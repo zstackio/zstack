@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <instanceOfferings>
+        <instanceOffering name="TestInstanceOffering"
+            description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000" />
+    </instanceOfferings>
+
+    <diskOffering name="TestDiskOffering1" description="Test"
+        diskSize="50G" />
+    <diskOffering name="TestDiskOffering2" description="Test"
+        diskSize="120G" />
+    <diskOffering name="TestDiskOffering3" description="Test"
+        diskSize="240G" />
+
+
+    <backupStorages>
+        <simulatorBackupStorage name="TestBackupStorage"
+            description="Test" url="nfs://test" />
+    </backupStorages>
+    <images>
+        <image name="TestImage" description="Test" size="2G" format="simulator">
+            <backupStorageRef>TestBackupStorage</backupStorageRef>
+        </image>
+    </images>
+
+    <zones>
+        <zone name="TestZone" description="Test">
+            <clusters>
+                <cluster name="TestCluster" description="Test">
+                    <hosts>
+                        <simulatorHost name="TestHost1" description="Test"
+                            managementIp="10.0.0.11" memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                        <simulatorHost name="TestHost2" description="Test"
+                            managementIp="10.0.0.12" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
+                    </hosts>
+                    <primaryStorageRef>TestPrimaryStorage1</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorage2</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorage3</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorageForRootVolume</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network</l2NetworkRef>
+                </cluster>
+            </clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="TestL2Network" description="Test"
+                    physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.1.100"
+                                endIp="10.0.1.200" gateway="10.0.1.1" netmask="255.255.255.0" />
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+
+            <primaryStorages>
+                <!-- TestPrimaryStorage2 doesn't have enough capacity -->
+                <simulatorPrimaryStorage name="TestPrimaryStorage1"
+                    url="nfs1://TestPrimaryStorage1/" description="Test" totalCapacity="51G" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage2"
+                    url="nfs1://TestPrimaryStorage2/" description="Test" totalCapacity="100G" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage3"
+                    url="nfs1://TestPrimaryStorage3/" description="Test" totalCapacity="241G" />
+                <simulatorPrimaryStorage name="TestPrimaryStorageForRootVolume"
+                    url="nfs1://TestPrimaryStorageForRootVolume/" description="Test"
+                    totalCapacity="3G" />
+            </primaryStorages>
+        </zone>
+    </zones>
+</deployerConfig>

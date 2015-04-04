@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+
+	<backupStorages>
+		<simulatorBackupStorage name="simulatorBackupStorage"
+			description="Test" url="nfs://test" />
+	</backupStorages>
+
+	<images>
+		<image name="TestImage" description="Test" format="simulator">
+			<backupStorageRef>simulatorBackupStorage</backupStorageRef>
+		</image>
+	</images>
+
+	<instanceOfferings>
+		<instanceOffering name="TestInstanceOffering"
+			description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000" />
+	</instanceOfferings>
+
+	<vm>
+		<userVm name="TestVm" description="Test">
+			<imageRef>TestImage</imageRef>
+			<instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
+			<l3NetworkRef>TestL3Network1</l3NetworkRef>
+		</userVm>
+	</vm>
+
+	<securityGroups>
+		<securityGroup name="test">
+			<l3NetworkRef>TestL3Network1</l3NetworkRef>
+		</securityGroup>
+		<securityGroup name="test1">
+			<l3NetworkRef>TestL3Network1</l3NetworkRef>
+		</securityGroup>
+	</securityGroups>
+
+	<zones>
+		<zone name="Zone1" description="Test">
+			<clusters>
+				<cluster name="Cluster1" description="Test" hypervisorType="Simulator">
+					<hosts>
+						<simulatorHost name="host1" description="Test"
+							managementIp="localhost" memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+					</hosts>
+					<primaryStorageRef>nfs</primaryStorageRef>
+					<l2NetworkRef>TestL2Network</l2NetworkRef>
+				</cluster>
+			</clusters>
+
+			<l2Networks>
+				<l2NoVlanNetwork name="TestL2Network" description="Test"
+					physicalInterface="eth0">
+					<l3Networks>
+						<l3BasicNetwork name="TestL3Network1" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+								endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+
+							<networkService provider="SecurityGroup">
+								<serviceType>SecurityGroup</serviceType>
+							</networkService>
+						</l3BasicNetwork>
+					</l3Networks>
+				</l2NoVlanNetwork>
+			</l2Networks>
+
+			<backupStorageRef>simulatorBackupStorage</backupStorageRef>
+			<primaryStorages>
+				<simulatorPrimaryStorage name="nfs"
+					description="Test" totalCapacity="1T" url="nfs://test" />
+			</primaryStorages>
+		</zone>
+	</zones>
+</deployerConfig>

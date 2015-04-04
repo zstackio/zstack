@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<account name="TestAccount" password="password" >
+		<policy name="systemAdminPolicy" policyFilePath="PolicyXml/SystemAdminPolicy.xml" />
+	</account>
+
+	<securityGroups>
+		<securityGroup name="test">
+			<l3NetworkRef>TestL3Network1</l3NetworkRef>
+			<accountRef>TestAccount</accountRef>
+			<rule>
+				<type>Ingress</type>
+				<protocol>TCP</protocol>
+				<startPort>22</startPort>
+				<endPort>100</endPort>
+				<allowedCidr>0.0.0.0/0</allowedCidr>
+			</rule>
+			<rule>
+				<type>Ingress</type>
+				<protocol>UDP</protocol>
+				<startPort>10</startPort>
+				<endPort>10</endPort>
+				<allowedCidr>192.168.0.1/0</allowedCidr>
+			</rule>
+		</securityGroup>
+        <securityGroup name="test1">
+            <accountRef>TestAccount</accountRef>
+        </securityGroup>
+        <securityGroup name="test2">
+        </securityGroup>
+	</securityGroups>
+
+	<zones>
+		<zone name="Zone1" description="Test">
+			<l2Networks>
+				<l2NoVlanNetwork name="TestL2Network" description="Test"
+					physicalInterface="eth0">
+					<l3Networks>
+						<l3BasicNetwork name="TestL3Network1" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+								endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+								
+							<networkService provider="SecurityGroup">
+								<serviceType>SecurityGroup</serviceType>
+							</networkService>
+						</l3BasicNetwork>
+					</l3Networks>
+				</l2NoVlanNetwork>
+			</l2Networks>
+		</zone>
+	</zones>
+</deployerConfig>

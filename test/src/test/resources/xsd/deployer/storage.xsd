@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://zstack.org/schema/zstack"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://zstack.org/schema/zstack" elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
+
+    <xsd:complexType name="PrimaryStorageUnion">
+        <xsd:sequence>
+            <xsd:element name="simulatorPrimaryStorage" type="SimulatorPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="nfsPrimaryStorage" type="NfsPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="BackupStorageUnion">
+        <xsd:sequence>
+            <xsd:element name="simulatorBackupStorage" type="SimulatorBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="sftpBackupStorage" type="SftpBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="PrimaryStorageConfigBase">
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="url" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="totalCapacity" type="xsd:string" default="500G"></xsd:attribute>
+        <xsd:attribute name="availableCapacity" type="xsd:string" default="500G"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="SimulatorPrimaryStorageConfig">
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="url" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="totalCapacity" type="xsd:string" default="500G"></xsd:attribute>
+        <xsd:attribute name="availableCapacity" type="xsd:string" default="500G"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="NfsPrimaryStorageConfig">
+        <xsd:complexContent>
+            <xsd:extension base="PrimaryStorageConfigBase">
+                <xsd:attribute name="placeHolder" type="xsd:string"></xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="BackupStorageConfigBase">
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="url" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="totalCapacity" type="xsd:string" default="1T"></xsd:attribute>
+        <xsd:attribute name="availableCapacity" type="xsd:string" default="1T"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="SimulatorBackupStorageConfig">
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="url" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="totalCapacity" type="xsd:string" default="1T"></xsd:attribute>
+        <xsd:attribute name="availableCapacity" type="xsd:string" default="1T"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="SftpBackupStorageConfig">
+        <xsd:complexContent>
+            <xsd:extension base="BackupStorageConfigBase">
+                <xsd:attribute name="hostname" type="xsd:string" default="localhost"></xsd:attribute>
+                <xsd:attribute name="username" type="xsd:string" default="root"></xsd:attribute>
+                <xsd:attribute name="password" type="xsd:string" default="password"></xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+</xsd:schema>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>vip</id>
+    <interceptor>VipApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.network.service.vip.APICreateVipMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.vip.APIDeleteVipMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.vip.APIChangeVipStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.vip.APIQueryVipMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>

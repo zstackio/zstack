@@ -1,0 +1,147 @@
+package org.zstack.kvm;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.Completion;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HypervisorType;
+import org.zstack.header.message.MessageReply;
+import org.zstack.kvm.KVMAgentCommands.ApplySecurityGroupRuleCmd;
+import org.zstack.kvm.KVMAgentCommands.ApplySecurityGroupRuleResponse;
+import org.zstack.kvm.KVMAgentCommands.CleanupUnusedRulesOnHostResponse;
+import org.zstack.kvm.KVMAgentCommands.RefreshAllRulesOnHostCmd;
+import org.zstack.network.securitygroup.*;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
+
+public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, KVMHostConnectExtensionPoint {
+    private static CLogger logger = Utils.getLogger(KVMSecurityGroupBackend.class);
+    
+    public static final String SECURITY_GROUP_APPLY_RULE_PATH = "/securitygroup/applyrules";
+    public static final String SECURITY_GROUP_REFRESH_RULE_ON_HOST_PATH = "/securitygroup/refreshrulesonhost";
+    public static final String SECURITY_GROUP_CLEANUP_UNUSED_RULE_ON_HOST_PATH = "/securitygroup/cleanupunusedrules";
+
+    @Autowired
+    private CloudBus bus;
+    @Autowired
+    private ErrorFacade errf;
+
+    private void incrementallyApplyRules(final HostRuleTO hto, final Completion complete) {
+        ApplySecurityGroupRuleCmd cmd = new ApplySecurityGroupRuleCmd();
+        cmd.setRuleTOs(hto.getRules());
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(hto.getHostUuid());
+        msg.setPath(SECURITY_GROUP_APPLY_RULE_PATH);
+        msg.setCommand(cmd);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hto.getHostUuid());
+        bus.send(msg, new CloudBusCallBack(complete) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    complete.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                ApplySecurityGroupRuleResponse rsp = hreply.toResponse(ApplySecurityGroupRuleResponse.class);
+                if (!rsp.isSuccess()) {
+                    String err = String.format("failed to apply rules of security group rules to kvm host[uuid:%s], because %s", hto.getHostUuid(), rsp.getError());
+                    logger.warn(err);
+                    complete.fail(errf.stringToOperationError(err));
+                    return;
+                }
+
+                String info = String.format("successfully applied rules of security group rules to kvm host[uuid:%s]", hto.getHostUuid());
+                logger.debug(info);
+                complete.success();
+            }
+        });
+    }
+    
+    private void reApplyAllRulesOnHost(final HostRuleTO hto, final Completion complete) {
+        RefreshAllRulesOnHostCmd cmd = new RefreshAllRulesOnHostCmd();
+        cmd.setRuleTOs(hto.getRules());
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(hto.getHostUuid());
+        msg.setPath(SECURITY_GROUP_REFRESH_RULE_ON_HOST_PATH);
+        msg.setCommand(cmd);
+        msg.setNoStatusCheck(true);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hto.getHostUuid());
+        bus.send(msg, new CloudBusCallBack(complete) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    complete.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                ApplySecurityGroupRuleResponse rsp = hreply.toResponse(ApplySecurityGroupRuleResponse.class);
+                if (!rsp.isSuccess()) {
+                    String err = String.format("failed to apply rules of security group rules to kvm host[uuid:%s], because %s", hto.getHostUuid(), rsp.getError());
+                    logger.warn(err);
+                    complete.fail(errf.stringToOperationError(err));
+                    return;
+                }
+
+                String info = String.format("successfully applied rules of security group rules to kvm host[uuid:%s]", hto.getHostUuid());
+                logger.debug(info);
+                complete.success();
+            }
+        });
+    }
+    
+    @Override
+    public void applyRules(final HostRuleTO hto, final Completion complete) {
+        if (!hto.isRefreshHost()) {
+            incrementallyApplyRules(hto, complete);
+        } else {
+            reApplyAllRulesOnHost(hto, complete);
+        }
+    }
+
+    @Override
+    public void cleanUpUnusedRuleOnHost(String hostUuid, final Completion completion) {
+        KVMAgentCommands.CleanupUnusedRulesOnHostCmd cmd = new KVMAgentCommands.CleanupUnusedRulesOnHostCmd();
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setCommand(cmd);
+        msg.setPath(SECURITY_GROUP_CLEANUP_UNUSED_RULE_ON_HOST_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                CleanupUnusedRulesOnHostResponse  rsp = hreply.toResponse(CleanupUnusedRulesOnHostResponse.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(errf.stringToOperationError(rsp.getError()));
+                    return;
+                }
+
+                completion.success();
+            }
+        });
+    }
+
+    @Override
+    public HypervisorType getSecurityGroupBackendHypervisorType() {
+        return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
+    }
+
+    @Override
+    public void kvmHostConnected(KVMHostConnectedContext context) throws KVMHostConnectException {
+        RefreshSecurityGroupRulesOnHostMsg msg = new RefreshSecurityGroupRulesOnHostMsg();
+        msg.setHostUuid(context.getInventory().getUuid());
+        bus.makeLocalServiceId(msg, SecurityGroupConstant.SERVICE_ID);
+        bus.send(msg);
+    }
+}

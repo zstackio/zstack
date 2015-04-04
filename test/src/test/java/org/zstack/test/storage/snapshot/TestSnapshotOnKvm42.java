@@ -1,0 +1,129 @@
+package org.zstack.test.storage.snapshot;
+
+import junit.framework.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.ComponentLoader;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
+import org.zstack.test.deployer.Deployer;
+import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
+
+/*
+* 1. take snapshot d1 from vm's data volume
+* 2. take snapshot r1 from vm's root volume
+* 3. take snapshot r2 from vm's root volume
+* 4. revert root volume to snapshot r1
+*
+* confirm current of snapshot tree of d1 is still set to true
+*/
+public class TestSnapshotOnKvm42 {
+    CLogger logger = Utils.getLogger(TestSnapshotOnKvm42.class);
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
+    SessionInventory session;
+    NfsPrimaryStorageSimulatorConfig nfsConfig;
+    VolumeSnapshotKvmSimulator snapshotKvmSimulator;
+
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/kvm/TestTakeSnapshotOnKvm28.xml", con);
+        deployer.addSpringConfig("KVMRelated.xml");
+        deployer.build();
+        api = deployer.getApi();
+        loader = deployer.getComponentLoader();
+        bus = loader.getComponent(CloudBus.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
+        nfsConfig = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
+        snapshotKvmSimulator = loader.getComponent(VolumeSnapshotKvmSimulator.class);
+        session = api.loginAsAdmin();
+    }
+
+    private void fullSnapshot(VolumeSnapshotInventory inv, int distance) {
+        Assert.assertEquals(VolumeSnapshotState.Enabled.toString(), inv.getState());
+        Assert.assertEquals(VolumeSnapshotStatus.Ready.toString(), inv.getStatus());
+        VolumeVO vol = dbf.findByUuid(inv.getVolumeUuid(), VolumeVO.class);
+        VolumeSnapshotVO svo = dbf.findByUuid(inv.getUuid(), VolumeSnapshotVO.class);
+        Assert.assertNotNull(svo);
+        Assert.assertTrue(svo.isFullSnapshot());
+        Assert.assertTrue(svo.isLatest());
+        Assert.assertNull(svo.getParentUuid());
+        Assert.assertEquals(distance, svo.getDistance());
+        Assert.assertEquals(vol.getPrimaryStorageUuid(), svo.getPrimaryStorageUuid());
+        Assert.assertNotNull(svo.getPrimaryStorageInstallPath());
+        VolumeSnapshotTreeVO cvo = dbf.findByUuid(svo.getTreeUuid(), VolumeSnapshotTreeVO.class);
+        Assert.assertNotNull(cvo);
+        Assert.assertTrue(cvo.isCurrent());
+    }
+
+    private void deltaSnapshot(VolumeSnapshotInventory inv, int distance) {
+        Assert.assertEquals(VolumeSnapshotState.Enabled.toString(), inv.getState());
+        Assert.assertEquals(VolumeSnapshotStatus.Ready.toString(), inv.getStatus());
+        VolumeVO vol = dbf.findByUuid(inv.getVolumeUuid(), VolumeVO.class);
+        VolumeSnapshotVO svo = dbf.findByUuid(inv.getUuid(), VolumeSnapshotVO.class);
+        Assert.assertNotNull(svo);
+        Assert.assertFalse(svo.isFullSnapshot());
+        Assert.assertTrue(svo.isLatest());
+        Assert.assertNotNull(svo.getParentUuid());
+        Assert.assertEquals(distance, svo.getDistance());
+        Assert.assertEquals(vol.getPrimaryStorageUuid(), svo.getPrimaryStorageUuid());
+        Assert.assertNotNull(svo.getPrimaryStorageInstallPath());
+        VolumeSnapshotTreeVO cvo = dbf.findByUuid(svo.getTreeUuid(), VolumeSnapshotTreeVO.class);
+        Assert.assertNotNull(cvo);
+        Assert.assertTrue(cvo.isCurrent());
+        Assert.assertEquals(svo.getTreeUuid(), cvo.getUuid());
+    }
+
+	@Test
+	public void test() throws ApiSenderException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        VolumeInventory dataVol = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
+            @Override
+            public VolumeInventory call(VolumeInventory arg) {
+                if (arg.getType().equals(VolumeType.Data.toString())) {
+                    return arg;
+                }
+                return null;
+            }
+        });
+
+        api.stopVmInstance(vm.getUuid());
+        String volUuid = dataVol.getUuid();
+        VolumeSnapshotInventory inv = api.createSnapshot(volUuid);
+        VolumeSnapshotInventory root = inv;
+        fullSnapshot(inv, 0);
+
+        VolumeSnapshotInventory rinv1 = api.createSnapshot(vm.getRootVolumeUuid());
+        fullSnapshot(rinv1, 0);
+        VolumeSnapshotInventory rinv2 = api.createSnapshot(vm.getRootVolumeUuid());
+        deltaSnapshot(rinv2, 1);
+        api.revertVolumeToSnapshot(rinv1.getUuid());
+
+        SimpleQuery<VolumeSnapshotTreeVO> q = dbf.createQuery(VolumeSnapshotTreeVO.class);
+        q.add(VolumeSnapshotTreeVO_.current, Op.EQ, true);
+        long count = q.count();
+        Assert.assertEquals(2, count);
+    }
+}

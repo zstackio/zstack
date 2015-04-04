@@ -1,0 +1,80 @@
+package org.zstack.compute.allocator;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.allocator.APIGetCpuMemoryCapacityMsg;
+import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.zone.ZoneVO;
+import org.zstack.header.zone.ZoneVO_;
+
+import java.util.List;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: frank
+ * Time: 4:16 PM
+ * To change this template use File | Settings | File Templates.
+ */
+public class HostAllocatorApiInterceptor implements ApiMessageInterceptor {
+    @Autowired
+    private CloudBus bus;
+    @Autowired
+    private ErrorFacade errf;
+    @Autowired
+    private DatabaseFacade dbf;
+
+    private void setServiceId(APIMessage msg) {
+        bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof APIGetCpuMemoryCapacityMsg) {
+            validate((APIGetCpuMemoryCapacityMsg) msg);
+        }
+
+        setServiceId(msg);
+        return msg;
+    }
+
+    private void validate(APIGetCpuMemoryCapacityMsg msg) {
+        boolean pass = false;
+        if ((msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty())) {
+            pass = true;
+        }
+        if ((msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty())) {
+            pass = true;
+        }
+        if ((msg.getHostUuids() != null && !msg.getHostUuids().isEmpty())) {
+            pass = true;
+        }
+
+        if (!pass && !msg.isAll()) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                    String.format("zoneUuids, clusterUuids, hostUuids must at least have one be none-empty list, or all is set to true")
+            ));
+        }
+
+        if (msg.isAll() && (msg.getZoneUuids() == null || msg.getZoneUuids().isEmpty())) {
+            SimpleQuery<ZoneVO> q = dbf.createQuery(ZoneVO.class);
+            q.select(ZoneVO_.uuid);
+            List<String> zuuids = q.listValue();
+            msg.setZoneUuids(zuuids);
+
+            if (msg.getZoneUuids().isEmpty()) {
+                APIGetCpuMemoryCapacityReply reply = new APIGetCpuMemoryCapacityReply();
+                bus.reply(msg, reply);
+                throw new StopRoutingException();
+            }
+        }
+    }
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <category>cloudBus</category>
+        <name>statistics.on</name>
+        <description>A boolean value indicating whether enabling message statistics through JMX</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+</globalConfig>

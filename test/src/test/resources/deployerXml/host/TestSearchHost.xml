@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<zones>
+		<zone name="TestZone" description="Test">
+			<clusters>
+				<cluster name="TestCluster" description="Test">
+					<hosts>
+						<simulatorHost name="TestHost1" description="Test"
+							managementIp="10.0.0.11" memoryCapacity="8G" cpuNum="4" cpuSpeed="2600">
+							<hostTag>large</hostTag>
+							<hostTag>business</hostTag>
+						</simulatorHost>
+						<simulatorHost name="TestHost2" description="Test"
+							managementIp="10.0.0.12" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600">
+							<hostTag>large</hostTag>
+							<hostTag>web</hostTag>
+						</simulatorHost>
+						<simulatorHost name="TestHost3" description="Test"
+							managementIp="10.0.0.13" memoryCapacity="8G" cpuNum="2" cpuSpeed="2600">
+							<hostTag>small</hostTag>
+							<hostTag>test</hostTag>
+						</simulatorHost>
+						<simulatorHost name="TestHost4" description="Test"
+							managementIp="10.0.0.14" memoryCapacity="16G" cpuNum="1"
+							cpuSpeed="2600" />
+						<simulatorHost name="TestHost5" description="Test"
+							managementIp="10.0.0.15" memoryCapacity="32G" cpuNum="3"
+							cpuSpeed="2600" />
+					</hosts>
+				</cluster>
+			</clusters>
+		</zone>
+	</zones>
+</deployerConfig>

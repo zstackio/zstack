@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://zstack.org/schema/zstack"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://zstack.org/schema/zstack" elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
+
+    <xsd:complexType name="L2NetworkUnion">
+        <xsd:sequence>
+            <xsd:element name="l2NoVlanNetwork" type="L2NoVlanNetworkConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="l2VlanNetwork" type="L2VlanNetworkConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="L3NetworkUnion">
+        <xsd:sequence>
+            <xsd:element name="l3BasicNetwork" type="L3BasicNetworkConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SecurityGroupUnion">
+        <xsd:sequence>
+            <xsd:element name="securityGroup" type="SecurityGroupConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="PortForwardingUnion">
+        <xsd:sequence>
+            <xsd:element name="portForwarding" type="PortForwardingConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="EipUnion">
+        <xsd:sequence>
+            <xsd:element name="eip" type="EipConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+
+    <xsd:complexType name="IpRangeConfig">
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="startIp" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="endIp" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="netmask" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="gateway" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="type" type="xsd:string" default="Guest"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="L2NoVlanNetworkConfig">
+        <xsd:sequence>
+            <xsd:element name="l3Networks" type="L3NetworkUnion" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="physicalInterface" type="xsd:string"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="L2VlanNetworkConfig">
+        <xsd:complexContent>
+            <xsd:extension base="L2NoVlanNetworkConfig">
+                <xsd:attribute name="vlan" type="xsd:unsignedInt" use="required"></xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="SecurityGroupRuleConfig">
+        <xsd:sequence>
+            <xsd:element name="type" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="protocol" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="startPort" type="xsd:unsignedInt" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="endPort" type="xsd:unsignedInt" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="allowedCidr" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="SecurityGroupConfig">
+        <xsd:sequence>
+            <xsd:element name="l3NetworkRef" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="accountRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="rule" type="SecurityGroupRuleConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="EipConfig">
+        <xsd:sequence>
+            <xsd:element name="name" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="description" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="publicL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="privateL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="vmRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="PortForwardingConfig">
+        <xsd:sequence>
+            <xsd:element name="name" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="description" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="publicL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="privateL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="vmRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="publicPortStart" type="xsd:unsignedInt" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="publicPortEnd" type="xsd:unsignedInt"/>
+            <xsd:element name="privatePortStart" type="xsd:unsignedInt" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="privatePortEnd" type="xsd:unsignedInt"/>
+            <xsd:element name="allowedCidr" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="protocolType" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="NetworkServiceConfig" >
+        <xsd:sequence>
+            <xsd:element name="serviceType" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="provider" type="xsd:string" use="required"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="L3BasicNetworkConfig">
+        <xsd:sequence>
+            <xsd:element name="ipRange" type="IpRangeConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="dns" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="dnsDomain" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="networkService" type="NetworkServiceConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="accountRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+    </xsd:complexType>
+
+</xsd:schema>

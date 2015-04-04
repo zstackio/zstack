@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>portForwarding</id>
+    <interceptor>PortForwardingApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.network.service.portforwarding.APICreatePortForwardingRuleMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.portforwarding.APIDeletePortForwardingRuleMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.portforwarding.APIListPortForwardingRuleMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.portforwarding.APIQueryPortForwardingRuleMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.portforwarding.APIAttachPortForwardingRuleMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.portforwarding.APIDetachPortForwardingRuleMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.portforwarding.APIChangePortForwardingRuleStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.portforwarding.APIGetPortForwardingAttachableVmNicsMsg</name>
+    </message>
+
+</service>

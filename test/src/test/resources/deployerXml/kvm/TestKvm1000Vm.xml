@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <instanceOfferings>
+        <virtualRouterOffering name="virtualRouterOffering"
+                               isDefault="true" memoryCapacity="80M" cpuNum="1" cpuSpeed="1">
+            <zoneRef>Zone1</zoneRef>
+            <managementL3NetworkRef>MgmtNetwork</managementL3NetworkRef>
+            <publicL3NetworkRef>MgmtNetwork</publicL3NetworkRef>
+            <imageRef>TestImage</imageRef>
+        </virtualRouterOffering>
+
+        <instanceOffering name="TestInstanceOffering"
+                          description="Test" memoryCapacity="80M" cpuNum="1" cpuSpeed="1" />
+    </instanceOfferings>
+
+    <diskOffering name="DataDiskOffering" description="Test"
+                  diskSize="1" />
+
+    <backupStorages>
+        <sftpBackupStorage name="sftp" description="Test"
+                           url="nfs://test" />
+    </backupStorages>
+
+    <images>
+        <image name="TestImage" description="Test">
+            <backupStorageRef>sftp</backupStorageRef>
+        </image>
+    </images>
+
+    <zones>
+        <zone name="Zone1" description="Test">
+            <clusters>
+                <cluster name="Cluster1" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host1" description="Test" managementIp="localhost"
+                                 memoryCapacity="100000T" cpuNum="320000" cpuSpeed="26000" />
+                    </hosts>
+
+                    <primaryStorageRef>nfs1</primaryStorageRef>
+                    <primaryStorageRef>nfs2</primaryStorageRef>
+                    <primaryStorageRef>nfs3</primaryStorageRef>
+                    <primaryStorageRef>nfs4</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network</l2NetworkRef>
+                    <l2NetworkRef>ManagementL2Network</l2NetworkRef>
+                </cluster>
+            </clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="ManagementL2Network" description="Test"
+                                 physicalInterface="eth1">
+                    <l3Networks>
+                        <l3BasicNetwork name="MgmtNetwork" description="Test">
+                            <ipRange name="MgmtIpRange" description="Test" startIp="192.168.0.100"
+                                     endIp="192.168.0.200" gateway="192.168.0.1" netmask="255.255.255.0" />
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+
+                <l2NoVlanNetwork name="TestL2Network" description="Test"
+                                 physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network1" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                     endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+
+                            <networkService provider="VirtualRouter">
+                                <serviceType>SNAT</serviceType>
+                            </networkService>
+
+                        </l3BasicNetwork>
+
+                        <l3BasicNetwork name="TestL3Network0" description="public network">
+                            <ipRange name="PublicIpRange" description="Test" startIp="72.0.0.100"
+                                     endIp="72.2.50.200" gateway="72.0.0.1" netmask="255.0.0.0" />
+
+                            <networkService provider="VirtualRouter">
+                                <serviceType>SNAT</serviceType>
+                            </networkService>
+                        </l3BasicNetwork>
+
+                        <l3BasicNetwork name="TestL3Network2" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
+                                     endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
+
+                            <networkService provider="VirtualRouter">
+                                <serviceType>SNAT</serviceType>
+                            </networkService>
+                        </l3BasicNetwork>
+
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+
+            <backupStorageRef>sftp</backupStorageRef>
+            <primaryStorages>
+                <nfsPrimaryStorage name="nfs1" description="Test"
+                                   totalCapacity="5000T" url="nfs://test1" />
+                <nfsPrimaryStorage name="nfs2" description="Test"
+                                   totalCapacity="5000T" url="nfs://test2" />
+                <nfsPrimaryStorage name="nfs3" description="Test"
+                                   totalCapacity="5000T" url="nfs://test3" />
+                <nfsPrimaryStorage name="nfs4" description="Test"
+                                   totalCapacity="5000T" url="nfs://test4" />
+            </primaryStorages>
+        </zone>
+    </zones>
+</deployerConfig>

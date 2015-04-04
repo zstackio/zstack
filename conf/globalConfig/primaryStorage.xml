@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+	<config>
+		<name>imageCache.garbageCollector.interval</name>
+		<description>The interval primary storage scans orphan image cache, in seconds</description>
+		<defaultValue>86400</defaultValue>
+        <category>primaryStorage</category>
+		<type>java.lang.Integer</type>
+		<validatorRegularExpression>^/(.*)</validatorRegularExpression>
+	</config>
+
+	<config>
+		<name>reservedCapacity</name>
+		<description>The reserved capacity on all primary storage</description>
+		<defaultValue>1G</defaultValue>
+        <category>primaryStorage</category>
+	</config>
+</globalConfig>

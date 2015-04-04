@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>globalConfig</id>
+    <interceptor>GlobalConfigApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.core.config.APIListGlobalConfigMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.config.APIUpdateGlobalConfigMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.config.APIGetGlobalConfigMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.config.APIQueryGlobalConfigMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>

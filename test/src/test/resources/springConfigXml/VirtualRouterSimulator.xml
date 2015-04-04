@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
+       default-init-method="init" default-destroy-method="destory">
+
+    <import resource="ApplianceVmSimulator.xml"/>
+
+	<bean id="VirtualRouterSimulator" class="org.zstack.simulator.virtualrouter.VirtualRouterSimulator"/>
+	
+	<bean id="VirtualRouterConfig" class="org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig"/>
+</beans>

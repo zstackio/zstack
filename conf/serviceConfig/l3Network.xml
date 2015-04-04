@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>network.l3</id>
+    <interceptor>L3NetworkApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.network.l3.APICreateL3NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIListL3NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIDeleteL3NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIAddIpRangeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIDeleteIpRangeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIListIpRangeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkMsg</name>
+        <interceptor>NetworkServiceApiInterceptor</interceptor>
+        <interceptor>L3NetworkApiInterceptor</interceptor>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIAddDnsToL3NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIRemoveDnsFromL3NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APISearchL3NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIGetL3NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIQueryL3NetworkMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.service.APIQueryNetworkServiceL3NetworkRefMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIQueryIpRangeMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIGetL3NetworkTypesMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIChangeL3NetworkStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIGetIpAddressCapacityMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIAddIpRangeByNetworkCidrMsg</name>
+    </message>
+</service>

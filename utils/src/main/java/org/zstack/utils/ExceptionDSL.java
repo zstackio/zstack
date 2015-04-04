@@ -1,0 +1,171 @@
+package org.zstack.utils;
+
+import org.zstack.utils.logging.CLogger;
+
+/**
+ */
+public class ExceptionDSL {
+    private static final CLogger logger = Utils.getLogger(ExceptionDSL.class);
+
+    public static class ExceptionWrapper {
+        public ExceptionWrapper throwableSafe(RunnableWithThrowable runnable) {
+            try {
+                runnable.run();
+            } catch (Throwable t) {
+                logger.warn("unhandled throwable happened", t);
+            }
+
+            return this;
+        }
+
+        public ExceptionWrapper throwableSafe(RunnableWithThrowable runnable, String msg) {
+            try {
+                runnable.run();
+            } catch (Throwable t) {
+                logger.warn(String.format("%s, unhandled throwable happened", msg), t);
+            }
+
+            return this;
+        }
+
+        public ExceptionWrapper throwableSafeSuppress(RunnableWithThrowable runnable, Class<? extends Throwable>...tclazz) {
+            try {
+                runnable.run();
+            } catch (Throwable t) {
+                boolean suppress = false;
+                for (Class<? extends Throwable> tc : tclazz) {
+                    if (tc.isAssignableFrom(t.getClass())) {
+                        suppress = true;
+                        break;
+                    }
+                }
+
+                if (!suppress) {
+                    logger.warn(String.format("unhandled throwable happened"), t);
+                }
+            }
+
+            return this;
+        }
+
+        public ExceptionWrapper throwableSafe(Runnable runnable) {
+            try {
+                runnable.run();
+            } catch (Throwable t) {
+                logger.warn("unhandled throwable happened", t);
+            }
+
+            return this;
+        }
+
+        public ExceptionWrapper throwableSafe(Runnable runnable, String msg) {
+            try {
+                runnable.run();
+            } catch (Throwable t) {
+                logger.warn(String.format("%s, unhandled throwable happened", msg), t);
+            }
+
+            return this;
+        }
+
+        public ExceptionWrapper throwableSafeSuppress(Runnable runnable, Class<? extends Throwable>...tclazz) {
+            try {
+                runnable.run();
+            } catch (Throwable t) {
+                boolean suppress = false;
+                for (Class<? extends Throwable> tc : tclazz) {
+                    if (tc.isAssignableFrom(t.getClass())) {
+                        suppress = true;
+                        break;
+                    }
+                }
+
+                if (!suppress) {
+                    logger.warn(String.format("unhandled throwable happened"), t);
+                }
+            }
+
+            return this;
+        }
+
+        public ExceptionWrapper exceptionSafe(Runnable runnable) {
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                logger.warn("unhandled throwable happened", e);
+            }
+            return this;
+        }
+
+        public ExceptionWrapper exceptionSafe(Runnable runnable, String msg) {
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                logger.warn(String.format("%s, unhandled throwable happened", msg), e);
+            }
+            return this;
+        }
+
+        public ExceptionWrapper exceptionSafeSuppress(Runnable runnable, Class<? extends Exception>...eclazz) {
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                boolean suppress = false;
+                for (Class<? extends Exception> ec : eclazz) {
+                    if (ec.isAssignableFrom(e.getClass())) {
+                        suppress = true;
+                        break;
+                    }
+                }
+
+                if (!suppress) {
+                    logger.warn(String.format("unhandled throwable happened"), e);
+                }
+            }
+            return this;
+        }
+    }
+
+    private static ExceptionWrapper self = new ExceptionWrapper();
+
+    public static interface RunnableWithThrowable {
+        void run() throws Throwable;
+    }
+
+    public static ExceptionWrapper throwableSafe(RunnableWithThrowable runnable) {
+        return self.throwableSafe(runnable);
+    }
+
+    public static ExceptionWrapper throwableSafe(RunnableWithThrowable runnable, String msg) {
+        return self.throwableSafe(runnable, msg);
+    }
+
+    public static ExceptionWrapper throwableSafeSuppress(RunnableWithThrowable runnable, Class<? extends Throwable>...tclazz) {
+        return self.throwableSafeSuppress(runnable, tclazz);
+    }
+
+    public static ExceptionWrapper throwableSafe(Runnable runnable) {
+        return self.throwableSafe(runnable);
+    }
+
+    public static ExceptionWrapper throwableSafe(Runnable runnable, String msg) {
+        return self.throwableSafe(runnable, msg);
+    }
+
+    public static ExceptionWrapper throwableSafeSuppress(Runnable runnable, Class<? extends Throwable>...tclazz) {
+        return self.throwableSafeSuppress(runnable, tclazz);
+    }
+
+    public static ExceptionWrapper exceptionSafe(Runnable runnable) {
+        return self.exceptionSafe(runnable);
+    }
+
+    public static ExceptionWrapper exceptionSafe(Runnable runnable, String msg) {
+        return self.exceptionSafe(runnable, msg);
+    }
+
+    public static ExceptionWrapper exceptionSafeSuppress(Runnable runnable, Class<? extends Exception>...eclazz) {
+        return self.exceptionSafeSuppress(runnable, eclazz);
+    }
+
+}

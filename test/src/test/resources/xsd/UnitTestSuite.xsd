@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://zstack.org/schema/zstack"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://zstack.org/schema/zstack" elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
+
+	<xsd:element name="UnitTestSuiteConfig">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:sequence maxOccurs="unbounded" minOccurs="0">
+					<xsd:element name="TestCase">
+						<xsd:complexType>
+							<xsd:attribute name="class" type="xsd:string" use="required"></xsd:attribute>
+							<xsd:attribute name="timeout" type="xsd:unsignedShort"></xsd:attribute>
+							<xsd:attribute name="repeatTimes" type="xsd:unsignedShort"></xsd:attribute>
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence maxOccurs="unbounded" minOccurs="0">
+					<xsd:element name="Import">
+						<xsd:complexType>
+							<xsd:attribute name="resource" type="xsd:string" use="required"></xsd:attribute>
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:sequence>
+			<xsd:attribute name="timeout" type="xsd:unsignedShort"></xsd:attribute>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

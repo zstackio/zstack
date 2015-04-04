@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <instanceOfferings>
+        <instanceOffering name="instanceOffering512M512HZ"
+            description="Test" memoryCapacity="512M" cpuNum="1" cpuSpeed="512" allocatorStrategy="DesignatedHostAllocatorStrategy" />
+    </instanceOfferings>
+
+    <backupStorages>
+        <simulatorBackupStorage name="backupStorage1"
+            description="Test" url="nfs://test" />
+    </backupStorages>
+
+    <images>
+        <image name="image1" description="Test" format="simulator">
+            <backupStorageRef>backupStorage1</backupStorageRef>
+        </image>
+    </images>
+
+    <diskOffering name="disk1G" description="Test"
+        diskSize="1G" />
+    <diskOffering name="disk120G" description="Test"
+        diskSize="120G" />
+
+    <zones>
+        <zone name="zone1" description="Test">
+            <clusters>
+                <cluster name="cluster1" description="Test">
+                    <hosts>
+                        <simulatorHost name="host0" description="Test"
+                                       managementIp="10.0.0.10" memoryCapacity="1M" cpuNum="1"
+                                       cpuSpeed="1" />
+                        <simulatorHost name="host1" description="Test"
+                            managementIp="10.0.0.11" memoryCapacity="1M" cpuNum="1"
+                            cpuSpeed="1" />
+                        <simulatorHost name="host2" description="Test"
+                                       managementIp="10.0.0.12" memoryCapacity="1M" cpuNum="1"
+                                       cpuSpeed="1" />
+                        <simulatorHost name="host3" description="Test"
+                                       managementIp="10.0.0.13" memoryCapacity="1M" cpuNum="1"
+                                       cpuSpeed="1" />
+                        <simulatorHost name="host4" description="Test"
+                                       managementIp="10.0.0.14" memoryCapacity="1M" cpuNum="1"
+                                       cpuSpeed="1" />
+                    </hosts>
+                    <primaryStorageRef>primaryStorage1</primaryStorageRef>
+                    <l2NetworkRef>l2Network1</l2NetworkRef>
+                </cluster>
+            </clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="l2Network1" description="Test"
+                    physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="l3Network1" description="Test">
+                            <ipRange name="ipRange1" description="Test" startIp="10.0.0.100"
+                                endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+
+            <primaryStorages>
+                <simulatorPrimaryStorage name="primaryStorage1"
+                    description="Test" totalCapacity="100T" availableCapacity="100T" url="nfs://test" />
+            </primaryStorages>
+
+            <backupStorageRef>backupStorage1</backupStorageRef>
+        </zone>
+    </zones>
+</deployerConfig>

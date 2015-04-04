@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>configuration</id>
+    <interceptor>ConfigurationApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.configuration.APICreateDiskOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIDeleteDiskOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIListDiskOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APICreateInstanceOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIDeleteInstanceOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIListInstanceOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APISearchDiskOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APISearchInstanceOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIGenerateApiJsonTemplateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIGenerateTestLinkDocumentMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIGetDiskOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIGetInstanceOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIQueryInstanceOfferingMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIQueryDiskOfferingMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIGenerateGroovyClassMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIChangeInstanceOfferingStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIChangeDiskOfferingStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIGenerateSqlVOViewMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIGenerateApiTypeScriptDefinitionMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIGenerateSqlForeignKeyMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIGenerateSqlIndexMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.query.APIGenerateQueryableFieldsMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>

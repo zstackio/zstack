@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://zstack.org/schema/zstack"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://zstack.org/schema/zstack" elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
+
+    <xsd:complexType name="ImageUnion">
+        <xsd:sequence>
+            <xsd:element name="image" type="ImageConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ImageConfig">
+        <xsd:sequence>
+            <xsd:element name="backupStorageRef" type="xsd:string" maxOccurs="unbounded" minOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="size" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="md5sum" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="bits" type="xsd:unsignedShort" default="64"></xsd:attribute>
+        <xsd:attribute name="url" type="xsd:string" default="http://zstack.org/download/test.qcow2"></xsd:attribute>
+        <xsd:attribute name="mediaType" type="xsd:string" default="RootVolumeTemplate"></xsd:attribute>
+        <xsd:attribute name="format" type="xsd:string" default="qcow2"></xsd:attribute>
+        <xsd:attribute name="guestOsType" type="xsd:string" default="centos63"></xsd:attribute>
+    </xsd:complexType>
+
+</xsd:schema>

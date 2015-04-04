@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+	<TestCase class="org.zstack.test.configuration.TestAddInstanceOffering" />
+	<TestCase class="org.zstack.test.configuration.TestDeleteInstanceOffering" />
+    <TestCase class="org.zstack.test.configuration.TestDeleteInstanceOffering2" />
+    <TestCase class="org.zstack.test.configuration.TestDeleteInstanceOffering3" />
+	<TestCase class="org.zstack.test.configuration.TestAddDiskOffering" />
+	<TestCase class="org.zstack.test.configuration.TestDeleteDiskOffering" />
+    <TestCase class="org.zstack.test.configuration.TestDeleteDiskOffering2" />
+    <TestCase class="org.zstack.test.configuration.TestDeleteDiskOffering3" />
+	<TestCase class="org.zstack.test.configuration.TestAddDns"/>
+    <TestCase class="org.zstack.test.configuration.TestChangeInstanceOfferingState"/>
+    <TestCase class="org.zstack.test.configuration.TestChangeDiskOfferingState"/>
+</UnitTestSuiteConfig>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <category>managementServer</category>
+        <name>node.heartbeatInterval</name>
+        <description>The interval management node writes heartbeat to database, in seconds</description>
+        <defaultValue>5</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <category>managementServer</category>
+        <name>node.joinDelay</name>
+        <description>The delay management node reports its join event to other management nodes, in secs. If none zero, a random number will be picked up between 0 to this value and be used as join delay</description>
+        <defaultValue>0</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+</globalConfig>

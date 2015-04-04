@@ -1,0 +1,9 @@
+<error>
+    <prefix>L2</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>Unable to attach L2Network to a cluster</description>
+    </code>
+</error>
+

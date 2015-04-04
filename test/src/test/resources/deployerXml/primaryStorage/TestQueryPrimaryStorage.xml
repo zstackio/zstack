@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <zones>
+        <zone name="TestZone" description="Test">
+            <clusters>
+                <cluster name="cluster1" description="Test">
+                    <primaryStorageRef>TestPrimaryStorage1</primaryStorageRef>
+                </cluster>
+                
+                <cluster name="cluster2" description="Test">
+                    <primaryStorageRef>TestPrimaryStorage2</primaryStorageRef>
+                </cluster>
+            </clusters>
+
+            <primaryStorages>
+                <simulatorPrimaryStorage name="TestPrimaryStorage1"
+                    description="Test" totalCapacity="1T" url="nfs://test1" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage2"
+                    description="Test" totalCapacity="2T" url="nfs://test2" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage3"
+                    description="Test" totalCapacity="5T" url="nfs://test3" />
+            </primaryStorages>
+        </zone>
+    </zones>
+</deployerConfig>

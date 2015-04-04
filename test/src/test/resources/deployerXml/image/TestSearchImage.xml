@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <backupStorages>
+        <simulatorBackupStorage name="TestBackupStorage"
+            description="Test" url="nfs://test" />
+    </backupStorages>
+    
+    <images>
+        <image name="TestImage" format="simulator" description="Test" url="http://zstack.org/download/test.qcow2">
+            <backupStorageRef>TestBackupStorage</backupStorageRef>
+        </image>
+    </images>
+</deployerConfig>

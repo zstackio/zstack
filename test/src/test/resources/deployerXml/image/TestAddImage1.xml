@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <backupStorages>
+        <simulatorBackupStorage name="TestBackupStorage"
+            description="Test" url="nfs://test" />
+        <simulatorBackupStorage name="TestBackupStorage1"
+                                description="Test" url="nfs://test" />
+    </backupStorages>
+</deployerConfig>

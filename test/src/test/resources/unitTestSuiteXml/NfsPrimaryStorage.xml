@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+	<TestCase class="org.zstack.test.storage.primary.nfs.TestExpungeVolumeOnNfsPrimaryStorageForKvm"/>
+    <TestCase class="org.zstack.test.storage.primary.nfs.TestImageCacheMissing"/>
+    <TestCase class="org.zstack.test.storage.primary.nfs.TestImageCacheMissingFailure"/>
+</UnitTestSuiteConfig>

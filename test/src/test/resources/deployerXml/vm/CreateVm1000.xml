@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <instanceOfferings>
+        <instanceOffering name="TestInstanceOffering"
+                          description="Test" memoryCapacity="64M" cpuNum="1" cpuSpeed="1" />
+    </instanceOfferings>
+
+    <backupStorages>
+        <simulatorBackupStorage name="TestBackupStorage"
+                                description="Test" url="nfs://test" />
+    </backupStorages>
+
+    <images>
+        <image name="TestImage" description="Test" format="simulator">
+            <backupStorageRef>TestBackupStorage</backupStorageRef>
+        </image>
+    </images>
+
+    <diskOffering name="TestRootDiskOffering" description="Test"
+                  diskSize="1G" />
+    <diskOffering name="TestDataDiskOffering" description="Test"
+                  diskSize="1G" />
+
+    <zones>
+        <zone name="TestZone" description="Test">
+            <clusters>
+                <cluster name="TestCluster" description="Test">
+                    <!--
+                    <hosts>
+                        <simulatorHost name="TestHost1" description="Test"
+                                       managementIp="10.0.0.11" memoryCapacity="32T" cpuNum="1"
+                                       cpuSpeed="2600" />
+                        <simulatorHost name="TestHost2" description="Test"
+                                       managementIp="10.0.0.12" memoryCapacity="32T" cpuNum="1"
+                                       cpuSpeed="2600" />
+                        <simulatorHost name="TestHost3" description="Test"
+                                       managementIp="10.0.0.13" memoryCapacity="32T" cpuNum="1"
+                                       cpuSpeed="2600" />
+                        <simulatorHost name="TestHost4" description="Test"
+                                       managementIp="10.0.0.14" memoryCapacity="32T" cpuNum="1"
+                                       cpuSpeed="2600" />
+                        <simulatorHost name="TestHost5" description="Test"
+                                       managementIp="10.0.0.15" memoryCapacity="32T" cpuNum="1"
+                                       cpuSpeed="2600" />
+                        <simulatorHost name="TestHost6" description="Test"
+                                       managementIp="10.0.0.16" memoryCapacity="32T" cpuNum="1"
+                                       cpuSpeed="2600" />
+                        <simulatorHost name="TestHost7" description="Test"
+                                       managementIp="10.0.0.17" memoryCapacity="32T" cpuNum="1"
+                                       cpuSpeed="2600" />
+                        <simulatorHost name="TestHost8" description="Test"
+                                       managementIp="10.0.0.18" memoryCapacity="32T" cpuNum="1"
+                                       cpuSpeed="2600" />
+                        <simulatorHost name="TestHost9" description="Test"
+                                       managementIp="10.0.0.19" memoryCapacity="32T" cpuNum="1"
+                                       cpuSpeed="2600" />
+                        <simulatorHost name="TestHost10" description="Test"
+                                       managementIp="10.0.0.20" memoryCapacity="32T" cpuNum="1"
+                                       cpuSpeed="2600" />
+                    </hosts>
+                    -->
+                    <primaryStorageRef>TestPrimaryStorage</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorage2</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorage3</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorage4</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorage5</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorage6</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorage7</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorage8</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorage9</primaryStorageRef>
+                    <primaryStorageRef>TestPrimaryStorage10</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network</l2NetworkRef>
+                </cluster>
+            </clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="TestL2Network" description="Test"
+                                 physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network1" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                     endIp="10.1.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                            <ipRange name="TestIpRange" description="Test" startIp="10.1.1.201"
+                                     endIp="10.5.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                            <ipRange name="TestIpRange" description="Test" startIp="10.5.1.201"
+                                     endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+
+            <primaryStorages>
+                <simulatorPrimaryStorage name="TestPrimaryStorage"
+                                         description="Test" totalCapacity="100000T" url="nfs://test1" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage2"
+                                         description="Test" totalCapacity="100000T" url="nfs://test2" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage3"
+                                         description="Test" totalCapacity="100000T" url="nfs://test3" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage4"
+                                         description="Test" totalCapacity="100000T" url="nfs://test4" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage5"
+                                         description="Test" totalCapacity="100000T" url="nfs://test5" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage6"
+                                         description="Test" totalCapacity="100000T" url="nfs://test6" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage7"
+                                         description="Test" totalCapacity="100000T" url="nfs://test7" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage8"
+                                         description="Test" totalCapacity="100000T" url="nfs://test8" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage9"
+                                         description="Test" totalCapacity="100000T" url="nfs://test9" />
+                <simulatorPrimaryStorage name="TestPrimaryStorage10"
+                                         description="Test" totalCapacity="100000T" url="nfs://test10" />
+            </primaryStorages>
+
+            <backupStorageRef>TestBackupStorage</backupStorageRef>
+        </zone>
+    </zones>
+</deployerConfig>

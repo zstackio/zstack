@@ -1,0 +1,59 @@
+<error>
+    <prefix>VM</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>Unable to create a new vm</description>
+    </code>
+
+    <code>
+        <id>1001</id>
+        <description>Unable to start a vm</description>
+    </code>
+
+    <code>
+        <id>1002</id>
+        <description>Unable to stop a vm</description>
+    </code>
+
+    <code>
+        <id>1003</id>
+        <description>Unable to reboot a vm</description>
+    </code>
+
+    <code>
+        <id>1004</id>
+        <description>Unable to destroy a vm</description>
+    </code>
+
+    <code>
+        <id>1005</id>
+        <description>Unable to attach data volume to a vm</description>
+    </code>
+
+    <code>
+        <id>1006</id>
+        <description>Unable to detach data volume from a vm</description>
+    </code>
+
+    <code>
+        <id>1007</id>
+        <description>Unable to attach a network to vm</description>
+    </code>
+
+    <code>
+        <id>1008</id>
+        <description>Unable to migrate a vm</description>
+    </code>
+
+    <code>
+        <id>1009</id>
+        <description>Unable to allocate a mac address for vm's nic</description>
+    </code>
+
+    <code>
+        <id>1010</id>
+        <description>VM is not in state that allows required operation</description>
+    </code>
+</error>
+

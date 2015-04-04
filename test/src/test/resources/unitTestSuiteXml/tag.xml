@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="180">
+    <TestCase class="org.zstack.test.tag.TestQueryTag"/>
+    <TestCase class="org.zstack.test.tag.TestUserTag"/>
+    <TestCase class="org.zstack.test.tag.TestSystemTag"/>
+    <TestCase class="org.zstack.test.tag.TestSystemTag1"/>
+    <TestCase class="org.zstack.test.tag.TestSystemTag2"/>
+    <TestCase class="org.zstack.test.tag.TestSystemTag3"/>
+</UnitTestSuiteConfig>

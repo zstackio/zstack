@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>cluster</id>
+    <interceptor>ClusterApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.cluster.APIChangeClusterStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.cluster.APICreateClusterMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.cluster.APIDeleteClusterMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.cluster.APIListClusterMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.cluster.APISearchClusterMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.cluster.APIGetClusterMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.cluster.APIQueryClusterMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>

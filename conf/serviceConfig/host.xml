@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>host</id>
+    <interceptor>HostApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.host.APIAddHostMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIChangeHostStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIDeleteHostMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIListHostMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIReconnectHostMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APISearchHostMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIGetHostMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIQueryHostMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIGetHypervisorTypesMsg</name>
+    </message>
+</service>

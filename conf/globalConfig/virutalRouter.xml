@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <name>agent.deployOnStart</name>
+        <description>A boolean value. When set to true, management server will deploy virtual router agent every time a virtual router being created/started/reboot, using ansible. The  virtual router image has agent built in by default, so in most of time this value doesn't need setting to true, as it will significantly increase boot time of virtual router; however, in case you have a new agent needed deploying in an existing virtual router, set this value to true and reboot virtual router will do the work.</description>
+        <defaultValue>false</defaultValue>
+        <category>virtualRouter</category>
+        <type>java.lang.Boolean</type>
+    </config>
+    <config>
+        <name>command.parallelismDegree</name>
+        <description>The max concurrent requests a virtual router can execute</description>
+        <defaultValue>100</defaultValue>
+        <category>virtualRouter</category>
+        <type>java.lang.Integer</type>
+    </config>
+    <config>
+        <name>dnsmasq.restartAfterNumberOfSIGUSER1</name>
+        <description>Restart DNSMASQ after sending $value times SIGUSER1 to it; because DNSMASQ will be stuck in reloading configuration file if there are lots of of SIGUSER1</description>
+        <defaultValue>500</defaultValue>
+        <category>virtualRouter</category>
+        <type>java.lang.Integer</type>
+    </config>
+</globalConfig>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+    <TestCase class="org.zstack.test.core.thread.TestThreadFacadeCancel"/>
+    <TestCase class="org.zstack.test.core.thread.TestThreadFacadeCancelSyncThread"/>
+    <TestCase class="org.zstack.test.core.thread.TestThreadFacadeReturnValue"/>
+    <TestCase class="org.zstack.test.core.thread.TestThreadFacadeReturnValueException"/>
+    <TestCase class="org.zstack.test.core.thread.TestThreadFacadeSyncReturnValue"/>
+    <TestCase class="org.zstack.test.core.thread.TestThreadFacadeSyncReturnValueCancel"/>
+    <TestCase class="org.zstack.test.core.thread.TestThreadFacadeSyncReturnValueTimeout"/>
+    <TestCase class="org.zstack.test.core.thread.TestThredFacadeSyncThreadSignature"/>
+    <TestCase class="org.zstack.test.core.thread.TestThreadFacadeAnnotationFuture"/>
+    <TestCase class="org.zstack.test.core.thread.TestChainTask"/>
+    <TestCase class="org.zstack.test.core.thread.TestChainTask2"/>
+    <TestCase class="org.zstack.test.core.thread.TestChainTask3"/>
+    <TestCase class="org.zstack.test.core.thread.TestChainTaskCancel"/>
+    <TestCase class="org.zstack.test.core.thread.TestChainTaskExceptionNotCallRunNext"/>
+    <TestCase class="org.zstack.test.core.thread.TestChainTaskExceptionCallRunNext"/>
+</UnitTestSuiteConfig>

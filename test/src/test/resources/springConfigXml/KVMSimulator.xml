@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:zstack="http://zstack.org/schema/zstack"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+     	 http://zstack.org/schema/zstack 
+         http://zstack.org/schema/zstack/plugin.xsd"
+       default-init-method="init" default-destroy-method="destory">
+
+	<bean id="VolumeSnapshotKvmSimulator" class="org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator" />
+
+	<bean id="KVMSimulatorConfig" class="org.zstack.simulator.kvm.KVMSimulatorConfig" />
+
+	<bean id="KVMStartVmExtension" class="org.zstack.test.kvm.KVMStartVmExtension">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
+		</zstack:plugin>
+	</bean>
+	
+	<bean id="KVMStopVmExtension" class="org.zstack.test.kvm.KVMStopVmExtension">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.kvm.KVMStopVmExtensionPoint" />
+		</zstack:plugin>
+	</bean>
+	
+	<bean id="KVMRebootVmExtension" class="org.zstack.test.kvm.KVMRebootVmExtension">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.kvm.KVMRebootVmExtensionPoint" />
+		</zstack:plugin>
+	</bean>
+	
+	<bean id="KVMDestroyVmExtension" class="org.zstack.test.kvm.KVMDestroyVmExtension">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.kvm.KVMDestroyVmExtensionPoint" />
+		</zstack:plugin>
+	</bean>
+</beans>

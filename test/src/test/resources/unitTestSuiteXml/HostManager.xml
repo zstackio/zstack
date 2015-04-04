@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+	<TestCase class="org.zstack.test.compute.host.TestCreateHost"/>
+	<TestCase class="org.zstack.test.compute.host.TestDeleteHost"/>
+	<TestCase class="org.zstack.test.compute.host.TestListHost"/>
+	<TestCase class="org.zstack.test.compute.host.TestChangeHostState"/>
+	<TestCase class="org.zstack.test.compute.host.TestHostMaintenanceAndDelete"/>
+	<TestCase class="org.zstack.test.compute.host.TestChangeHostStateExtensionPoint"/>
+	<TestCase class="org.zstack.test.compute.host.TestChangeZoneStateCascadeToHost"/>
+	<TestCase class="org.zstack.test.compute.host.TestChangeZoneStateCascadeToHostExtension"/>
+	<TestCase class="org.zstack.test.compute.host.TestDeleteZoneCascadeToHost"/>
+	<TestCase class="org.zstack.test.compute.host.TestDeleteZoneCascadeToHostExtension"/>
+	<TestCase class="org.zstack.test.compute.host.TestHostDeleteExtensionPoint"/>
+	<TestCase class="org.zstack.test.compute.host.TestLoadHosts" timeout="180"/>
+	<TestCase class="org.zstack.test.compute.host.TestLoadHosts2" timeout="180"/>
+	<TestCase class="org.zstack.test.compute.host.TestPingTask"/>
+	<TestCase class="org.zstack.test.compute.host.TestQueryHost"/>
+    <TestCase class="org.zstack.test.compute.host.TestGetHypervisorTypes"/>
+</UnitTestSuiteConfig>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+	<TestCase class="org.zstack.test.image.TestAddImage"/>
+    <TestCase class="org.zstack.test.image.TestAddImage1"/>
+    <TestCase class="org.zstack.test.image.TestAddImage2"/>
+    <TestCase class="org.zstack.test.image.TestAddImage3"/>
+	<TestCase class="org.zstack.test.image.TestDeleteImage"/>
+    <TestCase class="org.zstack.test.image.TestDeleteImage2"/>
+    <TestCase class="org.zstack.test.image.TestChangeImageState"/>
+	<TestCase class="org.zstack.test.image.TestListImage"/>
+	<TestCase class="org.zstack.test.image.TestAddImageFailure"/>
+	<TestCase class="org.zstack.test.image.TestQueryImage"/>
+	<TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolume"/>
+    <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolume1"/>
+    <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolume2"/>
+	<TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeFailure"/>
+    <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeFailure1"/>
+    <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeFailure2"/>
+    <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeFailure3"/>
+    <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeFailure4"/>
+    <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeFailure5"/>
+</UnitTestSuiteConfig>

@@ -1,0 +1,173 @@
+package org.zstack.appliancevm;
+
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.CancelablePeriodicTask;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.FlowTrigger;
+import org.zstack.core.workflow.NoRollbackFlow;
+import org.zstack.header.configuration.ConfigurationConstant;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
+import org.zstack.utils.ssh.Ssh;
+import org.zstack.utils.ssh.SshException;
+import org.zstack.utils.ssh.SshResult;
+
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+/**
+ */
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
+public class ApplianceVmConnectFlow extends NoRollbackFlow {
+    private static final CLogger logger = Utils.getLogger(ApplianceVmConnectFlow.class);
+
+    @Autowired
+    private ThreadFacade thdf;
+    @Autowired
+    private GlobalConfigFacade gcf;
+    @Autowired
+    private DatabaseFacade dbf;
+    @Autowired
+    private ErrorFacade errf;
+
+    private static final String ERROR_LOG_PATH = "/var/lib/zstack/error.log";
+
+    @Override
+    public void run(final FlowTrigger chain, Map data) {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            chain.next();
+            return;
+        }
+
+        final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        VmNicInventory mgmtNic;
+        if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate) {
+            final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
+            mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
+                @Override
+                public VmNicInventory call(VmNicInventory arg) {
+                    return arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()) ? arg : null;
+                }
+            });
+        } else {
+            ApplianceVmVO avo = dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
+            ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(avo);
+            mgmtNic = ainv.getManagementNic();
+        }
+
+        final int connectTimeout = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
+        final String username = "root";
+        final String privKey = gcf.getConfigValue(ConfigurationConstant.GlobalConfig.privateKey.getCategory(),
+                ConfigurationConstant.GlobalConfig.privateKey.toString(), String.class);
+        final int sshPort = 22;
+        final boolean connectVerbose = ApplianceVmGlobalProperty.CONNECT_VERBOSE;
+
+        final String mgmtIp = mgmtNic.getIp();
+        final int interval = 2;
+
+        class Retry {
+            int value = connectTimeout / interval;
+        }
+        final Retry retry = new Retry();
+
+        thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+            private boolean countDown(String msg) {
+                retry.value--;
+                if (retry.value <= 0) {
+                    String str = String.format("connecting appliance vm[uuid:%s, name:%s, ip:%s] timeout, unable to ssh in[%s]", spec.getVmInventory().getUuid(), spec.getVmInventory().getName(), mgmtIp, msg);
+                    logger.warn(str);
+                    chain.fail(errf.stringToTimeoutError(str));
+                    return true;
+                } else {
+                    logger.debug(String.format("appliance vm[uuid:%s, name:%s, ip:%s] is still not ready, unable to ssh in[%s], continue ... will be timeout after %s seconds",
+                            spec.getVmInventory().getUuid(), spec.getVmInventory().getName(), mgmtIp, msg, interval*retry.value));
+                    return false;
+                }
+            }
+
+            private void connected() {
+                String info = String.format("successfully connected to appliance vm[uuid:%s, name:%s, ip:%s], deploying agent now ...", spec.getVmInventory().getUuid(), spec.getVmInventory().getName(), mgmtIp);
+                logger.debug(info);
+                chain.next();
+            }
+
+            private void sshLogIn() throws InterruptedException {
+                long expired = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(ApplianceVmGlobalConfig.SSH_LOGIN_TIMEOUT.value(Integer.class));
+                SshException se = null;
+                while (true) {
+                   try {
+                       new Ssh().setHostname(mgmtIp).setUsername(username).setPrivateKey(privKey).setPort(sshPort).setSuppressException(!connectVerbose)
+                               .command("echo 'hello'").setTimeout(5).runErrorByExceptionAndClose();
+                       return;
+                   } catch (SshException e) {
+                       se = e;
+
+                       if (System.currentTimeMillis() > expired) {
+                           break;
+                       }
+
+                       TimeUnit.SECONDS.sleep(1);
+                   }
+                }
+
+                throw se;
+            }
+
+            @Override
+            public boolean run() {
+                try {
+                    if (!NetworkUtils.isRemotePortOpen(mgmtIp, sshPort, 5)) {
+                        return countDown("");
+                    } else {
+                        sshLogIn();
+                        checkError();
+                        connected();
+                        return true;
+                    }
+                } catch (Throwable e1) {
+                    logger.warn(e1.getMessage(), e1);
+                    ErrorCode err = e1 instanceof OperationFailureException ? ((OperationFailureException)e1).getErrorCode() : errf.instantiateErrorCode(ApplianceVmErrors.UNABLE_TO_START, e1.getMessage());
+                    chain.fail(err);
+                    return true;
+                }
+            }
+
+            private void checkError() {
+                SshResult ret = new Ssh().setHostname(mgmtIp).setUsername(username).setPrivateKey(privKey).setPort(sshPort)
+                        .command(String.format("if [ -f %s ]; then cat %s; exit 1; else exit 0; fi", ERROR_LOG_PATH, ERROR_LOG_PATH)).setTimeout(5).runAndClose();
+                if (ret.getReturnCode() != 0) {
+                    throw new OperationFailureException(errf.instantiateErrorCode(ApplianceVmErrors.UNABLE_TO_START, ret.getStdout()));
+                }
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return interval;
+            }
+
+            @Override
+            public String getName() {
+                return "connect-appliance-vm-" + spec.getVmInventory().getUuid();
+            }
+        });
+    }
+}

@@ -1,0 +1,8 @@
+<error>
+    <prefix>VOLUME_SNAPSHOT</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>Snapshot is not in correct status for operation</description>
+    </code>
+</error>

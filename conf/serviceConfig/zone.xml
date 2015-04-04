@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>zone</id>
+    <interceptor>ZoneApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.zone.APIChangeZoneStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.zone.APICreateZoneMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.zone.APIDeleteZoneMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.zone.APIListZonesMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.zone.APISearchZoneMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.zone.APIGetZoneMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.zone.APIQueryZoneMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>

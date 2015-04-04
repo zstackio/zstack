@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>image</id>
+    <interceptor>ImageApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.image.APIAddImageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APIListImageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APIDeleteImageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APISearchImageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APIGetImageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APIQueryImageMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APIChangeImageStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg</name>
+    </message>
+</service>

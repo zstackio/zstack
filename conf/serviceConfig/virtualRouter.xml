@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>virtualRouter</id>
+    <interceptor>VirtualRouterApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.network.service.virtualrouter.APICreateVirtualRouterOfferingMsg</name>
+        <serviceId>configuration</serviceId>
+        <interceptor>ConfigurationApiInterceptor</interceptor>
+        <interceptor>VirtualRouterApiInterceptor</interceptor>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.virtualrouter.APICreateVirtualRouterVmMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.virtualrouter.APISearchVirtualRouterOffingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.virtualrouter.APIGetVirtualRouterOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.virtualrouter.APIReconnectVirtualRouterMsg</name>
+        <serviceId>vmInstance</serviceId>
+    </message>
+</service>

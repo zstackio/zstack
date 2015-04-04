@@ -1,0 +1,266 @@
+package org.zstack.storage.volume;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.Component;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HypervisorType;
+import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageState;
+import org.zstack.header.image.ImageStatus;
+import org.zstack.header.image.ImageVO;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.volume.*;
+
+import javax.persistence.Tuple;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: frank
+ * Time: 10:02 PM
+ * To change this template use File | Settings | File Templates.
+ */
+public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
+    @Autowired
+    private CloudBus bus;
+    @Autowired
+    private DatabaseFacade dbf;
+    @Autowired
+    private ErrorFacade errf;
+    @Autowired
+    private PluginRegistry pluginRgty;
+
+    private Map<String, MaxDataVolumeNumberExtensionPoint> maxDataVolumeNumberExtensions = new ConcurrentHashMap<String, MaxDataVolumeNumberExtensionPoint>();
+    private static final int DEFAULT_MAX_DATA_VOLUME_NUMBER = 24;
+
+    private void setServiceId(APIMessage msg) {
+        if (msg instanceof VolumeMessage) {
+            VolumeMessage vmsg = (VolumeMessage)msg;
+            bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, vmsg.getVolumeUuid());
+        }
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof APIChangeVolumeStateMsg) {
+            validate((APIChangeVolumeStateMsg) msg);
+        } else if (msg instanceof APIDeleteDataVolumeMsg) {
+            validate((APIDeleteDataVolumeMsg) msg);
+        } else if (msg instanceof APIBackupDataVolumeMsg) {
+            validate((APIBackupDataVolumeMsg) msg);
+        } else if (msg instanceof APIAttachDataVolumeToVmMsg) {
+            validate((APIAttachDataVolumeToVmMsg) msg);
+        } else if (msg instanceof APIDetachDataVolumeFromVmMsg) {
+            validate((APIDetachDataVolumeFromVmMsg) msg);
+        } else if (msg instanceof APIGetDataVolumeAttachableVmMsg) {
+            validate((APIGetDataVolumeAttachableVmMsg) msg);
+        } else if (msg instanceof APICreateDataVolumeFromVolumeTemplateMsg) {
+            validate((APICreateDataVolumeFromVolumeTemplateMsg) msg);
+        }
+
+        setServiceId(msg);
+        return msg;
+    }
+
+    private void validate(APICreateDataVolumeFromVolumeTemplateMsg msg) {
+        ImageVO img = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
+        ImageMediaType type = img.getMediaType();
+        if (ImageMediaType.DataVolumeTemplate != type && ImageMediaType.RootVolumeTemplate != type) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("image[uuid:%s] is not %s, it's %s", msg.getImageUuid(), ImageMediaType.DataVolumeTemplate, type)
+            ));
+        }
+
+        if (ImageState.Enabled != img.getState()) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("image[uuid:%s] is not Enabled, it's %s", img.getUuid(), img.getState())
+            ));
+        }
+
+        if (ImageStatus.Ready != img.getStatus()) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("image[uuid:%s] is not Ready, it's %s", img.getUuid(), img.getStatus())
+            ));
+        }
+    }
+
+    private void validate(APIGetDataVolumeAttachableVmMsg msg) {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.vmInstanceUuid, VolumeVO_.state, VolumeVO_.status, VolumeVO_.type);
+        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
+        Tuple t = q.findTuple();
+
+        VolumeType type = t.get(3, VolumeType.class);
+        if (type == VolumeType.Root) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("volume[uuid:%s] is Root volume, can not be attach to vm", msg.getVolumeUuid())
+            ));
+        }
+
+        String vmUuid = t.get(0, String.class);
+        if (vmUuid != null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("volume[uuid:%s] has attached to vm[uuid:%s]", msg.getVolumeUuid(), vmUuid)
+            ));
+        }
+
+        VolumeState state = t.get(1, VolumeState.class);
+        if (state != VolumeState.Enabled) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("volume[uuid:%s] is in state[%s], data volume can only be attached when state is %s", msg.getVolumeUuid(), state, VolumeState.Enabled)
+            ));
+        }
+
+        VolumeStatus status = t.get(2, VolumeStatus.class);
+        if (status != VolumeStatus.Ready && status != VolumeStatus.NotInstantiated) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("volume[uuid:%s] is in status[%s], data volume can only be attached when status is %s or %S", msg.getVolumeUuid(), status, VolumeStatus.Ready, VolumeStatus.NotInstantiated)
+            ));
+        }
+    }
+
+    private void validate(APIDetachDataVolumeFromVmMsg msg) {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.vmInstanceUuid);
+        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
+        String vmUuid = q.findValue();
+        if (vmUuid == null) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("data volume[uuid:%s] is not attached to any vm, can't detach", msg.getVolumeUuid())
+            ));
+        }
+    }
+
+    private void validate(APIAttachDataVolumeToVmMsg msg) {
+        VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+        if (vol.getState() == VolumeState.Disabled) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format(String.format("data volume[uuid:%s] is Disabled, can't attach", vol.getUuid()))
+            ));
+        }
+
+        if (vol.getVmInstanceUuid() != null) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("data volume[%s] has been attached to vm[uuid:%s], can't attach again",
+                            vol.getUuid(), vol.getVmInstanceUuid())
+            ));
+        }
+
+        if (VolumeStatus.Ready != vol.getStatus() && VolumeStatus.NotInstantiated != vol.getStatus()) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("data volume can only be attached when status is [%s, %s], current is %s",
+                            VolumeStatus.Ready, VolumeStatus.NotInstantiated, vol.getStatus())
+            ));
+        }
+
+        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+        q.select(VmInstanceVO_.hypervisorType);
+        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
+        String hvType = q.findValue();
+        if (vol.getFormat() != null) {
+            HypervisorType volHvType = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat());
+            if (!hvType.equals(volHvType.toString())) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                        String.format("data volume[uuid:%s] has format[%s] that can only be attached to hypervisor[%s], but vm[uuid:%s] has hypervisor type[%s]. Can't attach",
+                                vol.getUuid(), vol.getFormat(), volHvType, msg.getVmInstanceUuid(), hvType)
+                ));
+            }
+        }
+
+        MaxDataVolumeNumberExtensionPoint ext = maxDataVolumeNumberExtensions.get(hvType);
+        int maxDataVolumeNum = DEFAULT_MAX_DATA_VOLUME_NUMBER;
+        if (ext != null) {
+            maxDataVolumeNum = ext.getMaxDataVolumeNumber();
+        }
+
+        SimpleQuery<VolumeVO> vq = dbf.createQuery(VolumeVO.class);
+        vq.add(VolumeVO_.type, Op.EQ, VolumeType.Data);
+        vq.add(VolumeVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
+        long count = vq.count();
+        if (count + 1 > maxDataVolumeNum) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("hypervisor[%s] only allows max %s data volumes to be attached to a single vm; there have been %s data volumes attached to vm[uuid:%s]",
+                            hvType, maxDataVolumeNum, count, msg.getVmInstanceUuid())
+            ));
+        }
+    }
+
+    private void validate(APIBackupDataVolumeMsg msg) {
+        if (isRootVolume(msg.getUuid())) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("it's not allowed to backup root volume, uuid:%s", msg.getUuid())
+            ));
+        }
+    }
+
+    private void validate(APIDeleteDataVolumeMsg msg) {
+        if (!dbf.isExist(msg.getUuid(), VolumeVO.class)) {
+            APIDeleteDataVolumeEvent evt = new APIDeleteDataVolumeEvent(msg.getId());
+            bus.publish(evt);
+            throw new StopRoutingException();
+        }
+
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.type);
+        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
+        VolumeType type = q.findValue();
+        if (type == VolumeType.Root) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                    String.format("volume[uuid:%s] is Root volume, can't be deleted", msg.getVolumeUuid())
+            ));
+        }
+    }
+
+    private boolean isRootVolume(String uuid) {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.type);
+        q.add(VolumeVO_.uuid, Op.EQ, uuid);
+        VolumeType type = q.findValue();
+        return type == VolumeType.Root;
+    }
+
+    private void validate(APIChangeVolumeStateMsg msg) {
+        if (isRootVolume(msg.getUuid())) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("it's not allowed to change state of root volume, uuid:%s", msg.getUuid())
+            ));
+        }
+    }
+
+    private void populateExtensions() {
+        for (MaxDataVolumeNumberExtensionPoint extp : pluginRgty.getExtensionList(MaxDataVolumeNumberExtensionPoint.class)) {
+            MaxDataVolumeNumberExtensionPoint old = maxDataVolumeNumberExtensions.get(extp.getHypervisorTypeForMaxDataVolumeNumberExtension());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate MaxDataVolumeNumberExtensionPoint[%s, %s] for hypervisor type[%s]",
+                        old.getClass().getName(), extp.getClass().getName(), extp.getHypervisorTypeForMaxDataVolumeNumberExtension())
+                );
+            }
+
+            maxDataVolumeNumberExtensions.put(extp.getHypervisorTypeForMaxDataVolumeNumberExtension(), extp);
+        }
+    }
+
+    @Override
+    public boolean start() {
+        populateExtensions();
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
+}

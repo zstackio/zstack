@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<policy xmlns="http://zstack.org/schema/zstack">
+	<statement>
+		<effect>allow</effect>
+		<!-- no policy matching to this leads to a default deny -->
+		<role>test:xxx</role>
+	</statement>
+</policy>

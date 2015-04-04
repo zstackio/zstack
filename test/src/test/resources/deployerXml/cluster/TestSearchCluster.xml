@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<zones>
+		<zone name="TestZone" description="Test">
+			<clusters>
+				<cluster name="Cluster1" description="Cluster1" />
+				<cluster name="Cluster2" description="Cluster2" />
+				<cluster name="Cluster3" description="Cluster3" />
+				<cluster name="Cluster4" description="Cluster4" />
+				<cluster name="Cluster5" description="Cluster5" />
+			</clusters>
+		</zone>
+	</zones>
+</deployerConfig>

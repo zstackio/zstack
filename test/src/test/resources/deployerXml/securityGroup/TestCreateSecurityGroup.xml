@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<securityGroups>
+		<securityGroup name="test">
+			<l3NetworkRef>TestL3Network1</l3NetworkRef>
+		</securityGroup>
+	</securityGroups>
+
+	<zones>
+		<zone name="Zone1" description="Test">
+			<l2Networks>
+				<l2NoVlanNetwork name="TestL2Network" description="Test"
+					physicalInterface="eth0">
+					<l3Networks>
+						<l3BasicNetwork name="TestL3Network1" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+								endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+
+							<networkService provider="SecurityGroup">
+								<serviceType>SecurityGroup</serviceType>
+							</networkService>
+						</l3BasicNetwork>
+					</l3Networks>
+				</l2NoVlanNetwork>
+			</l2Networks>
+		</zone>
+	</zones>
+</deployerConfig>

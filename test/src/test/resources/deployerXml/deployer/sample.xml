@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+
+	<backupStorages>
+		<simulatorBackupStorage name="TestBackupStorage"
+			description="AllOne" url="nfs://test" totalCapacity="500G"
+			usedCapacity="0" />
+	</backupStorages>
+	<images>
+		<image name="TestImage" description="AllOne"
+			url="http://zstack.org/download/test.qcow2"
+			guestOsType="centos63" bits="64" format="simulator">
+			<backupStorageRef>TestBackupStorage</backupStorageRef>
+		</image>
+	</images>
+
+	<zones>
+		<zone name="TestZone" description="AllOne">
+			<clusters>
+				<cluster name="TestCluster" description="AllOne"
+					hypervisorType="Simulator">
+					<hosts>
+						<simulatorHost name="TestHost" description="AllOne"
+							managementIp="10.0.0.11" memoryCapacity="2G" cpuNum="1" cpuSpeed="2600" />
+					</hosts>
+					<primaryStorageRef>TestPrimaryStorage</primaryStorageRef>
+				</cluster>
+			</clusters>
+
+			<backupStorageRef>TestBackupStorage</backupStorageRef>
+
+			<primaryStorages>
+				<simulatorPrimaryStorage name="TestPrimaryStorage"
+					description="AllOne" url="nfs://test" totalCapacity="100G"
+					usedCapacity="0" />
+			</primaryStorages>
+		</zone>
+	</zones>
+</deployerConfig>

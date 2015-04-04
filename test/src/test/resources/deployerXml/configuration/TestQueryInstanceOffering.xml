@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <instanceOfferings>
+        <instanceOffering name="InstanceOffering1" description="Test" memoryCapacity="1G" cpuNum="1" cpuSpeed="1000"/>
+        <instanceOffering name="InstanceOffering2" description="Test" memoryCapacity="2G" cpuNum="2" cpuSpeed="2000"/>
+        <instanceOffering name="InstanceOffering3" description="Test" memoryCapacity="3G" cpuNum="3" cpuSpeed="3000"/>
+        <instanceOffering name="InstanceOffering4" description="Test" memoryCapacity="4G" cpuNum="4" cpuSpeed="4000"/>
+        <instanceOffering name="InstanceOffering5" description="Test" memoryCapacity="5G" cpuNum="5" cpuSpeed="5000"/>
+    </instanceOfferings>
+</deployerConfig>
+

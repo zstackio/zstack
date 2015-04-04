@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<instanceOfferings>
+		<virtualRouterOffering name="virtualRouterOffering"
+			isDefault="true">
+			<zoneRef>Zone1</zoneRef>
+			<managementL3NetworkRef>TestL3Network1</managementL3NetworkRef>
+			<publicL3NetworkRef>TestL3Network2</publicL3NetworkRef>
+			<imageRef>TestImage</imageRef>
+		</virtualRouterOffering>
+		<instanceOffering name="TestInstanceOffering"
+			description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000" />
+	</instanceOfferings>
+
+	<backupStorages>
+		<sftpBackupStorage name="sftp" description="Test"
+			url="nfs://test" />
+	</backupStorages>
+
+	<images>
+        <image name="TestImage" description="Test">
+			<backupStorageRef>sftp</backupStorageRef>
+		</image>
+	</images>
+	
+	<vm>
+        <userVm name="TestVm" description="Test">
+            <imageRef>TestImage</imageRef>
+            <instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
+            <l3NetworkRef>TestL3Network2</l3NetworkRef>
+            <l3NetworkRef>TestL3Network1</l3NetworkRef>
+            <defaultL3NetworkRef>TestL3Network1</defaultL3NetworkRef>
+            <hostname>vm1</hostname>
+        </userVm>
+    </vm>
+
+	<zones>
+		<zone name="Zone1" description="Test">
+			<clusters>
+				<cluster name="Cluster1" description="Test" hypervisorType="KVM">
+					<hosts>
+						<kvmHost name="host1" description="Test" managementIp="localhost"
+							memoryCapacity="64G" cpuNum="32" cpuSpeed="2600" />
+					</hosts>
+					<primaryStorageRef>nfs</primaryStorageRef>
+					<l2NetworkRef>TestL2Network</l2NetworkRef>
+				</cluster>
+			</clusters>
+			
+			<l2Networks>
+				<l2NoVlanNetwork name="TestL2Network" description="Test"
+					physicalInterface="eth0">
+					<l3Networks>
+						<l3BasicNetwork name="TestL3Network1" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+								endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0"/>
+
+                            <networkService provider="VirtualRouter">
+                                <serviceType>DHCP</serviceType>
+                            </networkService>
+
+                            <dnsDomain>zstack.org</dnsDomain>
+						</l3BasicNetwork>
+						
+						<l3BasicNetwork name="TestL3Network2" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
+								endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
+
+							<networkService provider="VirtualRouter">
+								<serviceType>DHCP</serviceType>
+							</networkService>
+						</l3BasicNetwork>
+						
+					</l3Networks>
+				</l2NoVlanNetwork>
+			</l2Networks>
+
+			<backupStorageRef>sftp</backupStorageRef>
+			<primaryStorages>
+				<nfsPrimaryStorage name="nfs" description="Test"
+					totalCapacity="5T" url="nfs://test" />
+			</primaryStorages>
+		</zone>
+	</zones>
+</deployerConfig>

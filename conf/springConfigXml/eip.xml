@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+         http://www.springframework.org/schema/aop
+         http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+         http://www.springframework.org/schema/tx 
+     	 http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+     	 http://zstack.org/schema/zstack 
+         http://zstack.org/schema/zstack/plugin.xsd"
+	default-init-method="init" default-destroy-method="destroy">
+
+	<bean id="EipManager" class="org.zstack.network.service.eip.EipManagerImpl">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.Component" />
+			<zstack:extension interface="org.zstack.header.Service" />
+			<zstack:extension interface="org.zstack.network.service.vip.VipReleaseExtensionPoint" />
+			<zstack:extension interface="org.zstack.header.query.AddExpandedQueryExtensionPoint" />
+		</zstack:plugin>
+
+		<property name="createEipFlowNames">
+            <list>
+                <value>org.zstack.network.service.eip.EipPrepareVipFlow</value>
+                <value>org.zstack.network.service.eip.AttachEipFlow</value>
+            </list>
+        </property>
+
+		<property name="removeEipFlowNames">
+            <list>
+                <value>org.zstack.network.service.eip.DetachEipFlow</value>
+                <value>org.zstack.network.service.eip.EipReturnVipFlow</value>
+            </list>
+        </property>
+
+		<property name="attachEipFlowNames">
+            <list>
+                <value>org.zstack.network.service.eip.EipPrepareVipFlow</value>
+                <value>org.zstack.network.service.eip.AttachEipFlow</value>
+            </list>
+        </property>
+
+		<property name="detachEipFlowNames">
+            <list>
+                <value>org.zstack.network.service.eip.DetachEipFlow</value>
+                <value>org.zstack.network.service.eip.EipReturnVipFlow</value>
+            </list>
+        </property>
+    </bean>
+
+	<bean id="EipExtension" class="org.zstack.network.service.eip.EipExtension">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.Component" />
+			<zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" />
+		</zstack:plugin>
+    </bean>
+
+	<bean id="EipApiInterceptor" class="org.zstack.network.service.eip.EipApiInterceptor">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+		</zstack:plugin>
+    </bean>
+
+</beans>

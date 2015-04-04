@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<account name="TestAccount" password="password">
+		<policy name="TestPolicy" policyFilePath="PolicyXml/TestPolicyMessageHas2RoleAllow.xml" />
+		<user name="TestUser" password="password">
+			<policyRef>TestPolicy</policyRef>
+		</user>
+	</account>
+</deployerConfig>

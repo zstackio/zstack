@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+	<TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSend" />
+	<TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendCallback"/>
+	<TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendCallbackTimeout"/>
+	<TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendMultiMsg"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendMultiMsg1"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendMultiMsg2"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendMultiMsg3"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendMultiMsg4"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendMultiMsg5"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendMultiMsg6"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendMultiMsg7"/>
+	<TestCase class="org.zstack.test.core.cloudbus.TestCloudBusCall"/>
+	<TestCase class="org.zstack.test.core.cloudbus.TestCloudBusCallTimeout"/>
+	<TestCase class="org.zstack.test.core.cloudbus.TestCloudBusMultiCall"/>
+	<TestCase class="org.zstack.test.core.cloudbus.TestCloudBusMultiCallTimeout"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusNoRouteCall"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSharding"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSharding1"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent1"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent2"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent3"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent4"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent5"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent6"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent7"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent8"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestMessageSafe"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestLockResourceMessage"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusNoRouteError"/>
+
+	<TestCase class="org.zstack.test.core.db.TestDatabaseFacade"/>
+	<TestCase class="org.zstack.test.core.db.TestSimpleQuery"/>
+	<TestCase class="org.zstack.test.core.db.TestGlobalDbLock"/>
+	
+	<TestCase class="org.zstack.test.core.thread.TestThreadFacadeCancel"/>
+	<TestCase class="org.zstack.test.core.thread.TestThreadFacadeCancelSyncThread"/>
+	<TestCase class="org.zstack.test.core.thread.TestThreadFacadeReturnValue"/>
+	<TestCase class="org.zstack.test.core.thread.TestThreadFacadeReturnValueException"/>
+	<TestCase class="org.zstack.test.core.thread.TestThreadFacadeSyncReturnValue"/>
+	<TestCase class="org.zstack.test.core.thread.TestThreadFacadeSyncReturnValueCancel"/>
+	<TestCase class="org.zstack.test.core.thread.TestThreadFacadeSyncReturnValueTimeout"/>
+	<TestCase class="org.zstack.test.core.thread.TestThredFacadeSyncThreadSignature"/>
+	<TestCase class="org.zstack.test.core.thread.TestThreadFacadeAnnotationFuture"/>
+	<TestCase class="org.zstack.test.core.thread.TestChainTask"/>
+	<TestCase class="org.zstack.test.core.thread.TestChainTask2"/>
+	<TestCase class="org.zstack.test.core.thread.TestChainTask3"/>
+    <TestCase class="org.zstack.test.core.thread.TestChainTask4"/>
+	<TestCase class="org.zstack.test.core.thread.TestChainTaskCancel"/>
+	<TestCase class="org.zstack.test.core.thread.TestChainTaskExceptionNotCallRunNext"/>
+	<TestCase class="org.zstack.test.core.thread.TestChainTaskExceptionCallRunNext"/>
+	
+	<TestCase class="org.zstack.test.core.errorcode.TestErrorCode"/>
+
+	<TestCase class="org.zstack.test.core.safeguard.TestSafeGuard"/>
+	<TestCase class="org.zstack.test.core.safeguard.TestSafeGuardComplex"/>
+
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow"/>
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow1"/>
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow2"/>
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow3"/>
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow4"/>
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow5"/>
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow6"/>
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow7"/>
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow8"/>
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow9"/>
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow10"/>
+    <TestCase class="org.zstack.test.core.workflow.TestShareFlow"/>
+    <TestCase class="org.zstack.test.core.workflow.TestShareFlow1"/>
+    <TestCase class="org.zstack.test.core.workflow.TestShareFlow2"/>
+    <TestCase class="org.zstack.test.core.workflow.TestShareFlow3"/>
+
+	<TestCase class="org.zstack.test.core.rest.TestRestAsyncCallback"/>
+	<TestCase class="org.zstack.test.core.rest.TestRestAsyncCallback1"/>
+	<TestCase class="org.zstack.test.core.rest.TestRestAsyncCallbackFail"/>
+	<TestCase class="org.zstack.test.core.rest.TestRestAsyncCallbackMissingTaskUuid"/>
+	<TestCase class="org.zstack.test.core.rest.TestRestAsyncCallbackTimeout"/>
+	
+	<TestCase class="org.zstack.test.core.job.TestJob" />
+	<TestCase class="org.zstack.test.core.job.TestJob2" />
+	<TestCase class="org.zstack.test.core.job.TestJobReturnValue" timeout="240"/>
+	<TestCase class="org.zstack.test.core.job.TestJobReturnValueFail" />
+
+	<TestCase class="org.zstack.test.core.plugin.TestPluginOrder" />
+	<TestCase class="org.zstack.test.core.plugin.TestPluginOrder2" />
+	
+	<TestCase class="org.zstack.test.core.config.TestGlobalConfig" />
+	<TestCase class="org.zstack.test.core.config.TestGlobalConfigUpdatedExtension" />
+	<TestCase class="org.zstack.test.core.config.TestGlobalConfigValidateExtension" />
+	<TestCase class="org.zstack.test.core.config.TestGlobalConfigValidateExtension1" />
+	<TestCase class="org.zstack.test.core.config.TestGlobalConfigValidateExtension2" />
+    <TestCase class="org.zstack.test.core.config.TestQueryGlobalConfig" />
+
+    <TestCase class="org.zstack.test.core.TestGetManagementIp" />
+
+    <TestCase class="org.zstack.test.aop.TestAsyncSafe" />
+    <TestCase class="org.zstack.test.aop.TestAsyncSafe1" />
+    <TestCase class="org.zstack.test.aop.TestAsyncSafe2" />
+    <TestCase class="org.zstack.test.aop.TestAsyncSafe3" />
+    <TestCase class="org.zstack.test.aop.TestAsyncBackup" />
+    <TestCase class="org.zstack.test.aop.TestAsyncBackup1" />
+    <TestCase class="org.zstack.test.aop.TestAsyncBackup2" />
+    <TestCase class="org.zstack.test.aop.TestAsyncBackup3" />
+    <TestCase class="org.zstack.test.aop.TestAsyncBackup4" />
+    <TestCase class="org.zstack.test.aop.TestAsyncBackup5" />
+    <TestCase class="org.zstack.test.aop.TestAsyncBackup6" />
+    <TestCase class="org.zstack.test.aop.TestAsyncBackup7" />
+    <TestCase class="org.zstack.test.aop.TestWith" />
+    <TestCase class="org.zstack.test.aop.TestWith1" />
+    <TestCase class="org.zstack.test.aop.TestCompletionCallOnce" />
+    <TestCase class="org.zstack.test.aop.TestCompletionCallOnce1" />
+    <TestCase class="org.zstack.test.aop.TestCompletionCallOnce2" />
+    <TestCase class="org.zstack.test.aop.TestMessageSafe" />
+
+    <TestCase class="org.zstack.test.core.cascade.TestAsyncCascade" />
+    <TestCase class="org.zstack.test.core.cascade.TestAsyncCascade2" />
+
+    <TestCase class="org.zstack.test.core.keyvalue.TestKeyValue1" />
+
+    <TestCase class="org.zstack.test.aop.TestFutureCompletion" />
+    <TestCase class="org.zstack.test.aop.TestFutureCompletion1" />
+    <TestCase class="org.zstack.test.aop.TestFutureCompletion2" />
+    <TestCase class="org.zstack.test.aop.TestFutureCompletion3" />
+    <TestCase class="org.zstack.test.aop.TestFutureReturnValueCompletion" />
+    <TestCase class="org.zstack.test.aop.TestFutureReturnValueCompletion1" />
+    <TestCase class="org.zstack.test.aop.TestFutureReturnValueCompletion2" />
+    <TestCase class="org.zstack.test.aop.TestFutureReturnValueCompletion3" />
+</UnitTestSuiteConfig>

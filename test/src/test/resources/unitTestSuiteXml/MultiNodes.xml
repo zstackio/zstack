@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode1"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode2"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode3"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode5"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode6"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode7"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode8"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode9"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode10"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode11"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode12"/>
+    <TestCase class="org.zstack.test.multinodes.TestMultipleNode13"/>
+</UnitTestSuiteConfig>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>eip</id>
+    <interceptor>EipApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.network.service.eip.APICreateEipMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.eip.APIAttachEipMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.eip.APIDetachEipMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.eip.APIDeleteEipMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.eip.APIChangeEipStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.eip.APIGetEipAttachableVmNicsMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.eip.APIQueryEipMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>

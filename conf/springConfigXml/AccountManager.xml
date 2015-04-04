@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+         http://www.springframework.org/schema/aop
+         http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+         http://www.springframework.org/schema/tx 
+     	 http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+     	 http://zstack.org/schema/zstack 
+         http://zstack.org/schema/zstack/plugin.xsd"
+	default-init-method="init" default-destroy-method="destroy">
+
+	<bean id="AccountManager" class="org.zstack.identity.AccountManagerImpl">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Service" />
+			<zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
+			<zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint" />
+			<zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint" />
+		</zstack:plugin>
+
+		<property name="resourceTypeForAccountRef">
+			<list>
+				<value>org.zstack.header.vm.VmInstanceVO</value>
+				<value>org.zstack.header.volume.VolumeVO</value>
+				<value>org.zstack.header.image.ImageVO</value>
+				<value>org.zstack.header.network.l3.L3NetworkVO</value>
+				<value>org.zstack.header.network.l3.IpRangeVO</value>
+				<value>org.zstack.network.service.vip.VipVO</value>
+				<value>org.zstack.network.securitygroup.SecurityGroupVO</value>
+				<value>org.zstack.network.service.portforwarding.PortForwardingRuleVO</value>
+				<value>org.zstack.network.service.eip.EipVO</value>
+				<value>org.zstack.header.storage.snapshot.VolumeSnapshotVO</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="authenticationManager"
+		class="org.springframework.security.authentication.ProviderManager">
+		<property name="providers">
+			<list>
+				<ref local="CredentialChecker" />
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="UserRoleVoter" class="org.zstack.identity.UserRoleVoter" />
+	
+	<bean id="accessDecisionManager" class="org.zstack.identity.UserRoleDecisionManager">
+		<property name="decisionVoters">
+			<list>
+				<ref local="UserRoleVoter" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="AccountSubQueryExtension" class="org.zstack.identity.AccountSubQueryExtension">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.query.MysqlQuerySubQueryExtension" />
+		</zstack:plugin>
+	</bean>
+
+	<bean id="CredentialChecker" class="org.zstack.identity.CredentialCheckerImpl">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.Component" />
+		</zstack:plugin>
+	</bean>
+
+    <bean id="IdentityApiInterceptor" class="org.zstack.identity.IdentityApiInterceptor">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+		</zstack:plugin>
+    </bean>
+</beans>
+	

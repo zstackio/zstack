@@ -1,0 +1,9 @@
+<error>
+    <prefix>HOST_ALLOCATION</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>No available host found</description>
+    </code>
+</error>
+

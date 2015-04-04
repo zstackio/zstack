@@ -1,0 +1,9 @@
+<error>
+    <prefix>SG</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>Unable to add vm's nic to security group</description>
+    </code>
+</error>
+

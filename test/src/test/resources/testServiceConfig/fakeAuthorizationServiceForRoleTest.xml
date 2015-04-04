@@ -1,0 +1,16 @@
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>FakeAuthorizationServiceForRoleTest</id>
+
+    <message>
+        <name>org.zstack.test.identity.FakePolicyAllowMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.test.identity.FakePolicyDenyMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.test.identity.FakePolicyAllowHas2RoleMsg</name>
+        <role>test:allow2</role>
+    </message>
+</service>

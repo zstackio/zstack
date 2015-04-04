@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://zstack.org/schema/zstack"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://zstack.org/schema/zstack" elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
+
+    <xsd:include schemaLocation="network.xsd" />
+    <xsd:include schemaLocation="storage.xsd" />
+
+    <xsd:complexType name="ZoneUnion">
+        <xsd:sequence>
+            <xsd:element name="zone" type="ZoneConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ClusterUnion">
+        <xsd:sequence>
+            <xsd:element name="cluster" type="ClusterConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="HostUnion">
+        <xsd:sequence>
+            <xsd:element name="simulatorHost" type="SimulatorHostConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="kvmHost" type="KvmHostConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="VmUnion">
+        <xsd:sequence>
+            <xsd:element name="userVm" type="UserVmConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="UserVmConfig">
+        <xsd:sequence>
+            <xsd:element name="accountRef" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="instanceOfferingRef" type="xsd:string" minOccurs="1"/>
+            <xsd:element name="imageRef" type="xsd:string" minOccurs="1"/>
+            <xsd:element name="rootDiskOfferingRef" type="xsd:string"
+                minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="securityGoupRef" type="xsd:string"
+                minOccurs="0"/>
+            <xsd:element name="zoneRef" type="xsd:string" minOccurs="0" />
+            <xsd:element name="clusterRef" type="xsd:string"
+                minOccurs="0" />
+            <xsd:element name="hostRef" type="xsd:string" minOccurs="0" />
+            <xsd:element name="l3NetworkRef" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="hostname" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="defaultL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="diskOfferingRef" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="type" type="xsd:string" default="UserVm"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="HostConfigBase">
+        <xsd:sequence>
+            <xsd:element name="hostTag" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="managementIp" type="xsd:string" default="10.1.1.10"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="SimulatorHostConfig">
+        <xsd:complexContent>
+            <xsd:extension base="HostConfigBase">
+                <xsd:attribute name="memoryCapacity" type="xsd:string" default="8G"></xsd:attribute>
+                <xsd:attribute name="cpuNum" type="xsd:unsignedInt" default="8"></xsd:attribute>
+                <xsd:attribute name="cpuSpeed" type="xsd:unsignedInt" default="3000"></xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="KvmHostConfig">
+        <xsd:complexContent>
+            <xsd:extension base="HostConfigBase">
+                <xsd:attribute name="username" type="xsd:string" default="root"></xsd:attribute>
+                <xsd:attribute name="password" type="xsd:string" default="password"></xsd:attribute>
+                <xsd:attribute name="memoryCapacity" type="xsd:string" default="8G"></xsd:attribute>
+                <xsd:attribute name="cpuNum" type="xsd:unsignedInt" default="8"></xsd:attribute>
+                <xsd:attribute name="cpuSpeed" type="xsd:unsignedInt" default="3000"></xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="ClusterConfig">
+        <xsd:sequence>
+            <xsd:element name="hosts" type="HostUnion" minOccurs="0"/>
+            <xsd:element name="primaryStorageRef" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="l2NetworkRef" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="hypervisorType" type="xsd:string" default="Simulator"></xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="ZoneConfig">
+        <xsd:sequence>
+            <xsd:element name="clusters" type="ClusterUnion" minOccurs="0"/>
+            <xsd:element name="backupStorageRef" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="l2Networks" type="L2NetworkUnion" minOccurs="0"/>
+            <xsd:element name="primaryStorages" type="PrimaryStorageUnion" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
+        <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
+    </xsd:complexType>
+</xsd:schema>

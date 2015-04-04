@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>tag</id>
+    <interceptor>TagApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.tag.APIQuerySystemTagMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.tag.APIQueryUserTagMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.tag.APICreateSystemTagMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.tag.APICreateUserTagMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.tag.APIDeleteTagMsg</name>
+    </message>
+</service>

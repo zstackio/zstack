@@ -1,0 +1,707 @@
+package org.zstack.core.db;
+
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.zstack.core.Platform;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.TransactionalCallback.Operation;
+import org.zstack.header.Component;
+import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.APIListMessage;
+import org.zstack.header.vo.EO;
+import org.zstack.header.vo.SoftDeletionCascade;
+import org.zstack.header.vo.SoftDeletionCascades;
+import org.zstack.utils.*;
+import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.logging.CLoggerImpl;
+
+import javax.persistence.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.sql.DataSource;
+import java.lang.reflect.Field;
+import java.sql.Timestamp;
+import java.util.*;
+
+public class DatabaseFacadeImpl implements DatabaseFacade, Component {
+    private static final CLogger logger = CLoggerImpl.getLogger(DatabaseFacadeImpl.class);
+
+    @PersistenceUnit(unitName="zstack.jpa")
+    private EntityManagerFactory entityManagerFactory;
+    @PersistenceContext(unitName="zstack.jpa")
+    private EntityManager entityManager;
+
+    @Autowired
+    private PluginRegistry pluginRgty;
+
+    private DataSource dataSource = null;
+    private DataSource extraDataSource = null;
+    private List<TransactionalCallback> transactionAsyncCallbacks = null;
+    private List<TransactionalSyncCallback> transactionSyncCallbacks = null;
+    private Map<Class, List<SoftDeleteEntityExtensionPoint>> softDeleteExtensions = new HashMap<Class, List<SoftDeleteEntityExtensionPoint>>();
+    private Map<Class, List<SoftDeleteEntityByEOExtensionPoint>> softDeleteByEOExtensions = new HashMap<Class, List<SoftDeleteEntityByEOExtensionPoint>>();
+    private List<SoftDeleteEntityExtensionPoint> softDeleteForAllExtensions = new ArrayList<SoftDeleteEntityExtensionPoint>();
+    private Map<Class, List<HardDeleteEntityExtensionPoint>> hardDeleteExtensions = new HashMap<Class, List<HardDeleteEntityExtensionPoint>>();
+    private List<HardDeleteEntityExtensionPoint> hardDeleteForAllExtensions = new ArrayList<HardDeleteEntityExtensionPoint>();
+    private Map<Class, EntityInfo> entityInfoMap = new HashMap<Class, EntityInfo>();
+
+    private class EntityInfo {
+        Field voPrimaryKeyField;
+        Field eoPrimaryKeyField;
+        Field eoSoftDeleteColumn;
+        Class eoClass;
+        Class voClass;
+
+        EntityInfo(Class voClazz) {
+            voClass = voClazz;
+            voPrimaryKeyField = FieldUtils.getAnnotatedField(Id.class, voClass);
+            voPrimaryKeyField.setAccessible(true);
+
+            EO at = (EO) voClazz.getAnnotation(EO.class);
+            if (at != null) {
+                eoClass = at.EOClazz();
+                DebugUtils.Assert(eoClass != null, String.format("cannot find EO entity specified by VO entity[%s]", voClazz.getName()));
+                eoPrimaryKeyField = FieldUtils.getAnnotatedField(Id.class, eoClass);
+                DebugUtils.Assert(eoPrimaryKeyField != null, String.format("cannot find primary key field(@Id annotated) in EO entity[%s]", eoClass.getName()));
+                eoPrimaryKeyField.setAccessible(true);
+                eoSoftDeleteColumn = FieldUtils.getField(at.softDeletedColumn(), eoClass);
+                DebugUtils.Assert(eoSoftDeleteColumn != null, String.format("cannot find soft delete column[%s] in EO entity[%s]", at.softDeletedColumn(), eoClass.getName()));
+                eoSoftDeleteColumn.setAccessible(true);
+            }
+
+            buildInheritanceDeletionExtension();
+            buildSoftDeletionCascade();
+        }
+
+        private void buildSoftDeletionCascade() {
+            SoftDeletionCascades ats = (SoftDeletionCascades) voClass.getAnnotation(SoftDeletionCascades.class);
+            if (ats == null) {
+                return;
+            }
+
+            for (final SoftDeletionCascade at : ats.value()) {
+                final Class parent = at.parent();
+                if (!parent.isAnnotationPresent(Entity.class)) {
+                    throw new CloudRuntimeException(String.format("class[%s] has annotation @SoftDeletionCascade but its parent class[%s] is not annotated by @Entity",
+                            voClass, parent));
+                }
+
+                if (!parent.isAnnotationPresent(EO.class)) {
+                    continue;
+                }
+
+                List<SoftDeleteEntityExtensionPoint> exts = softDeleteExtensions.get(parent);
+                if (exts == null) {
+                    exts = new ArrayList<SoftDeleteEntityExtensionPoint>();
+                    softDeleteExtensions.put(parent, exts);
+                }
+
+                exts.add(new SoftDeleteEntityExtensionPoint() {
+                    @Override
+                    public List<Class> getEntityClassForSoftDeleteEntityExtension() {
+                        return Arrays.asList(parent);
+                    }
+
+                    @Override
+                    @Transactional
+                    public void postSoftDelete(Collection entityIds, Class entityClass) {
+                        String sql = String.format("delete from %s me where me.%s in (:ids)", voClass.getSimpleName(), at.joinColumn());
+                        Query q = getEntityManager().createQuery(sql);
+                        q.setParameter("ids", entityIds);
+                        q.executeUpdate();
+                    }
+                });
+            }
+        }
+
+        private void buildInheritanceDeletionExtension() {
+            PrimaryKeyJoinColumn at = (PrimaryKeyJoinColumn) voClass.getAnnotation(PrimaryKeyJoinColumn.class);
+            if (at == null) {
+                return;
+            }
+
+            final Class parent = voClass.getSuperclass();
+            if (!parent.isAnnotationPresent(Entity.class)) {
+                throw new CloudRuntimeException(String.format("class[%s] has annotation @PrimaryKeyJoinColumn but its parent class[%s] is not annotated by @Entity",
+                        voClass, parent));
+            }
+
+            if (!parent.isAnnotationPresent(EO.class)) {
+                return;
+            }
+
+            if (!hasEO()) {
+                List<SoftDeleteEntityExtensionPoint> exts = softDeleteExtensions.get(parent);
+                if (exts == null) {
+                    exts = new ArrayList<SoftDeleteEntityExtensionPoint>();
+                    softDeleteExtensions.put(parent, exts);
+                }
+
+                exts.add(new SoftDeleteEntityExtensionPoint() {
+                    @Override
+                    public List<Class> getEntityClassForSoftDeleteEntityExtension() {
+                        return Arrays.asList(parent);
+                    }
+
+                    @Override
+                    public void postSoftDelete(Collection entityIds, Class entityClass) {
+                        nativeSqlDelete(entityIds);
+                    }
+                });
+            } else {
+                List<SoftDeleteEntityByEOExtensionPoint> exts = softDeleteByEOExtensions.get(eoClass);
+                if (exts == null) {
+                    exts = new ArrayList<SoftDeleteEntityByEOExtensionPoint>();
+                    softDeleteByEOExtensions.put(eoClass, exts);
+                }
+
+                exts.add(new SoftDeleteEntityByEOExtensionPoint() {
+                    @Override
+                    public List<Class> getEOClassForSoftDeleteEntityExtension() {
+                        return Arrays.asList(eoClass);
+                    }
+
+                    @Override
+                    public void postSoftDelete(Collection entityIds, Class EOClass) {
+                        nativeSqlDelete(entityIds);
+                    }
+                });
+            }
+        }
+
+        private void fireSoftDeleteExtension(Collection ids, Class entityClass) {
+            List<SoftDeleteEntityExtensionPoint> exts = softDeleteExtensions.get(entityClass);
+            if (exts != null) {
+                for (SoftDeleteEntityExtensionPoint ext : exts) {
+                    ext.postSoftDelete(ids, entityClass);
+                }
+            }
+
+            for (SoftDeleteEntityExtensionPoint ext : softDeleteForAllExtensions) {
+                ext.postSoftDelete(ids, entityClass);
+            }
+        }
+
+        private void fireSoftDeleteExtensionByEOClass(Collection ids, Class eoClass) {
+            List<SoftDeleteEntityByEOExtensionPoint> exts = softDeleteByEOExtensions.get(eoClass);
+            if (exts != null) {
+                for (SoftDeleteEntityByEOExtensionPoint ext : exts) {
+                    ext.postSoftDelete(ids, eoClass);
+                }
+            }
+        }
+
+        boolean hasEO() {
+            return eoClass != null;
+        }
+
+        private Object getEOPrimaryKeyValue(Object entity) {
+            try {
+                return eoPrimaryKeyField.get(entity);
+            } catch (IllegalAccessException e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+
+        private Object getVOPrimaryKeyValue(Object entity) {
+            try {
+                return voPrimaryKeyField.get(entity);
+            } catch (IllegalAccessException e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+
+        private void updateEO(Object entity, DataIntegrityViolationException de) {
+            if (!MySQLIntegrityConstraintViolationException.class.isAssignableFrom(de.getRootCause().getClass())) {
+                throw de;
+            }
+
+            MySQLIntegrityConstraintViolationException me = (MySQLIntegrityConstraintViolationException) de.getRootCause();
+            if (!(me.getErrorCode() == 1062 && "23000".equals(me.getSQLState()) && me.getMessage().contains("PRIMARY"))) {
+                throw de;
+            }
+
+            if (!hasEO()) {
+                throw de;
+            }
+
+            // at this point, the error is caused by a update tried on VO entity which has been soft deleted. This is mostly
+            // caused by a deletion cascade(e.g deleting host will cause vm running on it to be deleted, and deleting vm is trying to return capacity
+            // to host which has been soft deleted, because vm deletion is executed in async manner). In this case, we make the update to EO table
+
+            Object idval = getEOPrimaryKeyValue(entity);
+            Object eo = getEntityManager().find(eoClass, idval);
+            final Object deo = ObjectUtils.copy(eo, entity);
+            new Runnable() {
+                @Override
+                @Transactional(propagation = Propagation.REQUIRES_NEW)
+                public void run() {
+                    getEntityManager().merge(deo);
+                }
+            }.run();
+            logger.debug(String.format("A EO[%s] update has been made", eoClass.getName()));
+        }
+
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        private Object update(Object e, boolean refresh) {
+            try {
+                e = getEntityManager().merge(e);
+                if (refresh) {
+                    getEntityManager().flush();
+                    getEntityManager().refresh(e);
+                }
+                return e;
+            } catch (DataIntegrityViolationException de) {
+                updateEO(e, de);
+            }
+
+            return e;
+        }
+
+        @DeadlockAutoRestart
+        void update(Object e) {
+            update(e, false);
+        }
+
+        @DeadlockAutoRestart
+        Object updateAndRefresh(Object e) {
+            return update(e, true);
+        }
+
+        private void softDelete(Object entity) {
+            try {
+                Object idval = getEOPrimaryKeyValue(entity);
+                Object eo = getEntityManager().find(eoClass, idval);
+                eoSoftDeleteColumn.set(eo, new Timestamp(new Date().getTime()).toString());
+                getEntityManager().merge(eo);
+                fireSoftDeleteExtension(Arrays.asList(idval), voClass);
+                fireSoftDeleteExtensionByEOClass(Arrays.asList(idval), eoClass);
+            } catch (CloudRuntimeException ce) {
+                throw ce;
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+
+        private void softDelete(Collection ids) {
+            String sql = String.format("update %s eo set eo.%s = (:date) where eo.%s in (:ids)", eoClass.getSimpleName(), eoSoftDeleteColumn.getName(), eoPrimaryKeyField.getName());
+            Query q = getEntityManager().createQuery(sql);
+            q.setParameter("ids", ids);
+            q.setParameter("date", new Timestamp(new Date().getTime()).toString());
+            q.executeUpdate();
+            fireSoftDeleteExtension(ids, voClass);
+            fireSoftDeleteExtensionByEOClass(ids, eoClass);
+        }
+
+
+        private void fireHardDeleteExtension(Collection ids) {
+            List<HardDeleteEntityExtensionPoint> exts = hardDeleteExtensions.get(voClass);
+            if (exts != null) {
+                for (HardDeleteEntityExtensionPoint ext : exts) {
+                    ext.postHardDelete(ids, voClass);
+                }
+            }
+            for (HardDeleteEntityExtensionPoint ext : hardDeleteForAllExtensions) {
+                ext.postHardDelete(ids, voClass);
+            }
+        }
+
+        private void hardDelete(Collection ids) {
+            String sql = String.format("delete from %s eo where eo.%s in (:ids)", voClass.getSimpleName(), voPrimaryKeyField.getName());
+            Query q = getEntityManager().createQuery(sql);
+            q.setParameter("ids", ids);
+            q.executeUpdate();
+            fireHardDeleteExtension(ids);
+        }
+
+        @Transactional
+        private void nativeSqlDelete(Collection ids) {
+            // native sql can avoid JPA cascades a deletion to parent entity when deleting a child entity
+            String sql = String.format("delete from %s where %s in (:ids)", voClass.getSimpleName(), voPrimaryKeyField.getName());
+            Query q = getEntityManager().createNativeQuery(sql);
+            q.setParameter("ids", ids);
+            q.executeUpdate();
+        }
+
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        void remove(Object entity) {
+            if (!hasEO()) {
+                entity = getEntityManager().merge(entity);
+                getEntityManager().remove(entity);
+            } else {
+                softDelete(entity);
+            }
+        }
+
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        void removeByPrimaryKey(Object id) {
+            if (hasEO()) {
+                softDelete(Arrays.asList(id));
+            } else {
+                hardDelete(Arrays.asList(id));
+            }
+        }
+
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        void removeByPrimaryKeys(Collection ids) {
+            if (hasEO()) {
+                softDelete(ids);
+            } else {
+                hardDelete(ids);
+            }
+        }
+
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        void removeCollection(Collection entities) {
+            for (Object entity : entities) {
+                if (!entity.getClass().isAnnotationPresent(EO.class)) {
+                    entity = getEntityManager().merge(entity);
+                    getEntityManager().remove(entity);
+                } else {
+                    softDelete(entity);
+                }
+            }
+        }
+
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        Object reload(Object entity) {
+            return getEntityManager().find(entity.getClass(), getVOPrimaryKeyValue(entity));
+        }
+
+        @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+        List listByPrimaryKeys(Collection ids, int offset, int length) {
+            String sql = null;
+            Query query = null;
+            if (ids == null || ids.isEmpty()) {
+                sql = String.format("select e from %s e", voClass.getSimpleName());
+                query = getEntityManager().createQuery(sql, voClass);
+            } else {
+                sql = String.format("select e from %s e where e.%s in (:ids)", voClass.getSimpleName(), voPrimaryKeyField.getName());
+                query = getEntityManager().createQuery(sql, voClass);
+                query.setParameter("ids", ids);
+            }
+            query.setFirstResult(offset);
+            query.setMaxResults(length);
+            return query.getResultList();
+        }
+
+        @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+        boolean isExist(Object id) {
+            String sql = String.format("select count(*) from %s ref where ref.%s = :id", voClass.getSimpleName(), voPrimaryKeyField.getName());
+            TypedQuery<Long> q = getEntityManager().createQuery(sql, Long.class);
+            q.setParameter("id", id);
+            Long count = q.getSingleResult();
+            return count > 0;
+        }
+    }
+
+    void init() {
+        buildEntityInfo();
+    }
+
+    @Override
+    public <T> T persist(T entity) {
+        return persist(entity, false);
+    }
+
+    private EntityInfo getEntityInfo(Class clz) {
+        EntityInfo info = entityInfoMap.get(clz);
+        DebugUtils.Assert(info!=null, String.format("cannot find entity info for %s", clz.getName()));
+        return info;
+    }
+
+    @Override
+    public <T> void update(T entity) {
+        getEntityInfo(entity.getClass()).update(entity);
+    }
+
+    @Override
+    public CriteriaBuilder getCriteriaBuilder() {
+        return entityManagerFactory.getCriteriaBuilder();
+    }
+
+    @Override
+    public <T> SimpleQuery<T> createQuery(Class<T> entityClass) {
+        assert entityClass.isAnnotationPresent(Entity.class) : entityClass.getName() + " is not annotated by JPA @Entity";
+        return new SimpleQueryImpl<T>(entityClass);
+    }
+
+    public EntityManager getEntityManager() {
+        return entityManager;
+    }
+
+    @Override
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+    public <T> T findById(long id, Class<T> entityClass) {
+        return getEntityManager().find(entityClass, id);
+    }
+
+    @Override
+    public void remove(Object entity) {
+        getEntityInfo(entity.getClass()).remove(entity);
+    }
+
+    @Override
+    public void removeCollection(Collection entities, Class entityClass) {
+        if (entities.isEmpty()) {
+            return;
+        }
+
+        getEntityInfo(entityClass).removeCollection(entities);
+    }
+
+    @Override
+    public void removeByPrimaryKeys(Collection priKeys, Class entityClazz) {
+        if (priKeys.isEmpty()) {
+            return;
+        }
+        getEntityInfo(entityClazz).removeByPrimaryKeys(priKeys);
+    }
+
+
+    @Override
+    public <T> T updateAndRefresh(T entity) {
+        return (T) getEntityInfo(entity.getClass()).updateAndRefresh(entity);
+    }
+
+    @Override
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+    public <T> T findByUuid(String uuid, Class<T> entityClass) {
+        return this.getEntityManager().find(entityClass, uuid);
+    }
+
+    @Override
+    public void removeByPrimaryKey(Object primaryKey, Class<?> entityClass) {
+        getEntityInfo(entityClass).removeByPrimaryKey(primaryKey);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private <T> T doPersist(T entity, boolean isRefresh) {
+        this.entityForTranscationCallback(Operation.PERSIST, entity.getClass());
+        getEntityManager().persist(entity);
+
+        if (isRefresh) {
+            getEntityManager().flush();
+            getEntityManager().refresh(entity);
+        }
+        return entity;
+    }
+
+    @DeadlockAutoRestart
+    private <T> T persist(T entity, boolean isRefresh) {
+        return doPersist(entity, isRefresh);
+    }
+
+    @Override
+    public <T> T persistAndRefresh(T entity) {
+        return persist(entity, true);
+    }
+
+    @Override
+    public long count(Class<?> entityClass) {
+        SimpleQuery<?> query = this.createQuery(entityClass);
+        return query.count();
+    }
+
+    private List<TransactionalCallback> getTransactionAsyncCallbacks() {
+        if (transactionAsyncCallbacks == null) {
+            transactionAsyncCallbacks = new ArrayList<TransactionalCallback>();
+            PluginRegistry pluginRgty = Platform.getComponentLoader().getComponent(PluginRegistry.class);
+            transactionAsyncCallbacks = pluginRgty.getExtensionList(TransactionalCallback.class);
+        }
+        return transactionAsyncCallbacks;
+    }
+    
+    private List<TransactionalSyncCallback> getTransactionSyncCallbacks() {
+        if (transactionSyncCallbacks == null) {
+            transactionSyncCallbacks = new ArrayList<TransactionalSyncCallback>();
+            PluginRegistry pluginRgty = Platform.getComponentLoader().getComponent(PluginRegistry.class);
+            transactionSyncCallbacks = pluginRgty.getExtensionList(TransactionalSyncCallback.class);
+        }
+        return transactionSyncCallbacks;
+    }
+    
+    @Override
+    public void entityForTranscationCallback(Operation op, Class<?>... entityClass) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            for (TransactionalSyncCallback cb : getTransactionSyncCallbacks()) {
+                TransactionSynchronizationSyncImpl tsi = new TransactionSynchronizationSyncImpl(cb, op, entityClass);
+                TransactionSynchronizationManager.registerSynchronization(tsi);
+            }
+            
+            for (TransactionalCallback cb : getTransactionAsyncCallbacks()) {
+                TransactionSynchronizationAsyncImpl tsi = new TransactionSynchronizationAsyncImpl(cb, op, entityClass);
+                TransactionSynchronizationManager.registerSynchronization(tsi);
+            }
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (Class<?> c : entityClass) {
+                sb.append(c.getName()).append(",");
+            }
+            
+            String err = String.format("entityForTranscationCallback is called but transcation is not active. Did you forget adding @Transactional to method??? [operation: %s, entity classes: %s]", op, sb.toString());
+            logger.warn(err);
+        }
+    }
+
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+	@Override
+	public <T> T reload(T entity) {
+        return (T) getEntityInfo(entity.getClass()).reload(entity);
+	}
+
+    @Override
+    public long generateSequenceNumber(Class<?> seqTable) {
+        try {
+            Field id = seqTable.getDeclaredField("id");
+            if (id == null) {
+                throw new CloudRuntimeException(String.format("sequence VO[%s] must have 'id' field", seqTable.getName()));
+            }
+            Object vo = seqTable.newInstance();
+            vo = persistAndRefresh(vo);
+            id.setAccessible(true);
+            return (Long) id.get(vo);
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
+
+    @Override
+    public <T> List<T> listByApiMessage(APIListMessage msg, Class<T> clazz) {
+        return listByPrimaryKeys(msg.getUuids(), msg.getOffset(), msg.getLength(), clazz);
+    }
+    
+    @Override
+    public <T> List<T> listAll(Class<T> clazz) {
+        return listAll(0, Integer.MAX_VALUE, clazz);
+    }
+
+    @Override
+    public <T> List<T> listAll(int offset, int length, Class<T> clazz) {
+        return listByPrimaryKeys(null, offset, length, clazz);
+    }
+
+    @Override
+    public <T> List<T> listByPrimaryKeys(Collection ids, Class<T> clazz) {
+        return listByPrimaryKeys(ids, 0, Integer.MAX_VALUE, clazz);
+    }
+
+    @Override
+    public <T> List<T> listByPrimaryKeys(Collection ids, int offset, int length, Class<T> clazz) {
+        return getEntityInfo(clazz).listByPrimaryKeys(ids, offset, length);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void persistCollection(Collection entities) {
+        for (Object e : entities) {
+            this.entityForTranscationCallback(Operation.PERSIST, e.getClass());
+            this.getEntityManager().persist(e);
+        }
+    }
+
+    @Override
+    public boolean isExist(Object id, Class<?> clazz) {
+        return getEntityInfo(clazz).isExist(id);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void eoCleanup(Class VOClazz) {
+        EO at = (EO) VOClazz.getAnnotation(EO.class);
+        if (at == null) {
+            return;
+        }
+
+        String deleted = at.softDeletedColumn();
+        String sql = String.format("delete from %s eo where eo.%s is not null", at.EOClazz().getSimpleName(), deleted);
+        Query q = getEntityManager().createQuery(sql);
+        q.executeUpdate();
+    }
+
+    @Override
+    public DataSource getDataSource() {
+        return dataSource;
+    }
+
+    public void setExtraDataSource(DataSource extraDataSource) {
+        this.extraDataSource = extraDataSource;
+    }
+
+    @Override
+    public DataSource getExtraDataSource() {
+        return extraDataSource;
+    }
+
+    @Override
+    public boolean start() {
+        populateExtensions();
+        return true;
+    }
+
+    private void buildEntityInfo() {
+        String[] pkgs = StringUtils.split(DbGlobalProperty.ENTITY_PACKAGES, ",");
+        List<Class> clzs = BeanUtils.scanClass(Arrays.asList(pkgs), Entity.class);
+        for (Class clz : clzs) {
+            logger.debug(String.format("build entity info for %s", clz.getName()));
+            entityInfoMap.put(clz, new EntityInfo(clz));
+        }
+    }
+
+    private void populateExtensions() {
+        for (SoftDeleteEntityExtensionPoint ext : pluginRgty.getExtensionList(SoftDeleteEntityExtensionPoint.class)) {
+            if (ext.getEntityClassForSoftDeleteEntityExtension() == null) {
+                softDeleteForAllExtensions.add(ext);
+                continue;
+            }
+
+            for (Class eclazz : ext.getEntityClassForSoftDeleteEntityExtension()) {
+                List<SoftDeleteEntityExtensionPoint> exts = softDeleteExtensions.get(eclazz);
+                if (exts == null) {
+                    exts = new ArrayList<SoftDeleteEntityExtensionPoint>();
+                    softDeleteExtensions.put(eclazz, exts);
+                }
+                exts.add(ext);
+            }
+        }
+
+        for (SoftDeleteEntityByEOExtensionPoint ext : pluginRgty.getExtensionList(SoftDeleteEntityByEOExtensionPoint.class)) {
+            for (Class eoClass : ext.getEOClassForSoftDeleteEntityExtension()) {
+                List<SoftDeleteEntityByEOExtensionPoint> exts = softDeleteByEOExtensions.get(eoClass);
+                if (exts == null) {
+                    exts = new ArrayList<SoftDeleteEntityByEOExtensionPoint>();
+                    softDeleteByEOExtensions.put(eoClass, exts);
+                }
+                exts.add(ext);
+            }
+        }
+
+        for (HardDeleteEntityExtensionPoint ext : pluginRgty.getExtensionList(HardDeleteEntityExtensionPoint.class)) {
+            if (ext.getEntityClassForHardDeleteEntityExtension() == null) {
+                hardDeleteForAllExtensions.add(ext);
+                continue;
+            }
+
+            for (Class clazz : ext.getEntityClassForHardDeleteEntityExtension()) {
+                List<HardDeleteEntityExtensionPoint> exts = hardDeleteExtensions.get(clazz);
+                if (exts == null) {
+                    exts = new ArrayList<HardDeleteEntityExtensionPoint>();
+                    hardDeleteExtensions.put(clazz, exts);
+                }
+                exts.add(ext);
+            }
+        }
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
+}

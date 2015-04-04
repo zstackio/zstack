@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>storage.backup.sftp</id>
+    <interceptor>SftpBackupStorageApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.storage.backup.sftp.APIAddSftpBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.backup.sftp.APISearchSftpBackupStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.backup.sftp.APIGetSftpBackupStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageMsg</name>
+        <interceptor>BackupStorageApiInterceptor</interceptor>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>

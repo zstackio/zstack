@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
+    <TestCase class="org.zstack.test.portal.TestManagementNodeHeartbeat"/>
+    <TestCase class="org.zstack.test.portal.TestQueryManagementNode"/>
+</UnitTestSuiteConfig>

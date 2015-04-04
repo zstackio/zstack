@@ -1,0 +1,787 @@
+package org.zstack.kvm;
+
+import org.zstack.core.validation.ConditionalValidation;
+import org.zstack.header.core.validation.Validation;
+import org.zstack.network.securitygroup.SecurityGroupRuleTO;
+
+import java.util.*;
+
+public class KVMAgentCommands {
+	public static enum BootDev {
+		hd,
+		cdrom,
+	}
+	
+    public static class AgentResponse implements ConditionalValidation {
+        private boolean success = true;
+        private String error;
+        public boolean isSuccess() {
+            return success;
+        }
+        public void setSuccess(boolean success) {
+            this.success = success;
+        }
+        public String getError() {
+            return error;
+        }
+        public void setError(String error) {
+            this.error = error;
+        }
+
+        @Override
+        public boolean needValidation() {
+            return success;
+        }
+    }
+    
+    public static class AgentCommand {
+    }
+
+    public static class AttachNicCommand extends AgentCommand {
+        private NicTO nic;
+
+        public NicTO getNic() {
+            return nic;
+        }
+
+        public void setNic(NicTO nic) {
+            this.nic = nic;
+        }
+    }
+
+    public static class AttachNicResponse extends AgentResponse {
+
+    }
+
+    public static class ConnectCmd extends AgentCommand {
+        private String hostUuid;
+        public String getHostUuid() {
+            return hostUuid;
+        }
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+    }
+    
+    public static class ConnectResponse extends AgentResponse {
+        private String libvirtVersion;
+        private String qemuVersion;
+
+        public String getLibvirtVersion() {
+            return libvirtVersion;
+        }
+
+        public void setLibvirtVersion(String libvirtVersion) {
+            this.libvirtVersion = libvirtVersion;
+        }
+
+        public String getQemuVersion() {
+            return qemuVersion;
+        }
+
+        public void setQemuVersion(String qemuVersion) {
+            this.qemuVersion = qemuVersion;
+        }
+    }
+    
+    public static class PingCmd extends AgentCommand {
+    }
+    
+    public static class PingResponse extends AgentResponse {
+        private String hostUuid;
+        public String getHostUuid() {
+            return hostUuid;
+        }
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+    }
+    
+    public static class CheckPhysicalNetworkInterfaceCmd extends AgentCommand {
+        private List<String> interfaceNames = new ArrayList<String>(2);
+
+        public CheckPhysicalNetworkInterfaceCmd addInterfaceName(String name) {
+            interfaceNames.add(name);
+            return this;
+        }
+        public List<String> getInterfaceNames() {
+            return interfaceNames;
+        }
+
+        public void setInterfaceNames(List<String> interfaceNames) {
+            this.interfaceNames = interfaceNames;
+        }
+    }
+    
+    public static class CheckPhysicalNetworkInterfaceResponse extends AgentResponse {
+        private List<String> failedInterfaceNames;
+        public List<String> getFailedInterfaceNames() {
+            if (failedInterfaceNames == null) {
+                failedInterfaceNames = new ArrayList<String>(0);
+            }
+            return failedInterfaceNames;
+        }
+
+        public void setFailedInterfaceNames(List<String> failedInterfaceNames) {
+            this.failedInterfaceNames = failedInterfaceNames;
+        }
+    }
+
+    public static class HostFactCmd extends AgentCommand {
+    }
+
+    public static class HostFactResponse extends AgentResponse {
+        private String qemuImgVersion;
+        private String libvirtVersion;
+        private String hvmCpuFlag;
+
+        public String getHvmCpuFlag() {
+            return hvmCpuFlag;
+        }
+
+        public void setHvmCpuFlag(String hvmCpuFlag) {
+            this.hvmCpuFlag = hvmCpuFlag;
+        }
+
+        public String getLibvirtVersion() {
+            return libvirtVersion;
+        }
+
+        public void setLibvirtVersion(String libvirtVersion) {
+            this.libvirtVersion = libvirtVersion;
+        }
+
+        public String getQemuImgVersion() {
+            return qemuImgVersion;
+        }
+
+        public void setQemuImgVersion(String qemuImgVersion) {
+            this.qemuImgVersion = qemuImgVersion;
+        }
+    }
+    
+    public static class HostCapacityCmd extends AgentCommand {
+    }
+    
+    public static class HostCapacityResponse extends AgentResponse {
+        private long cpuNum;
+        private long cpuSpeed;
+        private long usedCpu;
+        private long totalMemory;
+        private long usedMemory;
+
+        public long getCpuNum() {
+            return cpuNum;
+        }
+        public void setCpuNum(long cpuNum) {
+            this.cpuNum = cpuNum;
+        }
+        public long getCpuSpeed() {
+            return cpuSpeed;
+        }
+        public void setCpuSpeed(long cpuSpeed) {
+            this.cpuSpeed = cpuSpeed;
+        }
+        public long getUsedCpu() {
+            return usedCpu;
+        }
+        public void setUsedCpu(long usedCpu) {
+            this.usedCpu = usedCpu;
+        }
+        public long getTotalMemory() {
+            return totalMemory;
+        }
+        public void setTotalMemory(long totalMemory) {
+            this.totalMemory = totalMemory;
+        }
+        public long getUsedMemory() {
+            return usedMemory;
+        }
+        public void setUsedMemory(long usedMemory) {
+            this.usedMemory = usedMemory;
+        }
+    }
+    
+    public static class CreateBridgeCmd extends AgentCommand {
+        private String physicalInterfaceName;
+        private String bridgeName;
+        public String getPhysicalInterfaceName() {
+            return physicalInterfaceName;
+        }
+        public void setPhysicalInterfaceName(String physicalInterfaceName) {
+            this.physicalInterfaceName = physicalInterfaceName;
+        }
+        public String getBridgeName() {
+            return bridgeName;
+        }
+        public void setBridgeName(String bridgeName) {
+            this.bridgeName = bridgeName;
+        }
+    }
+
+    public static class CreateBridgeResponse extends AgentResponse {
+    }
+
+    public static class CheckBridgeCmd extends AgentCommand {
+        private String physicalInterfaceName;
+        private String bridgeName;
+        public String getPhysicalInterfaceName() {
+            return physicalInterfaceName;
+        }
+        public void setPhysicalInterfaceName(String physicalInterfaceName) {
+            this.physicalInterfaceName = physicalInterfaceName;
+        }
+        public String getBridgeName() {
+            return bridgeName;
+        }
+        public void setBridgeName(String bridgeName) {
+            this.bridgeName = bridgeName;
+        }
+    }
+    public static class CheckBridgeResponse extends AgentResponse {
+    }
+
+    public static class CheckVlanBridgeCmd extends CheckBridgeCmd {
+        private int vlan;
+
+        public int getVlan() {
+            return vlan;
+        }
+
+        public void setVlan(int vlan) {
+            this.vlan = vlan;
+        }
+    }
+    public static class CheckVlanBridgeResponse extends CheckBridgeResponse {
+    }
+
+    public static class CreateVlanBridgeCmd extends CreateBridgeCmd {
+        private int vlan;
+
+        public int getVlan() {
+            return vlan;
+        }
+
+        public void setVlan(int vlan) {
+            this.vlan = vlan;
+        }
+    }
+    public static class CreateVlanBridgeResponse extends CreateBridgeResponse {
+    }
+    
+    public static class NicTO {
+    	private String mac;
+    	private String bridgeName;
+    	private String nicInternalName;
+    	private int deviceId;
+    	private String metaData;
+    	
+		public String getMac() {
+			return mac;
+		}
+		public void setMac(String mac) {
+			this.mac = mac;
+		}
+		public String getBridgeName() {
+			return bridgeName;
+		}
+		public void setBridgeName(String bridgeName) {
+			this.bridgeName = bridgeName;
+		}
+		public int getDeviceId() {
+			return deviceId;
+		}
+		public void setDeviceId(int deviceId) {
+			this.deviceId = deviceId;
+		}
+        public String getMetaData() {
+            return metaData;
+        }
+        public void setMetaData(String metaData) {
+            this.metaData = metaData;
+        }
+        public String getNicInternalName() {
+            return nicInternalName;
+        }
+        public void setNicInternalName(String nicInternalName) {
+            this.nicInternalName = nicInternalName;
+        }
+        
+    }
+    
+    public static class VolumeTO {
+        private String installPath;
+        private int deviceId;
+        public String getInstallPath() {
+            return installPath;
+        }
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+        public int getDeviceId() {
+            return deviceId;
+        }
+        public void setDeviceId(int deviceId) {
+            this.deviceId = deviceId;
+        }
+    }
+    
+    public static class DetachDataVolumeCmd extends AgentCommand {
+        private VolumeTO volume;
+        private String vmInstanceUuid;
+        public VolumeTO getVolume() {
+            return volume;
+        }
+        public void setVolume(VolumeTO volume) {
+            this.volume = volume;
+        }
+        public String getVmUuid() {
+            return vmInstanceUuid;
+        }
+        public void setVmUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+    }
+    
+    public static class DetachDataVolumeResponse extends AgentResponse {
+    }
+    
+    public static class AttachDataVolumeCmd extends AgentCommand {
+        private VolumeTO volume;
+        private String vmInstanceUuid;
+        
+        public VolumeTO getVolume() {
+            return volume;
+        }
+
+        public void setVolume(VolumeTO volume) {
+            this.volume = volume;
+        }
+
+        public String getVmUuid() {
+            return vmInstanceUuid;
+        }
+
+        public void setVmUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+    }
+    
+    public static class AttachDataVolumeResponse extends AgentResponse {
+    }
+    
+    public static class StartVmCmd extends AgentCommand {
+    	private String vmInstanceUuid;
+    	private long vmInternalId;
+    	private String vmName;
+    	private long memory;
+    	private int cpuNum;
+    	private long cpuSpeed;
+    	private String bootDev;
+    	private VolumeTO rootVolume;
+    	private List<VolumeTO> dataVolumes;
+    	private List<NicTO> nics;
+    	private String isoPath;
+    	private long timeout;
+    	private List<String> dataIsoPaths;
+        private Map<String, Object> addons;
+        private boolean useVirtio;
+
+        public boolean isUseVirtio() {
+            return useVirtio;
+        }
+
+        public void setUseVirtio(boolean useVirtio) {
+            this.useVirtio = useVirtio;
+        }
+
+        public String getVmUuid() {
+			return vmInstanceUuid;
+		}
+		public void setVmUuid(String vmInstanceUuid) {
+			this.vmInstanceUuid = vmInstanceUuid;
+		}
+		public String getVmName() {
+			return vmName;
+		}
+		public void setVmName(String vmName) {
+			this.vmName = vmName;
+		}
+		public long getMemory() {
+			return memory;
+		}
+		public void setMemory(long memory) {
+			this.memory = memory;
+		}
+		
+		public int getCpuNum() {
+			return cpuNum;
+		}
+		public void setCpuNum(int cpuNum) {
+			this.cpuNum = cpuNum;
+		}
+		public long getCpuSpeed() {
+			return cpuSpeed;
+		}
+		public void setCpuSpeed(long cpuSpeed) {
+			this.cpuSpeed = cpuSpeed;
+		}
+		public String getBootDev() {
+			return bootDev;
+		}
+		public void setBootDev(String bootDev) {
+			this.bootDev = bootDev;
+		}
+		
+		public VolumeTO getRootVolume() {
+            return rootVolume;
+        }
+        public void setRootVolume(VolumeTO rootVolume) {
+            this.rootVolume = rootVolume;
+        }
+        public List<VolumeTO> getDataVolumes() {
+            return dataVolumes;
+        }
+        public void setDataVolumes(List<VolumeTO> dataVolumes) {
+            this.dataVolumes = dataVolumes;
+        }
+        public String getIsoPath() {
+            return isoPath;
+        }
+        public void setIsoPath(String isoPath) {
+            this.isoPath = isoPath;
+        }
+        public List<NicTO> getNics() {
+			return nics;
+		}
+		public void setNics(List<NicTO> nics) {
+			this.nics = nics;
+		}
+		public String getBootIsoPath() {
+			return isoPath;
+		}
+		public void setBootIsoPath(String bootIsoPath) {
+			this.isoPath = bootIsoPath;
+		}
+		public long getTimeout() {
+			return timeout;
+		}
+		public void setTimeout(long timeout) {
+			this.timeout = timeout;
+		}
+		public List<String> getDataIsoPaths() {
+			return dataIsoPaths;
+		}
+		public void setDataIsoPaths(List<String> dataIsoPaths) {
+			this.dataIsoPaths = dataIsoPaths;
+		}
+        public String getVmInstanceUuid() {
+            return vmInstanceUuid;
+        }
+        public void setVmInstanceUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+        public long getVmInternalId() {
+            return vmInternalId;
+        }
+        public void setVmInternalId(long vmInternalId) {
+            this.vmInternalId = vmInternalId;
+        }
+
+        public Map<String, Object> getAddons() {
+            if (addons == null) {
+                addons = new HashMap<String, Object>();
+            }
+            return addons;
+        }
+
+        public void setAddons(Map<String, Object> addons) {
+            this.addons = addons;
+        }
+    }
+    public static class StartVmResponse extends AgentResponse {
+    }
+    
+    public static class GetVncPortCmd extends AgentCommand {
+    	private String vmUuid;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+    }
+    public static class GetVncPortResponse extends AgentResponse {
+    	private int port;
+
+		public int getPort() {
+			return port;
+		}
+
+		public void setPort(int port) {
+			this.port = port;
+		}
+    }
+    
+    public static class StopVmCmd extends AgentCommand {
+    	private String uuid;
+    	private long timeout;
+
+		public String getUuid() {
+			return uuid;
+		}
+		public void setUuid(String uuid) {
+			this.uuid = uuid;
+		}
+		public long getTimeout() {
+			return timeout;
+		}
+		public void setTimeout(long timeout) {
+			this.timeout = timeout;
+		}
+    }
+    public static class StopVmResponse extends AgentResponse {
+    }
+    
+    public static class RebootVmCmd extends AgentCommand {
+    	private String uuid;
+    	private long timeout;
+
+		public String getUuid() {
+			return uuid;
+		}
+		public void setUuid(String uuid) {
+			this.uuid = uuid;
+		}
+		public long getTimeout() {
+			return timeout;
+		}
+		public void setTimeout(long timeout) {
+			this.timeout = timeout;
+		}
+    }
+    public static class RebootVmResponse extends AgentResponse {
+    }
+    
+    public static class DestroyVmCmd extends AgentCommand {
+    	private String uuid;
+
+		public String getUuid() {
+			return uuid;
+		}
+		public void setUuid(String uuid) {
+			this.uuid = uuid;
+		}
+    }
+    public static class DestroyVmResponse extends AgentResponse {
+    }
+    
+    
+    public static class VmSyncCmd extends AgentCommand {
+    }
+    
+    public static class VmSyncResponse extends AgentResponse {
+        private HashMap<String, String> states;
+
+        public HashMap<String, String> getStates() {
+            return states;
+        }
+        public void setStates(HashMap<String, String> states) {
+            this.states = states;
+        }
+    }
+    
+    public static class RefreshAllRulesOnHostCmd extends AgentCommand {
+        private List<SecurityGroupRuleTO> ruleTOs;
+
+        public List<SecurityGroupRuleTO> getRuleTOs() {
+            return ruleTOs;
+        }
+
+        public void setRuleTOs(List<SecurityGroupRuleTO> ruleTOs) {
+            this.ruleTOs = ruleTOs;
+        }
+    }
+    
+    public static class RefreshAllRulesOnHostResponse extends AgentResponse {
+    }
+
+    public static class CleanupUnusedRulesOnHostCmd extends AgentCommand {
+    }
+    public static class CleanupUnusedRulesOnHostResponse extends AgentResponse {
+    }
+    
+    
+    public static class ApplySecurityGroupRuleCmd extends AgentCommand {
+        private List<SecurityGroupRuleTO> ruleTOs;
+
+        public List<SecurityGroupRuleTO> getRuleTOs() {
+            return ruleTOs;
+        }
+
+        public void setRuleTOs(List<SecurityGroupRuleTO> ruleTOs) {
+            this.ruleTOs = ruleTOs;
+        }
+    }
+    
+    public static class ApplySecurityGroupRuleResponse extends AgentResponse {
+    }
+
+    public static class MigrateVmCmd extends AgentCommand {
+        private String vmUuid;
+        private String destHostIp;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getDestHostIp() {
+            return destHostIp;
+        }
+
+        public void setDestHostIp(String destHostIp) {
+            this.destHostIp = destHostIp;
+        }
+    }
+
+    public static class MigrateVmResponse extends AgentResponse {
+    }
+
+    public static class MergeSnapshotRsp extends AgentResponse {
+    }
+
+    public static class MergeSnapshotCmd extends AgentCommand {
+        private String vmUuid;
+        private int deviceId;
+        private String srcPath;
+        private String destPath;
+        private boolean fullRebase;
+
+        public boolean isFullRebase() {
+            return fullRebase;
+        }
+
+        public void setFullRebase(boolean fullRebase) {
+            this.fullRebase = fullRebase;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public int getDeviceId() {
+            return deviceId;
+        }
+
+        public void setDeviceId(int deviceId) {
+            this.deviceId = deviceId;
+        }
+
+        public String getSrcPath() {
+            return srcPath;
+        }
+
+        public void setSrcPath(String srcPath) {
+            this.srcPath = srcPath;
+        }
+
+        public String getDestPath() {
+            return destPath;
+        }
+
+        public void setDestPath(String destPath) {
+            this.destPath = destPath;
+        }
+    }
+
+    public static class TakeSnapshotCmd extends AgentCommand {
+        private String vmUuid;
+        private int deviceId;
+        private String installPath;
+        private boolean fullSnapshot;
+        private String volumeInstallPath;
+
+        public String getVolumeInstallPath() {
+            return volumeInstallPath;
+        }
+
+        public void setVolumeInstallPath(String volumeInstallPath) {
+            this.volumeInstallPath = volumeInstallPath;
+        }
+
+        public boolean isFullSnapshot() {
+            return fullSnapshot;
+        }
+
+        public void setFullSnapshot(boolean fullSnapshot) {
+            this.fullSnapshot = fullSnapshot;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public int getDeviceId() {
+            return deviceId;
+        }
+
+        public void setDeviceId(int deviceId) {
+            this.deviceId = deviceId;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+    }
+
+    public static class TakeSnapshotResponse extends AgentResponse {
+        @Validation
+        private String newVolumeInstallPath;
+        @Validation
+        private String snapshotInstallPath;
+        @Validation(notZero = true)
+        private long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public String getSnapshotInstallPath() {
+            return snapshotInstallPath;
+        }
+
+        public void setSnapshotInstallPath(String snapshotInstallPath) {
+            this.snapshotInstallPath = snapshotInstallPath;
+        }
+
+        public String getNewVolumeInstallPath() {
+            return newVolumeInstallPath;
+        }
+
+        public void setNewVolumeInstallPath(String newVolumeInstallPath) {
+            this.newVolumeInstallPath = newVolumeInstallPath;
+        }
+    }
+}

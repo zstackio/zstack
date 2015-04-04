@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>volume</id>
+    <interceptor>VolumeApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.volume.APICreateDataVolumeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIDeleteDataVolumeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIListVolumeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APISearchVolumeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIGetVolumeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIQueryVolumeMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIChangeVolumeStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APICreateVolumeSnapshotMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIAttachDataVolumeToVmMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIDetachDataVolumeFromVmMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIGetDataVolumeAttachableVmMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APICreateDataVolumeFromVolumeTemplateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIGetVolumeFormatMsg</name>
+    </message>
+</service>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>snapshot.volume</id>
+    <interceptor>VolumeSnapshotApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.APIBackupVolumeSnapshotMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotTreeMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.APIGetVolumeSnapshotTreeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotFromBackupStorageMsg</name>
+    </message>
+</service>

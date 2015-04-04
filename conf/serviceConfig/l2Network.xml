@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>network.l2</id>
+    <interceptor>L2NetworkApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.network.l2.APICreateL2NoVlanNetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APIListL2NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APIDeleteL2NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APISearchL2NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APIGetL2NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APICreateL2VlanNetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APISearchL2VlanNetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APIGetL2VlanNetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APIQueryL2NetworkMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l2.APIGetL2NetworkTypesMsg</name>
+    </message>
+</service>

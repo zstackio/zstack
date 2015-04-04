@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <zones>
+        <zone name="TestZone" description="Test">
+            <l2Networks>
+                <l2NoVlanNetwork name="TestL2Network" description="Test"
+                    physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network1" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                            
+                            
+							<networkService provider="VirtualRouter">
+								<serviceType>DHCP</serviceType>
+								<serviceType>DNS</serviceType>
+								<serviceType>SNAT</serviceType>
+							</networkService>
+							
+                        </l3BasicNetwork>
+                        <l3BasicNetwork name="TestL3Network2" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
+                                endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
+                            <dns>9.9.9.9</dns>
+                        </l3BasicNetwork>
+                        <l3BasicNetwork name="TestL3Network3" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.20.3.100"
+                                endIp="10.30.3.200" gateway="10.20.3.1" netmask="255.0.0.0" />
+                                
+                            <dns>8.8.8.8</dns>
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+        </zone>
+    </zones>
+</deployerConfig>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<zones>
+		<zone name="TestZone" description="Test">
+			<l2Networks>
+				<l2VlanNetwork name="TestL2VlanNetwork" description="Test"
+					physicalInterface="eth0" vlan="10" />
+			</l2Networks>
+		</zone>
+	</zones>
+</deployerConfig>

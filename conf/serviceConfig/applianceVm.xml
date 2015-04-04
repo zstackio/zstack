@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>applianceVm</id>
+
+    <message>
+        <name>org.zstack.appliancevm.APIQueryApplianceVmMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.appliancevm.APIListApplianceVmMsg</name>
+    </message>
+
+</service>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>managementNode</id>
+
+    <message>
+        <name>org.zstack.header.managementnode.APIListManagementNodeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.managementnode.APIQueryManagementNodeMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+</service>

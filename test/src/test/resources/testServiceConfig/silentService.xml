@@ -1,0 +1,7 @@
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>silentService</id>
+
+    <message>
+        <name>org.zstack.test.multinodes.APISilentMsg</name>
+    </message>
+</service>

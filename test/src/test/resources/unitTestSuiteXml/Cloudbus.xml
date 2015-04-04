@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSend" />
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendCallback"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendCallbackTimeout"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSendMultiMsg"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusCall"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusCallTimeout"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusMultiCall"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusMultiCallTimeout"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSharding"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSharding1"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestLockResourceMessage"/>
+</UnitTestSuiteConfig>

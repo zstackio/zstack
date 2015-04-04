@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<backupStorages>
+		<simulatorBackupStorage name="backup1" description="Test"
+			url="/path1"/>
+		<simulatorBackupStorage name="backup2" description="Test"
+			url="/path2"/>
+		<simulatorBackupStorage name="backup3" description="Test"
+			url="/path3"/>
+	</backupStorages>
+
+	<zones>
+		<zone name="Zone1" description="Test">
+			<backupStorageRef>backup1</backupStorageRef>
+		</zone>
+		<zone name="Zone2" description="Test">
+			<backupStorageRef>backup1</backupStorageRef>
+			<backupStorageRef>backup3</backupStorageRef>
+		</zone>
+		<zone name="Zone3" description="Test">
+			<backupStorageRef>backup2</backupStorageRef>
+		</zone>
+	</zones>
+</deployerConfig>

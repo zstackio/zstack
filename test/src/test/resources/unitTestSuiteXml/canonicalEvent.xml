@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent1"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent2"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent3"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent4"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent5"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent6"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent7"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent8"/>
+</UnitTestSuiteConfig>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<zones>
+		<zone name="TestZone" description="Test">
+			<clusters>
+				<cluster name="TestCluster" description="Test" hypervisorType="KVM">
+                    <l2NetworkRef>TestL2Network</l2NetworkRef>
+				</cluster>
+			</clusters>
+
+			<l2Networks>
+				<l2NoVlanNetwork name="TestL2Network" description="Test"
+					physicalInterface="eth0" />
+			</l2Networks>
+		</zone>
+	</zones>
+</deployerConfig>

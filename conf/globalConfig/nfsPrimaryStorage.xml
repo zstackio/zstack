@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+	<config>
+		<name>mount.base</name>
+		<description>The path host mounts nfs primary storage, which must be an absolute path</description>
+		<defaultValue>/opt/zstack/nfsprimarystorage</defaultValue>
+		<category>nfsPrimaryStorage</category>
+		<validatorRegularExpression>^/(.*)</validatorRegularExpression>
+	</config>
+</globalConfig>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<policy xmlns="http://zstack.org/schema/zstack">
+	<statement>
+		<effect>alLow</effect>
+		<role>identity:createAccount</role>
+		<role>identity:resetAccountPassword</role>
+	</statement>
+</policy>

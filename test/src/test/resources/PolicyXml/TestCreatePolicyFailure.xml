@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<policy xmlns="http://zstack.org/schema/zstack">
+	<statement>
+	<!-- invalid effect value -->
+		<effect>xxx</effect>
+		<role>identity:createAccount</role>
+		<role>identity:resetAccountPassword</role>
+	</statement>
+</policy>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<dns name="dns1" address="10.223.110.254" />
+	<dns name="dns2" address="10.223.110.253" />
+</deployerConfig>

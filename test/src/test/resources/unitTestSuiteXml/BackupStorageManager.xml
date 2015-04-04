@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+	<TestCase class="org.zstack.test.storage.backup.TestCreateBackupStorage"/>
+	<TestCase class="org.zstack.test.storage.backup.TestDeleteBackupStorage"/>
+	<TestCase class="org.zstack.test.storage.backup.TestDeleteBackupStorageExtensionPoint"/>
+	<TestCase class="org.zstack.test.storage.backup.TestBackupStorageChangeStateExtensionPoint"/>
+	<TestCase class="org.zstack.test.storage.backup.TestAttachBackupStorage"/>
+	<TestCase class="org.zstack.test.storage.backup.TestBackupAttachExtensionPoint"/>
+	<TestCase class="org.zstack.test.storage.backup.TestDetachBackupStorage"/>
+	<TestCase class="org.zstack.test.storage.backup.TestBackupStorageDetachExtensionPoint"/>
+	<TestCase class="org.zstack.test.storage.backup.TestQueryBackupStorage"/>
+    <TestCase class="org.zstack.test.storage.backup.TestGetBackupStorageTypes"/>
+    <TestCase class="org.zstack.test.storage.backup.TestAllocateBackupStorage1"/>
+    <TestCase class="org.zstack.test.storage.backup.TestAllocateBackupStorage2"/>
+    <TestCase class="org.zstack.test.storage.backup.TestAllocateBackupStorage3"/>
+    <TestCase class="org.zstack.test.storage.backup.TestAllocateBackupStorage4"/>
+    <TestCase class="org.zstack.test.storage.backup.TestAllocateBackupStorage5"/>
+    <TestCase class="org.zstack.test.storage.backup.TestAllocateBackupStorage6"/>
+    <TestCase class="org.zstack.test.storage.backup.TestGetBackupStorageCapacity"/>
+</UnitTestSuiteConfig>

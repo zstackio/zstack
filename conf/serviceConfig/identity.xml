@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>identity</id>
+    <interceptor>IdentityApiInterceptor</interceptor>
+    
+    <message>
+        <name>org.zstack.header.identity.APICreateAccountMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APIListAccountMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APIResetAccountPasswordMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APICreateUserMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APICreatePolicyMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APIAttachPolicyToUserMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APICreateUserGroupMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APIAttachPolicyToUserGroupMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APIAttachUserToUserGroupMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APILogInByAccountMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APILogInByUserMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APILogOutMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APISearchAccountMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APISearchPolicyMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APISearchUserGroupMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APISearchUserMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APIGetAccountMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APIGetUserMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APIGetUserGroupMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.APIGetPolicyMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIValidateSessionMsg</name>
+    </message>
+</service>

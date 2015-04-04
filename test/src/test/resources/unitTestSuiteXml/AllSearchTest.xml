@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack"
+	timeout="120">
+	<TestCase class="org.zstack.test.identity.TestSearchAccount" />
+	<TestCase class="org.zstack.test.identity.TestSearchPolicy" />
+	<TestCase class="org.zstack.test.identity.TestSearchUser" />
+	<TestCase class="org.zstack.test.identity.TestSearchUserGroup" />
+	<TestCase class="org.zstack.test.storage.backup.TestSearchBackupStorage" />
+	<TestCase class="org.zstack.test.compute.cluster.TestSearchCluster" />
+	<TestCase class="org.zstack.test.configuration.TestSearchDiskOffering" />
+	<TestCase class="org.zstack.test.configuration.TestSearchInstanceOffering" />
+	<TestCase class="org.zstack.test.compute.host.TestSearchHost" />
+	<TestCase class="org.zstack.test.image.TestSearchImage" />
+	<TestCase class="org.zstack.test.network.TestSearchL2Network" />
+	<TestCase class="org.zstack.test.network.TestSearchL3Network" />
+	<TestCase class="org.zstack.test.storage.primary.TestSearchPrimaryStorage" />
+	<TestCase
+		class="org.zstack.test.storage.backup.sftp.TestSearchSftpBackupStorage" />
+	<TestCase class="org.zstack.test.virtualrouter.TestSearchNetworkProvider" />
+	<TestCase
+		class="org.zstack.test.virtualrouter.TestSearchVirtualRouterOffering" />
+	<TestCase class="org.zstack.test.virtualrouter.TestSearchVirtualRouterVm" />
+	<TestCase class="org.zstack.test.compute.vm.TestSearchVm" />
+	<TestCase class="org.zstack.test.storage.volume.TestSearchVolume" />
+	<TestCase class="org.zstack.test.compute.zone.TestSearchZone" />
+</UnitTestSuiteConfig>

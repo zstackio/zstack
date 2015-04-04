@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>host</id>
+    <interceptor>HostApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.simulator.APIAddSimulatorHostMsg</name>
+    </message>
+</service>

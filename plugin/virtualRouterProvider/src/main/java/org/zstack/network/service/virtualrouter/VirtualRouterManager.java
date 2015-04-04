@@ -1,0 +1,53 @@
+package org.zstack.network.service.virtualrouter;
+
+import org.zstack.core.workflow.Flow;
+import org.zstack.core.workflow.FlowChain;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.host.HypervisorType;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.service.NetworkServiceProviderInventory;
+import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.vm.VmInstanceSpec;
+
+import java.util.List;
+
+public interface VirtualRouterManager {
+	NetworkServiceProviderInventory getVirtualRouterProvider(); 
+
+	VirtualRouterHypervisorBackend getHypervisorBackend(HypervisorType hypervisorType);
+	
+	String buildUrl(String mgmtNicIp, String subPath);
+
+	List<String> selectL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType);
+
+    boolean isL3NetworkNeedingNetworkServiceByVirtualRouter(String l3Uuid, String nsType);
+
+    void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VmInstanceSpec servedVm, ReturnValueCompletion<VirtualRouterVmInventory> completion);
+
+    void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VmInstanceSpec servedVm, VirtualRouterOfferingValidator vrOfferingValidator, ReturnValueCompletion<VirtualRouterVmInventory> completion);
+
+    void acquireVirtualRouterVm(L3NetworkInventory l3Nw, String accountUuid, VirtualRouterOfferingValidator vrOfferingValidator, ReturnValueCompletion<VirtualRouterVmInventory> completion);
+
+
+    VirtualRouterVmInventory getVirtualRouterVm(L3NetworkInventory l3Nw);
+
+    boolean isVirtualRouterRunningForL3Network(String l3Uuid);
+
+    VirtualRouterOfferingInventory findOfferingByGuestL3Network(L3NetworkInventory guestL3);
+
+    List<Flow> getPostCreateFlows();
+
+    List<Flow> getPostStartFlows();
+
+    List<Flow> getPostRebootFlows();
+
+    List<Flow> getPostStopFlows();
+
+    List<Flow> getPostMigrateFlows();
+
+    List<Flow> getPostDestroyFlows();
+
+    FlowChain getReconnectFlowChain();
+
+    int getParallelismDegree(String vrUuid);
+}

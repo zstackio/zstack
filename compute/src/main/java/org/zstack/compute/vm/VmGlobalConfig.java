@@ -1,0 +1,15 @@
+package org.zstack.compute.vm;
+
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDefinition;
+import org.zstack.core.config.GlobalConfigValidation;
+
+@GlobalConfigDefinition
+public class VmGlobalConfig {
+    public static final String CATEGORY = "vm";
+
+    @GlobalConfigValidation
+    public static GlobalConfig DELETE_DATA_VOLUME_ON_VM_DESTROY = new GlobalConfig(CATEGORY, "dataVolume.deleteOnVmDestroy");
+    @GlobalConfigValidation
+    public static GlobalConfig UPDATE_INSTANCE_OFFERING_TO_NULL_WHEN_DELETING = new GlobalConfig(CATEGORY, "instanceOffering.setNullWhenDeleting");
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+	<TestCase class="org.zstack.test.compute.cluster.TestCreateCluster"/>
+	<TestCase class="org.zstack.test.compute.cluster.TestDeleteCluster"/>
+    <TestCase class="org.zstack.test.compute.cluster.TestDeleteCluster2"/>
+	<TestCase class="org.zstack.test.compute.cluster.TestDeleteClusterExtensionPoint"/>
+    <TestCase class="org.zstack.test.compute.cluster.TestDeleteClusterExtensionPoint1"/>
+	<TestCase class="org.zstack.test.compute.cluster.TestListCluster"/>
+	<TestCase class="org.zstack.test.compute.cluster.TestChangeClusterState"/>
+	<TestCase class="org.zstack.test.compute.cluster.TestChangeClusterStateExtensionPoint"/>
+	<TestCase class="org.zstack.test.compute.cluster.TestDeleteZoneCascadeToCluster"/>
+	<TestCase class="org.zstack.test.compute.cluster.TestChangeZoneStateCascadeToCluster"/>
+	<TestCase class="org.zstack.test.compute.cluster.TestQueryCluster"/>
+</UnitTestSuiteConfig>

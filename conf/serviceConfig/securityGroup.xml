@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>securityGroup</id>
+    <interceptor>SecurityGroupApiInterceptor</interceptor>
+    
+    <message>
+        <name>org.zstack.network.securitygroup.APICreateSecurityGroupMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.network.securitygroup.APIListSecurityGroupMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.network.securitygroup.APIAddVmNicToSecurityGroupMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.network.securitygroup.APIDeleteSecurityGroupRuleMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.network.securitygroup.APIDeleteVmNicFromSecurityGroupMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.network.securitygroup.APIListVmNicInSecurityGroupMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.network.securitygroup.APIDeleteSecurityGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIAttachSecurityGroupToL3NetworkMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.network.securitygroup.APIQuerySecurityGroupMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+    
+    <message>
+        <name>org.zstack.network.securitygroup.APIQueryVmNicInSecurityGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIChangeSecurityGroupStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIDetachSecurityGroupFromL3NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIQuerySecurityGroupRuleMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIGetCandidateVmNicForSecurityGroupMsg</name>
+    </message>
+</service>

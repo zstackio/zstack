@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<zones>
+		<zone name="Zone1" description="Test">
+			<clusters>
+				<cluster name="Cluster1" description="Test" hypervisorType="KVM">
+					<l2NetworkRef>L2Network1</l2NetworkRef>
+					<l2NetworkRef>L2Network2</l2NetworkRef>
+					<l2NetworkRef>L2Network3</l2NetworkRef>
+				</cluster>
+			</clusters>
+			<l2Networks>
+				<l2NoVlanNetwork name="L2Network1" description="Test"
+					physicalInterface="eth0" />
+				<l2NoVlanNetwork name="L2Network2" description="Test"
+					physicalInterface="eth1" />
+				<l2NoVlanNetwork name="L2Network3" description="Test"
+					physicalInterface="eth2" />
+			</l2Networks>
+		</zone>
+	</zones>
+</deployerConfig>

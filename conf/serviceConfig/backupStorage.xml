@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>storage.backup</id>
+    <interceptor>BackupStorageApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIAddBackupStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIChangeBackupStorageStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIListBackupStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIDeleteBackupStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIAttachBackupStorageToZoneMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIScanBackupStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIDetachBackupStorageFromZoneMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APISearchBackupStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIGetBackupStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIQueryBackupStorageMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIGetBackupStorageTypesMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIGetBackupStorageCapacityMsg</name>
+    </message>
+</service>

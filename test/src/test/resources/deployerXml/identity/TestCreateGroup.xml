@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<account name="TestAccount" password="password">
+		<group name="TestGroup1" description="TestGroup1" />
+		<group name="TestGroup2" description="TestGroup2" />
+	</account>
+</deployerConfig>

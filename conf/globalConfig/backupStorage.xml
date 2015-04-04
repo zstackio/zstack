@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <name>ping.interval</name>
+        <description>The interval management server sends ping command to backup storage, in seconds</description>
+        <defaultValue>60</defaultValue>
+        <type>java.lang.Integer</type>
+        <category>backupStorage</category>
+    </config>
+
+    <config>
+        <name>ping.parallelismDegree</name>
+        <description>The max number of backup storages management server sends ping commands in parallel</description>
+        <defaultValue>50</defaultValue>
+        <type>java.lang.Integer</type>
+        <category>backupStorage</category>
+    </config>
+
+    <config>
+        <name>reservedCapacity</name>
+        <description>Reserved capcacity on every backup storage</description>
+        <defaultValue>1G</defaultValue>
+        <category>backupStorage</category>
+    </config>
+</globalConfig>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>storage.primary</id>
+    <interceptor>NfsPrimaryStorageApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.storage.primary.nfs.APIAddNfsPrimaryStorageMsg</name>
+    </message>
+
+</service>

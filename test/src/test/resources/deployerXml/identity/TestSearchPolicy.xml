@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<account name="account1" password="password">
+		<policy name="Policy1" policyFilePath="PolicyXml/TestPolicyAllow.xml" />
+		<policy name="Policy2" policyFilePath="PolicyXml/TestPolicyAllow.xml" />
+		<policy name="Policy3" policyFilePath="PolicyXml/TestPolicyAllow.xml" />
+	</account>
+</deployerConfig>

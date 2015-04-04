@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<account name="TestAccount" password="password">
+		<policy name="TestPolicy" policyFilePath="PolicyXml/TestPolicyAllow2.xml" />
+		<group name="TestGroup1" description="TestGroup1" >
+			<policyRef>TestPolicy</policyRef>
+		</group>
+		<user name="TestUser" password="password">
+			<groupRef>TestGroup1</groupRef>
+		</user>
+	</account>
+</deployerConfig>

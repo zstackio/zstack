@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<instanceOfferings>
+		<virtualRouterOffering name="virtualRouterOffering"
+			isDefault="true">
+			<zoneRef>Zone1</zoneRef>
+			<managementL3NetworkRef>PublicNetwork</managementL3NetworkRef>
+			<publicL3NetworkRef>PublicNetwork</publicL3NetworkRef>
+			<imageRef>TestImage</imageRef>
+		</virtualRouterOffering>
+
+		<instanceOffering name="TestInstanceOffering"
+			description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000" />
+	</instanceOfferings>
+
+	<backupStorages>
+		<sftpBackupStorage name="sftp" description="Test"
+			url="nfs://test" />
+	</backupStorages>
+
+	<images>
+        <image name="TestImage" description="Test">
+			<backupStorageRef>sftp</backupStorageRef>
+		</image>
+	</images>
+
+	<vm>
+		<userVm name="TestVm" description="Test">
+			<imageRef>TestImage</imageRef>
+			<instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
+			<l3NetworkRef>GuestNetwork</l3NetworkRef>
+		</userVm>
+
+		<userVm name="TestVm1" description="Test">
+			<imageRef>TestImage</imageRef>
+			<instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
+			<l3NetworkRef>GuestNetwork1</l3NetworkRef>
+		</userVm>
+	</vm>
+
+	<portForwardings>
+		<portForwarding>
+			<name>pfRule1</name>
+			<publicL3NetworkRef>PublicNetwork</publicL3NetworkRef>
+			<privateL3NetworkRef>GuestNetwork</privateL3NetworkRef>
+			<vmRef>TestVm</vmRef>
+			<publicPortStart>22</publicPortStart>
+			<publicPortEnd>100</publicPortEnd>
+			<privatePortStart>22</privatePortStart>
+			<privatePortEnd>100</privatePortEnd>
+			<allowedCidr>77.10.3.1/24</allowedCidr>
+			<protocolType>TCP</protocolType>
+		</portForwarding>
+		<portForwarding>
+			<name>pfRule2</name>
+			<publicL3NetworkRef>PublicNetwork</publicL3NetworkRef>
+			<privateL3NetworkRef>GuestNetwork1</privateL3NetworkRef>
+			<vmRef>TestVm1</vmRef>
+			<publicPortStart>50</publicPortStart>
+			<publicPortEnd>1000</publicPortEnd>
+			<privatePortStart>50</privatePortStart>
+			<privatePortEnd>1000</privatePortEnd>
+			<allowedCidr>68.10.2.1/24</allowedCidr>
+			<protocolType>UDP</protocolType>
+		</portForwarding>
+	</portForwardings>
+
+	<zones>
+		<zone name="Zone1" description="Test">
+			<clusters>
+				<cluster name="Cluster1" description="Test" hypervisorType="KVM">
+					<hosts>
+						<kvmHost name="host1" description="Test" managementIp="localhost"
+							memoryCapacity="64G" cpuNum="32" cpuSpeed="2600" />
+					</hosts>
+					<primaryStorageRef>nfs</primaryStorageRef>
+					<l2NetworkRef>TestL2Network</l2NetworkRef>
+				</cluster>
+			</clusters>
+
+			<l2Networks>
+				<l2NoVlanNetwork name="TestL2Network" description="Test"
+					physicalInterface="eth0">
+					<l3Networks>
+						<l3BasicNetwork name="PublicNetwork" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="192.168.1.10"
+								endIp="192.168.1.100" gateway="192.168.1.1" netmask="255.255.255.0" />
+						</l3BasicNetwork>
+
+						<l3BasicNetwork name="GuestNetwork" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
+								endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
+
+							<networkService provider="VirtualRouter">
+								<serviceType>PortForwarding</serviceType>
+                                <serviceType>SNAT</serviceType>
+							</networkService>
+						</l3BasicNetwork>
+
+                        <l3BasicNetwork name="GuestNetwork1" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.10.3.100"
+                                     endIp="10.20.3.200" gateway="10.10.3.1" netmask="255.0.0.0" />
+
+                            <networkService provider="VirtualRouter">
+                                <serviceType>PortForwarding</serviceType>
+                                <serviceType>SNAT</serviceType>
+                            </networkService>
+                        </l3BasicNetwork>
+
+					</l3Networks>
+				</l2NoVlanNetwork>
+			</l2Networks>
+
+			<backupStorageRef>sftp</backupStorageRef>
+			<primaryStorages>
+				<nfsPrimaryStorage name="nfs" description="Test"
+					totalCapacity="5T" url="nfs://test" />
+			</primaryStorages>
+		</zone>
+	</zones>
+</deployerConfig>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+
+	<backupStorages>
+		<sftpBackupStorage name="sftp" description="Test"
+			url="nfs://test" />
+	</backupStorages>
+
+    <instanceOfferings>
+        <instanceOffering name="TestInstanceOffering"
+                          description="Test" memoryCapacity="1" cpuNum="1" cpuSpeed="1" />
+    </instanceOfferings>
+
+	<images>
+        <image name="TestImage" description="Test">
+			<backupStorageRef>sftp</backupStorageRef>
+		</image>
+	</images>
+
+	<zones>
+		<zone name="Zone1" description="Test">
+			<clusters>
+				<cluster name="Cluster1" description="Test" hypervisorType="KVM">
+					<hosts>
+						<kvmHost name="host1" description="Test" managementIp="localhost"
+							memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+					</hosts>
+					<primaryStorageRef>nfs</primaryStorageRef>
+				</cluster>
+			</clusters>
+
+			<primaryStorages>
+				<nfsPrimaryStorage name="nfs" description="Test"
+					totalCapacity="1T" url="nfs://test" />
+			</primaryStorages>
+		</zone>
+	</zones>
+</deployerConfig>

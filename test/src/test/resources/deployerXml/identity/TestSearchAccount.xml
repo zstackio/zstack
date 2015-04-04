@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<account name="Account1" password="password" />
+	<account name="Account2" password="password" />
+	<account name="Account3" password="password" />
+</deployerConfig>

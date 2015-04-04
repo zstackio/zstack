@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<zones>
+		<zone name="TestZone" description="Test">
+			<clusters>
+				<cluster name="TestCluster" description="Test">
+					<l2NetworkRef>noVlan</l2NetworkRef>
+					<l2NetworkRef>TestL2Network6</l2NetworkRef>
+				</cluster>
+			</clusters>
+
+			<l2Networks>
+				<l2NoVlanNetwork name="noVlan" description="Test"
+					physicalInterface="eth0" />
+				<l2NoVlanNetwork name="TestL2Network2" description="Test"
+					physicalInterface="eth1" />
+				<l2NoVlanNetwork name="TestL2Network3" description="Test"
+					physicalInterface="eth2" />
+				<l2NoVlanNetwork name="TestL2Network4" description="Test"
+					physicalInterface="eth3" />
+				<l2NoVlanNetwork name="TestL2Network5" description="Test"
+					physicalInterface="eth4" />
+				<l2NoVlanNetwork name="TestL2Network6" description="Test"
+					physicalInterface="eth5" />
+                <l2VlanNetwork name="vlan" description="Test" vlan="10"
+                                 physicalInterface="eth6" />
+			</l2Networks>
+		</zone>
+	</zones>
+</deployerConfig>

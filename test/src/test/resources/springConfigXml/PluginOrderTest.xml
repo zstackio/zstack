@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:zstack="http://zstack.org/schema/zstack"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+
+
+
+
+     	 http://zstack.org/schema/zstack 
+         http://zstack.org/schema/zstack/plugin.xsd"
+       default-init-method="init" default-destroy-method="destory">
+	
+	<bean id="PluginOrder2" class="org.zstack.test.core.plugin.PluginOrder2">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.test.core.plugin.PluginOrderTestInterface" />
+		</zstack:plugin>
+	</bean>
+	
+	<bean id="PluginOrder3" class="org.zstack.test.core.plugin.PluginOrder3">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.test.core.plugin.PluginOrderTestInterface" order="-1"/>
+		</zstack:plugin>
+	</bean>
+	
+	<bean id="PluginOrder1" class="org.zstack.test.core.plugin.PluginOrder1">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.test.core.plugin.PluginOrderTestInterface" order="1"/>
+		</zstack:plugin>
+	</bean>
+</beans>

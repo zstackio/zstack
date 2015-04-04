@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+	<config>
+		<name>dataVolume.deleteOnVmDestroy</name>
+		<description>A boolean value indicating whether deleting attached data volumes when destroying a vm. If false, the data volume will be detached and be retained in primary storage</description>
+		<category>vm</category>
+		<defaultValue>false</defaultValue>
+		<type>java.lang.Boolean</type>
+	</config>
+
+	<config>
+		<name>instanceOffering.setNullWhenDeleting</name>
+        <description>whether update instance offering column of VM inventory to NULL when the instance offering is deleted</description>
+		<category>vm</category>
+		<defaultValue>true</defaultValue>
+		<type>java.lang.Boolean</type>
+	</config>
+</globalConfig>

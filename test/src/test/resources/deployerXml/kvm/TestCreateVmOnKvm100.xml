@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+
+    <backupStorages>
+        <sftpBackupStorage name="sftp" description="Test"
+            url="nfs://test" />
+    </backupStorages>
+
+    <images>
+        <image name="TestImage" description="Test">
+            <backupStorageRef>sftp</backupStorageRef>
+        </image>
+    </images>
+
+    <instanceOfferings>
+        <instanceOffering name="TestInstanceOffering"
+            description="Test" memoryCapacity="128M" cpuNum="1" cpuSpeed="128" />
+    </instanceOfferings>
+
+    <zones>
+        <zone name="Zone1" description="Test">
+            <clusters>
+                <cluster name="Cluster1" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host1" description="Test" managementIp="localhost"
+                            memoryCapacity="100000T" cpuNum="1000000000" cpuSpeed="100000" />
+                    </hosts>
+                    <primaryStorageRef>nfs</primaryStorageRef>
+                    <primaryStorageRef>nfs1</primaryStorageRef>
+                    <primaryStorageRef>nfs2</primaryStorageRef>
+                    <primaryStorageRef>nfs3</primaryStorageRef>
+                    <primaryStorageRef>nfs4</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network</l2NetworkRef>
+                </cluster>
+            </clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="TestL2Network" description="Test"
+                    physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network1" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                endIp="10.255.255.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+
+            <backupStorageRef>sftp</backupStorageRef>
+            <primaryStorages>
+                <nfsPrimaryStorage name="nfs" description="Test"
+                    totalCapacity="10000T" url="nfs://test" />
+                <nfsPrimaryStorage name="nfs1" description="Test"
+                    totalCapacity="10000T" url="nfs://test2" />
+                <nfsPrimaryStorage name="nfs2" description="Test"
+                    totalCapacity="10000T" url="nfs://test3" />
+                <nfsPrimaryStorage name="nfs3" description="Test"
+                    totalCapacity="10000T" url="nfs://test4" />
+                <nfsPrimaryStorage name="nfs4" description="Test"
+                    totalCapacity="10000T" url="nfs://test5" />
+            </primaryStorages>
+        </zone>
+    </zones>
+</deployerConfig>

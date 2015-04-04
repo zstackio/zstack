@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<zones>
+		<zone name="Zone1" description="Test">
+			<clusters>
+				<cluster name="Cluster1" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host1" description="Test" managementIp="localhost"
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                        <kvmHost name="host2" description="Test" managementIp="127.0.0.1"
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                    </hosts>
+                </cluster>
+			</clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="TestL2Network" description="Test"
+                                 physicalInterface="eth0">
+                </l2NoVlanNetwork>
+            </l2Networks>
+		</zone>
+	</zones>
+</deployerConfig>

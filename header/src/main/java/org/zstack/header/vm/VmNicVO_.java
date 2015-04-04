@@ -1,0 +1,22 @@
+package org.zstack.header.vm;
+
+import javax.persistence.metamodel.SingularAttribute;
+import javax.persistence.metamodel.StaticMetamodel;
+import java.sql.Timestamp;
+
+@StaticMetamodel(VmNicVO.class)
+public class VmNicVO_ {
+    public static volatile SingularAttribute<VmNicVO, String> uuid;
+    public static volatile SingularAttribute<VmNicVO, String> vmInstanceUuid;
+    public static volatile SingularAttribute<VmNicVO, String> internalName;
+    public static volatile SingularAttribute<VmNicVO, String> usedIpUuid;
+    public static volatile SingularAttribute<VmNicVO, String> l3NetworkUuid;
+    public static volatile SingularAttribute<VmNicVO, String> netmask;
+    public static volatile SingularAttribute<VmNicVO, String> gateway;
+    public static volatile SingularAttribute<VmNicVO, String> ip;
+    public static volatile SingularAttribute<VmNicVO, String> mac;
+    public static volatile SingularAttribute<VmNicVO, String> metaData;
+    public static volatile SingularAttribute<VmNicVO, Integer> deviceId;
+    public static volatile SingularAttribute<VmNicVO, Timestamp> createDate;
+    public static volatile SingularAttribute<VmNicVO, Timestamp> lastOpDate;
+}

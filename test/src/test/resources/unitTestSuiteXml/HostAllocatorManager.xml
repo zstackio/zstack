@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+	<TestCase class="org.zstack.test.compute.hostallocator.TestDefaultHostAllocationStrategy"/>
+	<TestCase class="org.zstack.test.compute.hostallocator.TestDefaultHostAllocationStrategy2"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDefaultHostAllocationStrategy3"/>
+	<TestCase class="org.zstack.test.compute.hostallocator.TestDefaultHostAllocationStrategyFailure1"/>
+	<TestCase class="org.zstack.test.compute.hostallocator.TestDefaultHostAllocationStrategyFailure2"/>
+	<TestCase class="org.zstack.test.compute.hostallocator.TestDefaultHostAllocationStrategyFailure3"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDefaultHostAllocationStrategyFailure4"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDefaultHostAllocationStrategyFailure5"/>
+
+	<TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy1"/>
+	<TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy2"/>
+	<TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy3"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy4"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy5"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy6"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy7"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy8"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy9"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy10"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy11"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy12"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy13"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy14"/>
+
+	<TestCase class="org.zstack.test.compute.hostallocator.TestGetCpuMemoryCapacity"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestGetCpuMemoryCapacity1"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestGetCpuMemoryCapacity2"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestGetHostAllocatorStrategies"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestHostAllocatorDryRun"/>
+
+    <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity1"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity2"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity3"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity4"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity5"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity6"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity7"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestReservedHostCapacity8"/>
+
+    <TestCase class="org.zstack.test.compute.hostallocator.TestHostAllocationPaginationStrategy1"/>
+    <TestCase class="org.zstack.test.compute.hostallocator.TestHostAllocationPaginationStrategy2"/>
+
+</UnitTestSuiteConfig>

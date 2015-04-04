@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="180">
+	<Import resource="unitTestSuiteXml/Core.xml"/>
+    <Import resource="unitTestSuiteXml/Cascade.xml"/>
+	<Import resource="unitTestSuiteXml/Others.xml"/>
+	<Import resource="unitTestSuiteXml/ZoneManager.xml"/>
+	<Import resource="unitTestSuiteXml/ClusterManager.xml"/>
+	<Import resource="unitTestSuiteXml/HostManager.xml"/>
+	<Import resource="unitTestSuiteXml/HostAllocatorManager.xml"/>
+	<Import resource="unitTestSuiteXml/ConfigurationManager.xml"/>
+	<Import resource="unitTestSuiteXml/PrimaryStorageManager.xml"/>
+	<Import resource="unitTestSuiteXml/BackupStorageManager.xml"/>
+	<Import resource="unitTestSuiteXml/ImageManager.xml"/>
+	<Import resource="unitTestSuiteXml/VolumeManager.xml"/>
+	<Import resource="unitTestSuiteXml/NetworkManager.xml"/>
+	<Import resource="unitTestSuiteXml/VmManager.xml"/>
+	<Import resource="unitTestSuiteXml/Kvm.xml"/>
+	<Import resource="unitTestSuiteXml/SftpBackupStorage.xml"/>
+	<Import resource="unitTestSuiteXml/NfsPrimaryStorage.xml"/>
+	<Import resource="unitTestSuiteXml/VirtualRouter.xml"/>
+	<Import resource="unitTestSuiteXml/VirtualRouterPortForwarding.xml"/>
+    <!--
+	<Import resource="unitTestSuiteXml/MultiNodes.xml"/>
+	-->
+    <Import resource="unitTestSuiteXml/vip.xml"/>
+    <Import resource="unitTestSuiteXml/eip.xml"/>
+    <Import resource="unitTestSuiteXml/snapshot.xml"/>
+    <Import resource="unitTestSuiteXml/tag.xml"/>
+    <Import resource="unitTestSuiteXml/managementNode.xml"/>
+</UnitTestSuiteConfig>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+	<config>
+		<name>diskOffering.setNullWhenDeleting</name>
+        <description>whether update disk offering column of volume inventory to NULL when the disk offering is deleted</description>
+		<category>volume</category>
+		<defaultValue>true</defaultValue>
+		<type>java.lang.Boolean</type>
+	</config>
+</globalConfig>

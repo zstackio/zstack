@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>console</id>
+
+    <message>
+        <name>org.zstack.header.console.APIRequestConsoleAccessMsg</name>
+    </message>
+
+</service>

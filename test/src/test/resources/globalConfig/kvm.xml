@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <category>kvm</category>
+        <name>vm.migrationQuantity</name>
+        <description>A value that defines how many vm can be migrated in parallel when putting a KVM host into maintenance mode.</description>
+        <defaultValue>2</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>reservedCpu</name>
+        <description>The CPU capacity reserved on all KVM hosts. ZStack KVM agent is a python web server that needs some CPU capacity to run, this value reserve a portion of CPU for the agent as well as other host applications. The value can be overriden by system tag on individual host, cluster and zone level</description>
+        <defaultValue>0</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>reservedMemory</name>
+        <description>The memory capacity reserved on all KVM hosts. ZStack KVM agent is a python web server that needs some memory capacity to run. this value reserves a portion of memory for the agent as well as other host applications. The value can be overriden by system tag on individual host, cluster and zone level</description>
+        <defaultValue>0</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>dataVolume.maxNum</name>
+        <description>Max number of data volumes allowed to attach to single KVM instance</description>
+        <type>java.lang.Integer</type>
+        <defaultValue>24</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>host.syncLevel</name>
+        <description>The number of parallel commands that can be executed on KVM host. A big number may put a host in heavy workload in a busy system. The value must be greater than zero</description>
+        <type>java.lang.Integer</type>
+        <defaultValue>10</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>host.DNSCheckList</name>
+        <description>DNS or IP check list. When adding a KVM host, if all DNS/IP in the list are failed to ping, the adding host will fail.</description>
+        <defaultValue>yahoo.com,google.com,baidu.com</defaultValue>
+    </config>
+</globalConfig>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+    http://www.springframework.org/schema/tx 
+    http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+    http://zstack.org/schema/zstack 
+    http://zstack.org/schema/zstack/plugin.xsd"
+    default-init-method="init" default-destroy-method="destroy">
+
+    <bean id="KvmHostReserveExtension" class="org.zstack.kvm.KvmHostReserveExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.allocator.HostReservedCapacityExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KVMHostFactory" class="org.zstack.kvm.KVMHostFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.host.HypervisorFactory" />
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+            <zstack:extension interface="org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KVMHostCapacityExtension" class="org.zstack.kvm.KVMHostCapacityExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KVMConnectExtensionForL2Network" class="org.zstack.kvm.KVMConnectExtensionForL2Network">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KVMRealizeL2NoVlanNetworkBackend" class="org.zstack.kvm.KVMRealizeL2NoVlanNetworkBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMCompleteNicInformationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KVMRealizeL2VlanNetworkBackend" class="org.zstack.kvm.KVMRealizeL2VlanNetworkBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMCompleteNicInformationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KVMExtensionEmitter" class="org.zstack.kvm.KVMExtensionEmitter">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+        </zstack:plugin>
+    </bean>	
+
+    <bean id="KvmVmSyncPingTask" class="org.zstack.kvm.KvmVmSyncPingTask">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.host.HostPingTaskExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KVMSecurityGroupBackend" class="org.zstack.kvm.KVMSecurityGroupBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.network.securitygroup.SecurityGroupHypervisorBackend" />
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+        </zstack:plugin>
+    </bean>	
+
+    <bean id="KVMConsoleHypervisorBackend" class="org.zstack.kvm.KVMConsoleHypervisorBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.console.ConsoleHypervisorBackend"/>
+        </zstack:plugin>
+    </bean>	
+
+    <bean id="KVMApiInterceptor" class="org.zstack.kvm.KVMApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
+        </zstack:plugin>
+    </bean>	
+</beans>

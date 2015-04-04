@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+    <TestCase class="org.zstack.test.applianceVm.TestCreateApplianceVm"/>
+    <TestCase class="org.zstack.test.applianceVm.TestCreateApplianceVm1"/>
+    <TestCase class="org.zstack.test.applianceVm.TestCreateApplianceVm2"/>
+    <TestCase class="org.zstack.test.applianceVm.TestDestroyApplianceVm"/>
+    <TestCase class="org.zstack.test.applianceVm.TestRebootApplianceVm"/>
+    <TestCase class="org.zstack.test.applianceVm.TestStartApplianceVm"/>
+    <TestCase class="org.zstack.test.applianceVm.TestStopApplianceVm"/>
+    <TestCase class="org.zstack.test.applianceVm.TestCreateApplianceVmKvm"/>
+    <TestCase class="org.zstack.test.applianceVm.TestCreateApplianceVmKvm1"/>
+    <TestCase class="org.zstack.test.applianceVm.TestCreateApplianceVmKvm2"/>
+    <TestCase class="org.zstack.test.applianceVm.TestStartApplianceVmKvm"/>
+    <TestCase class="org.zstack.test.applianceVm.TestStartApplianceVmKvm2"/>
+    <TestCase class="org.zstack.test.applianceVm.TestRebootApplianceVmKvm"/>
+    <TestCase class="org.zstack.test.applianceVm.TestApplianceVmFirewall"/>
+    <TestCase class="org.zstack.test.applianceVm.TestApplianceVmFirewallDestroy"/>
+    <TestCase class="org.zstack.test.applianceVm.TestApplianceVmFirewallStart"/>
+    <TestCase class="org.zstack.test.applianceVm.TestApplianceVmFirewallStop"/>
+    <TestCase class="org.zstack.test.applianceVm.TestApplianceVmOpenFirewall"/>
+    <TestCase class="org.zstack.test.applianceVm.TestApplianceVmRemoveFirewall"/>
+</UnitTestSuiteConfig>

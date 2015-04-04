@@ -1,0 +1,19 @@
+#!/bin/sh
+
+usage() {
+    echo "usage:$0 [deploydb|deploy|xml-java-schema]"
+}
+
+run_profile() {
+    mvn -pl build -P $1 exec:exec -D$1
+}
+
+if [ "$#" -eq 0 ]; then
+    usage
+    exit 1
+fi
+
+for cmd in $@
+do
+    run_profile $cmd
+done

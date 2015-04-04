@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>storage.primary</id>
+    <interceptor>PrimaryStorageApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIAddPrimaryStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIChangePrimaryStorageStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIListPrimaryStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIDeletePrimaryStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIDetachPrimaryStorageFromClusterMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APISearchPrimaryStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIGetPrimaryStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIQueryPrimaryStorageMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIGetPrimaryStorageTypesMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIGetPrimaryStorageAllocatorStrategiesMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIGetPrimaryStorageCapacityMsg</name>
+    </message>
+</service>

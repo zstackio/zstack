@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<diskOffering name="DiskOffering1" description="Test" diskSize="50G" />
+	<diskOffering name="DiskOffering2" description="Test" diskSize="120G" />
+</deployerConfig>

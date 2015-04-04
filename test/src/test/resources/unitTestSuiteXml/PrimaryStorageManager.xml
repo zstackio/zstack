@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+	<TestCase class="org.zstack.test.storage.primary.TestCreatePrimaryStorage"/>
+	<TestCase class="org.zstack.test.storage.primary.TestDeletePrimaryStorage"/>
+	<TestCase class="org.zstack.test.storage.primary.TestPrimaryStorageDeleteExtensionPoint"/>
+	<TestCase class="org.zstack.test.storage.primary.TestListPrimaryStorage"/>
+	<TestCase class="org.zstack.test.storage.primary.TestChangePrimaryStorageState"/>
+	<TestCase class="org.zstack.test.storage.primary.TestPrimaryStorageChangeStateExtensionPoint"/>
+	<TestCase class="org.zstack.test.storage.primary.TestAttachPrimaryStorage"/>
+	<TestCase class="org.zstack.test.storage.primary.TestPrimaryStorageAttachExtensionPoint"/>
+	<TestCase class="org.zstack.test.storage.primary.TestDetachPrimaryStorage"/>
+	<TestCase class="org.zstack.test.storage.primary.TestPrimaryStorageDetachExtensionPoint"/>
+	<TestCase class="org.zstack.test.storage.primary.TestDefaultPrimaryStorageAllocatorStrategy"/>
+	<TestCase class="org.zstack.test.storage.primary.TestDefaultPrimaryStorageAllocatorStrategy1"/>
+	<TestCase class="org.zstack.test.storage.primary.TestDefaultPrimaryStorageAllocatorStrategy2"/>
+	<TestCase class="org.zstack.test.storage.primary.TestDefaultPrimaryStorageAllocatorStrategyFailure1"/>
+	<TestCase class="org.zstack.test.storage.primary.TestDefaultPrimaryStorageAllocatorStrategyFailure2"/>
+	<TestCase class="org.zstack.test.storage.primary.TestDefaultPrimaryStorageAllocatorStrategyFailure3"/>
+	<TestCase class="org.zstack.test.storage.primary.TestDefaultPrimaryStorageAllocatorStrategyFailure4"/>
+    <TestCase class="org.zstack.test.storage.primary.TestDefaultPrimaryStorageAllocatorStrategyFailure5"/>
+	<TestCase class="org.zstack.test.storage.primary.TestQueryPrimaryStorage"/>
+    <TestCase class="org.zstack.test.storage.primary.TestGetPrimaryStoragesType"/>
+    <TestCase class="org.zstack.test.storage.primary.TestGetPrimaryStorageAllocatorStrategies"/>
+    <TestCase class="org.zstack.test.storage.primary.TestGetPrimaryStorageCapacity"/>
+</UnitTestSuiteConfig>

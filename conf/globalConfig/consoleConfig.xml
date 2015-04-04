@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+	<config>
+		<category>console</category>
+		<name>proxy.idleTimeout</name>
+        <description>Teh max time an idle console proxy process waits before exiting, in seconds</description>
+		<defaultValue>60</defaultValue>
+		<type>java.lang.Integer</type>
+	</config>
+</globalConfig>

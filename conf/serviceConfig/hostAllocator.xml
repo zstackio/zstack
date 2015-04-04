@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>host.allocator</id>
+    <interceptor>HostAllocatorApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.allocator.APIGetCpuMemoryCapacityMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.allocator.APIGetHostAllocatorStrategiesMsg</name>
+    </message>
+</service>

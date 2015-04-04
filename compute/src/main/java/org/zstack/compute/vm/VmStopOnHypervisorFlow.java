@@ -1,0 +1,52 @@
+package org.zstack.compute.vm;
+
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.Flow;
+import org.zstack.core.workflow.FlowTrigger;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.vm.StopVmOnHypervisorMsg;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+
+import java.util.Map;
+
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
+public class VmStopOnHypervisorFlow implements Flow {
+    @Autowired
+    protected DatabaseFacade dbf;
+    @Autowired
+    protected CloudBus bus;
+    @Autowired
+    protected ErrorFacade errf;
+
+    @Override
+    public void run(final FlowTrigger chain, Map data) {
+        final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+
+        StopVmOnHypervisorMsg msg = new StopVmOnHypervisorMsg();
+        msg.setVmInventory(spec.getVmInventory());
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getVmInventory().getHostUuid());
+        bus.send(msg, new CloudBusCallBack(chain) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    chain.next();
+                } else {
+                    chain.fail(reply.getError());
+                }
+            }
+        });
+    }
+
+    @Override
+    public void rollback(FlowTrigger chain, Map data) {
+        chain.rollback();
+    }
+}
