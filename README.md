@@ -26,6 +26,84 @@ Besides, ZStack is extremely scalable that a single management node is capable o
 physical servers, managing millions of virtual machines, and serving tens of thousands of concurrent API requests,
 particular suitable for building large-scale public clouds.
 
+## Key Strength
+
+#### Scalable
+
+A single management node is capable of managing **hundreds of thousands** of physical servers, managing **millions** of virtual machines,
+and serving **tens of thousands** of concurrent API requests.
+
+#### Fast
+
+Operations are **extremely fast**, see below performance data of creating VMs.
+
+<table class="table table-bordered home-table" style="margin-bottom: 0;">
+  <tr>
+    <th>VM NUMBER</td>
+    <th>TIME COST&nbsp;&nbsp;
+        <i class='fa fa-info-circle' style='cursor:help' title="Limited by hardware, this data is from a mixed environment containing real VMs created on nested virtualization hypervisor and simulator VMs, which are created by 100 threads using only one management node. We are 100% sure the performance will get better in the real data center with decent hardware."></i>
+    </td>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>0.51 seconds</td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td>1.55 seconds</td>
+  </tr>
+  <tr>
+    <td>100</td>
+    <td>11.33 seconds</td>
+  </tr>
+  <tr>
+    <td>1000</td>
+    <td>103 seconds</td>
+  </tr>
+  <tr>
+    <td>10000</td>
+    <td>23 minutes</td>
+  </tr>
+</table>
+
+#### Network functions virtualization
+
+The default networking model is built on **NFV(network functions virtualization)**, which provides every tenant a
+dedicated networking node implemented by a virtual appliance VM. The whole networking model is self-contained and
+self-managed, administrators need neither to purchase special hardware nor to deploy networking servers in front of
+computing servers.
+
+#### Comprehensive query APIs
+
+Users can query everything everywhere by about **4,000,000** query conditions and <b>countless</b> query combinations.
+You will never need to write ad-hoc scripts or directly access database to search a resource, it's all handled by APIs.
+
+     >> QueryVmInstance vmNics.eip.guestIp=16.16.16.16 zone.name=west-coast
+     
+     >> QueryHost fields=name,uuid,managementIp hypervisorType=KVM vmInstance.allVolumes.size>=549755813888000 vmInstance.state=Running start=0 limit=10
+     
+#### Easy to deploy and upgrade
+
+Installation and upgrade are as simple as deploying a **Java WAR file**. A POC environment can be installed in **5 minutes** with
+a bootstrap script; A multi-node production environment can be deployed in **30 minutes** including the time you read the
+documentation.
+
+     >> [root@localhost ~]# curl http://download.zstack.org/install.sh |  bash -s -- -a
+     
+#### Full automation
+
+**Everything is managed by APIs**, no manual, scattered configurations in your cloud. And the seamless, transparent integration with
+Ansible liberates you from installing, configuring, and upgrading agents on massive hardware.
+ 
+#### Versatile plugin system
+
+The core orchestration is built on an Eclipse and OSGI like **plugin system** that everything is a plugin. ZStack affirms
+that adding or removing features will not impact the core orchestration, promising a robust software the cloud users deserve.
+
+#### Rigorous testing system
+
+**Three full-automated, rigorous testing systems** ensure the quality of every feature.
+
 
 ## Installation
 
