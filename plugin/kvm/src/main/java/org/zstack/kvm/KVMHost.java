@@ -1476,8 +1476,9 @@ public class KVMHost extends HostBase implements Host {
 
                             @Override
                             public void run(FlowTrigger trigger, Map data) {
-                                ShellResult ret = ShellUtils.runAndReturn(String.format("ansible -i %s -m setup %s",
-                                        AnsibleConstant.INVENTORY_FILE, self.getManagementIp()), AnsibleConstant.ROOT_DIR);
+                                String privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY).getAbsolutePath();
+                                ShellResult ret = ShellUtils.runAndReturn(String.format("ansible -i %s --private-key %s -m setup %s",
+                                        AnsibleConstant.INVENTORY_FILE, privKeyFile, self.getManagementIp()), AnsibleConstant.ROOT_DIR);
                                 if (!ret.isReturnCode(0)) {
                                     trigger.fail(errf.stringToOperationError(
                                             String.format("unable to get kvm host[uuid:%s, ip:%s] facts by ansible\n%s", self.getUuid(), self.getManagementIp(), ret.getExecutionLog())

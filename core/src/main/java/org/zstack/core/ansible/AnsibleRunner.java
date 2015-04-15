@@ -45,7 +45,7 @@ public class AnsibleRunner {
     private static File hostsFile = new File(AnsibleConstant.INVENTORY_FILE);
 
     static {
-        privKeyFile = PathUtil.findFileOnClassPath("ansible/rsaKeys/id_rsa").getAbsolutePath();
+        privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY).getAbsolutePath();
     }
 
     {
