@@ -19,6 +19,7 @@
         <module>vip</module>
         <module>eip</module>
         <module>mediator</module>
+        <module>iscsiPrimaryStorage</module>
     </modules>
     <dependencies>
         <dependency>

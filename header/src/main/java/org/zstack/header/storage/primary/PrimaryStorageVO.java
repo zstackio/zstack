@@ -28,7 +28,13 @@ public class PrimaryStorageVO extends PrimaryStorageAO {
 
 	public PrimaryStorageVO() {
 	}
-	
+
+    public PrimaryStorageVO(PrimaryStorageVO other) {
+        super(other);
+        this.attachedClusterRefs = other.attachedClusterRefs;
+        this.capacity = other.capacity;
+    }
+
     public Set<PrimaryStorageClusterRefVO> getAttachedClusterRefs() {
         return attachedClusterRefs;
     }
