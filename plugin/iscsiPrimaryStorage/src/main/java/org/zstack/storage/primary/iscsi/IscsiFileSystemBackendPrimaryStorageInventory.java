@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Created by frank on 4/19/2015.
  */
-@Inventory(mappingVOClass = PrimaryStorageVO.class, collectionValueOfMethod = "valueOf1")
+@Inventory(mappingVOClass = IscsiFileSystemBackendPrimaryStorageVO.class, collectionValueOfMethod = "valueOf1")
 @PythonClassInventory
 public class IscsiFileSystemBackendPrimaryStorageInventory extends PrimaryStorageInventory {
     private String chapUsername;

@@ -1,11 +1,16 @@
 package org.zstack.storage.primary.iscsi;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.workflow.*;
 import org.zstack.header.Component;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.primary.*;
 
@@ -16,12 +21,14 @@ import java.util.Map;
  * Created by frank on 4/19/2015.
  */
 public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStorageFactory, Component {
-    public static final PrimaryStorageType type = new PrimaryStorageType(IscsiConstants.ISCSI_FILE_SYSTEM_BACKEND_PRIMARY_STORAGE_TYPE);
+    public static final PrimaryStorageType type = new PrimaryStorageType(IscsiPrimaryStorageConstants.ISCSI_FILE_SYSTEM_BACKEND_PRIMARY_STORAGE_TYPE);
 
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private CloudBus bus;
 
     private Map<BackupStorageType, Map<HypervisorType, IscsiFileSystemBackendPrimaryToBackupStorageMediator>> mediators = new HashMap<BackupStorageType, Map<HypervisorType, IscsiFileSystemBackendPrimaryToBackupStorageMediator>>();
 
@@ -60,7 +67,7 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
 
 
     @Override
-    public PrimaryStorageInventory createPrimaryStorage(PrimaryStorageVO vo, APIAddPrimaryStorageMsg msg) {
+    public PrimaryStorageInventory createPrimaryStorage(final PrimaryStorageVO vo, final APIAddPrimaryStorageMsg msg) {
         IscsiFileSystemBackendPrimaryStorageVO ivo = new IscsiFileSystemBackendPrimaryStorageVO(vo);
         APIAddIscsiFileSystemBackendPrimaryStorageMsg amsg = (APIAddIscsiFileSystemBackendPrimaryStorageMsg) msg;
         ivo.setFilesystemType(amsg.getFilesystemType());
@@ -69,7 +76,9 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
         ivo.setSshUsername(amsg.getSshUsername());
         ivo.setChapPassword(amsg.getChapPassword());
         ivo.setChapUsername(amsg.getChapUsername());
+        ivo.setMountPath(ivo.getUrl());
         ivo = dbf.persistAndRefresh(ivo);
+
         return IscsiFileSystemBackendPrimaryStorageInventory.valueOf(ivo);
     }
 

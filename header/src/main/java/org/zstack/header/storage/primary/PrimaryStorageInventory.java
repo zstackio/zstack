@@ -152,6 +152,9 @@ public class PrimaryStorageInventory implements Serializable{
             joinColumn = @JoinColumn(name = "primaryStorageUuid", referencedColumnName = "clusterUuid"))
 	private List<String> attachedClusterUuids;
 
+    public PrimaryStorageInventory() {
+    }
+
     protected PrimaryStorageInventory(PrimaryStorageVO vo) {
         setZoneUuid(vo.getZoneUuid());
         setCreateDate(vo.getCreateDate());

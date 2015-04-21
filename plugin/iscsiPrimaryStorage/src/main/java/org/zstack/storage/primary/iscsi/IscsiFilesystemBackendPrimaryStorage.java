@@ -10,6 +10,7 @@ import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.message.Message;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
@@ -20,6 +21,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
 import org.zstack.utils.path.PathUtil;
 
@@ -34,7 +36,9 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     @Autowired
     private IscsiFileSystemBackendPrimaryStorageFactory factory;
     @Autowired
-    private static AccountManager acntMgr;
+    private AccountManager acntMgr;
+    @Autowired
+    private PrimaryStorageManager psMgr;
 
     public IscsiFilesystemBackendPrimaryStorage(IscsiFileSystemBackendPrimaryStorageVO vo) {
         super(vo);
@@ -60,6 +64,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
 
     private String makeHttpUrl(String path) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
+        ub.scheme("http");
         ub.host(getSelf().getHostname());
         ub.port(IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PORT);
         ub.path(getSelf().getFilesystemType());
@@ -84,7 +89,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     private void deleteBits(String installPath, final Completion completion) {
         DeleteBitsCmd cmd = new DeleteBitsCmd();
         cmd.setInstallPath(installPath);
-        restf.asyncJsonPost(makeHttpUrl(IscsiFileSystemBackendPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>() {
+        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>() {
             @Override
             public void fail(ErrorCode err) {
                 completion.fail(err);
@@ -158,6 +163,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                                                 vo.setPrimaryStorageUuid(self.getUuid());
                                                 vo.setSize(image.getSize());
                                                 vo.setState(ImageCacheState.ready);
+                                                vo.setMd5sum("not calculated");
                                                 dbf.persist(vo);
                                             } else {
                                                 cvo.setInstallUrl(imagePathInCache);
@@ -177,7 +183,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         private void checkCache(final ImageCacheVO cvo, final FlowTrigger trigger) {
                             CheckBitsExistenceCmd cmd = new CheckBitsExistenceCmd();
                             cmd.setPath(cvo.getInstallUrl());
-                            restf.asyncJsonPost(makeHttpUrl(IscsiFileSystemBackendPrimaryStorageConstants.CHECK_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<CheckBitsExistenceRsp>(trigger) {
+                            restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CHECK_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<CheckBitsExistenceRsp>(trigger) {
                                 @Override
                                 public void fail(ErrorCode err) {
                                     trigger.fail(err);
@@ -213,7 +219,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                             cmd.setInstallUrl(volumePath);
                             cmd.setTemplatePathInCache(imagePathInCache);
 
-                            restf.asyncJsonPost(makeHttpUrl(IscsiFileSystemBackendPrimaryStorageConstants.CREATE_ROOT_VOLUME_PATH),
+                            restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_ROOT_VOLUME_PATH),
                                     cmd, new JsonAsyncRESTCallback<CreateRootVolumeFromTemplateRsp>() {
                                         @Override
                                         public void fail(ErrorCode err) {
@@ -271,6 +277,9 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     }
 
     private void reportCapacity(AgentCapacityResponse ret) {
+        if (ret.getTotalCapacity() != null && ret.getAvailableCapacity() != null) {
+            psMgr.sendCapacityReportMessage(ret.getTotalCapacity(), ret.getAvailableCapacity(), self.getUuid());
+        }
     }
 
     private void createEmptyVolume(final InstantiateVolumeMsg msg) {
@@ -280,14 +289,14 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
 
         final String volPath;
         if (VolumeType.Root.toString().equals(vol.getType())) {
-            volPath = makeDataVolumePath(vol.getUuid());
+            volPath = makeRootVolumePath(vol.getUuid());
         } else {
             volPath = makeDataVolumePath(vol.getUuid());
         }
 
         cmd.setInstallUrl(volPath);
         cmd.setSize(vol.getSize());
-        restf.asyncJsonPost(makeHttpUrl(IscsiFileSystemBackendPrimaryStorageConstants.CREATE_EMPTY_VOLUME_PATH), cmd, new JsonAsyncRESTCallback<CreateEmptyVolumeRsp>() {
+        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_EMPTY_VOLUME_PATH), cmd, new JsonAsyncRESTCallback<CreateEmptyVolumeRsp>() {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -296,7 +305,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
 
             @Override
             public void success(CreateEmptyVolumeRsp ret) {
-                if (ret.isSuccess()) {
+                if (!ret.isSuccess()) {
                     reply.setError(errf.stringToOperationError(ret.getError()));
                 } else {
                     vol.setInstallPath(volPath);
@@ -360,5 +369,79 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(UploadVolumeFromPrimaryStorageToBackupStorageMsg msg) {
 
+    }
+    
+    @Override
+    protected void handleLocalMessage(Message msg) {
+        if (msg instanceof ConnectPrimaryStorageMsg) {
+            handle((ConnectPrimaryStorageMsg)msg);
+        } else {
+            super.handleLocalMessage(msg);
+        }
+    }
+
+    private void handle(final ConnectPrimaryStorageMsg msg) {
+        final ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("connect-iscsi-file-system-primary-storage-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("deploy-agent-to-iscsi-filesystem-primary-storage-%s", self.getUuid());
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("init-iscsi-filesystem-primary-storage-%s", self.getUuid());
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        InitCmd cmd = new InitCmd();
+                        cmd.setRootFolderPath(getSelf().getUrl());
+                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.INIT_PATH), cmd, new JsonAsyncRESTCallback<InitRsp>() {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                trigger.fail(err);
+                            }
+
+                            @Override
+                            public void success(InitRsp ret) {
+                                if (ret.isSuccess()) {
+                                    reportCapacity(ret);
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(errf.stringToOperationError(ret.getError()));
+                                }
+                            }
+
+                            @Override
+                            public Class<InitRsp> getReturnClass() {
+                                return InitRsp.class;
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        reply.setConnected(true);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
     }
 }

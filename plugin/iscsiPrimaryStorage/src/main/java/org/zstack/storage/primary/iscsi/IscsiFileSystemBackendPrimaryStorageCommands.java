@@ -174,4 +174,20 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
 
     public static class CreateEmptyVolumeRsp extends AgentCapacityResponse {
     }
+
+    public static class InitCmd extends AgentCommand {
+        private String rootFolderPath;
+
+        public String getRootFolderPath() {
+            return rootFolderPath;
+        }
+
+        public void setRootFolderPath(String rootFolderPath) {
+            this.rootFolderPath = rootFolderPath;
+        }
+    }
+
+    public static class InitRsp extends AgentCapacityResponse {
+
+    }
 }

@@ -6,14 +6,13 @@ import org.zstack.header.message.APIParam;
  * Created by frank on 4/19/2015.
  */
 public class APIAddIscsiFileSystemBackendPrimaryStorageMsg extends APIAddIScsiPrimaryStorageMsg {
-    @APIParam
+    @APIParam(maxLength = 255)
     private String hostname;
-    @APIParam
+    @APIParam(maxLength = 255)
     private String sshUsername;
-    @APIParam
+    @APIParam(maxLength = 255)
     private String sshPassword;
-    @APIParam(maxLength = 2048)
-    private String url;
+    @APIParam(maxLength = 255, required = false)
     private String filesystemType;
 
     public String getHostname() {
@@ -38,16 +37,6 @@ public class APIAddIscsiFileSystemBackendPrimaryStorageMsg extends APIAddIScsiPr
 
     public void setSshPassword(String sshPassword) {
         this.sshPassword = sshPassword;
-    }
-
-    @Override
-    public String getUrl() {
-        return url;
-    }
-
-    @Override
-    public void setUrl(String url) {
-        this.url = url;
     }
 
     public String getFilesystemType() {

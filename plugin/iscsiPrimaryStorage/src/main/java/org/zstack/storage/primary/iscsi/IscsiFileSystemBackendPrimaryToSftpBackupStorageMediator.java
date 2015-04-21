@@ -48,6 +48,7 @@ public class IscsiFileSystemBackendPrimaryToSftpBackupStorageMediator implements
 
     private String makeHttpUrl(IscsiFileSystemBackendPrimaryStorageInventory inv, String path) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
+        ub.scheme("http");
         ub.host(inv.getHostname());
         ub.port(IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PORT);
         ub.path(inv.getFilesystemType());
@@ -75,7 +76,7 @@ public class IscsiFileSystemBackendPrimaryToSftpBackupStorageMediator implements
                 cmd.setPrimaryStorageInstallPath(primaryStorageInstallPath);
                 cmd.setBackupStorageInstallPath(backupStorageInstallPath);
 
-                restf.asyncJsonPost(makeHttpUrl((IscsiFileSystemBackendPrimaryStorageInventory) pinv, IscsiFileSystemBackendPrimaryStorageConstants.DOWNLOAD_IMAGE_TO_CACHE_PATH),
+                restf.asyncJsonPost(makeHttpUrl((IscsiFileSystemBackendPrimaryStorageInventory) pinv, IscsiBtrfsPrimaryStorageConstants.DOWNLOAD_IMAGE_TO_CACHE_PATH),
                         cmd, new JsonAsyncRESTCallback<DownloadBitsFromSftpBackupStorageRsp>() {
                             @Override
                             public void fail(ErrorCode err) {

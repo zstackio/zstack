@@ -202,7 +202,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageType type = PrimaryStorageType.valueOf(msg.getType());
         final PrimaryStorageFactory factory = getPrimaryStorageFactory(type);
 
-        final PrimaryStorageVO vo = new PrimaryStorageVO();
+        PrimaryStorageVO vo = new PrimaryStorageVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
         } else {
@@ -218,6 +218,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         final APIAddPrimaryStorageEvent evt = new APIAddPrimaryStorageEvent(msg.getId());
         final PrimaryStorageInventory inv = factory.createPrimaryStorage(vo, msg);
+        vo = dbf.findByUuid(vo.getUuid(), PrimaryStorageVO.class);
 
         tagMgr.createTagsFromAPICreateMessage(msg, inv.getUuid(), PrimaryStorageVO.class.getSimpleName());
 
@@ -231,20 +232,21 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         final ConnectPrimaryStorageMsg cmsg = new ConnectPrimaryStorageMsg();
         cmsg.setPrimaryStorageUuid(inv.getUuid());
         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
+        final PrimaryStorageVO finalVo = vo;
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     ConnectPrimaryStorageReply cr = reply.castReply();
-                    vo.setStatus(cr.isConnected() ? PrimaryStorageStatus.Connected : PrimaryStorageStatus.Disconnected);
+                    finalVo.setStatus(cr.isConnected() ? PrimaryStorageStatus.Connected : PrimaryStorageStatus.Disconnected);
                 } else {
-                    vo.setStatus(PrimaryStorageStatus.Disconnected);
-                    logger.warn(String.format("failed to connect primary storage[uuid:%s, name:%s, url:%s]", vo.getUuid(), vo.getName(), vo.getUrl()));
+                    finalVo.setStatus(PrimaryStorageStatus.Disconnected);
+                    logger.warn(String.format("failed to connect primary storage[uuid:%s, name:%s, url:%s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
                 }
 
-                dbf.update(vo);
-                PrimaryStorageInventory pinv = factory.getInventory(vo.getUuid());
-                logger.debug(String.format("successfully add primary storage[uuid:%s, name:%s, url: %s]", vo.getUuid(), vo.getName(), vo.getUrl()));
+                dbf.update(finalVo);
+                PrimaryStorageInventory pinv = factory.getInventory(finalVo.getUuid());
+                logger.debug(String.format("successfully add primary storage[uuid:%s, name:%s, url: %s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
                 evt.setInventory(pinv);
                 bus.publish(evt);
             }
