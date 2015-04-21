@@ -136,6 +136,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
         List<VolumeDeletionMsg> msgs = new ArrayList<VolumeDeletionMsg>();
         for (VolumeInventory vol : volumes) {
             VolumeDeletionMsg msg = new VolumeDeletionMsg();
+            msg.setDetachBeforeDeleting(!(vol instanceof VolumeDeletionStruct) || ((VolumeDeletionStruct) vol).isDetachBeforeDeleting());
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
             msg.setVolumeUuid(vol.getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, vol.getUuid());

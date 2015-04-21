@@ -44,6 +44,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -131,7 +133,7 @@ public class VolumeBase implements Volume {
 
     private void handle(final DeleteVolumeMsg msg) {
         final DeleteVolumeReply reply = new DeleteVolumeReply();
-        delete(true, new Completion(msg) {
+        delete(true, msg.isDetachBeforeDeleting(), new Completion(msg) {
             @Override
             public void success() {
                 logger.debug(String.format("deleted data volume[uuid: %s]", msg.getUuid()));
@@ -154,7 +156,7 @@ public class VolumeBase implements Volume {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                if (self.getVmInstanceUuid() != null && self.getType() == VolumeType.Data) {
+                if (self.getVmInstanceUuid() != null && self.getType() == VolumeType.Data && msg.isDetachBeforeDeleting()) {
                     flow(new NoRollbackFlow() {
                         String __name__ = String.format("detach-volume-from-vm");
 
@@ -342,8 +344,14 @@ public class VolumeBase implements Volume {
     }
 
     private void delete(boolean forceDelete, final Completion completion) {
+        delete(forceDelete, true, completion);
+    }
+
+    private void delete(boolean forceDelete, boolean detachBeforeDeleting, final Completion completion) {
         final String issuer = VolumeVO.class.getSimpleName();
-        final List<VolumeInventory> ctx = Arrays.asList(getSelfInventory());
+        VolumeDeletionStruct struct = new VolumeDeletionStruct(getSelfInventory());
+        struct.setDetachBeforeDeleting(detachBeforeDeleting);
+        final List<VolumeDeletionStruct> ctx = list(struct);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-data-volume"));
         if (!forceDelete) {

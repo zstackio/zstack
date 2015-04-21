@@ -122,6 +122,8 @@ public class VmAllocateVolumeFlow implements Flow {
             public DeleteVolumeMsg call(VolumeInventory arg) {
                 DeleteVolumeMsg msg = new DeleteVolumeMsg();
                 msg.setUuid(arg.getUuid());
+                // don't do detach; because the VM is in state of Starting, it cannot do a detach operation.
+                msg.setDetachBeforeDeleting(false);
                 bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, arg.getUuid());
                 return msg;
             }

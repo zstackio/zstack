@@ -1285,7 +1285,7 @@ public class Api implements CloudBusEventListener {
             @Override
             public String call(VolumeInventory arg) {
                 if (!arg.getType().equals(VolumeType.Root.toString())) {
-                    return arg.getUuid();
+                    return arg.getDiskOfferingUuid();
                 }
                 return null;
             }

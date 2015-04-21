@@ -15,6 +15,7 @@
 	<TestCase class="org.zstack.test.compute.vm.TestStopVmExtensionPoint"/>
 	<TestCase class="org.zstack.test.compute.vm.TestStartVmExtensionPoint"/>
 	<TestCase class="org.zstack.test.compute.vm.TestCreateVmFailure"/>
+    <TestCase class="org.zstack.test.compute.vm.TestCreateVmFailure1"/>
 	<TestCase class="org.zstack.test.compute.vm.TestMigrateVm"/>
 	<TestCase class="org.zstack.test.compute.vm.TestMigrateVm2"/>
     <TestCase class="org.zstack.test.compute.vm.TestMigrateVm3"/>

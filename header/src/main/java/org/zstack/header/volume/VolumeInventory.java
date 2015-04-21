@@ -154,6 +154,29 @@ public class VolumeInventory implements Serializable{
      */
     private Timestamp lastOpDate;
 
+    public VolumeInventory() {
+    }
+
+    public VolumeInventory(VolumeInventory other) {
+        this.uuid = other.uuid;
+        this.name = other.name;
+        this.description = other.description;
+        this.primaryStorageUuid = other.primaryStorageUuid;
+        this.vmInstanceUuid = other.vmInstanceUuid;
+        this.diskOfferingUuid = other.diskOfferingUuid;
+        this.rootImageUuid = other.rootImageUuid;
+        this.installPath = other.installPath;
+        this.type = other.type;
+        this.format = other.format;
+        this.size = other.size;
+        this.deviceId = other.deviceId;
+        this.state = other.state;
+        this.status = other.status;
+        this.createDate = other.createDate;
+        this.lastOpDate = other.lastOpDate;
+    }
+
+
     public static VolumeInventory valueOf(VolumeVO vo) {
     	VolumeInventory inv = new VolumeInventory();
     	inv.setRootImageUuid(vo.getRootImageUuid());
