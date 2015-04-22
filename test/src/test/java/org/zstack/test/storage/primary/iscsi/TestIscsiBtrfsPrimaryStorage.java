@@ -12,7 +12,11 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
+import org.zstack.kvm.KVMAgentCommands.VolumeTO;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageVO;
+import org.zstack.storage.primary.iscsi.KVMIscsiVolumeTO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -30,6 +34,7 @@ public class TestIscsiBtrfsPrimaryStorage {
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
+    KVMSimulatorConfig kconfig;
 
     @Before
     public void setUp() throws Exception {
@@ -44,6 +49,7 @@ public class TestIscsiBtrfsPrimaryStorage {
         loader = deployer.getComponentLoader();
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
+        kconfig = loader.getComponent(KVMSimulatorConfig.class);
     }
     
     @Test
@@ -52,7 +58,14 @@ public class TestIscsiBtrfsPrimaryStorage {
         for (VolumeInventory vol : vm.getAllVolumes()) {
             IscsiFileSystemBackendPrimaryStorageVO vo = dbf.findByUuid(vol.getPrimaryStorageUuid(), IscsiFileSystemBackendPrimaryStorageVO.class);
             Assert.assertNotNull(vo);
+            Assert.assertTrue(vol.getInstallPath().startsWith("iscsi"));
         }
-    }
 
+        StartVmCmd cmd = kconfig.startVmCmd;
+        Assert.assertNotNull(cmd);
+        for (VolumeTO to : cmd.getDataVolumes()) {
+            Assert.assertTrue(VolumeTO.ISCSI.endsWith(to.getDeviceType()));
+        }
+        Assert.assertTrue(VolumeTO.ISCSI.endsWith(cmd.getRootVolume().getDeviceType()));
+    }
 }

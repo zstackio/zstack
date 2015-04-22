@@ -8,6 +8,6 @@ import org.zstack.core.GlobalPropertyDefinition;
  */
 @GlobalPropertyDefinition
 public class IscsiFileSystemBackendPrimaryStorageGlobalProperty {
-    @GlobalProperty(name = "IscsiFileSystemBackendPrimaryStorage.agentPort", defaultValue = "7759")
+    @GlobalProperty(name = "IscsiFileSystemBackendPrimaryStorage.agentPort", defaultValue = "7760")
     public static int AGENT_PORT;
 }

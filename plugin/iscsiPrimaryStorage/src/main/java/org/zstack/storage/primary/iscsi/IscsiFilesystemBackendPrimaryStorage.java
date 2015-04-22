@@ -86,9 +86,14 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                 String.format("vol-%s", volumeUuid), String.format("%s.img", volumeUuid));
     }
 
-    private void deleteBits(String installPath, final Completion completion) {
+    private String makeIscsiVolumePath(String target) {
+        return String.format("iscsi://ip-%s:3260-iscsi-%s-lun-1", getSelf().getUuid(), target);
+    }
+
+    private void deleteBits(String installPath, String volumeUuid, final Completion completion) {
         DeleteBitsCmd cmd = new DeleteBitsCmd();
         cmd.setInstallPath(installPath);
+        cmd.setVolumeUuid(volumeUuid);
         restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>() {
             @Override
             public void fail(ErrorCode err) {
@@ -127,6 +132,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
             chain.then(new ShareFlow() {
                 String imagePathInCache;
                 String volumePath = makeRootVolumePath(volume.getUuid());
+                String iscsiTarget;
 
                 @Override
                 public void setup() {
@@ -216,7 +222,10 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
 
                         public void run(final FlowTrigger trigger, Map data) {
                             CreateRootVolumeFromTemplateCmd cmd = new CreateRootVolumeFromTemplateCmd();
-                            cmd.setInstallUrl(volumePath);
+                            cmd.setInstallPath(volumePath);
+                            cmd.setVolumeUuid(volume.getUuid());
+                            cmd.setChapPassword(getSelf().getChapPassword());
+                            cmd.setChapUsername(getSelf().getChapUsername());
                             cmd.setTemplatePathInCache(imagePathInCache);
 
                             restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_ROOT_VOLUME_PATH),
@@ -232,6 +241,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                                                 volumePath = null;
                                                 trigger.fail(errf.stringToOperationError(ret.getError()));
                                             } else {
+                                                iscsiTarget = makeIscsiVolumePath(ret.getIscsiPath());
                                                 reportCapacity(ret);
                                                 trigger.next();
                                             }
@@ -247,8 +257,9 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         @Override
                         public void rollback(FlowTrigger trigger, Map data) {
                             if (volumePath != null) {
-                                deleteBits(volumePath, new NopeCompletion());
+                                deleteBits(volumePath, volume.getUuid(), new NopeCompletion());
                             }
+
                             trigger.rollback();
                         }
                     });
@@ -256,7 +267,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     done(new FlowDoneHandler(msg) {
                         @Override
                         public void handle(Map data) {
-                            volume.setInstallPath(volumePath);
+                            volume.setInstallPath(iscsiTarget);
                             reply.setVolume(volume);
                             bus.reply(msg, reply);
                         }
@@ -294,7 +305,10 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
             volPath = makeDataVolumePath(vol.getUuid());
         }
 
-        cmd.setInstallUrl(volPath);
+        cmd.setInstallPath(volPath);
+        cmd.setVolumeUuid(vol.getUuid());
+        cmd.setChapUsername(getSelf().getChapUsername());
+        cmd.setChapPassword(getSelf().getChapPassword());
         cmd.setSize(vol.getSize());
         restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_EMPTY_VOLUME_PATH), cmd, new JsonAsyncRESTCallback<CreateEmptyVolumeRsp>() {
             @Override
@@ -308,7 +322,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                 if (!ret.isSuccess()) {
                     reply.setError(errf.stringToOperationError(ret.getError()));
                 } else {
-                    vol.setInstallPath(volPath);
+                    vol.setInstallPath(makeIscsiVolumePath(ret.getIscsiPath()));
                     reply.setVolume(vol);
                 }
 
@@ -325,7 +339,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(final DeleteVolumeOnPrimaryStorageMsg msg) {
         final DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
-        deleteBits(msg.getVolume().getInstallPath(), new Completion(msg) {
+        deleteBits(msg.getVolume().getInstallPath(), msg.getVolume().getUuid(), new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -352,7 +366,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
         final DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
-        deleteBits(msg.getInstallPath(), new Completion(msg) {
+        deleteBits(msg.getInstallPath(), null, new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);

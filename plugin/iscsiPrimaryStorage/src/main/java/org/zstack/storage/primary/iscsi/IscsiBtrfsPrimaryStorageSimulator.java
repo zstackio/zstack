@@ -119,6 +119,7 @@ public class IscsiBtrfsPrimaryStorageSimulator {
         CreateRootVolumeFromTemplateRsp rsp = new CreateRootVolumeFromTemplateRsp();
         if (config.createRootVolumeSuccess) {
             config.createRootVolumeFromTemplateCmds.add(cmd);
+            rsp.setIscsiPath("iqn.1994-05.com.redhat:3b93b069cc1");
         } else {
             rsp.setError("on purpose");
             rsp.setSuccess(false);
@@ -140,6 +141,7 @@ public class IscsiBtrfsPrimaryStorageSimulator {
         CreateEmptyVolumeRsp rsp = new CreateEmptyVolumeRsp();
         if (config.createEmptyVolumeSuccess) {
             config.createEmptyVolumeCmds.add(cmd);
+            rsp.setIscsiPath("iqn.1994-05.com.redhat:3b93b069cc1");
         } else {
             rsp.setError("on purpose");
             rsp.setSuccess(false);

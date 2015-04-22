@@ -120,7 +120,34 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
 
     public static class CreateRootVolumeFromTemplateCmd extends AgentCommand {
         private String templatePathInCache;
-        private String installUrl;
+        private String installPath;
+        private String volumeUuid;
+        private String chapUsername;
+        private String chapPassword;
+
+        public String getChapUsername() {
+            return chapUsername;
+        }
+
+        public void setChapUsername(String chapUsername) {
+            this.chapUsername = chapUsername;
+        }
+
+        public String getChapPassword() {
+            return chapPassword;
+        }
+
+        public void setChapPassword(String chapPassword) {
+            this.chapPassword = chapPassword;
+        }
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
 
         public String getTemplatePathInCache() {
             return templatePathInCache;
@@ -128,19 +155,37 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
         public void setTemplatePathInCache(String templatePathInCache) {
             this.templatePathInCache = templatePathInCache;
         }
-        public String getInstallUrl() {
-            return installUrl;
+        public String getInstallPath() {
+            return installPath;
         }
-        public void setInstallUrl(String installUrl) {
-            this.installUrl = installUrl;
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
         }
     }
 
     public static class CreateRootVolumeFromTemplateRsp extends AgentCapacityResponse {
+        private String iscsiPath;
+
+        public String getIscsiPath() {
+            return iscsiPath;
+        }
+
+        public void setIscsiPath(String iscsiPath) {
+            this.iscsiPath = iscsiPath;
+        }
     }
 
     public static class DeleteBitsCmd extends AgentCommand {
         private String installPath;
+        private String volumeUuid;
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
 
         public String getInstallPath() {
             return installPath;
@@ -155,14 +200,41 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
     }
 
     public static class CreateEmptyVolumeCmd extends AgentCommand {
-        private String installUrl;
+        private String installPath;
         private long size;
+        private String volumeUuid;
+        private String chapUsername;
+        private String chapPassword;
 
-        public String getInstallUrl() {
-            return installUrl;
+        public String getChapUsername() {
+            return chapUsername;
         }
-        public void setInstallUrl(String installUrl) {
-            this.installUrl = installUrl;
+
+        public void setChapUsername(String chapUsername) {
+            this.chapUsername = chapUsername;
+        }
+
+        public String getChapPassword() {
+            return chapPassword;
+        }
+
+        public void setChapPassword(String chapPassword) {
+            this.chapPassword = chapPassword;
+        }
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
         }
         public long getSize() {
             return size;
@@ -173,6 +245,15 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
     }
 
     public static class CreateEmptyVolumeRsp extends AgentCapacityResponse {
+        private String iscsiPath;
+
+        public String getIscsiPath() {
+            return iscsiPath;
+        }
+
+        public void setIscsiPath(String iscsiPath) {
+            this.iscsiPath = iscsiPath;
+        }
     }
 
     public static class InitCmd extends AgentCommand {

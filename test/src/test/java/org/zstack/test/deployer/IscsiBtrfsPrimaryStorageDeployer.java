@@ -43,6 +43,8 @@ public class IscsiBtrfsPrimaryStorageDeployer implements PrimaryStorageDeployer<
             msg.setType(IscsiPrimaryStorageConstants.ISCSI_FILE_SYSTEM_BACKEND_PRIMARY_STORAGE_TYPE);
             msg.setZoneUuid(zone.getUuid());
             msg.setSession(api.getAdminSession());
+            msg.setChapUsername(c.getChapUsername());
+            msg.setChapPassword(c.getChapPassword());
             ApiSender sender = api.getApiSender();
             APIAddPrimaryStorageEvent evt = sender.send(msg, APIAddPrimaryStorageEvent.class);
             PrimaryStorageInventory inv = evt.getInventory();

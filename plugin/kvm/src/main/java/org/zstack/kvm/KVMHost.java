@@ -1077,6 +1077,10 @@ public class KVMHost extends HostBase implements Host {
         return extp.completeNicInformation(l2inv, nic);
     }
 
+    private String getVolumeTOType(VolumeInventory vol) {
+        return vol.getInstallPath().startsWith("iscsi") ? VolumeTO.ISCSI : VolumeTO.FILE;
+    }
+
     private void startVm(final VmInstanceSpec spec, final NeedReplyMessage msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
         final StartVmCmd cmd = new StartVmCmd();
@@ -1093,6 +1097,7 @@ public class KVMHost extends HostBase implements Host {
         VolumeTO rootVolume = new VolumeTO();
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
+        rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
         cmd.setRootVolume(rootVolume);
         cmd.setTimeout(TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout()));
         List<VolumeTO> dataVolumes = new ArrayList<VolumeTO>(spec.getDestDataVolumes().size());
@@ -1100,6 +1105,7 @@ public class KVMHost extends HostBase implements Host {
             VolumeTO v = new VolumeTO();
             v.setInstallPath(data.getInstallPath());
             v.setDeviceId(data.getDeviceId());
+            v.setDeviceType(getVolumeTOType(data));
             dataVolumes.add(v);
         }
         cmd.setDataVolumes(dataVolumes);

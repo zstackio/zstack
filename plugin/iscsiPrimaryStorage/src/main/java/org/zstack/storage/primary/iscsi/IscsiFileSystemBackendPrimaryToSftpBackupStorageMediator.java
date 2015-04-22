@@ -76,7 +76,7 @@ public class IscsiFileSystemBackendPrimaryToSftpBackupStorageMediator implements
                 cmd.setPrimaryStorageInstallPath(primaryStorageInstallPath);
                 cmd.setBackupStorageInstallPath(backupStorageInstallPath);
 
-                restf.asyncJsonPost(makeHttpUrl((IscsiFileSystemBackendPrimaryStorageInventory) pinv, IscsiBtrfsPrimaryStorageConstants.DOWNLOAD_IMAGE_TO_CACHE_PATH),
+                restf.asyncJsonPost(makeHttpUrl((IscsiFileSystemBackendPrimaryStorageInventory) pinv, IscsiBtrfsPrimaryStorageConstants.DOWNLOAD_FROM_SFTP_PATH),
                         cmd, new JsonAsyncRESTCallback<DownloadBitsFromSftpBackupStorageRsp>() {
                             @Override
                             public void fail(ErrorCode err) {

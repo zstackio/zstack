@@ -7,7 +7,7 @@ public interface IscsiBtrfsPrimaryStorageConstants {
     public static final String BTRFS_TYPE = "btrfs";
 
     public static final String INIT_PATH = "/init";
-    public static final String DOWNLOAD_IMAGE_TO_CACHE_PATH = "/image/sftp/download";
+    public static final String DOWNLOAD_FROM_SFTP_PATH = "/image/sftp/download";
     public static final String CHECK_BITS_EXISTENCE = "/bits/checkifexists";
     public static final String DELETE_BITS_EXISTENCE = "/bits/delete";
     public static final String CREATE_ROOT_VOLUME_PATH = "/volumes/createrootfromtemplate";
