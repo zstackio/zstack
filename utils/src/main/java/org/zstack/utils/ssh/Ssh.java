@@ -22,6 +22,9 @@ import java.security.PublicKey;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.StringDSL.ln;
 import static org.zstack.utils.StringDSL.s;
 
 /**
@@ -53,9 +56,7 @@ public class Ssh {
     private class ScriptRunner {
         String scriptName;
         File scriptFile;
-        SshRunner scpCommand;
         SshRunner scriptCommand;
-        SshRunner cleanupCommand;
         String scriptContent;
 
         ScriptRunner(String scriptName, String parameters, Map token) {
@@ -73,27 +74,24 @@ public class Ssh {
                 String srcScript = String.format("zstack-script-%s", UUID.randomUUID().toString());
                 scriptFile = new File(PathUtil.join(PathUtil.getFolderUnderZStackHomeFolder("temp-scripts"), srcScript));
                 scriptContent = s(contents).formatByMap(token);
-                FileUtils.writeStringToFile(scriptFile, scriptContent);
-                String destName = String.format("/tmp/%s", scriptFile.getName());
-                scpCommand = createScpCommand(scriptFile.getAbsolutePath(), destName);
-                scriptCommand = createCommand(String.format("/bin/bash %s %s", destName, parameters));
-                cleanupCommand = createCommand(String.format("rm %s", destName));
+                String remoteScript = ln(
+                        "/bin/bash << EOF",
+                        "cat << EOF1 > {remotePath}",
+                        "{scriptContent}",
+                        "EOF1",
+                        "/bin/bash {remotePath} {parameters}",
+                        "rm -f {remotePath}",
+                        "EOF"
+                ).formatByMap(map(e("remotePath", String.format("/tmp/%s", UUID.randomUUID().toString())),
+                        e("scriptContent", scriptContent), e("parameters", parameters)));
+                scriptCommand = createCommand(remoteScript);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
         SshResult run() {
-            SshResult ret = scpCommand.run();
-            if (ret.getReturnCode() != 0) {
-                return ret;
-            }
-            ret = scriptCommand.run();
-            SshResult cret = cleanupCommand.run();
-            if (cret.getReturnCode() != 0) {
-                logger.warn(cret.toString());
-            }
-            return ret;
+            return scriptCommand.run();
         }
 
         void cleanup() {
