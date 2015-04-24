@@ -316,6 +316,7 @@ public class KVMAgentCommands {
         private String installPath;
         private int deviceId;
         private String deviceType = FILE;
+        private String volumeUuid;
 
         public VolumeTO() {
         }
@@ -324,8 +325,16 @@ public class KVMAgentCommands {
             this.installPath = other.installPath;
             this.deviceId = other.deviceId;
             this.deviceType = other.deviceType;
+            this.volumeUuid = other.volumeUuid;
         }
 
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
 
         public String getDeviceType() {
             return deviceType;

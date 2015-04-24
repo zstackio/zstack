@@ -1098,6 +1098,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
+        rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
         cmd.setRootVolume(rootVolume);
         cmd.setTimeout(TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout()));
         List<VolumeTO> dataVolumes = new ArrayList<VolumeTO>(spec.getDestDataVolumes().size());
@@ -1106,6 +1107,7 @@ public class KVMHost extends HostBase implements Host {
             v.setInstallPath(data.getInstallPath());
             v.setDeviceId(data.getDeviceId());
             v.setDeviceType(getVolumeTOType(data));
+            v.setVolumeUuid(data.getUuid());
             dataVolumes.add(v);
         }
         cmd.setDataVolumes(dataVolumes);

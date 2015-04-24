@@ -239,15 +239,16 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 if (reply.isSuccess()) {
                     ConnectPrimaryStorageReply cr = reply.castReply();
                     finalVo.setStatus(cr.isConnected() ? PrimaryStorageStatus.Connected : PrimaryStorageStatus.Disconnected);
+                    dbf.update(finalVo);
+                    PrimaryStorageInventory pinv = factory.getInventory(finalVo.getUuid());
+                    logger.debug(String.format("successfully add primary storage[uuid:%s, name:%s, url: %s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
+                    evt.setInventory(pinv);
                 } else {
-                    finalVo.setStatus(PrimaryStorageStatus.Disconnected);
+                    evt.setErrorCode(reply.getError());
                     logger.warn(String.format("failed to connect primary storage[uuid:%s, name:%s, url:%s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
+                    dbf.remove(finalVo);
                 }
 
-                dbf.update(finalVo);
-                PrimaryStorageInventory pinv = factory.getInventory(finalVo.getUuid());
-                logger.debug(String.format("successfully add primary storage[uuid:%s, name:%s, url: %s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
-                evt.setInventory(pinv);
                 bus.publish(evt);
             }
         });

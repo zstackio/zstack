@@ -7,4 +7,5 @@ public class IscsiPrimaryStorageConstants {
     public static final String ISCSI_FILE_SYSTEM_BACKEND_PRIMARY_STORAGE_TYPE = "IscsiFileSystemBackendPrimaryStorage";
 
     public static final String ISCSI_FILE_SYSTEM_BACKEND_DEFAULT_FILE_SYSETEM = "NoSnapshotFileSystem";
+    public static final String ANSIBLE_MODULE_PATH = "ansible/iscsi";
 }

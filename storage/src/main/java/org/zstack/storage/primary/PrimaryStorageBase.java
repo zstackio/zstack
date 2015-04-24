@@ -250,13 +250,21 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 		} else if (msg instanceof APIAttachPrimaryStorageToClusterMsg) {
 			handle((APIAttachPrimaryStorageToClusterMsg) msg);
 		} else if (msg instanceof APIDetachPrimaryStorageFromClusterMsg) {
-			handle((APIDetachPrimaryStorageFromClusterMsg) msg);
+            handle((APIDetachPrimaryStorageFromClusterMsg) msg);
+        } else if (msg instanceof APIReconnectPrimaryStorageMsg) {
+            handle((APIReconnectPrimaryStorageMsg) msg);
 		} else {
 			bus.dealWithUnknownMessage(msg);
 		}
 	}
 
-	protected void handle(final APIDetachPrimaryStorageFromClusterMsg msg) {
+    private void handle(APIReconnectPrimaryStorageMsg msg) {
+        APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
+    }
+
+    protected void handle(final APIDetachPrimaryStorageFromClusterMsg msg) {
         final APIDetachPrimaryStorageFromClusterEvent evt = new APIDetachPrimaryStorageFromClusterEvent(msg.getId());
 
         try {

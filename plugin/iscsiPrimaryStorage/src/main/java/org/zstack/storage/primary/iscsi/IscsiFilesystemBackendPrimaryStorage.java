@@ -2,14 +2,20 @@ package org.zstack.storage.primary.iscsi;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ansible.AnsibleGlobalProperty;
+import org.zstack.core.ansible.AnsibleRunner;
+import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.*;
+import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
@@ -20,6 +26,8 @@ import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.identity.AccountManager;
+import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
+import org.zstack.storage.backup.sftp.SftpBackupStorageGlobalProperty;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
@@ -86,13 +94,24 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                 String.format("vol-%s", volumeUuid), String.format("%s.img", volumeUuid));
     }
 
-    private String makeIscsiVolumePath(String target) {
-        return String.format("iscsi://ip-%s:3260-iscsi-%s-lun-1", getSelf().getUuid(), target);
+    private String makeIscsiVolumePath(String target, String volumePath) {
+        IscsiVolumePath path = new IscsiVolumePath();
+        path.setInstallPath(volumePath);
+        path.setHostname(getSelf().getHostname());
+        path.setTarget(target);
+        return path.assemble();
     }
 
     private void deleteBits(String installPath, String volumeUuid, final Completion completion) {
         DeleteBitsCmd cmd = new DeleteBitsCmd();
-        cmd.setInstallPath(installPath);
+        if (installPath.startsWith("iscsi")) {
+            IscsiVolumePath path = new IscsiVolumePath(installPath);
+            path.disassemble();
+            String volumeInstallPath = path.getInstallPath();
+            cmd.setInstallPath(volumeInstallPath);
+        } else {
+            cmd.setInstallPath(installPath);
+        }
         cmd.setVolumeUuid(volumeUuid);
         restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>() {
             @Override
@@ -241,7 +260,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                                                 volumePath = null;
                                                 trigger.fail(errf.stringToOperationError(ret.getError()));
                                             } else {
-                                                iscsiTarget = makeIscsiVolumePath(ret.getIscsiPath());
+                                                iscsiTarget = makeIscsiVolumePath(ret.getIscsiPath(), volumePath);
                                                 reportCapacity(ret);
                                                 trigger.next();
                                             }
@@ -322,7 +341,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                 if (!ret.isSuccess()) {
                     reply.setError(errf.stringToOperationError(ret.getError()));
                 } else {
-                    vol.setInstallPath(makeIscsiVolumePath(ret.getIscsiPath()));
+                    vol.setInstallPath(makeIscsiVolumePath(ret.getIscsiPath(), volPath));
                     reply.setVolume(vol);
                 }
 
@@ -393,9 +412,40 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
             super.handleLocalMessage(msg);
         }
     }
+    
+    @Override
+    protected void handleApiMessage(APIMessage msg) {
+        if (msg instanceof APIReconnectPrimaryStorageMsg) {
+            handle((APIReconnectPrimaryStorageMsg) msg);
+        } else {
+            super.handleApiMessage(msg);
+        }
+    }
 
-    private void handle(final ConnectPrimaryStorageMsg msg) {
-        final ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply();
+    private void handle(APIReconnectPrimaryStorageMsg msg) {
+        final APIReconnectPrimaryStorageEvent evt  = new APIReconnectPrimaryStorageEvent(msg.getId());
+        self.setStatus(PrimaryStorageStatus.Connecting);
+        self = dbf.updateAndRefresh(self);
+        connect(new Completion(msg) {
+            @Override
+            public void success() {
+                self.setStatus(PrimaryStorageStatus.Connected);
+                self = dbf.updateAndRefresh(self);
+                evt.setInventory(getSelfInventory());
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                self.setStatus(PrimaryStorageStatus.Disconnected);
+                self = dbf.updateAndRefresh(self);
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void connect(final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("connect-iscsi-file-system-primary-storage-%s", self.getUuid()));
         chain.then(new ShareFlow() {
@@ -404,8 +454,40 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                 flow(new NoRollbackFlow() {
                     String __name__ = String.format("deploy-agent-to-iscsi-filesystem-primary-storage-%s", self.getUuid());
                     @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        trigger.next();
+                    public void run(final FlowTrigger trigger, Map data) {
+                        if (CoreGlobalProperty.UNIT_TEST_ON) {
+                            trigger.next();
+                            return;
+                        }
+
+                        SshFileMd5Checker checker = new SshFileMd5Checker();
+                        checker.setTargetIp(getSelf().getHostname());
+                        checker.setUsername(getSelf().getSshUsername());
+                        checker.setPassword(getSelf().getSshPassword());
+                        checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/iscsi/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
+                        checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/iscsi/%s", IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PACKAGE_NAME), true).getAbsolutePath(),
+                                String.format("/var/lib/zstack/iscsi/%s", IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PACKAGE_NAME));
+
+                        AnsibleRunner runner = new AnsibleRunner();
+                        runner.installChecker(checker);
+                        runner.setPassword(getSelf().getSshPassword());
+                        runner.setUsername(getSelf().getSshUsername());
+                        runner.setTargetIp(getSelf().getHostname());
+                        runner.setAgentPort(IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PORT);
+                        runner.setPlayBookName(IscsiFileSystemBackendPrimaryStorageGlobalProperty.ANSIBLE_PLAYBOOK_NAME);
+                        runner.putArgument("pkg_iscsiagent", IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PACKAGE_NAME);
+                        runner.run(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+
                     }
                 });
 
@@ -440,22 +522,37 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     }
                 });
 
-                done(new FlowDoneHandler(msg) {
+                done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        reply.setConnected(true);
-                        bus.reply(msg, reply);
+                        completion.success();
                     }
                 });
 
-                error(new FlowErrorHandler(msg) {
+                error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        reply.setError(errCode);
-                        bus.reply(msg, reply);
+                        completion.fail(errCode);
                     }
                 });
             }
         }).start();
+    }
+
+    private void handle(final ConnectPrimaryStorageMsg msg) {
+        final ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply();
+        connect(new Completion(msg) {
+            @Override
+            public void success() {
+                reply.setConnected(true);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 }

@@ -1,6 +1,8 @@
 package org.zstack.storage.primary.iscsi;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -43,6 +45,8 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
     private PluginRegistry pluginRgty;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private AnsibleFacade asf;
 
     private Map<BackupStorageType, Map<HypervisorType, IscsiFileSystemBackendPrimaryToBackupStorageMediator>> mediators = new HashMap<BackupStorageType, Map<HypervisorType, IscsiFileSystemBackendPrimaryToBackupStorageMediator>>();
 
@@ -110,6 +114,11 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
     @Override
     public boolean start() {
         populateExtensions();
+
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            asf.deployModule(IscsiFileSystemBackendPrimaryStorageGlobalProperty.ANSIBLE_MODULE_PATH, IscsiFileSystemBackendPrimaryStorageGlobalProperty.ANSIBLE_PLAYBOOK_NAME);
+        }
+
         return true;
     }
 
@@ -148,6 +157,8 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
                 KVMIscsiVolumeTO kto = new KVMIscsiVolumeTO(to);
                 kto.setChapUsername(chapUsername);
                 kto.setChapPassword(chapPassword);
+                IscsiVolumePath path = new IscsiVolumePath(to.getInstallPath());
+                kto.setInstallPath(path.getInstallPath());
                 dataTOs.add(kto);
             }
         }
@@ -164,6 +175,8 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
                 String chapPassword = t.get(1, String.class);
 
                 KVMIscsiVolumeTO kto = new KVMIscsiVolumeTO(cmd.getRootVolume());
+                IscsiVolumePath path = new IscsiVolumePath(spec.getDestRootVolume().getInstallPath());
+                kto.setInstallPath(path.disassemble().assembleIscsiPath());
                 kto.setChapUsername(chapUsername);
                 kto.setChapPassword(chapPassword);
                 cmd.setRootVolume(kto);
