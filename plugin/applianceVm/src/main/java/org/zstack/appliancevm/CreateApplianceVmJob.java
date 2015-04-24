@@ -8,11 +8,15 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.Job;
 import org.zstack.core.job.JobContext;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.*;
@@ -73,6 +77,12 @@ public class CreateApplianceVmJob implements Job {
         avo.setType(ApplianceVmConstant.APPLIANCE_VM_TYPE);
 		avo.setInternalId(dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
         avo.setApplianceVmType(spec.getApplianceVmType().toString());
+
+        SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
+        imgq.select(ImageVO_.platform);
+        imgq.add(ImageVO_.uuid, Op.EQ, spec.getTemplate().getUuid());
+        ImagePlatform platform = imgq.findValue();
+        avo.setPlatform(platform.toString());
 
         InstanceOfferingVO iovo = dbf.findByUuid(spec.getInstanceOffering().getUuid(), InstanceOfferingVO.class);
         avo.setCpuNum(iovo.getCpuNum());

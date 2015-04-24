@@ -586,6 +586,7 @@ CREATE TABLE  `zstack`.`VmInstanceEO` (
     `memorySize` bigint unsigned NOT NULL,
     `allocatorStrategy` varchar(64) DEFAULT NULL,
     `name` varchar(255) NOT NULL,
+    `platform` varchar(255) NOT NULL,
     `description` varchar(2048) DEFAULT NULL,
     `type` varchar(64) NOT NULL,
     `internalId` bigint unsigned NOT NULL,

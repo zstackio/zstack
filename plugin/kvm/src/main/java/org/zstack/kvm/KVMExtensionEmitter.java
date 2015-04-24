@@ -7,6 +7,9 @@ import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
+import org.zstack.kvm.KVMAgentCommands.DetachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -29,6 +32,8 @@ public class KVMExtensionEmitter implements Component {
     private List<KVMStopVmExtensionPoint> stopVmExts = new ArrayList<KVMStopVmExtensionPoint>();
     private List<KVMRebootVmExtensionPoint> rebootVmExts = new ArrayList<KVMRebootVmExtensionPoint>();
     private List<KVMStartVmAddonExtensionPoint> addonsExts = new ArrayList<KVMStartVmAddonExtensionPoint>();
+    private List<KVMAttachVolumeExtensionPoint> attachVolumeExts = new ArrayList<KVMAttachVolumeExtensionPoint>();
+    private List<KVMDetachVolumeExtensionPoint> detachVolumeExts = new ArrayList<KVMDetachVolumeExtensionPoint>();
 
     private void populateExtensions() {
         startVmExts = pluginRgty.getExtensionList(KVMStartVmExtensionPoint.class);
@@ -36,6 +41,8 @@ public class KVMExtensionEmitter implements Component {
         stopVmExts = pluginRgty.getExtensionList(KVMStopVmExtensionPoint.class);
         rebootVmExts = pluginRgty.getExtensionList(KVMRebootVmExtensionPoint.class);
         addonsExts = pluginRgty.getExtensionList(KVMStartVmAddonExtensionPoint.class);
+        attachVolumeExts = pluginRgty.getExtensionList(KVMAttachVolumeExtensionPoint.class);
+        detachVolumeExts = pluginRgty.getExtensionList(KVMDetachVolumeExtensionPoint.class);
     }
 
     public void beforeStartVmOnKvm(final KVMHostInventory host, final VmInstanceSpec spec, final StartVmCmd cmd) throws KVMException {
@@ -144,6 +151,43 @@ public class KVMExtensionEmitter implements Component {
             }
         });
     }
+
+    public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, AttachDataVolumeCmd cmd) {
+        for (KVMAttachVolumeExtensionPoint ext : attachVolumeExts) {
+            ext.beforeAttachVolume(host, vm, vol, cmd);
+        }
+    }
+
+    public void afterAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, AttachDataVolumeCmd cmd) {
+        for (KVMAttachVolumeExtensionPoint ext : attachVolumeExts) {
+            ext.afterAttachVolume(host, vm, vol, cmd);
+        }
+    }
+
+    public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, AttachDataVolumeCmd cmd, ErrorCode err) {
+        for (KVMAttachVolumeExtensionPoint ext : attachVolumeExts) {
+            ext.attachVolumeFailed(host, vm, vol, cmd, err);
+        }
+    }
+
+    public void beforeDetachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, DetachDataVolumeCmd cmd) {
+        for (KVMDetachVolumeExtensionPoint ext : detachVolumeExts) {
+            ext.beforeDetachVolume(host, vm, vol, cmd);
+        }
+    }
+
+    public void afterDetachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, DetachDataVolumeCmd cmd) {
+        for (KVMDetachVolumeExtensionPoint ext : detachVolumeExts) {
+            ext.afterDetachVolume(host, vm, vol, cmd);
+        }
+    }
+
+    public void detachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, DetachDataVolumeCmd cmd, ErrorCode err) {
+        for (KVMDetachVolumeExtensionPoint ext : detachVolumeExts) {
+            ext.detachVolumeFailed(host, vm, vol, cmd, err);
+        }
+    }
+
 
     @Override
     public boolean start() {

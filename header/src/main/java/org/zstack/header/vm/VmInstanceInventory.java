@@ -200,6 +200,8 @@ public class VmInstanceInventory implements Serializable, Cloneable {
      */
     private String rootVolumeUuid;
 
+    private String platform;
+
     private String defaultL3NetworkUuid;
     /**
      * @desc
@@ -295,6 +297,7 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setCpuSpeed(vo.getCpuSpeed());
         this.setMemorySize(vo.getMemorySize());
         this.setAllocatorStrategy(vo.getAllocatorStrategy());
+        this.setPlatform(vo.getPlatform());
     }
     
     public static VmInstanceInventory valueOf(VmInstanceVO vo) {
@@ -310,6 +313,14 @@ public class VmInstanceInventory implements Serializable, Cloneable {
     }
 
     public VmInstanceInventory() {
+    }
+
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
     }
 
     public String getDefaultL3NetworkUuid() {

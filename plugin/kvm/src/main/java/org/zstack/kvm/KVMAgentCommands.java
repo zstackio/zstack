@@ -317,6 +317,7 @@ public class KVMAgentCommands {
         private int deviceId;
         private String deviceType = FILE;
         private String volumeUuid;
+        private boolean useVirtio;
 
         public VolumeTO() {
         }
@@ -326,6 +327,15 @@ public class KVMAgentCommands {
             this.deviceId = other.deviceId;
             this.deviceType = other.deviceType;
             this.volumeUuid = other.volumeUuid;
+            this.useVirtio = other.useVirtio;
+        }
+
+        public boolean isUseVirtio() {
+            return useVirtio;
+        }
+
+        public void setUseVirtio(boolean useVirtio) {
+            this.useVirtio = useVirtio;
         }
 
         public String getVolumeUuid() {

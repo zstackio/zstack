@@ -693,17 +693,22 @@ public class KVMHost extends HostBase implements Host {
         final VmInstanceInventory vm = msg.getVmInventory();
         to.setInstallPath(vol.getInstallPath());
         to.setDeviceId(vol.getDeviceId());
+        to.setDeviceType(getVolumeTOType(vol));
+        to.setVolumeUuid(vol.getUuid());
+        to.setUseVirtio(ImagePlatform.Linux.toString().equals(vm.getPlatform()) || ImagePlatform.Paravirtualization.toString().equals(vm.getPlatform()));
 
         final DetachVolumeFromVmOnHypervisorReply reply = new DetachVolumeFromVmOnHypervisorReply();
-        DetachDataVolumeCmd cmd = new DetachDataVolumeCmd();
+        final DetachDataVolumeCmd cmd = new DetachDataVolumeCmd();
         cmd.setVolume(to);
         cmd.setVmUuid(vm.getUuid());
+        extEmitter.beforeDetachVolume((KVMHostInventory)getSelfInventory(), vm, vol, cmd);
         restf.asyncJsonPost(detachDataVolumePath, cmd, new JsonAsyncRESTCallback<DetachDataVolumeResponse>(msg, completion) {
 
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
                 bus.reply(msg, reply);
+                extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, err);
                 completion.done();
             }
 
@@ -714,6 +719,9 @@ public class KVMHost extends HostBase implements Host {
                             vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(), getSelf().getUuid(), getSelf().getManagementIp(), ret.getError());
                     logger.warn(err);
                     reply.setError(errf.stringToOperationError(err));
+                    extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError());
+                } else {
+                    extEmitter.afterDetachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -763,14 +771,19 @@ public class KVMHost extends HostBase implements Host {
         final VmInstanceInventory vm = msg.getVmInventory();
         to.setInstallPath(vol.getInstallPath());
         to.setDeviceId(vol.getDeviceId());
+        to.setDeviceType(getVolumeTOType(vol));
+        to.setVolumeUuid(vol.getUuid());
+        to.setUseVirtio(ImagePlatform.Linux.toString().equals(vm.getPlatform()) || ImagePlatform.Paravirtualization.toString().equals(vm.getPlatform()));
 
         final AttachVolumeToVmOnHypervisorReply reply = new AttachVolumeToVmOnHypervisorReply();
-        AttachDataVolumeCmd cmd = new AttachDataVolumeCmd();
+        final AttachDataVolumeCmd cmd = new AttachDataVolumeCmd();
         cmd.setVolume(to);
         cmd.setVmUuid(msg.getVmInventory().getUuid());
+        extEmitter.beforeAttachVolume((KVMHostInventory)getSelfInventory(), vm, vol, cmd);
         restf.asyncJsonPost(attachDataVolumePath, cmd, new JsonAsyncRESTCallback<AttachDataVolumeResponse>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
+                extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, err);
                 reply.setError(err);
                 bus.reply(msg, reply);
                 completion.done();
@@ -782,7 +795,10 @@ public class KVMHost extends HostBase implements Host {
                     String err = String.format("failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
                             vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(), getSelf().getUuid(), getSelf().getManagementIp(), ret.getError());
                     logger.warn(err);
-                    reply.setError(errf.stringToTimeoutError(err));
+                    reply.setError(errf.stringToOperationError(err));
+                    extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError());
+                } else {
+                    extEmitter.afterAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -1099,6 +1115,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
         rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
+        rootVolume.setUseVirtio(ImagePlatform.Linux.toString().equals(spec.getVmInventory().getPlatform()) || ImagePlatform.Paravirtualization.toString().equals(spec.getVmInventory().getPlatform()));
         cmd.setRootVolume(rootVolume);
         cmd.setTimeout(TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout()));
         List<VolumeTO> dataVolumes = new ArrayList<VolumeTO>(spec.getDestDataVolumes().size());
@@ -1108,6 +1125,7 @@ public class KVMHost extends HostBase implements Host {
             v.setDeviceId(data.getDeviceId());
             v.setDeviceType(getVolumeTOType(data));
             v.setVolumeUuid(data.getUuid());
+            v.setUseVirtio(ImagePlatform.Linux.toString().equals(spec.getVmInventory().getPlatform()) || ImagePlatform.Paravirtualization.toString().equals(spec.getVmInventory().getPlatform()));
             dataVolumes.add(v);
         }
         cmd.setDataVolumes(dataVolumes);

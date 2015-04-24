@@ -17,6 +17,7 @@ import org.zstack.core.workflow.FlowErrorHandler;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.simulator.SimulatorConstant;
@@ -66,6 +67,7 @@ public class TestVmAllocateNicFlowMacCollision {
             vo.setType(VmInstanceConstant.USER_VM_TYPE);
             vo.setImageUuid(iminv.getUuid());
             vo.setName("TestVm");
+            vo.setPlatform(ImagePlatform.Linux.toString());
             vo.setUuid(Platform.getUuid());
             dbf.getEntityManager().persist(vo);
             vms.add(vo);
