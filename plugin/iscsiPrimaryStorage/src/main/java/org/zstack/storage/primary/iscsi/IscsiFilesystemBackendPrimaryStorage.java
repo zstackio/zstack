@@ -109,6 +109,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
             path.disassemble();
             String volumeInstallPath = path.getInstallPath();
             cmd.setInstallPath(volumeInstallPath);
+            cmd.setIscsiPath(path.assembleIscsiPath());
         } else {
             cmd.setInstallPath(installPath);
         }

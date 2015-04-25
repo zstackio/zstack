@@ -178,6 +178,15 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
     public static class DeleteBitsCmd extends AgentCommand {
         private String installPath;
         private String volumeUuid;
+        private String iscsiPath;
+
+        public String getIscsiPath() {
+            return iscsiPath;
+        }
+
+        public void setIscsiPath(String iscsiPath) {
+            this.iscsiPath = iscsiPath;
+        }
 
         public String getVolumeUuid() {
             return volumeUuid;
