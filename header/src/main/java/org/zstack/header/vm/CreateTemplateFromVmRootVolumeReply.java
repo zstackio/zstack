@@ -4,6 +4,15 @@ import org.zstack.header.message.MessageReply;
 
 public class CreateTemplateFromVmRootVolumeReply extends MessageReply {
     private String installPath;
+    private String format;
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
 
     public String getInstallPath() {
         return installPath;

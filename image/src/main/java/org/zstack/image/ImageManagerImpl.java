@@ -275,6 +275,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
                                 int fail = 0;
                                 String mdsum = null;
                                 ErrorCode err = null;
+                                String format = null;
                                 for (MessageReply r : replies) {
                                     BackupStorageInventory bs = backupStorage.get(replies.indexOf(r));
                                     if (!r.isSuccess()) {
@@ -295,6 +296,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
                                     if (mdsum == null) {
                                         mdsum = reply.getMd5sum();
                                     }
+                                    if (reply.getFormat() != null) {
+                                        format = reply.getFormat();
+                                    }
                                 }
 
                                 int backupStorageNum = msg.getBackupStorageUuids() == null ? 1 : msg.getBackupStorageUuids().size();
@@ -309,6 +313,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
                                     trigger.fail(errCode);
                                 } else {
                                     image = dbf.reload(image);
+                                    if (format != null) {
+                                        image.setFormat(format);
+                                    }
                                     image.setMd5Sum(mdsum);
                                     image.setStatus(ImageStatus.Ready);
                                     image = dbf.updateAndRefresh(image);
@@ -641,6 +648,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
                                     dbf.persist(ref);
 
                                     imageVO.setStatus(ImageStatus.Ready);
+                                    if (reply.getFormat() != null) {
+                                        imageVO.setFormat(reply.getFormat());
+                                    }
                                     dbf.update(imageVO);
                                     imageVO = dbf.reload(imageVO);
                                     success = true;

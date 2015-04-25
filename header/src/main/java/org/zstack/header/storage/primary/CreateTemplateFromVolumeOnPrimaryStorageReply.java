@@ -5,6 +5,15 @@ import org.zstack.header.volume.VolumeInventory;
 
 public class CreateTemplateFromVolumeOnPrimaryStorageReply extends APIReply {
     private String templateBackupStorageInstallPath;
+    private String format;
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
 
     public String getTemplateBackupStorageInstallPath() {
         return templateBackupStorageInstallPath;

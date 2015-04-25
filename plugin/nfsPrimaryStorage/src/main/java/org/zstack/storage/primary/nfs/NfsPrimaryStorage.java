@@ -873,30 +873,4 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             });
         }
     }
-
-    @Override
-    protected void handle(final UploadVolumeFromPrimaryStorageToBackupStorageMsg msg) {
-        final UploadVolumeFromPrimaryStorageToBackupStorageReply reply = new UploadVolumeFromPrimaryStorageToBackupStorageReply();
-        BackupStorageInventory bsinv = BackupStorageInventory.valueOf(dbf.findByUuid(msg.getBackupStorageUuid(), BackupStorageVO.class));
-
-        NfsPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(
-                BackupStorageType.valueOf(bsinv.getType()),
-                nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getVolume().getFormat(), self.getUuid())
-        );
-
-        final String backupStorageInstallPath = mediator.makeDataVolumeTemplateInstallPath(msg.getBackupStorageUuid(), msg.getImageUuid());
-        mediator.uploadBits(getSelfInventory(), bsinv, backupStorageInstallPath, msg.getVolume().getInstallPath(), new Completion(msg) {
-            @Override
-            public void success() {
-                reply.setBackupStorageIntallPath(backupStorageInstallPath);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
 }

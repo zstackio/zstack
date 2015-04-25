@@ -73,8 +73,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(DeleteBitsOnPrimaryStorageMsg msg);
 
-    protected abstract void handle(UploadVolumeFromPrimaryStorageToBackupStorageMsg msg);
-
 	public PrimaryStorageBase(PrimaryStorageVO self) {
 		this.self = self;
 	}
@@ -136,17 +134,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handleBase((DownloadDataVolumeToPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteBitsOnPrimaryStorageMsg) {
             handle((DeleteBitsOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof UploadVolumeFromPrimaryStorageToBackupStorageMsg) {
-            handleBase((UploadVolumeFromPrimaryStorageToBackupStorageMsg) msg);
 	    } else {
 	        bus.dealWithUnknownMessage(msg);
 	    }
 	}
-
-    private void handleBase(UploadVolumeFromPrimaryStorageToBackupStorageMsg msg) {
-        checkIfBackupStorageAttachedToMyZone(msg.getBackupStorageUuid());
-        handle(msg);
-    }
 
     private void handleBase(DownloadDataVolumeToPrimaryStorageMsg msg) {
         checkIfBackupStorageAttachedToMyZone(msg.getBackupStorageRef().getBackupStorageUuid());

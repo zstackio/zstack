@@ -12,7 +12,9 @@ import org.zstack.core.workflow.*;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
@@ -22,15 +24,17 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.volume.VolumeFormat;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 import org.zstack.storage.backup.sftp.SftpBackupStorageGlobalProperty;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import java.util.Map;
@@ -39,6 +43,8 @@ import java.util.Map;
  * Created by frank on 4/19/2015.
  */
 public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
+    private CLogger logger = Utils.getLogger(IscsiFilesystemBackendPrimaryStorage.class);
+
     @Autowired
     private RESTFacade restf;
     @Autowired
@@ -334,7 +340,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
-                bus.reply(msg ,reply);
+                bus.reply(msg, reply);
             }
 
             @Override
@@ -374,13 +380,154 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
+    protected void handle(final CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
+        final CreateTemplateFromVolumeOnPrimaryStorageReply reply = new CreateTemplateFromVolumeOnPrimaryStorageReply();
+        BackupStorageVO bsvo = dbf.findByUuid(msg.getBackupStorageUuid(), BackupStorageVO.class);
+        BackupStorageInventory bsinv = BackupStorageInventory.valueOf(bsvo);
+        VolumeInventory vol = msg.getVolumeInventory();
+        String imageUuid = msg.getImageInventory().getUuid();
 
+        IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bsinv.getType()),
+                VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat()));
+
+        String bsInstallPath = null;
+        if (vol.getType().equals(VolumeType.Root.toString())) {
+            bsInstallPath = mediator.makeRootVolumeTemplateInstallPath(bsinv, imageUuid);
+        } else if (vol.getType().equals(VolumeType.Data.toString())) {
+            bsInstallPath = mediator.makeDataVolumeTemplateInstallPath(bsinv, imageUuid);
+        } else {
+            DebugUtils.Assert(false, String.format("unknown volume type[%s]", vol.getType()));
+        }
+
+        IscsiVolumePath path = new IscsiVolumePath(vol.getInstallPath()).disassemble();
+        final String finalBsInstallPath = bsInstallPath;
+        mediator.uploadBits(getSelfInventory(), bsinv, bsInstallPath, path.getInstallPath(), new Completion(msg) {
+            @Override
+            public void success() {
+                reply.setTemplateBackupStorageInstallPath(finalBsInstallPath);
+                reply.setFormat(KVMConstant.RAW_FORMAT_STRING);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
-    protected void handle(DownloadDataVolumeToPrimaryStorageMsg msg) {
+    protected void handle(final DownloadDataVolumeToPrimaryStorageMsg msg) {
+        final DownloadDataVolumeToPrimaryStorageReply reply = new DownloadDataVolumeToPrimaryStorageReply();
+        final String installPath = makeDataVolumePath(msg.getVolumeUuid());
+        BackupStorageVO bsvo = dbf.findByUuid(msg.getBackupStorageRef().getBackupStorageUuid(), BackupStorageVO.class);
+        final BackupStorageInventory bsinv = BackupStorageInventory.valueOf(bsvo);
+        final VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
 
+        final IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bsinv.getType()),
+                VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat()));
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("download-image-%s-to-volume-%s-to-iscsi-primary-storage", msg.getImage().getUuid(), msg.getVolumeUuid()));
+        chain.then(new ShareFlow() {
+            String target;
+            Integer lun;
+
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        mediator.downloadBits(getSelfInventory(), bsinv, msg.getBackupStorageRef().getInstallPath(),
+                                installPath, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(final FlowTrigger trigger, Map data) {
+                        deleteBits(installPath, vol.getUuid(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.rollback();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                //TODO: GC
+                                logger.warn(String.format("failed to delete %s on primary storage[uuid:%s], %s. Need GC for this rollback error",
+                                        installPath, self.getUuid(), errorCode));
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        CreateIscsiTargetCmd cmd = new CreateIscsiTargetCmd();
+                        cmd.setInstallPath(installPath);
+                        cmd.setVolumeUuid(vol.getUuid());
+                        cmd.setChapPassword(getSelf().getChapPassword());
+                        cmd.setChapUsername(getSelf().getChapUsername());
+                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_TARGET_PATH), cmd, new JsonAsyncRESTCallback<CreateIscsiTargetRsp>() {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                trigger.fail(err);
+                            }
+
+                            @Override
+                            public void success(CreateIscsiTargetRsp ret) {
+                                if (!ret.isSuccess()) {
+                                    trigger.fail(errf.stringToOperationError(ret.getError()));
+                                } else {
+                                    target = ret.getTarget();
+                                    lun = ret.getLun();
+                                    trigger.next();
+                                }
+                            }
+
+                            @Override
+                            public Class<CreateIscsiTargetRsp> getReturnClass() {
+                                return CreateIscsiTargetRsp.class;
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        IscsiVolumePath path = new IscsiVolumePath();
+                        path.setInstallPath(installPath);
+                        path.setHostname(getSelfInventory().getHostname());
+                        path.setLun(lun);
+                        path.setTarget(target);
+                        reply.setInstallPath(path.assemble());
+                        reply.setFormat(KVMConstant.RAW_FORMAT_STRING);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override
@@ -400,11 +547,6 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    @Override
-    protected void handle(UploadVolumeFromPrimaryStorageToBackupStorageMsg msg) {
-
-    }
-    
     @Override
     protected void handleLocalMessage(Message msg) {
         if (msg instanceof ConnectPrimaryStorageMsg) {

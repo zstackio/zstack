@@ -171,4 +171,48 @@ public class IscsiBtrfsPrimaryStorageSimulator {
         reply(entity, rsp);
     }
 
+    @RequestMapping(value="/btrfs/bits/upload",  method= RequestMethod.POST)
+    @ResponseBody
+    private String upload(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        upload(entity);
+        return null;
+    }
+
+    private void upload(HttpEntity<String> entity) {
+        UploadToSftpCmd cmd = JSONObjectUtil.toObject(entity.getBody(), UploadToSftpCmd.class);
+        UploadToSftpRsp rsp = new UploadToSftpRsp();
+        if (!config.uploadSuccess) {
+            rsp.setError("on purpose");
+            rsp.setSuccess(false);
+        } else {
+            config.uploadToSftpCmds.add(cmd);
+        }
+
+        reply(entity, rsp);
+    }
+
+    @RequestMapping(value="/btrfs/target/create",  method= RequestMethod.POST)
+    @ResponseBody
+    private String createTarget(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        createTarget(entity);
+        return null;
+    }
+
+    private void createTarget(HttpEntity<String> entity) {
+        CreateIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateIscsiTargetCmd.class);
+        CreateIscsiTargetRsp rsp = new CreateIscsiTargetRsp();
+        if (config.createTargetSuccess) {
+            config.createIscsiTargetCmds.add(cmd);
+            rsp.setTarget("iqn.1994-05.com.redhat:3b93b069cc1");
+            rsp.setLun(1);
+        } else {
+            rsp.setError("on purpose");
+            rsp.setSuccess(false);
+        }
+
+        reply(entity, rsp);
+    }
+
 }

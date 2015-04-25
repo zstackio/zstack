@@ -19,7 +19,9 @@ public interface IscsiFileSystemBackendPrimaryToBackupStorageMediator extends Pr
 
     void uploadBits(PrimaryStorageInventory pinv, BackupStorageInventory bsinv, String backupStorageInstallPath, String primaryStorageInstallPath, Completion completion);
 
-    String makeRootVolumeTemplateInstallPath(String backupStorageUuid, String imageUuid);
+    String makeRootVolumeTemplateInstallPath(BackupStorageInventory bs, String imageUuid);
 
-    String makeVolumeSnapshotInstallPath(String backupStorageUuid, String snapshotUuid);
+    String makeVolumeSnapshotInstallPath(BackupStorageInventory bs, String snapshotUuid);
+
+    String makeDataVolumeTemplateInstallPath(BackupStorageInventory bs, String imageUuid);
 }

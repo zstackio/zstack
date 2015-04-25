@@ -280,4 +280,106 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
     public static class InitRsp extends AgentCapacityResponse {
 
     }
+
+    public static class UploadToSftpCmd extends AgentCommand {
+        private String primaryStorageInstallPath;
+        private String backupStorageInstallPath;
+        private String backupStorageHostName;
+        private String backupStorageSshKey;
+
+        public String getPrimaryStorageInstallPath() {
+            return primaryStorageInstallPath;
+        }
+
+        public void setPrimaryStorageInstallPath(String primaryStorageInstallPath) {
+            this.primaryStorageInstallPath = primaryStorageInstallPath;
+        }
+
+        public String getBackupStorageInstallPath() {
+            return backupStorageInstallPath;
+        }
+
+        public void setBackupStorageInstallPath(String backupStorageInstallPath) {
+            this.backupStorageInstallPath = backupStorageInstallPath;
+        }
+
+        public String getBackupStorageHostName() {
+            return backupStorageHostName;
+        }
+
+        public void setBackupStorageHostName(String backupStorageHostName) {
+            this.backupStorageHostName = backupStorageHostName;
+        }
+
+        public String getBackupStorageSshKey() {
+            return backupStorageSshKey;
+        }
+
+        public void setBackupStorageSshKey(String backupStorageSshKey) {
+            this.backupStorageSshKey = backupStorageSshKey;
+        }
+    }
+
+    public static class UploadToSftpRsp extends AgentCapacityResponse {
+    }
+
+    public static class CreateIscsiTargetCmd extends AgentCommand {
+        private String volumeUuid;
+        private String installPath;
+        private String chapUsername;
+        private String chapPassword;
+
+        public String getChapUsername() {
+            return chapUsername;
+        }
+
+        public void setChapUsername(String chapUsername) {
+            this.chapUsername = chapUsername;
+        }
+
+        public String getChapPassword() {
+            return chapPassword;
+        }
+
+        public void setChapPassword(String chapPassword) {
+            this.chapPassword = chapPassword;
+        }
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+    }
+
+    public static class CreateIscsiTargetRsp extends AgentResponse {
+        private String target;
+        private int lun;
+
+        public String getTarget() {
+            return target;
+        }
+
+        public void setTarget(String target) {
+            this.target = target;
+        }
+
+        public int getLun() {
+            return lun;
+        }
+
+        public void setLun(int lun) {
+            this.lun = lun;
+        }
+    }
 }

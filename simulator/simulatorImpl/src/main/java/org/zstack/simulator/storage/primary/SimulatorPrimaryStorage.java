@@ -109,11 +109,4 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
         DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
         bus.reply(msg, reply);
     }
-
-    @Override
-    protected void handle(UploadVolumeFromPrimaryStorageToBackupStorageMsg msg) {
-        UploadVolumeFromPrimaryStorageToBackupStorageReply reply = new UploadVolumeFromPrimaryStorageToBackupStorageReply();
-        reply.setBackupStorageIntallPath("/some_path");
-        bus.reply(msg, reply);
-    }
 }
