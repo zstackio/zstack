@@ -15,6 +15,11 @@ public class APIAddIscsiFileSystemBackendPrimaryStorageMsg extends APIAddIScsiPr
     @APIParam(maxLength = 255, required = false)
     private String filesystemType;
 
+    @Override
+    public String getType() {
+        return IscsiPrimaryStorageConstants.ISCSI_FILE_SYSTEM_BACKEND_PRIMARY_STORAGE_TYPE;
+    }
+
     public String getHostname() {
         return hostname;
     }

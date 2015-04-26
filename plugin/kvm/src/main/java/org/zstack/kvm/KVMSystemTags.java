@@ -3,6 +3,7 @@ package org.zstack.kvm;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.SystemTag;
 
 /**
  */
@@ -16,4 +17,6 @@ public class KVMSystemTags {
 
     public static final String HVM_CPU_FLAG_TOKEN = "flag";
     public static PatternedSystemTag HVM_CPU_FLAG = new PatternedSystemTag(String.format("hvm::{%s}", HVM_CPU_FLAG_TOKEN), HostVO.class);
+
+    public static SystemTag VIRTIO_SCSI = new SystemTag("capability:virtio-scsi", HostVO.class);
 }

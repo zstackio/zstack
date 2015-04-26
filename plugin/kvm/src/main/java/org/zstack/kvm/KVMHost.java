@@ -1564,6 +1564,10 @@ public class KVMHost extends HostBase implements Host {
                                         KVMSystemTags.LIBVIRT_VERSION.createTag(self.getUuid(), map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion())));
                                         KVMSystemTags.HVM_CPU_FLAG.createTag(self.getUuid(), map(e(KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag())));
 
+                                        if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
+                                            KVMSystemTags.VIRTIO_SCSI.reCreateInherentTag(self.getUuid());
+                                        }
+
                                         trigger.next();
                                     }
 

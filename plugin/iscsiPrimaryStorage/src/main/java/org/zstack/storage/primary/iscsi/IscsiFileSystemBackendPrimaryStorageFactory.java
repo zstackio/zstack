@@ -8,24 +8,23 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.workflow.*;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HypervisorType;
-import org.zstack.header.message.MessageReply;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.DetachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
 import org.zstack.kvm.KVMAgentCommands.VolumeTO;
+import org.zstack.kvm.*;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
 import javax.persistence.Tuple;
@@ -33,8 +32,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created by frank on 4/19/2015.
@@ -131,7 +128,7 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
         return true;
     }
 
-    private KVMIscsiVolumeTO convertToIscsiToIfNeed(VolumeInventory vol, VolumeTO to) {
+    private KVMIscsiVolumeTO convertToIscsiToIfNeed(HostInventory host, VolumeInventory vol, VolumeTO to) {
         if (!VolumeTO.ISCSI.equals(to.getDeviceType())) {
             return null;
         }
@@ -153,10 +150,20 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
         IscsiVolumePath path = new IscsiVolumePath(to.getInstallPath());
         kto.setInstallPath(path.disassemble().assembleIscsiPath());
 
+        DebugUtils.Assert(vol.getVmInstanceUuid() != null, String.format("vmInstanceUuid of volume[uuid:%s] is null", vol.getUuid()));
+        SimpleQuery<VmInstanceVO> vmq = dbf.createQuery(VmInstanceVO.class);
+        vmq.select(VmInstanceVO_.platform);
+        vmq.add(VmInstanceVO_.uuid, Op.EQ, vol.getVmInstanceUuid());
+        String platform = vmq.findValue();
+
+        boolean useVirtio = KVMSystemTags.VIRTIO_SCSI.hasTag(host.getUuid())
+                && (ImagePlatform.Paravirtualization.toString().equals(platform) || ImagePlatform.Linux.toString().equals(platform));
+        kto.setUseVirtio(useVirtio);
+
         return kto;
     }
 
-    private KVMIscsiVolumeTO convertToIscsiToIfNeed(List<VolumeInventory> srcVols, final VolumeTO to) {
+    private KVMIscsiVolumeTO convertToIscsiToIfNeed(HostInventory host, List<VolumeInventory> srcVols, final VolumeTO to) {
         if (!VolumeTO.ISCSI.equals(to.getDeviceType())) {
             return null;
         }
@@ -168,20 +175,20 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
             }
         });
 
-        return convertToIscsiToIfNeed(vol, to);
+        return convertToIscsiToIfNeed(host, vol, to);
     }
 
     @Override
     public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, StartVmCmd cmd) throws KVMException {
         List<VolumeTO> dataTOs = new ArrayList<VolumeTO>(cmd.getDataVolumes().size());
         for (final VolumeTO to : cmd.getDataVolumes()) {
-            KVMIscsiVolumeTO kto = convertToIscsiToIfNeed(spec.getDestDataVolumes(), to);
+            KVMIscsiVolumeTO kto = convertToIscsiToIfNeed(host, spec.getDestDataVolumes(), to);
             dataTOs.add(kto == null ? to : kto);
         }
 
         cmd.setDataVolumes(dataTOs);
 
-        KVMIscsiVolumeTO rootKto = convertToIscsiToIfNeed(spec.getDestRootVolume(), cmd.getRootVolume());
+        KVMIscsiVolumeTO rootKto = convertToIscsiToIfNeed(host, spec.getDestRootVolume(), cmd.getRootVolume());
         if (rootKto != null) {
             cmd.setRootVolume(rootKto);
         }
@@ -199,7 +206,7 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
 
     @Override
     public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, AttachDataVolumeCmd cmd) {
-        KVMIscsiVolumeTO kto = convertToIscsiToIfNeed(volume, cmd.getVolume());
+        KVMIscsiVolumeTO kto = convertToIscsiToIfNeed(host, volume, cmd.getVolume());
         if (kto != null) {
             cmd.setVolume(kto);
         }
@@ -217,7 +224,7 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
 
     @Override
     public void beforeDetachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, DetachDataVolumeCmd cmd) {
-        KVMIscsiVolumeTO kto = convertToIscsiToIfNeed(volume, cmd.getVolume());
+        KVMIscsiVolumeTO kto = convertToIscsiToIfNeed(host, volume, cmd.getVolume());
         if (kto != null) {
             cmd.setVolume(kto);
         }
