@@ -292,6 +292,9 @@ public class VolumeBase implements Volume {
     }
 
     private void handle(final APIAttachDataVolumeToVmMsg msg) {
+        self.setVmInstanceUuid(msg.getVmInstanceUuid());
+        self = dbf.updateAndRefresh(self);
+
         AttachDataVolumeToVmMsg amsg = new AttachDataVolumeToVmMsg();
         amsg.setVolume(getSelfInventory());
         amsg.setVmInstanceUuid(msg.getVmInstanceUuid());
@@ -309,6 +312,8 @@ public class VolumeBase implements Volume {
 
                     evt.setInventory(getSelfInventory());
                 } else {
+                    self.setVmInstanceUuid(null);
+                    dbf.update(self);
                     evt.setErrorCode(reply.getError());
                 }
 
