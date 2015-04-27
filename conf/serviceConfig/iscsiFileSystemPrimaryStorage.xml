@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <service xmlns="http://zstack.org/schema/zstack">
     <id>storage.primary</id>
+    <interceptor>PrimaryStorageApiInterceptor</interceptor>
 
     <message>
         <name>org.zstack.storage.primary.iscsi.APIAddIscsiFileSystemBackendPrimaryStorageMsg</name>
+        <interceptor>PrimaryStorageApiInterceptor</interceptor>
+        <interceptor>IscsiFileSystemPrimaryStorageApiInterceptor</interceptor>
     </message>
 
 </service>

@@ -28,4 +28,10 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="IscsiFileSystemPrimaryStorageApiInterceptor" class="org.zstack.storage.primary.iscsi.IscsiFileSystemPrimaryStorageApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
 </beans>
