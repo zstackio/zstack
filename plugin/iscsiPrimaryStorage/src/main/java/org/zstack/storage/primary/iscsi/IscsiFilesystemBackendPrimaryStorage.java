@@ -8,6 +8,9 @@ import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.*;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
@@ -53,6 +56,8 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     private AccountManager acntMgr;
     @Autowired
     private PrimaryStorageManager psMgr;
+    @Autowired
+    private ThreadFacade thdf;
 
     public IscsiFilesystemBackendPrimaryStorage(IscsiFileSystemBackendPrimaryStorageVO vo) {
         super(vo);
@@ -166,19 +171,49 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         String __name__ = String.format("download-image-%s-to-cache-ps-%s", image.getUuid(), self.getUuid());
 
                         @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            SimpleQuery<ImageCacheVO> query = dbf.createQuery(ImageCacheVO.class);
-                            query.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-                            query.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());
-                            ImageCacheVO cvo = query.find();
-                            if (cvo != null) {
-                                checkCache(cvo, trigger);
-                            } else {
-                                downloadToCache(null, trigger);
-                            }
+                        public void run(final FlowTrigger trigger, Map data) {
+                            thdf.chainSubmit(new ChainTask(trigger) {
+                                @Override
+                                public String getSyncSignature() {
+                                    return getName();
+                                }
+
+                                @Override
+                                public void run(final SyncTaskChain chain) {
+                                    Completion completion = new Completion(chain, trigger) {
+                                        @Override
+                                        public void success() {
+                                            trigger.next();
+                                            chain.next();
+                                        }
+
+                                        @Override
+                                        public void fail(ErrorCode errorCode) {
+                                            trigger.fail(errorCode);
+                                            chain.next();
+                                        }
+                                    };
+
+                                    SimpleQuery<ImageCacheVO> query = dbf.createQuery(ImageCacheVO.class);
+                                    query.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+                                    query.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());
+                                    ImageCacheVO cvo = query.find();
+                                    if (cvo != null) {
+                                        checkCache(cvo, completion);
+                                    } else {
+                                        downloadToCache(null, completion);
+                                    }
+                                }
+
+                                @Override
+                                public String getName() {
+                                    return String.format("download-image-%s-to-iscsi-primary-storage-%s", image.getUuid(), self.getUuid());
+                                }
+                            });
+
                         }
 
-                        private void downloadToCache(final ImageCacheVO cvo, final FlowTrigger trigger) {
+                        private void downloadToCache(final ImageCacheVO cvo, final Completion completion) {
                             IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bsinv.getType()),
                                     VolumeFormat.getMasterHypervisorTypeByVolumeFormat(image.getFormat()));
 
@@ -202,35 +237,35 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                                                 dbf.update(cvo);
                                             }
 
-                                            trigger.next();
+                                            completion.success();
                                         }
 
                                         @Override
                                         public void fail(ErrorCode errorCode) {
-                                            trigger.fail(errorCode);
+                                            completion.fail(errorCode);
                                         }
                                     });
                         }
 
-                        private void checkCache(final ImageCacheVO cvo, final FlowTrigger trigger) {
+                        private void checkCache(final ImageCacheVO cvo, final Completion completion) {
                             CheckBitsExistenceCmd cmd = new CheckBitsExistenceCmd();
                             cmd.setPath(cvo.getInstallUrl());
-                            restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CHECK_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<CheckBitsExistenceRsp>(trigger) {
+                            restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CHECK_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<CheckBitsExistenceRsp>(completion) {
                                 @Override
                                 public void fail(ErrorCode err) {
-                                    trigger.fail(err);
+                                    completion.fail(err);
                                 }
 
                                 @Override
                                 public void success(CheckBitsExistenceRsp ret) {
                                     if (!ret.isSuccess()) {
-                                        trigger.fail(errf.stringToOperationError(ret.getError()));
+                                        completion.fail(errf.stringToOperationError(ret.getError()));
                                     }  else {
                                         if (ret.isExisting()) {
                                             imagePathInCache = cvo.getInstallUrl();
-                                            trigger.next();
+                                            completion.success();
                                         } else {
-                                            downloadToCache(cvo, trigger);
+                                            downloadToCache(cvo, completion);
                                         }
                                     }
                                 }
