@@ -73,6 +73,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(DeleteBitsOnPrimaryStorageMsg msg);
 
+    protected abstract void connectHook(ConnectPrimaryStorageMsg msg, Completion completion);
+
 	public PrimaryStorageBase(PrimaryStorageVO self) {
 		this.self = self;
 	}
@@ -134,10 +136,37 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handleBase((DownloadDataVolumeToPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteBitsOnPrimaryStorageMsg) {
             handle((DeleteBitsOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof ConnectPrimaryStorageMsg) {
+            handle((ConnectPrimaryStorageMsg)msg);
 	    } else {
 	        bus.dealWithUnknownMessage(msg);
 	    }
 	}
+
+    private void handle(final ConnectPrimaryStorageMsg msg) {
+        final ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply();
+        self.setStatus(PrimaryStorageStatus.Connecting);
+        self = dbf.updateAndRefresh(self);
+        connectHook(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                self.setStatus(PrimaryStorageStatus.Connected);
+                self = dbf.updateAndRefresh(self);
+                reply.setConnected(true);
+                logger.debug(String.format("successfully connected primary storage[uuid:%s]", self.getUuid()));
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                self.setStatus(PrimaryStorageStatus.Disconnected);
+                self = dbf.updateAndRefresh(self);
+                logger.debug(String.format("failed to connect primary storage[uuid:%s], %s", self.getUuid(), errorCode));
+                reply.setConnected(false);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 
     private void handleBase(DownloadDataVolumeToPrimaryStorageMsg msg) {
         checkIfBackupStorageAttachedToMyZone(msg.getBackupStorageRef().getBackupStorageUuid());

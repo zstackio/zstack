@@ -77,8 +77,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof ConnectPrimaryStorageMsg) {
-            handle((ConnectPrimaryStorageMsg) msg);
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
             handle((MergeVolumeSnapshotOnPrimaryStorageMsg)msg);
         } else {
@@ -104,12 +102,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
-    }
-
-    private void handle(ConnectPrimaryStorageMsg msg) {
-        ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply();
-        reply.setConnected(true);
-        bus.reply(msg, reply);
     }
 
     private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
@@ -872,5 +864,10 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 }
             });
         }
+    }
+
+    @Override
+    protected void connectHook(ConnectPrimaryStorageMsg msg, Completion completion) {
+        completion.success();
     }
 }

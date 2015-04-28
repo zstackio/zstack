@@ -583,14 +583,10 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handleLocalMessage(Message msg) {
-        if (msg instanceof ConnectPrimaryStorageMsg) {
-            handle((ConnectPrimaryStorageMsg)msg);
-        } else {
-            super.handleLocalMessage(msg);
-        }
+    protected void connectHook(ConnectPrimaryStorageMsg msg, Completion completion) {
+        connect(completion);
     }
-    
+
     @Override
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIReconnectPrimaryStorageMsg) {
@@ -715,22 +711,5 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                 });
             }
         }).start();
-    }
-
-    private void handle(final ConnectPrimaryStorageMsg msg) {
-        final ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply();
-        connect(new Completion(msg) {
-            @Override
-            public void success() {
-                reply.setConnected(true);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
     }
 }
