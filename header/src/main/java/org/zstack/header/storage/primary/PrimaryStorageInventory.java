@@ -3,6 +3,7 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.search.TypeField;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.ZoneInventory;
@@ -106,6 +107,7 @@ public class PrimaryStorageInventory implements Serializable{
      * @desc
      * primary storage type
      */
+    @TypeField
 	private String type;
     /**
      * @desc

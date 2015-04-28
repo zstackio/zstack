@@ -9,4 +9,9 @@
         <interceptor>IscsiFileSystemPrimaryStorageApiInterceptor</interceptor>
     </message>
 
+    <message>
+        <name>org.zstack.storage.primary.iscsi.APIQueryIscsiFileSystemBackendPrimaryStorageMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
 </service>

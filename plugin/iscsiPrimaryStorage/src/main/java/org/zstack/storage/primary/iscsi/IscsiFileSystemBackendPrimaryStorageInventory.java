@@ -2,6 +2,7 @@ package org.zstack.storage.primary.iscsi;
 
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.search.Parent;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 
@@ -12,7 +13,8 @@ import java.util.List;
 /**
  * Created by frank on 4/19/2015.
  */
-@Inventory(mappingVOClass = IscsiFileSystemBackendPrimaryStorageVO.class, collectionValueOfMethod = "valueOf1")
+@Inventory(mappingVOClass = IscsiFileSystemBackendPrimaryStorageVO.class, collectionValueOfMethod = "valueOf1",
+        parent = {@Parent(inventoryClass = PrimaryStorageInventory.class, type = IscsiPrimaryStorageConstants.ISCSI_FILE_SYSTEM_BACKEND_PRIMARY_STORAGE_TYPE)})
 @PythonClassInventory
 public class IscsiFileSystemBackendPrimaryStorageInventory extends PrimaryStorageInventory {
     private String chapUsername;
