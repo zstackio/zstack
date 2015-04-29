@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChain;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -175,11 +177,18 @@ public class VirtualRouterPortForwardingBackend implements PortForwardingBackend
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                VirtualRouterPortForwardingRuleRefVO ref = new VirtualRouterPortForwardingRuleRefVO();
-                ref.setUuid(struct.getRule().getUuid());
-                ref.setVirtualRouterVmUuid(vr.getUuid());
-                ref.setVipUuid(struct.getVip().getUuid());
-                dbf.persist(ref);
+                SimpleQuery<VirtualRouterPortForwardingRuleRefVO> q = dbf.createQuery(VirtualRouterPortForwardingRuleRefVO.class);
+                q.add(VirtualRouterPortForwardingRuleRefVO_.uuid, Op.EQ, struct.getRule().getUuid());
+                if (!q.isExists()) {
+                    // if virtual router is stopped outside zstack (e.g. the host rebbot)
+                    // database will still have VirtualRouterPortForwardingRuleRefVO for this PF rule.
+                    // in this case, don't create the record again
+                    VirtualRouterPortForwardingRuleRefVO ref = new VirtualRouterPortForwardingRuleRefVO();
+                    ref.setUuid(struct.getRule().getUuid());
+                    ref.setVirtualRouterVmUuid(vr.getUuid());
+                    ref.setVipUuid(struct.getVip().getUuid());
+                    dbf.persist(ref);
+                }
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {

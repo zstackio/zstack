@@ -50,9 +50,10 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
 
     @Transactional(readOnly = true)
     private List<EipTO> findEipOnThisRouter(VirtualRouterVmInventory vr, List<String> eipUuids) {
-        String sql = "select vip.ip, nic.l3NetworkUuid, nic.ip from EipVO eip, VipVO vip, VmNicVO nic where eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and eip.uuid in (:euuids)";
+        String sql = "select vip.ip, nic.l3NetworkUuid, nic.ip from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where nic.vmInstanceUuid = vm.uuid and vm.state = :vmState and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and eip.uuid in (:euuids)";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("euuids", eipUuids);
+        q.setParameter("vmState", VmInstanceState.Running);
         List<Tuple> tuples =  q.getResultList();
         List<EipTO> ret = new ArrayList<EipTO>();
         for (Tuple t : tuples) {

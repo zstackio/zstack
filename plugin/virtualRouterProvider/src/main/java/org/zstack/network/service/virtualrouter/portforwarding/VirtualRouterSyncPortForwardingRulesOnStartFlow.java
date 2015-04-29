@@ -44,9 +44,10 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
     @Transactional
     private List<PortForwardingRuleVO> findRulesForThisRouter(VirtualRouterVmInventory vr, Map<String, Object> data, boolean isNewCreated) {
         if (!isNewCreated) {
-            String sql = "select rule from PortForwardingRuleVO rule, VirtualRouterPortForwardingRuleRefVO ref where rule.uuid = ref.uuid and ref.virtualRouterVmUuid = :vrUuid";
+            String sql = "select rule from PortForwardingRuleVO rule, VirtualRouterPortForwardingRuleRefVO ref, VmNicVO nic, VmInstanceVO vm where vm.state = :vmState and nic.vmInstanceUuid = vm.uuid and rule.vmNicUuid = nic.uuid and rule.uuid = ref.uuid and ref.virtualRouterVmUuid = :vrUuid";
             TypedQuery<PortForwardingRuleVO> q = dbf.getEntityManager().createQuery(sql, PortForwardingRuleVO.class);
             q.setParameter("vrUuid", vr.getUuid());
+            q.setParameter("vmState", VmInstanceState.Running);
             return q.getResultList();
         } else {
             VmNicInventory publicNic = vr.getPublicNic();

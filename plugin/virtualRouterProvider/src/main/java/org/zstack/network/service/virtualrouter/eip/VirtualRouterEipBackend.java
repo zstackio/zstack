@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
@@ -192,10 +193,17 @@ public class VirtualRouterEipBackend implements EipBackend {
                 applyEip(vr, struct, new Completion() {
                     @Override
                     public void success() {
-                        VirtualRouterEipRefVO ref = new VirtualRouterEipRefVO();
-                        ref.setEipUuid(struct.getEip().getUuid());
-                        ref.setVirtualRouterVmUuid(vr.getUuid());
-                        dbf.persist(ref);
+                        SimpleQuery<VirtualRouterEipRefVO> q = dbf.createQuery(VirtualRouterEipRefVO.class);
+                        q.add(VirtualRouterEipRefVO_.eipUuid, Op.EQ, struct.getEip().getUuid());
+                        if (!q.isExists()) {
+                            // if virtual router is stopped outside zstack (e.g. the host rebbot)
+                            // database will still have VirtualRouterEipRefVO for this EIP.
+                            // in this case, don't create the record again
+                            VirtualRouterEipRefVO ref = new VirtualRouterEipRefVO();
+                            ref.setEipUuid(struct.getEip().getUuid());
+                            ref.setVirtualRouterVmUuid(vr.getUuid());
+                            dbf.persist(ref);
+                        }
                         completion.success();
                     }
 

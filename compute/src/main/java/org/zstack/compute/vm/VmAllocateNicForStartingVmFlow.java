@@ -136,7 +136,7 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
     @Override
     public void rollback(FlowTrigger trigger, Map data) {
         List<UsedIpInventory> allocatedIps = (List<UsedIpInventory>) data.get(VmAllocateNicForStartingVmFlow.class);
-        if (!allocatedIps.isEmpty()) {
+        if (allocatedIps != null && !allocatedIps.isEmpty()) {
             List<ReturnIpMsg> rmsgs = CollectionUtils.transformToList(allocatedIps, new Function<ReturnIpMsg, UsedIpInventory>() {
                 @Override
                 public ReturnIpMsg call(UsedIpInventory arg) {
