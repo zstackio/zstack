@@ -10,6 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.Flow;
 import org.zstack.core.workflow.FlowTrigger;
+import org.zstack.core.workflow.NoRollbackFlow;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.InstantiateVolumeMsg;
 import org.zstack.header.storage.primary.InstantiateVolumeReply;
@@ -24,15 +25,11 @@ import org.zstack.header.volume.VolumeVO;
 import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VmInstantiateAttachingVolumeFlow implements Flow {
+public class VmInstantiateAttachingVolumeFlow extends NoRollbackFlow {
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
     protected CloudBus bus;
-    @Autowired
-    private GlobalConfigFacade gcf;
-    @Autowired
-    private ErrorFacade errf;
 
     @Override
     public void run(final FlowTrigger chain, final Map ctx) {
@@ -64,16 +61,5 @@ public class VmInstantiateAttachingVolumeFlow implements Flow {
                 }
             }
         });
-    }
-
-    @Override
-    public void rollback(FlowTrigger chain, Map data) {
-        final VolumeInventory volume = (VolumeInventory) data.get(VmInstanceConstant.Params.AttachingVolumeInventory.toString());
-        VolumeVO vo = dbf.findByUuid(volume.getUuid(), VolumeVO.class);
-        vo.setPrimaryStorageUuid(null);
-        vo.setInstallPath(null);
-        vo.setStatus(VolumeStatus.NotInstantiated);
-        dbf.update(vo);
-        chain.rollback();
     }
 }

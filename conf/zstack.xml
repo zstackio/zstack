@@ -73,4 +73,5 @@
     <import resource="springConfigXml/tag.xml" />
     <import resource="springConfigXml/mediator.xml" />
     <import resource="springConfigXml/jmx.xml" />
+    <import resource="springConfigXml/iscsiBtrfsPrimaryStorage.xml" />
 </beans>

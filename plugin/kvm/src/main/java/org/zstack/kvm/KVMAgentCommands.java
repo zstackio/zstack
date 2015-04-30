@@ -310,8 +310,50 @@ public class KVMAgentCommands {
     }
     
     public static class VolumeTO {
+        public static final String FILE = "file";
+        public static final String ISCSI = "iscsi";
+
         private String installPath;
         private int deviceId;
+        private String deviceType = FILE;
+        private String volumeUuid;
+        private boolean useVirtio;
+
+        public VolumeTO() {
+        }
+
+        public VolumeTO(VolumeTO other) {
+            this.installPath = other.installPath;
+            this.deviceId = other.deviceId;
+            this.deviceType = other.deviceType;
+            this.volumeUuid = other.volumeUuid;
+            this.useVirtio = other.useVirtio;
+        }
+
+        public boolean isUseVirtio() {
+            return useVirtio;
+        }
+
+        public void setUseVirtio(boolean useVirtio) {
+            this.useVirtio = useVirtio;
+        }
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
+
+        public String getDeviceType() {
+            return deviceType;
+        }
+
+        public void setDeviceType(String deviceType) {
+            this.deviceType = deviceType;
+        }
+
         public String getInstallPath() {
             return installPath;
         }

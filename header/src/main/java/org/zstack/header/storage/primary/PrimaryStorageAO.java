@@ -49,6 +49,21 @@ public class PrimaryStorageAO {
 	public PrimaryStorageAO() {
 	}
 
+    public PrimaryStorageAO(PrimaryStorageAO other) {
+        this.uuid = other.uuid;
+        this.zoneUuid = other.zoneUuid;
+        this.name = other.name;
+        this.url = other.url;
+        this.description = other.description;
+        this.type = other.type;
+        this.mountPath = other.mountPath;
+        this.state = other.state;
+        this.status = other.status;
+        this.createDate = other.createDate;
+        this.lastOpDate = other.lastOpDate;
+    }
+
+
     public PrimaryStorageStatus getStatus() {
         return status;
     }

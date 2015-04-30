@@ -74,6 +74,9 @@ public class VmInstanceAO {
     private long memorySize;
 
     @Column
+    private String platform;
+
+    @Column
     private String allocatorStrategy;
 
     @Column
@@ -111,8 +114,16 @@ public class VmInstanceAO {
         this.createDate = other.createDate;
         this.lastOpDate = other.lastOpDate;
         this.state = other.state;
+        this.platform = other.platform;
     }
 
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
+    }
 
     public String getAllocatorStrategy() {
         return allocatorStrategy;

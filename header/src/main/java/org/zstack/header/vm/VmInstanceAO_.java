@@ -18,6 +18,7 @@ public class VmInstanceAO_ {
     public static volatile SingularAttribute<VmInstanceAO, String> hostUuid;
     public static volatile SingularAttribute<VmInstanceAO, String> lastHostUuid;
     public static volatile SingularAttribute<VmInstanceAO, String> type;
+    public static volatile SingularAttribute<VmInstanceAO, String> platform;
     public static volatile SingularAttribute<VmInstanceAO, String> hypervisorType;
     public static volatile SingularAttribute<VmInstanceAO, String> allocatorStrategy;
     public static volatile SingularAttribute<VmInstanceAO, Long> internalId;

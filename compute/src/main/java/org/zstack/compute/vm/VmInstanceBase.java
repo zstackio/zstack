@@ -707,6 +707,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     } else {
                         CreateTemplateFromVolumeOnPrimaryStorageReply creply = (CreateTemplateFromVolumeOnPrimaryStorageReply) r;
                         reply.setInstallPath(creply.getTemplateBackupStorageInstallPath());
+                        reply.setFormat(creply.getFormat());
                         bus.reply(msg, reply);
                     }
                     chain.next();

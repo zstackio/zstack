@@ -97,5 +97,6 @@
         <class>org.zstack.header.tag.UserTagVO</class>
         <class>org.zstack.header.tag.SystemTagVO</class>
         <class>org.zstack.network.service.virtualrouter.VirtualRouterVmVO</class>
+        <class>org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageVO</class>
     </persistence-unit>
 </persistence>

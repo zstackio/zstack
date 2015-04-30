@@ -51,4 +51,8 @@
     <message>
         <name>org.zstack.header.storage.primary.APIGetPrimaryStorageCapacityMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIReconnectPrimaryStorageMsg</name>
+    </message>
 </service>

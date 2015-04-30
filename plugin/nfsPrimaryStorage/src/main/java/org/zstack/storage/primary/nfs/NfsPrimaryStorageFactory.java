@@ -2,10 +2,8 @@ package org.zstack.storage.primary.nfs;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
-import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -94,7 +92,9 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 	            if (map == null) {
 	                map = new HashMap<HypervisorType, NfsPrimaryToBackupStorageMediator>(1);
 	            }
-	            map.put(extp.getSupportedHypervisorType(), extp);
+                for (HypervisorType hvType : extp.getSupportedHypervisorTypes()) {
+                    map.put(hvType, extp);
+                }
 	            mediators.put(extp.getSupportedBackupStorageType(), map);
 	        }
 	    }

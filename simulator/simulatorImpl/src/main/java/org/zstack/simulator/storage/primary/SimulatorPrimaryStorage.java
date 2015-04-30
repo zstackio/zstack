@@ -18,21 +18,6 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handleLocalMessage(Message msg) {
-        if (msg instanceof ConnectPrimaryStorageMsg) {
-            handle((ConnectPrimaryStorageMsg) msg);
-        } else {
-            super.handleLocalMessage(msg);
-        }
-    }
-
-    private void handle(ConnectPrimaryStorageMsg msg) {
-        ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply();
-        reply.setConnected(true);
-        bus.reply(msg, reply);
-    }
-
-    @Override
     public void deleteHook() {
         logger.debug(String.format("SimulatorPrimaryStorage[uuid:%s] gets deleted", self.getUuid()));
     }
@@ -111,9 +96,7 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(UploadVolumeFromPrimaryStorageToBackupStorageMsg msg) {
-        UploadVolumeFromPrimaryStorageToBackupStorageReply reply = new UploadVolumeFromPrimaryStorageToBackupStorageReply();
-        reply.setBackupStorageIntallPath("/some_path");
-        bus.reply(msg, reply);
+    protected void connectHook(ConnectPrimaryStorageMsg msg, Completion completion) {
+        completion.success();
     }
 }

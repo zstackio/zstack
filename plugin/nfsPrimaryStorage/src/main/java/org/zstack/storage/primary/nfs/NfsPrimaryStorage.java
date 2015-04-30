@@ -77,8 +77,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof ConnectPrimaryStorageMsg) {
-            handle((ConnectPrimaryStorageMsg) msg);
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
             handle((MergeVolumeSnapshotOnPrimaryStorageMsg)msg);
         } else {
@@ -104,12 +102,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
-    }
-
-    private void handle(ConnectPrimaryStorageMsg msg) {
-        ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply();
-        reply.setConnected(true);
-        bus.reply(msg, reply);
     }
 
     private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
@@ -875,28 +867,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final UploadVolumeFromPrimaryStorageToBackupStorageMsg msg) {
-        final UploadVolumeFromPrimaryStorageToBackupStorageReply reply = new UploadVolumeFromPrimaryStorageToBackupStorageReply();
-        BackupStorageInventory bsinv = BackupStorageInventory.valueOf(dbf.findByUuid(msg.getBackupStorageUuid(), BackupStorageVO.class));
-
-        NfsPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(
-                BackupStorageType.valueOf(bsinv.getType()),
-                nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getVolume().getFormat(), self.getUuid())
-        );
-
-        final String backupStorageInstallPath = mediator.makeDataVolumeTemplateInstallPath(msg.getBackupStorageUuid(), msg.getImageUuid());
-        mediator.uploadBits(getSelfInventory(), bsinv, backupStorageInstallPath, msg.getVolume().getInstallPath(), new Completion(msg) {
-            @Override
-            public void success() {
-                reply.setBackupStorageIntallPath(backupStorageInstallPath);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
+    protected void connectHook(ConnectPrimaryStorageMsg msg, Completion completion) {
+        completion.success();
     }
 }

@@ -18,6 +18,8 @@ public class TestStringTemplate {
         tokens.put("boy", boy);
         String res = StringTemplate.subsititute(text, tokens);
         System.out.println(res);
+
+        System.out.println("file:///mnt".replaceAll("file://", ""));
     }
 
 }

@@ -3,6 +3,7 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.search.TypeField;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.ZoneInventory;
@@ -106,6 +107,7 @@ public class PrimaryStorageInventory implements Serializable{
      * @desc
      * primary storage type
      */
+    @TypeField
 	private String type;
     /**
      * @desc
@@ -152,29 +154,34 @@ public class PrimaryStorageInventory implements Serializable{
             joinColumn = @JoinColumn(name = "primaryStorageUuid", referencedColumnName = "clusterUuid"))
 	private List<String> attachedClusterUuids;
 
-	public static PrimaryStorageInventory valueOf(PrimaryStorageVO vo) {
-		PrimaryStorageInventory inv = new PrimaryStorageInventory();
-		inv.setZoneUuid(vo.getZoneUuid());
-		inv.setCreateDate(vo.getCreateDate());
-		inv.setDescription(vo.getDescription());
-		inv.setLastOpDate(vo.getLastOpDate());
-		inv.setName(vo.getName());
-		inv.setState(vo.getState().toString());
-		inv.setType(vo.getType());
-		inv.setUrl(vo.getUrl());
-		inv.setUuid(vo.getUuid());
-		inv.setMountPath(vo.getMountPath());
-        inv.setStatus(vo.getStatus().toString());
-		inv.attachedClusterUuids = new ArrayList<String>(vo.getAttachedClusterRefs().size());
-		for (PrimaryStorageClusterRefVO ref : vo.getAttachedClusterRefs()) {
-		    inv.attachedClusterUuids.add(ref.getClusterUuid());
-		}
+    public PrimaryStorageInventory() {
+    }
+
+    protected PrimaryStorageInventory(PrimaryStorageVO vo) {
+        setZoneUuid(vo.getZoneUuid());
+        setCreateDate(vo.getCreateDate());
+        setDescription(vo.getDescription());
+        setLastOpDate(vo.getLastOpDate());
+        setName(vo.getName());
+        setState(vo.getState().toString());
+        setType(vo.getType());
+        setUrl(vo.getUrl());
+        setUuid(vo.getUuid());
+        setMountPath(vo.getMountPath());
+        setStatus(vo.getStatus().toString());
+        attachedClusterUuids = new ArrayList<String>(vo.getAttachedClusterRefs().size());
+        for (PrimaryStorageClusterRefVO ref : vo.getAttachedClusterRefs()) {
+            attachedClusterUuids.add(ref.getClusterUuid());
+        }
 
         if (vo.getCapacity() != null) {
-            inv.setTotalCapacity(vo.getCapacity().getTotalCapacity());
-            inv.setAvailableCapacity(vo.getCapacity().getAvailableCapacity());
+            setTotalCapacity(vo.getCapacity().getTotalCapacity());
+            setAvailableCapacity(vo.getCapacity().getAvailableCapacity());
         }
-		return inv;
+    }
+
+	public static PrimaryStorageInventory valueOf(PrimaryStorageVO vo) {
+        return new PrimaryStorageInventory(vo);
 	}
 	
 	public static List<PrimaryStorageInventory> valueOf(Collection<PrimaryStorageVO> vos) {

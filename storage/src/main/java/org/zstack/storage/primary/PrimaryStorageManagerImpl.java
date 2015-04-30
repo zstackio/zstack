@@ -6,11 +6,13 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -18,6 +20,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.safeguard.Guard;
 import org.zstack.header.AbstractService;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -26,10 +29,8 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.SizeUtils;
-import org.zstack.utils.StringDSL;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -38,7 +39,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager {
+public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager, ManagementNodeChangeListener {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -53,6 +54,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ResourceDestinationMaker destMaker;
 
     private Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<String, PrimaryStorageFactory>());
     private Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections
@@ -202,7 +205,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageType type = PrimaryStorageType.valueOf(msg.getType());
         final PrimaryStorageFactory factory = getPrimaryStorageFactory(type);
 
-        final PrimaryStorageVO vo = new PrimaryStorageVO();
+        PrimaryStorageVO vo = new PrimaryStorageVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
         } else {
@@ -218,6 +221,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         final APIAddPrimaryStorageEvent evt = new APIAddPrimaryStorageEvent(msg.getId());
         final PrimaryStorageInventory inv = factory.createPrimaryStorage(vo, msg);
+        vo = dbf.findByUuid(vo.getUuid(), PrimaryStorageVO.class);
 
         tagMgr.createTagsFromAPICreateMessage(msg, inv.getUuid(), PrimaryStorageVO.class.getSimpleName());
 
@@ -231,21 +235,23 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         final ConnectPrimaryStorageMsg cmsg = new ConnectPrimaryStorageMsg();
         cmsg.setPrimaryStorageUuid(inv.getUuid());
         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
+        final PrimaryStorageVO finalVo = vo;
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     ConnectPrimaryStorageReply cr = reply.castReply();
-                    vo.setStatus(cr.isConnected() ? PrimaryStorageStatus.Connected : PrimaryStorageStatus.Disconnected);
+                    finalVo.setStatus(cr.isConnected() ? PrimaryStorageStatus.Connected : PrimaryStorageStatus.Disconnected);
+                    dbf.update(finalVo);
+                    PrimaryStorageInventory pinv = factory.getInventory(finalVo.getUuid());
+                    logger.debug(String.format("successfully add primary storage[uuid:%s, name:%s, url: %s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
+                    evt.setInventory(pinv);
                 } else {
-                    vo.setStatus(PrimaryStorageStatus.Disconnected);
-                    logger.warn(String.format("failed to connect primary storage[uuid:%s, name:%s, url:%s]", vo.getUuid(), vo.getName(), vo.getUrl()));
+                    evt.setErrorCode(reply.getError());
+                    logger.warn(String.format("failed to connect primary storage[uuid:%s, name:%s, url:%s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
+                    dbf.remove(finalVo);
                 }
 
-                dbf.update(vo);
-                PrimaryStorageInventory pinv = factory.getInventory(vo.getUuid());
-                logger.debug(String.format("successfully add primary storage[uuid:%s, name:%s, url: %s]", vo.getUuid(), vo.getName(), vo.getUrl()));
-                evt.setInventory(pinv);
                 bus.publish(evt);
             }
         });
@@ -432,5 +438,60 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         msg.setPrimaryStorageUuid(primaryStorageUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
         bus.send(msg);
+    }
+
+    @Override
+    public void nodeJoin(String nodeId) {
+        logger.debug(String.format("management node[uuid:%s] left, node[uuid:%s] starts taking over primary storage...", nodeId, Platform.getManagementServerId()));
+        loadPrimaryStorage();
+    }
+
+    @Override
+    public void nodeLeft(String nodeId) {
+
+    }
+
+    private List<String> getPrimaryStorageManagedByUs() {
+        List<String> ret = new ArrayList<String>();
+        SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
+        q.select(PrimaryStorageVO_.uuid);
+        List<String> uuids = q.list();
+        for (String uuid : uuids) {
+            if (destMaker.isManagedByUs(uuid)) {
+                ret.add(uuid);
+            }
+        }
+
+        return ret;
+    }
+
+    private void loadPrimaryStorage() {
+        List<String> uuids = getPrimaryStorageManagedByUs();
+        if (uuids.isEmpty()) {
+            return;
+        }
+
+        List<ConnectPrimaryStorageMsg> msgs = CollectionUtils.transformToList(uuids, new Function<ConnectPrimaryStorageMsg, String>() {
+            @Override
+            public ConnectPrimaryStorageMsg call(String arg) {
+                ConnectPrimaryStorageMsg msg = new ConnectPrimaryStorageMsg();
+                msg.setPrimaryStorageUuid(arg);
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg);
+                return msg;
+            }
+        });
+
+        bus.send(msgs);
+    }
+
+    @Override
+    public void iAmDead(String nodeId) {
+
+    }
+
+    @Override
+    public void iJoin(String nodeId) {
+        logger.debug(String.format("management node[uuid:%s] joins, starts load primary storage ...", nodeId));
+        loadPrimaryStorage();
     }
 }

@@ -28,6 +28,11 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import java.util.Arrays;
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
+
 public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStorageMediator {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryToSftpBackupKVMBackend.class);
 
@@ -59,8 +64,8 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
     }
 
     @Override
-    public HypervisorType getSupportedHypervisorType() {
-        return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
+    public List<HypervisorType> getSupportedHypervisorTypes() {
+        return list(HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE));
     }
 
     @Override

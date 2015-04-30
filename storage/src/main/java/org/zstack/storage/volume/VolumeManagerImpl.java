@@ -238,6 +238,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
             ImageBackupStorageRefVO targetBackupStorageRef;
             PrimaryStorageInventory targetPrimaryStorage;
             String primaryStorageInstallPath;
+            String volumeFormat;
 
             @Override
             public void setup() {
@@ -335,6 +336,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
                                 } else {
                                     DownloadDataVolumeToPrimaryStorageReply r = reply.castReply();
                                     primaryStorageInstallPath = r.getInstallPath();
+                                    volumeFormat = r.getFormat();
                                     trigger.next();
                                 }
                             }
@@ -361,6 +363,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
                     public void handle(Map data) {
                         vol.setInstallPath(primaryStorageInstallPath);
                         vol.setStatus(VolumeStatus.Ready);
+                        if (volumeFormat != null) {
+                            vol.setFormat(volumeFormat);
+                        }
                         VolumeVO vo = dbf.updateAndRefresh(vol);
                         evt.setInventory(VolumeInventory.valueOf(vo));
                         bus.publish(evt);

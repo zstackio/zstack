@@ -108,7 +108,7 @@ public class VolumeBase implements Volume {
     }
 
     private void handle(final CreateDataVolumeTemplateFromDataVolumeMsg msg) {
-        CreateTemplateFromVolumeOnPrimaryStorageMsg cmsg = new CreateTemplateFromVolumeOnPrimaryStorageMsg();
+        final CreateTemplateFromVolumeOnPrimaryStorageMsg cmsg = new CreateTemplateFromVolumeOnPrimaryStorageMsg();
         cmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
         cmsg.setImageInventory(ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class)));
         cmsg.setVolumeInventory(getSelfInventory());
@@ -120,7 +120,9 @@ public class VolumeBase implements Volume {
                 if (!r.isSuccess()) {
                     reply.setError(r.getError());
                 } else {
-                    String backupStorageInstallPath = ((CreateTemplateFromVolumeOnPrimaryStorageReply)r).getTemplateBackupStorageInstallPath();
+                    CreateTemplateFromVolumeOnPrimaryStorageReply creply = r.castReply();
+                    String backupStorageInstallPath = creply.getTemplateBackupStorageInstallPath();
+                    reply.setFormat(creply.getFormat());
                     reply.setInstallPath(backupStorageInstallPath);
                     reply.setMd5sum(null);
                     reply.setBackupStorageUuid(msg.getBackupStorageUuid());
@@ -292,6 +294,9 @@ public class VolumeBase implements Volume {
     }
 
     private void handle(final APIAttachDataVolumeToVmMsg msg) {
+        self.setVmInstanceUuid(msg.getVmInstanceUuid());
+        self = dbf.updateAndRefresh(self);
+
         AttachDataVolumeToVmMsg amsg = new AttachDataVolumeToVmMsg();
         amsg.setVolume(getSelfInventory());
         amsg.setVmInstanceUuid(msg.getVmInstanceUuid());
@@ -309,6 +314,8 @@ public class VolumeBase implements Volume {
 
                     evt.setInventory(getSelfInventory());
                 } else {
+                    self.setVmInstanceUuid(null);
+                    dbf.update(self);
                     evt.setErrorCode(reply.getError());
                 }
 

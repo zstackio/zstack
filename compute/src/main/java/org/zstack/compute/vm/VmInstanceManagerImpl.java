@@ -23,6 +23,9 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostStatusChangeNotifyPoint;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -192,6 +195,12 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         vo.setZoneUuid(msg.getZoneUuid());
         vo.setInternalId(dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
         vo.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
+
+        SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
+        imgq.select(ImageVO_.platform);
+        imgq.add(ImageVO_.uuid, Op.EQ, msg.getImageUuid());
+        ImagePlatform platform = imgq.findValue();
+        vo.setPlatform(platform.toString());
 
         InstanceOfferingVO iovo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
         vo.setCpuNum(iovo.getCpuNum());

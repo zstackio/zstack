@@ -238,10 +238,21 @@ CREATE TABLE  `zstack`.`PrimaryStorageEO` (
     `description` varchar(2048) DEFAULT NULL COMMENT 'primary storage description',
     `state` varchar(32) NOT NULL,
     `status` varchar(32) NOT NULL,
-    `type` varchar(32) NOT NULL COMMENT 'primary storage type',
+    `type` varchar(255) NOT NULL COMMENT 'primary storage type',
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP COMMENT 'last operation date',
     `createDate` timestamp,
     `deleted` varchar(255) DEFAULT NULL,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`IscsiFileSystemBackendPrimaryStorageVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+    `hostname` varchar(255) NOT NULL UNIQUE,
+    `sshUsername` varchar(255) NOT NULL,
+    `sshPassword` varchar(255) NOT NULL,
+    `filesystemType` varchar(255) NOT NULL,
+    `chapUsername` varchar(255) DEFAULT NULL,
+    `chapPassword` varchar(255) DEFAULT NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -575,6 +586,7 @@ CREATE TABLE  `zstack`.`VmInstanceEO` (
     `memorySize` bigint unsigned NOT NULL,
     `allocatorStrategy` varchar(64) DEFAULT NULL,
     `name` varchar(255) NOT NULL,
+    `platform` varchar(255) NOT NULL,
     `description` varchar(2048) DEFAULT NULL,
     `type` varchar(64) NOT NULL,
     `internalId` bigint unsigned NOT NULL,
