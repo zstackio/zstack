@@ -1,52 +1,52 @@
 #!/bin/sh
 # Author: YYK
-zstack_war="/root/sanitytest/zstack.war"
+zstack_war="~/zstack.war"
 zstack_service="/etc/init.d/zstack-server"
 tomcat_folder_path=""
 zstack_property_folder=~/.zstack/
-[ ! -d ] && mkdir $zstack_property_folder
+[ ! -d $zstack_property_folder ] && mkdir $zstack_property_folder || exit 1
 old_zstack_property=$zstack_property_folder/zstack.properties-old
 tomcat_path_save=$zstack_property_folder/tomcat_path
 
 [ -f $tomcat_path_save ] && tomcat_folder_path=`cat $tomcat_path_save`
 
 #default is upgrade
-fresh_install=1
+fresh_install=0
 user_selection=""
+interactive_install=0
+
+set -u # undefined variables are errors
 
 error_tmp_file=`mktemp`
+trap "rm $error_tmp_file 2>/dev/null" EXIT
 
 help (){
     echo "Usage: $0 [options] [TOMCAT_PATH]
 
-Description: 
-    ZStack Installer is to install zstack.war to given the Tomcat folder. 
-It is assumed all tools and services are installed, including Tomcat, 
-mysql server, rabbitmq server, Ansible etc. The default behavior (without -f)
-will upgrade current zstack and keep previous zstack.properties. 
-    If not not providing any options, it will pop up a menu for user 
-interaction. 
+Description:
+    ZStack Installer will install zstack.war to the given Tomcat folder.
+It is assumed all tools and services are installed, including Tomcat,
+MySQL server, RabbitMQ server, Ansible etc. The default behavior (without -f)
+will upgrade current ZStack and keep previous zstack.properties.
+    Without command line options, it will pop up a menu for user interaction.
 
 Options:
   -u DB_USER    Database user name, default is 'root'
   -p DB_PASSWD  Database user password, default is ''
   -s DB_HOST    Database host server name, default is 'localhost'
   -P DB_PORT    Database host server mysql port, default is '3306'
-  -f            Fresh installation. Will deploy fresh zstack database. Default 
+  -f            Fresh installation. Will deploy fresh zstack database. Default
                 behavior is just upgrade zstack and not deploy new database.
+  -w WAR_FILE   The path to zstack.war file, default is '$zstack_war'
   -h            Show this help.
 "
-    Exit 1
+    exit 1
 }
 
-Exit(){
-    rm -f $error_tmp_file
-    exit $1
-}
-
-Error_Msg(){
+err_quit(){
     echo -e "$(tput setaf 1)$*\n$(tput sgr0)"
     echo -e "$(tput setaf 1)ZStack Installation Failed\n$(tput sgr0)"
+    exit 1
 }
 
 show_config(){
@@ -69,7 +69,7 @@ show_menu(){
     tput rev
     echo "ZStack Server Installation Menu"
     tput sgr0
-     
+
     tput cup 8 15
     echo "1. Apache Tomcat Configuration"
     tput cup 8 50
@@ -81,43 +81,43 @@ show_menu(){
     echo "2. MySQL Database Configuration"
     tput cup 9 50
     check_mysql 'quiet'
-    mysql_flag=$? 
+    mysql_flag=$?
     show_config $mysql_flag
- 
+
     [ $mysql_flag -eq 0 ] && [ $tomcat_flag -eq 0 ] && is_ok=0
 
     [ $is_ok -ne 0 ] && tput setaf 7
     tput cup 10 15
     echo "3. Upgrade ZStack Server"
-     
+
     tput cup 11 15
     echo "4. Fresh Install ZStack Server"
-     
+
     tput sgr0
     tput cup 12 15
     echo "5. Quit"
-     
+
     tput bold
     tput cup 14 13
     read -p "Enter your action[1-5]: " user_selection
-     
+
     tput clear
     tput sgr0
     tput rc
-    
+
     case $user_selection in
-        1)  config_tomcat 
+        1)  config_tomcat
             show_menu;;
         2)  config_db
             show_menu ;;
         3)  if [ $is_ok -eq 0 ];then
-                fresh_install=1 
+                fresh_install=0
             else
                 show_menu
             fi
             ;;
         4)  if [ $is_ok -eq 0 ];then
-                fresh_install=0 
+                fresh_install=1
             else
                 show_menu
             fi
@@ -147,7 +147,7 @@ config_db(){
     echo "3. Database Username: $db_user_name"
     tput cup 9 20
     echo "4. Database Password: $db_user_passwd"
-    
+
     tput sgr0
     tput bold
     tput cup 12 15
@@ -202,7 +202,7 @@ config_tomcat(){
     tput rc
 }
 
-# check mysql connection. 
+# check mysql connection.
 check_mysql(){
     if [ ! -z $1 ];then
         error_log=/dev/null
@@ -221,14 +221,12 @@ check_tomcat(){
     webapp_folder=$tomcat_folder_path/webapps
     if [ ! -d $webapp_folder ]; then
         [ ! -z $1 ] && return 1
-        Error_Msg "Tomcat's web application folder: $webapp_folder doesn't not exist"
-        Exit 1
+        err_quit "Tomcat's web application folder: $webapp_folder doesn't not exist"
     fi
-    
+
     if [ ! -f $tomcat_folder_path/bin/startup.sh ]; then
         [ ! -z $1 ] && return 1
-        Error_Msg "Is $tomcat_folder_path tomcat folder? Can't find $tomcat_folder_path/bin/startup.sh "
-        Exit 1
+        err_quit "Is $tomcat_folder_path tomcat folder? Can't find $tomcat_folder_path/bin/startup.sh "
     fi
     return 0
 }
@@ -236,7 +234,7 @@ check_tomcat(){
 set_db_config(){
     #base on old zstack.properties to get current db configurations.
     if [ -f $zstack_property ];then
-       /bin/cp -f $zstack_property $old_zstack_property
+        /bin/cp -f $zstack_property $old_zstack_property
         db_info=`grep 'DbFacadeDataSource.jdbcUrl' $zstack_property|awk -F'//' '{print $2}'|awk -F'/' '{print $1}'`
         db_df_host=`echo $db_info|awk -F: '{print $1}'`
         db_df_port=`echo $db_info|awk -F: '{print $2}'`
@@ -256,7 +254,7 @@ set_db_config(){
             df_df_passwd=""
         fi
     fi
-    
+
     db_user_name=${db_user_name-"$db_df_user"}
     db_user_passwd=${db_user_passwd-"$db_df_passwd"}
     db_host=${db_host-"$db_df_host"}
@@ -268,37 +266,34 @@ cancel(){
     tput sgr0
     tput rc
     echo "Cancel installation by User"
-    Exit 1
+    exit 1
 }
 
 trap cancel INT
 
+[ $# -eq 0 ] && interactive_install=1
+
 OPTIND=1
-while getopts "u:p:s:P:fh" Option
+while getopts "u:p:s:P:fw:h" Option
 do
     case $Option in
         u ) db_user_name=$OPTARG;;
         p ) db_user_passwd=$OPTARG;;
         s ) db_host=$OPTARG;;
         P ) db_port=$OPTARG;;
-        f ) fresh_install=0;;
+        f ) fresh_install=1;;
+        w ) zstack_war=$OPTARG;;
         h ) help;;
         * ) help;;
     esac
 done
-OPTIND=1
+shift `expr $OPTIND - 1`
 
-if [ $# -ne 0 ];then
-    #automation work, no prompt
-    augs=`expr $# % 2`
-    [ $augs -eq 0 ] && [ $fresh_install -eq  1 ] && help
-    [ $augs -eq 1 ] && [ $fresh_install -eq  0 ] && help
-    
-    for aug; do
-        true
-    done
-    
-    tomcat_folder_path=$aug
+if [ $interactive_install -eq 0 ]; then
+    # only one left-over - the path to tomcat
+    [ $# -eq 1 ] || help
+
+    tomcat_folder_path=$1
     webapp_folder=$tomcat_folder_path/webapps
     zstack_folder=$webapp_folder/zstack
     zstack_property="$zstack_folder/WEB-INF/classes/zstack.properties"
@@ -313,11 +308,10 @@ echo $tomcat_folder_path > $tomcat_path_save
 # Above: do configuration
 #-------------
 # Below: begin installation or upgrading
-if [ $fresh_install -eq 1 ];then
+if [ $fresh_install -eq 0 ];then
     echo "Upgrade ZStack Server ..."
     if [ ! -f $zstack_service ];then
-        Error_Msg "Do not find zstack service script in $zstack_service. If not install ZStack yet, please add option -f"
-        Exit 1
+        err_quit "Do not find zstack service script in $zstack_service. If not install ZStack yet, please add option -f"
     fi
     echo "Stop ZStack Server ..."
     $zstack_service stop
@@ -325,8 +319,7 @@ if [ $fresh_install -eq 1 ];then
         pid=`ps -aef|grep java|grep 'org.apache.catalina.startup.Bootstrap'|awk '{print $2}'`
         ps -p $pid > /dev/null 2>&1
         if [ $? -eq 0 ]; then
-            Error_Msg "Can not stop ZStack server by '$zstack_service stop'. Kill Tomcat service manually and rerun the install.sh again."
-            Exit 1
+            err_quit "Can not stop ZStack server by '$zstack_service stop'. Kill Tomcat service manually and rerun the install.sh again."
         fi
     fi
     echo "ZStack Server is not running"
@@ -342,8 +335,7 @@ check_cmd(){
     #$2 is command's package name
     which $1 >/dev/null 2>&1
     if [ $? -ne 0 ]; then
-        Error_Msg "Can not find command: [$1], you need to install [$2] firstly."
-        Exit 1
+        err_quit "Can not find command: [$1], you need to install [$2] firstly."
     fi
 }
 
@@ -354,25 +346,23 @@ check_cmd ansible ansible
 
 check_mysql
 if [ $? -ne 0 ];then
-    Error_Msg "Can not operate mysql database with
+    err_quit "Can not operate mysql database with
     [user:] $db_user_name
     [password:] $db_user_passwd
     [mysql server:] $db_host:$db_port
 
-    The reason is: 
+    The reason is:
     `cat $error_tmp_file`
     "
-    Exit 1
 fi
 
 # check rabbitmq-server connection.
 rabbitmqctl status >/dev/null 2>$error_tmp_file
 if [ $? -ne 0 ]; then
-    Error_Msg "Can not get rabbitmq server's status.
+    err_quit "Can not get rabbitmq server's status.
     The reason is :
     `cat $error_tmp_file`
     "
-    Exit 1
 fi
 
 check_tomcat
@@ -380,20 +370,19 @@ check_tomcat
 /bin/rm -f $webapp_folder/zstack.war
 
 if [ ! -f $zstack_war ]; then
-    Error_Msg "Did not find zstack.war: $zstack_war"
-    Exit 1
+    err_quit "Did not find zstack.war: $zstack_war"
 fi
 
 cp $zstack_war $webapp_folder
 cd $webapp_folder
 
 unzip -q -d zstack zstack.war
-if [ $fresh_install -eq 0 ]; then
+if [ $fresh_install -eq 1 ]; then
     sed -i "s/DbFacadeDataSource.user.*/DbFacadeDataSource.user=$db_user_name/" $zstack_property
     sed -i "s/DbFacadeDataSource.password.*/DbFacadeDataSource.password=$db_user_passwd/" $zstack_property
     sed -i "s/DbFacadeDataSource.jdbcUrl.*/DbFacadeDataSource.jdbcUrl=jdbc:mysql:\/\/$db_host:$db_port\/zstack/" $zstack_property
     sed -i "s/RestApiDataSource.jdbcUrl.*/RestApiDataSource.jdbcUrl=jdbc:mysql:\/\/$db_host:$db_port\/zstack_rest/" $zstack_property
-    
+
     db_script_folder=zstack/WEB-INF/classes/db
     database=$db_script_folder/database.sql
     schema=$db_script_folder/schema.sql
@@ -401,27 +390,25 @@ if [ $fresh_install -eq 0 ]; then
     schema_rest=$db_script_folder/schema-rest.sql
     schema_quartz=$db_script_folder/zstack_quartz.sql
     view=$db_script_folder/view.sql
-    
+
     create_zstack_db(){
         mysql --user=$db_user_name --password=$db_user_passwd --host=$db_host --port=$db_port < $1 >/dev/null 2>$error_tmp_file
         if [ $? -ne 0 ];then
-            Error_Msg "Create ZStack Initial Database Failed.
+            err_quit "Create ZStack Initial Database Failed.
         The reason is:
         `cat $error_tmp_file`"
-            Exit 1
         fi
     }
- 
+
     update_zstack_db(){
         mysql --user=$db_user_name --password=$db_user_passwd --host=$db_host --port=$db_port -t $1 < $2 >/dev/null 2>$error_tmp_file
         if [ $? -ne 0 ];then
-            Error_Msg "Create ZStack Initial Database Failed.
+            err_quit "Create ZStack Initial Database Failed.
         The reason is:
         `cat $error_tmp_file`"
-            Exit 1
         fi
     }
-    #can not directly call deploydb.sh, since the empty password string will 
+    #can not directly call deploydb.sh, since the empty password string will
     # make the parameters sequence wrong.
     create_zstack_db  $database
     create_zstack_db  $schema
@@ -436,19 +423,20 @@ fi
 zstack_service_script=$webapp_folder/zstack/WEB-INF/classes/install/zstack-server
 
 if [ ! -f $zstack_service_script ]; then
-    Error_Msg "Did not find zstack server script: $zstack_service_script"
-    Exit 1
+    err_quit "Did not find zstack server script: $zstack_service_script"
 fi
 
-#since tomcat_folder_path is a path, should use '#' instead of '/' in sed 
+#since tomcat_folder_path is a path, should use '#' instead of '/' in sed
 sed -i "s#^TOMCAT_PATH=.*#TOMCAT_PATH=$tomcat_folder_path#" $zstack_service_script
 /bin/cp -f $zstack_service_script /etc/init.d/
-chmod a+x /etc/init.d/zstack-server 
+chmod a+x /etc/init.d/zstack-server
 
-if [ $fresh_install -eq 0 ]; then
+if [ $fresh_install -eq 1 ]; then
     echo -e "$(tput setaf 2)ZStack has been installed to $webapp_folder\n$(tput sgr0)"
 else
     echo -e "$(tput setaf 2)ZStack has been upgraded in $webapp_folder\n$(tput sgr0)"
 fi
 echo -e "$(tput setaf 2)zstack-server has been installed to /etc/init.d . Run \`/etc/init.d/zstack-server start\` to start zstack service.\n$(tput sgr0)"
 [ -f $old_zstack_property ] && echo -e "$(tput setaf 2)Original zstack.properties was saved in $old_zstack_property\n$(tput sgr0)"
+
+# vim: set et ts=4 sw=4 ai:
