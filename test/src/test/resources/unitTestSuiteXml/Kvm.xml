@@ -84,4 +84,5 @@
     <TestCase class="org.zstack.test.kvm.TestCreateDataVolumeTemplate6"/>
     <TestCase class="org.zstack.test.kvm.TestKvmMaintenanceModeAttachPrimaryStorage"/>
     <TestCase class="org.zstack.test.kvm.TestKvmMaintenanceModeAttachL2Network"/>
+    <TestCase class="org.zstack.test.kvm.TestCreateVmOnKvmIso"/>
 </UnitTestSuiteConfig>

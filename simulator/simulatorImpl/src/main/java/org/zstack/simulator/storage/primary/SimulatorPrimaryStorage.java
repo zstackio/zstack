@@ -96,6 +96,13 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(DownloadIsoToPrimaryStorageMsg msg) {
+        DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
+        reply.setInstallPath("/xxx.iso");
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void connectHook(ConnectPrimaryStorageMsg msg, Completion completion) {
         completion.success();
     }

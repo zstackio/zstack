@@ -148,7 +148,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 	}
 
     private void handleBase(DownloadIsoToPrimaryStorageMsg msg) {
-        checkIfBackupStorageAttachedToMyZone(msg.getIsoSpec().getSelectedBackupStorage().getImageUuid());
+        checkIfBackupStorageAttachedToMyZone(msg.getIsoSpec().getSelectedBackupStorage().getBackupStorageUuid());
         handle(msg);
     }
 
