@@ -34,12 +34,6 @@
 		</zstack:plugin>
 	</bean>
 	
-	<bean id="NfsPrimaryStorageInstantiateIsoExtension" class="org.zstack.storage.primary.nfs.NfsPrimaryStorageInstantiateIsoExtension">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint" />
-		</zstack:plugin>
-	</bean>
-
 	<bean id="NfsPrimaryStorageApiInterceptor" class="org.zstack.storage.primary.nfs.NfsPrimaryStorageApiInterceptor">
 		<zstack:plugin>
 			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />

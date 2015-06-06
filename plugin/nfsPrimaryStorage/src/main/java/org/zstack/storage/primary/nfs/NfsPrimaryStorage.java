@@ -13,6 +13,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
@@ -30,6 +31,8 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMIsoTO;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageBackend.CreateBitsFromSnapshotResult;
@@ -864,6 +867,42 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 }
             });
         }
+    }
+
+    @Override
+    protected void handle(final DownloadIsoToPrimaryStorageMsg msg) {
+        final DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
+        final PrimaryStorageInventory pinv = getSelfInventory();
+        NfsDownloadImageToCacheJob job = new NfsDownloadImageToCacheJob();
+        job.setPrimaryStorage(pinv);
+        job.setImage(msg.getIsoSpec());
+
+        final ImageInventory img = msg.getIsoSpec().getInventory();
+        jobf.execute(NfsPrimaryStorageKvmHelper.makeDownloadImageJobName(msg.getIsoSpec().getInventory(), pinv),
+                NfsPrimaryStorageKvmHelper.makeJobOwnerName(pinv), job,
+                new ReturnValueCompletion<ImageCacheInventory>(msg) {
+
+                    @Override
+                    public void success(ImageCacheInventory returnValue) {
+                        logger.debug(String.format("successfully downloaded iso[uuid:%s, name:%s] from backup storage[uuid:%s] to primary storage[uuid:%s, name:%s], path in cache: %s",
+                                img.getUuid(), img.getName(), msg.getIsoSpec().getSelectedBackupStorage().getBackupStorageUuid(),
+                                pinv.getUuid(), pinv.getName(), returnValue.getInstallUrl()));
+
+                        reply.setInstallPath(returnValue.getInstallUrl());
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        String err = String.format("failed to downloaded iso[uuid:%s, name:%s] from backup storage[uuid:%s] to primary storage[uuid:%s, name:%s]",
+                                img.getUuid(), img.getName(), msg.getIsoSpec().getSelectedBackupStorage().getBackupStorageUuid(),
+                                pinv.getUuid(), pinv.getName());
+                        logger.warn(err);
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                }, ImageCacheInventory.class);
+
     }
 
     @Override

@@ -583,6 +583,11 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(DownloadIsoToPrimaryStorageMsg msg) {
+
+    }
+
+    @Override
     protected void connectHook(ConnectPrimaryStorageMsg msg, Completion completion) {
         connect(completion);
     }

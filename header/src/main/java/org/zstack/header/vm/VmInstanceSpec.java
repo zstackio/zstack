@@ -81,6 +81,18 @@ public class VmInstanceSpec implements Serializable {
         }
     }
 
+    public static class IsoSpec implements Serializable {
+        private String installPath;
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+    }
+
     public static class HostName implements Serializable {
         private String l3NetworkUuid;
         private String hostname;
@@ -122,6 +134,15 @@ public class VmInstanceSpec implements Serializable {
     private VmOperation currentVmOperation;
     private Map<String, JsonWrapper> extensionData = new HashMap<String, JsonWrapper>();
     private String dataIsoPath;
+    private IsoSpec destIso;
+
+    public IsoSpec getDestIso() {
+        return destIso;
+    }
+
+    public void setDestIso(IsoSpec destIso) {
+        this.destIso = destIso;
+    }
 
     public VmInstanceSpec() {
     }

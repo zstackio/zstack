@@ -73,6 +73,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(DeleteBitsOnPrimaryStorageMsg msg);
 
+    protected abstract void handle(DownloadIsoToPrimaryStorageMsg msg);
+
     protected abstract void connectHook(ConnectPrimaryStorageMsg msg, Completion completion);
 
 	public PrimaryStorageBase(PrimaryStorageVO self) {
@@ -137,11 +139,18 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         } else if (msg instanceof DeleteBitsOnPrimaryStorageMsg) {
             handle((DeleteBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ConnectPrimaryStorageMsg) {
-            handle((ConnectPrimaryStorageMsg)msg);
+            handle((ConnectPrimaryStorageMsg) msg);
+        } else if (msg instanceof DownloadIsoToPrimaryStorageMsg) {
+            handleBase((DownloadIsoToPrimaryStorageMsg) msg);
 	    } else {
 	        bus.dealWithUnknownMessage(msg);
 	    }
 	}
+
+    private void handleBase(DownloadIsoToPrimaryStorageMsg msg) {
+        checkIfBackupStorageAttachedToMyZone(msg.getIsoSpec().getSelectedBackupStorage().getImageUuid());
+        handle(msg);
+    }
 
     private void handle(final ConnectPrimaryStorageMsg msg) {
         final ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply();

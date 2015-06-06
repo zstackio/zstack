@@ -36,6 +36,7 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.tag.TagManager;
@@ -1139,9 +1140,9 @@ public class KVMHost extends HostBase implements Host {
 
         ImageInventory image = spec.getImageSpec().getInventory();
         if (ImageMediaType.ISO.toString().equals(image.getMediaType()) && spec.getCurrentVmOperation() == VmOperation.NewCreate) {
-            KVMIsoTO iso = spec.getExtensionData(KVMConstant.ISO_TO, KVMIsoTO.class);
+            IsoSpec iso = spec.getDestIso();
             cmd.setBootDev(BootDev.cdrom.toString());
-            cmd.setBootIsoPath(iso.getPathInCache());
+            cmd.setBootIsoPath(iso.getInstallPath());
         } else {
             cmd.setBootDev(BootDev.hd.toString());
         }
