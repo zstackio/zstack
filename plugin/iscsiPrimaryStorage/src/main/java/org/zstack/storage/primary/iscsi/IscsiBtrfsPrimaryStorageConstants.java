@@ -14,4 +14,6 @@ public interface IscsiBtrfsPrimaryStorageConstants {
     public static final String CREATE_EMPTY_VOLUME_PATH = "/volumes/createempty";
     public static final String UPLOAD_BITS = "/bits/upload";
     public static final String CREATE_TARGET_PATH = "/target/create";
+    public static final String CREATE_SYMLINK = "/symlink/create";
+    public static final String DELETE_SYMLINK = "/symlink/delete";
 }

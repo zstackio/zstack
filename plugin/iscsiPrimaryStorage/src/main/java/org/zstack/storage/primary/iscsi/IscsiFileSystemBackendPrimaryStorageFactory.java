@@ -3,7 +3,6 @@ package org.zstack.storage.primary.iscsi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleFacade;
-import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
@@ -12,11 +11,13 @@ import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.DetachDataVolumeCmd;
@@ -45,45 +46,30 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
-    private CloudBus bus;
-    @Autowired
     private AnsibleFacade asf;
 
-    private Map<BackupStorageType, Map<HypervisorType, IscsiFileSystemBackendPrimaryToBackupStorageMediator>> mediators = new HashMap<BackupStorageType, Map<HypervisorType, IscsiFileSystemBackendPrimaryToBackupStorageMediator>>();
+    private Map<BackupStorageType, IscsiFileSystemBackendPrimaryToBackupStorageMediator> mediators = new HashMap<BackupStorageType, IscsiFileSystemBackendPrimaryToBackupStorageMediator>();
 
     @Override
     public PrimaryStorageType getPrimaryStorageType() {
         return type;
     }
 
-    IscsiFileSystemBackendPrimaryToBackupStorageMediator getPrimaryToBackupStorageMediator(BackupStorageType bsType, HypervisorType hvType) {
-        Map<HypervisorType, IscsiFileSystemBackendPrimaryToBackupStorageMediator> mediatorMap = mediators.get(bsType);
-        if (mediatorMap == null) {
-            throw new CloudRuntimeException(String.format("primary storage[type:%s] wont have mediator supporting backup storage[type:%s]", type, bsType));
-        }
-        IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = mediatorMap.get(hvType);
+    IscsiFileSystemBackendPrimaryToBackupStorageMediator getPrimaryToBackupStorageMediator(BackupStorageType bsType) {
+        IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = mediators.get(bsType);
         if (mediator == null) {
-            throw new CloudRuntimeException(String.format("PrimaryToBackupStorageMediator[primary storage type: %s, backup storage type: %s] doesn't have backend supporting hypervisor type[%s]" , type, bsType, hvType));
+            throw new CloudRuntimeException(String.format("primary storage[type:%s] wont have mediator supporting backup storage[type:%s]", type, bsType));
         }
         return mediator;
     }
 
     private void populateExtensions() {
         for (IscsiFileSystemBackendPrimaryToBackupStorageMediator extp : pluginRgty.getExtensionList(IscsiFileSystemBackendPrimaryToBackupStorageMediator.class)) {
-            if (extp.getSupportedPrimaryStorageType().equals(type)) {
-                Map<HypervisorType, IscsiFileSystemBackendPrimaryToBackupStorageMediator> map = mediators.get(extp.getSupportedBackupStorageType());
-                if (map == null) {
-                    map = new HashMap<HypervisorType, IscsiFileSystemBackendPrimaryToBackupStorageMediator>(1);
-                }
-                for (HypervisorType hvType : extp.getSupportedHypervisorTypes()) {
-                    map.put(hvType, extp);
-                }
-                mediators.put(extp.getSupportedBackupStorageType(), map);
+            if (extp.getSupportedPrimaryStorageType().equals(type) && !mediators.containsKey(extp.getSupportedBackupStorageType())) {
+                mediators.put(extp.getSupportedBackupStorageType(), extp);
             }
         }
     }
-
-
 
     @Override
     public PrimaryStorageInventory createPrimaryStorage(final PrimaryStorageVO vo, final APIAddPrimaryStorageMsg msg) {

@@ -6,5 +6,6 @@
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage3"/>
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage4"/>
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage5"/>
+    <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage6"/>
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestQueryIscsiBtrfsPrimaryStorage"/>
 </UnitTestSuiteConfig>

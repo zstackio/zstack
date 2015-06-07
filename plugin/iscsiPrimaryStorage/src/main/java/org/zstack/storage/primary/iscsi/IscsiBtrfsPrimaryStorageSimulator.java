@@ -215,4 +215,40 @@ public class IscsiBtrfsPrimaryStorageSimulator {
         reply(entity, rsp);
     }
 
+    @RequestMapping(value="/btrfs/symlink/create",  method= RequestMethod.POST)
+    @ResponseBody
+    private String createSymlink(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        createSymlink(entity);
+        return null;
+    }
+
+    private void createSymlink(HttpEntity<String> entity) {
+        CreateSymlinkCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateSymlinkCmd.class);
+        CreateSymlinkRsp rsp = new CreateSymlinkRsp();
+        if (config.createSymlinkSuccess) {
+            config.createSymlinkCmds.add(cmd);
+        } else {
+            rsp.setError("on purpose");
+            rsp.setSuccess(false);
+        }
+
+        reply(entity, rsp);
+    }
+
+    @RequestMapping(value="/btrfs/symlink/delete",  method= RequestMethod.POST)
+    @ResponseBody
+    private String deleteSymlink(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        deleteSymlink(entity);
+        return null;
+    }
+
+    private void deleteSymlink(HttpEntity<String> entity) {
+        DeleteSymlinkCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteSymlinkCmd.class);
+        DeleteSyslinkRsp rsp = new DeleteSyslinkRsp();
+        config.deleteSymlinkCmdLIst.add(cmd);
+        reply(entity, rsp);
+    }
+
 }

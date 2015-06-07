@@ -12,26 +12,25 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.*;
-import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.backup.BackupStorageType;
+import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMConstant;
-import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
-import org.zstack.storage.backup.sftp.SftpBackupStorageGlobalProperty;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
@@ -95,6 +94,10 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         return PathUtil.join(self.getUrl(), "imageCache/templates", imageUuid, String.format("%s.template", imageUuid));
     }
 
+    private String makeIsoPathInImageCache(String imageUuid) {
+        return PathUtil.join(self.getUrl(), "imageCache/iso", imageUuid, String.format("%s.iso", imageUuid));
+    }
+
     private String makeRootVolumePath(String volumeUuid) {
         return PathUtil.join(self.getUrl(), "rootVolumes", String.format("acct-%s", acntMgr.getOwnerAccountUuidOfResource(volumeUuid)),
                 String.format("vol-%s", volumeUuid), String.format("%s.img", volumeUuid));
@@ -148,6 +151,122 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
+    private class DownloadImageToCache {
+        ImageCacheVO result;
+        BackupStorageInventory bs;
+        ImageSpec imageSpec;
+
+        void run(final ReturnValueCompletion<ImageCacheVO> completion) {
+            DebugUtils.Assert(imageSpec!=null, "imageSpec cannot be null");
+            DebugUtils.Assert(bs!=null, "backup storage cannot bel null");
+
+            thdf.chainSubmit(new ChainTask(completion) {
+                @Override
+                public String getSyncSignature() {
+                    return getName();
+                }
+
+                @Override
+                public void run(final SyncTaskChain chain) {
+                    Completion c = new Completion(chain, completion) {
+                        @Override
+                        public void success() {
+                            completion.success(result);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                            chain.next();
+                        }
+                    };
+
+                    SimpleQuery<ImageCacheVO> query = dbf.createQuery(ImageCacheVO.class);
+                    query.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+                    query.add(ImageCacheVO_.imageUuid, Op.EQ, imageSpec.getInventory().getUuid());
+                    ImageCacheVO cvo = query.find();
+                    if (cvo != null) {
+                        checkCache(cvo, c);
+                    } else {
+                        downloadToCache(null, c);
+                    }
+                }
+
+                @Override
+                public String getName() {
+                    return String.format("download-image-%s-to-iscsi-primary-storage-%s", imageSpec.getInventory().getUuid(), self.getUuid());
+                }
+            });
+        }
+
+        private void downloadToCache(final ImageCacheVO cvo, final Completion completion) {
+            IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bs.getType()));
+
+            final String imagePathInCache = ImageMediaType.ISO.toString().equals(imageSpec.getInventory().getMediaType()) ?
+                    makeIsoPathInImageCache(imageSpec.getInventory().getUuid()) : makePathInImageCache(imageSpec.getInventory().getUuid());
+            mediator.downloadBits(getSelfInventory(), bs,
+                    imageSpec.getSelectedBackupStorage().getInstallPath(),  imagePathInCache, new Completion() {
+                        @Override
+                        public void success() {
+                            if (cvo == null) {
+                                ImageCacheVO vo = new ImageCacheVO();
+                                vo.setImageUuid(imageSpec.getInventory().getUuid());
+                                vo.setInstallUrl(imagePathInCache);
+                                vo.setMediaType(ImageMediaType.valueOf(imageSpec.getInventory().getMediaType()));
+                                vo.setPrimaryStorageUuid(self.getUuid());
+                                vo.setSize(imageSpec.getInventory().getSize());
+                                vo.setState(ImageCacheState.ready);
+                                vo.setMd5sum("not calculated");
+                                dbf.persist(vo);
+                                result = vo;
+                            } else {
+                                cvo.setInstallUrl(imagePathInCache);
+                                dbf.update(cvo);
+                                result = cvo;
+                            }
+
+                            completion.success();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                        }
+                    });
+        }
+
+        private void checkCache(final ImageCacheVO cvo, final Completion completion) {
+            CheckBitsExistenceCmd cmd = new CheckBitsExistenceCmd();
+            cmd.setPath(cvo.getInstallUrl());
+            restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CHECK_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<CheckBitsExistenceRsp>(completion) {
+                @Override
+                public void fail(ErrorCode err) {
+                    completion.fail(err);
+                }
+
+                @Override
+                public void success(CheckBitsExistenceRsp ret) {
+                    if (!ret.isSuccess()) {
+                        completion.fail(errf.stringToOperationError(ret.getError()));
+                    }  else {
+                        if (ret.isExisting()) {
+                            result = cvo;
+                            completion.success();
+                        } else {
+                            downloadToCache(cvo, completion);
+                        }
+                    }
+                }
+
+                @Override
+                public Class<CheckBitsExistenceRsp> getReturnClass() {
+                    return CheckBitsExistenceRsp.class;
+                }
+            });
+        }
+    }
+
     private void handle(final InstantiateRootVolumeFromTemplateMsg msg) {
         final InstantiateVolumeReply reply = new InstantiateVolumeReply();
         final ImageSpec ispec = msg.getTemplateSpec();
@@ -172,107 +291,19 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            thdf.chainSubmit(new ChainTask(trigger) {
+                            DownloadImageToCache download = new DownloadImageToCache();
+                            download.imageSpec = ispec;
+                            download.bs = bsinv;
+                            download.run(new ReturnValueCompletion<ImageCacheVO>(trigger) {
                                 @Override
-                                public String getSyncSignature() {
-                                    return getName();
+                                public void success(ImageCacheVO returnValue) {
+                                    imagePathInCache = returnValue.getInstallUrl();
+                                    trigger.next();
                                 }
 
                                 @Override
-                                public void run(final SyncTaskChain chain) {
-                                    Completion completion = new Completion(chain, trigger) {
-                                        @Override
-                                        public void success() {
-                                            trigger.next();
-                                            chain.next();
-                                        }
-
-                                        @Override
-                                        public void fail(ErrorCode errorCode) {
-                                            trigger.fail(errorCode);
-                                            chain.next();
-                                        }
-                                    };
-
-                                    SimpleQuery<ImageCacheVO> query = dbf.createQuery(ImageCacheVO.class);
-                                    query.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-                                    query.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());
-                                    ImageCacheVO cvo = query.find();
-                                    if (cvo != null) {
-                                        checkCache(cvo, completion);
-                                    } else {
-                                        downloadToCache(null, completion);
-                                    }
-                                }
-
-                                @Override
-                                public String getName() {
-                                    return String.format("download-image-%s-to-iscsi-primary-storage-%s", image.getUuid(), self.getUuid());
-                                }
-                            });
-
-                        }
-
-                        private void downloadToCache(final ImageCacheVO cvo, final Completion completion) {
-                            IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bsinv.getType()),
-                                    VolumeFormat.getMasterHypervisorTypeByVolumeFormat(image.getFormat()));
-
-                            imagePathInCache = makePathInImageCache(image.getUuid());
-                            mediator.downloadBits(getSelfInventory(), bsinv,
-                                    ispec.getSelectedBackupStorage().getInstallPath(),  imagePathInCache, new Completion() {
-                                        @Override
-                                        public void success() {
-                                            if (cvo == null) {
-                                                ImageCacheVO vo = new ImageCacheVO();
-                                                vo.setImageUuid(image.getUuid());
-                                                vo.setInstallUrl(imagePathInCache);
-                                                vo.setMediaType(ImageMediaType.valueOf(image.getMediaType()));
-                                                vo.setPrimaryStorageUuid(self.getUuid());
-                                                vo.setSize(image.getSize());
-                                                vo.setState(ImageCacheState.ready);
-                                                vo.setMd5sum("not calculated");
-                                                dbf.persist(vo);
-                                            } else {
-                                                cvo.setInstallUrl(imagePathInCache);
-                                                dbf.update(cvo);
-                                            }
-
-                                            completion.success();
-                                        }
-
-                                        @Override
-                                        public void fail(ErrorCode errorCode) {
-                                            completion.fail(errorCode);
-                                        }
-                                    });
-                        }
-
-                        private void checkCache(final ImageCacheVO cvo, final Completion completion) {
-                            CheckBitsExistenceCmd cmd = new CheckBitsExistenceCmd();
-                            cmd.setPath(cvo.getInstallUrl());
-                            restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CHECK_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<CheckBitsExistenceRsp>(completion) {
-                                @Override
-                                public void fail(ErrorCode err) {
-                                    completion.fail(err);
-                                }
-
-                                @Override
-                                public void success(CheckBitsExistenceRsp ret) {
-                                    if (!ret.isSuccess()) {
-                                        completion.fail(errf.stringToOperationError(ret.getError()));
-                                    }  else {
-                                        if (ret.isExisting()) {
-                                            imagePathInCache = cvo.getInstallUrl();
-                                            completion.success();
-                                        } else {
-                                            downloadToCache(cvo, completion);
-                                        }
-                                    }
-                                }
-
-                                @Override
-                                public Class<CheckBitsExistenceRsp> getReturnClass() {
-                                    return CheckBitsExistenceRsp.class;
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
                                 }
                             });
                         }
@@ -422,8 +453,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         VolumeInventory vol = msg.getVolumeInventory();
         String imageUuid = msg.getImageInventory().getUuid();
 
-        IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bsinv.getType()),
-                VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat()));
+        IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bsinv.getType()));
 
         String bsInstallPath = null;
         if (vol.getType().equals(VolumeType.Root.toString())) {
@@ -460,8 +490,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         final BackupStorageInventory bsinv = BackupStorageInventory.valueOf(bsvo);
         final VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
 
-        final IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bsinv.getType()),
-                VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat()));
+        final IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bsinv.getType()));
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("download-image-%s-to-volume-%s-to-iscsi-primary-storage", msg.getImage().getUuid(), msg.getVolumeUuid()));
@@ -583,8 +612,118 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(DownloadIsoToPrimaryStorageMsg msg) {
+    protected void handle(final DownloadIsoToPrimaryStorageMsg msg) {
+        final DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
 
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("download-iso-%s-to-iscsi-btrfs-primary-storage-%s", msg.getIsoSpec().getInventory().getUuid(), self.getUuid()));
+        chain.then(new ShareFlow() {
+            String pathInCache;
+            String link;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "download-to-image-cache";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        DownloadImageToCache download = new DownloadImageToCache();
+                        download.imageSpec = msg.getIsoSpec();
+                        BackupStorageVO bsvo = dbf.findByUuid(msg.getIsoSpec().getSelectedBackupStorage().getBackupStorageUuid(), BackupStorageVO.class);
+                        download.bs = BackupStorageInventory.valueOf(bsvo);
+                        download.run(new ReturnValueCompletion<ImageCacheVO>(trigger) {
+                            @Override
+                            public void success(ImageCacheVO returnValue) {
+                                pathInCache = returnValue.getInstallUrl();
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "create-http-download-path";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        link = PathUtil.join(IscsiBtrfsPrimaryStorageGlobalProperty.ISO_HTTP_SERVER_ROOT, "iso", msg.getIsoSpec().getInventory().getUuid() + ".iso");
+                        CreateSymlinkCmd cmd = new CreateSymlinkCmd();
+                        cmd.setSrc(pathInCache);
+                        cmd.setDst(link);
+                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_SYMLINK), cmd, new JsonAsyncRESTCallback<CreateSymlinkRsp>(trigger) {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                trigger.fail(err);
+                            }
+
+                            @Override
+                            public void success(CreateSymlinkRsp ret) {
+                                if (ret.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(errf.stringToOperationError(ret.getError()));
+                                }
+                            }
+
+                            @Override
+                            public Class<CreateSymlinkRsp> getReturnClass() {
+                                return CreateSymlinkRsp.class;
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(final FlowTrigger trigger, Map data) {
+                        DeleteSymlinkCmd cmd = new DeleteSymlinkCmd();
+                        cmd.setLink(link);
+                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_SYMLINK), cmd,
+                                new JsonAsyncRESTCallback<DeleteSyslinkRsp>(trigger) {
+                                    @Override
+                                    public void fail(ErrorCode err) {
+                                        logger.warn(String.format("failed to delete symlink[%s], %s, continue to rollback", link, err));
+                                        trigger.rollback();
+                                    }
+
+                                    @Override
+                                    public void success(DeleteSyslinkRsp ret) {
+                                        if (!ret.isSuccess()) {
+                                            logger.warn(String.format("failed to delete symlink[%s], %s, continue to rollback", link, ret.getError()));
+                                        }
+
+                                        trigger.rollback();
+                                    }
+
+                                    @Override
+                                    public Class<DeleteSyslinkRsp> getReturnClass() {
+                                        return DeleteSyslinkRsp.class;
+                                    }
+                                });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        reply.setInstallPath(String.format("http://%s/iso/%s.iso", getSelf().getHostname(), msg.getIsoSpec().getInventory().getUuid()));
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override
@@ -655,6 +794,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         runner.setAgentPort(IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PORT);
                         runner.setPlayBookName(IscsiFileSystemBackendPrimaryStorageGlobalProperty.ANSIBLE_PLAYBOOK_NAME);
                         runner.putArgument("pkg_iscsiagent", IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PACKAGE_NAME);
+                        runner.putArgument("iso_http_server_root", IscsiBtrfsPrimaryStorageGlobalProperty.ISO_HTTP_SERVER_ROOT);
                         runner.run(new Completion(trigger) {
                             @Override
                             public void success() {

@@ -1,6 +1,5 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 

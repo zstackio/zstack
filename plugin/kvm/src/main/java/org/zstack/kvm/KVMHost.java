@@ -1141,6 +1141,15 @@ public class KVMHost extends HostBase implements Host {
         ImageInventory image = spec.getImageSpec().getInventory();
         if (ImageMediaType.ISO.toString().equals(image.getMediaType()) && spec.getCurrentVmOperation() == VmOperation.NewCreate) {
             IsoSpec iso = spec.getDestIso();
+
+            if (iso.getInstallPath().startsWith("http")) {
+                String libvirtVersion = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN);
+                if ("1.2.1".compareTo(libvirtVersion) > 0) {
+                    throw new OperationFailureException(errf.stringToOperationError(String.format("the ISO[%s] is exposed by HTTP protocol that needs minimal libvirt version 1.2.1, but current libvirt version is %s",
+                            iso.getInstallPath(), libvirtVersion)));
+                }
+            }
+
             cmd.setBootDev(BootDev.cdrom.toString());
             cmd.setBootIsoPath(iso.getInstallPath());
         } else {

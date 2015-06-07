@@ -382,4 +382,43 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
             this.lun = lun;
         }
     }
+
+    public static class CreateSymlinkCmd extends AgentCommand {
+        private String src;
+        private String dst;
+
+        public String getSrc() {
+            return src;
+        }
+
+        public void setSrc(String src) {
+            this.src = src;
+        }
+
+        public String getDst() {
+            return dst;
+        }
+
+        public void setDst(String dst) {
+            this.dst = dst;
+        }
+    }
+
+    public static class CreateSymlinkRsp extends AgentResponse {
+    }
+
+    public static class DeleteSymlinkCmd extends AgentCommand {
+        private String link;
+
+        public String getLink() {
+            return link;
+        }
+
+        public void setLink(String link) {
+            this.link = link;
+        }
+    }
+
+    public static class DeleteSyslinkRsp extends AgentResponse {
+    }
 }
