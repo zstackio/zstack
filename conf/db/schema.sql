@@ -256,6 +256,21 @@ CREATE TABLE  `zstack`.`IscsiFileSystemBackendPrimaryStorageVO` (
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE  `zstack`.`IscsiIsoVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `imageUuid` varchar(32) NOT NULL,
+    `primaryStorageUuid` varchar(32) NOT NULL,
+    `target` varchar(128) DEFAULT NULL,
+    `hostname` varchar(128) DEFAULT NULL,
+    `path` varchar(512) DEFAULT NULL,
+    `vmInstanceUuid` varchar(32) DEFAULT NULL,
+    `lun` int(10) unsigned,
+    `port` int(10) unsigned,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE  `zstack`.`PrimaryStorageCapacityVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `totalCapacity` bigint unsigned DEFAULT 0,

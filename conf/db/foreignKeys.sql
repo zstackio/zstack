@@ -51,6 +51,15 @@ ALTER TABLE ImageCacheVO ADD CONSTRAINT fkImageCacheVOPrimaryStorageEO FOREIGN K
 
 ALTER TABLE IpRangeEO ADD CONSTRAINT fkIpRangeEOL3NetworkEO FOREIGN KEY (l3NetworkUuid) REFERENCES L3NetworkEO (uuid) ON DELETE CASCADE;
 
+# Foreign keys for table IscsiFileSystemBackendPrimaryStorageVO
+
+ALTER TABLE IscsiFileSystemBackendPrimaryStorageVO ADD CONSTRAINT fkIscsiFileSystemBackendPrimaryStorageVOPrimaryStorageEO FOREIGN KEY (uuid) REFERENCES PrimaryStorageEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+# Foreign keys for table IscsiIsoVO
+
+ALTER TABLE IscsiIsoVO ADD CONSTRAINT fkIscsiIsoVOPrimaryStorageEO FOREIGN KEY (primaryStorageUuid) REFERENCES PrimaryStorageEO (uuid) ON DELETE CASCADE;
+ALTER TABLE IscsiIsoVO ADD CONSTRAINT fkIscsiIsoVOVmInstanceEO FOREIGN KEY (vmInstanceUuid) REFERENCES VmInstanceEO (uuid) ON DELETE SET NULL;
+
 # Foreign keys for table JobQueueEntryVO
 
 ALTER TABLE JobQueueEntryVO ADD CONSTRAINT fkJobQueueEntryVOJobQueueVO FOREIGN KEY (jobQueueId) REFERENCES JobQueueVO (id) ON DELETE CASCADE;

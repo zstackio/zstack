@@ -3,6 +3,7 @@ package org.zstack.storage.primary.iscsi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
@@ -34,6 +35,7 @@ import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
+import org.zstack.storage.primary.iscsi.IscsiIsoStoreManager.IscsiIsoSpec;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -57,6 +59,8 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     private PrimaryStorageManager psMgr;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private IscsiIsoStoreManager isoStoreMgr;
 
     public IscsiFilesystemBackendPrimaryStorage(IscsiFileSystemBackendPrimaryStorageVO vo) {
         super(vo);
@@ -96,6 +100,10 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
 
     private String makeIsoPathInImageCache(String imageUuid) {
         return PathUtil.join(self.getUrl(), "imageCache/iso", imageUuid, String.format("%s.iso", imageUuid));
+    }
+
+    private String makeIsoSubvolumePathInImageCache(String imageUuid) {
+        return PathUtil.join(self.getUrl(), "imageCache/iso/subvolumes",imageUuid, imageUuid);
     }
 
     private String makeRootVolumePath(String volumeUuid) {
@@ -615,11 +623,28 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     protected void handle(final DownloadIsoToPrimaryStorageMsg msg) {
         final DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
 
+        // check if the store has a spare one, if there is then return it
+        IscsiIsoSpec spec = new IscsiIsoSpec();
+        spec.setVmInstanceUuid(msg.getVmInstanceUuid());
+        spec.setImageUuid(msg.getIsoSpec().getInventory().getUuid());
+        spec.setPrimaryStorageUuid(self.getUuid());
+        IscsiIsoVO isovo = isoStoreMgr.take(spec);
+        if (isovo != null) {
+            reply.setInstallPath(isovo.getPath());
+            bus.reply(msg, reply);
+            return;
+        }
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("download-iso-%s-to-iscsi-btrfs-primary-storage-%s", msg.getIsoSpec().getInventory().getUuid(), self.getUuid()));
         chain.then(new ShareFlow() {
             String pathInCache;
-            String link;
+            String isoSubVolumePath;
+            String iscsiPath;
+            String iscsiTarget;
+            String isoSubvolumeUuid;
+            int iscsiLun;
+            String isoUuid = Platform.getUuid();
 
             @Override
             public void setup() {
@@ -648,23 +673,25 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                 });
 
                 flow(new Flow() {
-                    String __name__ = "create-http-download-path";
+                    String __name__ = "create-subvolume-for-iso";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        link = PathUtil.join(IscsiBtrfsPrimaryStorageGlobalProperty.ISO_HTTP_SERVER_ROOT, "iso", msg.getIsoSpec().getInventory().getUuid() + ".iso");
-                        CreateSymlinkCmd cmd = new CreateSymlinkCmd();
+                        final String dstFolder = makeIsoSubvolumePathInImageCache(isoUuid);
+                        CreateSubVolumeCmd cmd = new CreateSubVolumeCmd();
                         cmd.setSrc(pathInCache);
-                        cmd.setDst(link);
-                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_SYMLINK), cmd, new JsonAsyncRESTCallback<CreateSymlinkRsp>(trigger) {
+                        cmd.setDst(dstFolder);
+                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_SUBVOLUME), cmd, new JsonAsyncRESTCallback<CreateSubVolumeRsp>(trigger) {
                             @Override
                             public void fail(ErrorCode err) {
                                 trigger.fail(err);
                             }
 
                             @Override
-                            public void success(CreateSymlinkRsp ret) {
+                            public void success(CreateSubVolumeRsp ret) {
                                 if (ret.isSuccess()) {
+                                    reportCapacity(ret);
+                                    isoSubVolumePath = ret.getPath();
                                     trigger.next();
                                 } else {
                                     trigger.fail(errf.stringToOperationError(ret.getError()));
@@ -672,45 +699,131 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                             }
 
                             @Override
-                            public Class<CreateSymlinkRsp> getReturnClass() {
-                                return CreateSymlinkRsp.class;
+                            public Class<CreateSubVolumeRsp> getReturnClass() {
+                                return CreateSubVolumeRsp.class;
                             }
                         });
                     }
 
                     @Override
                     public void rollback(final FlowTrigger trigger, Map data) {
-                        DeleteSymlinkCmd cmd = new DeleteSymlinkCmd();
-                        cmd.setLink(link);
-                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_SYMLINK), cmd,
-                                new JsonAsyncRESTCallback<DeleteSyslinkRsp>(trigger) {
-                                    @Override
-                                    public void fail(ErrorCode err) {
-                                        logger.warn(String.format("failed to delete symlink[%s], %s, continue to rollback", link, err));
-                                        trigger.rollback();
-                                    }
+                        if (isoSubVolumePath == null) {
+                            trigger.rollback();
+                            return;
+                        }
 
-                                    @Override
-                                    public void success(DeleteSyslinkRsp ret) {
-                                        if (!ret.isSuccess()) {
-                                            logger.warn(String.format("failed to delete symlink[%s], %s, continue to rollback", link, ret.getError()));
-                                        }
+                        deleteBits(isoSubVolumePath, null, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.rollback();
+                            }
 
-                                        trigger.rollback();
-                                    }
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format("failed to deleted subvolume[%s], %s, continue to rollback", isoSubVolumePath, errorCode));
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                });
 
-                                    @Override
-                                    public Class<DeleteSyslinkRsp> getReturnClass() {
-                                        return DeleteSyslinkRsp.class;
-                                    }
-                                });
+                flow(new Flow() {
+                    String __name__ = "create-iscsi-target-for-iso";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        CreateIscsiTargetCmd cmd = new CreateIscsiTargetCmd();
+                        cmd.setChapPassword(getSelf().getChapPassword());
+                        cmd.setChapUsername(getSelf().getChapUsername());
+                        cmd.setInstallPath(isoSubVolumePath);
+                        isoSubvolumeUuid = String.format("%s-%s", msg.getIsoSpec().getInventory().getUuid(), isoUuid);
+                        cmd.setVolumeUuid(isoSubvolumeUuid);
+                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_TARGET_PATH), cmd, new JsonAsyncRESTCallback<CreateIscsiTargetRsp>() {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                trigger.fail(err);
+                            }
+
+                            @Override
+                            public void success(CreateIscsiTargetRsp ret) {
+                                if (ret.isSuccess()) {
+                                    IscsiVolumePath path = new IscsiVolumePath();
+                                    path.setInstallPath(isoSubVolumePath);
+                                    path.setHostname(getSelfInventory().getHostname());
+                                    path.setLun(ret.getLun());
+                                    path.setTarget(ret.getTarget());
+                                    iscsiPath = path.assemble();
+                                    iscsiTarget = ret.getTarget();
+                                    iscsiLun = ret.getLun();
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(errf.stringToOperationError(ret.getError()));
+                                }
+                            }
+
+                            @Override
+                            public Class<CreateIscsiTargetRsp> getReturnClass() {
+                                return CreateIscsiTargetRsp.class;
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(final FlowTrigger trigger, Map data) {
+                        if (iscsiTarget == null) {
+                            trigger.rollback();
+                            return;
+                        }
+
+                        DeleteIscsiTargetCmd cmd = new DeleteIscsiTargetCmd();
+                        cmd.setTarget(iscsiTarget);
+                        cmd.setUuid(isoSubvolumeUuid);
+                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_TARGET_PATH), cmd, new JsonAsyncRESTCallback<DeleteIscsiTargetRsp>() {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                trigger.fail(err);
+                            }
+
+                            @Override
+                            public void success(DeleteIscsiTargetRsp ret) {
+                                if (!ret.isSuccess()) {
+                                    logger.warn(String.format("failed to delete iscsi target[name:%s, uuid:%s], %s", iscsiTarget, isoSubvolumeUuid, ret.getError()));
+                                }
+                                trigger.rollback();
+                            }
+
+                            @Override
+                            public Class<DeleteIscsiTargetRsp> getReturnClass() {
+                                return DeleteIscsiTargetRsp.class;
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "save-iso-to-iscsi-iso-store";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        IscsiIsoVO vo = new IscsiIsoVO();
+                        vo.setUuid(isoUuid);
+                        vo.setVmInstanceUuid(msg.getVmInstanceUuid());
+                        vo.setImageUuid(msg.getIsoSpec().getInventory().getUuid());
+                        vo.setPrimaryStorageUuid(self.getUuid());
+                        vo.setHostname(getSelf().getHostname());
+                        vo.setPort(3260);
+                        vo.setLun(iscsiLun);
+                        vo.setPath(iscsiPath);
+                        vo.setTarget(iscsiTarget);
+                        isoStoreMgr.store(vo);
+                        trigger.next();
                     }
                 });
 
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        reply.setInstallPath(String.format("http://%s/iso/%s.iso", getSelf().getHostname(), msg.getIsoSpec().getInventory().getUuid()));
+                        reply.setInstallPath(iscsiPath);
                         bus.reply(msg, reply);
                     }
                 });
@@ -724,6 +837,13 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                 });
             }
         }).start();
+    }
+
+    @Override
+    protected void handle(DeleteIsoFromPrimaryStorageMsg msg) {
+        isoStoreMgr.releaseByVmUuid(msg.getVmInstanceUuid());
+        DeleteIsoFromPrimaryStorageReply reply = new DeleteIsoFromPrimaryStorageReply();
+        bus.reply(msg, reply);
     }
 
     @Override
@@ -794,7 +914,6 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         runner.setAgentPort(IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PORT);
                         runner.setPlayBookName(IscsiFileSystemBackendPrimaryStorageGlobalProperty.ANSIBLE_PLAYBOOK_NAME);
                         runner.putArgument("pkg_iscsiagent", IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PACKAGE_NAME);
-                        runner.putArgument("iso_http_server_root", IscsiBtrfsPrimaryStorageGlobalProperty.ISO_HTTP_SERVER_ROOT);
                         runner.run(new Completion(trigger) {
                             @Override
                             public void success() {

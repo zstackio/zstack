@@ -906,6 +906,12 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(DeleteIsoFromPrimaryStorageMsg msg) {
+        DeleteIsoFromPrimaryStorageReply reply = new DeleteIsoFromPrimaryStorageReply();
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void connectHook(ConnectPrimaryStorageMsg msg, Completion completion) {
         completion.success();
     }

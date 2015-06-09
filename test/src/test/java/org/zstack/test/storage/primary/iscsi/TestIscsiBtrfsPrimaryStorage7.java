@@ -8,38 +8,32 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.BootDev;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
-import org.zstack.kvm.KVMAgentCommands.VolumeTO;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.iscsi.IscsiBtrfsPrimaryStorageSimulatorConfig;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageVO;
+import org.zstack.storage.primary.iscsi.IscsiIsoVO;
 import org.zstack.storage.primary.iscsi.IscsiVolumePath;
-import org.zstack.storage.primary.iscsi.KVMIscsiIsoTO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
-import java.util.List;
-
 /**
  * 1. create VM using ISO with IscsiBtrfsPrimaryStorage
+ * 2. stop VM
  *
- * confirm the ISO related parameters are passed down to KVM host
+ * confirm the ISO is released in iscsi ISO store
+ * confirm iscsi target is logged out on KVM host
  *
  */
-public class TestIscsiBtrfsPrimaryStorage6 {
+public class TestIscsiBtrfsPrimaryStorage7 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -67,22 +61,11 @@ public class TestIscsiBtrfsPrimaryStorage6 {
     
     @Test
     public void test() throws ApiSenderException, InterruptedException {
-        ImageInventory iso = deployer.images.get("TestImage");
-        SimpleQuery query = dbf.createQuery(ImageCacheVO.class);
-        query.add(ImageCacheVO_.imageUuid, Op.EQ, iso.getUuid());
-        ImageCacheVO isoCache = (ImageCacheVO) query.find();
-        Assert.assertNotNull(isoCache);
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
 
-        IscsiFileSystemBackendPrimaryStorageVO iscsi = dbf.listAll(IscsiFileSystemBackendPrimaryStorageVO.class).get(0);
-
-        StartVmCmd scmd = kconfig.startVmCmd;
-        Assert.assertNotNull(scmd);
-
-        Assert.assertEquals(1, iconfig.createSubVolumeCmds.size());
-
-        Assert.assertEquals(BootDev.cdrom.toString(), scmd.getBootDev());
-        IscsiVolumePath path = new IscsiVolumePath(scmd.getBootIso().getPath());
-        path.disassemble();
-        Assert.assertEquals(iscsi.getHostname(), path.getHostname());
+        IscsiIsoVO vo = dbf.listAll(IscsiIsoVO.class).get(0);
+        Assert.assertNull(vo.getVmInstanceUuid());
+        Assert.assertEquals(1, kconfig.logoutIscsiTargetCmds.size());
     }
 }

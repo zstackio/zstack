@@ -362,6 +362,30 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
         }
     }
 
+    public static class DeleteIscsiTargetCmd extends AgentCommand {
+        private String target;
+        private String uuid;
+
+        public String getTarget() {
+            return target;
+        }
+
+        public void setTarget(String target) {
+            this.target = target;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+    }
+
+    public static class DeleteIscsiTargetRsp extends AgentResponse {
+    }
+
     public static class CreateIscsiTargetRsp extends AgentResponse {
         private String target;
         private int lun;
@@ -383,7 +407,7 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
         }
     }
 
-    public static class CreateSymlinkCmd extends AgentCommand {
+    public static class CreateSubVolumeCmd extends AgentCommand {
         private String src;
         private String dst;
 
@@ -404,21 +428,30 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
         }
     }
 
-    public static class CreateSymlinkRsp extends AgentResponse {
-    }
+    public static class CreateSubVolumeRsp extends AgentCapacityResponse {
+        private String path;
 
-    public static class DeleteSymlinkCmd extends AgentCommand {
-        private String link;
-
-        public String getLink() {
-            return link;
+        public String getPath() {
+            return path;
         }
 
-        public void setLink(String link) {
-            this.link = link;
+        public void setPath(String path) {
+            this.path = path;
         }
     }
 
-    public static class DeleteSyslinkRsp extends AgentResponse {
+    public static class DeleteSubVolumeCmd extends AgentCommand {
+        private String src;
+
+        public String getSrc() {
+            return src;
+        }
+
+        public void setSrc(String src) {
+            this.src = src;
+        }
+    }
+
+    public static class DeleteSubVolumeRsp extends AgentCapacityResponse {
     }
 }

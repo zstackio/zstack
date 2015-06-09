@@ -513,4 +513,19 @@ public class KVMSimulatorController {
         logger.debug(String.format("successfully get console port[port:%s] for vm[uuid:%s]", rsp.getPort(), cmd.getVmUuid()));
         replyer.reply(entity, rsp);
     }
+
+    @RequestMapping(value=KVMConstant.KVM_LOGOUT_ISCSI_PATH, method=RequestMethod.POST)
+    private @ResponseBody String logoutIscsiTarget(HttpServletRequest req) throws InterruptedException {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        logoutIscsiTarget(entity);
+        return null;
+    }
+
+    private void logoutIscsiTarget(HttpEntity<String> entity) {
+        LogoutIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), KVMAgentCommands.LogoutIscsiTargetCmd.class);
+        LogoutIscsiTargetRsp rsp = JSONObjectUtil.toObject(entity.getBody(), LogoutIscsiTargetRsp.class);
+        config.logoutIscsiTargetCmds.add(cmd);
+        logger.debug(String.format("logout iscsi target: %s", cmd.getTarget()));
+        replyer.reply(entity, rsp);
+    }
 }

@@ -1150,18 +1150,15 @@ public class KVMHost extends HostBase implements Host {
                 }
             }
 
+            IsoTO bootIso = new IsoTO();
+            bootIso.setPath(iso.getInstallPath());
+            bootIso.setImageUuid(iso.getImageUuid());
+            cmd.setBootIso(bootIso);
             cmd.setBootDev(BootDev.cdrom.toString());
-            cmd.setBootIsoPath(iso.getInstallPath());
         } else {
             cmd.setBootDev(BootDev.hd.toString());
         }
         
-        if (cmd.getBootIsoPath() != null && spec.getDataIsoPath() != null) {
-            throw new CloudRuntimeException(String.format("both boot iso and data iso set to vm[uuid:%s, name:%s], only one iso is allowed", cmd.getBootIsoPath(), spec.getDataIsoPath()));
-        } else if (spec.getDataIsoPath() != null) {
-            cmd.setBootIsoPath(spec.getDataIsoPath());
-        }
-
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
         try {
             extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);

@@ -63,5 +63,6 @@ public class KVMSimulatorConfig {
     public volatile List<MergeSnapshotCmd> mergeSnapshotCmds = new ArrayList<MergeSnapshotCmd>();
     public volatile List<AttachDataVolumeCmd> attachDataVolumeCmds = new ArrayList<AttachDataVolumeCmd>();
     public volatile List<CreateBridgeCmd> createBridgeCmds = new ArrayList<CreateBridgeCmd>();
+    public volatile List<LogoutIscsiTargetCmd> logoutIscsiTargetCmds = new ArrayList<LogoutIscsiTargetCmd>();
 
 }

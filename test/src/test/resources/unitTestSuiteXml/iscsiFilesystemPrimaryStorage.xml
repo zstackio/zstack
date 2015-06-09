@@ -7,5 +7,10 @@
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage4"/>
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage5"/>
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage6"/>
+    <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage7"/>
+    <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage8"/>
+    <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage9"/>
+    <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage10"/>
+    <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage11"/>
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestQueryIscsiBtrfsPrimaryStorage"/>
 </UnitTestSuiteConfig>

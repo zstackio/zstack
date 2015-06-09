@@ -411,6 +411,36 @@ public class KVMAgentCommands {
     
     public static class AttachDataVolumeResponse extends AgentResponse {
     }
+
+    public static class IsoTO {
+        private String path;
+        private String imageUuid;
+
+        public IsoTO() {
+        }
+
+        public IsoTO(IsoTO other) {
+            this.path = other.path;
+            this.imageUuid = other.imageUuid;
+        }
+
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+    }
     
     public static class StartVmCmd extends AgentCommand {
     	private String vmInstanceUuid;
@@ -421,13 +451,20 @@ public class KVMAgentCommands {
     	private long cpuSpeed;
     	private String bootDev;
     	private VolumeTO rootVolume;
+        private IsoTO bootIso;
     	private List<VolumeTO> dataVolumes;
     	private List<NicTO> nics;
-    	private String isoPath;
     	private long timeout;
-    	private List<String> dataIsoPaths;
         private Map<String, Object> addons;
         private boolean useVirtio;
+
+        public IsoTO getBootIso() {
+            return bootIso;
+        }
+
+        public void setBootIso(IsoTO bootIso) {
+            this.bootIso = bootIso;
+        }
 
         public boolean isUseVirtio() {
             return useVirtio;
@@ -487,35 +524,18 @@ public class KVMAgentCommands {
         public void setDataVolumes(List<VolumeTO> dataVolumes) {
             this.dataVolumes = dataVolumes;
         }
-        public String getIsoPath() {
-            return isoPath;
-        }
-        public void setIsoPath(String isoPath) {
-            this.isoPath = isoPath;
-        }
+
         public List<NicTO> getNics() {
 			return nics;
 		}
 		public void setNics(List<NicTO> nics) {
 			this.nics = nics;
 		}
-		public String getBootIsoPath() {
-			return isoPath;
-		}
-		public void setBootIsoPath(String bootIsoPath) {
-			this.isoPath = bootIsoPath;
-		}
 		public long getTimeout() {
 			return timeout;
 		}
 		public void setTimeout(long timeout) {
 			this.timeout = timeout;
-		}
-		public List<String> getDataIsoPaths() {
-			return dataIsoPaths;
-		}
-		public void setDataIsoPaths(List<String> dataIsoPaths) {
-			this.dataIsoPaths = dataIsoPaths;
 		}
         public String getVmInstanceUuid() {
             return vmInstanceUuid;
@@ -825,5 +845,38 @@ public class KVMAgentCommands {
         public void setNewVolumeInstallPath(String newVolumeInstallPath) {
             this.newVolumeInstallPath = newVolumeInstallPath;
         }
+    }
+
+    public static class LogoutIscsiTargetCmd extends AgentCommand {
+        private String hostname;
+        private int port;
+        private String target;
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
+        }
+
+        public String getTarget() {
+            return target;
+        }
+
+        public void setTarget(String target) {
+            this.target = target;
+        }
+    }
+
+    public static class LogoutIscsiTargetRsp extends AgentResponse {
     }
 }

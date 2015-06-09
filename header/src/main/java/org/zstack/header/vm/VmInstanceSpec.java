@@ -83,6 +83,15 @@ public class VmInstanceSpec implements Serializable {
 
     public static class IsoSpec implements Serializable {
         private String installPath;
+        private String imageUuid;
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
 
         public String getInstallPath() {
             return installPath;

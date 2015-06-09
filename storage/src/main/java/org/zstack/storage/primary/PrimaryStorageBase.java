@@ -75,6 +75,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(DownloadIsoToPrimaryStorageMsg msg);
 
+    protected abstract void handle(DeleteIsoFromPrimaryStorageMsg msg);
+
     protected abstract void connectHook(ConnectPrimaryStorageMsg msg, Completion completion);
 
 	public PrimaryStorageBase(PrimaryStorageVO self) {
@@ -142,6 +144,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((ConnectPrimaryStorageMsg) msg);
         } else if (msg instanceof DownloadIsoToPrimaryStorageMsg) {
             handleBase((DownloadIsoToPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteIsoFromPrimaryStorageMsg) {
+            handle((DeleteIsoFromPrimaryStorageMsg) msg);
 	    } else {
 	        bus.dealWithUnknownMessage(msg);
 	    }

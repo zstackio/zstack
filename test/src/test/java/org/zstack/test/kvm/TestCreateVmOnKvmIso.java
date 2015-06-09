@@ -65,7 +65,7 @@ public class TestCreateVmOnKvmIso {
         Assert.assertNotNull(scmd);
 
         Assert.assertEquals(BootDev.cdrom.toString(), scmd.getBootDev());
-        Assert.assertEquals(isoCache.getInstallUrl(), scmd.getBootIsoPath());
+        Assert.assertEquals(isoCache.getInstallUrl(), scmd.getBootIso().getPath());
     }
 
 }

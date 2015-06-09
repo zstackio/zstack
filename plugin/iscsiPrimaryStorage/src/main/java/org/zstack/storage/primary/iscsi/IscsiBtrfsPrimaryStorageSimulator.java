@@ -14,6 +14,7 @@ import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.path.PathUtil;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -215,19 +216,20 @@ public class IscsiBtrfsPrimaryStorageSimulator {
         reply(entity, rsp);
     }
 
-    @RequestMapping(value="/btrfs/symlink/create",  method= RequestMethod.POST)
+    @RequestMapping(value="/btrfs/subvolume/create",  method= RequestMethod.POST)
     @ResponseBody
-    private String createSymlink(HttpServletRequest req) {
+    private String createSubvolume(HttpServletRequest req) {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
-        createSymlink(entity);
+        createSubvolume(entity);
         return null;
     }
 
-    private void createSymlink(HttpEntity<String> entity) {
-        CreateSymlinkCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateSymlinkCmd.class);
-        CreateSymlinkRsp rsp = new CreateSymlinkRsp();
-        if (config.createSymlinkSuccess) {
-            config.createSymlinkCmds.add(cmd);
+    private void createSubvolume(HttpEntity<String> entity) {
+        CreateSubVolumeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateSubVolumeCmd.class);
+        CreateSubVolumeRsp rsp = new CreateSubVolumeRsp();
+        if (config.createSubVolumeSuccess) {
+            config.createSubVolumeCmds.add(cmd);
+            rsp.setPath(PathUtil.join("/fake_path/", cmd.getSrc()));
         } else {
             rsp.setError("on purpose");
             rsp.setSuccess(false);
@@ -236,19 +238,18 @@ public class IscsiBtrfsPrimaryStorageSimulator {
         reply(entity, rsp);
     }
 
-    @RequestMapping(value="/btrfs/symlink/delete",  method= RequestMethod.POST)
+    @RequestMapping(value="/btrfs/subvolume/delete",  method= RequestMethod.POST)
     @ResponseBody
-    private String deleteSymlink(HttpServletRequest req) {
+    private String deleteSubvolume(HttpServletRequest req) {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
-        deleteSymlink(entity);
+        deleteSubvolume(entity);
         return null;
     }
 
-    private void deleteSymlink(HttpEntity<String> entity) {
-        DeleteSymlinkCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteSymlinkCmd.class);
-        DeleteSyslinkRsp rsp = new DeleteSyslinkRsp();
-        config.deleteSymlinkCmdLIst.add(cmd);
+    private void deleteSubvolume(HttpEntity<String> entity) {
+        DeleteSubVolumeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteSubVolumeCmd.class);
+        DeleteSubVolumeRsp  rsp = new DeleteSubVolumeRsp();
+        config.deleteSubVolumeCmds.add(cmd);
         reply(entity, rsp);
     }
-
 }

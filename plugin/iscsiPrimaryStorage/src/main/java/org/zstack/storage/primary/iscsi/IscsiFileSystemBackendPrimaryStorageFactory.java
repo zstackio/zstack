@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.iscsi;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -19,16 +20,14 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
-import org.zstack.kvm.KVMAgentCommands.DetachDataVolumeCmd;
-import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
-import org.zstack.kvm.KVMAgentCommands.VolumeTO;
+import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
 import javax.persistence.Tuple;
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -114,6 +113,39 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
         return true;
     }
 
+
+    @Transactional(readOnly = true)
+    private KVMIscsiIsoTO convertToIscsiIsoToIfNeed(IsoTO iso) {
+        if (iso == null || !iso.getPath().startsWith("iscsi")) {
+            return null;
+        }
+
+        String sql = "select i from IscsiFileSystemBackendPrimaryStorageVO i, ImageCacheVO ic where ic.primaryStorageUuid = i.uuid and ic.imageUuid = :imgUuid and i.type = :ptype";
+        TypedQuery<IscsiFileSystemBackendPrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, IscsiFileSystemBackendPrimaryStorageVO.class);
+        q.setParameter("imgUuid", iso.getImageUuid());
+        q.setParameter("ptype", type.toString());
+        List<IscsiFileSystemBackendPrimaryStorageVO> ts = q.getResultList();
+        if (ts.isEmpty()) {
+            return null;
+        }
+
+        IscsiFileSystemBackendPrimaryStorageVO i = ts.get(0);
+
+        KVMIscsiIsoTO ret = new KVMIscsiIsoTO(iso);
+        ret.setChapUsername(i.getChapUsername());
+        ret.setChapPassword(i.getChapPassword());
+        ret.setHostname(i.getHostname());
+        ret.setPort(3260);
+
+        IscsiVolumePath path = new IscsiVolumePath(iso.getPath());
+        path.disassemble();
+
+        ret.setTarget(path.getTarget());
+        ret.setLun(path.getLun());
+
+        return ret;
+    }
+
     private KVMIscsiVolumeTO convertToIscsiToIfNeed(HostInventory host, VolumeInventory vol, VolumeTO to) {
         if (!VolumeTO.ISCSI.equals(to.getDeviceType())) {
             return null;
@@ -177,6 +209,11 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
         KVMIscsiVolumeTO rootKto = convertToIscsiToIfNeed(host, spec.getDestRootVolume(), cmd.getRootVolume());
         if (rootKto != null) {
             cmd.setRootVolume(rootKto);
+        }
+
+        KVMIscsiIsoTO iso = convertToIscsiIsoToIfNeed(cmd.getBootIso());
+        if (iso != null) {
+            cmd.setBootIso(iso);
         }
     }
 

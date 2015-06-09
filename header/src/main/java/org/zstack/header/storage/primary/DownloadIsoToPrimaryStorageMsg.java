@@ -9,6 +9,15 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 public class DownloadIsoToPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private ImageSpec isoSpec;
+    private String vmInstanceUuid;
+
+    public String getVmInstanceUuid() {
+        return vmInstanceUuid;
+    }
+
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
+    }
 
     @Override
     public String getPrimaryStorageUuid() {

@@ -8,6 +8,6 @@ import org.zstack.core.GlobalPropertyDefinition;
  */
 @GlobalPropertyDefinition
 public class IscsiBtrfsPrimaryStorageGlobalProperty {
-    @GlobalProperty(name="IscsiFileSystemBackendPrimaryStorage.btrfs.httpServer.root", defaultValue = "/var/www/html")
-    public static String ISO_HTTP_SERVER_ROOT;
+    @GlobalProperty(name="IscsiFileSystemBackendPrimaryStorage.DownloadBitsFromSftpBackupStorageCmd.timeout", defaultValue = "3600")
+    public static int DownloadBitsFromSftpBackupStorageCmd_TIMEOUT;
 }

@@ -30,6 +30,7 @@ import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageComm
 import org.zstack.utils.path.PathUtil;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -101,7 +102,7 @@ public class IscsiFileSystemBackendPrimaryToSftpBackupStorageMediator implements
                             public Class<DownloadBitsFromSftpBackupStorageRsp> getReturnClass() {
                                 return DownloadBitsFromSftpBackupStorageRsp.class;
                             }
-                        });
+                        }, TimeUnit.SECONDS, IscsiBtrfsPrimaryStorageGlobalProperty.DownloadBitsFromSftpBackupStorageCmd_TIMEOUT);
             }
         });
     }

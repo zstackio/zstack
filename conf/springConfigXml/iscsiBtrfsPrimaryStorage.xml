@@ -34,4 +34,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="IscsiIsoStoreManager" class="org.zstack.storage.primary.iscsi.IscsiIsoStoreManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceStopExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceDestroyExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>

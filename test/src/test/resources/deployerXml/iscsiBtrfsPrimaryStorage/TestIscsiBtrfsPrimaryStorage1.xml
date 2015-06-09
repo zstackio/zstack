@@ -41,7 +41,7 @@
                 <cluster name="Cluster1" description="Test" hypervisorType="KVM">
                     <hosts>
                         <kvmHost name="host1" description="Test" managementIp="localhost"
-                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                                 memoryCapacity="10000G" cpuNum="1000" cpuSpeed="2600" />
                     </hosts>
                     <primaryStorageRef>TestPrimaryStorage</primaryStorageRef>
                     <l2NetworkRef>TestL2Network</l2NetworkRef>
@@ -70,7 +70,7 @@
 
             <primaryStorages>
                 <iscsiBtrfsPrimaryStorage name="TestPrimaryStorage"
-                    description="Test" totalCapacity="1T" availableCapacity="1T" url="/test" chapUsername="test" chapPassword="test"
+                    description="Test" totalCapacity="100T" availableCapacity="100T" url="/test" chapUsername="test" chapPassword="test"
                     hostname="localhost" sshUsername="root" sshPassword="password" filesystemType="btrfs"/>
             </primaryStorages>
 
