@@ -42,4 +42,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="IscsiFileSystemPrimaryStorageTargetExtension" class="org.zstack.storage.primary.iscsi.IscsiFileSystemPrimaryStorageTargetExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceStopExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmAttachVolumeExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmDetachVolumeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>

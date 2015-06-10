@@ -1084,7 +1084,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final VolumeInventory volume = msg.getVolume();
         extEmitter.preDetachVolume(getSelfInventory(), volume);
-        extEmitter.beforeAttachVolume(getSelfInventory(), volume);
+        extEmitter.beforeDetachVolume(getSelfInventory(), volume);
 
         if (self.getState() == VmInstanceState.Stopped) {
             bus.reply(msg, reply);
@@ -1104,9 +1104,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(final MessageReply r) {
                 if (!r.isSuccess()) {
                     reply.setError(r.getError());
-                    extEmitter.failedToAttachVolume(getSelfInventory(), volume, r.getError());
+                    extEmitter.failedToDetachVolume(getSelfInventory(), volume, r.getError());
                 } else {
-                    extEmitter.afterAttachVolume(getSelfInventory(), volume);
+                    extEmitter.afterDetachVolume(getSelfInventory(), volume);
                 }
 
                 bus.reply(msg, reply);

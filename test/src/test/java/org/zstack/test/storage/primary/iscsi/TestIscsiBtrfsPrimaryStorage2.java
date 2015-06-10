@@ -13,6 +13,7 @@ import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.DetachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.VolumeTO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
+import org.zstack.storage.primary.iscsi.IscsiBtrfsPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -34,6 +35,7 @@ public class TestIscsiBtrfsPrimaryStorage2 {
     CloudBus bus;
     DatabaseFacade dbf;
     KVMSimulatorConfig kconfig;
+    IscsiBtrfsPrimaryStorageSimulatorConfig iconfig;
 
     @Before
     public void setUp() throws Exception {
@@ -49,6 +51,7 @@ public class TestIscsiBtrfsPrimaryStorage2 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
+        iconfig = loader.getComponent(IscsiBtrfsPrimaryStorageSimulatorConfig.class);
     }
     
     @Test
@@ -57,7 +60,11 @@ public class TestIscsiBtrfsPrimaryStorage2 {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VolumeInventory vol = api.createDataVolume("data", disk.getUuid());
         api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
+        // no instantiated volume doesn't need to create target separately
+        Assert.assertEquals(0, iconfig.createIscsiTargetCmds.size());
+
         api.detachVolumeFromVm(vol.getUuid());
+        Assert.assertEquals(1, iconfig.deleteIscsiTargetCmds.size());
         DetachDataVolumeCmd cmd = kconfig.detachDataVolumeCmds.get(0);
         Assert.assertNotNull(cmd);
         Assert.assertEquals(VolumeTO.ISCSI, cmd.getVolume().getDeviceType());

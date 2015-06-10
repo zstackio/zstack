@@ -54,10 +54,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by frank on 4/19/2015.
@@ -1055,9 +1052,34 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
             handle((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof IscsiBtrfsPrimaryStorageAsyncCallMsg) {
+            handle((IscsiBtrfsPrimaryStorageAsyncCallMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final IscsiBtrfsPrimaryStorageAsyncCallMsg msg) {
+        final IscsiBtrfsPrimaryStorageAsyncCallReply reply = new IscsiBtrfsPrimaryStorageAsyncCallReply();
+
+        restf.asyncJsonPost(makeHttpUrl(msg.getPath()), msg.getCommand(), new JsonAsyncRESTCallback<LinkedHashMap>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(LinkedHashMap ret) {
+                reply.setResponse(ret);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<LinkedHashMap> getReturnClass() {
+                return LinkedHashMap.class;
+            }
+        });
     }
 
     private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {

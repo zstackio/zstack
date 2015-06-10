@@ -26,6 +26,7 @@ public class IscsiBtrfsPrimaryStorageSimulatorConfig {
     public List<UploadToSftpCmd> uploadToSftpCmds = new ArrayList<UploadToSftpCmd>();
     public volatile boolean createTargetSuccess = true;
     public List<CreateIscsiTargetCmd> createIscsiTargetCmds = new ArrayList<CreateIscsiTargetCmd>();
+    public List<DeleteIscsiTargetCmd> deleteIscsiTargetCmds = new ArrayList<DeleteIscsiTargetCmd>();
     public volatile boolean createSubVolumeSuccess = true;
     public List<CreateSubVolumeCmd> createSubVolumeCmds = new ArrayList<CreateSubVolumeCmd>();
     public List<DeleteSubVolumeCmd> deleteSubVolumeCmds = new ArrayList<DeleteSubVolumeCmd>();
