@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.iscsi;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
@@ -20,27 +21,42 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.rest.AsyncRESTCallback;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.storage.backup.BackupStorage;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
+import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotReply.CreateTemplateFromVolumeSnapshotResult;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMConstant;
+import org.zstack.storage.backup.BackupStoragePathMaker;
+import org.zstack.storage.backup.sftp.SftpBackupStorageVO;
+import org.zstack.storage.backup.sftp.SftpBackupStorageVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
 import org.zstack.storage.primary.iscsi.IscsiIsoStoreManager.IscsiIsoSpec;
+import org.zstack.storage.snapshot.VolumeSnapshot;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -114,6 +130,44 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     private String makeDataVolumePath(String volumeUuid) {
         return PathUtil.join(self.getUrl(), "dataVolumes", String.format("acct-%s", acntMgr.getOwnerAccountUuidOfResource(volumeUuid)),
                 String.format("vol-%s", volumeUuid), String.format("%s.img", volumeUuid));
+    }
+
+    private String makeVolumeSnapshotPath(String volumeUuid, String snapshotUuid) {
+        return PathUtil.join(self.getUrl(), "snapshots", String.format("acct-%s", acntMgr.getOwnerAccountUuidOfResource(snapshotUuid)),
+                String.format("vol-%s", volumeUuid), snapshotUuid);
+    }
+
+    private String makeSnapshotWorkSpaceInstallPath(String snapshotUuid) {
+        return PathUtil.join(self.getUrl(), "workspace", "snapshot", snapshotUuid, String.format("%s.temp-snapshot", snapshotUuid));
+    }
+
+    //TODO: merge with makeDataVolumePath
+    private String makeDataVolumeSubvolumePath(String volumeUuid) {
+        return PathUtil.join(self.getUrl(), "dataVolumes", String.format("acct-%s", acntMgr.getOwnerAccountUuidOfResource(volumeUuid)),
+                String.format("vol-%s", volumeUuid));
+    }
+
+    private String findSftpRootPath(String bsUuid) {
+        SimpleQuery<SftpBackupStorageVO> q = dbf.createQuery(SftpBackupStorageVO.class);
+        q.select(SftpBackupStorageVO_.url);
+        q.add(SftpBackupStorageVO_.uuid, SimpleQuery.Op.EQ, bsUuid);
+        return q.findValue();
+    }
+
+    private String makeRootVolumeTemplateInstallPathOnBackupStorage(String bsUuid, String imageUuid) {
+        return PathUtil.join(
+                findSftpRootPath(bsUuid),
+                BackupStoragePathMaker.makeRootVolumeTemplateInstallFolderPath(imageUuid),
+                String.format("%s.template", imageUuid)
+        );
+    }
+
+    private String makeDataVolumeTemplateInstallPath(String backupStorageUuid, String volumeUuid) {
+        return PathUtil.join(
+                findSftpRootPath(backupStorageUuid),
+                BackupStoragePathMaker.makeDataVolumeTemplateInstallFolderPath(volumeUuid),
+                String.format("%s.template", volumeUuid)
+        );
     }
 
     private String makeIscsiVolumePath(String target, String volumePath) {
@@ -847,6 +901,16 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(AskVolumeSnapshotCapabilityMsg msg) {
+        AskVolumeSnapshotCapabilityReply reply = new AskVolumeSnapshotCapabilityReply();
+        VolumeSnapshotCapability capability = new VolumeSnapshotCapability();
+        capability.setArrangementType(VolumeSnapshotArrangementType.INDIVIDUAL);
+        capability.setSupport(true);
+        reply.setCapability(capability);
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void connectHook(ConnectPrimaryStorageMsg msg, Completion completion) {
         connect(completion);
     }
@@ -975,5 +1039,381 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                 });
             }
         }).start();
+    }
+
+    @Override
+    protected void handleLocalMessage(Message msg) {
+        if (msg instanceof TakeSnapshotMsg) {
+            handle((TakeSnapshotMsg) msg);
+        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
+            handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
+            handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else {
+            super.handleLocalMessage(msg);
+        }
+    }
+
+    private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("create-data-volume-%s-from-snapshot", msg.getVolumeUuid()));
+        chain.then(new ShareFlow() {
+            String installPath = makeDataVolumePath(msg.getVolumeUuid());
+            SnapshotDownloadInfo snapshotInfo;
+
+            @Override
+            public void setup() {
+                DebugUtils.Assert(msg.getSnapshots().size()==1, String.format("why more[%s] than one snapshot???", msg.getSnapshots().size()));
+                snapshotInfo = msg.getSnapshots().get(0);
+
+                if (msg.isNeedDownload()) {
+                    flow(new NoRollbackFlow() {
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            BackupStorageVO bsvo = dbf.findByUuid(snapshotInfo.getBackupStorageUuid(), BackupStorageVO.class);
+                            IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bsvo.getType()));
+                            mediator.downloadBits(getSelfInventory(), BackupStorageInventory.valueOf(bsvo), snapshotInfo.getBackupStorageInstallPath(), installPath, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    flow(new NoRollbackFlow() {
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            CreateSubVolumeCmd cmd = new CreateSubVolumeCmd();
+                            cmd.setSrc(snapshotInfo.getSnapshot().getPrimaryStorageInstallPath());
+                            cmd.setDst(makeDataVolumeSubvolumePath(msg.getVolumeUuid()));
+                            restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_SUBVOLUME), cmd, new JsonAsyncRESTCallback<CreateSubVolumeRsp>() {
+                                @Override
+                                public void fail(ErrorCode err) {
+                                    trigger.fail(err);
+                                }
+
+                                @Override
+                                public void success(CreateSubVolumeRsp ret) {
+                                    if (!ret.isSuccess()) {
+                                        trigger.fail(errf.stringToOperationError(ret.getError()));
+                                    } else {
+                                        trigger.next();
+                                    }
+                                }
+
+                                @Override
+                                public Class<CreateSubVolumeRsp> getReturnClass() {
+                                    return CreateSubVolumeRsp.class;
+                                }
+                            });
+                        }
+                    });
+
+                    done(new FlowDoneHandler(msg) {
+                        @Override
+                        public void handle(Map data) {
+                            reply.setInstallPath(installPath);
+                            reply.setSize(snapshotInfo.getSnapshot().getSize());
+                            bus.reply(msg, reply);
+                        }
+                    });
+
+                    error(new FlowErrorHandler(msg) {
+                        @Override
+                        public void handle(ErrorCode errCode, Map data) {
+                            reply.setError(errCode);
+                            bus.reply(msg, reply);
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    private void handle(final CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        final CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply();
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("create-template-%s-form-volume-snapshot", msg.getImageUuid()));
+        chain.then(new ShareFlow() {
+            String primaryStorageInstallPath;
+            List<CreateTemplateFromVolumeSnapshotResult> results = new ArrayList<CreateTemplateFromVolumeSnapshotResult>();
+            SnapshotDownloadInfo snapshotInfo;
+
+            @Override
+            public void setup() {
+                if (msg.isNeedDownload()) {
+                    flow(new Flow() {
+                        String __name__ = "download-snapshots-to-primary-storage";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            DebugUtils.Assert(msg.getSnapshotsDownloadInfo().size()==1, String.format("why more[%s] than one snapshot???", msg.getSnapshotsDownloadInfo().size()));
+                            snapshotInfo = msg.getSnapshotsDownloadInfo().get(0);
+
+                            BackupStorageVO bsvo = dbf.findByUuid(snapshotInfo.getBackupStorageUuid(), BackupStorageVO.class);
+                            BackupStorageInventory bs = BackupStorageInventory.valueOf(bsvo);
+                            DebugUtils.Assert(bs != null, "bs cannot be null");
+                            IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bs.getType()));
+                            primaryStorageInstallPath = makeSnapshotWorkSpaceInstallPath(snapshotInfo.getSnapshot().getUuid());
+                            mediator.downloadBits(getSelfInventory(), bs, snapshotInfo.getBackupStorageInstallPath(), primaryStorageInstallPath, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void rollback(final FlowTrigger trigger, Map data) {
+                            if (primaryStorageInstallPath != null) {
+                                DeleteBitsCmd cmd = new DeleteBitsCmd();
+                                cmd.setInstallPath(primaryStorageInstallPath);
+                                restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>() {
+                                    @Override
+                                    public void fail(ErrorCode err) {
+                                        logger.warn(String.format("failed to delete %s on btrfs iscsi primary storage[uuid:%s], %s. Continue to rollback",
+                                                primaryStorageInstallPath, self.getUuid(), err));
+                                        trigger.rollback();
+                                    }
+
+                                    @Override
+                                    public void success(DeleteBitsRsp ret) {
+                                        if (!ret.isSuccess()) {
+                                            logger.warn(String.format("failed to delete %s on btrfs iscsi primary storage[uuid:%s], %s. Continue to rollback",
+                                                    primaryStorageInstallPath, self.getUuid(), ret.getError()));
+                                        }
+                                        trigger.rollback();
+                                    }
+
+                                    @Override
+                                    public Class<DeleteBitsRsp> getReturnClass() {
+                                        return DeleteBitsRsp.class;
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "upload-template-from-primary-storage-to-backup-storage";
+
+                    boolean success = false;
+                    List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        upload(msg.getBackupStorage().iterator(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    private void upload(final Iterator<BackupStorageInventory> iterator, final Completion completion) {
+                        if (!iterator.hasNext()) {
+                            if (success) {
+                                completion.success();
+                            } else {
+                                completion.fail(errf.stringToOperationError(String.format("uploading failed on all backup storage. An error list is %s", JSONObjectUtil.toJsonString(errorCodes))));
+                            }
+
+                            return;
+                        }
+
+                        final BackupStorageInventory bs = iterator.next();
+                        final String bsInstallPath = makeRootVolumeTemplateInstallPathOnBackupStorage(bs.getUuid(), msg.getImageUuid());
+                        IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bs.getType()));
+                        mediator.uploadBits(getSelfInventory(), bs, bsInstallPath, primaryStorageInstallPath, new Completion(completion) {
+                            @Override
+                            public void success() {
+                                success = true;
+                                CreateTemplateFromVolumeSnapshotResult result = new CreateTemplateFromVolumeSnapshotResult();
+                                result.setInstallPath(bsInstallPath);
+                                result.setBackupStorageUuid(bs.getUuid());
+                                results.add(result);
+                                upload(iterator, completion);
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format("failed to upload %s from btrfs iscsi primary storage[uuid:%s] to backup storage[uuid: %s], %s. Continue to upload others",
+                                        primaryStorageInstallPath, bs.getUuid(), self.getUuid(), errorCode));
+                                errorCodes.add(errorCode);
+                                upload(iterator, completion);
+                            }
+                        });
+                    }
+                });
+
+                if (msg.isNeedDownload()) {
+                    flow(new NoRollbackFlow() {
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            DeleteBitsCmd cmd = new DeleteBitsCmd();
+                            cmd.setInstallPath(primaryStorageInstallPath);
+                            restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>() {
+                                @Override
+                                public void fail(ErrorCode err) {
+                                    //TODO: cleanup
+                                    logger.warn(String.format("failed to delete %s on btrfs iscsi primary storage[uuid:%s], %s. Continue to rollback",
+                                            primaryStorageInstallPath, self.getUuid(), err));
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void success(DeleteBitsRsp ret) {
+                                    //TODO: cleanup
+                                    if (!ret.isSuccess()) {
+                                        logger.warn(String.format("failed to delete %s on btrfs iscsi primary storage[uuid:%s], %s. Continue to rollback",
+                                                primaryStorageInstallPath, self.getUuid(), ret.getError()));
+                                    }
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public Class<DeleteBitsRsp> getReturnClass() {
+                                    return DeleteBitsRsp.class;
+                                }
+                            });
+                        }
+                    });
+                }
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        reply.setResults(results);
+                        reply.setSize(snapshotInfo.getSnapshot().getSize());
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void handle(RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
+        RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
+        IscsiVolumePath path = new IscsiVolumePath(msg.getVolume().getInstallPath());
+        path.disassemble();
+        path.replaceUuidInTarget(msg.getSnapshot().getUuid());
+        path.setInstallPath(msg.getSnapshot().getPrimaryStorageInstallPath());
+        reply.setNewVolumeInstallPath(path.assemble());
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
+        final DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
+        SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
+        q.select(VolumeSnapshotVO_.primaryStorageInstallPath);
+        q.add(VolumeSnapshotVO_.uuid, Op.EQ, msg.getSnapshot().getUuid());
+        String installPath = q.findValue();
+
+        DeleteSubVolumeCmd cmd = new DeleteSubVolumeCmd();
+        cmd.setPath(installPath);
+        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_SUBVOLUME), cmd, new JsonAsyncRESTCallback<DeleteSubVolumeRsp>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(DeleteSubVolumeRsp ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<DeleteSubVolumeRsp> getReturnClass() {
+                return DeleteSubVolumeRsp.class;
+            }
+        });
+    }
+
+    private void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
+        MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final TakeSnapshotMsg msg) {
+        final TakeSnapshotReply reply = new TakeSnapshotReply();
+
+        final VolumeSnapshotStruct struct = msg.getStruct();
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.installPath);
+        q.add(VolumeVO_.uuid, Op.EQ, struct.getCurrent().getVolumeUuid());
+        String volumePath = q.findValue();
+        IscsiVolumePath path = new IscsiVolumePath(volumePath);
+        path.disassemble();
+
+        CreateSubVolumeCmd cmd = new CreateSubVolumeCmd();
+        cmd.setSrc(path.getInstallPath());
+        cmd.setDst(makeVolumeSnapshotPath(struct.getCurrent().getVolumeUuid(), struct.getCurrent().getUuid()));
+        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_SUBVOLUME), cmd, new JsonAsyncRESTCallback<CreateSubVolumeRsp>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(CreateSubVolumeRsp ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                } else {
+                    VolumeSnapshotInventory inv = struct.getCurrent();
+                    inv.setSize(ret.getSize());
+                    inv.setPrimaryStorageUuid(self.getUuid());
+                    inv.setPrimaryStorageInstallPath(ret.getPath());
+                    inv.setType(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString());
+                    reply.setInventory(inv);
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<CreateSubVolumeRsp> getReturnClass() {
+                return CreateSubVolumeRsp.class;
+            }
+        });
     }
 }

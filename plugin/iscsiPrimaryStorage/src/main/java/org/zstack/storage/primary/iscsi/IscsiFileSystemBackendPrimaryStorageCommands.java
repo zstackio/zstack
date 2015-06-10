@@ -430,6 +430,15 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
 
     public static class CreateSubVolumeRsp extends AgentCapacityResponse {
         private String path;
+        private long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
 
         public String getPath() {
             return path;
@@ -441,14 +450,14 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
     }
 
     public static class DeleteSubVolumeCmd extends AgentCommand {
-        private String src;
+        private String path;
 
-        public String getSrc() {
-            return src;
+        public String getPath() {
+            return path;
         }
 
-        public void setSrc(String src) {
-            this.src = src;
+        public void setPath(String path) {
+            this.path = path;
         }
     }
 

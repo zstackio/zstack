@@ -17,10 +17,11 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
-import org.zstack.header.storage.primary.TakeSnapshotMsg;
-import org.zstack.header.storage.primary.TakeSnapshotReply;
+import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.DebugUtils;
@@ -72,7 +73,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         if (msg instanceof VolumeSnapshotMessage) {
             passThrough((VolumeSnapshotMessage) msg);
         } else if (msg instanceof APIMessage) {
-            handleApiMessage((APIMessage)msg);
+            handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
         }
@@ -80,7 +81,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
 
     private void handleLocalMessage(Message msg) {
         if (msg instanceof CreateVolumeSnapshotMsg) {
-            handle((CreateVolumeSnapshotMsg)msg);
+            handle((CreateVolumeSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -157,7 +158,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
     }
 
     @Transactional
-    private VolumeSnapshotStruct saveSnapshot(VolumeSnapshotVO vo) {
+    private VolumeSnapshotStruct saveChainTypeSnapshot(VolumeSnapshotVO vo) {
         String sql = "select c from VolumeSnapshotTreeVO c where c.volumeUuid = :volUuid and c.current = true";
         TypedQuery<VolumeSnapshotTreeVO> cq = dbf.getEntityManager().createQuery(sql, VolumeSnapshotTreeVO.class);
         cq.setParameter("volUuid", vo.getVolumeUuid());
@@ -195,6 +196,10 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         }
     }
 
+    private VolumeSnapshotStruct saveIndividualTypeSnapshot(VolumeSnapshotVO vo) {
+        return newChain(vo);
+    }
+
     @Transactional
     private void rollbackSnapshot(String uuid) {
         VolumeSnapshotVO vo = dbf.getEntityManager().find(VolumeSnapshotVO.class, uuid);
@@ -217,6 +222,25 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         final VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
         String primaryStorageUuid = vol.getPrimaryStorageUuid();
 
+        AskVolumeSnapshotCapabilityMsg askMsg = new AskVolumeSnapshotCapabilityMsg();
+        askMsg.setPrimaryStorageUuid(primaryStorageUuid);
+        askMsg.setVolume(VolumeInventory.valueOf(vol));
+        bus.makeTargetServiceIdByResourceUuid(askMsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+        MessageReply reply = bus.call(askMsg);
+        if (!reply.isSuccess()) {
+            ret.setError(errf.stringToOperationError(String.format("cannot ask primary storage[uuid:%s] for volume snapshot capability", vol.getUuid()), reply.getError()));
+            bus.reply(msg, ret);
+            return;
+        }
+
+        AskVolumeSnapshotCapabilityReply areply = reply.castReply();
+        VolumeSnapshotCapability capability = areply.getCapability();
+        if (!capability.isSupport()) {
+            ret.setError(errf.stringToOperationError(String.format("primary storage[uuid:%s] doesn't support volume snapshot; cannot create snapshot for volume[uuid:%s]", primaryStorageUuid, vol.getUuid())));
+            bus.reply(msg, ret);
+            return;
+        }
+
         final VolumeSnapshotVO vo = new VolumeSnapshotVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -233,7 +257,16 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
 
         acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VolumeSnapshotVO.class);
 
-        final VolumeSnapshotStruct struct = saveSnapshot(vo);
+        VolumeSnapshotStruct s = null;
+        if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
+            s = saveChainTypeSnapshot(vo);
+        } else if (VolumeSnapshotArrangementType.INDIVIDUAL == capability.getArrangementType()) {
+            s = saveIndividualTypeSnapshot(vo);
+        } else {
+            DebugUtils.Assert(false, "should not be here");
+        }
+
+        final VolumeSnapshotStruct struct = s;
         TakeSnapshotMsg tmsg = new TakeSnapshotMsg();
         tmsg.setPrimaryStorageUuid(primaryStorageUuid);
         tmsg.setStruct(struct);

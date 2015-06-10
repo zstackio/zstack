@@ -3,6 +3,7 @@ package org.zstack.simulator.storage.primary;
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.utils.Utils;
@@ -105,6 +106,16 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(DeleteIsoFromPrimaryStorageMsg msg) {
         DeleteIsoFromPrimaryStorageReply reply = new DeleteIsoFromPrimaryStorageReply();
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(AskVolumeSnapshotCapabilityMsg msg) {
+        AskVolumeSnapshotCapabilityReply reply = new AskVolumeSnapshotCapabilityReply();
+        VolumeSnapshotCapability capability = new VolumeSnapshotCapability();
+        capability.setArrangementType(VolumeSnapshotArrangementType.CHAIN);
+        capability.setSupport(true);
+        reply.setCapability(capability);
         bus.reply(msg, reply);
     }
 

@@ -122,6 +122,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         return self;
     }
 
+    protected VmInstanceInventory getSelfInventory() {
+        return VmInstanceInventory.valueOf(self);
+    }
+
     public VmInstanceBase(VmInstanceVO vo) {
         this.self = vo;
         this.syncThreadName = "Vm-" + vo.getUuid();
@@ -531,7 +535,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getName() {
-                return String.format("attachNic-vm-%s-l3-%s",self.getUuid(), l3Uuid);
+                return String.format("attachNic-vm-%s-l3-%s", self.getUuid(), l3Uuid);
             }
         });
     }
@@ -1078,13 +1082,16 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        final VolumeInventory volume = msg.getVolume();
+        extEmitter.preDetachVolume(getSelfInventory(), volume);
+        extEmitter.beforeAttachVolume(getSelfInventory(), volume);
+
         if (self.getState() == VmInstanceState.Stopped) {
             bus.reply(msg, reply);
             completion.done();
             return;
         }
 
-        VolumeInventory volume = msg.getVolume();
         // VmInstanceState.Running
         String hostUuid = self.getHostUuid();
         DetachVolumeFromVmOnHypervisorMsg dmsg = new DetachVolumeFromVmOnHypervisorMsg();
@@ -1097,6 +1104,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(final MessageReply r) {
                 if (!r.isSuccess()) {
                     reply.setError(r.getError());
+                    extEmitter.failedToAttachVolume(getSelfInventory(), volume, r.getError());
+                } else {
+                    extEmitter.afterAttachVolume(getSelfInventory(), volume);
                 }
 
                 bus.reply(msg, reply);
@@ -1115,7 +1125,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        VolumeInventory volume = msg.getVolume();
+        final VolumeInventory volume = msg.getVolume();
+
+        extEmitter.preAttachVolume(getSelfInventory(), volume);
+        extEmitter.beforeAttachVolume(getSelfInventory(), volume);
+
         VmInstanceSpec spec = new VmInstanceSpec();
         spec.setMessage(msg);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
@@ -1134,6 +1148,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(msg, completion) {
             @Override
             public void handle(Map data) {
+                extEmitter.afterAttachVolume(getSelfInventory(), volume);
                 reply.setHypervisorType(self.getHypervisorType());
                 bus.reply(msg, reply);
                 completion.done();
@@ -1141,6 +1156,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(msg, completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
+                extEmitter.failedToAttachVolume(getSelfInventory(), volume, errCode);
                 reply.setError(errf.instantiateErrorCode(VmErrors.ATTACH_VOLUME_ERROR, errCode));
                 bus.reply(msg, reply);
                 completion.done();

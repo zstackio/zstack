@@ -1,18 +1,17 @@
 package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.*;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class VmInstanceExtensionPointEmitter implements Component {
@@ -29,6 +28,8 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private List<VmInstanceDestroyExtensionPoint> destroyVmExtensions;
     private List<VmInstanceStartExtensionPoint> startVmExtensions;
     private List<VmInstanceMigrateExtensionPoint> migrateVmExtensions;
+    private List<VmAttachVolumeExtensionPoint> attachVolumeExtensions;
+    private List<VmDetachVolumeExtensionPoint> detachVolumeExtensions;
 
     public ErrorCode preStartNewCreatedVm(VmInstanceInventory inv) {
         for (VmInstanceStartNewCreatedVmExtensionPoint ext : startNewCreatedVmExtensions) {
@@ -296,6 +297,72 @@ public class VmInstanceExtensionPointEmitter implements Component {
             }
         });
     }
+
+    public void preAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+        for (VmAttachVolumeExtensionPoint ext : attachVolumeExtensions) {
+            ext.preAttachVolume(vm, volume);
+        }
+    }
+
+    public void beforeAttachVolume(final VmInstanceInventory vm, final VolumeInventory volume) {
+        CollectionUtils.safeForEach(attachVolumeExtensions, new ForEachFunction<VmAttachVolumeExtensionPoint>() {
+            @Override
+            public void run(VmAttachVolumeExtensionPoint arg) {
+                arg.beforeAttachVolume(vm ,volume);
+            }
+        });
+    }
+
+    public void afterAttachVolume(final VmInstanceInventory vm, final VolumeInventory volume) {
+        CollectionUtils.safeForEach(attachVolumeExtensions, new ForEachFunction<VmAttachVolumeExtensionPoint>() {
+            @Override
+            public void run(VmAttachVolumeExtensionPoint arg) {
+                arg.beforeAttachVolume(vm ,volume);
+            }
+        });
+    }
+
+    public void failedToAttachVolume(final VmInstanceInventory vm, final VolumeInventory volume, final ErrorCode errorCode) {
+        CollectionUtils.safeForEach(attachVolumeExtensions, new ForEachFunction<VmAttachVolumeExtensionPoint>() {
+            @Override
+            public void run(VmAttachVolumeExtensionPoint arg) {
+                arg.failedToAttachVolume(vm, volume, errorCode);
+            }
+        });
+    }
+
+    public void preDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume) {
+        for (VmDetachVolumeExtensionPoint ext : detachVolumeExtensions) {
+            ext.preDetachVolume(vm, volume);
+        }
+    }
+
+    public void beforeDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume) {
+        CollectionUtils.safeForEach(detachVolumeExtensions, new ForEachFunction<VmDetachVolumeExtensionPoint>() {
+            @Override
+            public void run(VmDetachVolumeExtensionPoint arg) {
+                arg.beforeDetachVolume(vm, volume);
+            }
+        });
+    }
+
+    public void afterDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume) {
+        CollectionUtils.safeForEach(detachVolumeExtensions, new ForEachFunction<VmDetachVolumeExtensionPoint>() {
+            @Override
+            public void run(VmDetachVolumeExtensionPoint arg) {
+                arg.afterDetachVolume(vm, volume);
+            }
+        });
+    }
+
+    public void failedToDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume, final ErrorCode errorCode) {
+        CollectionUtils.safeForEach(detachVolumeExtensions, new ForEachFunction<VmDetachVolumeExtensionPoint>() {
+            @Override
+            public void run(VmDetachVolumeExtensionPoint arg) {
+                arg.failedToDetachVolume(vm, volume, errorCode);
+            }
+        });
+    }
     
     private void populateExtensions() {
         startNewCreatedVmExtensions = pluginRgty.getExtensionList(VmInstanceStartNewCreatedVmExtensionPoint.class);
@@ -304,6 +371,8 @@ public class VmInstanceExtensionPointEmitter implements Component {
         destroyVmExtensions = pluginRgty.getExtensionList(VmInstanceDestroyExtensionPoint.class);
         startVmExtensions = pluginRgty.getExtensionList(VmInstanceStartExtensionPoint.class);
         migrateVmExtensions = pluginRgty.getExtensionList(VmInstanceMigrateExtensionPoint.class);
+        attachVolumeExtensions = pluginRgty.getExtensionList(VmAttachVolumeExtensionPoint.class);
+        detachVolumeExtensions = pluginRgty.getExtensionList(VmDetachVolumeExtensionPoint.class);
     }
 
     @Override

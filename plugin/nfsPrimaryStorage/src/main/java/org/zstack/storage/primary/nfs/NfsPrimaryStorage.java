@@ -22,6 +22,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
+import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotReply.CreateTemplateFromVolumeSnapshotResult;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -29,6 +30,7 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMConstant;
@@ -908,6 +910,22 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(DeleteIsoFromPrimaryStorageMsg msg) {
         DeleteIsoFromPrimaryStorageReply reply = new DeleteIsoFromPrimaryStorageReply();
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(AskVolumeSnapshotCapabilityMsg msg) {
+        VolumeSnapshotCapability capability = new VolumeSnapshotCapability();
+        HypervisorType hvType = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getVolume().getFormat());
+        if (hvType.toString().equals(KVMConstant.KVM_HYPERVISOR_TYPE)) {
+            capability.setArrangementType(VolumeSnapshotArrangementType.CHAIN);
+            capability.setSupport(true);
+        } else {
+            capability.setSupport(false);
+        }
+
+        AskVolumeSnapshotCapabilityReply reply = new AskVolumeSnapshotCapabilityReply();
+        reply.setCapability(capability);
         bus.reply(msg, reply);
     }
 
