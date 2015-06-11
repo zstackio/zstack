@@ -8,10 +8,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
-import org.zstack.header.vm.VmAttachVolumeExtensionPoint;
-import org.zstack.header.vm.VmDetachVolumeExtensionPoint;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceStopExtensionPoint;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.CreateIscsiTargetCmd;
@@ -31,7 +28,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * Created by frank on 6/9/2015.
  */
 public class IscsiFileSystemPrimaryStorageTargetExtension implements VmInstanceStopExtensionPoint,
-        VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint {
+        VmAttachVolumeExtensionPoint, VmDetachVolumeExtensionPoint, VmInstanceStartExtensionPoint {
     private CLogger logger = Utils.getLogger(IscsiFileSystemPrimaryStorageTargetExtension.class);
 
     @Autowired
@@ -59,6 +56,27 @@ public class IscsiFileSystemPrimaryStorageTargetExtension implements VmInstanceS
 
     }
 
+    @Override
+    public String preStartVm(VmInstanceInventory inv) {
+        createTarget(inv.getAllVolumes());
+        return null;
+    }
+
+    @Override
+    public void beforeStartVm(VmInstanceInventory inv) {
+
+    }
+
+    @Override
+    public void afterStartVm(VmInstanceInventory inv) {
+
+    }
+
+    @Override
+    public void failedToStartVm(VmInstanceInventory inv, ErrorCode reason) {
+
+    }
+
     private class VolumeIscsiPrimaryStorageStruct {
         VolumeInventory volume;
         IscsiFileSystemBackendPrimaryStorageVO primaryStorage;
@@ -79,7 +97,7 @@ public class IscsiFileSystemPrimaryStorageTargetExtension implements VmInstanceS
             return res;
         }
 
-        String sql = "select i from IscsiFileSystemBackendPrimaryStorageVO i, VolumeVO vol where vol.primaryStorageUuid = i.uuid and vol.uuid in (:volUuids)";
+        String sql = "select i from IscsiFileSystemBackendPrimaryStorageVO i, VolumeVO vol where vol.primaryStorageUuid = i.uuid and vol.uuid in (:volUuids) group by i.uuid";
         TypedQuery<IscsiFileSystemBackendPrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, IscsiFileSystemBackendPrimaryStorageVO.class);
         q.setParameter("volUuids", vuuids);
         List<IscsiFileSystemBackendPrimaryStorageVO> vos = q.getResultList();

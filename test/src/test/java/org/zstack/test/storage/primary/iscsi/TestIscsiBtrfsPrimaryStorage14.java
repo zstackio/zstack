@@ -27,6 +27,7 @@ import org.zstack.utils.function.Function;
  * 3. revert the volume to the snapshot 1
  *
  * confirm the volume is successfully reverted
+ * confirm the new volume is created
  */
 public class TestIscsiBtrfsPrimaryStorage14 {
     Deployer deployer;
@@ -74,8 +75,11 @@ public class TestIscsiBtrfsPrimaryStorage14 {
         validator.validate(sp2);
         Assert.assertEquals(2, iconfig.createSubVolumeCmds.size());
 
+        iconfig.createSubVolumeCmds.clear();
+        iconfig.deleteSubVolumeCmds.clear();
         api.revertVolumeToSnapshot(sp1.getUuid());
-        VolumeVO rootvo = dbf.findByUuid(root.getUuid(), VolumeVO.class);
-        Assert.assertEquals(sp1.getPrimaryStorageInstallPath(), rootvo.getInstallPath());
+
+        Assert.assertEquals(1, iconfig.deleteSubVolumeCmds.size());
+        Assert.assertEquals(1, iconfig.createSubVolumeCmds.size());
     }
 }

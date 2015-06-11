@@ -1,36 +1,32 @@
 package org.zstack.test.storage.primary.iscsi;
 
-import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.image.ImageInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
-import org.zstack.kvm.KVMAgentCommands.VolumeTO;
-import org.zstack.kvm.KVMConstant;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.iscsi.IscsiBtrfsPrimaryStorageSimulatorConfig;
-import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-
-import java.util.List;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.function.Function;
 
 /**
  * 1. create VM with IscsiBtrfsPrimaryStorage
- * 2. stop vm
- * 3. create template from vm's root volume
+ * 2. take a snapshot from VM's root volume
+ * 3. create a data volume from the snapshot
  *
- * confirm success and root volume is of format raw
+ * confirm the data volume is created successfully
  */
-public class TestIscsiBtrfsPrimaryStorage3 {
+public class TestIscsiBtrfsPrimaryStorage17 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -59,10 +55,18 @@ public class TestIscsiBtrfsPrimaryStorage3 {
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
-        api.stopVmInstance(vm.getUuid());
-        Assert.assertEquals(vm.getAllVolumes().size(), iconfig.deleteIscsiTargetCmds.size());
-        ImageInventory i = api.createTemplateFromRootVolume("t1", vm.getRootVolumeUuid(), (List)null);
-        Assert.assertEquals(KVMConstant.RAW_FORMAT_STRING, i.getFormat());
-        Assert.assertEquals(1, iconfig.uploadToSftpCmds.size());
+        VolumeInventory root = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
+            @Override
+            public VolumeInventory call(VolumeInventory arg) {
+                return VolumeType.Root.toString().equals(arg.getType()) ? arg : null;
+            }
+        });
+
+        assert root != null;
+        VolumeSnapshotInventory sp =  api.createSnapshot(root.getUuid());
+        IscsiBtrfsSnapshotValidator validator = new IscsiBtrfsSnapshotValidator();
+        validator.validate(sp);
+
+        VolumeInventory volume = api.createDataVolumeFromSnapshot(sp.getUuid());
     }
 }

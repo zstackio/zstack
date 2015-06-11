@@ -8,13 +8,9 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
-import org.zstack.kvm.KVMAgentCommands.VolumeTO;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.iscsi.IscsiBtrfsPrimaryStorageSimulatorConfig;
-import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -26,11 +22,11 @@ import java.util.List;
 /**
  * 1. create VM with IscsiBtrfsPrimaryStorage
  * 2. stop vm
- * 3. create template from vm's root volume
+ * 3. start vm
  *
- * confirm success and root volume is of format raw
+ * confirm iscsi targets for all volumes are created
  */
-public class TestIscsiBtrfsPrimaryStorage3 {
+public class TestIscsiBtrfsPrimaryStorage15 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -61,8 +57,7 @@ public class TestIscsiBtrfsPrimaryStorage3 {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         Assert.assertEquals(vm.getAllVolumes().size(), iconfig.deleteIscsiTargetCmds.size());
-        ImageInventory i = api.createTemplateFromRootVolume("t1", vm.getRootVolumeUuid(), (List)null);
-        Assert.assertEquals(KVMConstant.RAW_FORMAT_STRING, i.getFormat());
-        Assert.assertEquals(1, iconfig.uploadToSftpCmds.size());
+        api.startVmInstance(vm.getUuid());
+        Assert.assertEquals(vm.getAllVolumes().size(), iconfig.createIscsiTargetCmds.size());
     }
 }

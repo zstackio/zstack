@@ -13,7 +13,9 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
+import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 @Controller
 public class IscsiBtrfsPrimaryStorageSimulator {
+    private static CLogger logger = Utils.getLogger(IscsiBtrfsPrimaryStorageSimulator.class);
 
     @Autowired
     private RESTFacade restf;
@@ -227,6 +230,7 @@ public class IscsiBtrfsPrimaryStorageSimulator {
     private void deleteTarget(HttpEntity<String> entity) {
         DeleteIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteIscsiTargetCmd.class);
         config.deleteIscsiTargetCmds.add(cmd);
+        logger.debug(String.format("delete iscsi target[name:%s, uuid:%s]", cmd.getTarget(), cmd.getUuid()));
         DeleteIscsiTargetRsp rsp = new DeleteIscsiTargetRsp();
         reply(entity, rsp);
     }

@@ -61,7 +61,7 @@ public class VmStartOnHypervisorFlow implements Flow {
 
     @Override
     public void rollback(final FlowTrigger chain, Map data) {
-        if (!(Boolean) data.get(VmStartOnHypervisorFlow.class.getName())) {
+        if (!data.containsKey(VmStartOnHypervisorFlow.class.getName())) {
             chain.rollback();
             return;
         }

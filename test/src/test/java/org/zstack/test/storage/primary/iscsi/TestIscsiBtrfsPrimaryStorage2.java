@@ -24,8 +24,10 @@ import org.zstack.test.deployer.Deployer;
  * 1. create VM with IscsiBtrfsPrimaryStorage
  * 2. attach a data volume
  * 3. detach the data volume
+ * 4. re-attach the data volume
  *
  * confirm the data volume is detached as ISCSI type
+ * confirm the iscsi target is created when re-attaching the volume
  *
  */
 public class TestIscsiBtrfsPrimaryStorage2 {
@@ -69,5 +71,8 @@ public class TestIscsiBtrfsPrimaryStorage2 {
         Assert.assertNotNull(cmd);
         Assert.assertEquals(VolumeTO.ISCSI, cmd.getVolume().getDeviceType());
         Assert.assertEquals(vol.getUuid(), cmd.getVolume().getVolumeUuid());
+
+        api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
+        Assert.assertEquals(1, iconfig.createIscsiTargetCmds.size());
     }
 }

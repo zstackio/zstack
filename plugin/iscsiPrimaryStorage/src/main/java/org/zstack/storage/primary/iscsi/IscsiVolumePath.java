@@ -1,10 +1,6 @@
 package org.zstack.storage.primary.iscsi;
 
-import org.apache.commons.lang.StringUtils;
 import org.zstack.utils.DebugUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by frank on 4/24/2015.
@@ -23,15 +19,6 @@ public class IscsiVolumePath {
     }
 
     public IscsiVolumePath() {
-    }
-
-    public void replaceUuidInTarget(String uuid) {
-        DebugUtils.Assert(target!=null, "target cannot be null");
-        String[] pair = target.split(":");
-        List<String> n = new ArrayList<String>();
-        n.add(pair[0]);
-        n.add(uuid);
-        target = StringUtils.join(n, ":");
     }
 
     public String assembleIscsiPath() {
