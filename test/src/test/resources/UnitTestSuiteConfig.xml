@@ -19,13 +19,14 @@
 	<Import resource="unitTestSuiteXml/NfsPrimaryStorage.xml"/>
 	<Import resource="unitTestSuiteXml/VirtualRouter.xml"/>
 	<Import resource="unitTestSuiteXml/VirtualRouterPortForwarding.xml"/>
-    <!--
-	<Import resource="unitTestSuiteXml/MultiNodes.xml"/>
-	-->
     <Import resource="unitTestSuiteXml/vip.xml"/>
     <Import resource="unitTestSuiteXml/eip.xml"/>
     <Import resource="unitTestSuiteXml/snapshot.xml"/>
     <Import resource="unitTestSuiteXml/tag.xml"/>
     <Import resource="unitTestSuiteXml/managementNode.xml"/>
 	<Import resource="unitTestSuiteXml/iscsiFilesystemPrimaryStorage.xml"/>
+
+	<!--
+    <Import resource="unitTestSuiteXml/MultiNodes.xml"/>
+    -->
 </UnitTestSuiteConfig>

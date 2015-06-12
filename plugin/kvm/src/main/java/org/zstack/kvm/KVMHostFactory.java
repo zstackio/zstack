@@ -23,6 +23,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
@@ -38,8 +39,8 @@ public class KVMHostFactory implements HypervisorFactory, Component, ManagementN
     private static final CLogger logger = Utils.getLogger(KVMHostFactory.class);
 
     public static final HypervisorType hypervisorType = new HypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
-    public static final VolumeFormat QCOW2_FORMAT = new VolumeFormat(KVMConstant.QCOW2_FORMAT_STRING, hypervisorType);
-    public static final VolumeFormat RAW_FORMAT = new VolumeFormat(KVMConstant.RAW_FORMAT_STRING, hypervisorType);
+    public static final VolumeFormat QCOW2_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_QCOW2, hypervisorType);
+    public static final VolumeFormat RAW_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_RAW, hypervisorType);
     private List<KVMHostConnectExtensionPoint> connectExtensions = new ArrayList<KVMHostConnectExtensionPoint>();
     private Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<L2NetworkType, KVMCompleteNicInformationExtensionPoint>();
     private int maxDataVolumeNum;

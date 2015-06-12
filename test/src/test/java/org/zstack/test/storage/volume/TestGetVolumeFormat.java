@@ -11,11 +11,8 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
-import org.zstack.header.volume.APIQueryVolumeMsg;
-import org.zstack.header.volume.APIQueryVolumeReply;
-import org.zstack.header.volume.VolumeFormat;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -54,22 +51,22 @@ public class TestGetVolumeFormat {
         VolumeFormatReplyStruct qcow2 = CollectionUtils.find(structs, new Function<VolumeFormatReplyStruct, VolumeFormatReplyStruct>() {
             @Override
             public VolumeFormatReplyStruct call(VolumeFormatReplyStruct arg) {
-                return arg.getFormat().equals(KVMConstant.QCOW2_FORMAT_STRING) ? arg : null;
+                return arg.getFormat().equals(VolumeConstant.VOLUME_FORMAT_QCOW2) ? arg : null;
             }
         });
         Assert.assertNotNull(qcow2);
-        Assert.assertEquals(KVMConstant.QCOW2_FORMAT_STRING, qcow2.getFormat());
+        Assert.assertEquals(VolumeConstant.VOLUME_FORMAT_QCOW2, qcow2.getFormat());
         Assert.assertEquals(KVMConstant.KVM_HYPERVISOR_TYPE, qcow2.getMasterHypervisorType());
         Assert.assertFalse(qcow2.getSupportingHypervisorTypes().isEmpty());
 
         VolumeFormatReplyStruct raw = CollectionUtils.find(structs, new Function<VolumeFormatReplyStruct, VolumeFormatReplyStruct>() {
             @Override
             public VolumeFormatReplyStruct call(VolumeFormatReplyStruct arg) {
-                return arg.getFormat().equals(KVMConstant.RAW_FORMAT_STRING) ? arg : null;
+                return arg.getFormat().equals(VolumeConstant.VOLUME_FORMAT_RAW) ? arg : null;
             }
         });
         Assert.assertNotNull(raw);
-        Assert.assertEquals(KVMConstant.RAW_FORMAT_STRING, raw.getFormat());
+        Assert.assertEquals(VolumeConstant.VOLUME_FORMAT_RAW, raw.getFormat());
         Assert.assertEquals(KVMConstant.KVM_HYPERVISOR_TYPE, raw.getMasterHypervisorType());
         Assert.assertFalse(raw.getSupportingHypervisorTypes().isEmpty());
     }

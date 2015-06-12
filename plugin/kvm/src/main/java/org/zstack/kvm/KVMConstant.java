@@ -60,7 +60,4 @@ public interface KVMConstant {
     		}
     	}
     }
-
-    public static final String QCOW2_FORMAT_STRING = "qcow2";
-    public static final String RAW_FORMAT_STRING = "raw";
 }

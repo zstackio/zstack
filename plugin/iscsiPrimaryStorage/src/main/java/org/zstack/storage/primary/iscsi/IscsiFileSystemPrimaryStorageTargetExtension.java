@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
@@ -12,7 +13,9 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.CreateIscsiTargetCmd;
+import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.CreateIscsiTargetRsp;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.DeleteIscsiTargetCmd;
+import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.DeleteIscsiTargetRsp;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -35,6 +38,8 @@ public class IscsiFileSystemPrimaryStorageTargetExtension implements VmInstanceS
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ErrorFacade errf;
 
     @Override
     public String preStopVm(VmInstanceInventory inv) {
@@ -147,6 +152,12 @@ public class IscsiFileSystemPrimaryStorageTargetExtension implements VmInstanceS
                 // no need to rollback created targets, the agent is designed as skipping existing targets
                 // so it's no harm for next time creating targets where targets are already there
                 throw new OperationFailureException(r.getError());
+            } else {
+                IscsiBtrfsPrimaryStorageAsyncCallReply ir = r.castReply();
+                CreateIscsiTargetRsp rsp = ir.toResponse(CreateIscsiTargetRsp.class);
+                if (!ir.isSuccess()) {
+                    throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
+                }
             }
         }
     }
@@ -180,6 +191,14 @@ public class IscsiFileSystemPrimaryStorageTargetExtension implements VmInstanceS
                 VolumeIscsiPrimaryStorageStruct s = structs.get(replies.indexOf(r));
                 logger.warn(String.format("failed to delete iscsi target for volume[uuid:%s, path:%s] on btrfs primary storage[uuid:%s], %s. It's fine, it won't harm your system",
                         s.volume.getUuid(), s.volume.getInstallPath(), s.primaryStorage.getUuid(), r.getError()));
+            } else {
+                VolumeIscsiPrimaryStorageStruct s = structs.get(replies.indexOf(r));
+                IscsiBtrfsPrimaryStorageAsyncCallReply ir = r.castReply();
+                DeleteIscsiTargetRsp rsp = ir.toResponse(DeleteIscsiTargetRsp.class);
+                if (!rsp.isSuccess()) {
+                    logger.warn(String.format("failed to delete iscsi target for volume[uuid:%s, path:%s] on btrfs primary storage[uuid:%s], %s. It's fine, it won't harm your system",
+                            s.volume.getUuid(), s.volume.getInstallPath(), s.primaryStorage.getUuid(), rsp.getError()));
+                }
             }
         }
     }

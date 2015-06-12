@@ -287,6 +287,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
                     svo.setPrimaryStorageInstallPath(sinv.getPrimaryStorageInstallPath());
                     svo.setStatus(VolumeSnapshotStatus.Ready);
                     svo.setSize(sinv.getSize());
+                    if (sinv.getFormat() != null) {
+                        svo.setFormat(sinv.getFormat());
+                    }
                     svo = dbf.updateAndRefresh(svo);
                     ret.setInventory(VolumeSnapshotInventory.valueOf(svo));
                     bus.reply(msg, ret);

@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
 import org.zstack.kvm.KVMAgentCommands.VolumeTO;
@@ -62,7 +63,7 @@ public class TestIscsiBtrfsPrimaryStorage3 {
         api.stopVmInstance(vm.getUuid());
         Assert.assertEquals(vm.getAllVolumes().size(), iconfig.deleteIscsiTargetCmds.size());
         ImageInventory i = api.createTemplateFromRootVolume("t1", vm.getRootVolumeUuid(), (List)null);
-        Assert.assertEquals(KVMConstant.RAW_FORMAT_STRING, i.getFormat());
+        Assert.assertEquals(VolumeConstant.VOLUME_FORMAT_RAW, i.getFormat());
         Assert.assertEquals(1, iconfig.uploadToSftpCmds.size());
     }
 }

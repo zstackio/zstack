@@ -13,6 +13,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.simulator.SimulatorConstant;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
@@ -59,7 +60,7 @@ public class TestSftpBackupStorageDownloadImageFailure2 {
         config.downloadSuccess2 = false;
         ImageInventory iinv = new ImageInventory();
         iinv.setMediaType(ImageMediaType.RootVolumeTemplate.toString());
-        iinv.setFormat(KVMConstant.QCOW2_FORMAT_STRING);
+        iinv.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
         iinv.setFormat(SimulatorConstant.SIMULATOR_VOLUME_FORMAT_STRING);
         iinv.setGuestOsType("CentOS6.3");
         iinv.setName("TestImage");

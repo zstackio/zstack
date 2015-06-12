@@ -1,5 +1,6 @@
 package org.zstack.test.storage.primary.iscsi;
 
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -7,6 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -68,5 +70,6 @@ public class TestIscsiBtrfsPrimaryStorage17 {
         validator.validate(sp);
 
         VolumeInventory volume = api.createDataVolumeFromSnapshot(sp.getUuid());
+        Assert.assertEquals(VolumeConstant.VOLUME_FORMAT_RAW, volume.getFormat());
     }
 }

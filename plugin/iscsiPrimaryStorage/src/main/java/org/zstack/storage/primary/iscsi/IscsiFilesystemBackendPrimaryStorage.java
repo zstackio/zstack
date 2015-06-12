@@ -54,6 +54,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -172,12 +173,24 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         );
     }
 
+    public String makeVolumeSnapshotInstallPathOnBackupStorage(String bsUuid, String snapshotUuid) {
+        return PathUtil.join(
+                findSftpRootPath(bsUuid),
+                BackupStoragePathMaker.makeVolumeSnapshotInstallFolderPath(snapshotUuid),
+                String.format("%s.raw", snapshotUuid)
+        );
+    }
+
     private String makeIscsiVolumePath(String target, String volumePath) {
         IscsiVolumePath path = new IscsiVolumePath();
         path.setInstallPath(volumePath);
         path.setHostname(getSelf().getHostname());
         path.setTarget(target);
         return path.assemble();
+    }
+
+    private String makeIscsiTargetName(String uuid) {
+        return String.format("iqn.%s.org.zstack:%s", new SimpleDateFormat("yyyy-MM").format(new Date()), uuid);
     }
 
     private void deleteBits(String installPath, String volumeUuid, final Completion completion) {
@@ -534,7 +547,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void success() {
                 reply.setTemplateBackupStorageInstallPath(finalBsInstallPath);
-                reply.setFormat(KVMConstant.RAW_FORMAT_STRING);
+                reply.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 bus.reply(msg, reply);
             }
 
@@ -642,7 +655,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         path.setLun(lun);
                         path.setTarget(target);
                         reply.setInstallPath(path.assemble());
-                        reply.setFormat(KVMConstant.RAW_FORMAT_STRING);
+                        reply.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                         bus.reply(msg, reply);
                     }
                 });
@@ -1059,9 +1072,32 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof IscsiBtrfsPrimaryStorageAsyncCallMsg) {
             handle((IscsiBtrfsPrimaryStorageAsyncCallMsg) msg);
+        } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
+            handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg) {
+        final BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();
+        final BackupStorageInventory bs = msg.getBackupStorage();
+        IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bs.getType()));
+        final String bsIntallPath = makeVolumeSnapshotInstallPathOnBackupStorage(bs.getUuid(), msg.getSnapshot().getUuid());
+        mediator.uploadBits(getSelfInventory(), bs, bsIntallPath, msg.getSnapshot().getPrimaryStorageInstallPath(), new Completion(msg) {
+            @Override
+            public void success() {
+                reply.setBackupStorageInstallPath(bsIntallPath);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+
     }
 
     private void handle(final IscsiBtrfsPrimaryStorageAsyncCallMsg msg) {
@@ -1138,6 +1174,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                                     if (!ret.isSuccess()) {
                                         trigger.fail(errf.stringToOperationError(ret.getError()));
                                     } else {
+                                        installPath = ret.getPath();
                                         trigger.next();
                                     }
                                 }
@@ -1153,7 +1190,11 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     done(new FlowDoneHandler(msg) {
                         @Override
                         public void handle(Map data) {
-                            reply.setInstallPath(installPath);
+                            IscsiVolumePath ipath = new IscsiVolumePath();
+                            ipath.setHostname(getSelf().getHostname());
+                            ipath.setInstallPath(installPath);
+                            ipath.setTarget(makeIscsiTargetName(msg.getVolumeUuid()));
+                            reply.setInstallPath(ipath.assemble());
                             reply.setSize(snapshotInfo.getSnapshot().getSize());
                             bus.reply(msg, reply);
                         }
@@ -1548,6 +1589,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     inv.setPrimaryStorageUuid(self.getUuid());
                     inv.setPrimaryStorageInstallPath(ret.getPath());
                     inv.setType(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString());
+                    inv.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                     reply.setInventory(inv);
                 }
 

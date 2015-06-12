@@ -10,6 +10,7 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.VolumeTO;
@@ -74,12 +75,12 @@ public class TestIscsiBtrfsPrimaryStorage5 {
 
         api.detachVolumeFromVm(vol.getUuid());
         ImageInventory img = api.addDataVolumeTemplateFromDataVolume(vol.getUuid(), (List) null);
-        Assert.assertEquals(KVMConstant.RAW_FORMAT_STRING, img.getFormat());
+        Assert.assertEquals(VolumeConstant.VOLUME_FORMAT_RAW, img.getFormat());
         Assert.assertEquals(1, iconfig.uploadToSftpCmds.size());
 
         PrimaryStorageInventory ps = deployer.primaryStorages.get("TestPrimaryStorage");
         VolumeInventory dv = api.createDataVolumeFromTemplate(img.getUuid(), ps.getUuid());
-        Assert.assertEquals(KVMConstant.RAW_FORMAT_STRING, dv.getFormat());
+        Assert.assertEquals(VolumeConstant.VOLUME_FORMAT_RAW, dv.getFormat());
         Assert.assertTrue(dv.getInstallPath().contains("iscsi://") && dv.getInstallPath().contains("file://"));
         Assert.assertEquals(1, iconfig.createIscsiTargetCmds.size());
     }

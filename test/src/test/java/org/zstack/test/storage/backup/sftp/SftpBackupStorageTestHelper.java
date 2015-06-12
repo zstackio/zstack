@@ -13,6 +13,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.backup.APIAddBackupStorageEvent;
 import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.backup.sftp.*;
@@ -56,7 +57,7 @@ public class SftpBackupStorageTestHelper {
         config.imageSize = SizeUnit.GIGABYTE.toByte(8);
         ImageInventory iinv = new ImageInventory();
         iinv.setMediaType(ImageMediaType.RootVolumeTemplate.toString());
-        iinv.setFormat(KVMConstant.QCOW2_FORMAT_STRING);
+        iinv.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
         iinv.setGuestOsType("CentOS6.3");
         iinv.setName("TestImage");
         iinv.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
