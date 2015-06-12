@@ -125,9 +125,9 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                 String.format("vol-%s", volumeUuid), String.format("%s.img", volumeUuid));
     }
 
-    private String makeRootVolumeBySnapshotPath(String volumeUuid) {
+    private String makeRootVolumeBySnapshotPath(String volumeUuid, String snapshotUuid) {
         return PathUtil.join(self.getUrl(), "rootVolumes", String.format("acct-%s", acntMgr.getOwnerAccountUuidOfResource(volumeUuid)),
-                String.format("vol-by-snapshot-%s", volumeUuid));
+                String.format("vol-%s-by-snapshot", volumeUuid), String.format("snapshot-%s", snapshotUuid));
     }
 
     private String makeDataVolumePath(String volumeUuid) {
@@ -1415,7 +1415,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     public void run(final FlowTrigger trigger, Map data) {
                         CreateSubVolumeCmd cmd = new CreateSubVolumeCmd();
                         cmd.setSrc(msg.getSnapshot().getPrimaryStorageInstallPath());
-                        cmd.setDst(makeRootVolumeBySnapshotPath(msg.getVolume().getUuid()));
+                        cmd.setDst(makeRootVolumeBySnapshotPath(msg.getVolume().getUuid(), msg.getSnapshot().getUuid()));
                         restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.CREATE_SUBVOLUME), cmd, new JsonAsyncRESTCallback<CreateSubVolumeRsp>(msg) {
                             @Override
                             public void fail(ErrorCode err) {

@@ -93,7 +93,7 @@ public class TestIscsiBtrfsPrimaryStorage9 {
             runnable.run();
         }
 
-        latch.await(60, TimeUnit.SECONDS);
+        latch.await(180, TimeUnit.SECONDS);
         long count = dbf.count(IscsiIsoVO.class);
         Assert.assertEquals(100, count);
     }
