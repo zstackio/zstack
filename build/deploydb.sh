@@ -1,21 +1,46 @@
 #!/bin/sh
+set -e
 
 user="$1"
 password="$2"
 
-database=`dirname $0`/../conf/db/database.sql
-schema=`dirname $0`/../conf/db/schema.sql
-#trigger=`dirname $0`/../conf/db/trigger.sql
-schema_rest=`dirname $0`/../conf/db/schema-rest.sql
-view=`dirname $0`/../conf/db/view.sql
-foreign_keys=`dirname $0`/../conf/db/foreignKeys.sql
-indexes=`dirname $0`/../conf/db/indexes.sql
+base=`dirname $0`
 
-mysql --user=$user --password=$password < $database
-mysql --user=$user --password=$password < $schema
-mysql --user=$user --password=$password < $view
-#mysql --user=$user --password=$password < $trigger
-mysql --user=$user --password=$password < $schema_rest
-mysql --user=$user --password=$password -t zstack < $foreign_keys
-mysql --user=$user --password=$password -t zstack < $indexes
+schema="$base/../conf/db/schema.sql"
+view="$base/../conf/db/view.sql"
+foreign_keys="$base/../conf/db/foreignKeys.sql"
+indexes="$base/../conf/db/indexes.sql"
+schema_rest="$base/../conf/db/schema-rest.sql"
 
+mysql --user=$user --password=$password << EOF
+DROP DATABASE IF EXISTS zstack;
+CREATE DATABASE zstack;
+DROP DATABASE IF EXISTS zstack_rest;
+CREATE DATABASE zstack_rest;
+grant all privileges on zstack.* to root@'%' identified by "$password";
+grant all privileges on zstack_rest.* to root@'%' identified by "$password";
+EOF
+
+flyway="$base/../conf//tools/flyway-3.2.1/flyway"
+flyway_sql="$base/../conf/tools/flyway-3.2.1/sql/"
+
+eval "rm -f $flyway_sql/*"
+schema_0_6="$flyway_sql/V0.6__schema.sql"
+cat $schema > $schema_0_6
+cat $foreign_keys >> $schema_0_6
+cat $indexes >> $schema_0_6
+cat $view >> $schema_0_6
+cp $base/../conf/db/upgrade/* $flyway_sql
+
+url="jdbc:mysql://localhost:3306/zstack"
+$flyway -user=$user -password=$password -url=$url clean
+$flyway -user=$user -password=$password -url=$url migrate
+
+eval "rm -f $flyway_sql/*"
+
+schema_rest_0_6="$flyway_sql/V0.6__schema_rest.sql"
+cat $schema_rest > $schema_rest_0_6
+
+url="jdbc:mysql://localhost:3306/zstack_rest"
+$flyway -user=$user -password=$password -url=$url clean
+$flyway -user=$user -password=$password -url=$url migrate

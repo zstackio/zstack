@@ -9,6 +9,12 @@ host="$3"
 port="$4"
 zstack_user_password="$5"
 
+base=`dirname $0`
+
+flyway="$base/tools/flyway-3.2.1/flyway"
+flyway_sql="$base/tools/flyway-3.2.1/sql/"
+
+
 mysql --user=$user --password=$password --host=$host --port=$port << EOF
 DROP DATABASE IF EXISTS zstack;
 CREATE DATABASE zstack;
@@ -18,20 +24,35 @@ grant all privileges on zstack.* to root@'%' identified by "$password";
 grant all privileges on zstack_rest.* to root@'%' identified by "$password";
 EOF
 
+schema="$base/db/schema.sql"
+schema_rest="$base/db/schema-rest.sql"
+view="$base/db/view.sql"
+foreign_keys="$base/db/foreignKeys.sql"
+indexes="$base/db/indexes.sql"
 
-schema=`dirname $0`/db/schema.sql
-trigger=`dirname $0`/db/trigger.sql
-schema_rest=`dirname $0`/db/schema-rest.sql
-view=`dirname $0`/db/view.sql
-foreign_keys=`dirname $0`/db/foreignKeys.sql
-indexes=`dirname $0`/db/indexes.sql
+eval "rm -f $flyway_sql/*"
 
-[ -z $password ] && password=''
-mysql --user=$user --password=$password --host=$host --port=$port< $schema
-mysql --user=$user --password=$password --host=$host --port=$port< $view
-mysql --user=$user --password=$password --host=$host --port=$port< $schema_rest
-mysql --user=$user --password=$password --host=$host --port=$port -t zstack < $foreign_keys
-mysql --user=$user --password=$password --host=$host --port=$port -t zstack < $indexes
+schema_0_6="$flyway_sql/V0.6__schema.sql"
+cat $schema > $schema_0_6
+cat $foreignKeys >> $schema_0_6
+cat $indexes >> $schema_0_6
+cat $view >> $schema_0_6
+cp db/upgrade/* $flyway_sql
+
+url="jdbc:mysql://$host:$port/zstack"
+$flyway -user=$user -password=$password -url=$url clean
+$flyway -user=$user -password=$password -url=$url migrate
+
+eval "rm -f $flyway_sql/*"
+
+schema_rest_0_6="$flyway_sql/V0.6__schema_rest.sql"
+cat $schema_rest > $schema_rest_0_6
+
+url="jdbc:mysql://$host:$port/zstack_rest"
+$flyway -user=$user -password=$password -url=$url clean
+$flyway -user=$user -password=$password -url=$url migrate
+
+eval "rm -f $flyway_sql/*"
 
 hostname=`hostname`
 
