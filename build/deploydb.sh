@@ -6,12 +6,6 @@ password="$2"
 
 base=`dirname $0`
 
-schema="$base/../conf/db/schema.sql"
-view="$base/../conf/db/view.sql"
-foreign_keys="$base/../conf/db/foreignKeys.sql"
-indexes="$base/../conf/db/indexes.sql"
-schema_rest="$base/../conf/db/schema-rest.sql"
-
 mysql --user=$user --password=$password << EOF
 DROP DATABASE IF EXISTS zstack;
 CREATE DATABASE zstack;
@@ -25,11 +19,7 @@ flyway="$base/../conf//tools/flyway-3.2.1/flyway"
 flyway_sql="$base/../conf/tools/flyway-3.2.1/sql/"
 
 eval "rm -f $flyway_sql/*"
-schema_0_6="$flyway_sql/V0.6__schema.sql"
-cat $schema > $schema_0_6
-cat $foreign_keys >> $schema_0_6
-cat $indexes >> $schema_0_6
-cat $view >> $schema_0_6
+cp $base/../conf/db/V0.6__schema.sql $flyway_sql
 cp $base/../conf/db/upgrade/* $flyway_sql
 
 url="jdbc:mysql://localhost:3306/zstack"
@@ -38,8 +28,7 @@ $flyway -user=$user -password=$password -url=$url migrate
 
 eval "rm -f $flyway_sql/*"
 
-schema_rest_0_6="$flyway_sql/V0.6__schema_rest.sql"
-cat $schema_rest > $schema_rest_0_6
+cp $base/../conf/db/V0.6__schema_buildin_httpserver.sql $flyway_sql
 
 url="jdbc:mysql://localhost:3306/zstack_rest"
 $flyway -user=$user -password=$password -url=$url clean

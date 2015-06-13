@@ -24,33 +24,22 @@ grant all privileges on zstack.* to root@'%' identified by "$password";
 grant all privileges on zstack_rest.* to root@'%' identified by "$password";
 EOF
 
-schema="$base/db/schema.sql"
-schema_rest="$base/db/schema-rest.sql"
-view="$base/db/view.sql"
-foreign_keys="$base/db/foreignKeys.sql"
-indexes="$base/db/indexes.sql"
-
 eval "rm -f $flyway_sql/*"
 
-schema_0_6="$flyway_sql/V0.6__schema.sql"
-cat $schema > $schema_0_6
-cat $foreignKeys >> $schema_0_6
-cat $indexes >> $schema_0_6
-cat $view >> $schema_0_6
-cp db/upgrade/* $flyway_sql
+cp $base/db/V0.6__schema.sql $flyway_sql
+cp $base/db/upgrade/* $flyway_sql
 
 url="jdbc:mysql://$host:$port/zstack"
-$flyway -user=$user -password=$password -url=$url clean
-$flyway -user=$user -password=$password -url=$url migrate
+bash $flyway -user=$user -password=$password -url=$url clean
+bash $flyway -user=$user -password=$password -url=$url migrate
 
 eval "rm -f $flyway_sql/*"
 
-schema_rest_0_6="$flyway_sql/V0.6__schema_rest.sql"
-cat $schema_rest > $schema_rest_0_6
+cp $base/db/V0.6__schema_buildin_httpserver.sql $flyway_sql
 
 url="jdbc:mysql://$host:$port/zstack_rest"
-$flyway -user=$user -password=$password -url=$url clean
-$flyway -user=$user -password=$password -url=$url migrate
+bash $flyway -user=$user -password=$password -url=$url clean
+bash $flyway -user=$user -password=$password -url=$url migrate
 
 eval "rm -f $flyway_sql/*"
 
