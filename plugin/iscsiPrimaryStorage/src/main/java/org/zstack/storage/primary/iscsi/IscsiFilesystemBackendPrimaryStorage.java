@@ -127,7 +127,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
 
     private String makeRootVolumeBySnapshotPath(String volumeUuid, String snapshotUuid) {
         return PathUtil.join(self.getUrl(), "rootVolumes", String.format("acct-%s", acntMgr.getOwnerAccountUuidOfResource(volumeUuid)),
-                String.format("vol-%s-by-snapshot", volumeUuid), String.format("snapshot-%s", snapshotUuid));
+                String.format("vol-%s-by-snapshot", volumeUuid), String.format("snapshot-%s", snapshotUuid), String.format("random-%s", Platform.getUuid()));
     }
 
     private String makeDataVolumePath(String volumeUuid) {
