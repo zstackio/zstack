@@ -134,7 +134,13 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
             q.select(VolumeSnapshotVO_.uuid);
             q.add(VolumeSnapshotVO_.treeUuid, Op.EQ, cuuid);
             q.add(VolumeSnapshotVO_.parentUuid, Op.NULL);
+            q.add(VolumeSnapshotVO_.type, Op.EQ, VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
             String suuid = q.findValue();
+
+            if (suuid == null) {
+                // this is a storage snapshot, don't delete it on primary storage
+                continue;
+            }
 
             ret.add(makeMsg(suuid, true));
         }

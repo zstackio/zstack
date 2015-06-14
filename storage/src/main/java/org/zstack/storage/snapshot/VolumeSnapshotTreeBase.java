@@ -794,7 +794,7 @@ public class VolumeSnapshotTreeBase {
             if (currentRoot.getType().equals(VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString())) {
                 new Runnable() {
                     @Override
-                    @Transactional
+                    @Transactional(readOnly = true)
                     public void run() {
                         String sql;
                         if (requiredPrimaryStorage != null) {
@@ -865,9 +865,14 @@ public class VolumeSnapshotTreeBase {
                     }
                 }.run();
             } else {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("Storage volume snapshot has not supported yet")
-                ));
+                if (requiredPrimaryStorage == null) {
+                    throw new OperationFailureException(errf.stringToOperationError(
+                            String.format("Please tell me which primary storage you want to create this data volume by providing 'primaryStorageUuid' in API. This snapshot is of type of storage snapshot, ZStack cannot figure out which primary storage to use by itself")
+                    ));
+                } else {
+                    PrimaryStorageVO privo = dbf.findByUuid(requiredPrimaryStorage, PrimaryStorageVO.class);
+                    info.workspacePrimaryStorage  = PrimaryStorageInventory.valueOf(privo);
+                }
             }
         } else {
             PrimaryStorageVO privo = dbf.findByUuid(currentRoot.getPrimaryStorageUuid(), PrimaryStorageVO.class);
