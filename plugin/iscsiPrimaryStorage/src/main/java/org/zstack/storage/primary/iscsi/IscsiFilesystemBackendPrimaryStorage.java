@@ -205,7 +205,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
             cmd.setInstallPath(installPath);
         }
         cmd.setVolumeUuid(volumeUuid);
-        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>() {
+        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>(completion) {
             @Override
             public void fail(ErrorCode err) {
                 completion.fail(err);
@@ -1256,7 +1256,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                             if (primaryStorageInstallPath != null) {
                                 DeleteBitsCmd cmd = new DeleteBitsCmd();
                                 cmd.setInstallPath(primaryStorageInstallPath);
-                                restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>() {
+                                restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>(trigger) {
                                     @Override
                                     public void fail(ErrorCode err) {
                                         logger.warn(String.format("failed to delete %s on btrfs iscsi primary storage[uuid:%s], %s. Continue to rollback",
@@ -1269,6 +1269,8 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                                         if (!ret.isSuccess()) {
                                             logger.warn(String.format("failed to delete %s on btrfs iscsi primary storage[uuid:%s], %s. Continue to rollback",
                                                     primaryStorageInstallPath, self.getUuid(), ret.getError()));
+                                        } else {
+                                            reportCapacity(ret);
                                         }
                                         trigger.rollback();
                                     }
@@ -1348,7 +1350,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         public void run(final FlowTrigger trigger, Map data) {
                             DeleteBitsCmd cmd = new DeleteBitsCmd();
                             cmd.setInstallPath(primaryStorageInstallPath);
-                            restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>() {
+                            restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>(trigger) {
                                 @Override
                                 public void fail(ErrorCode err) {
                                     //TODO: cleanup
@@ -1363,6 +1365,8 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                                     if (!ret.isSuccess()) {
                                         logger.warn(String.format("failed to delete %s on btrfs iscsi primary storage[uuid:%s], %s. Continue to rollback",
                                                 primaryStorageInstallPath, self.getUuid(), ret.getError()));
+                                    } else {
+                                        reportCapacity(ret);
                                     }
                                     trigger.next();
                                 }
@@ -1446,9 +1450,9 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                             return;
                         }
 
-                        DeleteSubVolumeCmd cmd = new DeleteSubVolumeCmd();
-                        cmd.setPath(newVolumePath);
-                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_SUBVOLUME), cmd, new JsonAsyncRESTCallback<DeleteSubVolumeRsp>(trigger) {
+                        DeleteBitsCmd cmd = new DeleteBitsCmd();
+                        cmd.setInstallPath(newVolumePath);
+                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>(trigger) {
                             @Override
                             public void fail(ErrorCode err) {
                                 logger.warn(String.format("failed to delete subvolume[%s], %s. Continue to rollback", newVolumePath, err));
@@ -1456,16 +1460,18 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                             }
 
                             @Override
-                            public void success(DeleteSubVolumeRsp ret) {
+                            public void success(DeleteBitsRsp ret) {
                                 if (!ret.isSuccess()) {
                                     logger.warn(String.format("failed to delete subvolume[%s], %s. Continue to rollback", newVolumePath, ret.getError()));
+                                } else {
+                                    reportCapacity(ret);
                                 }
                                 trigger.rollback();
                             }
 
                             @Override
-                            public Class<DeleteSubVolumeRsp> getReturnClass() {
-                                return DeleteSubVolumeRsp.class;
+                            public Class<DeleteBitsRsp> getReturnClass() {
+                                return DeleteBitsRsp.class;
                             }
                         });
                     }
@@ -1476,9 +1482,9 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        DeleteSubVolumeCmd cmd = new DeleteSubVolumeCmd();
-                        cmd.setPath(path.getInstallPath());
-                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_SUBVOLUME), cmd, new JsonAsyncRESTCallback<DeleteSubVolumeRsp>(trigger) {
+                        DeleteBitsCmd cmd = new DeleteBitsCmd();
+                        cmd.setInstallPath(path.getInstallPath());
+                        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>(trigger) {
                             @Override
                             public void fail(ErrorCode err) {
                                 logger.warn(String.format("failed to delete old subvolume[%s], %s. Continue to proceed", path.getInstallPath(), err));
@@ -1486,16 +1492,18 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                             }
 
                             @Override
-                            public void success(DeleteSubVolumeRsp ret) {
+                            public void success(DeleteBitsRsp ret) {
                                 if (!ret.isSuccess()) {
                                     logger.warn(String.format("failed to delete old subvolume[%s], %s. Continue to proceed", path.getInstallPath(), ret.getError()));
+                                } else {
+                                    reportCapacity(ret);
                                 }
                                 trigger.next();
                             }
 
                             @Override
-                            public Class<DeleteSubVolumeRsp> getReturnClass() {
-                                return DeleteSubVolumeRsp.class;
+                            public Class<DeleteBitsRsp> getReturnClass() {
+                                return DeleteBitsRsp.class;
                             }
                         });
                     }
@@ -1528,9 +1536,9 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         q.add(VolumeSnapshotVO_.uuid, Op.EQ, msg.getSnapshot().getUuid());
         String installPath = q.findValue();
 
-        DeleteSubVolumeCmd cmd = new DeleteSubVolumeCmd();
-        cmd.setPath(installPath);
-        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_SUBVOLUME), cmd, new JsonAsyncRESTCallback<DeleteSubVolumeRsp>(msg) {
+        DeleteBitsCmd cmd = new DeleteBitsCmd();
+        cmd.setInstallPath(installPath);
+        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_BITS_EXISTENCE), cmd, new JsonAsyncRESTCallback<DeleteBitsRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -1538,17 +1546,19 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
             }
 
             @Override
-            public void success(DeleteSubVolumeRsp ret) {
+            public void success(DeleteBitsRsp ret) {
                 if (!ret.isSuccess()) {
                     reply.setError(errf.stringToOperationError(ret.getError()));
+                } else {
+                    reportCapacity(ret);
                 }
 
                 bus.reply(msg, reply);
             }
 
             @Override
-            public Class<DeleteSubVolumeRsp> getReturnClass() {
-                return DeleteSubVolumeRsp.class;
+            public Class<DeleteBitsRsp> getReturnClass() {
+                return DeleteBitsRsp.class;
             }
         });
     }

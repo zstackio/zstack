@@ -448,19 +448,4 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
             this.path = path;
         }
     }
-
-    public static class DeleteSubVolumeCmd extends AgentCommand {
-        private String path;
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
-    }
-
-    public static class DeleteSubVolumeRsp extends AgentCapacityResponse {
-    }
 }

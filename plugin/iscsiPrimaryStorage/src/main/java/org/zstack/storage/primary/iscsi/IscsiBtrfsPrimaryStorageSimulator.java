@@ -256,19 +256,4 @@ public class IscsiBtrfsPrimaryStorageSimulator {
 
         reply(entity, rsp);
     }
-
-    @RequestMapping(value="/btrfs/subvolume/delete",  method= RequestMethod.POST)
-    @ResponseBody
-    private String deleteSubvolume(HttpServletRequest req) {
-        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
-        deleteSubvolume(entity);
-        return null;
-    }
-
-    private void deleteSubvolume(HttpEntity<String> entity) {
-        DeleteSubVolumeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteSubVolumeCmd.class);
-        DeleteSubVolumeRsp  rsp = new DeleteSubVolumeRsp();
-        config.deleteSubVolumeCmds.add(cmd);
-        reply(entity, rsp);
-    }
 }

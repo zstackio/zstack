@@ -29,5 +29,4 @@ public class IscsiBtrfsPrimaryStorageSimulatorConfig {
     public List<DeleteIscsiTargetCmd> deleteIscsiTargetCmds = new ArrayList<DeleteIscsiTargetCmd>();
     public volatile boolean createSubVolumeSuccess = true;
     public List<CreateSubVolumeCmd> createSubVolumeCmds = new ArrayList<CreateSubVolumeCmd>();
-    public List<DeleteSubVolumeCmd> deleteSubVolumeCmds = new ArrayList<DeleteSubVolumeCmd>();
 }

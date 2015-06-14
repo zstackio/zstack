@@ -1087,6 +1087,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         extEmitter.beforeDetachVolume(getSelfInventory(), volume);
 
         if (self.getState() == VmInstanceState.Stopped) {
+            extEmitter.afterDetachVolume(getSelfInventory(), volume);
             bus.reply(msg, reply);
             completion.done();
             return;

@@ -76,10 +76,10 @@ public class TestIscsiBtrfsPrimaryStorage14 {
         Assert.assertEquals(2, iconfig.createSubVolumeCmds.size());
 
         iconfig.createSubVolumeCmds.clear();
-        iconfig.deleteSubVolumeCmds.clear();
+        iconfig.deleteBitsCmds.clear();
         api.revertVolumeToSnapshot(sp1.getUuid());
 
-        Assert.assertEquals(1, iconfig.deleteSubVolumeCmds.size());
+        Assert.assertEquals(1, iconfig.deleteBitsCmds.size());
         Assert.assertEquals(1, iconfig.createSubVolumeCmds.size());
     }
 }

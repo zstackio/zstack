@@ -72,7 +72,7 @@ public class TestIscsiBtrfsPrimaryStorage13 {
         validator.validate(sp);
 
         api.deleteSnapshot(sp.getUuid());
-        Assert.assertEquals(1, iconfig.deleteSubVolumeCmds.size());
+        Assert.assertEquals(1, iconfig.deleteBitsCmds.size());
 
         long count = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(0, count);
