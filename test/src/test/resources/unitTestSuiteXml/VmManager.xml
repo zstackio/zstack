@@ -41,5 +41,8 @@
     <TestCase class="org.zstack.test.compute.vm.TestQueryVm3"/>
     <TestCase class="org.zstack.test.compute.vm.TestQueryVm4"/>
 	<TestCase class="org.zstack.test.compute.vm.TestQueryVmNic"/>
+	<TestCase class="org.zstack.test.compute.vm.TestVmStaticIp"/>
+	<TestCase class="org.zstack.test.compute.vm.TestVmStaticIp1"/>
+	<TestCase class="org.zstack.test.compute.vm.TestVmStaticIp2"/>
     <TestCase class="org.zstack.test.compute.vm.TestCreateVmWithMultipleSameDataVolume"/>
 </UnitTestSuiteConfig>

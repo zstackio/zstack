@@ -69,6 +69,15 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
             @Override
             public AllocateIpMsg call(VmNicInventory arg) {
                 AllocateIpMsg msg = new AllocateIpMsg();
+
+                List<Map<String, String>> tokenList = VmSystemTags.STATIC_IP.getTokensOfTagsByResourceUuid(spec.getVmInventory().getUuid());
+                for (Map<String, String> tokens : tokenList) {
+                    String l3Uuid = tokens.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
+                    if (l3Uuid.equals(arg.getL3NetworkUuid())) {
+                        msg.setRequiredIp(tokens.get(VmSystemTags.STATIC_IP_TOKEN));
+                    }
+                }
+
                 msg.setL3NetworkUuid(arg.getL3NetworkUuid());
                 msg.setAllocateStrategy(spec.getIpAllocatorStrategy());
                 bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, arg.getL3NetworkUuid());

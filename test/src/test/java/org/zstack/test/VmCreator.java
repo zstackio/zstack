@@ -24,7 +24,7 @@ public class VmCreator {
     public String defaultL3NetworkUuid;
     public String description;
     public String name = "vm";
-    public List<String> systemTags;
+    public List<String> systemTags = new ArrayList<String>();
     public List<String> userTags;
     public String rootDiskOfferingUuid;
     public int timeout = 15;

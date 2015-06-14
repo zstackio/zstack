@@ -30,6 +30,8 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.L3Network;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagVO;
@@ -40,9 +42,11 @@ import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -312,7 +316,26 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
                         validateHostname(sysTag, hostname);
                         validateHostNameOnDefaultL3Network(sysTag, hostname, msg.getDefaultL3NetworkUuid());
+                    } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
+                        validateStaticIp(sysTag);
                     }
+                }
+            }
+
+            private void validateStaticIp(String sysTag) {
+                Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
+                if (!dbf.isExist(l3Uuid, L3NetworkVO.class)) {
+                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                            String.format("L3 network[uuid:%s] not found. Please correct your system tag[%s] of static IP", l3Uuid, sysTag)
+                    ));
+                }
+
+                String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
+                if (!NetworkUtils.isIpv4Address(ip)) {
+                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                            String.format("%s is not a valid IPv4 address. Please correct your system tag[%s] of static IP", ip, sysTag)
+                    ));
                 }
             }
 
@@ -345,6 +368,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     String defaultL3Uuid = q.findValue();
 
                     validateHostNameOnDefaultL3Network(systemTag, hostname, defaultL3Uuid);
+                } else if (VmSystemTags.STATIC_IP.isMatch(systemTag)) {
+                    validateStaticIp(systemTag);
                 }
             }
         }

@@ -4,6 +4,8 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.utils.TagUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.zstack.utils.StringDSL.s;
@@ -49,6 +51,21 @@ public class PatternedSystemTag extends SystemTag {
         }
 
         return TagUtils.parseIfMatch(tagFormat, tag);
+    }
+
+    public List<Map<String, String>> getTokensOfTagsByResourceUuid(String resourceUuid) {
+        return getTokensOfTagsByResourceUuid(resourceUuid, resourceClass);
+    }
+
+    public List<Map<String, String>> getTokensOfTagsByResourceUuid(String resourceUuid, Class resourceClass) {
+        List<Map<String, String>> res = new ArrayList<Map<String, String>>();
+
+        List<String> tags = getTags(resourceUuid, resourceClass);
+        for (String tag : tags) {
+            res.add(TagUtils.parseIfMatch(tagFormat, tag));
+        }
+
+        return res;
     }
 
     public Map<String, String> getTokensByResourceUuid(String resourceUuid) {
