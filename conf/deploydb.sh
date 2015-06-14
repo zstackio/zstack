@@ -24,7 +24,8 @@ grant all privileges on zstack.* to root@'%' identified by "$password";
 grant all privileges on zstack_rest.* to root@'%' identified by "$password";
 EOF
 
-eval "rm -f $flyway_sql/*"
+rm -f $flyway_sql
+mkdir -p $flyway_sql
 
 cp $base/db/V0.6__schema.sql $flyway_sql
 cp $base/db/upgrade/* $flyway_sql
