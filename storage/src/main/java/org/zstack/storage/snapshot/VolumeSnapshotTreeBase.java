@@ -263,7 +263,7 @@ public class VolumeSnapshotTreeBase {
             tq.add(VolumeSnapshotTreeVO_.uuid, Op.EQ, currentRoot.getTreeUuid());
             Boolean onCurrentTree = tq.findValue();
 
-            boolean needMerge = onCurrentTree && ancestorOfLatest && currentRoot.getPrimaryStorageUuid() != null;
+            boolean needMerge = onCurrentTree && ancestorOfLatest && currentRoot.getPrimaryStorageUuid() != null && VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.equals(currentRoot.getType());
             if (needMerge) {
                 chain.then(new NoRollbackFlow() {
                     String __name__ = "merge-volume-snapshots-to-volume";

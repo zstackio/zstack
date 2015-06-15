@@ -21,5 +21,6 @@
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage18"/>
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage19"/>
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage20"/>
+    <TestCase class="org.zstack.test.storage.primary.iscsi.TestIscsiBtrfsPrimaryStorage21"/>
     <TestCase class="org.zstack.test.storage.primary.iscsi.TestQueryIscsiBtrfsPrimaryStorage"/>
 </UnitTestSuiteConfig>
