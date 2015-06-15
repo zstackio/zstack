@@ -66,11 +66,33 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetIpAddressCapacityMsg) msg);
         } else if (msg instanceof APIAddIpRangeByNetworkCidrMsg) {
             validate((APIAddIpRangeByNetworkCidrMsg) msg);
+        } else if (msg instanceof APIGetFreeIpMsg) {
+            validate((APIGetFreeIpMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIGetFreeIpMsg msg) {
+        if (msg.getIpRangeUuid() == null && msg.getL3NetworkUuid() == null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("ipRangeUuid and l3NetworkUuid cannot both be null; you must set either one.")
+            ));
+        }
+
+        if (msg.getIpRangeUuid() != null && msg.getL3NetworkUuid() == null) {
+            SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
+            q.select(IpRangeVO_.l3NetworkUuid);
+            q.add(IpRangeVO_.uuid, Op.EQ, msg.getIpRangeUuid());
+            String l3Uuid = q.findValue();
+            msg.setL3NetworkUuid(l3Uuid);
+        }
+
+        if (msg.getLimit() < 0) {
+            msg.setLimit(Integer.MAX_VALUE);
+        }
     }
 
     private void validate(APIAddIpRangeByNetworkCidrMsg msg) {

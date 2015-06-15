@@ -26,11 +26,15 @@ import org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkMsg;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -194,9 +198,57 @@ public class L3BasicNetwork implements L3Network {
             handle((APIAddIpRangeByNetworkCidrMsg) msg);
         } else if (msg instanceof APIUpdateL3NetworkMsg) {
             handle((APIUpdateL3NetworkMsg) msg);
+        } else if (msg instanceof APIGetFreeIpMsg) {
+            handle((APIGetFreeIpMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private List<FreeIpInventory> getFreeIp(final IpRangeVO ipr, int limit) {
+        SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
+        q.select(UsedIpVO_.ip);
+        q.add(UsedIpVO_.ipRangeUuid, Op.EQ, ipr.getUuid());
+
+        List<String> used = q.listValue();
+
+        List<String> spareIps = NetworkUtils.getFreeIpInRange(ipr.getStartIp(), ipr.getEndIp(), used, limit);
+        return CollectionUtils.transformToList(spareIps, new Function<FreeIpInventory, String>() {
+            @Override
+            public FreeIpInventory call(String arg) {
+                FreeIpInventory f = new FreeIpInventory();
+                f.setGateway(ipr.getGateway());
+                f.setIp(arg);
+                f.setNetmask(ipr.getNetmask());
+                f.setIpRangeUuid(ipr.getUuid());
+                return f;
+            }
+        });
+    }
+
+    private void handle(APIGetFreeIpMsg msg) {
+        APIGetFreeIpReply reply = new APIGetFreeIpReply();
+
+        if (msg.getIpRangeUuid() != null) {
+            final IpRangeVO ipr = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
+            List<FreeIpInventory> free = getFreeIp(ipr, msg.getLimit());
+            reply.setInventories(free);
+        } else {
+            SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
+            q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+            List<IpRangeVO> iprs = q.list();
+            List<FreeIpInventory> res = new ArrayList<FreeIpInventory>();
+            for (IpRangeVO ipr : iprs) {
+                List<FreeIpInventory> i = getFreeIp(ipr, msg.getLimit());
+                res.addAll(i);
+                if (res.size() >= msg.getLimit()) {
+                    break;
+                }
+            }
+            reply.setInventories(res);
+        }
+
+        bus.reply(msg, reply);
     }
 
     private void handle(APIUpdateL3NetworkMsg msg) {

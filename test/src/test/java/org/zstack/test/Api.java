@@ -184,7 +184,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public ImageInventory createTemplateFromSnapshot(String snapshotUuid) throws ApiSenderException {
-        return createTemplateFromSnapshot(snapshotUuid, (List)null);
+        return createTemplateFromSnapshot(snapshotUuid, (List) null);
     }
 
     public VolumeInventory createDataVolumeFromSnapshot(String snapshotUuid) throws ApiSenderException {
@@ -1020,6 +1020,17 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIAddIpRangeEvent e = sender.send(msg, APIAddIpRangeEvent.class);
         return e.getInventory();
+    }
+
+    public List<FreeIpInventory> getFreeIp(String l3Uuid, String ipRangeUuid) throws ApiSenderException {
+        APIGetFreeIpMsg msg = new APIGetFreeIpMsg();
+        msg.setSession(adminSession);
+        msg.setL3NetworkUuid(l3Uuid);
+        msg.setIpRangeUuid(ipRangeUuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetFreeIpReply reply = sender.call(msg, APIGetFreeIpReply.class);
+        return reply.getInventories();
     }
 
     public List<IpRangeInventory> listIpRange(List<String> uuids) throws ApiSenderException {
