@@ -63,6 +63,14 @@ public class L3BasicNetwork implements L3Network {
         this.self = vo;
     }
 
+    protected L3NetworkVO getSelf() {
+        return self;
+    }
+
+    protected L3NetworkInventory getSelfInventory() {
+        return L3NetworkInventory.valueOf(getSelf());
+    }
+
     @Override
     public void handleMessage(Message msg) {
         try {
@@ -184,9 +192,30 @@ public class L3BasicNetwork implements L3Network {
             handle((APIChangeL3NetworkStateMsg) msg);
         } else if (msg instanceof APIAddIpRangeByNetworkCidrMsg) {
             handle((APIAddIpRangeByNetworkCidrMsg) msg);
+        } else if (msg instanceof APIUpdateL3NetworkMsg) {
+            handle((APIUpdateL3NetworkMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateL3NetworkMsg msg) {
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            self.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            self = dbf.updateAndRefresh(self);
+        }
+
+        APIUpdateL3NetworkEvent evt = new APIUpdateL3NetworkEvent(msg.getId());
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     private void handle(APIAddIpRangeByNetworkCidrMsg msg) {

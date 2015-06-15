@@ -156,9 +156,30 @@ public class L2NoVlanNetwork implements L2Network {
             handle((APIAttachL2NetworkToClusterMsg) msg);
         } else if (msg instanceof APIDetachL2NetworkFromClusterMsg) {
             handle((APIDetachL2NetworkFromClusterMsg) msg);
+        } else if (msg instanceof APIUpdateL2NetworkMsg) {
+            handle((APIUpdateL2NetworkMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateL2NetworkMsg msg) {
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            self.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            self = dbf.updateAndRefresh(self);
+        }
+
+        APIUpdateL2NetworkEvent evt = new APIUpdateL2NetworkEvent(msg.getId());
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     private void handle(final APIDetachL2NetworkFromClusterMsg msg) {
