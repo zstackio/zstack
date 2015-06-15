@@ -18,6 +18,8 @@ EOF
 flyway="$base/../conf//tools/flyway-3.2.1/flyway"
 flyway_sql="$base/../conf/tools/flyway-3.2.1/sql/"
 
+mkdir -p $flyway_sql
+
 eval "rm -f $flyway_sql/*"
 cp $base/../conf/db/V0.6__schema.sql $flyway_sql
 cp $base/../conf/db/upgrade/* $flyway_sql
