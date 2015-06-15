@@ -106,9 +106,30 @@ public abstract class HostBase extends AbstractHost {
             handle((APIDeleteHostMsg) msg);
         } else if (msg instanceof APIReconnectHostMsg) {
             handle((APIReconnectHostMsg) msg);
+        } else if (msg instanceof APIUpdateHostMsg) {
+            handle((APIUpdateHostMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateHostMsg msg) {
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            self.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            self = dbf.updateAndRefresh(self);
+        }
+
+        APIUpdateHostEvent evt = new APIUpdateHostEvent();
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     protected void maintenanceHook(final Completion completion) {

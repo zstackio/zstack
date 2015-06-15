@@ -18,6 +18,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.image.APIUpdateImageEvent;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
@@ -253,9 +254,30 @@ public class VolumeBase implements Volume {
             handle((APIAttachDataVolumeToVmMsg) msg);
         } else if (msg instanceof APIGetDataVolumeAttachableVmMsg) {
             handle((APIGetDataVolumeAttachableVmMsg) msg);
+        } else if (msg instanceof APIUpdateVolumeMsg) {
+            handle((APIUpdateVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateVolumeMsg msg) {
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            self.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            self = dbf.updateAndRefresh(self);
+        }
+
+        APIUpdateVolumeEvent evt = new APIUpdateVolumeEvent(msg.getId());
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
 

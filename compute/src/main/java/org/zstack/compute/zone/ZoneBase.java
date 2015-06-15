@@ -76,13 +76,34 @@ public class ZoneBase extends AbstractZone {
 	    if (msg instanceof APIDeleteZoneMsg) {
 	        handle((APIDeleteZoneMsg)msg);
 	    } else if (msg instanceof APIChangeZoneStateMsg) {
-	        handle((APIChangeZoneStateMsg)msg);
+            handle((APIChangeZoneStateMsg) msg);
+        } else if (msg instanceof APIUpdateZoneMsg) {
+            handle((APIUpdateZoneMsg) msg);
 	    } else  {
 	        bus.dealWithUnknownMessage(msg);
 	    }
 	}
-	
-	protected void handle(APIDeleteZoneMsg msg) {
+
+    private void handle(APIUpdateZoneMsg msg) {
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            self.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            self = dbf.updateAndRefresh(self);
+        }
+
+        APIUpdateZoneEvent evt = new APIUpdateZoneEvent(msg.getId());
+        evt.setInventory(ZoneInventory.valueOf(self));
+        bus.publish(evt);
+    }
+
+    protected void handle(APIDeleteZoneMsg msg) {
         final APIDeleteZoneEvent evt = new APIDeleteZoneEvent(msg.getId());
         final String issuer = ZoneVO.class.getSimpleName();
         ZoneInventory zinv = ZoneInventory.valueOf(self);

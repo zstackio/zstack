@@ -73,6 +73,14 @@ public class ImageBase implements Image {
     public void deleteHook() {
     }
 
+    protected ImageVO getSelf() {
+        return self;
+    }
+
+    protected ImageInventory getSelfInventory() {
+        return ImageInventory.valueOf(getSelf());
+    }
+
     private void handleLocalMessage(Message msg) {
         if (msg instanceof ImageDeletionMsg) {
             handle((ImageDeletionMsg) msg);
@@ -136,12 +144,41 @@ public class ImageBase implements Image {
 
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIChangeImageStateMsg) {
-            handle((APIChangeImageStateMsg)msg);
+            handle((APIChangeImageStateMsg) msg);
         } else if (msg instanceof APIDeleteImageMsg) {
             handle((APIDeleteImageMsg) msg);
+        } else if (msg instanceof APIUpdateImageMsg) {
+            handle((APIUpdateImageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateImageMsg msg) {
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            self.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (msg.getSystem() != null) {
+            self.setSystem(msg.getSystem());
+            update = true;
+        }
+        if (msg.getGuestOsType() != null) {
+            self.setGuestOsType(msg.getGuestOsType());
+            update = true;
+        }
+        if (update) {
+            self = dbf.updateAndRefresh(self);
+        }
+
+        APIUpdateImageEvent evt = new APIUpdateImageEvent(msg.getId());
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     private void handle(APIChangeImageStateMsg msg) {

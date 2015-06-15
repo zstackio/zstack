@@ -59,9 +59,30 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
             handle((VolumeSnapshotBackupStorageDeletionMsg) msg);
         } else if (msg instanceof ChangeVolumeSnapshotStatusMsg) {
             handle((ChangeVolumeSnapshotStatusMsg) msg);
+        } else if (msg instanceof APIUpdateVolumeSnapshotMsg) {
+            handle((APIUpdateVolumeSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateVolumeSnapshotMsg msg) {
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            self.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            self = dbf.updateAndRefresh(self);
+        }
+
+        APIUpdateVolumeSnapshotEvent evt = new APIUpdateVolumeSnapshotEvent(msg.getId());
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     private void handle(ChangeVolumeSnapshotStatusMsg msg) {

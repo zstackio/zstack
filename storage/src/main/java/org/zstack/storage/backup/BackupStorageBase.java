@@ -282,7 +282,9 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 			} else if (msg instanceof APIDetachBackupStorageFromZoneMsg) {
 				handle((APIDetachBackupStorageFromZoneMsg)msg);
 			} else if (msg instanceof APIScanBackupStorageMsg) {
-			    handle((APIScanBackupStorageMsg) msg);
+                handle((APIScanBackupStorageMsg) msg);
+            } else if (msg instanceof APIUpdateBackupStorageMsg) {
+                handle((APIUpdateBackupStorageMsg) msg);
 			} else {
 				bus.dealWithUnknownMessage(msg);
 			}
@@ -292,7 +294,26 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 		}
 	}
 
-	private void handle(APIScanBackupStorageMsg msg) {
+    private void handle(APIUpdateBackupStorageMsg msg) {
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            self.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            self = dbf.updateAndRefresh(self);
+        }
+
+        APIUpdateBackupStorageEvent evt = new APIUpdateBackupStorageEvent(msg.getId());
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
+    }
+
+    private void handle(APIScanBackupStorageMsg msg) {
 	    APIScanBackupStorageEvent evt = new APIScanBackupStorageEvent(msg.getId());
 	    bus.publish(evt);
 	    

@@ -16,6 +16,7 @@ public class APIAddImageMsg extends APICreateMessage {
 	private String url;
 	@APIParam(required = false, validValues = {"RootVolumeTemplate", "ISO", "DataVolumeTemplate"})
 	private String mediaType;
+    @APIParam(maxLength = 255, required = false)
 	private String guestOsType;
     private boolean system;
     @APIParam

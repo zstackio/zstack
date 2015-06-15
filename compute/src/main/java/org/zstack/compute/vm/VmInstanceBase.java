@@ -661,7 +661,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final StartVmInstanceMsg msg) {
-        thdf.chainSubmit(new ChainTask (msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getName() {
                 return String.format("start-vm-%s", self.getUuid());
@@ -770,7 +770,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final DestroyVmInstanceMsg msg) {
-        thdf.chainSubmit(new ChainTask (msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getName() {
                 return String.format("destroy-vm-%s", self.getUuid());
@@ -998,9 +998,50 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIGetVmMigrationCandidateHostsMsg) msg);
         } else if (msg instanceof APIGetVmAttachableDataVolumeMsg) {
             handle((APIGetVmAttachableDataVolumeMsg) msg);
+        } else if (msg instanceof APIUpdateVmInstanceMsg) {
+            handle((APIUpdateVmInstanceMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APIUpdateVmInstanceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                boolean update = false;
+                if (msg.getName() != null) {
+                    self.setName(msg.getName());
+                    update = true;
+                }
+                if (msg.getDescription() != null) {
+                    self.setDescription(msg.getDescription());
+                    update = true;
+                }
+                if (msg.getState() != null) {
+                    self.setState(VmInstanceState.valueOf(msg.getState()));
+                    update = true;
+                }
+                if (update) {
+                    self = dbf.updateAndRefresh(self);
+                }
+
+                APIUpdateVmInstanceEvent evt = new APIUpdateVmInstanceEvent(msg.getId());
+                evt.setInventory(getSelfInventory());
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "update-vm-info";
+            }
+        });
     }
 
     @Transactional(readOnly = true)

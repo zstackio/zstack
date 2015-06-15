@@ -68,9 +68,30 @@ public class ClusterBase extends AbstractCluster {
 			handle((APIChangeClusterStateMsg) msg);
 		} else if (msg.getClass() == APIDeleteClusterMsg.class) {
 			handle((APIDeleteClusterMsg) msg);
+		} else if (msg instanceof APIUpdateClusterMsg) {
+			handle((APIUpdateClusterMsg) msg);
 		} else {
 			bus.dealWithUnknownMessage(msg);
 		}
+	}
+
+	private void handle(APIUpdateClusterMsg msg) {
+		boolean update = false;
+		if (msg.getName() != null) {
+			self.setName(msg.getName());
+			update = true;
+		}
+		if (msg.getDescription() != null) {
+			self.setDescription(msg.getDescription());
+			update = true;
+		}
+		if (update) {
+			self = dbf.updateAndRefresh(self);
+		}
+
+		APIUpdateClusterEvent evt = new APIUpdateClusterEvent(msg.getId());
+		evt.setInventory(ClusterInventory.valueOf(self));
+		bus.publish(evt);
 	}
 
 	protected void handle(final APIDeleteClusterMsg msg) {
