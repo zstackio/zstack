@@ -1023,10 +1023,15 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<FreeIpInventory> getFreeIp(String l3Uuid, String ipRangeUuid) throws ApiSenderException {
+        return getFreeIp(l3Uuid, ipRangeUuid, 100);
+    }
+
+    public List<FreeIpInventory> getFreeIp(String l3Uuid, String ipRangeUuid, int limit) throws ApiSenderException {
         APIGetFreeIpMsg msg = new APIGetFreeIpMsg();
         msg.setSession(adminSession);
         msg.setL3NetworkUuid(l3Uuid);
         msg.setIpRangeUuid(ipRangeUuid);
+        msg.setLimit(limit);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIGetFreeIpReply reply = sender.call(msg, APIGetFreeIpReply.class);
