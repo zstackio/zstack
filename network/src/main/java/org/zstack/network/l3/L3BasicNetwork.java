@@ -238,12 +238,14 @@ public class L3BasicNetwork implements L3Network {
             q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
             List<IpRangeVO> iprs = q.list();
             List<FreeIpInventory> res = new ArrayList<FreeIpInventory>();
+            int limit = msg.getLimit();
             for (IpRangeVO ipr : iprs) {
-                List<FreeIpInventory> i = getFreeIp(ipr, msg.getLimit());
+                List<FreeIpInventory> i = getFreeIp(ipr, limit);
                 res.addAll(i);
                 if (res.size() >= msg.getLimit()) {
                     break;
                 }
+                limit -= res.size();
             }
             reply.setInventories(res);
         }
