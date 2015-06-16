@@ -294,7 +294,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 		}
 	}
 
-    private void handle(APIUpdateBackupStorageMsg msg) {
+    protected BackupStorageVO updateBackupStorage(APIUpdateBackupStorageMsg msg) {
         boolean update = false;
         if (msg.getName() != null) {
             self.setName(msg.getName());
@@ -304,8 +304,13 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             self.setDescription(msg.getDescription());
             update = true;
         }
-        if (update) {
-            self = dbf.updateAndRefresh(self);
+        return update ? self : null;
+    }
+
+    private void handle(APIUpdateBackupStorageMsg msg) {
+        BackupStorageVO vo = updateBackupStorage(msg);
+        if (vo != null) {
+            self = dbf.updateAndRefresh(vo);
         }
 
         APIUpdateBackupStorageEvent evt = new APIUpdateBackupStorageEvent(msg.getId());

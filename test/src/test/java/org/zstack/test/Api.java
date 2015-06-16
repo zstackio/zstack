@@ -67,6 +67,7 @@ import org.zstack.network.service.virtualrouter.APIReconnectVirtualRouterMsg;
 import org.zstack.portal.managementnode.ManagementNodeManager;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageEvent;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageMsg;
+import org.zstack.storage.backup.sftp.APIUpdateSftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TimeUtils;
@@ -2540,5 +2541,166 @@ public class Api implements CloudBusEventListener {
 
     public static ComponentLoader getLoader() {
         return loader;
+    }
+
+    public ZoneInventory updateZone(ZoneInventory inv) throws ApiSenderException {
+        APIUpdateZoneMsg msg = new APIUpdateZoneMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateZoneEvent evt = sender.send(msg, APIUpdateZoneEvent.class);
+        return evt.getInventory();
+    }
+
+    public ClusterInventory updateCluster(ClusterInventory inv) throws ApiSenderException {
+        APIUpdateClusterMsg msg = new APIUpdateClusterMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateClusterEvent evt = sender.send(msg, APIUpdateClusterEvent.class);
+        return evt.getInventory();
+    }
+
+    public HostInventory updateHost(HostInventory inv) throws ApiSenderException {
+        APIUpdateHostMsg msg = new APIUpdateHostMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateHostEvent evt = sender.send(msg, APIUpdateHostEvent.class);
+        return evt.getInventory();
+    }
+
+    public VmInstanceInventory updateVm(VmInstanceInventory inv) throws ApiSenderException {
+        APIUpdateVmInstanceMsg msg = new APIUpdateVmInstanceMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        msg.setState(inv.getState());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateVmInstanceEvent evt = sender.send(msg, APIUpdateVmInstanceEvent.class);
+        return evt.getInventory();
+    }
+
+    public PrimaryStorageInventory updatePrimaryStorage(PrimaryStorageInventory inv) throws ApiSenderException {
+        APIUpdatePrimaryStorageMsg msg = new APIUpdatePrimaryStorageMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdatePrimaryStorageEvent evt = sender.send(msg, APIUpdatePrimaryStorageEvent.class);
+        return evt.getInventory();
+    }
+
+    public BackupStorageInventory updateSftpBackupStorage(SftpBackupStorageInventory inv, String password) throws ApiSenderException {
+        APIUpdateSftpBackupStorageMsg msg = new APIUpdateSftpBackupStorageMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        msg.setUsername(inv.getUsername());
+        msg.setPassword(password);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateBackupStorageEvent evt = sender.send(msg, APIUpdateBackupStorageEvent.class);
+        return evt.getInventory();
+    }
+
+    public VolumeInventory updateVolume(VolumeInventory inv) throws ApiSenderException {
+        APIUpdateVolumeMsg msg = new APIUpdateVolumeMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateVolumeEvent evt = sender.send(msg, APIUpdateVolumeEvent.class);
+        return evt.getInventory();
+    }
+
+    public VolumeSnapshotInventory updateVolumeSnapshot(VolumeSnapshotInventory inv) throws ApiSenderException {
+        APIUpdateVolumeSnapshotMsg msg = new APIUpdateVolumeSnapshotMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateVolumeSnapshotEvent evt = sender.send(msg, APIUpdateVolumeSnapshotEvent.class);
+        return evt.getInventory();
+    }
+
+    public VipInventory updateVip(VipInventory inv) throws ApiSenderException {
+        APIUpdateVipMsg msg = new APIUpdateVipMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateVipEvent evt =  sender.send(msg, APIUpdateVipEvent.class);
+        return evt.getInventory();
+    }
+
+    public PortForwardingRuleInventory updatePortForwardingRule(PortForwardingRuleInventory inv) throws ApiSenderException {
+        APIUpdatePortForwardingRuleMsg msg = new APIUpdatePortForwardingRuleMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdatePortForwardingRuleEvent evt = sender.send(msg, APIUpdatePortForwardingRuleEvent.class);
+        return evt.getInventory();
+    }
+
+    public SecurityGroupInventory updateSecurityGroup(SecurityGroupInventory inv) throws ApiSenderException {
+        APIUpdateSecurityGroupMsg msg = new APIUpdateSecurityGroupMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateSecurityGroupEvent evt = sender.send(msg, APIUpdateSecurityGroupEvent.class);
+        return evt.getInventory();
+    }
+
+    public ImageInventory updateImage(ImageInventory inv) throws ApiSenderException {
+        APIUpdateImageMsg msg = new APIUpdateImageMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        msg.setGuestOsType(inv.getGuestOsType());
+        msg.setSystem(inv.isSystem());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateImageEvent evt = sender.send(msg, APIUpdateImageEvent.class);
+        return evt.getInventory();
+    }
+
+    public EipInventory updateEip(EipInventory inv) throws ApiSenderException {
+        APIUpdateEipMsg msg = new APIUpdateEipMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateEipEvent evt = sender.send(msg, APIUpdateEipEvent.class);
+        return evt.getInventory();
     }
 }

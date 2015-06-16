@@ -51,4 +51,8 @@
     <message>
         <name>org.zstack.header.storage.backup.APIGetBackupStorageCapacityMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APIUpdateBackupStorageMsg</name>
+    </message>
 </service>

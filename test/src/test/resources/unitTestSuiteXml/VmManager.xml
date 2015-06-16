@@ -45,4 +45,6 @@
 	<TestCase class="org.zstack.test.compute.vm.TestVmStaticIp1"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStaticIp2"/>
     <TestCase class="org.zstack.test.compute.vm.TestCreateVmWithMultipleSameDataVolume"/>
+	<TestCase class="org.zstack.test.compute.vm.TestGetFreeIp"/>
+	<TestCase class="org.zstack.test.compute.vm.TestGetFreeIp1"/>
 </UnitTestSuiteConfig>

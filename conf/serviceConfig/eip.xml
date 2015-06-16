@@ -31,4 +31,8 @@
         <name>org.zstack.network.service.eip.APIQueryEipMsg</name>
         <serviceId>query</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.network.service.eip.APIUpdateEipMsg</name>
+    </message>
 </service>

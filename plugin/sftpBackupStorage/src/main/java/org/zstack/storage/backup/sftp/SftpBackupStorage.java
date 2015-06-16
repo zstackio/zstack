@@ -346,4 +346,20 @@ public class SftpBackupStorage extends BackupStorageBase {
             }
         });
     }
+
+    @Override
+    protected BackupStorageVO updateBackupStorage(APIUpdateBackupStorageMsg msg) {
+        SftpBackupStorageVO vo = (SftpBackupStorageVO) super.updateBackupStorage(msg);
+        vo = vo == null ? getSelf() : vo;
+
+        APIUpdateSftpBackupStorageMsg umsg = (APIUpdateSftpBackupStorageMsg) msg;
+        if (umsg.getUsername() != null) {
+            vo.setUsername(umsg.getUsername());
+        }
+        if (umsg.getPassword() != null) {
+            vo.setPassword(umsg.getPassword());
+        }
+
+        return vo;
+    }
 }

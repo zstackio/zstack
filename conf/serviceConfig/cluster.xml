@@ -29,6 +29,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.cluster.APIUpdateClusterMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.cluster.APIQueryClusterMsg</name>
         <serviceId>query</serviceId>
     </message>

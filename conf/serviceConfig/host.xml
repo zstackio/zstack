@@ -39,4 +39,8 @@
     <message>
         <name>org.zstack.header.host.APIGetHypervisorTypesMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.host.APIUpdateHostMsg</name>
+    </message>
 </service>

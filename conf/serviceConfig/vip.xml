@@ -16,6 +16,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.vip.APIUpdateVipMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.vip.APIQueryVipMsg</name>
         <serviceId>query</serviceId>
     </message>

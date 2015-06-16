@@ -87,9 +87,36 @@ public class InstanceOfferingBase implements InstanceOffering {
             handle((APIChangeInstanceOfferingStateMsg)msg);
         } else if (msg instanceof APIDeleteInstanceOfferingMsg) {
             handle((APIDeleteInstanceOfferingMsg) msg);
+        } else if (msg instanceof APIUpdateInstanceOfferingMsg) {
+            handle((APIUpdateInstanceOfferingMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    protected InstanceOfferingVO updateInstanceOffering(APIUpdateInstanceOfferingMsg msg) {
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            self.setDescription(msg.getDescription());
+            update = true;
+        }
+
+        return update ? self : null;
+    }
+
+    private void handle(APIUpdateInstanceOfferingMsg msg) {
+        InstanceOfferingVO vo = updateInstanceOffering(msg);
+        if (vo != null) {
+            self = dbf.updateAndRefresh(vo);
+        }
+
+        APIUpdateInstanceOfferingEvent evt = new APIUpdateInstanceOfferingEvent(msg.getId());
+        evt.setInventory(getInventory());
+        bus.publish(evt);
     }
 
     private void handle(APIDeleteInstanceOfferingMsg msg) {

@@ -99,7 +99,7 @@ public class VipManagerImpl extends AbstractService implements VipManager  {
     @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
-            handleApiMessage((APIMessage)msg);
+            handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
         }
@@ -152,9 +152,31 @@ public class VipManagerImpl extends AbstractService implements VipManager  {
             handle((APIDeleteVipMsg) msg);
         } else if (msg instanceof APIChangeVipStateMsg) {
             handle((APIChangeVipStateMsg) msg);
+        } else if (msg instanceof APIUpdateVipMsg) {
+            handle((APIUpdateVipMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateVipMsg msg) {
+        VipVO vo = dbf.findByUuid(msg.getUuid(), VipVO.class);
+        boolean update = false;
+        if (msg.getName() != null) {
+            vo.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            vo = dbf.updateAndRefresh(vo);
+        }
+
+        APIUpdateVipEvent evt = new APIUpdateVipEvent(msg.getId());
+        evt.setInventory(VipInventory.valueOf(vo));
+        bus.publish(evt);
     }
 
     private void handle(APIChangeVipStateMsg msg) {

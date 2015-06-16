@@ -449,9 +449,30 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             handle((APIDetachSecurityGroupFromL3NetworkMsg) msg);
         } else if (msg instanceof APIGetCandidateVmNicForSecurityGroupMsg) {
             handle((APIGetCandidateVmNicForSecurityGroupMsg) msg);
+        } else if (msg instanceof APIUpdateSecurityGroupMsg) {
+            handle((APIUpdateSecurityGroupMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateSecurityGroupMsg msg) {
+        boolean update = false;
+        SecurityGroupVO vo = dbf.findByUuid(msg.getUuid(), SecurityGroupVO.class);
+        if (msg.getName() != null) {
+            vo.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            vo = dbf.updateAndRefresh(vo);
+        }
+        APIUpdateSecurityGroupEvent evt = new APIUpdateSecurityGroupEvent(msg.getId());
+        evt.setInventory(SecurityGroupInventory.valueOf(vo));
+        bus.publish(evt);
     }
 
     @Transactional(readOnly = true)

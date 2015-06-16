@@ -1613,4 +1613,20 @@ public class KVMHost extends HostBase implements Host {
     @Override
     public void executeHostMessageHandlerHook(HostMessageHandlerExtensionPoint ext, Message msg) {
     }
+
+    @Override
+    protected HostVO updateHost(APIUpdateHostMsg msg) {
+        KVMHostVO vo = (KVMHostVO) super.updateHost(msg);
+        vo = vo == null ? getSelf() : vo;
+
+        APIUpdateKVMHostMsg umsg = (APIUpdateKVMHostMsg) msg;
+        if (umsg.getUsername() != null) {
+            vo.setUsername(umsg.getUsername());
+        }
+        if (umsg.getPassword() != null) {
+            vo.setPassword(umsg.getPassword());
+        }
+
+        return vo;
+    }
 }

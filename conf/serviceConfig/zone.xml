@@ -31,4 +31,8 @@
         <name>org.zstack.header.zone.APIQueryZoneMsg</name>
         <serviceId>query</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.header.zone.APIUpdateZoneMsg</name>
+    </message>
 </service>

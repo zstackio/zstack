@@ -25,4 +25,9 @@
         <name>org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageMsg</name>
         <serviceId>query</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.storage.backup.sftp.APIUpdateSftpBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
 </service>

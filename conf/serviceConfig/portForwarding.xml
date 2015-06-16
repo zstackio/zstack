@@ -36,4 +36,8 @@
         <name>org.zstack.network.service.portforwarding.APIGetPortForwardingAttachableVmNicsMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.network.service.portforwarding.APIUpdatePortForwardingRuleMsg</name>
+    </message>
+
 </service>

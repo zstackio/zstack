@@ -113,7 +113,7 @@ public abstract class HostBase extends AbstractHost {
         }
     }
 
-    private void handle(APIUpdateHostMsg msg) {
+    protected HostVO updateHost(APIUpdateHostMsg msg) {
         boolean update = false;
         if (msg.getName() != null) {
             self.setName(msg.getName());
@@ -123,11 +123,16 @@ public abstract class HostBase extends AbstractHost {
             self.setDescription(msg.getDescription());
             update = true;
         }
-        if (update) {
-            self = dbf.updateAndRefresh(self);
-        }
 
-        APIUpdateHostEvent evt = new APIUpdateHostEvent();
+        return update ? self : null;
+    }
+
+    private void handle(APIUpdateHostMsg msg) {
+        HostVO vo = updateHost(msg);
+        if (vo != null) {
+            self = dbf.updateAndRefresh(vo);
+        }
+        APIUpdateHostEvent evt = new APIUpdateHostEvent(msg.getId());
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }

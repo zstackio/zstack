@@ -158,9 +158,32 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             handle((APIChangePortForwardingRuleStateMsg) msg);
         } else if (msg instanceof APIGetPortForwardingAttachableVmNicsMsg) {
             handle((APIGetPortForwardingAttachableVmNicsMsg) msg);
+        } else if (msg instanceof APIUpdatePortForwardingRuleMsg) {
+            handle((APIUpdatePortForwardingRuleMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdatePortForwardingRuleMsg msg) {
+        boolean update = false;
+
+        PortForwardingRuleVO vo = dbf.findByUuid(msg.getUuid(), PortForwardingRuleVO.class);
+        if (msg.getName() != null) {
+            vo.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            vo = dbf.updateAndRefresh(vo);
+        }
+
+        APIUpdatePortForwardingRuleEvent evt = new APIUpdatePortForwardingRuleEvent(msg.getId());
+        evt.setInventory(PortForwardingRuleInventory.valueOf(vo));
+        bus.publish(evt);
     }
 
     @Transactional(readOnly = true)

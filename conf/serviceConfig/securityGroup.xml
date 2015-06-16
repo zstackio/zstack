@@ -64,4 +64,8 @@
     <message>
         <name>org.zstack.network.securitygroup.APIGetCandidateVmNicForSecurityGroupMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIUpdateSecurityGroupMsg</name>
+    </message>
 </service>

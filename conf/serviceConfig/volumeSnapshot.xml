@@ -32,4 +32,8 @@
     <message>
         <name>org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotFromBackupStorageMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.APIUpdateVolumeSnapshotMsg</name>
+    </message>
 </service>

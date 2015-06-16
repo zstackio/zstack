@@ -1,0 +1,30 @@
+package org.zstack.storage.backup.sftp;
+
+import org.zstack.header.message.APIParam;
+import org.zstack.header.storage.backup.APIUpdateBackupStorageMsg;
+
+/**
+ * Created by frank on 6/15/2015.
+ */
+public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {
+    @APIParam(maxLength = 255, required = false)
+    private String username;
+    @APIParam(maxLength = 255, required = false)
+    private String password;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+}

@@ -92,9 +92,31 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             handle((APIChangeEipStateMsg) msg);
         } else if (msg instanceof APIGetEipAttachableVmNicsMsg) {
             handle((APIGetEipAttachableVmNicsMsg) msg);
+        } else if (msg instanceof APIUpdateEipMsg) {
+            handle((APIUpdateEipMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateEipMsg msg) {
+        EipVO vo = dbf.findByUuid(msg.getUuid(), EipVO.class);
+        boolean update = false;
+        if (msg.getName() != null) {
+            vo.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            vo = dbf.updateAndRefresh(vo);
+        }
+
+        APIUpdateEipEvent evt = new APIUpdateEipEvent(msg.getId());
+        evt.setInventory(EipInventory.valueOf(vo));
+        bus.publish(evt);
     }
 
     @Transactional(readOnly = true)

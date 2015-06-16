@@ -59,4 +59,8 @@
     <message>
         <name>org.zstack.header.volume.APIGetVolumeFormatMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIUpdateVolumeMsg</name>
+    </message>
 </service>

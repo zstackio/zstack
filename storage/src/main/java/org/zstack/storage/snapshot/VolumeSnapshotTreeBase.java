@@ -1184,10 +1184,34 @@ public class VolumeSnapshotTreeBase {
             handle((APIBackupVolumeSnapshotMsg) msg);
         } else if (msg instanceof APIDeleteVolumeSnapshotFromBackupStorageMsg) {
             handle((APIDeleteVolumeSnapshotFromBackupStorageMsg) msg);
+        } else if (msg instanceof APIUpdateVolumeSnapshotMsg) {
+            handle((APIUpdateVolumeSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
+
+    private void handle(APIUpdateVolumeSnapshotMsg msg) {
+        VolumeSnapshotVO self = dbf.findByUuid(msg.getUuid(), VolumeSnapshotVO.class);
+
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            self.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            self = dbf.updateAndRefresh(self);
+        }
+
+        APIUpdateVolumeSnapshotEvent evt = new APIUpdateVolumeSnapshotEvent(msg.getId());
+        evt.setInventory(VolumeSnapshotInventory.valueOf(self));
+        bus.publish(evt);
+    }
+
     private boolean cleanup() {
         SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
         q.select(VolumeSnapshotVO_.primaryStorageUuid);

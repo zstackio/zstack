@@ -77,9 +77,30 @@ public class DiskOfferingBase implements DiskOffering {
             handle((APIChangeDiskOfferingStateMsg)msg);
         } else if (msg instanceof APIDeleteDiskOfferingMsg) {
             handle((APIDeleteDiskOfferingMsg) msg);
+        } else if (msg instanceof APIUpdateDiskOfferingMsg) {
+            handle((APIUpdateDiskOfferingMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateDiskOfferingMsg msg) {
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            self.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            self = dbf.updateAndRefresh(self);
+        }
+
+        APIUpdateDiskOfferingEvent evt = new APIUpdateDiskOfferingEvent(msg.getId());
+        evt.setInventory(DiskOfferingInventory.valueOf(self));
+        bus.publish(evt);
     }
 
     private void handle(APIChangeDiskOfferingStateMsg msg) {
