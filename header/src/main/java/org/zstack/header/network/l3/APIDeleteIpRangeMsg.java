@@ -41,7 +41,7 @@ import org.zstack.header.rest.APINoSee;
  * @result
  * see :ref:`APIDeleteIpRangeEvent`
  */
-public class APIDeleteIpRangeMsg extends APIDeleteMessage implements L3NetworkMessage {
+public class APIDeleteIpRangeMsg extends APIDeleteMessage implements L3NetworkMessage, IpRangeMessage {
     /**
      * @desc ip range uuid
      */
@@ -76,5 +76,10 @@ public class APIDeleteIpRangeMsg extends APIDeleteMessage implements L3NetworkMe
     @Override
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
+    }
+
+    @Override
+    public String getIpRangeUuid() {
+        return uuid;
     }
 }

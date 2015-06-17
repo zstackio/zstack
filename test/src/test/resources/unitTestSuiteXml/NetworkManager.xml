@@ -48,4 +48,7 @@
     <TestCase class="org.zstack.test.network.TestChangeVipState"/>
     <TestCase class="org.zstack.test.network.TestAcquireRequiredVip"/>
     <TestCase class="org.zstack.test.network.TestAttachNetworkServiceL3NetworkFailure"/>
+	<TestCase class="org.zstack.test.network.TestUpdateL2Network"/>
+	<TestCase class="org.zstack.test.network.TestUpdateL3Network"/>
+	<TestCase class="org.zstack.test.network.TestUpdateIpRange"/>
 </UnitTestSuiteConfig>

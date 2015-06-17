@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.iscsi;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
@@ -18,9 +19,11 @@ import java.util.List;
 @PythonClassInventory
 public class IscsiFileSystemBackendPrimaryStorageInventory extends PrimaryStorageInventory {
     private String chapUsername;
+    @APINoSee
     private String chapPassword;
     private String hostname;
     private String sshUsername;
+    @APINoSee
     private String sshPassword;
     private String filesystemType;
 

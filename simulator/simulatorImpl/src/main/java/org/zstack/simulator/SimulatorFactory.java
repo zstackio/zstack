@@ -46,6 +46,17 @@ public class SimulatorFactory implements HypervisorFactory {
     }
 
     @Override
+    public HostInventory getHostInventory(HostVO vo) {
+        return HostInventory.valueOf(vo);
+    }
+
+    @Override
+    public HostInventory getHostInventory(String uuid) {
+        HostVO vo = dbf.findByUuid(uuid, HostVO.class);
+        return HostInventory.valueOf(vo);
+    }
+
+    @Override
     public Host getHost(HostVO vo) {
         Host host = hosts.get(vo.getUuid());
         if (host == null) {

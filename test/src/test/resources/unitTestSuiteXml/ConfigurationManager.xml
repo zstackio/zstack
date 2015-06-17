@@ -11,4 +11,6 @@
 	<TestCase class="org.zstack.test.configuration.TestAddDns"/>
     <TestCase class="org.zstack.test.configuration.TestChangeInstanceOfferingState"/>
     <TestCase class="org.zstack.test.configuration.TestChangeDiskOfferingState"/>
+    <TestCase class="org.zstack.test.configuration.TestUpdateDiskOffering"/>
+    <TestCase class="org.zstack.test.configuration.TestUpdateInstanceOffering"/>
 </UnitTestSuiteConfig>

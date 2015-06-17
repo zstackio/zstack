@@ -297,7 +297,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 		}
 	}
 
-    private void handle(APIUpdatePrimaryStorageMsg msg) {
+    protected PrimaryStorageVO updatePrimaryStorage(APIUpdatePrimaryStorageMsg msg) {
         boolean update = false;
         if (msg.getName() != null) {
             self.setName(msg.getName());
@@ -307,8 +307,15 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             self.setDescription(msg.getDescription());
             update = true;
         }
-        if (update) {
-            self = dbf.updateAndRefresh(self);
+
+        return update ? self : null;
+    }
+
+    private void handle(APIUpdatePrimaryStorageMsg msg) {
+        PrimaryStorageVO vo = updatePrimaryStorage(msg);
+
+        if (vo != null) {
+            self = dbf.updateAndRefresh(vo);
         }
 
         APIUpdatePrimaryStorageEvent evt = new APIUpdatePrimaryStorageEvent(msg.getId());

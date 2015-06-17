@@ -14,4 +14,8 @@
         <serviceId>query</serviceId>
     </message>
 
+    <message>
+        <name>org.zstack.storage.primary.iscsi.APIUpdateIscsiFileSystemBackendPrimaryStorageMsg</name>
+    </message>
+
 </service>

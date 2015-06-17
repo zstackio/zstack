@@ -12,4 +12,5 @@
 	<TestCase class="org.zstack.test.storage.backup.sftp.TestSftpBackupStoragePingFailure2"/>
 	<TestCase class="org.zstack.test.storage.backup.sftp.TestQuerySftpBackupStorage"/>
     <TestCase class="org.zstack.test.storage.backup.sftp.TestSftpBackupStorageReconnect"/>
+	<TestCase class="org.zstack.test.storage.backup.sftp.TestUpdateSftpBackupStorage"/>
 </UnitTestSuiteConfig>

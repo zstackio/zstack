@@ -90,6 +90,14 @@
     </message>
 
     <message>
+        <name>org.zstack.header.configuration.APIUpdateDiskOfferingMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.configuration.APIUpdateInstanceOfferingMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.query.APIGenerateQueryableFieldsMsg</name>
         <serviceId>query</serviceId>
     </message>

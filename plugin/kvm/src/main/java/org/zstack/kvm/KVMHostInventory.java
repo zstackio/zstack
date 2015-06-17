@@ -1,15 +1,23 @@
 package org.zstack.kvm;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.search.Inventory;
+import org.zstack.header.search.Parent;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 @PythonClassInventory
+@Inventory(mappingVOClass = KVMHostVO.class, collectionValueOfMethod = "valueOf1",
+        parent = {@Parent(inventoryClass = HostInventory.class, type = KVMConstant.KVM_HYPERVISOR_TYPE)})
 public class KVMHostInventory extends HostInventory {
     /**
      * @ignore
      */
-    @APINoSee
     private String username;
     /**
      * @ignore
@@ -24,8 +32,15 @@ public class KVMHostInventory extends HostInventory {
     }
     
     public static KVMHostInventory valueOf(KVMHostVO vo) {
-        KVMHostInventory inv = new KVMHostInventory(vo);
-        return inv;
+        return new KVMHostInventory(vo);
+    }
+
+    public static List<KVMHostInventory> valueOf1(Collection<KVMHostVO> vos) {
+        List<KVMHostInventory> invs = new ArrayList<KVMHostInventory>();
+        for (KVMHostVO vo : vos) {
+            invs.add(valueOf(vo));
+        }
+        return invs;
     }
     
     public String getUsername() {

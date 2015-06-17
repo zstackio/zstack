@@ -200,9 +200,30 @@ public class L3BasicNetwork implements L3Network {
             handle((APIUpdateL3NetworkMsg) msg);
         } else if (msg instanceof APIGetFreeIpMsg) {
             handle((APIGetFreeIpMsg) msg);
+        } else if (msg instanceof APIUpdateIpRangeMsg) {
+            handle((APIUpdateIpRangeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateIpRangeMsg msg) {
+        IpRangeVO vo = dbf.findByUuid(msg.getUuid(), IpRangeVO.class);
+        boolean update = false;
+        if (msg.getName() != null) {
+            vo.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            vo = dbf.updateAndRefresh(vo);
+        }
+        APIUpdateIpRangeEvent evt = new APIUpdateIpRangeEvent(msg.getId());
+        evt.setInventory(IpRangeInventory.valueOf(vo));
+        bus.publish(evt);
     }
 
     private List<FreeIpInventory> getFreeIp(final IpRangeVO ipr, int limit) {

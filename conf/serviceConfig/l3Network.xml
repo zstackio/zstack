@@ -83,4 +83,12 @@
     <message>
         <name>org.zstack.header.network.l3.APIGetFreeIpMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIUpdateL3NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIUpdateIpRangeMsg</name>
+    </message>
 </service>

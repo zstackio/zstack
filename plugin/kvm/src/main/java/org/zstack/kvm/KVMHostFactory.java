@@ -111,6 +111,18 @@ public class KVMHostFactory implements HypervisorFactory, Component, ManagementN
         return hypervisorType;
     }
 
+    @Override
+    public HostInventory getHostInventory(HostVO vo) {
+        KVMHostVO kvo = vo instanceof KVMHostVO ? (KVMHostVO) vo : dbf.findByUuid(vo.getUuid(), KVMHostVO.class);
+        return KVMHostInventory.valueOf(kvo);
+    }
+
+    @Override
+    public HostInventory getHostInventory(String uuid) {
+        KVMHostVO vo = dbf.findByUuid(uuid, KVMHostVO.class);
+        return vo == null ? null : KVMHostInventory.valueOf(vo);
+    }
+
     private void populateExtensions() {
         connectExtensions = pluginRgty.getExtensionList(KVMHostConnectExtensionPoint.class);
         for (KVMCompleteNicInformationExtensionPoint ext : pluginRgty.getExtensionList(KVMCompleteNicInformationExtensionPoint.class)) {

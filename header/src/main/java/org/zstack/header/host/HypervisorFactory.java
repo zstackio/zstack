@@ -6,4 +6,8 @@ public interface HypervisorFactory {
 	Host getHost(HostVO vo);
 	
 	HypervisorType getHypervisorType();
+
+	HostInventory getHostInventory(HostVO vo);
+
+	HostInventory getHostInventory(String uuid);
 }

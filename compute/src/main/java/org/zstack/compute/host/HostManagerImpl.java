@@ -285,7 +285,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }).done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
-                HostInventory inv = HostInventory.valueOf(dbf.reload(vo));
+                HostInventory inv = factory.getHostInventory(vo.getUuid());
                 inv.setStatus(HostStatus.Connected.toString());
                 evt.setInventory(inv);
                 bus.publish(evt);

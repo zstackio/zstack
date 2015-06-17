@@ -16,4 +16,5 @@
 	<TestCase class="org.zstack.test.compute.host.TestPingTask"/>
 	<TestCase class="org.zstack.test.compute.host.TestQueryHost"/>
     <TestCase class="org.zstack.test.compute.host.TestGetHypervisorTypes"/>
+	<TestCase class="org.zstack.test.compute.host.TestUpdateHost"/>
 </UnitTestSuiteConfig>

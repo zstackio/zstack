@@ -19,4 +19,5 @@
     <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeFailure3"/>
     <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeFailure4"/>
     <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeFailure5"/>
+    <TestCase class="org.zstack.test.image.TestUpdateImage"/>
 </UnitTestSuiteConfig>

@@ -7,7 +7,7 @@ import org.zstack.header.message.APIParam;
  * Created by frank on 6/14/2015.
  */
 public class APIUpdateClusterMsg extends APIMessage implements ClusterMessage {
-    @APIParam
+    @APIParam(resourceType = ClusterVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

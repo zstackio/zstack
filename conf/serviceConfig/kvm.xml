@@ -8,4 +8,8 @@
         <interceptor>KVMApiInterceptor</interceptor>
     </message>
 
+    <message>
+        <name>org.zstack.kvm.APIUpdateKVMHostMsg</name>
+    </message>
+
 </service>

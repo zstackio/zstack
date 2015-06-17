@@ -7,7 +7,7 @@ import org.zstack.header.message.APIParam;
  * Created by frank on 6/14/2015.
  */
 public class APIUpdatePrimaryStorageMsg extends APIMessage implements PrimaryStorageMessage {
-    @APIParam
+    @APIParam(resourceType = PrimaryStorageVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

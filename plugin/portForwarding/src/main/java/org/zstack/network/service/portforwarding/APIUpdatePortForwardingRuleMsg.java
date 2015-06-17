@@ -7,7 +7,7 @@ import org.zstack.header.message.APIParam;
  * Created by frank on 6/15/2015.
  */
 public class APIUpdatePortForwardingRuleMsg extends APIMessage {
-    @APIParam
+    @APIParam(resourceType = PortForwardingRuleVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

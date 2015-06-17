@@ -7,7 +7,7 @@ import org.zstack.header.message.APIParam;
  * Created by frank on 6/15/2015.
  */
 public class APIUpdateDiskOfferingMsg extends APIMessage implements DiskOfferingMessage {
-    @APIParam
+    @APIParam(resourceType = DiskOfferingVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

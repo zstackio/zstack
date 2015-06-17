@@ -7,7 +7,7 @@ import org.zstack.header.message.APIParam;
  * Created by frank on 6/15/2015.
  */
 public class APIUpdateInstanceOfferingMsg extends APIMessage implements InstanceOfferingMessage {
-    @APIParam
+    @APIParam(resourceType = InstanceOfferingVO.class)
     private String uuid;
     @APIParam
     private String name;

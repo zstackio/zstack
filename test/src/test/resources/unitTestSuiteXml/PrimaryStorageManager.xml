@@ -22,4 +22,5 @@
     <TestCase class="org.zstack.test.storage.primary.TestGetPrimaryStoragesType"/>
     <TestCase class="org.zstack.test.storage.primary.TestGetPrimaryStorageAllocatorStrategies"/>
     <TestCase class="org.zstack.test.storage.primary.TestGetPrimaryStorageCapacity"/>
+	<TestCase class="org.zstack.test.storage.primary.TestUpdatePrimaryStorage"/>
 </UnitTestSuiteConfig>

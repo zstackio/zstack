@@ -6,4 +6,5 @@
 	<TestCase class="org.zstack.test.compute.zone.TestChangeZoneState" />
 	<TestCase class="org.zstack.test.compute.zone.TestZoneChangeStateExtensionPoint"/>
 	<TestCase class="org.zstack.test.compute.zone.TestQueryZone"/>
+	<TestCase class="org.zstack.test.compute.zone.TestUpdateZone"/>
 </UnitTestSuiteConfig>

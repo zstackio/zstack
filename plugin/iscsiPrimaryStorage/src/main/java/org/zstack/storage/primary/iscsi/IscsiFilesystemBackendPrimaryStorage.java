@@ -1,7 +1,6 @@
 package org.zstack.storage.primary.iscsi;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
@@ -18,14 +17,13 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.rest.AsyncRESTCallback;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.storage.backup.BackupStorage;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -37,7 +35,6 @@ import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotReply.
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.backup.BackupStoragePathMaker;
 import org.zstack.storage.backup.sftp.SftpBackupStorageVO;
 import org.zstack.storage.backup.sftp.SftpBackupStorageVO_;
@@ -45,11 +42,8 @@ import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
 import org.zstack.storage.primary.iscsi.IscsiIsoStoreManager.IscsiIsoSpec;
-import org.zstack.storage.snapshot.VolumeSnapshot;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -1611,5 +1605,38 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                 return CreateSubVolumeRsp.class;
             }
         });
+    }
+
+    @Override
+    protected PrimaryStorageVO updatePrimaryStorage(APIUpdatePrimaryStorageMsg pmsg) {
+        APIUpdateIscsiFileSystemBackendPrimaryStorageMsg msg = (APIUpdateIscsiFileSystemBackendPrimaryStorageMsg) pmsg;
+        PrimaryStorageVO vo = super.updatePrimaryStorage(msg);
+        self = vo == null ? getSelf() : vo;
+
+        boolean update = false;
+        if (msg.getChapUsername() != null) {
+            getSelf().setChapUsername(msg.getChapUsername());
+            update = true;
+        }
+        if (msg.getChapPassword() != null) {
+            getSelf().setChapPassword(msg.getChapPassword());
+            update = true;
+        }
+
+        if ((getSelf().getChapUsername() != null && getSelf().getChapPassword() == null)
+                || getSelf().getChapUsername() == null && getSelf().getChapPassword() != null) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError(String.format("chapUsername and chapPassword must be both null or not null; you can not set chapUsername without setting chapPassword, vice versa.")));
+        }
+
+        if (msg.getSshUsername() != null) {
+            getSelf().setSshUsername(msg.getSshUsername());
+            update = true;
+        }
+        if (msg.getSshPassword() != null) {
+            getSelf().setSshPassword(msg.getSshPassword());
+            update = true;
+        }
+
+        return update ? self : null;
     }
 }

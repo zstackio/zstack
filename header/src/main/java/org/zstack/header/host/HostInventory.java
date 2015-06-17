@@ -7,6 +7,7 @@ import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.Queryable;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.search.TypeField;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.zone.ZoneInventory;
 
@@ -82,6 +83,7 @@ public class HostInventory implements Serializable{
     /**
      * @desc type of hypervisor installed on the host
      */
+    @TypeField
     private String hypervisorType;
     /**
      * @desc

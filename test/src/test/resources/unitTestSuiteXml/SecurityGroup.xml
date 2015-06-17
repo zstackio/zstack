@@ -40,4 +40,5 @@
     <TestCase class="org.zstack.test.securitygroup.TestQuerySecurityGroupRule"/>
     <TestCase class="org.zstack.test.securitygroup.TestGetCandidateVmNicForSecurityGroup"/>
     <TestCase class="org.zstack.test.securitygroup.TestKvmSecurityGroupRefreshOnReconnect"/>
+	<TestCase class="org.zstack.test.securitygroup.TestUpdateSecurityGroup"/>
 </UnitTestSuiteConfig>

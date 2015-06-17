@@ -57,6 +57,8 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.zone.*;
+import org.zstack.kvm.APIUpdateKVMHostMsg;
+import org.zstack.kvm.KVMHostInventory;
 import org.zstack.network.securitygroup.*;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.network.service.eip.*;
@@ -69,6 +71,8 @@ import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageEvent;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.APIUpdateSftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
+import org.zstack.storage.primary.iscsi.APIUpdateIscsiFileSystemBackendPrimaryStorageMsg;
+import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
@@ -2702,5 +2706,95 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIUpdateEipEvent evt = sender.send(msg, APIUpdateEipEvent.class);
         return evt.getInventory();
+    }
+
+    public DiskOfferingInventory updateDiskOffering(DiskOfferingInventory inv) throws ApiSenderException {
+        APIUpdateDiskOfferingMsg msg = new APIUpdateDiskOfferingMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateDiskOfferingEvent evt = sender.send(msg, APIUpdateDiskOfferingEvent.class);
+        return evt.getInventory();
+    }
+
+    public InstanceOfferingInventory updateInstanceOffering(InstanceOfferingInventory inv) throws ApiSenderException {
+        APIUpdateInstanceOfferingMsg msg = new APIUpdateInstanceOfferingMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateInstanceOfferingEvent evt = sender.send(msg, APIUpdateInstanceOfferingEvent.class);
+        return evt.getInventory();
+    }
+
+    public L2NetworkInventory updateL2Network(L2NetworkInventory inv) throws ApiSenderException {
+        APIUpdateL2NetworkMsg msg = new APIUpdateL2NetworkMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateL2NetworkEvent evt = sender.send(msg, APIUpdateL2NetworkEvent.class);
+        return evt.getInventory();
+    }
+
+    public L3NetworkInventory updateL3Network(L3NetworkInventory inv) throws ApiSenderException {
+        APIUpdateL3NetworkMsg msg = new APIUpdateL3NetworkMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateL3NetworkEvent evt = sender.send(msg, APIUpdateL3NetworkEvent.class);
+        return evt.getInventory();
+    }
+
+    public IpRangeInventory updateIpRange(IpRangeInventory inv) throws ApiSenderException {
+        APIUpdateIpRangeMsg msg = new APIUpdateIpRangeMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateIpRangeEvent evt = sender.send(msg, APIUpdateIpRangeEvent.class);
+        return evt.getInventory();
+    }
+
+    public KVMHostInventory updateKvmHost(KVMHostInventory inv, String password) throws ApiSenderException {
+        APIUpdateKVMHostMsg msg = new APIUpdateKVMHostMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        msg.setUsername(inv.getUsername());
+        msg.setPassword(password);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateHostEvent evt = sender.send(msg, APIUpdateHostEvent.class);
+        return (KVMHostInventory) evt.getInventory();
+    }
+
+    public IscsiFileSystemBackendPrimaryStorageInventory updateIscsiFileSystemPrimaryStorage(IscsiFileSystemBackendPrimaryStorageInventory inv) throws ApiSenderException {
+        APIUpdateIscsiFileSystemBackendPrimaryStorageMsg msg = new APIUpdateIscsiFileSystemBackendPrimaryStorageMsg();
+        msg.setSession(adminSession);
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setUuid(inv.getUuid());
+        msg.setChapUsername(inv.getChapUsername());
+        msg.setChapPassword(inv.getChapPassword());
+        msg.setSshUsername(inv.getSshUsername());
+        msg.setSshPassword(inv.getSshPassword());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdatePrimaryStorageEvent evt = sender.send(msg, APIUpdatePrimaryStorageEvent.class);
+        return (IscsiFileSystemBackendPrimaryStorageInventory) evt.getInventory();
     }
 }

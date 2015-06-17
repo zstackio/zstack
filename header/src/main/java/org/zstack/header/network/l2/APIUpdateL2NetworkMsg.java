@@ -7,7 +7,7 @@ import org.zstack.header.message.APIParam;
  * Created by frank on 6/14/2015.
  */
 public class APIUpdateL2NetworkMsg extends APIMessage implements L2NetworkMessage {
-    @APIParam
+    @APIParam(resourceType = L2NetworkVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

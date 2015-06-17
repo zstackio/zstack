@@ -36,11 +36,11 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     private ErrorFacade errf;
 
     private void setServiceId(APIMessage msg) {
-        if (msg instanceof APIDeleteIpRangeMsg) {
-            APIDeleteIpRangeMsg dmsg = (APIDeleteIpRangeMsg)msg;
+        if (msg instanceof IpRangeMessage) {
+            IpRangeMessage dmsg = (IpRangeMessage)msg;
             SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
             q.select(IpRangeVO_.l3NetworkUuid);
-            q.add(IpRangeVO_.uuid, SimpleQuery.Op.EQ, dmsg.getUuid());
+            q.add(IpRangeVO_.uuid, SimpleQuery.Op.EQ, dmsg.getIpRangeUuid());
             String l3NwUuid = q.findValue();
             dmsg.setL3NetworkUuid(l3NwUuid);
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3NwUuid);

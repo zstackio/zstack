@@ -11,4 +11,5 @@
 	<TestCase class="org.zstack.test.compute.cluster.TestDeleteZoneCascadeToCluster"/>
 	<TestCase class="org.zstack.test.compute.cluster.TestChangeZoneStateCascadeToCluster"/>
 	<TestCase class="org.zstack.test.compute.cluster.TestQueryCluster"/>
+	<TestCase class="org.zstack.test.compute.cluster.TestUpdateCluster"/>
 </UnitTestSuiteConfig>
