@@ -34,6 +34,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="IscsiFileSystemPrimaryStorageVmMigrationExtension" class="org.zstack.storage.primary.iscsi.IscsiFileSystemPrimaryStorageVmMigrationExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="IscsiIsoStoreManager" class="org.zstack.storage.primary.iscsi.IscsiIsoStoreManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />

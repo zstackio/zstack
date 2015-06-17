@@ -64,5 +64,5 @@ public class KVMSimulatorConfig {
     public volatile List<AttachDataVolumeCmd> attachDataVolumeCmds = new ArrayList<AttachDataVolumeCmd>();
     public volatile List<CreateBridgeCmd> createBridgeCmds = new ArrayList<CreateBridgeCmd>();
     public volatile List<LogoutIscsiTargetCmd> logoutIscsiTargetCmds = new ArrayList<LogoutIscsiTargetCmd>();
-
+    public volatile List<LoginIscsiTargetCmd> loginIscsiTargetCmds = new ArrayList<LoginIscsiTargetCmd>();
 }

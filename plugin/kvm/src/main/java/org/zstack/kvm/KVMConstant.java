@@ -33,6 +33,7 @@ public interface KVMConstant {
     public static final String KVM_TAKE_VOLUME_SNAPSHOT_PATH = "/vm/volume/takesnapshot";
     public static final String KVM_MERGE_SNAPSHOT_PATH = "/vm/volume/mergesnapshot";
     public static final String KVM_LOGOUT_ISCSI_PATH = "/iscsi/target/logout";
+    public static final String KVM_LOGIN_ISCSI_PATH = "/iscsi/target/login";
     public static final String ISO_TO = "kvm.isoto";
     public static final String ANSIBLE_PLAYBOOK_NAME = "kvm.yaml";
     public static final String ANSIBLE_MODULE_PATH = "ansible/kvm";

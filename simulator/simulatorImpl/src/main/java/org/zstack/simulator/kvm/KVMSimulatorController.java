@@ -523,9 +523,24 @@ public class KVMSimulatorController {
 
     private void logoutIscsiTarget(HttpEntity<String> entity) {
         LogoutIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), KVMAgentCommands.LogoutIscsiTargetCmd.class);
-        LogoutIscsiTargetRsp rsp = JSONObjectUtil.toObject(entity.getBody(), LogoutIscsiTargetRsp.class);
+        LogoutIscsiTargetRsp rsp = new LogoutIscsiTargetRsp();
         config.logoutIscsiTargetCmds.add(cmd);
         logger.debug(String.format("logout iscsi target: %s", cmd.getTarget()));
+        replyer.reply(entity, rsp);
+    }
+
+    @RequestMapping(value=KVMConstant.KVM_LOGIN_ISCSI_PATH, method=RequestMethod.POST)
+    private @ResponseBody String loginIscsiTarget(HttpServletRequest req) throws InterruptedException {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        loginIscsiTarget(entity);
+        return null;
+    }
+
+    private void loginIscsiTarget(HttpEntity<String> entity) {
+        LoginIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), KVMAgentCommands.LoginIscsiTargetCmd.class);
+        LoginIscsiTargetRsp rsp = new LoginIscsiTargetRsp();
+        config.loginIscsiTargetCmds.add(cmd);
+        logger.debug(String.format("login iscsi  target: %s", cmd.getTarget()));
         replyer.reply(entity, rsp);
     }
 }
