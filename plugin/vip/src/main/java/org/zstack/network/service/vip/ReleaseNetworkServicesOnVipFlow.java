@@ -22,7 +22,7 @@ public class ReleaseNetworkServicesOnVipFlow extends NoRollbackFlow {
         VipInventory vip = (VipInventory) data.get(VipConstant.Params.VIP.toString());
 
         VipReleaseExtensionPoint ext = vipMgr.getVipReleaseExtensionPoint(vip.getUseFor());
-        ext.releaseServicesOnVip(vip, new Completion() {
+        ext.releaseServicesOnVip(vip, new Completion(trigger) {
             @Override
             public void success() {
                 trigger.next();

@@ -3,6 +3,7 @@ package org.zstack.portal.managementnode;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -108,9 +109,13 @@ public class ManagementNode implements CloudBusEventListener {
             }
 
             private ManagementNodeVO getNode(String uuid) {
-                String sql = "select * from ManagementNodeVO where uuid = ?";
-                ManagementNodeVO vo = (ManagementNodeVO) jdbc.queryForObject(sql, new Object[]{uuid}, new BeanPropertyRowMapper(ManagementNodeVO.class));
-                return vo;
+                try {
+                    String sql = "select * from ManagementNodeVO where uuid = ?";
+                    ManagementNodeVO vo = (ManagementNodeVO) jdbc.queryForObject(sql, new Object[]{uuid}, new BeanPropertyRowMapper(ManagementNodeVO.class));
+                    return vo;
+                } catch (IncorrectResultSizeDataAccessException e) {
+                    return null;
+                }
             }
 
             private int deleteNode(String uuid) {

@@ -491,6 +491,11 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         });
 
         logger.info("Management node: " + getId() + " exits successfully");
+        if (CoreGlobalProperty.EXIT_JVM_ON_STOP) {
+            logger.info("exitJVMOnStop is set to true, exit the JVM");
+            System.exit(0);
+        }
+
         return true;
 	}
 

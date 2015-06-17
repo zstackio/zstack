@@ -24,4 +24,6 @@ public class CoreGlobalProperty {
     public static String CONSOLE_PROXY_OVERRIDDEN_IP;
     @GlobalProperty(name="exposeSimulatorType", defaultValue = "false")
     public static boolean EXPOSE_SIMULATOR_TYPE;
+    @GlobalProperty(name="exitJVMOnStop", defaultValue = "true")
+    public static boolean EXIT_JVM_ON_STOP;
 }
