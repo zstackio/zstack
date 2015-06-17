@@ -30,6 +30,7 @@
         <property name="connectionCustomizerClassName" value="org.zstack.core.db.TransactionIsolationLevelSetter" />
         <property name="numHelperThreads" value="${DbFacadeDataSource.numHelperThreads:15}" />
         <property name="acquireIncrement" value="50" />
+        <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}"/>
         <!--
         <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}" />
         <property name="unreturnedConnectionTimeout" value="10" />
