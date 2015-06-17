@@ -51,4 +51,6 @@
 	<TestCase class="org.zstack.test.network.TestUpdateL2Network"/>
 	<TestCase class="org.zstack.test.network.TestUpdateL3Network"/>
 	<TestCase class="org.zstack.test.network.TestUpdateIpRange"/>
+	<TestCase class="org.zstack.test.network.TestGetFreeIp"/>
+	<TestCase class="org.zstack.test.network.TestGetFreeIp1"/>
 </UnitTestSuiteConfig>
