@@ -8,6 +8,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.NopeCompletion;
@@ -18,7 +19,6 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.image.APIUpdateImageEvent;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
@@ -34,12 +34,13 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import javax.swing.text.html.HTML.Tag;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -71,6 +72,8 @@ public class VolumeBase implements Volume {
     private AccountManager acntMgr;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private VolumeVO self;
 
@@ -154,6 +157,17 @@ public class VolumeBase implements Volume {
     private void handle(final VolumeDeletionMsg msg) {
         final VolumeDeletionReply reply = new VolumeDeletionReply();
 
+        for (VolumeDeletionExtensionPoint extp : pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class)) {
+            extp.preDeleteVolume(getSelfInventory());
+        }
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class), new ForEachFunction<VolumeDeletionExtensionPoint>() {
+            @Override
+            public void run(VolumeDeletionExtensionPoint arg) {
+                arg.beforeDeleteVolume(getSelfInventory());
+            }
+        });
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-volume-%s", self.getUuid()));
         chain.then(new ShareFlow() {
@@ -226,13 +240,26 @@ public class VolumeBase implements Volume {
                     @Override
                     public void handle(Map data) {
                         dbf.remove(self);
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class), new ForEachFunction<VolumeDeletionExtensionPoint>() {
+                            @Override
+                            public void run(VolumeDeletionExtensionPoint arg) {
+                                arg.afterDeleteVolume(getSelfInventory());
+                            }
+                        });
                         bus.reply(msg, reply);
                     }
                 });
 
                 error(new FlowErrorHandler(msg) {
                     @Override
-                    public void handle(ErrorCode errCode, Map data) {
+                    public void handle(final ErrorCode errCode, Map data) {
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class), new ForEachFunction<VolumeDeletionExtensionPoint>() {
+                            @Override
+                            public void run(VolumeDeletionExtensionPoint arg) {
+                                arg.failedToDeleteVolume(getSelfInventory(), errCode);
+                            }
+                        });
+
                         reply.setError(errCode);
                         bus.reply(msg, reply);
                     }

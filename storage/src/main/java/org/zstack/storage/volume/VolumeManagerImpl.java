@@ -38,6 +38,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -86,10 +87,25 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
 
 	private void handleLocalMessage(Message msg) {
 	   if (msg instanceof CreateVolumeMsg) {
-		   handle((CreateVolumeMsg) msg);
+           handle((CreateVolumeMsg) msg);
+       } else if (msg instanceof VolumeReportPrimaryStorageCapacityUsageMsg) {
+           handle((VolumeReportPrimaryStorageCapacityUsageMsg) msg);
 	   } else {
 		   bus.dealWithUnknownMessage(msg);
 	   }
+    }
+
+    @Transactional(readOnly = true)
+    private void handle(VolumeReportPrimaryStorageCapacityUsageMsg msg) {
+        String sql = "select sum(vol.size) from VolumeVO vol where vol.primaryStorageUuid = :prUuid and vol.status = :status";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("prUuid", msg.getPrimaryStorageUuid());
+        q.setParameter("status", VolumeStatus.Ready);
+        Long size = q.getSingleResult();
+
+        VolumeReportPrimaryStorageCapacityUsageReply reply = new VolumeReportPrimaryStorageCapacityUsageReply();
+        reply.setUsedCapacity(size == null ? 0 : size);
+        bus.reply(msg, reply);
     }
 
     private VolumeInventory createVolume(CreateVolumeMsg msg) {

@@ -103,6 +103,15 @@ public class PrimaryStorageInventory implements Serializable{
     @Queryable(mappingClass = PrimaryStorageCapacityInventory.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "availableCapacity"))
     private Long availableCapacity;
+
+    @Queryable(mappingClass = PrimaryStorageCapacityInventory.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "totalPhysicalCapacity"))
+    private Long totalPhysicalCapacity;
+
+    @Queryable(mappingClass = PrimaryStorageCapacityInventory.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "availablePhysicalCapacity"))
+    private Long availablePhysicalCapacity;
+
     /**
      * @desc
      * primary storage type
@@ -177,6 +186,8 @@ public class PrimaryStorageInventory implements Serializable{
         if (vo.getCapacity() != null) {
             setTotalCapacity(vo.getCapacity().getTotalCapacity());
             setAvailableCapacity(vo.getCapacity().getAvailableCapacity());
+            setTotalPhysicalCapacity(vo.getCapacity().getTotalPhysicalCapacity());
+            setAvailablePhysicalCapacity(vo.getCapacity().getAvailablePhysicalCapacity());
         }
     }
 
@@ -191,6 +202,22 @@ public class PrimaryStorageInventory implements Serializable{
 	    }
 	    return invs;
 	}
+
+    public Long getTotalPhysicalCapacity() {
+        return totalPhysicalCapacity;
+    }
+
+    public void setTotalPhysicalCapacity(Long totalPhysicalCapacity) {
+        this.totalPhysicalCapacity = totalPhysicalCapacity;
+    }
+
+    public Long getAvailablePhysicalCapacity() {
+        return availablePhysicalCapacity;
+    }
+
+    public void setAvailablePhysicalCapacity(Long availablePhysicalCapacity) {
+        this.availablePhysicalCapacity = availablePhysicalCapacity;
+    }
 
     public String getStatus() {
         return status;

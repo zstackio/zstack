@@ -925,6 +925,34 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void syncPhysicalCapacity(final ReturnValueCompletion<PhysicalCapacityUsage> completion) {
+        GetCapacityCmd cmd = new GetCapacityCmd();
+        restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.GET_CAPACITY), cmd, new JsonAsyncRESTCallback<AgentCapacityResponse>(completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                completion.fail(err);
+            }
+
+            @Override
+            public void success(AgentCapacityResponse ret) {
+                if (!ret.isSuccess()) {
+                    completion.fail(errf.stringToOperationError(ret.getError()));
+                } else {
+                    PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
+                    usage.availablePhysicalSize = ret.getAvailableCapacity();
+                    usage.totalPhysicalSize = ret.getTotalCapacity();
+                    completion.success(usage);
+                }
+            }
+
+            @Override
+            public Class<AgentCapacityResponse> getReturnClass() {
+                return AgentCapacityResponse.class;
+            }
+        });
+    }
+
+    @Override
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIReconnectPrimaryStorageMsg) {
             handle((APIReconnectPrimaryStorageMsg) msg);
@@ -1019,6 +1047,14 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                             public void success(InitRsp ret) {
                                 if (ret.isSuccess()) {
                                     reportCapacity(ret);
+
+                                    PrimaryStorageReportCapacityMsg rmsg = new PrimaryStorageReportCapacityMsg();
+                                    rmsg.setPrimaryStorageUuid(self.getUuid());
+                                    rmsg.setAvailableCapacity(ret.getAvailableCapacity());
+                                    rmsg.setTotalCapacity(ret.getTotalCapacity());
+                                    bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+
+                                    bus.send(rmsg);
                                     trigger.next();
                                 } else {
                                     trigger.fail(errf.stringToOperationError(ret.getError()));

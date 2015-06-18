@@ -448,4 +448,7 @@ public interface IscsiFileSystemBackendPrimaryStorageCommands {
             this.path = path;
         }
     }
+
+    public static class GetCapacityCmd extends AgentCommand {
+    }
 }

@@ -50,9 +50,8 @@ public class NfsPrimaryStorageSimulator {
     private Map<String, Capacity> capacityMap = new HashMap<String, Capacity>();
 
     private void setCapacity(NfsPrimaryStorageAgentCommand cmd, NfsPrimaryStorageAgentResponse rsp) {
-        Capacity  cap = capacityMap.get(cmd.getUuid());
-        rsp.setTotalCapacity(rsp.getTotalCapacity());
-        rsp.setAvailableCapacity(rsp.getAvailableCapacity());
+        rsp.setTotalCapacity(config.totalCapacity);
+        rsp.setAvailableCapacity(config.availableCapacity);
     }
 
     @AsyncThread

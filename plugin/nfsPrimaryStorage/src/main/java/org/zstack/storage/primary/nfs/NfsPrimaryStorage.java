@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.nfs;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.SimpleQuery;
@@ -38,6 +39,7 @@ import org.zstack.kvm.KVMIsoTO;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageBackend.CreateBitsFromSnapshotResult;
+import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.GetCapacityCmd;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -47,6 +49,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -513,6 +516,12 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     inv.setType(VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
                     reply.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                     reply.setInventory(inv);
+
+                    TakePrimaryStorageCapacityMsg tmsg = new TakePrimaryStorageCapacityMsg();
+                    tmsg.setPrimaryStorageUuid(self.getUuid());
+                    tmsg.setSize(inv.getSize());
+                    bus.makeTargetServiceIdByResourceUuid(tmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                    bus.send(tmsg);
                 } else {
                     reply.setError(ret.getError());
                 }
@@ -535,6 +544,32 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         getBackend(HypervisorType.valueOf(cluster.getHypervisorType())).deleteImageCache(msg.getInventory());
     }
 
+    @Transactional(readOnly = true)
+    private NfsPrimaryStorageBackend getUsableBackend() {
+        List<String> cuuids = CollectionUtils.transformToList(self.getAttachedClusterRefs(), new Function<String, PrimaryStorageClusterRefVO>() {
+            @Override
+            public String call(PrimaryStorageClusterRefVO arg) {
+                return arg.getClusterUuid();
+            }
+        });
+
+        if (cuuids.isEmpty()) {
+            return null;
+        }
+
+        String sql = "select cluster.uuid from ClusterVO cluster, HostVO host where cluster.uuid = host.clusterUuid and host.status = :hostStatus and cluster.uuid in (:cuuids)";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("hostStatus", HostStatus.Connected);
+        q.setParameter("cuuids", cuuids);
+        cuuids = q.getResultList();
+
+        if (cuuids.isEmpty()) {
+            return null;
+        }
+
+        return getBackendByClusterUuid(cuuids.get(0));
+    }
+
     private NfsPrimaryStorageBackend getBackendByClusterUuid(String clusterUuid) {
         SimpleQuery<ClusterVO> query = dbf.createQuery(ClusterVO.class);
         query.select(ClusterVO_.hypervisorType);
@@ -544,8 +579,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     private NfsPrimaryStorageBackend getBackend(HypervisorType hvType) {
-        NfsPrimaryStorageBackend backend = factory.getHypervisorBackend(hvType);
-        return backend;
+        return factory.getHypervisorBackend(hvType);
     }
 
     @Override
@@ -932,5 +966,18 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void connectHook(ConnectPrimaryStorageMsg msg, Completion completion) {
         completion.success();
+    }
+
+    @Override
+    protected void syncPhysicalCapacity(ReturnValueCompletion<PhysicalCapacityUsage> completion) {
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
+            usage.availablePhysicalSize = 0;
+            usage.totalPhysicalSize = 0;
+            completion.success(usage);
+        } else {
+            backend.getPhysicalCapacity(getSelfInventory(), completion);
+        }
     }
 }

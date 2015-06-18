@@ -28,6 +28,9 @@ CREATE TABLE  `zstack`.`IscsiIsoVO` (
 ALTER TABLE `zstack`.`PrimaryStorageEO` MODIFY `type` varchar(255);
 ALTER TABLE `zstack`.`VmInstanceEO` ADD COLUMN `platform` varchar(255) NOT NULL;
 
+ALTER TABLE `zstack`.`PrimaryStorageCapacityVO` ADD COLUMN `totalPhysicalCapacity` bigint unsigned DEFAULT 0;
+ALTER TABLE `zstack`.`PrimaryStorageCapacityVO` ADD COLUMN `availablePhysicalCapacity` bigint unsigned DEFAULT 0;
+
 # Foreign keys for table IscsiFileSystemBackendPrimaryStorageVO
 
 ALTER TABLE IscsiFileSystemBackendPrimaryStorageVO ADD CONSTRAINT fkIscsiFileSystemBackendPrimaryStorageVOPrimaryStorageEO FOREIGN KEY (uuid) REFERENCES PrimaryStorageEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;

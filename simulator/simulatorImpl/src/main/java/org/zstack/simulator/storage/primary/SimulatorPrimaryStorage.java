@@ -1,6 +1,7 @@
 package org.zstack.simulator.storage.primary;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
@@ -122,5 +123,13 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void connectHook(ConnectPrimaryStorageMsg msg, Completion completion) {
         completion.success();
+    }
+
+    @Override
+    protected void syncPhysicalCapacity(ReturnValueCompletion<PhysicalCapacityUsage> completion) {
+        PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
+        usage.availablePhysicalSize = self.getCapacity().getAvailablePhysicalCapacity();
+        usage.totalPhysicalSize = self.getCapacity().getTotalPhysicalCapacity();
+        completion.success(usage);
     }
 }

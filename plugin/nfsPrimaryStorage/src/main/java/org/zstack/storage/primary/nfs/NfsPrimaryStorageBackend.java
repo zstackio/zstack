@@ -10,6 +10,7 @@ import org.zstack.header.storage.primary.ImageCacheInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 
 import java.util.List;
 
@@ -36,6 +37,8 @@ public interface NfsPrimaryStorageBackend {
     }
 
     HypervisorType getHypervisorType();
+
+    void getPhysicalCapacity(PrimaryStorageInventory inv, ReturnValueCompletion<PhysicalCapacityUsage> completion);
 
     void checkIsBitsExisting(PrimaryStorageInventory inv, String installPath, ReturnValueCompletion<Boolean> completion);
 

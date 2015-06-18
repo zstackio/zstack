@@ -86,4 +86,5 @@
     <TestCase class="org.zstack.test.kvm.TestKvmMaintenanceModeAttachL2Network"/>
     <TestCase class="org.zstack.test.kvm.TestCreateVmOnKvmIso"/>
     <TestCase class="org.zstack.test.kvm.TestUpdateKvmHost"/>
+    <TestCase class="org.zstack.test.kvm.TestSyncPrimaryStorageCapacityOnKvm"/>
 </UnitTestSuiteConfig>

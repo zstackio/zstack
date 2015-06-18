@@ -340,8 +340,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         cvo.setAvailableCapacity(avail);
         dbf.getEntityManager().merge(cvo);
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format(String.format("reserved %s bytes on primary storage[uuid:%s, total:%s, available:%s]",
-                    size, inv.getUuid(), cvo.getTotalCapacity(), avail)));
+            logger.trace(String.format("reserved %s bytes on primary storage[uuid:%s, total:%s, available:%s]",
+                    size, inv.getUuid(), cvo.getTotalCapacity(), avail));
         }
         return true;
     }
@@ -432,7 +432,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     @Override
     public void sendCapacityReportMessage(long total, long avail, String primaryStorageUuid) {
-        PrimaryStorageReportCapacityMsg msg = new PrimaryStorageReportCapacityMsg();
+        PrimaryStorageReportPhysicalCapacityMsg msg = new PrimaryStorageReportPhysicalCapacityMsg();
         msg.setTotalCapacity(total);
         msg.setAvailableCapacity(avail);
         msg.setPrimaryStorageUuid(primaryStorageUuid);

@@ -2797,4 +2797,14 @@ public class Api implements CloudBusEventListener {
         APIUpdatePrimaryStorageEvent evt = sender.send(msg, APIUpdatePrimaryStorageEvent.class);
         return (IscsiFileSystemBackendPrimaryStorageInventory) evt.getInventory();
     }
+
+    public PrimaryStorageInventory syncPrimaryStorageCapacity(String primaryStorageUuid) throws ApiSenderException {
+        APISyncPrimaryStorageCapacityMsg msg = new APISyncPrimaryStorageCapacityMsg();
+        msg.setPrimaryStorageUuid(primaryStorageUuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISyncPrimaryStorageCapacityEvent evt = sender.send(msg, APISyncPrimaryStorageCapacityEvent.class);
+        return evt.getInventory();
+    }
 }

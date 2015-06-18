@@ -82,9 +82,24 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
     private void handleLocalMessage(Message msg) {
         if (msg instanceof CreateVolumeSnapshotMsg) {
             handle((CreateVolumeSnapshotMsg) msg);
+        } else if (msg instanceof VolumeSnapshotReportPrimaryStorageCapacityUsageMsg) {
+            handle((VolumeSnapshotReportPrimaryStorageCapacityUsageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    @Transactional(readOnly = true)
+    private void handle(VolumeSnapshotReportPrimaryStorageCapacityUsageMsg msg) {
+        String sql = "select sum(sp.size) from VolumeSnapshotVO sp where sp.type = :sptype and sp.primaryStorageUuid = :prUuid";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("sptype", VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
+        q.setParameter("prUuid", msg.getPrimaryStorageUuid());
+        Long size = q.getSingleResult();
+
+        VolumeSnapshotReportPrimaryStorageCapacityUsageReply reply = new VolumeSnapshotReportPrimaryStorageCapacityUsageReply();
+        reply.setUsedSize(size == null ? 0 : size);
+        bus.reply(msg, reply);
     }
 
 

@@ -29,10 +29,34 @@ public class PrimaryStorageCapacityVO {
     private long availableCapacity;
 
     @Column
+    @Index
+    private long totalPhysicalCapacity;
+
+    @Column
+    @Index
+    private long availablePhysicalCapacity;
+
+    @Column
     private Timestamp createDate;
 
     @Column
     private Timestamp lastOpDate;
+
+    public long getTotalPhysicalCapacity() {
+        return totalPhysicalCapacity;
+    }
+
+    public void setTotalPhysicalCapacity(long totalPhysicalCapacity) {
+        this.totalPhysicalCapacity = totalPhysicalCapacity;
+    }
+
+    public long getAvailablePhysicalCapacity() {
+        return availablePhysicalCapacity;
+    }
+
+    public void setAvailablePhysicalCapacity(long availablePhysicalCapacity) {
+        this.availablePhysicalCapacity = availablePhysicalCapacity;
+    }
 
     public String getUuid() {
         return uuid;

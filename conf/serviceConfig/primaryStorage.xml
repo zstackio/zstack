@@ -57,6 +57,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.storage.primary.APISyncPrimaryStorageCapacityMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.storage.primary.APIUpdatePrimaryStorageMsg</name>
     </message>
 </service>

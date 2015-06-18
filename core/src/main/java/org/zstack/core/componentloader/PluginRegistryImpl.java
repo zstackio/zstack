@@ -1,6 +1,9 @@
 package org.zstack.core.componentloader;
 
 import org.zstack.core.Platform;
+import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
@@ -9,8 +12,9 @@ import java.util.*;
 
 public class PluginRegistryImpl implements PluginRegistryIN {
     private static final CLogger logger = CLoggerImpl.getLogger(PluginRegistryImpl.class);
-    private Map<String, List<PluginExtension>> extensions = new HashMap<String, List<PluginExtension>>(10);
-    private Map<String, List<PluginExtension>> extensionsByInterfaceName = new HashMap<String, List<PluginExtension>>(10);
+    private Map<String, List<PluginExtension>> extensions = new HashMap<String, List<PluginExtension>>();
+    private Map<String, List<PluginExtension>> extensionsByInterfaceName = new HashMap<String, List<PluginExtension>>();
+    private Map<Class, List> extensionsByInterfaceClass = new HashMap<Class, List>();
 
     private void sortPlugins() {
         for (List<PluginExtension> exts : extensionsByInterfaceName.values()) {
@@ -53,6 +57,14 @@ public class PluginRegistryImpl implements PluginRegistryIN {
                     }
                     exts.add(ext);
                     extensionsByInterfaceName.put(ext.getReferenceInterface(), exts);
+
+                    List pluginInstances = new ArrayList();
+                    for (PluginExtension pe : exts) {
+                        if (!pluginInstances.contains(pe.getInstance())) {
+                            pluginInstances.add(pe.getInstance());
+                        }
+                    }
+                    extensionsByInterfaceClass.put(Class.forName(ext.getReferenceInterface()), pluginInstances);
                 } catch (Exception e) {
                     logger.warn(String.format("%s, mark extension referred to interface [%s] in bean[name=%s, class=%s] as invalid. Checking the bean XML file to fix it", e.getMessage(), ext.getReferenceInterface(), ext.getBeanName(), ext.getBeanClassName()), e);
                 }
@@ -74,22 +86,15 @@ public class PluginRegistryImpl implements PluginRegistryIN {
             try {
                 processor.process(ext, args);
             } catch (Exception e) {
-                logger.warn("Unhandled execption happened while " + processor.getClass().getCanonicalName() + " process extesnion " + ext.getReferenceInterface() + " implemented by:" + ext.getInstance().getClass().getCanonicalName(), e);
+                logger.warn("Unhandled exception happened while " + processor.getClass().getCanonicalName() + " process extesnion " + ext.getReferenceInterface() + " implemented by:" + ext.getInstance().getClass().getCanonicalName(), e);
             }
         }
     }
 
     @Override
     public <T> List<T> getExtensionList(Class<T> clazz) {
-        List<T> exts = new ArrayList<T>();
-        List<PluginExtension> pexts = getExtensionByInterfaceName(clazz.getName());
-        for (PluginExtension pext : pexts) {
-            T extp = (T)pext.getInstance();
-            if (!exts.contains(extp)) {
-                exts.add(extp);
-            }
-        }
-        return exts;
+        List<T> exts = extensionsByInterfaceClass.get(clazz);
+        return exts == null ? new ArrayList<T>() : exts;
     }
 
     @Override

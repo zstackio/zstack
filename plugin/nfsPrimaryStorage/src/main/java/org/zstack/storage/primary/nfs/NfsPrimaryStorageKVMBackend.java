@@ -32,6 +32,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.kvm.*;
+import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
 import org.zstack.utils.Bucket;
 import org.zstack.utils.CollectionUtils;
@@ -108,6 +109,13 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         }
 
         nfsMgr.reportCapacityIfNeeded(inv.getUuid(), rsp);
+
+        PrimaryStorageReportCapacityMsg rmsg = new PrimaryStorageReportCapacityMsg();
+        rmsg.setPrimaryStorageUuid(inv.getUuid());
+        rmsg.setAvailableCapacity(rsp.getAvailableCapacity());
+        rmsg.setTotalCapacity(rsp.getTotalCapacity());
+        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
+        bus.send(rmsg);
 
         logger.debug(String.format(
                 "Successfully mounted nfs primary storage[uuid:%s] on kvm host[uuid:%s]",
@@ -224,6 +232,41 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
+    public void getPhysicalCapacity(PrimaryStorageInventory inv, final ReturnValueCompletion<PhysicalCapacityUsage> completion) {
+        final HostInventory host = nfsFactory.getConnectedHostForOperation(inv);
+
+        GetCapacityCmd cmd = new GetCapacityCmd();
+        cmd.setMountPath(inv.getMountPath());
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(host.getUuid());
+        msg.setPath(GET_CAPACITY_PATH);
+        msg.setCommand(cmd);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                GetCapacityResponse rsp = r.toResponse(GetCapacityResponse.class);
+                if (!r.isSuccess()) {
+                    completion.fail(errf.stringToOperationError(rsp.getError()));
+                    return;
+                }
+
+                PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
+                usage.totalPhysicalSize = rsp.getTotalCapacity();
+                usage.availablePhysicalSize = rsp.getAvailableCapacity();
+                completion.success(usage);
+            }
+        });
+    }
+
+    @Override
     public void checkIsBitsExisting(final PrimaryStorageInventory inv, final String installPath, final ReturnValueCompletion<Boolean> completion) {
         HostInventory host = nfsFactory.getConnectedHostForOperation(inv);
         CheckIsBitsExistingCmd cmd = new CheckIsBitsExistingCmd();
@@ -294,6 +337,13 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             }
 
             nfsMgr.reportCapacityIfNeeded(inv.getUuid(), rsp);
+
+            PrimaryStorageReportCapacityMsg rmsg = new PrimaryStorageReportCapacityMsg();
+            rmsg.setPrimaryStorageUuid(inv.getUuid());
+            rmsg.setAvailableCapacity(rsp.getAvailableCapacity());
+            rmsg.setTotalCapacity(rsp.getTotalCapacity());
+            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
+            bus.send(rmsg);
         }
     }
 
