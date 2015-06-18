@@ -16,6 +16,5 @@ public interface IscsiBtrfsPrimaryStorageConstants {
     public static final String CREATE_TARGET_PATH = "/target/create";
     public static final String DELETE_TARGET_PATH = "/target/delete";
     public static final String CREATE_SUBVOLUME = "/subvolume/create";
-    public static final String DELETE_SUBVOLUME = "/subvolume/delete";
     public static final String GET_CAPACITY = "/capacity/get";
 }
