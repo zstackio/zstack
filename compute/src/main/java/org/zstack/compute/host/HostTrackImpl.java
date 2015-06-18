@@ -69,7 +69,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
             HostStatusEvent cevt = preply.isConnected() ? HostStatusEvent.connected : HostStatusEvent.disconnected;
             if (logger.isTraceEnabled()) {
                 String moreInfo = preply.isConnected() ? "all good!" : preply.getError().toString();
-                logger.trace(String.format("[Host Tracker]: discover host[uuid:%s] connection state[%s], %s", hostUuid, cevt, moreInfo));
+                logger.trace(String.format("[Host Tracker]: ping host[uuid:%s], connection state[%s], %s", hostUuid, cevt, moreInfo));
             }
 
             HostStatusEvent oevt = hostConnectionStateEventMap.get(hostUuid);
@@ -77,25 +77,28 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                 return;
             }
 
-            hostConnectionStateEventMap.put(hostUuid, cevt);
-            ChangeHostConnectionStateMsg cmsg = new ChangeHostConnectionStateMsg();
-            cmsg.setHostUuid(hostUuid);
-            cmsg.setConnectionStateEvent(cevt.toString());
-            bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
-            bus.send(cmsg, new CloudBusCallBack() {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!preply.isConnected() && reply.isSuccess() && HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class)) {
-                        logger.debug(String.format("[Host Tracker]: detected host[uuid:%s] connection lost, issue a reconnect because %s is set to true",
-                                hostUuid, HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.getCanonicalName()));
-                        ReconnectHostMsg msg = new ReconnectHostMsg();
-                        msg.setHostUuid(hostUuid);
-                        msg.setSkipIfHostConnected(true);
-                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-                        bus.send(msg);
+            boolean needReconnect = oevt == HostStatusEvent.disconnected && preply.isSuccess() && HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class);
+            if (needReconnect) {
+                logger.debug(String.format("[Host Tracker]: detected host[uuid:%s] connection lost, issue a reconnect because %s is set to true",
+                        hostUuid, HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.getCanonicalName()));
+                ReconnectHostMsg msg = new ReconnectHostMsg();
+                msg.setHostUuid(hostUuid);
+                msg.setSkipIfHostConnected(true);
+                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+                bus.send(msg, new CloudBusCallBack() {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(String.format("host[uuid:%s] failed to reconnect, %s", hostUuid, reply.getError()));
+                            hostConnectionStateEventMap.put(hostUuid, HostStatusEvent.disconnected);
+                        } else {
+                            hostConnectionStateEventMap.put(hostUuid, HostStatusEvent.connected);
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                hostConnectionStateEventMap.put(hostUuid, cevt);
+            }
         }
 
         @Override
