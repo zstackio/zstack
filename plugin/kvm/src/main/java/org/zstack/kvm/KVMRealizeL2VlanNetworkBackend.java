@@ -34,6 +34,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
     private CloudBus bus;
 
     private String makeBridgeName(String physicalInterfaceName, int vlan) {
+        physicalInterfaceName = physicalInterfaceName.substring(0, Math.min(physicalInterfaceName.length(), 7));
         return String.format("br_%s_%s", physicalInterfaceName, vlan);
     }
 
