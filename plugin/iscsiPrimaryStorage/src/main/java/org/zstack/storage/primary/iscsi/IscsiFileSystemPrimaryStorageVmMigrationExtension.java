@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
@@ -15,9 +16,12 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.LoginIscsiTargetCmd;
+import org.zstack.kvm.KVMAgentCommands.LoginIscsiTargetRsp;
 import org.zstack.kvm.KVMAgentCommands.LogoutIscsiTargetCmd;
+import org.zstack.kvm.KVMAgentCommands.LogoutIscsiTargetRsp;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMSystemTags;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -39,6 +43,8 @@ public class IscsiFileSystemPrimaryStorageVmMigrationExtension implements VmInst
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ErrorFacade errf;
 
     @Override
     public String preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
@@ -91,6 +97,13 @@ public class IscsiFileSystemPrimaryStorageVmMigrationExtension implements VmInst
             if (!reply.isSuccess()) {
                 errorCode = reply.getError();
                 break;
+            } else {
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                LoginIscsiTargetRsp rsp = r.toResponse(LoginIscsiTargetRsp.class);
+                if (!rsp.isSuccess()) {
+                    errorCode = errf.stringToOperationError(rsp.getError());
+                    break;
+                }
             }
         }
 
@@ -135,8 +148,17 @@ public class IscsiFileSystemPrimaryStorageVmMigrationExtension implements VmInst
                 for (MessageReply reply : replies) {
                     if (!reply.isSuccess()) {
                         VolumeInventory vol = toCleanup.get(replies.indexOf(reply));
-                        logger.warn(String.format("failed to logout iscsi target for volume[uuid:%s, path:%s] on host[uuid:%s]",
-                                vol.getUuid(), vol.getInstallPath(), hostUuid));
+                        logger.warn(String.format("failed to logout iscsi target for volume[uuid:%s, path:%s] on host[uuid:%s], %s",
+                                vol.getUuid(), vol.getInstallPath(), hostUuid, reply.getError()));
+                        continue;
+                    }
+
+                    KVMHostAsyncHttpCallReply r = reply.castReply();
+                    LogoutIscsiTargetRsp rsp = r.toResponse(LogoutIscsiTargetRsp.class);
+                    if (!rsp.isSuccess()) {
+                        VolumeInventory vol = toCleanup.get(replies.indexOf(reply));
+                        logger.warn(String.format("failed to logout iscsi target for volume[uuid:%s, path:%s] on host[uuid:%s], %s",
+                                vol.getUuid(), vol.getInstallPath(), hostUuid, rsp.getError()));
                     }
                 }
             }
