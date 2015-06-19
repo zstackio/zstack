@@ -314,7 +314,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         DebugUtils.Assert(cvo != null, String.format("how can there is no PrimaryStorageCapacityVO[uuid:%s]", self.getUuid()));
 
         cvo.setTotalPhysicalCapacity(total);
-        cvo.setTotalPhysicalCapacity(avail);
+        cvo.setAvailablePhysicalCapacity(avail);
         dbf.getEntityManager().merge(cvo);
     }
 
