@@ -72,8 +72,15 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
             File privKeyFile = PathUtil.findFileOnClassPath("ansible/rsaKeys/id_rsa");
             String privKey = FileUtils.readFileToString(privKeyFile);
 
-            String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/consoleproxy/%s", agentPackageName), true).getAbsolutePath();
-            String destPath = String.format("/var/lib/zstack/console/%s", agentPackageName);
+            String srcPath;
+            String destPath;
+            if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
+                srcPath = PathUtil.findFileOnClassPath(String.format("ansible/consoleproxy/%s", agentPackageName), true).getAbsolutePath();
+                destPath = String.format("/var/lib/zstack/console/%s", agentPackageName);
+            } else {
+                srcPath = PathUtil.findFileOnClassPath(String.format("ansible/consoleproxy/%s", ConsoleGlobalPropery.VIRTUAL_ENV_PACKAGE), true).getAbsolutePath();
+                destPath = String.format("/var/lib/zstack/console/%s", ConsoleGlobalPropery.VIRTUAL_ENV_PACKAGE);
+            }
             SshFileMd5Checker checker = new SshFileMd5Checker();
             checker.setTargetIp("127.0.0.1");
             checker.setUsername("root");
@@ -89,7 +96,11 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
             runner.setAgentPort(7758);
             runner.setTargetIp(Platform.getManagementServerIp());
             runner.setPlayBookName(ANSIBLE_PLAYBOOK_NAME);
-            runner.putArgument("pkg_consoleproxy", agentPackageName);
+            if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
+                runner.putArgument("pkg_consoleproxy", agentPackageName);
+            } else {
+                runner.putArgument("virtualenv_pkg", ConsoleGlobalPropery.VIRTUAL_ENV_PACKAGE);
+            }
             runner.run(new Completion() {
                 @Override
                 public void success() {

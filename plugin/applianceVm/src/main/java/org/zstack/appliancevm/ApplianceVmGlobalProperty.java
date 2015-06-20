@@ -19,4 +19,6 @@ public class ApplianceVmGlobalProperty {
     public static String AGENT_URL_SCHEME;
     @GlobalProperty(name="ApplianceVm.agentUrlRootPath", defaultValue = "")
     public static String AGENT_URL_ROOT_PATH;
+    @GlobalProperty(name="ApplianceVm.virtualEnvPackage", defaultValue = "appliancevm-virtualenv.tar.bz")
+    public static String VIRTUAL_ENV_PACKAGE;
 }

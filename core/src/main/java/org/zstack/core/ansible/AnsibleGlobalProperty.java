@@ -21,4 +21,6 @@ public class AnsibleGlobalProperty {
     public static boolean DEBUG_MODE;
     @GlobalProperty(name = "Ansible.debugMode2", defaultValue = "false")
     public static boolean DEBUG_MODE2;
+    @GlobalProperty(name = "Ansible.usePackagedVirtualEnv", defaultValue = "true")
+    public static boolean USE_PACKAGED_VIRTUAL_ENV;
 }

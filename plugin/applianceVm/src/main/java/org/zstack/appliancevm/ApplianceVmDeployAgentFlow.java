@@ -97,8 +97,13 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         checker.setUsername(username);
         checker.setPrivateKey(privKey);
         checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/appliancevm/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
-        checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/appliancevm/%s", ApplianceVmGlobalProperty.AGENT_PACKAGE_NAME), true).getAbsolutePath(),
-                String.format("/var/lib/zstack/appliancevm/%s", ApplianceVmGlobalProperty.AGENT_PACKAGE_NAME));
+        if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
+            checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/appliancevm/%s", ApplianceVmGlobalProperty.AGENT_PACKAGE_NAME), true).getAbsolutePath(),
+                    String.format("/var/lib/zstack/appliancevm/%s", ApplianceVmGlobalProperty.AGENT_PACKAGE_NAME));
+        } else {
+            checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/appliancevm/%s", ApplianceVmGlobalProperty.VIRTUAL_ENV_PACKAGE), true).getAbsolutePath(),
+                    String.format("/var/lib/zstack/appliancevm/%s", ApplianceVmGlobalProperty.VIRTUAL_ENV_PACKAGE));
+        }
 
         AnsibleRunner runner = new AnsibleRunner();
         runner.installChecker(checker);
@@ -107,7 +112,11 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         runner.setPrivateKey(privKey);
         runner.setAgentPort(ApplianceVmGlobalProperty.AGENT_PORT);
         runner.setTargetIp(mgmtIp);
-        runner.putArgument("pkg_appliancevm", ApplianceVmGlobalProperty.AGENT_PACKAGE_NAME);
+        if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
+            runner.putArgument("pkg_appliancevm", ApplianceVmGlobalProperty.AGENT_PACKAGE_NAME);
+        } else {
+            runner.putArgument("virtualenv_pkg", ApplianceVmGlobalProperty.VIRTUAL_ENV_PACKAGE);
+        }
         runner.run(new Completion(trigger) {
             @Override
             public void success() {

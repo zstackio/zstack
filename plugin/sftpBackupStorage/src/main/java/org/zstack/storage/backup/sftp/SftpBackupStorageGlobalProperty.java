@@ -18,4 +18,6 @@ public class SftpBackupStorageGlobalProperty {
     public static String AGENT_URL_ROOT_PATH;
     @GlobalProperty(name="SftpBackupStorage.DownloadCmd.timeout", defaultValue = "7200")
     public static int DOWNLOAD_CMD_TIMEOUT;
+    @GlobalProperty(name="SftpBackupStorage.virtualEnvPackage", defaultValue = "sftpbackupstorage-virtualenv.tar.bz")
+    public static String VIRTUAL_ENV_PACKAGE;
 }
