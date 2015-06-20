@@ -117,6 +117,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         } else {
             runner.putArgument("virtualenv_pkg", ApplianceVmGlobalProperty.VIRTUAL_ENV_PACKAGE);
         }
+        runner.putArgument("deploy_package", ApplianceVmGlobalProperty.DEPLOY_PACKAGE_ON_RECONNECT.toString());
         runner.run(new Completion(trigger) {
             @Override
             public void success() {
