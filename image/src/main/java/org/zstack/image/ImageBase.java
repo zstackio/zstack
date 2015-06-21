@@ -15,6 +15,7 @@ import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.*;
+import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -170,6 +171,14 @@ public class ImageBase implements Image {
         }
         if (msg.getGuestOsType() != null) {
             self.setGuestOsType(msg.getGuestOsType());
+            update = true;
+        }
+        if (msg.getMediaType() != null) {
+            self.setMediaType(ImageMediaType.valueOf(msg.getMediaType()));
+            update = true;
+        }
+        if (msg.getFormat() != null) {
+            self.setFormat(msg.getFormat());
             update = true;
         }
         if (update) {

@@ -2690,6 +2690,8 @@ public class Api implements CloudBusEventListener {
         msg.setUuid(inv.getUuid());
         msg.setGuestOsType(inv.getGuestOsType());
         msg.setSystem(inv.isSystem());
+        msg.setFormat(inv.getFormat());
+        msg.setMediaType(inv.getMediaType());
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIUpdateImageEvent evt = sender.send(msg, APIUpdateImageEvent.class);

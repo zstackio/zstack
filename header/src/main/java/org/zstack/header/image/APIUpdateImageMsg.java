@@ -15,7 +15,27 @@ public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
     private String description;
     @APIParam(maxLength = 255, required = false)
     private String guestOsType;
+    @APIParam(maxLength = 255, validValues = {"RootVolumeTemplate", "DataVolumeTemplate", "ISO"}, required = false)
+    private String mediaType;
+    @APIParam(maxLength = 255, validValues = {"raw", "qcow2", "iso"}, required = false)
+    private String format;
     private Boolean system;
+
+    public String getMediaType() {
+        return mediaType;
+    }
+
+    public void setMediaType(String mediaType) {
+        this.mediaType = mediaType;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
 
     public String getUuid() {
         return uuid;

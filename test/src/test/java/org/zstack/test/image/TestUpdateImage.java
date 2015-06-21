@@ -60,6 +60,8 @@ public class TestUpdateImage {
         iinv.setName("1");
         iinv.setDescription("xxx");
         iinv.setGuestOsType("yyy");
+        iinv.setFormat("raw");
+        iinv.setMediaType(ImageMediaType.DataVolumeTemplate.toString());
         iinv.setSystem(true);
 
         iinv = api.updateImage(iinv);
@@ -67,5 +69,7 @@ public class TestUpdateImage {
         Assert.assertEquals("xxx", iinv.getDescription());
         Assert.assertEquals("yyy", iinv.getGuestOsType());
         Assert.assertTrue(iinv.isSystem());
+        Assert.assertEquals("raw", iinv.getFormat());
+        Assert.assertEquals(ImageMediaType.DataVolumeTemplate.toString(), iinv.getMediaType());
     }
 }
