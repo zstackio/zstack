@@ -1467,20 +1467,14 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", agentPackageName), true).getAbsolutePath();
+                            String destPath = String.format("/var/lib/zstack/kvm/%s", agentPackageName);
                             SshFileMd5Checker checker = new SshFileMd5Checker();
                             checker.setUsername(getSelf().getUsername());
                             checker.setPassword(getSelf().getPassword());
                             checker.setTargetIp(getSelf().getManagementIp());
-
-                            if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
-                                String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", agentPackageName), true).getAbsolutePath();
-                                String destPath = String.format("/var/lib/zstack/kvm/%s", agentPackageName);
-                                checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
-                                checker.addSrcDestPair(srcPath, destPath);
-                            }  else {
-                                checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", KVMGlobalProperty.VIRTUAL_ENV_PACKAGE), true).getAbsolutePath(),
-                                        String.format("/var/lib/zstack/kvm/%s", KVMGlobalProperty.VIRTUAL_ENV_PACKAGE));
-                            }
+                            checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
+                            checker.addSrcDestPair(srcPath, destPath);
 
                             AnsibleRunner runner = new AnsibleRunner();
                             runner.installChecker(checker);
@@ -1493,11 +1487,7 @@ public class KVMHost extends HostBase implements Host {
                                 runner.putArgument("init", "true");
                                 runner.setFullDeploy(true);
                             }
-                            if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
-                                runner.putArgument("pkg_kvmagent", agentPackageName);
-                            } else {
-                                runner.putArgument("virtualenv_pkg", KVMGlobalProperty.VIRTUAL_ENV_PACKAGE);
-                            }
+                            runner.putArgument("pkg_kvmagent", agentPackageName);
                             runner.putArgument("hostname", String.format("%s.zstack.org",self.getManagementIp().replaceAll("\\.", "-")));
                             runner.run(new Completion(trigger) {
                                 @Override

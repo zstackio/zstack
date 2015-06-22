@@ -162,14 +162,9 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
         checker.setTargetIp(mgmtIp);
         checker.setUsername(username);
         checker.setPrivateKey(privKey);
-        if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
-            checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/virtualrouter/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
-            checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/virtualrouter/%s", agentPackageName), true).getAbsolutePath(),
-                    String.format("/var/lib/zstack/virtualrouter/%s", agentPackageName));
-        } else {
-            checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/virtualrouter/%s", VirtualRouterGlobalProperty.VIRTUAL_ENV_PACKAGE), true).getAbsolutePath(),
-                    String.format("/var/lib/zstack/virtualrouter/%s", VirtualRouterGlobalProperty.VIRTUAL_ENV_PACKAGE));
-        }
+        checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/virtualrouter/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
+        checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/virtualrouter/%s", agentPackageName), true).getAbsolutePath(),
+                String.format("/var/lib/zstack/virtualrouter/%s", agentPackageName));
 
         AnsibleRunner runner = new AnsibleRunner();
         runner.installChecker(checker);
@@ -178,11 +173,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
         runner.setPrivateKey(privKey);
         runner.setAgentPort(VirtualRouterGlobalProperty.AGENT_PORT);
         runner.setTargetIp(mgmtIp);
-        if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
-            runner.putArgument("pkg_virtualrouter", VirtualRouterGlobalProperty.AGENT_PACKAGE_NAME);
-        } else {
-            runner.putArgument("virtualenv_pkg", VirtualRouterGlobalProperty.VIRTUAL_ENV_PACKAGE);
-        }
+        runner.putArgument("pkg_virtualrouter", agentPackageName);
         final VmNicInventory fmgmtNic = mgmtNic;
         runner.run(new Completion(chain) {
             @Override

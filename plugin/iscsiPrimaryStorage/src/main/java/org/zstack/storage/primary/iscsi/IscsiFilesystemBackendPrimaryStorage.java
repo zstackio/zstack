@@ -1003,14 +1003,9 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         checker.setTargetIp(getSelf().getHostname());
                         checker.setUsername(getSelf().getSshUsername());
                         checker.setPassword(getSelf().getSshPassword());
-                        if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
-                            checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/iscsi/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
-                            checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/iscsi/%s", IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PACKAGE_NAME), true).getAbsolutePath(),
-                                    String.format("/var/lib/zstack/iscsi/%s", IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PACKAGE_NAME));
-                        } else {
-                            checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/iscsi/%s", IscsiFileSystemBackendPrimaryStorageGlobalProperty.VIRTUAL_ENV_PACKAGE), true).getAbsolutePath(),
-                                    String.format("/var/lib/zstack/iscsi/%s", IscsiFileSystemBackendPrimaryStorageGlobalProperty.VIRTUAL_ENV_PACKAGE));
-                        }
+                        checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/iscsi/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
+                        checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/iscsi/%s", IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PACKAGE_NAME), true).getAbsolutePath(),
+                                String.format("/var/lib/zstack/iscsi/%s", IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PACKAGE_NAME));
 
                         AnsibleRunner runner = new AnsibleRunner();
                         runner.installChecker(checker);
@@ -1019,11 +1014,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         runner.setTargetIp(getSelf().getHostname());
                         runner.setAgentPort(IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PORT);
                         runner.setPlayBookName(IscsiFileSystemBackendPrimaryStorageGlobalProperty.ANSIBLE_PLAYBOOK_NAME);
-                        if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
-                            runner.putArgument("pkg_iscsiagent", IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PACKAGE_NAME);
-                        } else {
-                            runner.putArgument("virtualenv_pkg", IscsiFileSystemBackendPrimaryStorageGlobalProperty.VIRTUAL_ENV_PACKAGE);
-                        }
+                        runner.putArgument("pkg_iscsiagent", IscsiFileSystemBackendPrimaryStorageGlobalProperty.AGENT_PACKAGE_NAME);
                         runner.run(new Completion(trigger) {
                             @Override
                             public void success() {

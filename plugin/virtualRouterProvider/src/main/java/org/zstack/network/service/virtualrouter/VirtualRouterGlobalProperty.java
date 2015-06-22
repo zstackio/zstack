@@ -21,6 +21,4 @@ public class VirtualRouterGlobalProperty {
     public static List<String> TCP_PORTS_ON_MGMT_NIC;
     @GlobalProperty(name="VirtualRouter.portsOpenOnManagementNic.udp.")
     public static List<String> UDP_PORTS_ON_MGMT_NIC;
-    @GlobalProperty(name="VirtualRouter.virtualEnvPackage", defaultValue = "virtualrouter-virtualenv.tar.bz")
-    public static String VIRTUAL_ENV_PACKAGE;
 }

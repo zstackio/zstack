@@ -212,14 +212,9 @@ public class SftpBackupStorage extends BackupStorageBase {
         checker.setTargetIp(getSelf().getHostname());
         checker.setUsername(getSelf().getUsername());
         checker.setPassword(getSelf().getPassword());
-        if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
-            checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/sftpbackupstorage/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
-            checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/sftpbackupstorage/%s", agentPackageName), true).getAbsolutePath(),
-                    String.format("/var/lib/zstack/sftpbackupstorage/%s", agentPackageName));
-        } else {
-            checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/sftpbackupstorage/%s", SftpBackupStorageGlobalProperty.VIRTUAL_ENV_PACKAGE), true).getAbsolutePath(),
-                    String.format("/var/lib/zstack/sftpbackupstorage/%s", SftpBackupStorageGlobalProperty.VIRTUAL_ENV_PACKAGE));
-        }
+        checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/sftpbackupstorage/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
+        checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/sftpbackupstorage/%s", agentPackageName), true).getAbsolutePath(),
+                String.format("/var/lib/zstack/sftpbackupstorage/%s", agentPackageName));
 
         AnsibleRunner runner = new AnsibleRunner();
         runner.installChecker(checker);
@@ -228,11 +223,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         runner.setTargetIp(getSelf().getHostname());
         runner.setAgentPort(SftpBackupStorageGlobalProperty.AGENT_PORT);
         runner.setPlayBookName(SftpBackupStorageConstant.ANSIBLE_PLAYBOOK_NAME);
-        if (!AnsibleGlobalProperty.USE_PACKAGED_VIRTUAL_ENV) {
-            runner.putArgument("pkg_sftpbackupstorage", agentPackageName);
-        } else {
-            runner.putArgument("virtualenv_pkg", SftpBackupStorageGlobalProperty.VIRTUAL_ENV_PACKAGE);
-        }
+        runner.putArgument("pkg_sftpbackupstorage", agentPackageName);
         runner.run(new Completion(complete) {
             @Override
             public void success() {

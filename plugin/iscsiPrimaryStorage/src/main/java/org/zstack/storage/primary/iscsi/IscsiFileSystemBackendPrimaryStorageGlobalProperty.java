@@ -16,6 +16,4 @@ public class IscsiFileSystemBackendPrimaryStorageGlobalProperty {
     public static String ANSIBLE_PLAYBOOK_NAME;
     @GlobalProperty(name = "IscsiFileSystemBackendPrimaryStorage.ansibleModulePath", defaultValue = "ansible/iscsi")
     public static String ANSIBLE_MODULE_PATH;
-    @GlobalProperty(name = "IscsiFileSystemBackendPrimaryStorage.virtualEnvPackage", defaultValue = "iscsi-virtualenv.tar.bz")
-    public static String VIRTUAL_ENV_PACKAGE;
 }
