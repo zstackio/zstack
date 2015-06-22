@@ -23,6 +23,4 @@ public class VirtualRouterGlobalProperty {
     public static List<String> UDP_PORTS_ON_MGMT_NIC;
     @GlobalProperty(name="VirtualRouter.virtualEnvPackage", defaultValue = "virtualrouter-virtualenv.tar.bz")
     public static String VIRTUAL_ENV_PACKAGE;
-    @GlobalProperty(name="VirtualRouter.deployPackageOnReconnect", defaultValue = "false")
-    public static String DEPLOY_PACKAGE_ON_RECONNECT;
 }

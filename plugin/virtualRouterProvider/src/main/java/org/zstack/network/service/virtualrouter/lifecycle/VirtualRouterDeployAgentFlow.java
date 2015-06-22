@@ -183,7 +183,6 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
         } else {
             runner.putArgument("virtualenv_pkg", VirtualRouterGlobalProperty.VIRTUAL_ENV_PACKAGE);
         }
-        runner.putArgument("deploy_package", VirtualRouterGlobalProperty.DEPLOY_PACKAGE_ON_RECONNECT.toString());
         final VmNicInventory fmgmtNic = mgmtNic;
         runner.run(new Completion(chain) {
             @Override
