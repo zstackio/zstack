@@ -1,5 +1,13 @@
 #!/bin/bash
-pypi_path=${ZSTACK_PYPI_URL-'https://pypi.python.org/simple/'}
+current_folder=`pwd`
+relative_script_parent_path=`dirname $0`
+if [ ${relative_script_parent_path:0:1} = "/" ]; then
+    cwd=$relative_script_parent_path
+else
+    cwd=$current_folder/$relative_script_parent_path
+fi
+
+pypi_path=file://$cwd/../../../static/pypi/simple
 
 usage() {
     echo "usage:$0 [zstack-cli|zstack-ctl|zstack-dashboard]"
@@ -12,35 +20,36 @@ if [ -z $tool ]; then
   usage
 fi
 
+install_pip() {
+    pip --version | grep 7.0.3 >/dev/null || pip install --ignore-installed pip-7.0.3.tar.gz
+}
+
 install_virtualenv() {
-    which virtualenv &>/dev/null
-    if [ $? != 0 ]; then
-        pip install -i $pypi_path virtualenv
-    fi
+    virtualenv --version | grep 12.1.1 >/dev/null || pip install -i $pypi_path --ignore-installed virtualenv==12.1.1
 }
 
 PWD=`dirname $0`
 cd $PWD
 
+install_pip
+install_virtualenv
+
 if [ $tool = 'zstack-cli' ]; then
-    install_virtualenv
     CLI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackcli
-    [ ! -d $CLI_VIRENV_PATH ] && virtualenv $CLI_VIRENV_PATH
+    rm -rf $CLI_VIRENV_PATH && virtualenv $CLI_VIRENV_PATH
     . $CLI_VIRENV_PATH/bin/activate
-    pip install -i $pypi_path --ignore-installed zstacklib-*.tar.gz apibinding-*.tar.gz zstackcli-*.tar.gz || exit 1
+    pip install -i $pypi_path --trusted-host localhost --ignore-installed zstacklib-*.tar.gz apibinding-*.tar.gz zstackcli-*.tar.gz || exit 1
     chmod +x /usr/bin/zstack-cli
 elif [ $tool = 'zstack-ctl' ]; then
-    install_virtualenv
     CTL_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackctl
-    [ ! -d $CTL_VIRENV_PATH ] && virtualenv $CTL_VIRENV_PATH
+    rm -rf $CTL_VIRENV_PATH && virtualenv $CTL_VIRENV_PATH
     . $CTL_VIRENV_PATH/bin/activate
     pip install -i $pypi_path --ignore-installed zstackctl-*.tar.gz || exit 1
     chmod +x /usr/bin/zstack-ctl
 elif [ $tool = 'zstack-dashboard' ]; then
-    install_virtualenv
-    CTL_VIRENV_PATH=/var/lib/zstack/virtualenv/zstack-dashboard
-    [ ! -d $CTL_VIRENV_PATH ] && virtualenv $CTL_VIRENV_PATH
-    . $CTL_VIRENV_PATH/bin/activate
+    UI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstack-dashboard
+    rm -rf $UI_VIRENV_PATH && virtualenv $UI_VIRENV_PATH
+    . $UI_VIRENV_PATH/bin/activate
     pip install -i $pypi_path --ignore-installed zstack_dashboard-*.tar.gz || exit 1
     chmod +x /etc/init.d/zstack-dashboard
 else
