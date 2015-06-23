@@ -21,15 +21,14 @@ if [ -z $tool ]; then
 fi
 
 install_pip() {
-    pip --version | grep 7.0.3 >/dev/null || pip install --ignore-installed pip-7.0.3.tar.gz
+    pip --version | grep 7.0.3 >/dev/null || easy_install -i $pypi_path pip==7.0.3
 }
 
 install_virtualenv() {
     virtualenv --version | grep 12.1.1 >/dev/null || pip install -i $pypi_path --ignore-installed virtualenv==12.1.1
 }
 
-PWD=`dirname $0`
-cd $PWD
+cd $cwd
 
 install_pip
 install_virtualenv
