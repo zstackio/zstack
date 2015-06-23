@@ -46,6 +46,13 @@
 								<include>**/*</include>
 							</includes>
 						</resource>
+						<resource>	
+							<directory>../conf</directory>
+							<targetPath>WEB-INF/</targetPath>
+							<includes>
+                                <include>urlrewrite.xml</include>
+							</includes>
+						</resource>
 					</webResources>
 				</configuration>
 			</plugin>

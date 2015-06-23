@@ -11,6 +11,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.safeguard.Guard;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
 import org.zstack.core.workflow.*;
 import org.zstack.header.AbstractService;
@@ -439,6 +440,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     }
 
     @Override
+    @AsyncThread
     public void iJoin(String nodeId) {
         logger.debug(String.format("Management node[uuid:%s] joins, start loading host...", nodeId));
         loadHost();

@@ -15,6 +15,7 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -134,7 +135,7 @@ public class KVMHostFactory implements HypervisorFactory, Component, ManagementN
         	completeNicInfoExtensions.put(ext.getL2NetworkTypeVmNicOn(), ext);
         }
     }
-    
+
     public KVMCompleteNicInformationExtensionPoint getCompleteNicInfoExtension(L2NetworkType type) {
     	KVMCompleteNicInformationExtensionPoint extp = completeNicInfoExtensions.get(type);
     	if (extp == null) {
@@ -142,7 +143,7 @@ public class KVMHostFactory implements HypervisorFactory, Component, ManagementN
     	}
     	return extp;
     }
-    
+
 
     private void deployAnsibleModule() {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
@@ -151,7 +152,7 @@ public class KVMHostFactory implements HypervisorFactory, Component, ManagementN
 
         asf.deployModule(KVMConstant.ANSIBLE_MODULE_PATH, KVMConstant.ANSIBLE_PLAYBOOK_NAME);
     }
-    
+
     @Override
     public boolean start() {
         deployAnsibleModule();
@@ -185,7 +186,7 @@ public class KVMHostFactory implements HypervisorFactory, Component, ManagementN
     public List<KVMHostConnectExtensionPoint> getConnectExtensions() {
         return connectExtensions;
     }
-    
+
     KVMHostContext createHostContext(KVMHostVO vo) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
         ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
@@ -194,8 +195,8 @@ public class KVMHostFactory implements HypervisorFactory, Component, ManagementN
         if (!"".equals(KVMGlobalProperty.AGENT_URL_ROOT_PATH)) {
             ub.path(KVMGlobalProperty.AGENT_URL_ROOT_PATH);
         }
-        String baseUrl = ub.build().toUriString(); 
-        
+        String baseUrl = ub.build().toUriString();
+
         KVMHostContext context = new KVMHostContext();
         context.setInventory(KVMHostInventory.valueOf(vo));
         context.setBaseUrl(baseUrl);
@@ -220,6 +221,7 @@ public class KVMHostFactory implements HypervisorFactory, Component, ManagementN
     }
 
     @Override
+    @AsyncThread
     public void iJoin(String nodeId) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             return;

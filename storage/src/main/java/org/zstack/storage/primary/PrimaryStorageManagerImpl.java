@@ -14,6 +14,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -490,6 +491,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     @Override
+    @AsyncThread
     public void iJoin(String nodeId) {
         logger.debug(String.format("management node[uuid:%s] joins, starts load primary storage ...", nodeId));
         loadPrimaryStorage();

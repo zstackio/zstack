@@ -298,6 +298,9 @@ public class AnsibleRunner {
                 return;
             }
 
+            putArgument("pip_url", String.format("http://%s:8080/zstack/static/pypi/simple", Platform.getManagementServerIp()));
+            putArgument("trusted_host", Platform.getManagementServerIp());
+
             logger.debug(String.format("starts to run ansbile[%s]", playBookName));
             setupHostsFile();
             setupPublicKey();

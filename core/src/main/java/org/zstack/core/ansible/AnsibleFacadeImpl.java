@@ -52,6 +52,20 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     @Autowired
     private ThreadFacade thdf;
 
+    private void placePip703() {
+        File pip = PathUtil.findFileOnClassPath("tools/pip-7.0.3.tar.gz");
+        if (pip == null) {
+            throw new CloudRuntimeException(String.format("cannot find tools/pip-7.0.3.tar.gz on classpath"));
+        }
+
+        File root = new File(filesDir);
+        if (!root.exists()) {
+            root.mkdirs();
+        }
+
+        ShellUtils.run(String.format("yes | cp %s %s", pip.getAbsolutePath(), filesDir));
+    }
+
     void init() {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             logger.debug(String.format("skip AnsibleFacade init as it's unittest"));
@@ -89,6 +103,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 logger.debug(String.format("discovered ansible variable[%s=%s]", key, e.getValue()));
             }
 
+            placePip703();
             deployModule("ansible/zstacklib", "zstacklib.yaml");
         } catch (IOException e) {
             throw new CloudRuntimeException(e);

@@ -12,6 +12,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
@@ -49,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 public class SecurityGroupManagerImpl extends AbstractService implements SecurityGroupManager, ManagementNodeChangeListener,
           VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint {
     private static CLogger logger = Utils.getLogger(SecurityGroupManagerImpl.class);
-    
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -91,7 +92,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             } else if (hostUuids != null) {
                 return calculateByHost();
             }
-            
+
             throw new CloudRuntimeException("should not be here");
         }
 
@@ -753,7 +754,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 private void copeWithFailureHost() {
                     createFailureHostTask(h.getHostUuid());
                 }
-                
+
                 @Override
                 public void success() {
                     logger.debug(String.format("successfully applied security rules on host[uuid:%s]", h.getHostUuid()));
@@ -767,7 +768,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             });
         }
     }
-    
+
     private void handle(APIAddSecurityGroupRuleMsg msg) {
         APIAddSecurityGroupRuleEvent evt = new APIAddSecurityGroupRuleEvent(msg.getId());
 
@@ -844,12 +845,12 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             hypervisorBackends.put(backend.getSecurityGroupBackendHypervisorType().toString(), backend);
         }
     }
-    
+
     private void startFailureHostCopingThread() {
         failureHostCopingThread = thdf.submitPeriodicTask(new FailureHostWorker());
         logger.debug(String.format("security group failureHostCopingThread starts[failureHostEachTimeTake: %s, failureHostWorkerInterval: %ss]", failureHostEachTimeTake, failureHostWorkerInterval));
     }
-    
+
     private void restartFailureHostCopingThread() {
         if (failureHostCopingThread != null) {
             failureHostCopingThread.cancel(true);
@@ -993,7 +994,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             if (lst.isEmpty()) {
                 return lst;
             }
-            
+
             List<Long> ids = CollectionUtils.transformToList(lst, new Function<Long, SecurityGroupFailureHostVO>() {
                 @Override
                 public Long call(SecurityGroupFailureHostVO arg) {
@@ -1008,12 +1009,12 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             uq.executeUpdate();
             return lst;
         }
-        
+
         private void copeWithFailureHost(SecurityGroupFailureHostVO fvo) {
             fvo.setManagementNodeId(null);
             dbf.update(fvo);
         }
-        
+
         @Override
         public void run() {
             List<SecurityGroupFailureHostVO> vos = takeFailureHosts();
@@ -1059,7 +1060,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             return FailureHostWorker.class.getName();
         }
     }
-    
+
     @Override
     public void nodeJoin(String nodeId) {
     }
@@ -1073,6 +1074,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     @Override
+    @AsyncThread
     public void iJoin(String nodeId) {
         startFailureHostCopingThread();
     }
