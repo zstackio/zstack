@@ -43,13 +43,13 @@ elif [ $tool = 'zstack-ctl' ]; then
     CTL_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackctl
     rm -rf $CTL_VIRENV_PATH && virtualenv $CTL_VIRENV_PATH
     . $CTL_VIRENV_PATH/bin/activate
-    pip install -i $pypi_path --ignore-installed zstackctl-*.tar.gz || exit 1
+    pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
     chmod +x /usr/bin/zstack-ctl
 elif [ $tool = 'zstack-dashboard' ]; then
     UI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstack-dashboard
     rm -rf $UI_VIRENV_PATH && virtualenv $UI_VIRENV_PATH
     . $UI_VIRENV_PATH/bin/activate
-    pip install -i $pypi_path --ignore-installed zstack_dashboard-*.tar.gz || exit 1
+    pip install -i $pypi_path --trusted-host localhost --ignore-installed zstack_dashboard-*.tar.gz || exit 1
     chmod +x /etc/init.d/zstack-dashboard
 else
     usage
