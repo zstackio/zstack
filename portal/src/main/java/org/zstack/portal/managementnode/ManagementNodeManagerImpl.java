@@ -4,8 +4,7 @@ import com.rabbitmq.client.AlreadyClosedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.CloudBusIN;
-import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -360,7 +359,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     node = new ManagementNode();
-                    node.addListener(self);
+                    node.addNodeManagerCallback(self);
                     node.join();
                     trigger.next();
                 }

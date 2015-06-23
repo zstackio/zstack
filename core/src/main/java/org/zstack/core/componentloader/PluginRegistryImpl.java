@@ -57,14 +57,6 @@ public class PluginRegistryImpl implements PluginRegistryIN {
                     }
                     exts.add(ext);
                     extensionsByInterfaceName.put(ext.getReferenceInterface(), exts);
-
-                    List pluginInstances = new ArrayList();
-                    for (PluginExtension pe : exts) {
-                        if (!pluginInstances.contains(pe.getInstance())) {
-                            pluginInstances.add(pe.getInstance());
-                        }
-                    }
-                    extensionsByInterfaceClass.put(Class.forName(ext.getReferenceInterface()), pluginInstances);
                 } catch (Exception e) {
                     logger.warn(String.format("%s, mark extension referred to interface [%s] in bean[name=%s, class=%s] as invalid. Checking the bean XML file to fix it", e.getMessage(), ext.getReferenceInterface(), ext.getBeanName(), ext.getBeanClassName()), e);
                 }
@@ -76,10 +68,31 @@ public class PluginRegistryImpl implements PluginRegistryIN {
     public void initialize() {
         buildPluginTree();
         sortPlugins();
+        createClassPluginInstanceMap();
         logger.info("Plugin system has been initialized successfully");
     }
 
-    
+    private void createClassPluginInstanceMap() {
+        for (Map.Entry<String, List<PluginExtension>> e : extensionsByInterfaceName.entrySet()) {
+            String className = e.getKey();
+            List<PluginExtension> exts = e.getValue();
+
+            try {
+                Class clazz = Class.forName(className);
+                List instances = new ArrayList();
+                for (PluginExtension ext : exts) {
+                    if (!instances.contains(ext.getInstance())) {
+                        instances.add(ext.getInstance());
+                    }
+                }
+                extensionsByInterfaceClass.put(clazz, instances);
+            } catch (Exception ex) {
+                throw new CloudRuntimeException(ex);
+            }
+        }
+    }
+
+
     @Override
     public void processExtensions(List<PluginExtension> exts, ExtensionProcessor processor, Object[] args) {
         for (PluginExtension ext : exts) {

@@ -7,6 +7,7 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.Component;
 import org.zstack.header.console.*;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -139,6 +140,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     }
 
     @Override
+    @AsyncThread
     public void iJoin(String nodeId) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             return;

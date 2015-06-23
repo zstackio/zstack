@@ -51,17 +51,15 @@ public class ManagementNode implements CloudBusEventListener {
 
     private static final CLogger logger = Utils.getLogger(ManagementNode.class);
     private Event[] myEvents;
-    private List<ManagementNodeChangeListener> listeners = new ArrayList<ManagementNodeChangeListener>();
 
     private volatile ManagementNodeVO node = null;
     private Future<Void> heartBeatTask = null;
     private volatile AtomicBoolean isLeft = new AtomicBoolean(false);
 
-    public static final String MANAGEMENT_NODE_EVENT = "MANAGEMENT_NODE_EVENT";
-
     private JdbcTemplate jdbc;
     private Connection heartbeatDbConnection;
     private EventSubscriberReceipt unsubscriber;
+    private ManagementNodeChangeListener nodeManagerCallback;
 
     public ManagementNode() {
         myEvents = new Event[] { new ManagementNodeJoinEvent(), new ManagementNodeLeftEvent(), };
@@ -80,13 +78,7 @@ public class ManagementNode implements CloudBusEventListener {
     }
 
     private void notifyIJoin() {
-        for (ManagementNodeChangeListener l : listeners) {
-            try {
-                l.iJoin(node.getUuid());
-            } catch (Exception e) {
-                logger.warn("Exception happened while notifying listener " + l.getClass().getCanonicalName() + " that I joined", e);
-            }
-        }
+        nodeManagerCallback.iJoin(node.getUuid());
     }
 
     private void startHeartbeat() {
@@ -354,35 +346,15 @@ public class ManagementNode implements CloudBusEventListener {
     }
 
     private void notifyIAmDead() {
-        for (ManagementNodeChangeListener l : listeners) {
-            try {
-                l.iAmDead(node.getUuid());
-            } catch (Exception e) {
-                logger.warn("Exception happened while notifying listener " + l.getClass().getCanonicalName() + " that I am dead event", e);
-            }
-        }
+        nodeManagerCallback.iAmDead(node.getUuid());
     }
 
-    @SyncThread
     private void notifyNodeLeft(String nodeId) {
-        for (ManagementNodeChangeListener l : listeners) {
-            try {
-                l.nodeLeft(nodeId);
-            } catch (Exception e) {
-                logger.warn("Exception happened while notifying listener " + l.getClass().getCanonicalName() + " that node " + nodeId + " leaving event", e);
-            }
-        }
+        nodeManagerCallback.nodeLeft(nodeId);
     }
 
-    @SyncThread
     private void notifyNodeJoin(String nodeId) {
-        for (ManagementNodeChangeListener l : listeners) {
-            try {
-                l.nodeJoin(nodeId);
-            } catch (Exception e) {
-                logger.warn("Exception happened while notifying listener " + l.getClass().getCanonicalName() + " that node " + nodeId + " joining event", e);
-            }
-        }
+        nodeManagerCallback.nodeJoin(nodeId);
     }
 
     @Override
@@ -402,19 +374,7 @@ public class ManagementNode implements CloudBusEventListener {
         return false;
     }
 
-    public void addListener(ManagementNodeChangeListener l) {
-        synchronized (listeners) {
-            listeners.add(l);
-        }
-    }
-
-    public void removeListener(ManagementNodeChangeListener l) {
-        synchronized (listeners) {
-            listeners.remove(l);
-        }
-    }
-
-    public void setListeners(List<ManagementNodeChangeListener> listeners) {
-        this.listeners = listeners;
+    public void addNodeManagerCallback(ManagementNodeChangeListener l) {
+        nodeManagerCallback = l;
     }
 }
