@@ -21,7 +21,7 @@ if [ -z $tool ]; then
 fi
 
 install_pip() {
-    pip --version | grep 7.0.3 >/dev/null || easy_install -i $pypi_path --upgrade pip
+    pip --version | grep 7.0.3 >/dev/null || pip install --ignore-installed pip-7.0.3.tar.gz
 }
 
 install_virtualenv() {
