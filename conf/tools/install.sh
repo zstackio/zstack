@@ -21,36 +21,39 @@ if [ -z $tool ]; then
 fi
 
 install_pip() {
-    pip --version | grep 7.0.3 >/dev/null || pip install --ignore-installed pip-7.0.3.tar.gz
+    pip --version | grep 7.0.3 >/dev/null || easy_install -i $pypi_path --upgrade pip
 }
 
 install_virtualenv() {
     virtualenv --version | grep 12.1.1 >/dev/null || pip install -i $pypi_path --ignore-installed virtualenv==12.1.1
 }
 
-PWD=`dirname $0`
-cd $PWD
+cd $cwd
 
 install_pip
 install_virtualenv
+cd /tmp
 
 if [ $tool = 'zstack-cli' ]; then
     CLI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackcli
     rm -rf $CLI_VIRENV_PATH && virtualenv $CLI_VIRENV_PATH
     . $CLI_VIRENV_PATH/bin/activate
+    cd $cwd
     pip install -i $pypi_path --trusted-host localhost --ignore-installed zstacklib-*.tar.gz apibinding-*.tar.gz zstackcli-*.tar.gz || exit 1
     chmod +x /usr/bin/zstack-cli
 elif [ $tool = 'zstack-ctl' ]; then
     CTL_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackctl
     rm -rf $CTL_VIRENV_PATH && virtualenv $CTL_VIRENV_PATH
     . $CTL_VIRENV_PATH/bin/activate
-    pip install -i $pypi_path --ignore-installed zstackctl-*.tar.gz || exit 1
+    cd $cwd
+    pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
     chmod +x /usr/bin/zstack-ctl
 elif [ $tool = 'zstack-dashboard' ]; then
     UI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstack-dashboard
     rm -rf $UI_VIRENV_PATH && virtualenv $UI_VIRENV_PATH
     . $UI_VIRENV_PATH/bin/activate
-    pip install -i $pypi_path --ignore-installed zstack_dashboard-*.tar.gz || exit 1
+    cd $cwd
+    pip install -i $pypi_path --trusted-host localhost --ignore-installed zstack_dashboard-*.tar.gz || exit 1
     chmod +x /etc/init.d/zstack-dashboard
 else
     usage
