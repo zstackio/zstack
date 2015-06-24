@@ -63,6 +63,6 @@ public class TestKvmAttachL2Network6 {
         TimeUnit.SECONDS.sleep(3);
         config.pingSuccess = true;
         TimeUnit.SECONDS.sleep(3);
-        Assert.assertEquals(1, config.createBridgeCmds.size());
+        Assert.assertFalse(config.createBridgeCmds.isEmpty());
     }
 }

@@ -3,10 +3,12 @@ package org.zstack.test.storage.primary.iscsi;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.ThreadGlobalProperty;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -45,6 +47,7 @@ public class TestIscsiBtrfsPrimaryStorage9 {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
+        ThreadGlobalProperty.MAX_THREAD_NUM = 200;
         deployer = new Deployer("deployerXml/iscsiBtrfsPrimaryStorage/TestIscsiBtrfsPrimaryStorage1.xml", con);
         deployer.addSpringConfig("iscsiBtrfsPrimaryStorage.xml");
         deployer.addSpringConfig("iscsiFileSystemPrimaryStorageSimulator.xml");

@@ -33,6 +33,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     private Set<String> hostInTracking = Collections.synchronizedSet(new HashSet<String>());
     private Future<Void> trackerThread = null;
     private final Map<String, HostStatusEvent> hostConnectionStateEventMap = Collections.synchronizedMap(new HashMap<String, HostStatusEvent>());
+    private final List<String> inReconnectingHost = Collections.synchronizedList(new ArrayList<String>());
 
     @Autowired
     private DatabaseFacade dbf;
@@ -72,13 +73,11 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                 logger.trace(String.format("[Host Tracker]: ping host[uuid:%s], connection state[%s], %s", hostUuid, cevt, moreInfo));
             }
 
-            HostStatusEvent oevt = hostConnectionStateEventMap.get(hostUuid);
-            if (oevt == cevt) {
-                return;
-            }
+            //TODO: use hostConnectionStateEventMap to implement stopping PING after failing specific times
 
-            boolean needReconnect = oevt == HostStatusEvent.disconnected && preply.isSuccess() && HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class);
-            if (needReconnect) {
+            boolean needReconnect = cevt == HostStatusEvent.disconnected && preply.isSuccess() && HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class);
+            if (needReconnect && !inReconnectingHost.contains(hostUuid)) {
+                inReconnectingHost.add(hostUuid);
                 logger.debug(String.format("[Host Tracker]: detected host[uuid:%s] connection lost, issue a reconnect because %s is set to true",
                         hostUuid, HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.getCanonicalName()));
                 ReconnectHostMsg msg = new ReconnectHostMsg();
@@ -88,12 +87,15 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                 bus.send(msg, new CloudBusCallBack() {
                     @Override
                     public void run(MessageReply reply) {
+                        inReconnectingHost.remove(hostUuid);
+
                         if (!reply.isSuccess()) {
                             logger.warn(String.format("host[uuid:%s] failed to reconnect, %s", hostUuid, reply.getError()));
                             hostConnectionStateEventMap.put(hostUuid, HostStatusEvent.disconnected);
                         } else {
                             hostConnectionStateEventMap.put(hostUuid, HostStatusEvent.connected);
                         }
+
                     }
                 });
             } else {

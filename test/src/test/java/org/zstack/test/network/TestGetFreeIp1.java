@@ -56,7 +56,6 @@ public class TestGetFreeIp1 {
         FreeIpInventory ip1 = ips.get(20);
         Assert.assertEquals(gw, ip1.getGateway());
         Assert.assertEquals(nw, ip1.getNetmask());
-        Assert.assertEquals(ipr.getUuid(), ip1.getIpRangeUuid());
 
         ips = api.getFreeIp(null, ipr.getUuid());
         Assert.assertEquals(11, ips.size());
