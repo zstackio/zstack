@@ -82,6 +82,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
             checker.addSrcDestPair(srcPath, destPath);
 
             AnsibleRunner runner = new AnsibleRunner();
+            runner.setRunOnLocal(true);
             runner.setLocalPublicKey(true);
             runner.installChecker(checker);
             runner.setUsername("root");

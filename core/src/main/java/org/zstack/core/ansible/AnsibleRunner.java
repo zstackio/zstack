@@ -81,6 +81,15 @@ public class AnsibleRunner {
     private int agentPort;
     private boolean fullDeploy;
     private boolean localPublicKey;
+    private boolean runOnLocal;
+
+    public boolean isRunOnLocal() {
+        return runOnLocal;
+    }
+
+    public void setRunOnLocal(boolean runOnLocal) {
+        this.runOnLocal = runOnLocal;
+    }
 
     public boolean isLocalPublicKey() {
         return localPublicKey;
@@ -228,7 +237,11 @@ public class AnsibleRunner {
         msg.setPrivateKeyFile(privKeyFile);
         msg.setArguments(arguments);
         msg.setPlayBookName(playBookName);
-        bus.makeTargetServiceIdByResourceUuid(msg, AnsibleConstant.SERVICE_ID, targetIp);
+        if (runOnLocal) {
+            bus.makeLocalServiceId(msg, AnsibleConstant.SERVICE_ID);
+        } else {
+            bus.makeTargetServiceIdByResourceUuid(msg, AnsibleConstant.SERVICE_ID, targetIp);
+        }
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
