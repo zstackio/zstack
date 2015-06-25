@@ -3,6 +3,7 @@ package org.zstack.console;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.console.*;
@@ -60,7 +61,11 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setVmUuid(self.getVmInstanceUuid());
         cmd.setTargetHostname(targetHostname);
         cmd.setTargetPort(targetPort);
-        cmd.setProxyHostname(self.getProxyHostname());
+        if (!"0.0.0.0".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)) {
+            cmd.setProxyHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
+        } else {
+            cmd.setProxyHostname(self.getProxyHostname());
+        }
         cmd.setScheme(self.getScheme());
         cmd.setToken(self.getToken());
         cmd.setIdleTimeout(timeout);
