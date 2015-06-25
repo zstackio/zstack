@@ -1,14 +1,18 @@
 package org.zstack.console;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.AbstractService;
 import org.zstack.header.console.*;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -16,7 +20,10 @@ import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +35,9 @@ import java.util.Map;
  * Time: 11:51 PM
  * To change this template use File | Settings | File Templates.
  */
-public class ConsoleManagerImpl extends AbstractService implements ConsoleManager {
+public class ConsoleManagerImpl extends AbstractService implements ConsoleManager, VmInstanceMigrateExtensionPoint {
+    private static CLogger logger = Utils.getLogger(ConsoleManagerImpl.class);
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -141,5 +150,34 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
             throw new CloudRuntimeException(String.format("cannot find ConsoleHypervisorBackend[type:%s]", type.toString()));
         }
         return bkd;
+    }
+
+    @Override
+    public String preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+        return null;
+    }
+
+    @Override
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+
+    }
+
+    @Override
+    public void afterMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+        ConsoleBackend bkd = getBackend();
+        FutureCompletion completion = new FutureCompletion();
+        bkd.deleteConsoleSession(inv, completion);
+        try {
+            synchronized (completion) {
+                completion.wait(1500);
+            }
+        } catch (InterruptedException e) {
+            logger.warn(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
+
     }
 }

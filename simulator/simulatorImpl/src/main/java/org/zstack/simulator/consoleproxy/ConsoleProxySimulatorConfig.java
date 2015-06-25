@@ -1,5 +1,10 @@
 package org.zstack.simulator.consoleproxy;
 
+import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyCmd;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -11,4 +16,5 @@ public class ConsoleProxySimulatorConfig {
     public volatile boolean isAvailable = true;
     public volatile Integer proxyPort = 5900;
     public volatile boolean proxySuccess = true;
+    public List<DeleteProxyCmd> deleteProxyCmdList = new ArrayList<DeleteProxyCmd>();
 }

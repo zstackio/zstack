@@ -7,6 +7,9 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.console.*;
+import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyCmd;
+import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyRsp;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HypervisorType;
@@ -148,5 +151,38 @@ public class ConsoleProxyBase implements ConsoleProxy {
             }
 
         }, TimeUnit.SECONDS, 300);
+    }
+
+    @Override
+    public void deleteProxy(VmInstanceInventory vm, final Completion completion) {
+        DeleteProxyCmd cmd = new DeleteProxyCmd();
+        cmd.setProxyHostname(self.getProxyHostname());
+        cmd.setProxyPort(self.getProxyPort());
+        cmd.setTargetHostname(self.getTargetHostname());
+        cmd.setTargetPort(self.getTargetPort());
+        cmd.setToken(self.getToken());
+        cmd.setVmUuid(vm.getUuid());
+
+        restf.asyncJsonPost(URLBuilder.buildHttpUrl(self.getAgentIp(), agentPort, ConsoleConstants.CONSOLE_PROXY_DELETE_PROXY_PATH), cmd,
+                new JsonAsyncRESTCallback<DeleteProxyRsp>(completion) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        completion.fail(err);
+                    }
+
+                    @Override
+                    public void success(DeleteProxyRsp ret) {
+                        if (ret.isSuccess()) {
+                            completion.success();
+                        } else {
+                            completion.fail(errf.stringToOperationError(ret.getError()));
+                        }
+                    }
+
+                    @Override
+                    public Class<DeleteProxyRsp> getReturnClass() {
+                        return DeleteProxyRsp.class;
+                    }
+                });
     }
 }

@@ -13,6 +13,7 @@ public interface ConsoleConstants {
 
     public static final String CONSOLE_PROXY_ESTABLISH_PROXY_PATH = "/establish";
     public static final String CONSOLE_PROXY_CHECK_PROXY_PATH = "/check";
+    public static final String CONSOLE_PROXY_DELETE_PROXY_PATH = "/delete";
 
     public static enum ConsoleGlobalConfig {
         ProxyIdleTimeout;

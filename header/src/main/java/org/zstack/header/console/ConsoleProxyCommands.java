@@ -105,6 +105,66 @@ public interface ConsoleProxyCommands {
         }
     }
 
+    public static class DeleteProxyCmd extends AgentCommand {
+        private String token;
+        private String targetHostname;
+        private int targetPort;
+        private String proxyHostname;
+        private String vmUuid;
+        private int proxyPort;
+
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
+
+        public String getTargetHostname() {
+            return targetHostname;
+        }
+
+        public void setTargetHostname(String targetHostname) {
+            this.targetHostname = targetHostname;
+        }
+
+        public int getTargetPort() {
+            return targetPort;
+        }
+
+        public void setTargetPort(int targetPort) {
+            this.targetPort = targetPort;
+        }
+
+        public String getProxyHostname() {
+            return proxyHostname;
+        }
+
+        public void setProxyHostname(String proxyHostname) {
+            this.proxyHostname = proxyHostname;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public int getProxyPort() {
+            return proxyPort;
+        }
+
+        public void setProxyPort(int proxyPort) {
+            this.proxyPort = proxyPort;
+        }
+    }
+
+    public static class DeleteProxyRsp extends AgentResponse {
+    }
+
     public static class EstablishProxyCmd extends AgentCommand {
         private String token;
         private String targetHostname;

@@ -10,6 +10,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.Component;
 import org.zstack.header.console.*;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.SessionInventory;
@@ -39,7 +40,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
     protected static final String ANSIBLE_PLAYBOOK_NAME = "consoleproxy.yaml";
 
-    protected abstract ConsoleProxy getConsoleProxy(SessionInventory session, VmInstanceInventory vm, ConsoleProxyVO vo);
+    protected abstract ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo);
     protected abstract ConsoleProxy getConsoleProxy(SessionInventory session, VmInstanceInventory vm);
     protected abstract void connectAgent();
 
@@ -79,7 +80,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         q.add(ConsoleProxyVO_.status, SimpleQuery.Op.EQ, ConsoleProxyStatus.Active);
         final ConsoleProxyVO vo = q.find();
         if (vo != null) {
-            final ConsoleProxy proxy = getConsoleProxy(session, vm, vo);
+            final ConsoleProxy proxy = getConsoleProxy(vm, vo);
             proxy.checkAvailability(new ReturnValueCompletion<Boolean>() {
                 @Override
                 public void success(Boolean returnValue) {
@@ -107,6 +108,22 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         ConsoleProxy proxy = getConsoleProxy(session, vm);
         establishNewProxy(proxy, session, vm, complete);
     }
+
+    @Override
+    public void deleteConsoleSession(VmInstanceInventory vm, Completion completion) {
+        SimpleQuery<ConsoleProxyVO> q = dbf.createQuery(ConsoleProxyVO.class);
+        q.add(ConsoleProxyVO_.vmInstanceUuid, SimpleQuery.Op.EQ, vm.getUuid());
+        q.add(ConsoleProxyVO_.status, SimpleQuery.Op.EQ, ConsoleProxyStatus.Active);
+        final ConsoleProxyVO vo = q.find();
+        if (vo != null) {
+            ConsoleProxy proxy = getConsoleProxy(vm, vo);
+            proxy.deleteProxy(vm, completion);
+            dbf.remove(vo);
+            logger.debug(String.format("deleted a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s",
+                    vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort()));
+        }
+    }
+
 
     private void deploySaltState() {
         if (CoreGlobalProperty.UNIT_TEST_ON) {

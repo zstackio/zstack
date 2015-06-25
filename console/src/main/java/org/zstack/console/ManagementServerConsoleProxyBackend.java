@@ -10,10 +10,7 @@ import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.salt.SaltFacade;
 import org.zstack.core.salt.SaltRunner;
 import org.zstack.core.thread.AsyncThread;
-import org.zstack.header.console.ConsoleConstants;
-import org.zstack.header.console.ConsoleProxy;
-import org.zstack.header.console.ConsoleProxyInventory;
-import org.zstack.header.console.ConsoleProxyVO;
+import org.zstack.header.console.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -40,13 +37,13 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     private int agentPort = 7758;
     private String agentPackageName = ConsoleGlobalPropery.AGENT_PACKAGE_NAME;
 
-    protected ConsoleProxy getConsoleProxy(SessionInventory session, VmInstanceInventory vm, ConsoleProxyVO vo) {
+    protected ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo) {
         return new ConsoleProxyBase(vo, getAgentPort());
     }
 
     @Override
     protected ConsoleProxy getConsoleProxy(SessionInventory session, VmInstanceInventory vm) {
-        String mgmtIp = Platform.getManagementServerIp();
+        String mgmtIp = CoreGlobalProperty.UNIT_TEST_ON ? "127.0.0.1" : Platform.getManagementServerIp();
         ConsoleProxyInventory inv = new ConsoleProxyInventory();
         inv.setScheme("http");
         inv.setProxyHostname(mgmtIp);
@@ -111,6 +108,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     public String getConsoleBackendType() {
         return ConsoleConstants.MANAGEMENT_SERVER_CONSOLE_PROXY_BACKEND;
     }
+
 
     public int getAgentPort() {
         return agentPort;

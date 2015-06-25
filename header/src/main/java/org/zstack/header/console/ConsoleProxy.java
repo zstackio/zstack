@@ -1,5 +1,6 @@
 package org.zstack.header.console;
 
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -14,4 +15,6 @@ public interface ConsoleProxy {
     void establishProxy(SessionInventory session, VmInstanceInventory vm, ReturnValueCompletion<ConsoleProxyInventory> completion);
 
     void checkAvailability(ReturnValueCompletion<Boolean> completion);
+
+    void deleteProxy(VmInstanceInventory vm, Completion completion);
 }

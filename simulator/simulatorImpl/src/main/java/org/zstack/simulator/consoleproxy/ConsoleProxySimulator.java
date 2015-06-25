@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.console.ConsoleConstants;
 import org.zstack.header.console.ConsoleProxyCommands;
+import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyCmd;
+import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyRsp;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.simulator.AsyncRESTReplyer;
 import org.zstack.utils.Utils;
@@ -67,6 +69,20 @@ public class ConsoleProxySimulator {
             logger.debug(String.format("successfully establish console proxy %s at port %s", JSONObjectUtil.toJsonString(cmd), config.proxyPort));
         }
 
+        replyer.reply(entity, rsp);
+    }
+
+    @RequestMapping(value= ConsoleConstants.CONSOLE_PROXY_DELETE_PROXY_PATH, method=RequestMethod.POST)
+    public @ResponseBody String delete(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        delete(entity);
+        return null;
+    }
+
+    private void delete(HttpEntity<String> entity) {
+        DeleteProxyCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteProxyCmd.class);
+        config.deleteProxyCmdList.add(cmd);
+        DeleteProxyRsp rsp = new DeleteProxyRsp();
         replyer.reply(entity, rsp);
     }
 }
