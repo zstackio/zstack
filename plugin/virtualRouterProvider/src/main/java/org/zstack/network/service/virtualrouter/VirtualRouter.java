@@ -137,7 +137,9 @@ public class VirtualRouter extends ApplianceVmBase {
                 restf.asyncJsonPost(vrMgr.buildUrl(vr.getManagementNic().getIp(), VirtualRouterConstant.VR_PING), cmd, new JsonAsyncRESTCallback<PingRsp>(msg, chain) {
                     @Override
                     public void fail(ErrorCode err) {
-                        reply.setError(err);
+                        reply.setDoReconnect(true);
+                        reply.setConnected(false);
+                        logger.warn(String.format("failed to ping the virtual router vm[uuid:%s], %s. We will reconnect it soon", self.getUuid(), reply.getError()));
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -343,7 +345,7 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void rollback(FlowTrigger trigger, Map data) {
                 self = dbf.reload(self);
-                getSelf().setStatus(originStatus);
+                getSelf().setStatus(ApplianceVmStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);
                 trigger.rollback();
             }

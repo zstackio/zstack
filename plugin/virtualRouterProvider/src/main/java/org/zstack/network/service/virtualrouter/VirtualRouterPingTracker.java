@@ -8,6 +8,7 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.tacker.PingTracker;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
@@ -112,6 +113,7 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
     }
 
     @Override
+    @AsyncThread
     public void iJoin(String nodeId) {
         trackOurs();
     }
