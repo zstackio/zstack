@@ -30,9 +30,18 @@ public class VirtualRouterCommands {
 	}
 
     public static class InitCommand extends AgentCommand {
+		private String uuid;
         private int restartDnsmasqAfterNumberOfSIGUSER1;
 
-        public int getRestartDnsmasqAfterNumberOfSIGUSER1() {
+		public String getUuid() {
+			return uuid;
+		}
+
+		public void setUuid(String uuid) {
+			this.uuid = uuid;
+		}
+
+		public int getRestartDnsmasqAfterNumberOfSIGUSER1() {
             return restartDnsmasqAfterNumberOfSIGUSER1;
         }
 
@@ -508,4 +517,28 @@ public class VirtualRouterCommands {
 
     public static class SyncEipRsp extends AgentResponse {
     }
+
+	public static class PingCmd extends AgentCommand {
+		private String uuid;
+
+		public String getUuid() {
+			return uuid;
+		}
+
+		public void setUuid(String uuid) {
+			this.uuid = uuid;
+		}
+	}
+
+	public static class PingRsp extends AgentResponse {
+		private String uuid;
+
+		public String getUuid() {
+			return uuid;
+		}
+
+		public void setUuid(String uuid) {
+			this.uuid = uuid;
+		}
+	}
 }

@@ -31,4 +31,8 @@
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterReconnect"/>
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDMZ"/>
     <TestCase class="org.zstack.test.virtualrouter.TestQueryVirtualRouterVm"/>
+	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPing"/>
+	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPing1"/>
+	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPing2"/>
+	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPing3"/>
 </UnitTestSuiteConfig>

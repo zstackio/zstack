@@ -118,6 +118,13 @@ public abstract class PingTracker implements Component {
         }
     }
 
+    public void untrackAll() {
+        synchronized (resourceUuids) {
+            resourceUuids.clear();
+            logger.debug(String.format("untrack all %s", getResourceName()));
+        }
+    }
+
     public void untrack(String resUuid) {
         synchronized (resourceUuids) {
             resourceUuids.remove(resUuid);

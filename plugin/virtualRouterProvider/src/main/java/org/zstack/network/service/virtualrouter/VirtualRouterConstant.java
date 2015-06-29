@@ -35,6 +35,7 @@ public interface VirtualRouterConstant {
     public static final String VR_REMOVE_EIP = "/removeeip";
     public static final String VR_SYNC_EIP = "/synceip";
     public static final String VR_INIT = "/init";
+	public static final String VR_PING = "/ping";
 
 	public static final String VR_CREATE_VIP = "/createvip";
 	public static final String VR_REMOVE_VIP = "/removevip";

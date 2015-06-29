@@ -16,4 +16,8 @@ public class VirtualRouterGlobalConfig {
     public static GlobalConfig COMMANDS_PARALELLISM_DEGREE = new GlobalConfig(CATEGORY, "command.parallelismDegree");
     @GlobalConfigValidation
     public static GlobalConfig RESTART_DNSMASQ_COUNT = new GlobalConfig(CATEGORY, "dnsmasq.restartAfterNumberOfSIGUSER1");
+    @GlobalConfigValidation
+    public static GlobalConfig PING_INTERVAL = new GlobalConfig(CATEGORY, "ping.interval");
+    @GlobalConfigValidation
+    public static GlobalConfig PING_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "ping.parallelismDegree");
 }

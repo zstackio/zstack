@@ -11,6 +11,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.*;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
@@ -18,7 +19,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 
 import java.util.LinkedHashMap;
@@ -33,6 +37,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
     static {
         allowedOperations.addState(VmInstanceState.Running, APIReconnectVirtualRouterMsg.class.getName());
+        allowedOperations.addState(VmInstanceState.Running, ReconnectVirtualRouterVmMsg.class.getName());
     }
 
     @Autowired
@@ -51,6 +56,11 @@ public class VirtualRouter extends ApplianceVmBase {
     public VirtualRouter(VirtualRouterVmVO vo) {
         super(vo);
         vr = new VirtualRouterVmInventory(vo);
+    }
+
+    @Override
+    protected VmInstanceInventory getSelfInventory() {
+        return VirtualRouterVmInventory.valueOf(getSelf());
     }
 
     @Override
@@ -96,9 +106,116 @@ public class VirtualRouter extends ApplianceVmBase {
     protected void handleLocalMessage(Message msg) {
         if (msg instanceof VirtualRouterAsyncHttpCallMsg) {
             handle((VirtualRouterAsyncHttpCallMsg) msg);
+        } else if (msg instanceof ReconnectVirtualRouterVmMsg) {
+            handle((ReconnectVirtualRouterVmMsg) msg);
+        } else if (msg instanceof PingVirtualRouterVmMsg) {
+            handle((PingVirtualRouterVmMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final PingVirtualRouterVmMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final PingVirtualRouterVmReply reply = new PingVirtualRouterVmReply();
+                if (VmInstanceState.Running != self.getState() || ApplianceVmStatus.Connecting == getSelf().getStatus()) {
+                    reply.setDoReconnect(false);
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                PingCmd cmd = new PingCmd();
+                cmd.setUuid(self.getUuid());
+                restf.asyncJsonPost(vrMgr.buildUrl(vr.getManagementNic().getIp(), VirtualRouterConstant.VR_PING), cmd, new JsonAsyncRESTCallback<PingRsp>(msg, chain) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        reply.setError(err);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void success(PingRsp ret) {
+                        reply.setDoReconnect(true);
+                        if (!ret.isSuccess()) {
+                            logger.warn(String.format("failed to ping the virtual router vm[uuid:%s], %s. We will reconnect it soon", self.getUuid(), ret.getError()));
+                            reply.setConnected(false);
+                        } else {
+                            boolean connected = self.getUuid().equals(ret.getUuid());
+                            if (!connected) {
+                                logger.warn(String.format("a signature lost on the virtual router vm[uuid:%s] changed, it's probably caused by the agent restart. We will issue a reconnect soon", self.getUuid()));
+                            }
+                            reply.setConnected(connected);
+                        }
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public Class<PingRsp> getReturnClass() {
+                        return PingRsp.class;
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "ping-virtual-router";
+            }
+        });
+
+
+    }
+
+    private void handle(final ReconnectVirtualRouterVmMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final ReconnectVirtualRouterVmReply reply = new ReconnectVirtualRouterVmReply();
+
+                refreshVO();
+                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    reply.setError(allowed);
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                reconnect(new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("reconnect-virtual-router-%s", self.getUuid());
+            }
+        });
     }
 
     private void handle(final VirtualRouterAsyncHttpCallMsg msg) {
@@ -162,9 +279,29 @@ public class VirtualRouter extends ApplianceVmBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                reconnect(msg, new NoErrorCompletion(chain) {
+                final APIReconnectVirtualRouterEvent evt = new APIReconnectVirtualRouterEvent(msg.getId());
+
+                refreshVO();
+                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    evt.setErrorCode(allowed);
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+
+                reconnect(new Completion(msg, chain) {
                     @Override
-                    public void done() {
+                    public void success() {
+                        evt.setInventory((ApplianceVmInventory) getSelfInventory());
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setErrorCode(errorCode);
+                        bus.publish(evt);
                         chain.next();
                     }
                 });
@@ -177,18 +314,7 @@ public class VirtualRouter extends ApplianceVmBase {
         });
     }
 
-    private void reconnect(APIReconnectVirtualRouterMsg msg, final NoErrorCompletion completion) {
-        final APIReconnectVirtualRouterEvent evt = new APIReconnectVirtualRouterEvent(msg.getId());
-
-        refreshVO();
-        ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
-        if (allowed != null) {
-            evt.setErrorCode(allowed);
-            bus.publish(evt);
-            completion.done();
-            return;
-        }
-
+    private void reconnect(final Completion completion) {
         FlowChain chain = vrMgr.getReconnectFlowChain();
         chain.setName(String.format("reconnect-virtual-router-%s", self.getUuid()));
         chain.getData().put(VirtualRouterConstant.Param.VR.toString(), vr);
@@ -230,20 +356,16 @@ public class VirtualRouter extends ApplianceVmBase {
                 self = dbf.updateAndRefresh(self);
                 trigger.next();
             }
-        }).done(new FlowDoneHandler(msg, completion) {
+        }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
                 self = dbf.reload(self);
-                evt.setInventory(getInventory());
-                bus.publish(evt);
-                completion.done();
+                completion.success();
             }
-        }).error(new FlowErrorHandler(msg, completion) {
+        }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setErrorCode(errCode);
-                bus.publish(evt);
-                completion.done();
+                completion.fail(errCode);
             }
         }).start();
     }

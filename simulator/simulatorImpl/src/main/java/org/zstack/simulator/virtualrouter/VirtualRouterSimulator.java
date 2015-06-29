@@ -71,6 +71,7 @@ public class VirtualRouterSimulator {
     private void doInit(HttpEntity<String> entity) {
         InitCommand cmd = JSONObjectUtil.toObject(entity.getBody(), InitCommand.class);
         config.initCommands.add(cmd);
+        config.uuid = cmd.getUuid();
         replyer.reply(entity, new InitRsp());
     }
 
@@ -266,6 +267,19 @@ public class VirtualRouterSimulator {
     private @ResponseBody
     String echo(HttpServletRequest req) {
         logger.debug("virtual router connected");
+        return null;
+    }
+
+    @RequestMapping(value = VirtualRouterConstant.VR_PING, method = RequestMethod.POST)
+    private @ResponseBody
+    String ping(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), PingCmd.class);
+        config.pingCmds.add(cmd);
+
+        PingRsp rsp = new PingRsp();
+        rsp.setUuid(config.uuid);
+        replyer.reply(entity, rsp);
         return null;
     }
 

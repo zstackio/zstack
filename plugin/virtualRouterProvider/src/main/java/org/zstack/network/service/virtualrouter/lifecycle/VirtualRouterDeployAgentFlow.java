@@ -49,6 +49,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
     private String agentPackageName = VirtualRouterGlobalProperty.AGENT_PACKAGE_NAME;
 
 	private void continueConnect(final VmNicInventory mgmtNic, final Map<String, Object> data, final FlowTrigger completion) {
+        final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("virtual-router-%s-continue-connecting", mgmtNic.getVmInstanceUuid()));
         chain.then(new ShareFlow() {
@@ -81,6 +82,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                     public void run(final FlowTrigger trigger, Map data) {
                         String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_INIT);
                         InitCommand cmd = new InitCommand();
+                        cmd.setUuid(vr.getUuid());
                         cmd.setRestartDnsmasqAfterNumberOfSIGUSER1(VirtualRouterGlobalConfig.RESTART_DNSMASQ_COUNT.value(Integer.class));
                         restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
                             @Override

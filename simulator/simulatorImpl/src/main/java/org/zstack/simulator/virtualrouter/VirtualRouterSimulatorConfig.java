@@ -32,4 +32,6 @@ public class VirtualRouterSimulatorConfig {
 	public volatile List<PortForwardingRuleTO> removedPortForwardingRules = new ArrayList<PortForwardingRuleTO>();
 	public volatile List<VipTO> vips = new ArrayList<VipTO>();
 	public volatile List<VipTO> removedVips = new ArrayList<VipTO>();
+	public volatile List<PingCmd> pingCmds = new ArrayList<PingCmd>();
+	public volatile String uuid;
 }

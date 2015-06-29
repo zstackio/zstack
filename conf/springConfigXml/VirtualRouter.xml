@@ -35,6 +35,7 @@
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterSyncVipForNewCreateFlow</value>
                 <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterSyncPortForwardingRulesOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.eip.VirtualRouterSyncEipOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.lifecycle.TrackVirtualRouterVmFlow</value>
             </list>
         </property>
 
@@ -70,6 +71,7 @@
                 <value>org.zstack.network.service.virtualrouter.eip.VirtualRouterCleanupEipOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterCleanupPortforwardingOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCleanupVipOnDestroyFlow</value>
+                <value>org.zstack.network.service.virtualrouter.lifecycle.UntrackVirtualRouterVmFlow</value>
             </list>
         </property>
 
@@ -94,6 +96,13 @@
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkCreateExtensionPoint" />
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
             <zstack:extension interface="org.zstack.header.query.AddExpandedQueryExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VirtualRouterPingTracker" class="org.zstack.network.service.virtualrouter.VirtualRouterPingTracker">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
         </zstack:plugin>
     </bean>
 
