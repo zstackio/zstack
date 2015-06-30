@@ -984,7 +984,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                     Object value = tuple.get(i);
                     Field f = info.allFieldsMap.get(fname);
                     try {
-                        if (String.class.isAssignableFrom(f.getType())) {
+                        if (value != null && String.class.isAssignableFrom(f.getType())) {
                             value = value.toString();
                         }
                         f.set(inv, value);

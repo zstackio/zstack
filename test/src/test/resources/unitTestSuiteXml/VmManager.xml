@@ -40,6 +40,7 @@
 	<TestCase class="org.zstack.test.compute.vm.TestQueryVm2"/>
     <TestCase class="org.zstack.test.compute.vm.TestQueryVm3"/>
     <TestCase class="org.zstack.test.compute.vm.TestQueryVm4"/>
+	<TestCase class="org.zstack.test.compute.vm.TestQueryVm5"/>
 	<TestCase class="org.zstack.test.compute.vm.TestQueryVmNic"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStaticIp"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStaticIp1"/>

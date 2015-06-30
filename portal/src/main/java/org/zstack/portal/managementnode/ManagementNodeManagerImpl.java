@@ -566,7 +566,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
         
         if (isNodeRunning == NODE_FAILED) {
-            logger.debug(String.format("error happened when starting node, stop management node now"));
+            logger.debug(String.format("error happened when starting node, stop the management node now"));
             stop();
             throw new CloudRuntimeException("failed to start management node");
         }
