@@ -74,4 +74,5 @@
     <import resource="springConfigXml/mediator.xml" />
     <import resource="springConfigXml/jmx.xml" />
     <import resource="springConfigXml/iscsiBtrfsPrimaryStorage.xml" />
+    <import resource="springConfigXml/localStorage.xml" />
 </beans>

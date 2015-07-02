@@ -11,38 +11,43 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
-	<bean id="LocalStorageFactory" class="org.zstack.storage.primary.local.LocalStorageFactory">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageFactory" />
-			<zstack:extension interface="org.zstack.header.Component" />
-			<zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint" />
-		</zstack:plugin>
-	</bean>
+    <bean id="LocalStorageFactory" class="org.zstack.storage.primary.local.LocalStorageFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageFactory" />
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 
-	<bean id="LocalStorageAllocatorFactory" class="org.zstack.storage.primary.local.LocalStorageAllocatorFactory">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.Component" />
-			<zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory" />
-		</zstack:plugin>
+    <bean id="LocalStorageAllocatorFactory" class="org.zstack.storage.primary.local.LocalStorageAllocatorFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory" />
+        </zstack:plugin>
 
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.storage.primary.local.LocalStorageMainAllocatorFlow</value>
             </list>
         </property>
-	</bean>
+    </bean>
 
-	<bean id="LocalStorageKvmSftpBackupStorageMediatorImpl" class="org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.Component" />
-			<zstack:extension interface="org.zstack.storage.primary.local.LocalStorageBackupStorageMediator" />
-		</zstack:plugin>
-	</bean>
+    <bean id="LocalStorageKvmSftpBackupStorageMediatorImpl" class="org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.primary.local.LocalStorageBackupStorageMediator" />
+        </zstack:plugin>
+    </bean>
 
-	<bean id="LocalStorageKvmFactory" class="org.zstack.storage.primary.local.LocalStorageKvmFactory">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.storage.primary.local.LocalStorageHypervisorFactory" />
-		</zstack:plugin>
-	</bean>
+    <bean id="LocalStorageKvmFactory" class="org.zstack.storage.primary.local.LocalStorageKvmFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.primary.local.LocalStorageHypervisorFactory" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="LocalStorageApiInterceptor" class="org.zstack.storage.primary.local.LocalStorageApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
 
 </beans>

@@ -5,6 +5,8 @@ import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateVolumeFromC
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.GetPhysicalCapacityCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.InitCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpUploadBitsCmd;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,8 +18,8 @@ import java.util.Map;
  */
 public class LocalStorageSimulatorConfig {
     public static class Capacity {
-        long total;
-        long avail;
+        public long total;
+        public long avail;
     }
 
     public Map<String, Capacity> capacityMap = new HashMap<String, Capacity>();
@@ -26,4 +28,6 @@ public class LocalStorageSimulatorConfig {
     public List<CreateEmptyVolumeCmd> createEmptyVolumeCmds = new ArrayList<CreateEmptyVolumeCmd>();
     public List<CreateVolumeFromCacheCmd> createVolumeFromCacheCmds = new ArrayList<CreateVolumeFromCacheCmd>();
     public List<DeleteBitsCmd> deleteBitsCmds = new ArrayList<DeleteBitsCmd>();
+    public List<SftpUploadBitsCmd> uploadBitsCmds = new ArrayList<SftpUploadBitsCmd>();
+    public List<SftpDownloadBitsCmd> downloadBitsCmds = new ArrayList<SftpDownloadBitsCmd>();
 }

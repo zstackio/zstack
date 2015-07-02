@@ -37,6 +37,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, PrimaryStorag
 
     @Override
     public PrimaryStorageInventory createPrimaryStorage(PrimaryStorageVO vo, APIAddPrimaryStorageMsg msg) {
+        vo.setMountPath(msg.getUrl());
         vo = dbf.persistAndRefresh(vo);
         return PrimaryStorageInventory.valueOf(vo);
     }

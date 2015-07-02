@@ -398,7 +398,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         final BackupStorageInventory bsInv = BackupStorageInventory.valueOf(bs);
         final VolumeInventory volume = msg.getVolume();
-        final String hostUuid = getHostUuidByResourceUuid(volume.getUuid(), VolumeVO.class.getSimpleName());
+        final String hostUuid = msg.getDestHost().getUuid();
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("kvm-localstorage-create-root-volume-from-image-%s", image.getUuid()));

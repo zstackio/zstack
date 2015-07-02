@@ -15,12 +15,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for NfsPrimaryStorageConfig complex type.
+ * <p>Java class for LocalPrimaryStorageConfig complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="NfsPrimaryStorageConfig">
+ * &lt;complexType name="LocalPrimaryStorageConfig">
  *   &lt;complexContent>
  *     &lt;extension base="{http://zstack.org/schema/zstack}PrimaryStorageConfigBase">
  *       &lt;attribute name="placeHolder" type="{http://www.w3.org/2001/XMLSchema}string" />
@@ -32,8 +32,8 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "NfsPrimaryStorageConfig")
-public class NfsPrimaryStorageConfig
+@XmlType(name = "LocalPrimaryStorageConfig")
+public class LocalPrimaryStorageConfig
     extends PrimaryStorageConfigBase
 {
 

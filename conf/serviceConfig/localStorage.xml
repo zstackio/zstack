@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>storage.primary</id>
+
+    <message>
+        <name>org.zstack.storage.primary.local.APIAddLocalPrimaryStorageMsg</name>
+    </message>
+
+</service>

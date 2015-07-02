@@ -19,3 +19,20 @@ CREATE TABLE  `zstack`.`LocalStorageResourceRefVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`primaryStorageUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# Foreign keys for table LocalStorageHostRefVO
+
+ALTER TABLE LocalStorageHostRefVO ADD CONSTRAINT fkLocalStorageHostRefVOHostEO FOREIGN KEY (hostUuid) REFERENCES HostEO (uuid) ON DELETE CASCADE;
+ALTER TABLE LocalStorageHostRefVO ADD CONSTRAINT fkLocalStorageHostRefVOPrimaryStorageEO FOREIGN KEY (primaryStorageUuid) REFERENCES PrimaryStorageEO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table LocalStorageResourceRefVO
+
+ALTER TABLE LocalStorageResourceRefVO ADD CONSTRAINT fkLocalStorageResourceRefVOHostEO FOREIGN KEY (hostUuid) REFERENCES HostEO (uuid) ON DELETE CASCADE;
+ALTER TABLE LocalStorageResourceRefVO ADD CONSTRAINT fkLocalStorageResourceRefVOPrimaryStorageEO FOREIGN KEY (primaryStorageUuid) REFERENCES PrimaryStorageEO (uuid) ON DELETE CASCADE;
+
+# Index for table LocalStorageHostRefVO
+
+CREATE INDEX idxLocalStorageHostRefVOtotalCapacity ON LocalStorageHostRefVO (totalCapacity);
+CREATE INDEX idxLocalStorageHostRefVOavailableCapacity ON LocalStorageHostRefVO (availableCapacity);
+CREATE INDEX idxLocalStorageHostRefVOtotalPhysicalCapacity ON LocalStorageHostRefVO (totalPhysicalCapacity);
+CREATE INDEX idxLocalStorageHostRefVOavailablePhysicalCapacity ON LocalStorageHostRefVO (availablePhysicalCapacity);

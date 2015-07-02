@@ -9,6 +9,10 @@ import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsRsp;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.GetPhysicalCapacityCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.InitCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsRsp;
+import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpUploadBitsCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpUploadBitsRsp;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -121,6 +125,24 @@ public class LocalStorageSimulator {
         config.deleteBitsCmds.add(cmd);
         DeleteBitsRsp rsp = new DeleteBitsRsp();
         reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String download(HttpEntity<String> entity) {
+        SftpDownloadBitsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SftpDownloadBitsCmd.class);
+        config.downloadBitsCmds.add(cmd);
+        reply(entity, new SftpDownloadBitsRsp());
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmSftpBackupStorageMediatorImpl.UPLOAD_BIT_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String upload(HttpEntity<String> entity) {
+        SftpUploadBitsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SftpUploadBitsCmd.class);
+        config.uploadBitsCmds.add(cmd);
+        reply(entity, new SftpUploadBitsRsp());
         return null;
     }
 }

@@ -9,6 +9,7 @@
             <xsd:element name="simulatorPrimaryStorage" type="SimulatorPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
             <xsd:element name="nfsPrimaryStorage" type="NfsPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
             <xsd:element name="iscsiBtrfsPrimaryStorage" type="IscsiFileSystemPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="localPrimaryStorage" type="LocalPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
@@ -36,6 +37,14 @@
     </xsd:complexType>
 
     <xsd:complexType name="NfsPrimaryStorageConfig">
+        <xsd:complexContent>
+            <xsd:extension base="PrimaryStorageConfigBase">
+                <xsd:attribute name="placeHolder" type="xsd:string"></xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="LocalPrimaryStorageConfig">
         <xsd:complexContent>
             <xsd:extension base="PrimaryStorageConfigBase">
                 <xsd:attribute name="placeHolder" type="xsd:string"></xsd:attribute>
