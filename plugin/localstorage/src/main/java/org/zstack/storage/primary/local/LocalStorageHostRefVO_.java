@@ -1,3 +1,5 @@
+package org.zstack.storage.primary.local;
+
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
@@ -7,7 +9,7 @@ import java.sql.Timestamp;
  */
 @StaticMetamodel(LocalStorageHostRefVO.class)
 public class LocalStorageHostRefVO_ {
-    public static volatile SingularAttribute<LocalStorageHostRefVO, String> uuid;
+    public static volatile SingularAttribute<LocalStorageHostRefVO, String> primaryStorageUuid;
     public static volatile SingularAttribute<LocalStorageHostRefVO, String> hostUuid;
     public static volatile SingularAttribute<LocalStorageHostRefVO, Timestamp> createDate;
     public static volatile SingularAttribute<LocalStorageHostRefVO, Timestamp> lastOpDate;

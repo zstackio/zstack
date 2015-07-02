@@ -9,6 +9,24 @@ public class DeleteBitsOnPrimaryStorageMsg extends NeedReplyMessage implements P
     private String installPath;
     private String hypervisorType;
     private boolean folder;
+    private String bitsUuid;
+    private String bitsType;
+
+    public String getBitsUuid() {
+        return bitsUuid;
+    }
+
+    public void setBitsUuid(String bitsUuid) {
+        this.bitsUuid = bitsUuid;
+    }
+
+    public String getBitsType() {
+        return bitsType;
+    }
+
+    public void setBitsType(String bitsType) {
+        this.bitsType = bitsType;
+    }
 
     public boolean isFolder() {
         return folder;

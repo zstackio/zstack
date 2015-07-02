@@ -99,5 +99,7 @@
         <class>org.zstack.network.service.virtualrouter.VirtualRouterVmVO</class>
         <class>org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageVO</class>
         <class>org.zstack.storage.primary.iscsi.IscsiIsoVO</class>
+        <class>org.zstack.storage.primary.local.LocalStorageResourceRefVO</class>
+        <class>org.zstack.storage.primary.local.LocalStorageHostRefVO</class>
     </persistence-unit>
 </persistence>

@@ -1,3 +1,5 @@
+package org.zstack.storage.primary.local;
+
 import org.zstack.header.host.HostEO;
 import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.vo.ForeignKey;
@@ -19,7 +21,7 @@ public class LocalStorageHostRefVO {
     @Column
     @Id
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
-    private String uuid;
+    private String primaryStorageUuid;
 
     @Column
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
@@ -47,12 +49,12 @@ public class LocalStorageHostRefVO {
     @Column
     private Timestamp lastOpDate;
 
-    public String getUuid() {
-        return uuid;
+    public String getPrimaryStorageUuid() {
+        return primaryStorageUuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
     }
 
     public String getHostUuid() {

@@ -210,8 +210,8 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
                         UploadToSftpResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(UploadToSftpResponse.class);
                         if (!rsp.isSuccess()) {
                             completion.fail(errf.stringToOperationError(
-                                    String.format(String.format("failed to download[%s] from SftpBackupStorage[hostname:%s] to nfs primary storage[uuid:%s, path:%s], %s",
-                                            backupStorageInstallPath, hostname, pinv.getUuid(), primaryStorageInstallPath, rsp.getError()))));
+                                    String.format(String.format("failed to upload bits from nfs primary storage[uuid:%s, path:%s] to SFTP backup storage[hostname:%s, path: %s], %s",
+                                            pinv.getUuid(), primaryStorageInstallPath, hostname,  backupStorageInstallPath, rsp.getError()))));
                             return;
                         }
 

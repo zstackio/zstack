@@ -1,7 +1,7 @@
 package org.zstack.header.storage.primary;
 
 public interface PrimaryStorageAllocatorStrategyFactory {
-	PrimaryStorageAllocatorStrategyType getPrimaryStorageAlloactorStrategyType();
+	PrimaryStorageAllocatorStrategyType getPrimaryStorageAllocatorStrategyType();
 
-	PrimaryStorageAllocatorStrategy getPrimaryStorageAlloactorStrategy();
+	PrimaryStorageAllocatorStrategy getPrimaryStorageAllocatorStrategy();
 }

@@ -1,3 +1,5 @@
+package org.zstack.storage.primary.local;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +19,7 @@ public class LocalStorageHostRefInventory {
 
     public static LocalStorageHostRefInventory valueOf(LocalStorageHostRefVO vo) {
         LocalStorageHostRefInventory inv = new LocalStorageHostRefInventory();
-        inv.setUuid(vo.getUuid());
+        inv.setUuid(vo.getPrimaryStorageUuid());
         inv.setHostUuid(vo.getHostUuid());
         inv.setAvailableCapacity(vo.getAvailableCapacity());
         inv.setAvailablePhysicalCapacity(vo.getAvailablePhysicalCapacity());

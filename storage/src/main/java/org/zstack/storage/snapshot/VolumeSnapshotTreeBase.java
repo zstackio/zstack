@@ -536,6 +536,8 @@ public class VolumeSnapshotTreeBase {
                             dmsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(getSelfInventory().getFormat()).toString());
                             dmsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                             dmsg.setInstallPath(info.bitsInstallPath);
+                            dmsg.setBitsType(VolumeVO.class.getSimpleName());
+                            dmsg.setBitsUuid(msg.getVolumeUuid());
                             bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, dmsg.getPrimaryStorageUuid());
                             bus.send(dmsg);
                         }

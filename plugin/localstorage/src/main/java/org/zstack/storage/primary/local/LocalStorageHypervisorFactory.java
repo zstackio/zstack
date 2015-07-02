@@ -1,3 +1,5 @@
+package org.zstack.storage.primary.local;
+
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 
 /**

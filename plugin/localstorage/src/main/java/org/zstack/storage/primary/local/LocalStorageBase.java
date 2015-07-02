@@ -1,3 +1,5 @@
+package org.zstack.storage.primary.local;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -11,10 +13,13 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.PrimaryStorageBase;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
@@ -37,43 +42,142 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(InstantiateVolumeMsg msg) {
+    protected void handle(final InstantiateVolumeMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHost().getUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
 
+        bkd.handle(msg, new ReturnValueCompletion<InstantiateVolumeReply>(msg) {
+            @Override
+            public void success(InstantiateVolumeReply returnValue) {
+                createResourceRefVO(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName(), msg.getDestHost().getUuid());
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                InstantiateVolumeReply reply = new InstantiateVolumeReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void deleteResourceRefVO(String resourceUuid) {
+        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
+        q.add(LocalStorageResourceRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, resourceUuid);
+        LocalStorageResourceRefVO ref = q.find();
+        dbf.remove(ref);
+    }
+
+    private void createResourceRefVO(String resUuid, String resType, String hostUuid) {
+        LocalStorageResourceRefVO ref = new LocalStorageResourceRefVO();
+        ref.setPrimaryStorageUuid(self.getUuid());
+        ref.setResourceType(resType);
+        ref.setResourceUuid(resUuid);
+        ref.setHostUuid(hostUuid);
+        dbf.persist(ref);
     }
 
     @Override
-    protected void handle(DeleteVolumeOnPrimaryStorageMsg msg) {
+    protected void handle(final DeleteVolumeOnPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(DeleteVolumeOnPrimaryStorageReply returnValue) {
+                deleteResourceRefVO(msg.getVolume().getUuid());
+                bus.reply(msg, returnValue);
+            }
 
+            @Override
+            public void fail(ErrorCode errorCode) {
+                DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
     protected void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
-
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getVolumeInventory().getUuid(), VolumeVO.class.getSimpleName());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg);
     }
 
     @Override
     protected void handle(DownloadDataVolumeToPrimaryStorageMsg msg) {
-
     }
 
     @Override
-    protected void handle(DeleteBitsOnPrimaryStorageMsg msg) {
+    protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(DeleteBitsOnPrimaryStorageReply returnValue) {
+                deleteResourceRefVO(msg.getBitsUuid());
+                bus.reply(msg, returnValue);
+            }
 
+            @Override
+            public void fail(ErrorCode errorCode) {
+                DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
-    protected void handle(DownloadIsoToPrimaryStorageMsg msg) {
+    protected void handle(final DownloadIsoToPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<DownloadIsoToPrimaryStorageReply>(msg) {
+            @Override
+            public void success(DownloadIsoToPrimaryStorageReply returnValue) {
+                createResourceRefVO(msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName(), msg.getDestHostUuid());
+                bus.reply(msg, returnValue);
+            }
 
+            @Override
+            public void fail(ErrorCode errorCode) {
+                DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
-    protected void handle(DeleteIsoFromPrimaryStorageMsg msg) {
+    protected void handle(final DeleteIsoFromPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<DeleteIsoFromPrimaryStorageReply>(msg) {
+            @Override
+            public void success(DeleteIsoFromPrimaryStorageReply returnValue) {
+                deleteResourceRefVO(msg.getIsoSpec().getInventory().getUuid());
+                bus.reply(msg, returnValue);
+            }
 
+            @Override
+            public void fail(ErrorCode errorCode) {
+                DeleteIsoFromPrimaryStorageReply reply = new DeleteIsoFromPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
     protected void handle(AskVolumeSnapshotCapabilityMsg msg) {
-
+        AskVolumeSnapshotCapabilityReply reply = new AskVolumeSnapshotCapabilityReply();
+        VolumeSnapshotCapability capability = new VolumeSnapshotCapability();
+        capability.setSupport(true);
+        capability.setArrangementType(VolumeSnapshotArrangementType.CHAIN);
+        reply.setCapability(capability);
+        bus.reply(msg, reply);
     }
 
     @Transactional
@@ -153,7 +257,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 fc = new FactoryCluster();
                 fc.factory = getHypervisorBackendFactory(c.getHypervisorType());
                 fc.clusters = new ArrayList<ClusterInventory>();
-                m.put(c.getHypervisorType(), fc)
+                m.put(c.getHypervisorType(), fc);
             }
 
             fc.clusters.add(ClusterInventory.valueOf(c));
@@ -277,6 +381,32 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
 
         new Sync().sync();
+    }
+
+    private LocalStorageHypervisorFactory getHypervisorBackendFactoryByHostUuid(String hostUuid) {
+        SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
+        q.select(HostVO_.hypervisorType);
+        q.add(HostVO_.uuid, Op.EQ, hostUuid);
+        String hvType = q.findValue();
+        return getHypervisorBackendFactory(hvType);
+    }
+
+    @Transactional(readOnly = true)
+    private LocalStorageHypervisorFactory getHypervisorBackendFactoryByResourceUuid(String resUuid, String resourceType) {
+        String sql = "select host.hypervisorType from HostVO host, LocalStorageResourceRefVO ref where ref.hostUuid = host.uuid and ref.resourceUuid = :resUuid and ref.primaryStorageUuid = :puuid";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("resUuid", resUuid);
+        q.setParameter("puuid", self.getUuid());
+        List<String> ret = q.getResultList();
+        if (ret.isEmpty()) {
+            throw new CloudRuntimeException(String.format("resource[uuid:%s, type: %s] is not on the local primary storage[uuid:%s]", resUuid, resourceType, self.getUuid()));
+        }
+        if (ret.size() != 1) {
+            throw new CloudRuntimeException(String.format("resource[uuid:%s, type: %s] on the local primary storage[uuid:%s] maps to multiple hypervisor%s", resUuid, resourceType, self.getUuid(), ret));
+        }
+
+        String hvType = ret.get(0);
+        return getHypervisorBackendFactory(hvType);
     }
 
     private LocalStorageHypervisorFactory getHypervisorBackendFactory(String hvType) {

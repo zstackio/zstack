@@ -20,12 +20,12 @@ public class DefaultPrimaryStorageAllocatorFactory implements PrimaryStorageAllo
     }
 
     @Override
-	public PrimaryStorageAllocatorStrategyType getPrimaryStorageAlloactorStrategyType() {
+	public PrimaryStorageAllocatorStrategyType getPrimaryStorageAllocatorStrategyType() {
 		return type;
 	}
 
 	@Override
-	public PrimaryStorageAllocatorStrategy getPrimaryStorageAlloactorStrategy() {
+	public PrimaryStorageAllocatorStrategy getPrimaryStorageAllocatorStrategy() {
 		return strategy;
 	}
 

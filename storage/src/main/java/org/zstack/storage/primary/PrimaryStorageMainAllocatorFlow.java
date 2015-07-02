@@ -42,7 +42,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("status", PrimaryStorageStatus.Connected);
             query.setParameter("size", spec.getSize());
             query.setParameter("priUuid", spec.getRequiredPrimaryStorageUuid());
-            errorInfo = String.format("required primary storage[uuid:%s] can not satisfying conditions[state:%s, status:%s, size:%s]",
+            errorInfo = String.format("required primary storage[uuid:%s] cannot satisfy conditions[state:%s, status:%s, size:%s]",
                     spec.getRequiredPrimaryStorageUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredHostUuid() != null) {
             String sql = "select pri from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host, PrimaryStorageCapacityVO cap where pri.uuid = cap.uuid and host.uuid = :huuid" +

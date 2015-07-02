@@ -287,11 +287,22 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private void handle(AllocatePrimaryStorageMsg msg) {
         AllocatePrimaryStorageReply reply = new AllocatePrimaryStorageReply(null);
-        String allocatorStrategyType = msg.getAllocationStrategy() == null ? PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE : msg.getAllocationStrategy();
+        String allocatorStrategyType = null;
+        for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
+            allocatorStrategyType = ext.getPrimaryStorageAllocatorStrategyName(msg);
+            if (allocatorStrategyType != null) {
+                break;
+            }
+        }
+
+        if (allocatorStrategyType == null) {
+            allocatorStrategyType = msg.getAllocationStrategy() == null ? PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE : msg.getAllocationStrategy();
+        }
+
         PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAlloactorStrategyFactory(
                 PrimaryStorageAllocatorStrategyType.valueOf(allocatorStrategyType)
         );
-        PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAlloactorStrategy();
+        PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
         PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
         spec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
         spec.setVmInstanceUuid(msg.getVmInstanceUuid());
@@ -378,12 +389,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private void populateExtensions() {
         for (PrimaryStorageAllocatorStrategyFactory f : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyFactory.class)) {
-            PrimaryStorageAllocatorStrategyFactory old = allocatorFactories.get(f.getPrimaryStorageAlloactorStrategyType().toString());
+            PrimaryStorageAllocatorStrategyFactory old = allocatorFactories.get(f.getPrimaryStorageAllocatorStrategyType().toString());
             if (old != null) {
                 throw new CloudRuntimeException(String.format("duplicate PrimaryStorageAlloactorStrategyFactory[%s, %s] for type[%s]",
-                        f.getClass().getName(), old.getClass().getName(), f.getPrimaryStorageAlloactorStrategyType()));
+                        f.getClass().getName(), old.getClass().getName(), f.getPrimaryStorageAllocatorStrategyType()));
             }
-            allocatorFactories.put(f.getPrimaryStorageAlloactorStrategyType().toString(), f);
+            allocatorFactories.put(f.getPrimaryStorageAllocatorStrategyType().toString(), f);
         }
 
         for (PrimaryStorageFactory f : pluginRgty.getExtensionList(PrimaryStorageFactory.class)) {

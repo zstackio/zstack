@@ -10,6 +10,15 @@ public class DownloadIsoToPrimaryStorageMsg extends NeedReplyMessage implements 
     private String primaryStorageUuid;
     private ImageSpec isoSpec;
     private String vmInstanceUuid;
+    private String destHostUuid;
+
+    public String getDestHostUuid() {
+        return destHostUuid;
+    }
+
+    public void setDestHostUuid(String destHostUuid) {
+        this.destHostUuid = destHostUuid;
+    }
 
     public String getVmInstanceUuid() {
         return vmInstanceUuid;

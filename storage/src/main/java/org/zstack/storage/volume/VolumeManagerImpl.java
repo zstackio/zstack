@@ -365,6 +365,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
                         if (primaryStorageInstallPath != null) {
                             DeleteBitsOnPrimaryStorageMsg delMsg = new DeleteBitsOnPrimaryStorageMsg();
                             delMsg.setInstallPath(PathUtil.parentFolder(primaryStorageInstallPath));
+                            delMsg.setBitsUuid(vol.getUuid());
+                            delMsg.setBitsType(VolumeVO.class.getSimpleName());
                             delMsg.setFolder(true);
                             delMsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
                             delMsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat()).toString());
