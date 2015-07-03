@@ -3,8 +3,8 @@ package org.zstack.network.service.vip;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.workflow.FlowTrigger;
-import org.zstack.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 

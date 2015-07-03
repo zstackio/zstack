@@ -1,15 +1,17 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.With;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.ChainTask;
@@ -29,7 +31,6 @@ import org.zstack.header.image.ImageEO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
-import org.zstack.header.network.l3.L3Network;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
@@ -76,6 +77,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected AccountManager acntMgr;
     @Autowired
     protected EventFacade evtf;
+    @Autowired
+    protected PluginRegistry pluginRgty;
 
 
     protected VmInstanceVO self;
@@ -97,10 +100,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         self = changeVmStateInDb(VmInstanceStateEvent.destroying);
         final VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+        VmInstanceSpec spec = buildSpecFromInventory(inv);
 
         FlowChain chain = getDestroyVmWorkFlowChain(inv);
+        chain = marshalChain(chain, spec);
+
         chain.setName(String.format("destroy-vm-%s", self.getUuid()));
-        VmInstanceSpec spec = buildSpecFromInventory(inv);
         spec.setCurrentVmOperation(VmOperation.Destroy);
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(completion) {
@@ -853,6 +858,27 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    protected FlowChain marshalChain(FlowChain chain, VmInstanceSpec spec) {
+        for (MarshalVmOperationFlowExtensionPoint mext : pluginRgty.getExtensionList(MarshalVmOperationFlowExtensionPoint.class)) {
+            FlowChain nchan = mext.marshalVmOperationFlows(chain, spec);
+            if (nchan != null) {
+                List<String> flowNames = CollectionUtils.transformToList(nchan.getFlows(), new Function<String, Flow>() {
+                    @Override
+                    public String call(Flow arg) {
+                        return String.format("[%s]", arg.getClass());
+                    }
+                });
+
+                logger.debug(String.format("VM[uuid: %s] operation flows[%s] are marshaled by the extension[%s]. The new flows are:\n %s",
+                        self.getUuid(), spec.getCurrentVmOperation(), mext.getClass(), StringUtils.join(flowNames, "\n")));
+
+                return nchan;
+            }
+        }
+
+        return chain;
+    }
+
     protected void startVmFromNewCreate(final StartNewCreatedVmInstanceMsg msg, final SyncTaskChain taskChain) {
         boolean callNext = true;
         try {
@@ -919,6 +945,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
             FlowChain chain = getCreateVmWorkFlowChain(msg.getVmInstanceInventory());
+            chain = marshalChain(chain, spec);
+
             chain.setName(String.format("create-vm-%s", self.getUuid()));
             chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
             chain.done(new FlowDoneHandler(msg, taskChain) {
@@ -1313,6 +1341,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setCurrentVmOperation(VmOperation.Start);
 
         FlowChain chain = getStartVmWorkFlowChain(inv);
+        chain = marshalChain(chain, spec);
+
         chain.setName(String.format("start-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(completion) {
@@ -1610,6 +1640,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setMessage(msg);
         spec.setCurrentVmOperation(VmOperation.Reboot);
         FlowChain chain = getRebootVmWorkFlowChain(inv);
+        chain = marshalChain(chain, spec);
+
         chain.setName(String.format("reboot-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
 
@@ -1725,6 +1757,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setMessage(msg);
         spec.setCurrentVmOperation(VmOperation.Stop);
         FlowChain chain = getStopVmWorkFlowChain(inv);
+        chain = marshalChain(chain, spec);
+
         chain.setName(String.format("stop-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(completion) {

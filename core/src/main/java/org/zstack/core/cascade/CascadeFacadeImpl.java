@@ -5,6 +5,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.workflow.*;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Bucket;

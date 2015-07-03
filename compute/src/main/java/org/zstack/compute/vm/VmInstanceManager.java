@@ -1,7 +1,6 @@
 package org.zstack.compute.vm;
 
-import org.zstack.core.workflow.FlowChain;
-import org.zstack.header.Service;
+import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.vm.VmInstanceFactory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceType;

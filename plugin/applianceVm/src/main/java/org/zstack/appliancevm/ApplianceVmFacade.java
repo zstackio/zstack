@@ -1,12 +1,11 @@
 package org.zstack.appliancevm;
 
-import org.zstack.core.workflow.Flow;
+import org.zstack.header.core.workflow.Flow;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicInventory;
 
 import java.util.List;
 import java.util.Map;

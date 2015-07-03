@@ -8,7 +8,7 @@ import org.zstack.compute.vm.VmInstanceBase;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.workflow.*;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -601,6 +601,8 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
             FlowChain chain = apvmf.getCreateApplianceVmWorkFlowBuilder().build();
+            chain = marshalChain(chain, spec);
+
             chain.setName(String.format("create-appliancevm-%s", msg.getVmInstanceUuid()));
             chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
             chain.getData().put(ApplianceVmConstant.Params.applianceVmFirewallRules.toString(), aspec.getFirewallRules());

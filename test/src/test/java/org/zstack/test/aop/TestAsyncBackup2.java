@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBusIN;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.thread.AsyncThread;
-import org.zstack.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Service;
 import org.zstack.header.core.AsyncBackup;

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -109,6 +110,35 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
     @Override
     public FlowChain insert(int pos, Flow flow) {
         flows.add(pos, flow);
+        return this;
+    }
+
+    @Override
+    public FlowChain replaceFlowByClassName(String name, Flow flow) {
+        List<Flow> n = new ArrayList<Flow>();
+        for (Flow f : flows) {
+            if (name.equals(f.getClass().getName())) {
+                n.add(flow);
+            } else {
+                n.add(f);
+            }
+        }
+
+        flows = n;
+        return this;
+    }
+
+    @Override
+    public FlowChain deleteFlowByClassName(String name) {
+        List<Flow> n = new ArrayList<Flow>();
+
+        for (Flow f : flows) {
+            if (!name.equals(f.getClass().getName())) {
+                n.add(f);
+            }
+        }
+
+        flows = n;
         return this;
     }
 

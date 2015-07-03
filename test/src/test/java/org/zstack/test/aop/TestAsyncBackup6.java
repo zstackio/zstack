@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.thread.AsyncThread;
-import org.zstack.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.test.BeanConstructor;

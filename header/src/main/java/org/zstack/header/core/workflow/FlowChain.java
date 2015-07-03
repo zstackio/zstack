@@ -1,4 +1,4 @@
-package org.zstack.core.workflow;
+package org.zstack.header.core.workflow;
 
 import java.util.List;
 import java.util.Map;
@@ -11,6 +11,10 @@ public interface FlowChain {
     FlowChain insert(Flow flow);
 
     FlowChain insert(int pos, Flow flow);
+
+    FlowChain replaceFlowByClassName(String name, Flow flow);
+
+    FlowChain deleteFlowByClassName(String name);
 
     FlowChain then(Flow flow);
 

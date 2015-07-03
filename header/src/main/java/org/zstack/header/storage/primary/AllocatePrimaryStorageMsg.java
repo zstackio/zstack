@@ -2,6 +2,7 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.NeedReplyMessage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
@@ -15,6 +16,23 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private String primaryStorageUuid;
     private String vmInstanceUuid;
     private String diskOfferingUuid;
+    private List<String> avoidPrimaryStorageUuids;
+
+    public List<String> getAvoidPrimaryStorageUuids() {
+        return avoidPrimaryStorageUuids;
+    }
+
+    public void setAvoidPrimaryStorageUuids(List<String> avoidPrimaryStorageUuids) {
+        this.avoidPrimaryStorageUuids = avoidPrimaryStorageUuids;
+    }
+
+    public void addVoidPrimaryStoratgeUuid(String priUuid) {
+        if (avoidPrimaryStorageUuids == null) {
+            avoidPrimaryStorageUuids = new ArrayList<String>();
+        }
+
+        avoidPrimaryStorageUuids.add(priUuid);
+    }
 
     public String getVmInstanceUuid() {
         return vmInstanceUuid;

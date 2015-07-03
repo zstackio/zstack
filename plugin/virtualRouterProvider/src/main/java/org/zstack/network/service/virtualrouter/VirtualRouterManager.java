@@ -1,7 +1,7 @@
 package org.zstack.network.service.virtualrouter;
 
-import org.zstack.core.workflow.Flow;
-import org.zstack.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.network.l3.L3NetworkInventory;

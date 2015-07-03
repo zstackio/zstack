@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;

@@ -47,6 +47,7 @@
                 <value>org.zstack.compute.allocator.AvoidHostAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.TagAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.LeastVmPreferredAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.FilterFlow</value>
             </list>
         </property>
     </bean>
@@ -66,6 +67,7 @@
                 <value>org.zstack.compute.allocator.HostPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.AvoidHostAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.TagAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.FilterFlow</value>
             </list>
         </property>
     </bean>
@@ -87,6 +89,7 @@
                 <value>org.zstack.compute.allocator.AvoidHostAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.TagAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.LastHostPreferredAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.FilterFlow</value>
             </list>
         </property>
     </bean> 
@@ -107,6 +110,7 @@
                 <value>org.zstack.compute.allocator.AvoidHostAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.TagAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.LastHostPreferredAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.FilterFlow</value>
             </list>
         </property>
     </bean> 

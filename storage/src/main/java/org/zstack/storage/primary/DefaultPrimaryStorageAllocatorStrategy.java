@@ -1,9 +1,9 @@
 package org.zstack.storage.primary;
 
-import org.zstack.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.core.workflow.FlowDoneHandler;
-import org.zstack.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.storage.primary.PrimaryStorageAllocationSpec;

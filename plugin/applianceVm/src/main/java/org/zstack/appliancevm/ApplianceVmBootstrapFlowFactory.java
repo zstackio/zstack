@@ -1,6 +1,6 @@
 package org.zstack.appliancevm;
 
-import org.zstack.core.workflow.Flow;
+import org.zstack.header.core.workflow.Flow;
 
 /**
  */

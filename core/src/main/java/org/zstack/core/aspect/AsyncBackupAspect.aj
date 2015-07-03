@@ -5,7 +5,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -161,7 +161,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.core.workflow.FlowDoneHandler+.handle(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.workflow.FlowDoneHandler+.handle(*)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -169,7 +169,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.core.workflow.FlowErrorHandler+.handle(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.workflow.FlowErrorHandler+.handle(*)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {

@@ -7,9 +7,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.Component;
+import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.vm.MarshalVmOperationFlowExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.vm.VmInstanceSpec;
 
 import javax.persistence.TypedQuery;
 import java.util.HashMap;
@@ -20,7 +24,7 @@ import java.util.concurrent.Callable;
 /**
  * Created by frank on 6/30/2015.
  */
-public class LocalStorageFactory implements PrimaryStorageFactory, PrimaryStorageAllocatorStrategyExtensionPoint, Component {
+public class LocalStorageFactory implements PrimaryStorageFactory, Component, MarshalVmOperationFlowExtensionPoint {
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
     @Autowired
@@ -50,39 +54,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, PrimaryStorag
     @Override
     public PrimaryStorageInventory getInventory(String uuid) {
         return PrimaryStorageInventory.valueOf(dbf.findByUuid(uuid, PrimaryStorageVO.class));
-    }
-
-    @Override
-    public String getPrimaryStorageAllocatorStrategyName(final AllocatePrimaryStorageMsg msg) {
-        String allocatorType = null;
-        if (msg.getPrimaryStorageUuid() != null) {
-            SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
-            q.select(PrimaryStorageVO_.type);
-            q.add(PrimaryStorageVO_.uuid, Op.EQ, msg.getPrimaryStorageUuid());
-            String type = q.findValue();
-            if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(type)) {
-                allocatorType = LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
-            }
-        } else if (msg.getHostUuid() != null) {
-            allocatorType = new Callable<String>() {
-                @Override
-                @Transactional(readOnly = true)
-                public String call() {
-                    String sql = "select ps.type from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref, HostVO host where ps.uuid = ref.primaryStorageUuid and ref.clusterUuid = host.clusterUuid and host.uuid = :huuid";
-                    TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                    q.setParameter("huuid", msg.getHostUuid());
-                    List<String> types = q.getResultList();
-                    for (String type : types) {
-                        if (type.equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)) {
-                            return LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
-                        }
-                    }
-                    return null;
-                }
-            }.call();
-        }
-
-        return allocatorType;
     }
 
     private String makeMediatorKey(String hvType, String bsType) {
@@ -120,5 +91,14 @@ public class LocalStorageFactory implements PrimaryStorageFactory, PrimaryStorag
     @Override
     public boolean stop() {
         return true;
+    }
+
+    @Override
+    public FlowChain marshalVmOperationFlows(FlowChain chain, VmInstanceSpec spec) {
+        if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
+
+        }
+
+        return chain;
     }
 }

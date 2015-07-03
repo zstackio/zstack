@@ -3,6 +3,9 @@ package org.zstack.test.core.workflow;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.zstack.core.workflow.*;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

@@ -15,6 +15,7 @@ import org.zstack.core.workflow.*;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.Service;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.managementnode.IsManagementNodeReadyMsg;
 import org.zstack.header.managementnode.IsManagementNodeReadyReply;

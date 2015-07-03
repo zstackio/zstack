@@ -1,5 +1,7 @@
 package org.zstack.core.workflow;
 
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.exception.CloudRuntimeException;
 
 import java.util.ArrayList;

@@ -18,8 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
-	private static final CLogger logger = Utils.getLogger(HostPrimaryStorageAllocatorFlow.class);
-
     @Autowired
     private DatabaseFacade dbf;
 

@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.workflow.FlowTrigger;
-import org.zstack.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 
 import java.util.List;

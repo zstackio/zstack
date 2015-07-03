@@ -1,8 +1,8 @@
 package org.zstack.simulator;
 
 import org.zstack.appliancevm.ApplianceVmBootstrapFlowFactory;
-import org.zstack.core.workflow.Flow;
-import org.zstack.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.simulator.SimulatorConstant;
 
 import java.util.Map;
