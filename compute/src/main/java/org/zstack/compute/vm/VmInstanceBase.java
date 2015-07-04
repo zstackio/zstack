@@ -1,6 +1,5 @@
 package org.zstack.compute.vm;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
@@ -103,7 +102,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         VmInstanceSpec spec = buildSpecFromInventory(inv);
 
         FlowChain chain = getDestroyVmWorkFlowChain(inv);
-        chain = marshalChain(chain, spec);
+        setFlowMarshaller(chain);
 
         chain.setName(String.format("destroy-vm-%s", self.getUuid()));
         spec.setCurrentVmOperation(VmOperation.Destroy);
@@ -858,25 +857,24 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    protected FlowChain marshalChain(FlowChain chain, VmInstanceSpec spec) {
-        for (MarshalVmOperationFlowExtensionPoint mext : pluginRgty.getExtensionList(MarshalVmOperationFlowExtensionPoint.class)) {
-            FlowChain nchan = mext.marshalVmOperationFlows(chain, spec);
-            if (nchan != null) {
-                List<String> flowNames = CollectionUtils.transformToList(nchan.getFlows(), new Function<String, Flow>() {
-                    @Override
-                    public String call(Flow arg) {
-                        return String.format("[%s]", arg.getClass());
+    protected void setFlowMarshaller(FlowChain chain) {
+        chain.setFlowMarshaller(new FlowMarshaller() {
+            @Override
+            public Flow marshalTheNextFlow(String previousFlowClassName, String nextFlowClassName, FlowChain chain, Map data) {
+                Flow nflow = null;
+                for (MarshalVmOperationFlowExtensionPoint mext : pluginRgty.getExtensionList(MarshalVmOperationFlowExtensionPoint.class)) {
+                    VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+                    nflow = mext.marshalVmOperationFlow(previousFlowClassName, nextFlowClassName, chain, spec);
+                    if (nflow != null) {
+                        logger.debug(String.format("a VM[uuid: %s, operation: %s] operation flow[%s] is changed to the flow[%s] by %s",
+                                self.getUuid(), spec.getCurrentVmOperation(), nextFlowClassName, nflow.getClass(), mext.getClass()));
+                        break;
                     }
-                });
+                }
 
-                logger.debug(String.format("VM[uuid: %s] operation flows[%s] are marshaled by the extension[%s]. The new flows are:\n %s",
-                        self.getUuid(), spec.getCurrentVmOperation(), mext.getClass(), StringUtils.join(flowNames, "\n")));
-
-                return nchan;
+                return nflow;
             }
-        }
-
-        return chain;
+        });
     }
 
     protected void startVmFromNewCreate(final StartNewCreatedVmInstanceMsg msg, final SyncTaskChain taskChain) {
@@ -945,7 +943,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
             FlowChain chain = getCreateVmWorkFlowChain(msg.getVmInstanceInventory());
-            chain = marshalChain(chain, spec);
+            setFlowMarshaller(chain);
 
             chain.setName(String.format("create-vm-%s", self.getUuid()));
             chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
@@ -1341,7 +1339,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setCurrentVmOperation(VmOperation.Start);
 
         FlowChain chain = getStartVmWorkFlowChain(inv);
-        chain = marshalChain(chain, spec);
+        setFlowMarshaller(chain);
 
         chain.setName(String.format("start-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
@@ -1640,7 +1638,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setMessage(msg);
         spec.setCurrentVmOperation(VmOperation.Reboot);
         FlowChain chain = getRebootVmWorkFlowChain(inv);
-        chain = marshalChain(chain, spec);
+        setFlowMarshaller(chain);
 
         chain.setName(String.format("reboot-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
@@ -1757,7 +1755,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setMessage(msg);
         spec.setCurrentVmOperation(VmOperation.Stop);
         FlowChain chain = getStopVmWorkFlowChain(inv);
-        chain = marshalChain(chain, spec);
+        setFlowMarshaller(chain);
 
         chain.setName(String.format("stop-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);

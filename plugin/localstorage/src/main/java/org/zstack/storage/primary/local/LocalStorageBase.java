@@ -13,6 +13,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -21,8 +22,11 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.utils.data.SizeUnit;
 
 import javax.persistence.LockModeType;
+import javax.persistence.Query;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
@@ -42,25 +46,131 @@ public class LocalStorageBase extends PrimaryStorageBase {
         super(self);
     }
 
+    @Transactional
+    protected void reserveCapacityOnHost(String hostUuid, long size) {
+        String sql = "select ref from LocalStorageHostRefVO ref where ref.hostUuid = :huuid";
+        TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
+        q.setParameter("huuid", hostUuid);
+        q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        List<LocalStorageHostRefVO> refs = q.getResultList();
+
+        if (refs.isEmpty()) {
+            throw new CloudRuntimeException(String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]", hostUuid, self.getUuid()));
+        }
+
+        LocalStorageHostRefVO ref = refs.get(0);
+        long avail = ref.getAvailableCapacity() - size;
+        if (avail < 0) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity[current: %s bytes, needed: %s]",
+                            hostUuid, self.getUuid(), size, ref.getAvailableCapacity())
+            ));
+        }
+
+        ref.setAvailableCapacity(avail);
+        dbf.getEntityManager().merge(ref);
+    }
+
+    @Transactional
+    protected void returnCapacityToHost(String hostUuid, long size) {
+        String sql = "select ref from LocalStorageHostRefVO ref where ref.hostUuid = :huuid";
+        TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
+        q.setParameter("huuid", hostUuid);
+        q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        List<LocalStorageHostRefVO> refs = q.getResultList();
+
+        if (refs.isEmpty()) {
+            throw new CloudRuntimeException(String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]", hostUuid, self.getUuid()));
+        }
+
+        LocalStorageHostRefVO ref = refs.get(0);
+        ref.setAvailableCapacity(ref.getAvailableCapacity() + size);
+        dbf.getEntityManager().merge(ref);
+    }
+
+    @Transactional
+    protected void returnCapacityToHostByResourceUuid(String resUuid) {
+        String sql = "select href, ref from LocalStorageHostRefVO href, LocalStorageResourceRefVO ref where href.hostUuid = ref.hostUuid and ref.resourceUuid = :resUuid and ref.primaryStorageUuid = :puuid";
+        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        q.setParameter("resUuid", resUuid);
+        q.setParameter("puuid", self.getUuid());
+        Tuple ref = q.getSingleResult();
+
+        LocalStorageHostRefVO href = ref.get(0, LocalStorageHostRefVO.class);
+        LocalStorageResourceRefVO rref = ref.get(1, LocalStorageResourceRefVO.class);
+
+        href.setAvailableCapacity(href.getAvailableCapacity() + rref.getSize());
+        dbf.getEntityManager().merge(ref);
+    }
+
     @Override
     protected void handle(final InstantiateVolumeMsg msg) {
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHost().getUuid());
-        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
 
-        bkd.handle(msg, new ReturnValueCompletion<InstantiateVolumeReply>(msg) {
-            @Override
-            public void success(InstantiateVolumeReply returnValue) {
-                createResourceRefVO(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName(), msg.getDestHost().getUuid());
-                bus.reply(msg, returnValue);
-            }
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("instantiate-volume-%s-local-primary-storage-%s", msg.getVolume().getUuid(), self.getUuid()));
+        chain.then(new ShareFlow() {
+            InstantiateVolumeReply reply;
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                InstantiateVolumeReply reply = new InstantiateVolumeReply();
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "allocate-capacity-on-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        reserveCapacityOnHost(msg.getDestHost().getUuid(), msg.getVolume().getSize());
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowTrigger trigger, Map data) {
+                        returnCapacityToHost(msg.getDestHost().getUuid(), msg.getVolume().getSize());
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "instantiate-volume-on-host";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        bkd.handle(msg, new ReturnValueCompletion<InstantiateVolumeReply>(msg) {
+                            @Override
+                            public void success(InstantiateVolumeReply returnValue) {
+                                reply = returnValue;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        createResourceRefVO(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName(),
+                                msg.getVolume().getSize(), msg.getDestHost().getUuid());
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        InstantiateVolumeReply reply = new InstantiateVolumeReply();
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     private void deleteResourceRefVO(String resourceUuid) {
@@ -71,9 +181,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
         dbf.remove(ref);
     }
 
-    private void createResourceRefVO(String resUuid, String resType, String hostUuid) {
+    private void createResourceRefVO(String resUuid, String resType, long size, String hostUuid) {
         LocalStorageResourceRefVO ref = new LocalStorageResourceRefVO();
         ref.setPrimaryStorageUuid(self.getUuid());
+        ref.setSize(size);
         ref.setResourceType(resType);
         ref.setResourceUuid(resUuid);
         ref.setHostUuid(hostUuid);
@@ -82,22 +193,65 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final DeleteVolumeOnPrimaryStorageMsg msg) {
-        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName());
-        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, new ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply>(msg) {
-            @Override
-            public void success(DeleteVolumeOnPrimaryStorageReply returnValue) {
-                deleteResourceRefVO(msg.getVolume().getUuid());
-                bus.reply(msg, returnValue);
-            }
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("delete-volume-%s-local-primary-storage-%s", msg.getVolume().getUuid(), self.getUuid()));
+        chain.then(new ShareFlow() {
+            DeleteVolumeOnPrimaryStorageReply reply;
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-volume-on-host";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName());
+                        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+                        bkd.handle(msg, new ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply>(msg) {
+                            @Override
+                            public void success(DeleteVolumeOnPrimaryStorageReply returnValue) {
+                                reply = returnValue;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "return-capacity-to-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        returnCapacityToHostByResourceUuid(msg.getVolume().getUuid());
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        deleteResourceRefVO(msg.getVolume().getUuid());
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
-        });
+        }).start();
+
+
     }
 
     @Override
@@ -113,62 +267,194 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
-        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
-        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, new ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply>(msg) {
-            @Override
-            public void success(DeleteBitsOnPrimaryStorageReply returnValue) {
-                deleteResourceRefVO(msg.getBitsUuid());
-                bus.reply(msg, returnValue);
-            }
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("delete-bits-on-local-primary-storage-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            DeleteBitsOnPrimaryStorageReply reply;
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-bits-on-host";
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
+                        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+                        bkd.handle(msg, new ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply>(msg) {
+                            @Override
+                            public void success(DeleteBitsOnPrimaryStorageReply returnValue) {
+                                reply = returnValue;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "return-capacity-to-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        returnCapacityToHostByResourceUuid(msg.getBitsUuid());
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        deleteResourceRefVO(msg.getBitsUuid());
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
-        });
+        }).start();
+
     }
 
     @Override
     protected void handle(final DownloadIsoToPrimaryStorageMsg msg) {
-        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid());
-        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, new ReturnValueCompletion<DownloadIsoToPrimaryStorageReply>(msg) {
-            @Override
-            public void success(DownloadIsoToPrimaryStorageReply returnValue) {
-                createResourceRefVO(msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName(), msg.getDestHostUuid());
-                bus.reply(msg, returnValue);
-            }
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("download-iso-%s-local-primary-storage-%s", msg.getIsoSpec().getInventory().getUuid(), self.getUuid()));
+        chain.then(new ShareFlow() {
+            DownloadIsoToPrimaryStorageReply reply;
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "reserve-capacity-on-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        reserveCapacityOnHost(msg.getDestHostUuid(), msg.getIsoSpec().getInventory().getSize());
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowTrigger trigger, Map data) {
+                        returnCapacityToHost(msg.getDestHostUuid(), msg.getIsoSpec().getInventory().getSize());
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "download-iso-to-host";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid());
+                        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+                        bkd.handle(msg, new ReturnValueCompletion<DownloadIsoToPrimaryStorageReply>(msg) {
+                            @Override
+                            public void success(DownloadIsoToPrimaryStorageReply returnValue) {
+                                reply = returnValue;
+                                trigger.next();
+
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        createResourceRefVO(msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName(),
+                                msg.getIsoSpec().getInventory().getSize(), msg.getDestHostUuid());
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     @Override
     protected void handle(final DeleteIsoFromPrimaryStorageMsg msg) {
-        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName());
-        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, new ReturnValueCompletion<DeleteIsoFromPrimaryStorageReply>(msg) {
-            @Override
-            public void success(DeleteIsoFromPrimaryStorageReply returnValue) {
-                deleteResourceRefVO(msg.getIsoSpec().getInventory().getUuid());
-                bus.reply(msg, returnValue);
-            }
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("delete-iso-local-primary-storage-%s", msg.getIsoSpec().getInventory().getUuid()));
+        chain.then(new ShareFlow() {
+            DeleteIsoFromPrimaryStorageReply reply;
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                DeleteIsoFromPrimaryStorageReply reply = new DeleteIsoFromPrimaryStorageReply();
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-iso-on-host";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName());
+                        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+                        bkd.handle(msg, new ReturnValueCompletion<DeleteIsoFromPrimaryStorageReply>(msg) {
+                            @Override
+                            public void success(DeleteIsoFromPrimaryStorageReply returnValue) {
+                                reply = returnValue;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "return-capacity-to-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        returnCapacityToHostByResourceUuid(msg.getIsoSpec().getInventory().getUuid());
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        deleteResourceRefVO(msg.getIsoSpec().getInventory().getUuid());
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        DeleteIsoFromPrimaryStorageReply reply = new DeleteIsoFromPrimaryStorageReply();
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     @Override

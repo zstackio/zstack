@@ -30,6 +30,9 @@ public class LocalStorageResourceRefVO {
     private String resourceUuid;
 
     @Column
+    private long size;
+
+    @Column
     private String resourceType;
 
     @Column
@@ -37,6 +40,14 @@ public class LocalStorageResourceRefVO {
 
     @Column
     private Timestamp lastOpDate;
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
 
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;

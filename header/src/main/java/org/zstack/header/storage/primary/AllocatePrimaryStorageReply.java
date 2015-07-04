@@ -4,6 +4,7 @@ import org.zstack.header.message.MessageReply;
 
 public class AllocatePrimaryStorageReply extends MessageReply {
 	private PrimaryStorageInventory primaryStorageInventory;
+	private long size;
 
 	public AllocatePrimaryStorageReply(PrimaryStorageInventory primaryStorageInventory) {
 	    super();
@@ -17,4 +18,12 @@ public class AllocatePrimaryStorageReply extends MessageReply {
 	public void setPrimaryStorageInventory(PrimaryStorageInventory primaryStorageInventory) {
     	this.primaryStorageInventory = primaryStorageInventory;
     }
+
+	public long getSize() {
+		return size;
+	}
+
+	public void setSize(long size) {
+		this.size = size;
+	}
 }

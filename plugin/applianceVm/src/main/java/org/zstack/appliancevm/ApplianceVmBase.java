@@ -601,7 +601,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
             FlowChain chain = apvmf.getCreateApplianceVmWorkFlowBuilder().build();
-            chain = marshalChain(chain, spec);
+            setFlowMarshaller(chain);
 
             chain.setName(String.format("create-appliancevm-%s", msg.getVmInstanceUuid()));
             chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);

@@ -15,6 +15,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageFactory" />
             <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.vm.MarshalVmOperationFlowExtensionPoint" />
         </zstack:plugin>
     </bean>
 

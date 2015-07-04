@@ -2,11 +2,13 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.Component;
+import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
@@ -14,6 +16,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.MarshalVmOperationFlowExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 
 import javax.persistence.TypedQuery;
 import java.util.HashMap;
@@ -93,12 +96,25 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component, Ma
         return true;
     }
 
-    @Override
-    public FlowChain marshalVmOperationFlows(FlowChain chain, VmInstanceSpec spec) {
-        if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
+    @Transactional(readOnly = true)
+    private boolean hasLocalStorageInCluster(String clusterUuid) {
+        String sql = "select count(pri) from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref where pri.uuid = ref.primaryStorageUuid and ref.clusterUuid = :cuuid and pri.type = :ptype";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("cuuid", clusterUuid);
+        q.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
+        return q.getSingleResult() > 0;
+    }
 
+    @Override
+    public Flow marshalVmOperationFlow(String previousFlowName, String nextFlowName, FlowChain chain, VmInstanceSpec spec) {
+        if (VmAllocatePrimaryStorageFlow.class.getName().equals(nextFlowName)) {
+            if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
+                if (hasLocalStorageInCluster(spec.getDestHost().getClusterUuid())) {
+                    return new LocalStorageAllocateCapacityFlow();
+                }
+            }
         }
 
-        return chain;
+        return null;
     }
 }

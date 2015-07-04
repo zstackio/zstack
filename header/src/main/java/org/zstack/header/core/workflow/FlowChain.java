@@ -12,9 +12,7 @@ public interface FlowChain {
 
     FlowChain insert(int pos, Flow flow);
 
-    FlowChain replaceFlowByClassName(String name, Flow flow);
-
-    FlowChain deleteFlowByClassName(String name);
+    FlowChain setFlowMarshaller(FlowMarshaller marshaller);
 
     FlowChain then(Flow flow);
 

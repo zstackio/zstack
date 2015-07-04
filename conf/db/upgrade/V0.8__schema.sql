@@ -13,6 +13,7 @@ CREATE TABLE  `zstack`.`LocalStorageHostRefVO` (
 CREATE TABLE  `zstack`.`LocalStorageResourceRefVO` (
     `primaryStorageUuid` varchar(32) NOT NULL UNIQUE,
     `hostUuid` varchar(32),
+    `size` bigint unsigned DEFAULT 0,
     `resourceUuid` varchar(32),
     `resourceType` varchar(256),
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,

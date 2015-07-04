@@ -332,6 +332,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         reply.setPrimaryStorageInventory(target);
+        reply.setSize(msg.getSize());
         bus.reply(msg, reply);
     }
 

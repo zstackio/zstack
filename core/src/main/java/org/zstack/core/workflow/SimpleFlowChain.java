@@ -43,6 +43,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
     private String name;
     private boolean skipRestRollbacks;
     private boolean allowEmptyFlow;
+    private FlowMarshaller flowMarshaller;
 
     private static final Map<String, WorkFlowStatistic> statistics = new ConcurrentHashMap<String, WorkFlowStatistic>();
 
@@ -114,31 +115,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
     }
 
     @Override
-    public FlowChain replaceFlowByClassName(String name, Flow flow) {
-        List<Flow> n = new ArrayList<Flow>();
-        for (Flow f : flows) {
-            if (name.equals(f.getClass().getName())) {
-                n.add(flow);
-            } else {
-                n.add(f);
-            }
-        }
-
-        flows = n;
-        return this;
-    }
-
-    @Override
-    public FlowChain deleteFlowByClassName(String name) {
-        List<Flow> n = new ArrayList<Flow>();
-
-        for (Flow f : flows) {
-            if (!name.equals(f.getClass().getName())) {
-                n.add(f);
-            }
-        }
-
-        flows = n;
+    public FlowChain setFlowMarshaller(FlowMarshaller marshaller) {
+        flowMarshaller = marshaller;
         return this;
     }
 
@@ -172,7 +150,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
 
     @Override
     public SimpleFlowChain done(FlowDoneHandler handler) {
-        DebugUtils.Assert(doneHandler==null, String.format("there has been a FlowDoneHandler installed"));
+        DebugUtils.Assert(doneHandler==null, "there has been a FlowDoneHandler installed");
         doneHandler = handler;
         return this;
     }
@@ -183,7 +161,16 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
         }
 
         try {
-            currentFlow = flow;
+            if (flowMarshaller != null) {
+                currentFlow = flowMarshaller.marshalTheNextFlow(currentFlow == null ? null : currentFlow.getClass().getName(), flow.getClass().getName(), this, data);
+                if (currentFlow != null) {
+                    logger.debug(String.format("FlowMarshaller[%s] replace the next flow[%s] to the flow[%s]", flowMarshaller.getClass(), flow.getClass(), currentFlow.getClass()));
+                }
+            }
+            if (currentFlow == null) {
+                currentFlow = flow;
+            }
+
             String info = String.format("[FlowChain: %s] start executing flow[%s]", name, getFlowName(currentFlow));
             logger.debug(info);
             flow.run(this, data);
