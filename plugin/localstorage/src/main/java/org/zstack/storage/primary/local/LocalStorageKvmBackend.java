@@ -34,6 +34,7 @@ import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -384,6 +385,108 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         return hostUuid;
     }
 
+    class CacheInstallPath {
+        String fullPath;
+        String hostUuid;
+        String installPath;
+
+        CacheInstallPath disassemble() {
+            DebugUtils.Assert(fullPath != null, "fullPath cannot be null");
+            String[] pair = fullPath.split(";");
+            installPath = pair[0].replaceFirst("file://", "");
+            hostUuid = pair[1].replaceFirst("hostUuid://", "");
+            return this;
+        }
+
+        String makeFullPath() {
+            DebugUtils.Assert(installPath != null, "installPath cannot be null");
+            DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
+            fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
+            return fullPath;
+        }
+    }
+
+    class ImageCache {
+        ImageInventory image;
+        BackupStorageInventory backupStorage;
+        String hostUuid;
+        String primaryStorageInstallPath;
+        String backupStorageInstallPath;
+
+        void download(final ReturnValueCompletion<String> completion) {
+            DebugUtils.Assert(image != null, "image cannot be null");
+            DebugUtils.Assert(backupStorage != null, "backup storage cannot be null");
+            DebugUtils.Assert(hostUuid != null, "host uuid cannot be null");
+            DebugUtils.Assert(primaryStorageInstallPath != null, "primaryStorageInstallPath cannot be null");
+            DebugUtils.Assert(backupStorageInstallPath != null, "backupStorageInstallPath cannot be null");
+
+            thdf.chainSubmit(new ChainTask(completion) {
+                @Override
+                public String getSyncSignature() {
+                    return String.format("download-image-%s-to-localstorage-%s-cache", image.getUuid(), self.getUuid());
+                }
+
+                @Override
+                public void run(final SyncTaskChain chain) {
+                    SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+                    q.select(ImageCacheVO_.installUrl);
+                    q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+                    q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());
+                    q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", hostUuid));
+                    String fullPath = q.findValue();
+                    if (fullPath != null) {
+                        CacheInstallPath path = new CacheInstallPath();
+                        path.fullPath = fullPath;
+                        String installPath = path.disassemble().installPath;
+                        logger.debug(String.format("found image[uuid: %s, name: %s] in the image cache of local primary storage[uuid:%s, installPath: %s]",
+                                image.getUuid(), image.getName(), self.getUuid(), installPath));
+                        completion.success(installPath);
+                        chain.next();
+                        return;
+                    }
+
+                    LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(KVMConstant.KVM_HYPERVISOR_TYPE, backupStorage.getType());
+                    m.downloadBits(getSelfInventory(), backupStorage,
+                            backupStorageInstallPath, primaryStorageInstallPath,
+                            hostUuid, new Completion(completion, chain) {
+                                @Override
+                                public void success() {
+                                    ImageCacheVO vo = new ImageCacheVO();
+                                    vo.setState(ImageCacheState.ready);
+                                    vo.setMediaType(ImageMediaType.valueOf(image.getMediaType()));
+                                    vo.setImageUuid(image.getUuid());
+                                    vo.setPrimaryStorageUuid(self.getUuid());
+                                    vo.setSize(image.getSize());
+                                    vo.setMd5sum("not calculated");
+
+                                    CacheInstallPath path = new CacheInstallPath();
+                                    path.installPath = primaryStorageInstallPath;
+                                    path.hostUuid = hostUuid;
+                                    vo.setInstallUrl(path.makeFullPath());
+                                    dbf.persist(vo);
+
+                                    logger.debug(String.format("downloaded image[uuid:%s, name:%s] to the image cache of local primary storage[uuid: %s, installPath: %s] on host[uuid: %s]",
+                                            image.getUuid(), image.getName(), self.getUuid(), primaryStorageInstallPath, hostUuid));
+                                    completion.success(primaryStorageInstallPath);
+                                    chain.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    completion.fail(errorCode);
+                                    chain.next();
+                                }
+                            });
+                }
+
+                @Override
+                public String getName() {
+                    return getSyncSignature();
+                }
+            });
+        }
+    }
+
     private void createRootVolume(InstantiateRootVolumeFromTemplateMsg msg, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
         final ImageSpec ispec = msg.getTemplateSpec();
         final ImageInventory image = ispec.getInventory();
@@ -414,34 +517,22 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        thdf.chainSubmit(new ChainTask(trigger) {
+                        ImageCache cache = new ImageCache();
+                        cache.backupStorage = bsInv;
+                        cache.backupStorageInstallPath = ispec.getSelectedBackupStorage().getInstallPath();
+                        cache.primaryStorageInstallPath = pathInCache;
+                        cache.hostUuid = hostUuid;
+                        cache.image = image;
+                        cache.download(new ReturnValueCompletion<String>(trigger) {
                             @Override
-                            public String getSyncSignature() {
-                                return String.format("localstorage-download-image-%s", image.getUuid());
+                            public void success(String returnValue) {
+                                pathInCache = returnValue;
+                                trigger.next();
                             }
 
                             @Override
-                            public void run(final SyncTaskChain schain) {
-                                LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(KVMConstant.KVM_HYPERVISOR_TYPE, bsInv.getType());
-                                m.downloadBits(getSelfInventory(), bsInv, ispec.getSelectedBackupStorage().getInstallPath(), pathInCache,
-                                        hostUuid, new Completion(trigger, schain) {
-                                    @Override
-                                    public void success() {
-                                        trigger.next();
-                                        schain.next();
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        trigger.fail(errorCode);
-                                        schain.next();
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public String getName() {
-                                return "download-image-to-localstorage-cache";
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
                             }
                         });
                     }
@@ -577,21 +668,19 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
         q.add(BackupStorageVO_.uuid, Op.EQ, ispec.getSelectedBackupStorage().getBackupStorageUuid());
         BackupStorageVO bsvo = q.find();
-
-        SimpleQuery<HostVO> hq = dbf.createQuery(HostVO.class);
-        hq.select(HostVO_.hypervisorType);
-        hq.add(HostVO_.uuid, Op.EQ, msg.getDestHostUuid());
-        String hvType = hq.findValue();
-
-        final String installPath = makeCachedImageInstallUrl(ispec.getInventory());
-
         BackupStorageInventory bsinv = BackupStorageInventory.valueOf(bsvo);
-        LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(hvType, bsinv.getType());
-        m.downloadBits(getSelfInventory(), bsinv, ispec.getSelectedBackupStorage().getInstallPath(), installPath, msg.getDestHostUuid(), new Completion(completion) {
+
+        ImageCache cache = new ImageCache();
+        cache.image = ispec.getInventory();
+        cache.hostUuid = msg.getDestHostUuid();
+        cache.primaryStorageInstallPath = makeCachedImageInstallUrl(ispec.getInventory());
+        cache.backupStorage = bsinv;
+        cache.backupStorageInstallPath = ispec.getSelectedBackupStorage().getInstallPath();
+        cache.download(new ReturnValueCompletion<String>(completion) {
             @Override
-            public void success() {
+            public void success(String returnValue) {
                 DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
-                reply.setInstallPath(installPath);
+                reply.setInstallPath(returnValue);
                 completion.success(reply);
             }
 

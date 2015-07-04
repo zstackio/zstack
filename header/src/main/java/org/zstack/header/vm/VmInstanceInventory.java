@@ -371,6 +371,16 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setAllocatorStrategy(inv.getAllocatorStrategy());
     }
 
+    public VolumeInventory getRootVolume() {
+        for (VolumeInventory v : allVolumes) {
+            if (v.getUuid().equals(rootVolumeUuid)) {
+                return v;
+            }
+        }
+
+        return null;
+    }
+
     public String getAllocatorStrategy() {
         return allocatorStrategy;
     }

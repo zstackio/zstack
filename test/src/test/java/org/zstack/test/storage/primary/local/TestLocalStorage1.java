@@ -1,12 +1,17 @@
 package org.zstack.test.storage.primary.local;
 
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.storage.primary.local.*;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.DBUtil;
@@ -14,6 +19,12 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
 
+/**
+ * 1. use local storage
+ * 2. create a vm
+ *
+ * confirm all local storage related commands, VOs are set
+ */
 public class TestLocalStorage1 {
     Deployer deployer;
     Api api;
@@ -22,6 +33,7 @@ public class TestLocalStorage1 {
     DatabaseFacade dbf;
     SessionInventory session;
     LocalStorageSimulatorConfig config;
+    long totalSize = SizeUnit.GIGABYTE.toByte(100);
 
     @Before
     public void setUp() throws Exception {
@@ -39,8 +51,8 @@ public class TestLocalStorage1 {
         config = loader.getComponent(LocalStorageSimulatorConfig.class);
 
         Capacity c = new Capacity();
-        c.total = SizeUnit.GIGABYTE.toByte(100);
-        c.avail = SizeUnit.GIGABYTE.toByte(100);
+        c.total = totalSize;
+        c.avail = totalSize;
 
         config.capacityMap.put("host1", c);
 
@@ -51,6 +63,23 @@ public class TestLocalStorage1 {
     
 	@Test
 	public void test() {
-	}
+        HostInventory host = deployer.hosts.get("host1");
+        SimpleQuery<LocalStorageHostRefVO> hq = dbf.createQuery(LocalStorageHostRefVO.class);
+        hq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, host.getUuid());
+        LocalStorageHostRefVO href = hq.find();
+        Assert.assertEquals(href.getTotalCapacity(), totalSize);
+        Assert.assertEquals(href.getTotalPhysicalCapacity(), totalSize);
 
+        Assert.assertFalse(config.initCmdList.isEmpty());
+        Assert.assertFalse(config.downloadBitsCmds.isEmpty());
+        Assert.assertFalse(config.createVolumeFromCacheCmds.isEmpty());
+
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
+        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, vm.getRootVolumeUuid());
+        LocalStorageResourceRefVO rref = q.find();
+
+        Assert.assertNotNull(rref);
+        Assert.assertEquals(vm.getRootVolume().getSize(), rref.getSize());
+    }
 }
