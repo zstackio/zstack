@@ -1,24 +1,24 @@
 CREATE TABLE  `zstack`.`LocalStorageHostRefVO` (
-    `primaryStorageUuid` varchar(32) NOT NULL UNIQUE,
-    `hostUuid` varchar(32),
+    `hostUuid` varchar(32) NOT NULL UNIQUE,
+    `primaryStorageUuid` varchar(32) NOT NULL,
     `totalCapacity` bigint unsigned DEFAULT 0,
     `availableCapacity` bigint unsigned DEFAULT 0,
     `totalPhysicalCapacity` bigint unsigned DEFAULT 0,
     `availablePhysicalCapacity` bigint unsigned DEFAULT 0,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
-    PRIMARY KEY  (`primaryStorageUuid`)
+    PRIMARY KEY  (`hostUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `zstack`.`LocalStorageResourceRefVO` (
-    `primaryStorageUuid` varchar(32) NOT NULL UNIQUE,
+    `resourceUuid` varchar(32) NOT NULL UNIQUE,
+    `primaryStorageUuid` varchar(32) NOT NULL,
     `hostUuid` varchar(32),
     `size` bigint unsigned DEFAULT 0,
-    `resourceUuid` varchar(32),
     `resourceType` varchar(256),
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
-    PRIMARY KEY  (`primaryStorageUuid`)
+    PRIMARY KEY  (`resourceUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 # Foreign keys for table LocalStorageHostRefVO

@@ -22,7 +22,9 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -34,6 +36,8 @@ import java.util.Map;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class LocalStorageAllocateCapacityFlow implements Flow {
+    private final static CLogger logger = Utils.getLogger(LocalStorageAllocateCapacityFlow.class);
+
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -84,7 +88,9 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
                 amsg.setHostUuid(spec.getDestHost().getUuid());
                 if (hasOtherPrimaryStorage) {
                     amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
-                    amsg.addVoidPrimaryStoratgeUuid(localStorageUuid);
+                    amsg.addExcludePrimaryStoratgeUuid(localStorageUuid);
+                    amsg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
+                    logger.debug("there are non-local primary storage in the cluster, use it for data volumes");
                 } else {
                     amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
                     amsg.setPrimaryStorageUuid(localStorageUuid);
@@ -98,7 +104,7 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
         bus.send(msgs, new CloudBusListCallBack(trigger) {
             @Override
             public void run(List<MessageReply> replies) {
-                for (int i=0; i<replies.size(); i++) {
+                for (int i = 0; i < replies.size(); i++) {
                     MessageReply reply = replies.get(i);
                     if (!reply.isSuccess()) {
                         trigger.fail(reply.getError());
@@ -115,7 +121,7 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
                     } else {
                         vspec.setSize(ar.getSize());
                         vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
-                        vspec.setDiskOfferingUuid(spec.getDataDiskOfferings().get(i).getUuid());
+                        vspec.setDiskOfferingUuid(spec.getDataDiskOfferings().get(i-1).getUuid());
                         vspec.setRoot(false);
                     }
 

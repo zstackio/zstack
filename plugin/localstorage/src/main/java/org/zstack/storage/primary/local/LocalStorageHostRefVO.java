@@ -20,12 +20,12 @@ import java.sql.Timestamp;
 public class LocalStorageHostRefVO {
     @Column
     @Id
-    @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
-    private String primaryStorageUuid;
-
-    @Column
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String hostUuid;
+
+    @Column
+    @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
+    private String primaryStorageUuid;
 
     @Column
     @Index

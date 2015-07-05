@@ -299,6 +299,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             allocatorStrategyType = msg.getAllocationStrategy() == null ? PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE : msg.getAllocationStrategy();
         }
 
+        if (msg.getExcludeAllocatorStrategies() != null && msg.getExcludeAllocatorStrategies().contains(allocatorStrategyType)) {
+            throw new CloudRuntimeException(String.format("%s is set as excluded, there is no available primary storage allocator strategy", allocatorStrategyType));
+        }
+
         PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAlloactorStrategyFactory(
                 PrimaryStorageAllocatorStrategyType.valueOf(allocatorStrategyType)
         );
@@ -313,6 +317,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         spec.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         spec.setTags(msg.getTags());
         spec.setAllocationMessage(msg);
+        spec.setAvoidPrimaryStorageUuids(msg.getExcludePrimaryStorageUuids());
         List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
         Iterator<PrimaryStorageInventory> it = ret.iterator();
 

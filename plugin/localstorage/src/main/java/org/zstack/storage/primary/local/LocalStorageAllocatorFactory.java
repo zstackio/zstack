@@ -94,7 +94,9 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     @Override
     public String getPrimaryStorageAllocatorStrategyName(final AllocatePrimaryStorageMsg msg) {
         String allocatorType = null;
-        if (LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY.equals(msg.getAllocationStrategy())) {
+        if (msg.getExcludeAllocatorStrategies() != null && msg.getExcludeAllocatorStrategies().contains(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY)) {
+            allocatorType = null;
+        } else if (LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY.equals(msg.getAllocationStrategy())) {
             allocatorType = LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
         } else if (msg.getPrimaryStorageUuid() != null) {
             SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);

@@ -14,6 +14,15 @@ public class PrimaryStorageAllocationSpec {
     private AllocatePrimaryStorageMsg allocationMessage;
     private String vmInstanceUuid;
     private String diskOfferingUuid;
+    private List<String> avoidPrimaryStorageUuids;
+
+    public List<String> getAvoidPrimaryStorageUuids() {
+        return avoidPrimaryStorageUuids;
+    }
+
+    public void setAvoidPrimaryStorageUuids(List<String> avoidPrimaryStorageUuids) {
+        this.avoidPrimaryStorageUuids = avoidPrimaryStorageUuids;
+    }
 
     public String getVmInstanceUuid() {
         return vmInstanceUuid;

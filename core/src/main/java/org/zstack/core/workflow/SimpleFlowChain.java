@@ -156,24 +156,28 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
     }
 
     private void runFlow(Flow flow) {
-        if (CoreGlobalProperty.PROFILER_WORKFLOW) {
-            stopWath.start(flow);
-        }
-
         try {
+            Flow toRun = null;
             if (flowMarshaller != null) {
-                currentFlow = flowMarshaller.marshalTheNextFlow(currentFlow == null ? null : currentFlow.getClass().getName(), flow.getClass().getName(), this, data);
-                if (currentFlow != null) {
-                    logger.debug(String.format("FlowMarshaller[%s] replace the next flow[%s] to the flow[%s]", flowMarshaller.getClass(), flow.getClass(), currentFlow.getClass()));
+                toRun = flowMarshaller.marshalTheNextFlow(currentFlow == null ? null : currentFlow.getClass().getName(), flow.getClass().getName(), this, data);
+                if (toRun != null) {
+                    logger.debug(String.format("FlowMarshaller[%s] replaces the next flow[%s] to the flow[%s]", flowMarshaller.getClass(), flow.getClass(), toRun.getClass()));
                 }
             }
-            if (currentFlow == null) {
-                currentFlow = flow;
+
+            if (toRun == null) {
+                toRun = flow;
             }
+
+            if (CoreGlobalProperty.PROFILER_WORKFLOW) {
+                stopWath.start(toRun);
+            }
+
+            currentFlow = toRun;
 
             String info = String.format("[FlowChain: %s] start executing flow[%s]", name, getFlowName(currentFlow));
             logger.debug(info);
-            flow.run(this, data);
+            toRun.run(this, data);
         } catch (OperationFailureException oe) {
             String errInfo = oe.getErrorCode() != null ? oe.getErrorCode().toString() : "";
             logger.warn(errInfo, oe);
@@ -338,7 +342,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
 
         isStart = true;
         if (name == null) {
-            name = String.format("anonymous-chain");
+            name = "anonymous-chain";
         }
 
         logger.debug(String.format("[FlowChain: %s] starts", name));

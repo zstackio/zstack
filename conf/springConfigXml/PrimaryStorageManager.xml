@@ -30,6 +30,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.storage.primary.PrimaryStorageMainAllocatorFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageAvoidAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageTagAllocatorFlow</value>
                 <value>org.zstack.storage.primary.PrimaryStorageReservedCapacityAllocatorFlow</value>
             </list>

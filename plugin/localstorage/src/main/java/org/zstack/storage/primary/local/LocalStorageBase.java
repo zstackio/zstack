@@ -101,7 +101,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         LocalStorageResourceRefVO rref = ref.get(1, LocalStorageResourceRefVO.class);
 
         href.setAvailableCapacity(href.getAvailableCapacity() + rref.getSize());
-        dbf.getEntityManager().merge(ref);
+        dbf.getEntityManager().merge(href);
     }
 
     @Override

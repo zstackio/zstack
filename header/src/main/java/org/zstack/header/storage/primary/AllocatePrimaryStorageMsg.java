@@ -16,22 +16,38 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private String primaryStorageUuid;
     private String vmInstanceUuid;
     private String diskOfferingUuid;
-    private List<String> avoidPrimaryStorageUuids;
+    private List<String> excludePrimaryStorageUuids;
+    private List<String> excludeAllocatorStrategies;
 
-    public List<String> getAvoidPrimaryStorageUuids() {
-        return avoidPrimaryStorageUuids;
+    public List<String> getExcludeAllocatorStrategies() {
+        return excludeAllocatorStrategies;
     }
 
-    public void setAvoidPrimaryStorageUuids(List<String> avoidPrimaryStorageUuids) {
-        this.avoidPrimaryStorageUuids = avoidPrimaryStorageUuids;
+    public void setExcludeAllocatorStrategies(List<String> excludeAllocatorStrategies) {
+        this.excludeAllocatorStrategies = excludeAllocatorStrategies;
     }
 
-    public void addVoidPrimaryStoratgeUuid(String priUuid) {
-        if (avoidPrimaryStorageUuids == null) {
-            avoidPrimaryStorageUuids = new ArrayList<String>();
+    public void addExcludeAllocatorStrategy(String allocationStrategy) {
+        if (excludeAllocatorStrategies == null) {
+            excludeAllocatorStrategies = new ArrayList<String>();
+        }
+        excludeAllocatorStrategies.add(allocationStrategy);
+    }
+
+    public List<String> getExcludePrimaryStorageUuids() {
+        return excludePrimaryStorageUuids;
+    }
+
+    public void setExcludePrimaryStorageUuids(List<String> excludePrimaryStorageUuids) {
+        this.excludePrimaryStorageUuids = excludePrimaryStorageUuids;
+    }
+
+    public void addExcludePrimaryStoratgeUuid(String priUuid) {
+        if (excludePrimaryStorageUuids == null) {
+            excludePrimaryStorageUuids = new ArrayList<String>();
         }
 
-        avoidPrimaryStorageUuids.add(priUuid);
+        excludePrimaryStorageUuids.add(priUuid);
     }
 
     public String getVmInstanceUuid() {

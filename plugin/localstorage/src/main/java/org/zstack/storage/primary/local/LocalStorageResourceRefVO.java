@@ -20,14 +20,14 @@ public class LocalStorageResourceRefVO {
     @Column
     @Id
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
+    private String resourceUuid;
+
+    @Column
     private String primaryStorageUuid;
 
     @Column
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String hostUuid;
-
-    @Column
-    private String resourceUuid;
 
     @Column
     private long size;
