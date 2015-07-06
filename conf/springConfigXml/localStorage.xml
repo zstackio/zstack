@@ -16,6 +16,8 @@
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageFactory" />
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.vm.MarshalVmOperationFlowExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostDeleteExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmAttachVolumeExtensionPoint" />
         </zstack:plugin>
     </bean>
 
@@ -43,6 +45,7 @@
     <bean id="LocalStorageKvmFactory" class="org.zstack.storage.primary.local.LocalStorageKvmFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.storage.primary.local.LocalStorageHypervisorFactory" />
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
         </zstack:plugin>
     </bean>
 

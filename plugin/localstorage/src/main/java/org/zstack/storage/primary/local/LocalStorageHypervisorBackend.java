@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.storage.primary.*;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 
 import java.util.List;
 
@@ -27,4 +28,6 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract void handle(DownloadIsoToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadIsoToPrimaryStorageReply> completion);
 
     abstract void handle(DeleteIsoFromPrimaryStorageMsg msg, ReturnValueCompletion<DeleteIsoFromPrimaryStorageReply> completion);
+
+    abstract void handle(InitPrimaryStorageOnHostConnectedMsg msg, ReturnValueCompletion<PhysicalCapacityUsage> completion);
 }

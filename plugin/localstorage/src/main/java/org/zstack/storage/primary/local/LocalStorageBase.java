@@ -18,8 +18,10 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.utils.data.SizeUnit;
@@ -44,6 +46,63 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     public LocalStorageBase(PrimaryStorageVO self) {
         super(self);
+    }
+
+    @Override
+    protected void handleLocalMessage(Message msg) {
+        if (msg instanceof InitPrimaryStorageOnHostConnectedMsg) {
+            handle((InitPrimaryStorageOnHostConnectedMsg) msg);
+        } else if (msg instanceof RemoveHostFromLocalStorageMsg) {
+            handle((RemoveHostFromLocalStorageMsg) msg);
+        } else {
+            super.handleLocalMessage(msg);
+        }
+    }
+
+    private void handle(RemoveHostFromLocalStorageMsg msg) {
+        LocalStorageHostRefVO ref = dbf.findByUuid(msg.getHostUuid(), LocalStorageHostRefVO.class);
+        // on remove, substract the total capacity from every capacity
+        decreaseCapacity(ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity());
+        dbf.remove(ref);
+        bus.reply(msg, new RemoveHostFromLocalStorageReply());
+    }
+
+    protected void handle(final InitPrimaryStorageOnHostConnectedMsg msg) {
+        final InitPrimaryStorageOnHostConnectedReply reply = new InitPrimaryStorageOnHostConnectedReply();
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<PhysicalCapacityUsage>(msg) {
+            @Override
+            public void success(PhysicalCapacityUsage c) {
+                SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+                q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getHostUuid());
+                q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+                LocalStorageHostRefVO ref = q.find();
+                if (ref == null) {
+                    ref = new LocalStorageHostRefVO();
+                    ref.setTotalCapacity(c.totalPhysicalSize);
+                    ref.setAvailableCapacity(c.availablePhysicalSize);
+                    ref.setTotalPhysicalCapacity(c.totalPhysicalSize);
+                    ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
+                    ref.setHostUuid(msg.getHostUuid());
+                    ref.setPrimaryStorageUuid(self.getUuid());
+                    dbf.persist(ref);
+
+                    increaseCapacity(c.totalPhysicalSize, c.availablePhysicalSize, c.totalPhysicalSize, c.availablePhysicalSize);
+                } else {
+                    ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
+                    dbf.update(ref);
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Transactional
@@ -106,11 +165,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final InstantiateVolumeMsg msg) {
-        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHost().getUuid());
+        String hostUuid = msg.getDestHost().getUuid();
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("instantiate-volume-%s-local-primary-storage-%s", msg.getVolume().getUuid(), self.getUuid()));
+        final String finalHostUuid = hostUuid;
         chain.then(new ShareFlow() {
             InstantiateVolumeReply reply;
 
@@ -121,13 +182,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(msg.getDestHost().getUuid(), msg.getVolume().getSize());
+                        reserveCapacityOnHost(finalHostUuid, msg.getVolume().getSize());
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
-                        returnCapacityToHost(msg.getDestHost().getUuid(), msg.getVolume().getSize());
+                        returnCapacityToHost(finalHostUuid, msg.getVolume().getSize());
                         trigger.rollback();
                     }
                 });
@@ -156,7 +217,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     @Override
                     public void handle(Map data) {
                         createResourceRefVO(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName(),
-                                msg.getVolume().getSize(), msg.getDestHost().getUuid());
+                                msg.getVolume().getSize(), finalHostUuid);
                         bus.reply(msg, reply);
                     }
                 });

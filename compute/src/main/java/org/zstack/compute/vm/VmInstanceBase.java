@@ -54,6 +54,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 
 public class VmInstanceBase extends AbstractVmInstance {
     protected static final CLogger logger = Utils.getLogger(VmInstanceBase.class);
@@ -1201,6 +1203,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         VmInstanceSpec spec = new VmInstanceSpec();
         spec.setMessage(msg);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
+        spec.setCurrentVmOperation(VmOperation.AttachVolume);
+        spec.setDestDataVolumes(list(volume));
         FlowChain chain;
         if (volume.getStatus().equals(VolumeStatus.Ready.toString())) {
             chain = FlowChainBuilder.newSimpleFlowChain();
@@ -1209,6 +1213,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         } else {
             chain = getAttachUninstantiatedVolumeWorkFlowChain(spec.getVmInventory());
         }
+
+        setFlowMarshaller(chain);
 
         chain.setName(String.format("vm-%s-attach-volume-%s", self.getUuid(), volume.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);

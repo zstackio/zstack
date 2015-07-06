@@ -12,9 +12,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.AllocatePrimaryStorageMsg;
-import org.zstack.header.storage.primary.AllocatePrimaryStorageReply;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
@@ -51,6 +49,7 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
                 if (reply.isSuccess()) {
                     AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply)reply;
                     data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
+                    data.put(VmAllocatePrimaryStorageForAttachingDiskFlow.class, ar.getSize());
                     chain.next();
                 } else {
                     chain.fail(reply.getError());
@@ -61,9 +60,15 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
 
     @Override
     public void rollback(FlowTrigger chain, Map data) {
-        // primary storage capacity is updated by response of every operation on real storage,
-        // no need to return storage size here
-
+        Long size = (Long) data.get(VmAllocatePrimaryStorageForAttachingDiskFlow.class);
+        if (size != null) {
+            PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
+            ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+            rmsg.setPrimaryStorageUuid(pri.getUuid());
+            rmsg.setDiskSize(size);
+            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
+            bus.send(rmsg);
+        }
         chain.rollback();
     }
 }

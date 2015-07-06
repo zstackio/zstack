@@ -22,5 +22,6 @@ public interface VmInstanceConstant {
         Reboot,
         Destroy,
         Migrate,
+        AttachVolume,
     }
 }

@@ -326,6 +326,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     private void createEmptyVolume(final InstantiateVolumeMsg msg, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
+        String hostUuid = msg.getDestHost().getUuid();
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         cmd.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(msg.getVolume().getUuid()));
         if (VolumeType.Root.toString().equals(msg.getVolume().getType())) {
@@ -338,10 +339,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.setVolumeUuid(msg.getVolume().getUuid());
 
         KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-        kmsg.setHostUuid(msg.getDestHost().getUuid());
+        kmsg.setHostUuid(hostUuid);
         kmsg.setPath(CREATE_EMPTY_VOLUME_PATH);
         kmsg.setCommand(cmd);
-        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, msg.getDestHost().getUuid());
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
+        final String finalHostUuid = hostUuid;
         bus.send(kmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
@@ -356,7 +358,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 if (!rsp.isSuccess()) {
                     completion.fail(errf.stringToOperationError(
                             String.format("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s], %s",
-                                    msg.getVolume().getUuid(), msg.getVolume().getName(), msg.getDestHost().getUuid(), rsp.getError())
+                                    msg.getVolume().getUuid(), msg.getVolume().getName(), finalHostUuid, rsp.getError())
                     ));
                     return;
                 }
@@ -696,6 +698,42 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         // The ISO is in the image cache, no need to delete it
         DeleteIsoFromPrimaryStorageReply reply = new DeleteIsoFromPrimaryStorageReply();
         completion.success(reply);
+    }
+
+    @Override
+    void handle(InitPrimaryStorageOnHostConnectedMsg msg, final ReturnValueCompletion<PhysicalCapacityUsage> completion) {
+        InitCmd cmd = new InitCmd();
+        cmd.setHostUuid(msg.getHostUuid());
+        cmd.setPath(self.getUrl());
+
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setCommand(cmd);
+        kmsg.setHostUuid(msg.getHostUuid());
+        kmsg.setPath(INIT_PATH);
+        kmsg.setCommand(cmd);
+        kmsg.setNoStatusCheck(true);
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(kmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply kr = reply.castReply();
+                AgentResponse rsp = kr.toResponse(AgentResponse.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(errf.stringToOperationError(rsp.getError()));
+                    return;
+                }
+
+                PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
+                usage.totalPhysicalSize = rsp.getTotalCapacity();
+                usage.availablePhysicalSize = rsp.getAvailableCapacity();
+                completion.success(usage);
+            }
+        });
     }
 
     @Override
