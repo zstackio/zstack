@@ -132,6 +132,7 @@
                 <value>org.zstack.compute.allocator.AvoidHostAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostOsVersionAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.TagAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.FilterFlow</value>
             </list>
         </property>
     </bean>

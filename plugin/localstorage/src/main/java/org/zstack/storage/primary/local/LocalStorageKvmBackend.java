@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cglib.core.Local;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.SimpleQuery;
@@ -830,6 +831,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         continue;
                     }
 
+                    if (dbf.isExist(hostUuid, LocalStorageHostRefVO.class)) {
+                        logger.debug(String.format("host[uuid :%s] is already in the local primary storage[uuid: %s]", hostUuid, self.getUuid()));
+                        continue;
+                    }
+
                     total += rsp.getTotalCapacity();
                     avail += rsp.getAvailableCapacity();
 
@@ -841,6 +847,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     ref.setTotalCapacity(rsp.getTotalCapacity());
                     ref.setTotalPhysicalCapacity(rsp.getTotalCapacity());
                     refs.add(ref);
+
                 }
 
                 dbf.persistCollection(refs);
