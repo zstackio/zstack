@@ -82,8 +82,8 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     public static class SftpUploadBitsCmd extends LocalStorageKvmBackend.AgentCommand {
         private String primaryStorageInstallPath;
         private String backupStorageInstallPath;
-        private String backupStorageHostName;
-        private String backupStorageSshKey;
+        private String hostname;
+        private String sshKey;
 
         public String getPrimaryStorageInstallPath() {
             return primaryStorageInstallPath;
@@ -101,20 +101,20 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
             this.backupStorageInstallPath = backupStorageInstallPath;
         }
 
-        public String getBackupStorageHostName() {
-            return backupStorageHostName;
+        public String getHostname() {
+            return hostname;
         }
 
-        public void setBackupStorageHostName(String backupStorageHostName) {
-            this.backupStorageHostName = backupStorageHostName;
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
         }
 
-        public String getBackupStorageSshKey() {
-            return backupStorageSshKey;
+        public String getSshKey() {
+            return sshKey;
         }
 
-        public void setBackupStorageSshKey(String backupStorageSshKey) {
-            this.backupStorageSshKey = backupStorageSshKey;
+        public void setSshKey(String sshKey) {
+            this.sshKey = sshKey;
         }
     }
 
@@ -189,8 +189,8 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                 SftpUploadBitsCmd cmd = new SftpUploadBitsCmd();
                 cmd.setPrimaryStorageInstallPath(primaryStorageInstallPath);
                 cmd.setBackupStorageInstallPath(backupStorageInstallPath);
-                cmd.setBackupStorageHostName(r.getHostname());
-                cmd.setBackupStorageSshKey(r.getSshKey());
+                cmd.setHostname(r.getHostname());
+                cmd.setSshKey(r.getSshKey());
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);

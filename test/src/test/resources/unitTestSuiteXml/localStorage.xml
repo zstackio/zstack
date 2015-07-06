@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage1"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage2"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage3"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage4"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage5"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage6"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage7"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage8"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage9"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage10"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage11"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage12"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage13"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage14"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage15"/>
+</UnitTestSuiteConfig>

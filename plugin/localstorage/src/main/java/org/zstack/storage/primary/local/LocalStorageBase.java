@@ -24,18 +24,23 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import javax.rmi.CORBA.Util;
 import java.util.*;
 
 /**
  * Created by frank on 6/30/2015.
  */
 public class LocalStorageBase extends PrimaryStorageBase {
+    private static final CLogger logger = Utils.getLogger(LocalStorageBase.class);
+
     @Autowired
     private PluginRegistry pluginRgty;
 
@@ -618,79 +623,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void connectHook(final ConnectPrimaryStorageMsg msg, final Completion completion) {
-        final List<FactoryCluster> fs = getAllFactoriesForAttachedClusters();
-
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("connect-local-primary-storage-%s", self.getUuid()));
-        chain.then(new ShareFlow() {
-            @Override
-            public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "connect-all-backend";
-                    final Iterator<FactoryCluster> it = fs.iterator();
-
-                    private void connect(final FlowTrigger trigger) {
-                        if (!it.hasNext()) {
-                            trigger.next();
-                            return;
-                        }
-
-                        FactoryCluster fc = it.next();
-                        LocalStorageHypervisorBackend bkd = fc.factory.getHypervisorBackend(self);
-                        bkd.connectHook(msg, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                connect(trigger);
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        connect(trigger);
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "sync-physical-capacity";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        syncPhysicalCapacity(new ReturnValueCompletion<PhysicalCapacityUsage>(trigger) {
-                            @Override
-                            public void success(PhysicalCapacityUsage returnValue) {
-                                setCapacity(null, null, returnValue.totalPhysicalSize, returnValue.availablePhysicalSize);
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
-                done(new FlowDoneHandler(completion) {
-                    @Override
-                    public void handle(Map data) {
-                        completion.success();
-                    }
-                });
-
-                error(new FlowErrorHandler(completion) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        completion.fail(errCode);
-                    }
-                });
-            }
-        }).start();
+        completion.success();
     }
 
     @Override
