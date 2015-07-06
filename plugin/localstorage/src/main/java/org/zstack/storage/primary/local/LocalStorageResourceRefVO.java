@@ -2,8 +2,12 @@ package org.zstack.storage.primary.local;
 
 import org.zstack.header.host.HostEO;
 import org.zstack.header.storage.primary.PrimaryStorageEO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.SoftDeletionCascade;
+import org.zstack.header.vo.SoftDeletionCascades;
+import org.zstack.header.volume.VolumeVO;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -16,13 +20,17 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@SoftDeletionCascades({
+        @SoftDeletionCascade(parent = VolumeVO.class, joinColumn = "resourceUuid"),
+        @SoftDeletionCascade(parent = VolumeSnapshotVO.class, joinColumn = "resourceUuid")
+})
 public class LocalStorageResourceRefVO {
     @Column
     @Id
-    @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String resourceUuid;
 
     @Column
+    @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String primaryStorageUuid;
 
     @Column
