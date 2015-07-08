@@ -1,14 +1,6 @@
 package org.zstack.storage.primary.local;
 
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.AgentResponse;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeRsp;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateVolumeFromCacheCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateVolumeFromCacheRsp;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsRsp;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.GetPhysicalCapacityCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.InitCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsRsp;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpUploadBitsCmd;
@@ -143,6 +135,58 @@ public class LocalStorageSimulator {
         SftpUploadBitsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SftpUploadBitsCmd.class);
         config.uploadBitsCmds.add(cmd);
         reply(entity, new SftpUploadBitsRsp());
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.CREATE_TEMPLATE_FROM_VOLUME, method= RequestMethod.POST)
+    public @ResponseBody
+    String createTemplateFromVolume(HttpEntity<String> entity) {
+        CreateTemplateFromVolumeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateTemplateFromVolumeCmd.class);
+        config.createTemplateFromVolumeCmds.add(cmd);
+        reply(entity, new CreateTemplateFromVolumeRsp());
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String revertSnapshot(HttpEntity<String> entity) {
+        RevertVolumeFromSnapshotCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RevertVolumeFromSnapshotCmd.class);
+        config.revertVolumeFromSnapshotCmds.add(cmd);
+        RevertVolumeFromSnapshotRsp rsp = new RevertVolumeFromSnapshotRsp();
+        rsp.setNewVolumeInstallPath("/new/path");
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.MERGE_AND_REBASE_SNAPSHOT_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String rebaseAndMergeSnapshot(HttpEntity<String> entity) {
+        RebaseAndMergeSnapshotsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RebaseAndMergeSnapshotsCmd.class);
+        config.rebaseAndMergeSnapshotsCmds.add(cmd);
+        RebaseAndMergeSnapshotsRsp rsp = new RebaseAndMergeSnapshotsRsp();
+        rsp.setSize(100);
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.MERGE_SNAPSHOT_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String mergeSnapshot(HttpEntity<String> entity) {
+        MergeSnapshotCmd cmd = JSONObjectUtil.toObject(entity.getBody(), MergeSnapshotCmd.class);
+        config.mergeSnapshotCmds.add(cmd);
+        MergeSnapshotRsp rsp = new MergeSnapshotRsp();
+        rsp.setSize(100);
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.OFFLINE_MERGE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String offlineMerge(HttpEntity<String> entity) {
+        OfflineMergeSnapshotCmd cmd =  JSONObjectUtil.toObject(entity.getBody(), OfflineMergeSnapshotCmd.class);
+        config.offlineMergeSnapshotCmds.add(cmd);
+        OfflineMergeSnapshotRsp rsp = new OfflineMergeSnapshotRsp();
+        reply(entity, rsp);
         return null;
     }
 }

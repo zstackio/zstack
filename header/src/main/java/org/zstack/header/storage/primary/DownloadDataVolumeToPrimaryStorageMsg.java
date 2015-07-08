@@ -11,6 +11,15 @@ public class DownloadDataVolumeToPrimaryStorageMsg extends NeedReplyMessage impl
     private ImageBackupStorageRefInventory backupStorageRef;
     private ImageInventory image;
     private String volumeUuid;
+    private String hostUuid;
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
 
     public String getVolumeUuid() {
         return volumeUuid;

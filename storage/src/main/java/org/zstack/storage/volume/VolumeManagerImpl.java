@@ -307,6 +307,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
                         AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                         amsg.setSize(template.getSize());
                         amsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                        amsg.setHostUuid(msg.getHostUuid());
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                         bus.send(amsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -344,6 +345,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
                         dmsg.setVolumeUuid(vol.getUuid());
                         dmsg.setBackupStorageRef(ImageBackupStorageRefInventory.valueOf(targetBackupStorageRef));
                         dmsg.setImage(ImageInventory.valueOf(template));
+                        dmsg.setHostUuid(msg.getHostUuid());
                         bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
                         bus.send(dmsg, new CloudBusCallBack(trigger) {
                             @Override

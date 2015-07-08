@@ -69,6 +69,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     abstract protected void handle(PingBackupStorageMsg msg);
 
+    abstract protected void handle(BackupStorageAskInstallPathMsg msg);
+
     abstract protected void connectHook(Completion completion);
 
 	public BackupStorageBase(BackupStorageVO self) {
@@ -149,7 +151,9 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         } else if (msg instanceof DeleteBitsOnBackupStorageMsg) {
             handleBase((DeleteBitsOnBackupStorageMsg) msg);
         } else if (msg instanceof PingBackupStorageMsg) {
-            handle((PingBackupStorageMsg)msg);
+            handle((PingBackupStorageMsg) msg);
+        } else if (msg instanceof BackupStorageAskInstallPathMsg) {
+            handle((BackupStorageAskInstallPathMsg) msg);
 	    } else {
 	        bus.dealWithUnknownMessage(msg);
 	    }

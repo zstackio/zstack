@@ -315,6 +315,14 @@ public class SftpBackupStorage extends BackupStorageBase {
         });
     }
 
+    @Override
+    protected void handle(BackupStorageAskInstallPathMsg msg) {
+        BackupStorageAskInstallPathReply reply = new BackupStorageAskInstallPathReply();
+        String installPath = PathUtil.join(self.getUrl(), BackupStoragePathMaker.makeImageInstallPath(msg.getImageUuid(), msg.getImageMediaType()));
+        reply.setInstallPath(installPath);
+        bus.reply(msg, reply);
+    }
+
     private void handle(final GetSftpBackupStorageDownloadCredentialMsg msg) {
         final GetSftpBackupStorageDownloadCredentialReply reply = new GetSftpBackupStorageDownloadCredentialReply();
 

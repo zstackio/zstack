@@ -16,4 +16,12 @@
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage14"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage15"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage16"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage17"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage18"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage19"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage20"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage21"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage22"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage23"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage24"/>
 </UnitTestSuiteConfig>

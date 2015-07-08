@@ -73,6 +73,13 @@ public class SimulatorBackupStorage extends BackupStorageBase {
     }
 
     @Override
+    protected void handle(BackupStorageAskInstallPathMsg msg) {
+        BackupStorageAskInstallPathReply reply = new BackupStorageAskInstallPathReply();
+        reply.setInstallPath(String.format("/%s/%s/%s.img", msg.getImageMediaType(), msg.getImageUuid(), msg.getImageUuid()));
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void connectHook(Completion completion) {
         completion.success();
     }

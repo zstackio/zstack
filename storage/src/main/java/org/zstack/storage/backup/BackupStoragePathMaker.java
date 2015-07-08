@@ -6,6 +6,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.DebugUtils;
@@ -84,6 +85,30 @@ public class BackupStoragePathMaker {
 
         String filename = makeFilename(iminv.getUrl(), iminv.getMediaType());
         return PathUtil.join(root, accountFolder(accountUuid), iminv.getUuid(), filename);
+    }
+
+    public static String makeImageInstallPath(String imageUuid, String mediaType) {
+        String root;
+        String suffix;
+        if (mediaType.equals(ImageMediaType.RootVolumeTemplate.toString())) {
+            root = ROOT_VOLUME_TEMPLATE_FOLDER;
+            suffix = "template";
+        } else if (mediaType.equals(ImageMediaType.ISO.toString())) {
+            root = ISO_FOLDER;
+            suffix = "iso";
+        } else if (mediaType.equals(ImageMediaType.DataVolumeTemplate.toString())) {
+            root = DATA_VOLUME_TEMPLATE_FOLDER;
+            suffix = "volume";
+        } else if (mediaType.equals(VolumeSnapshotVO.class.getSimpleName())) {
+            root = VOLUME_SNAPSHOT_FOLDER;
+            suffix = "snapshot";
+        } else {
+            throw new CloudRuntimeException(String.format("unknown image mediaType[%s]", mediaType));
+        }
+
+        String accountUuid = getAccountManager().getOwnerAccountUuidOfResource(imageUuid);
+        String filename = String.format("%s.%s", imageUuid, suffix);
+        return PathUtil.join(root, accountFolder(accountUuid), imageUuid, filename);
     }
 
     private static String getAccountUuid(String resourceUuid) {

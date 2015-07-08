@@ -1,10 +1,6 @@
 package org.zstack.storage.primary.local;
 
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateVolumeFromCacheCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.GetPhysicalCapacityCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.InitCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpUploadBitsCmd;
 
@@ -30,4 +26,9 @@ public class LocalStorageSimulatorConfig {
     public List<DeleteBitsCmd> deleteBitsCmds = new ArrayList<DeleteBitsCmd>();
     public List<SftpUploadBitsCmd> uploadBitsCmds = new ArrayList<SftpUploadBitsCmd>();
     public List<SftpDownloadBitsCmd> downloadBitsCmds = new ArrayList<SftpDownloadBitsCmd>();
+    public List<CreateTemplateFromVolumeCmd> createTemplateFromVolumeCmds = new ArrayList<CreateTemplateFromVolumeCmd>();
+    public List<RevertVolumeFromSnapshotCmd> revertVolumeFromSnapshotCmds = new ArrayList<RevertVolumeFromSnapshotCmd>();
+    public List<MergeSnapshotCmd> mergeSnapshotCmds = new ArrayList<MergeSnapshotCmd>();
+    public List<RebaseAndMergeSnapshotsCmd> rebaseAndMergeSnapshotsCmds = new ArrayList<RebaseAndMergeSnapshotsCmd>();
+    public List<OfflineMergeSnapshotCmd> offlineMergeSnapshotCmds = new ArrayList<OfflineMergeSnapshotCmd>();
 }
