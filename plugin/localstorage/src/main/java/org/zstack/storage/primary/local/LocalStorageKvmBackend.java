@@ -237,7 +237,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     public static class CreateTemplateFromVolumeCmd extends AgentCommand {
         private String installPath;
-        private String rootVolumePath;
+        private String volumePath;
 
         public String getInstallPath() {
             return installPath;
@@ -246,11 +246,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
         }
-        public String getRootVolumePath() {
-            return rootVolumePath;
+        public String getVolumePath() {
+            return volumePath;
         }
         public void setVolumePath(String rootVolumePath) {
-            this.rootVolumePath = rootVolumePath;
+            this.volumePath = rootVolumePath;
         }
     }
 
