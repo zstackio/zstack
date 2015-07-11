@@ -1,5 +1,6 @@
 package org.zstack.network.service.portforwarding;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
@@ -38,6 +39,7 @@ import org.zstack.header.message.APIParam;
  * @result
  * see :ref:`APIDetachPortForwardingRuleEvent`
  */
+@Action(category = PortForwardingConstant.ACTION_CATEGORY)
 public class APIDetachPortForwardingRuleMsg extends APIMessage {
     /**
      * @desc rule uuid

@@ -1,6 +1,7 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.host.HostVO;
+import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
@@ -8,6 +9,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 
 /**
  */
+@Action(category = VolumeConstant.ACTION_CATEGORY)
 public class APICreateDataVolumeFromVolumeTemplateMsg extends APICreateMessage {
     @APIParam(resourceType = ImageVO.class)
     private String imageUuid;

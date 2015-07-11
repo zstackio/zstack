@@ -1,5 +1,6 @@
 package org.zstack.header.volume;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -41,6 +42,7 @@ import org.zstack.header.message.APIParam;
  *
  * see :ref:`APIDeleteDataVolumeEvent`
  */
+@Action(category = VolumeConstant.ACTION_CATEGORY)
 public class APIDeleteDataVolumeMsg extends APIDeleteMessage implements VolumeMessage {
     /**
      * @desc data volume uuid

@@ -1,17 +1,20 @@
 package org.zstack.header.identity;
 
+import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ForeignKey.ReferenceOption;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
 @Table
-@Inheritance(strategy=InheritanceType.JOINED)
 public class SessionVO {
     @Id
     @Column
     private String uuid;
     
     @Column
+    @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String accountUuid;
     
     @Column

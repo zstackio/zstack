@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 /**
@@ -38,6 +39,7 @@ import org.zstack.header.message.APIParam;
  *
  * see :ref:`APICreateSecurityGroupEvent`
  */
+@Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 public class APICreateSecurityGroupMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters

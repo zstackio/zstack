@@ -1,10 +1,11 @@
 package org.zstack.header.identity;
 
+import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.util.Date;
 
 @Entity
 @Table
@@ -15,9 +16,11 @@ public class AccountResourceRefVO {
     private long id;
     
     @Column
+    @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String accountUuid;
     
     @Column
+    @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String ownerAccountUuid;
     
     @Column

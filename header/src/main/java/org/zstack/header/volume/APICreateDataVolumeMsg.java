@@ -1,6 +1,7 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 
@@ -43,6 +44,7 @@ import org.zstack.header.message.APIParam;
  *
  * see :ref:`APICreateDataVolumeEvent`
  */
+@Action(category = VolumeConstant.ACTION_CATEGORY)
 public class APICreateDataVolumeMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters

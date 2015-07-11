@@ -1,15 +1,15 @@
 package org.zstack.header.identity;
 
-import org.zstack.header.search.SqlTrigger;
-import org.zstack.header.search.TriggerIndex;
+import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.SoftDeletionCascade;
+import org.zstack.header.vo.SoftDeletionCascades;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.util.Date;
 
 @Entity
 @Table
-@Inheritance(strategy=InheritanceType.JOINED)
 public class UserGroupPolicyRefVO {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -17,9 +17,11 @@ public class UserGroupPolicyRefVO {
     private long id;
     
     @Column
+    @ForeignKey(parentEntityClass = UserGroupVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String groupUuid;
     
     @Column
+    @ForeignKey(parentEntityClass = PolicyVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String policyUuid;
     
     @Column

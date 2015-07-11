@@ -9,6 +9,8 @@ public interface ImageConstant {
         DataVolumeTemplate,
         ISO,
 	}
+
+	public static final String ACTION_CATEGORY = "image";
 	
 	public static final String SERVICE_ID = "image";
 	@PythonClass

@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
@@ -41,6 +42,7 @@ import org.zstack.header.rest.APINoSee;
  * @result
  * see :ref:`APIDeleteIpRangeEvent`
  */
+@Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APIDeleteIpRangeMsg extends APIDeleteMessage implements L3NetworkMessage, IpRangeMessage {
     /**
      * @desc ip range uuid

@@ -1,5 +1,6 @@
 package org.zstack.header.volume;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
@@ -41,6 +42,7 @@ import org.zstack.header.message.APIParam;
  *
  * See :ref:`APICreateDataVolumeEvent`
  */
+@Action(category = VolumeConstant.ACTION_CATEGORY)
 public class APIChangeVolumeStateMsg extends APIMessage implements VolumeMessage {
     /**
      * @desc data volume uuid

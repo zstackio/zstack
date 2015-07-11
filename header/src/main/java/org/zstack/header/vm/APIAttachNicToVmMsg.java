@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -45,6 +46,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
  *
  * see :ref:`APIAttachNicToVmEvent`
  */
+@Action(category = VmInstanceConstant.ACTION_CATEGORY)
 public class APIAttachNicToVmMsg extends APIMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid

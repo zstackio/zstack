@@ -670,6 +670,7 @@ public class Deployer {
     }
 
     private void deployPolicy(AccountConfig ac, AccountInventory ainv) throws IOException, ApiSenderException {
+        /*
         SessionInventory session = api.loginByAccount(ainv.getName(), ac.getPassword());
         for (PolicyConfig pc : ac.getPolicy()) {
             URL configFile = this.getClass().getClassLoader().getResource(pc.getPolicyFilePath());
@@ -681,6 +682,8 @@ public class Deployer {
             api.attachPolicyToUser(ainv.getUuid(), ainv.getUuid(), pinv.getUuid(), session);
             polices.put(pc.getName(), pinv);
         }
+        */
+        throw new CloudRuntimeException("not implemented");
     }
 
     private void attachPolicyToUser(String policyName, UserInventory uinv, SessionInventory session) throws ApiSenderException {

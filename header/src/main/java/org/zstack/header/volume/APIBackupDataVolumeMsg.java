@@ -1,5 +1,6 @@
 package org.zstack.header.volume;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -40,6 +41,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
  *
  * See :ref:`APIBackupDataVolumeEvent`
  */
+@Action(category = VolumeConstant.ACTION_CATEGORY)
 public class APIBackupDataVolumeMsg extends APIMessage implements VolumeMessage {
     /**
      * @desc

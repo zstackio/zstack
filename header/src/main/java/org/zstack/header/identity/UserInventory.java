@@ -19,9 +19,7 @@ public class UserInventory {
     private String token;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    private List<UserGroupInventory> groups;
-    private List<PolicyInventory> policies;
-    
+
     public static UserInventory valueOf(UserVO vo) {
         UserInventory inv = new UserInventory();
         inv.setUuid(vo.getUuid());
@@ -30,8 +28,6 @@ public class UserInventory {
         inv.setName(vo.getName());
         inv.setSecurityKey(vo.getSecurityKey());
         inv.setToken(vo.getToken());
-        inv.setPolicies(PolicyInventory.valueOf(vo.getPolicies()));
-        inv.setGroups(UserGroupInventory.valueOf(vo.getGroups()));
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
     }
@@ -75,14 +71,6 @@ public class UserInventory {
         this.token = token;
     }
 
-    public List<PolicyInventory> getPolicies() {
-        return policies;
-    }
-
-    public void setPolicies(List<PolicyInventory> policies) {
-        this.policies = policies;
-    }
-
     public Timestamp getCreateDate() {
         return createDate;
     }
@@ -97,13 +85,5 @@ public class UserInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
-    }
-
-    public List<UserGroupInventory> getGroups() {
-        return groups;
-    }
-
-    public void setGroups(List<UserGroupInventory> groups) {
-        this.groups = groups;
     }
 }

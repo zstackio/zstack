@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.zone.ZoneVO;
@@ -8,6 +9,7 @@ import java.util.List;
 
 /**
  */
+@Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APIGetIpAddressCapacityMsg extends APISyncCallMessage {
     @APIParam(required = false, resourceType = ZoneVO.class)
     private List<String> zoneUuids;

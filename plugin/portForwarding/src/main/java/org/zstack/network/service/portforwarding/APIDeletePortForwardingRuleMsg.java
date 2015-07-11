@@ -1,5 +1,6 @@
 package org.zstack.network.service.portforwarding;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -43,6 +44,7 @@ import org.zstack.header.message.APIParam;
  * see :ref:`APIDetachPortForwardingRuleEvent`
  */
 
+@Action(category = PortForwardingConstant.ACTION_CATEGORY)
 public class APIDeletePortForwardingRuleMsg extends APIDeleteMessage {
     /**
      * @desc

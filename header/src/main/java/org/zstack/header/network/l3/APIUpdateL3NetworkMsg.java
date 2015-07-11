@@ -1,11 +1,13 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**
  * Created by frank on 6/14/2015.
  */
+@Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APIUpdateL3NetworkMsg extends APIMessage implements L3NetworkMessage {
     @APIParam(resourceType = L3NetworkVO.class)
     private String uuid;

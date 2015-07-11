@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -35,6 +36,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
  * see :ref:`APIDetachSecurityGroupFromL3NetworkEvent`
  */
 
+@Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 public class APIDetachSecurityGroupFromL3NetworkMsg extends APIMessage {
     /**
      * @desc security group uuid

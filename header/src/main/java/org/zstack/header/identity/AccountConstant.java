@@ -17,15 +17,26 @@ public interface AccountConstant {
     
     public static final int RESOURCE_PERMISSION_READ = 1;
     public static final int RESOURCE_PERMISSION_WRITE = 2;
+
+    public static final String ACTION_CATEGORY = "identity";
+    public static final String READ_PERMISSION_POLICY = "default-read-permission";
     
     public static enum RoleDecision {
         EXPLICIT_DENY,
         DEFAULT_DENY,
+        DENY,
         ALLOW,
     }
     
     public static enum StatementEffect {
         Allow,
         Deny,
+    }
+
+    public static enum Principal {
+        Account,
+        User,
+        Role,
+        Group
     }
 }

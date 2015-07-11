@@ -1,5 +1,6 @@
 package org.zstack.header.image;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
@@ -9,6 +10,7 @@ import org.zstack.header.message.APIParam;
  * Time: 5:31 PM
  * To change this template use File | Settings | File Templates.
  */
+@Action(category = ImageConstant.ACTION_CATEGORY)
 public class APIChangeImageStateMsg  extends APIMessage implements ImageMessage{
     @APIParam(resourceType = ImageVO.class)
     private String uuid;

@@ -1,10 +1,9 @@
 package org.zstack.header.volume;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.vm.VmInstanceMessage;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.volume.VolumeVO;
 
 /**
  * @api
@@ -44,6 +43,7 @@ import org.zstack.header.volume.VolumeVO;
  *
  * See :ref:`APIAttachVolumeToVmEvent`
  */
+@Action(category = VolumeConstant.ACTION_CATEGORY)
 public class APIAttachDataVolumeToVmMsg extends APIMessage implements VolumeMessage {
     /**
      * @desc vm uuid. see :ref:`VmInstanceInventory`

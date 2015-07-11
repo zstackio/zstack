@@ -8,6 +8,8 @@ public interface EipConstant {
     public static final String SERVICE_ID = "eip";
     public static String EIP_NETWORK_SERVICE_TYPE = "Eip";
 
+    public static final String ACTION_CATEGORY = "eip";
+
     public static final NetworkServiceType EIP_TYPE = new NetworkServiceType(EIP_NETWORK_SERVICE_TYPE);
 
     public static enum Params {

@@ -5,6 +5,8 @@ import org.zstack.header.configuration.PythonClass;
 @PythonClass
 public interface L3NetworkConstant {
     public static final String SERVICE_ID = "network.l3";
+
+    public static final String ACTION_CATEGORY = "l3Network";
     @PythonClass
     public static final String L3_BASIC_NETWORK_TYPE = "L3BasicNetwork";
     @PythonClass

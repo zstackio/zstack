@@ -1,5 +1,6 @@
 package org.zstack.network.service.vip;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -41,6 +42,7 @@ import org.zstack.header.rest.APINoSee;
  *
  * @result
  */
+@Action(category = VipConstant.ACTION_CATEGORY)
 public class APIDeleteVipMsg extends APIDeleteMessage implements L3NetworkMessage {
     /**
      * @ignore

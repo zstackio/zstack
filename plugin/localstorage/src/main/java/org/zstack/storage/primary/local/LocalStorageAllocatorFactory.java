@@ -13,13 +13,11 @@ import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 

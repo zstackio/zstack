@@ -11,6 +11,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor.InterceptorPosition;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -137,26 +138,40 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
             }
         }
 
+        List<GlobalApiMessageInterceptor> system = new ArrayList<GlobalApiMessageInterceptor>();
+        List<GlobalApiMessageInterceptor> front = new ArrayList<GlobalApiMessageInterceptor>();
+        List<GlobalApiMessageInterceptor> end = new ArrayList<GlobalApiMessageInterceptor>();
+
         if (gis != null) {
             for (GlobalApiMessageInterceptor gi : gis) {
                 logger.debug(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
                 if (gi.getPosition() == GlobalApiMessageInterceptor.InterceptorPosition.FRONT) {
-                    interceptors.add(0, gi);
-                } else {
-                    interceptors.add(gi);
+                    front.add(gi);
+                } else if (gi.getPosition() == InterceptorPosition.END){
+                    end.add(gi);
+                } else if (gi.getPosition() == InterceptorPosition.SYSTEM) {
+                    system.add(gi);
                 }
             }
         }
         for (GlobalApiMessageInterceptor gi : globalInterceptorsForAllMsg) {
             logger.debug(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
             if (gi.getPosition() == GlobalApiMessageInterceptor.InterceptorPosition.FRONT) {
-                interceptors.add(0, gi);
-            } else {
-                interceptors.add(gi);
+                front.add(gi);
+            } else if (gi.getPosition() == InterceptorPosition.END){
+                end.add(gi);
+            } else if (gi.getPosition() == InterceptorPosition.SYSTEM) {
+                system.add(gi);
             }
         }
 
-        desc.setInterceptors(interceptors);
+        List<ApiMessageInterceptor> all = new ArrayList<ApiMessageInterceptor>();
+        all.addAll(system);
+        all.addAll(front);
+        all.addAll(interceptors);
+        all.addAll(end);
+
+        desc.setInterceptors(all);
     }
 
     private void prepareRoles(ApiMessageDescriptor desc, Service.Message mschem) {

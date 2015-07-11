@@ -1,11 +1,13 @@
 package org.zstack.network.service.vip;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**
  * Created by frank on 6/15/2015.
  */
+@Action(category = VipConstant.ACTION_CATEGORY)
 public class APIUpdateVipMsg extends APIMessage {
     @APIParam(resourceType = VipVO.class)
     private String uuid;

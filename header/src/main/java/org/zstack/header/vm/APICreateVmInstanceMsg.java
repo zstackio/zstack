@@ -4,6 +4,7 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
@@ -71,6 +72,7 @@ import java.util.List;
  * See :ref:`APICreateVmInstanceEvent`
  */
 @TagResourceType(VmInstanceVO.class)
+@Action(category = VmInstanceConstant.ACTION_CATEGORY)
 public class APICreateVmInstanceMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters

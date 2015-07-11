@@ -1,28 +1,31 @@
 package org.zstack.header.identity;
 
+import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
-@NeedRoles(roles = {IdentityRoles.CREATE_POLICY_ROLE})
+import java.util.List;
+
+@Action(category = AccountConstant.ACTION_CATEGORY)
 public class APICreatePolicyMsg extends APICreateMessage implements AccountMessage {
     @APIParam
     private String name;
     private String description;
-    @APIParam
-    private String policyData;
-    
+    @APIParam(nonempty = true)
+    private List<Statement> statements;
+
+    public List<Statement> getStatements() {
+        return statements;
+    }
+
+    public void setStatements(List<Statement> statements) {
+        this.statements = statements;
+    }
+
     @Override
     public String getAccountUuid() {
         return this.getSession().getAccountUuid();
-    }
-
-    public String getPolicyData() {
-        return policyData;
-    }
-
-    public void setPolicyData(String policyData) {
-        this.policyData = policyData;
     }
 
     public String getName() {

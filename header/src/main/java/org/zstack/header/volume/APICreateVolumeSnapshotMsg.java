@@ -1,5 +1,6 @@
 package org.zstack.header.volume;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -46,6 +47,7 @@ import org.zstack.header.message.APIParam;
  *
  * see :ref:`APICreateVolumeSnapshotEvent`
  */
+@Action(category = VolumeConstant.ACTION_CATEGORY)
 public class APICreateVolumeSnapshotMsg extends APICreateMessage implements VolumeMessage {
     /**
      * @desc volume uuid. See :ref:`VolumeInventory`

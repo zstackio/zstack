@@ -28,7 +28,15 @@ public class SessionInventory implements Serializable {
         inv.setUuid(vo.getUuid());
         return inv;
     }
-    
+
+    public boolean isAccountSession() {
+        return accountUuid.equals(userUuid);
+    }
+
+    public boolean isUserSession() {
+        return !accountUuid.equals(userUuid);
+    }
+
     public String getUuid() {
         return uuid;
     }

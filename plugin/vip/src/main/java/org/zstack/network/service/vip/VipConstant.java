@@ -4,6 +4,7 @@ package org.zstack.network.service.vip;
  */
 public interface VipConstant {
     public static final String SERVICE_ID = "vip";
+    public static final String ACTION_CATEGORY = "vip";
 
     public static enum Params {
         VIP,

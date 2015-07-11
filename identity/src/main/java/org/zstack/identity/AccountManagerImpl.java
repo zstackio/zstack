@@ -1,6 +1,5 @@
 package org.zstack.identity;
 
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,37 +8,42 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.SysErrors;
+import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
+import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.search.SearchOp;
-import org.zstack.search.GetQuery;
-import org.zstack.search.SearchQuery;
+import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.sql.Timestamp;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
-        SoftDeleteEntityExtensionPoint, HardDeleteEntityExtensionPoint {
+        SoftDeleteEntityExtensionPoint, HardDeleteEntityExtensionPoint, GlobalApiMessageInterceptor, ApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(AccountManagerImpl.class);
 
     @Autowired
@@ -49,14 +53,22 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Autowired
     private DbEntityLister dl;
     @Autowired
-    private CredentialChecker credentialChecker;
-    @Autowired
     private ErrorFacade errf;
-
-    private static final String DEFAULT_ACCOUNT_ROLE = "DefaultAccountRole";
+    @Autowired
+    private ThreadFacade thdf;
 
     private List<String> resourceTypeForAccountRef;
     private List<Class> resourceTypes;
+    private Map<String, SessionInventory> sessions = new ConcurrentHashMap<String, SessionInventory>();
+
+    class MessageAction {
+        boolean adminOnly;
+        List<String> actions;
+        String category;
+    }
+
+    private Map<Class, MessageAction> actions = new HashMap<Class, MessageAction>();
+    private Future<Void> expiredSessionCollector;
 
     @Override
     @MessageSafe
@@ -101,16 +113,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APILogInByUserMsg)msg);
         } else if (msg instanceof APILogOutMsg) {
             handle((APILogOutMsg) msg);
-        } else if (msg instanceof APISearchAccountMsg) {
-            handle((APISearchAccountMsg) msg);
-        } else if (msg instanceof APIGetAccountMsg) {
-            handle((APIGetAccountMsg) msg);
-        } else if (msg instanceof APIGetUserMsg) {
-            handle((APIGetUserMsg) msg);
-        } else if (msg instanceof APIGetUserGroupMsg) {
-            handle((APIGetUserGroupMsg) msg);
-        } else if (msg instanceof APIGetPolicyMsg) {
-            handle((APIGetPolicyMsg) msg);
         } else if (msg instanceof APIValidateSessionMsg) {
             handle((APIValidateSessionMsg) msg);
         } else {
@@ -120,97 +122,75 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void handle(APIValidateSessionMsg msg) {
         APIValidateSessionReply reply = new APIValidateSessionReply();
-        try {
-            credentialChecker.validateSession(msg);
-            reply.setValidSession(true);
-        } catch (BadCredentialsException e) {
-            reply.setValidSession(false);
-        }
+        reply.setValidSession(sessions.containsKey(msg.getSessionUuid()));
         bus.reply(msg, reply);
     }
 
-    private void handle(APIGetPolicyMsg msg) {
-        SearchQuery<PolicyInventory> q = new SearchQuery<PolicyInventory>(PolicyInventory.class);
-        q.addAccountAsAnd(msg);
-        q.add("uuid", SearchOp.AND_EQ, msg.getUuid());
-        List<PolicyInventory> invs = q.list();
-        APIGetPolicyReply reply = new APIGetPolicyReply();
-        if (!invs.isEmpty()) {
-            reply.setInventory(JSONObjectUtil.toJsonString(invs.get(0)));
-        }
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIGetUserGroupMsg msg) {
-        SearchQuery<UserGroupInventory> q = new SearchQuery<UserGroupInventory>(UserGroupInventory.class);
-        q.addAccountAsAnd(msg);
-        q.add("uuid", SearchOp.AND_EQ, msg.getUuid());
-        List<UserGroupInventory> invs = q.list();
-        APIGetUserGroupReply reply = new APIGetUserGroupReply();
-        if (!invs.isEmpty()) {
-            reply.setInventory(JSONObjectUtil.toJsonString(invs.get(0)));
-        }
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIGetUserMsg msg) {
-        SearchQuery<UserInventory> q = new SearchQuery(UserInventory.class);
-        q.addAccountAsAnd(msg);
-        q.add("uuid", SearchOp.AND_EQ, msg.getUuid());
-        List<UserInventory> invs = q.list();
-        APIGetUserReply reply = new APIGetUserReply();
-        if (!invs.isEmpty()) {
-            UserInventory inv = invs.get(0);
-            reply.setInventory(JSONObjectUtil.toJsonString(inv));
-        }
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIGetAccountMsg msg) {
-        GetQuery q = new GetQuery();
-        String res = q.getAsString(msg, AccountInventory.class);
-        APIGetAccountReply reply = new APIGetAccountReply();
-        reply.setInventory(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchAccountMsg msg) {
-        SearchQuery<AccountInventory> query = SearchQuery.create(msg, AccountInventory.class);
-        String content = query.listAsString();
-        APISearchAccountReply reply = new APISearchAccountReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
-    }
 
     private void handle(APILogOutMsg msg) {
         APILogOutReply reply = new APILogOutReply();
-        credentialChecker.logOutSession(msg.getSessionUuid());
+        logOutSession(msg.getSessionUuid());
         bus.reply(msg, reply);
+    }
+
+    private SessionInventory getSession(String accountUuid, String userUuid) {
+        int maxLoginTimes = org.zstack.identity.IdentityGlobalConfig.MAX_CONCURRENT_SESSION.value(Integer.class);
+        SimpleQuery<SessionVO> query = dbf.createQuery(SessionVO.class);
+        query.add(SessionVO_.accountUuid, Op.EQ, accountUuid);
+        query.add(SessionVO_.userUuid, Op.EQ, userUuid);
+        long count = query.count();
+        if (count >= maxLoginTimes) {
+            String err = String.format("Login sessions hit limit of max allowed concurrent login sessions, max allowed: %s", maxLoginTimes);
+            throw new BadCredentialsException(err);
+        }
+
+        int sessionTimeout = IdentityGlobalConfig.SESSION_TIMEOUT.value(Integer.class);
+        SessionVO svo = new SessionVO();
+        svo.setUuid(Platform.getUuid());
+        svo.setAccountUuid(accountUuid);
+        svo.setUserUuid(userUuid);
+        long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(sessionTimeout);
+        svo.setExpiredDate(new Timestamp(expiredTime));
+        svo = dbf.persistAndRefresh(svo);
+        return SessionInventory.valueOf(svo);
     }
 
     private void handle(APILogInByUserMsg msg) {
         APILogInReply reply = new APILogInReply();
-        try {
-            SessionInventory inv = credentialChecker.authenticateByUser(msg.getAccountUuid(), msg.getUserName(), msg.getPassword());
-            reply.setInventory(inv);
-        } catch (CredentialDeniedException e) {
-            logger.trace("", e);
-            reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR, e.getError()));
+        SimpleQuery<UserVO> q = dbf.createQuery(UserVO.class);
+        q.add(UserVO_.accountUuid, Op.EQ, msg.getAccountUuid());
+        q.add(UserVO_.password, Op.EQ, msg.getPassword());
+        q.add(UserVO_.name, Op.EQ, msg.getUserName());
+        UserVO user = q.find();
+        if (user == null) {
+            reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR,
+                    "wrong username or password"
+            ));
+            bus.reply(msg, reply);
+            return;
         }
+
+        reply.setInventory(getSession(user.getAccountUuid(), user.getUuid()));
         bus.reply(msg, reply);
     }
 
     private void handle(APILogInByAccountMsg msg) {
         APILogInReply reply = new APILogInReply();
-        try {
-            SessionInventory inv = credentialChecker.authenticateByAccount(msg.getAccountName(), msg.getPassword());
-            reply.setInventory(inv);
-        } catch (CredentialDeniedException e) {
-            logger.trace("", e);
-            reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR, e.getError()));
+
+        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+        q.add(AccountVO_.name, Op.EQ, msg.getAccountName());
+        q.add(AccountVO_.password, Op.EQ, msg.getPassword());
+        AccountVO vo = q.find();
+        if (vo == null) {
+            reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR, "wrong account name or password"));
+            bus.reply(msg, reply);
+            return;
         }
+
+        reply.setInventory(getSession(vo.getUuid(), vo.getUuid()));
         bus.reply(msg, reply);
     }
+
 
     private void handle(APIListPolicyMsg msg) {
         List<PolicyVO> vos = dl.listByApiMessage(msg, PolicyVO.class);
@@ -236,15 +216,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         bus.reply(msg, reply);
     }
 
-    private String getDefaultAccountRoleDoc() {
-        List<String> roles = new ArrayList<String>();
-        roles.add(IdentityRoles.ALL_ACCOUNT_ROLES);
-        return PolicyDoc.generatePolicyXmlData(AccountConstant.StatementEffect.Allow.toString(), roles);
-    }
-
-    @Transactional
     private void handle(APICreateAccountMsg msg) {
-        dbf.entityForTranscationCallback(Operation.PERSIST, AccountVO.class, UserVO.class, UserPolicyRefVO.class);
         AccountVO vo = new AccountVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -253,28 +225,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
         vo.setName(msg.getName());
         vo.setPassword(msg.getPassword());
-        vo.setType(AccountType.Normal);
-        dbf.getEntityManager().persist(vo);
-        UserVO uvo = new UserVO();
-        uvo.setUuid(vo.getUuid());
-        uvo.setAccountUuid(vo.getUuid());
-        uvo.setName(vo.getName());
-        uvo.setPassword(vo.getPassword());
-        dbf.getEntityManager().persist(uvo);
-
-        SimpleQuery<PolicyVO> pq = dbf.createQuery(PolicyVO.class);
-        pq.select(PolicyVO_.uuid);
-        pq.add(PolicyVO_.name, Op.EQ, DEFAULT_ACCOUNT_ROLE);
-        pq.add(PolicyVO_.type, Op.EQ, PolicyType.System);
-        String policyUUid = pq.findValue();
-
-        UserPolicyRefVO upvo = new UserPolicyRefVO();
-        upvo.setPolicyUuid(policyUUid);
-        upvo.setUserUuid(uvo.getUuid());
-        dbf.getEntityManager().persist(upvo);
-
-        dbf.getEntityManager().flush();
-        dbf.getEntityManager().refresh(vo);
+        vo.setType(msg.getType() != null ? AccountType.valueOf(msg.getType()) : AccountType.Normal);
+        vo = dbf.persistAndRefresh(vo);
 
         AccountInventory inv = AccountInventory.valueOf(vo);
         APICreateAccountEvent evt = new APICreateAccountEvent(msg.getId());
@@ -299,60 +251,88 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     public boolean start() {
         try {
             buildResourceTypes();
+            buildActions();
+            startExpiredSessionCollector();
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
         return true;
     }
 
-    @Override
-    public boolean stop() {
-        return true;
+    private void startExpiredSessionCollector() {
+        final int interval = IdentityGlobalConfig.SESSION_CELANUP_INTERVAL.value(Integer.class);
+        expiredSessionCollector = thdf.submitPeriodicTask(new PeriodicTask() {
+
+            @Transactional
+            private List<String> deleteExpiredSessions() {
+                String sql = "select s.uuid from SessionVO s where CURRENT_TIMESTAMP  >= s.expiredDate";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                List<String> uuids = q.getResultList();
+                if (!uuids.isEmpty()) {
+                    String dsql = "delete from SessionVO s where s.uuid in :uuids";
+                    Query dq = dbf.getEntityManager().createQuery(dsql);
+                    dq.setParameter("uuids", uuids);
+                    dq.executeUpdate();
+                }
+                return uuids;
+            }
+
+            @Override
+            public void run() {
+                List<String> uuids = deleteExpiredSessions();
+                for (String uuid : uuids) {
+                    sessions.remove(uuid);
+                }
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return interval;
+            }
+
+            @Override
+            public String getName() {
+                return "ExpiredSessionCleanupThread";
+            }
+
+        });
     }
 
-    @Transactional
-    private void createInitialSystemAdminAccountAndUser(String defaultAccountRoleData) throws IOException {
-        InputStream is = this.getClass().getClassLoader().getResourceAsStream("SystemAdminPolicy.xml");
-        if (is == null) {
-            throw new CloudRuntimeException(String.format("Cannot find default SystemAdminPolicy.xml in classpath"));
-        }
-        StringWriter writer = new StringWriter();
-        IOUtils.copy(is, writer);
-        String policyData = writer.toString();
+    private void buildActions() {
+        List<Class> apiMsgClasses = BeanUtils.scanClassByType("org.zstack", APIMessage.class);
+        for (Class clz : apiMsgClasses) {
+            Action a = (Action) clz.getAnnotation(Action.class);
+            if (a == null) {
+                logger.debug(String.format("API message[%s] doesn't have annotation @Action, assume it's an admin only API", clz));
+                MessageAction ma = new MessageAction();
+                ma.adminOnly = true;
+                actions.put(clz, ma);
+                continue;
+            }
 
-        dbf.entityForTranscationCallback(Operation.PERSIST, AccountVO.class, UserVO.class, PolicyVO.class, UserPolicyRefVO.class);
-        AccountVO vo = new AccountVO();
-        vo.setUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
-        vo.setName(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME);
-        vo.setPassword(AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
-        vo.setType(AccountType.SystemAdmin);
-        dbf.getEntityManager().persist(vo);
-        UserVO uvo = new UserVO();
-        uvo.setUuid(vo.getUuid());
-        uvo.setAccountUuid(vo.getUuid());
-        uvo.setName(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME);
-        uvo.setPassword(AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
-        dbf.getEntityManager().persist(uvo);
-        PolicyVO pvo = new PolicyVO();
-        pvo.setUuid(Platform.getUuid());
-        pvo.setType(PolicyType.System);
-        pvo.setAccountUuid(vo.getUuid());
-        pvo.setData(policyData);
-        pvo.setName("SystemAdminPolicy");
-        pvo.setDescription("Default policy granting all permission to system admin");
-        dbf.getEntityManager().persist(pvo);
-        UserPolicyRefVO upvo = new UserPolicyRefVO();
-        upvo.setPolicyUuid(pvo.getUuid());
-        upvo.setUserUuid(uvo.getUuid());
-        dbf.getEntityManager().persist(upvo);
-        PolicyVO apvo = new PolicyVO();
-        apvo.setUuid(Platform.getUuid());
-        apvo.setAccountUuid(vo.getUuid());
-        apvo.setType(PolicyType.System);
-        apvo.setData(defaultAccountRoleData);
-        apvo.setName(DEFAULT_ACCOUNT_ROLE);
-        apvo.setDescription(DEFAULT_ACCOUNT_ROLE);
-        dbf.getEntityManager().persist(apvo);
+            MessageAction ma = new MessageAction();
+            ma.adminOnly = a.adminOnly();
+            ma.category = a.category();
+            ma.actions = new ArrayList<String>();
+            for (String ac : ma.actions) {
+                ma.actions.add(String.format("%s:%s", ma.category, ac));
+            }
+            ma.actions.add(String.format("%s:%s", ma.category, clz.getSimpleName()));
+            actions.put(clz, ma);
+        }
+    }
+
+    @Override
+    public boolean stop() {
+        if (expiredSessionCollector != null) {
+            expiredSessionCollector.cancel(true);
+        }
+        return true;
     }
 
     @Override
@@ -360,37 +340,19 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         try {
             SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
             q.add(AccountVO_.name, Op.EQ, AccountConstant.INITIAL_SYSTEM_ADMIN_NAME);
-            long account = q.count();
-            if (account == 0) {
-                createInitialSystemAdminAccountAndUser(getDefaultAccountRoleDoc());
+            q.add(AccountVO_.type, Op.EQ, AccountType.SystemAdmin);
+            if (!q.isExists()) {
+                AccountVO vo = new AccountVO();
+                vo.setUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+                vo.setName(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME);
+                vo.setPassword(AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
+                vo.setType(AccountType.SystemAdmin);
+                dbf.persist(vo);
                 logger.debug(String.format("Created initial system admin account[name:%s]", AccountConstant.INITIAL_SYSTEM_ADMIN_NAME));
             }
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to create default system admin account", e);
         }
-    }
-
-    private boolean isAccountExisted(String accountIdentify, boolean isUuid) {
-        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-        if (isUuid) {
-            q.add(AccountVO_.uuid, Op.EQ, accountIdentify);
-        } else {
-            q.add(AccountVO_.name, Op.EQ, accountIdentify);
-        }
-        long count = q.count();
-        return count != 0;
-    }
-
-    @Transactional
-    private boolean isUserExisted(String userUuid) {
-        SimpleQuery<UserVO> q = dbf.createQuery(UserVO.class);
-        q.add(UserVO_.uuid, Op.EQ, userUuid);
-        long count = q.count();
-        return count != 0;
-    }
-
-    public void setResourceTypeForAccountRef(List<String> resourceTypeForAccountRef) {
-        this.resourceTypeForAccountRef = resourceTypeForAccountRef;
     }
 
     @Override
@@ -457,5 +419,320 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (resourceTypes.contains(entityClass)) {
             postSoftDelete(entityIds, entityClass);
         }
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return null;
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.FRONT;
+    }
+
+    private void logOutSession(String sessionUuid) {
+        sessions.remove(sessionUuid);
+        dbf.removeByPrimaryKey(sessionUuid, SessionVO.class);
+    }
+
+    @Transactional(readOnly = true)
+    private Timestamp getCurrentSqlDate() {
+        Query query = dbf.getEntityManager().createNativeQuery("select current_timestamp()");
+        return (Timestamp) query.getSingleResult();
+    }
+
+    class Auth {
+        APIMessage msg;
+        SessionInventory session;
+        MessageAction action;
+
+        void validate(APIMessage msg) {
+            this.msg = msg;
+            if (msg.getClass().isAnnotationPresent(SuppressCredentialCheck.class)) {
+                return;
+            }
+
+            action = actions.get(msg.getClass());
+
+            sessionCheck();
+            policyCheck();
+
+            msg.setSession(session);
+        }
+
+        private void policyCheck() {
+            if (session.isAccountSession()) {
+                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+                q.select(AccountVO_.type);
+                q.add(AccountVO_.uuid, Op.EQ, session.getAccountUuid());
+                AccountType type = q.findValue();
+                if (action.adminOnly && type != AccountType.SystemAdmin) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                            String.format("API[%s] is admin only", msg.getClass().getSimpleName())));
+                }
+
+                return;
+            }
+
+            SimpleQuery<UserVO> uq = dbf.createQuery(UserVO.class);
+            uq.select(UserVO_.name);
+            uq.add(UserVO_.uuid, Op.EQ, session.getUserUuid());
+            String username = uq.findValue();
+
+            Statement readPermission = new Statement();
+            readPermission.setEffect(StatementEffect.Allow);
+            readPermission.setName(AccountConstant.READ_PERMISSION_POLICY);
+            readPermission.addAction(".*:read");
+            PolicyInventory readPolicy = new PolicyInventory();
+            readPolicy.setStatements(list(readPermission));
+            StatementEffect effect = decide(list(readPolicy));
+            if (effect == StatementEffect.Allow) {
+                return;
+            }
+
+            List<PolicyInventory> userPolicies = getUserPolicies();
+            effect = decide(userPolicies);
+            if (effect == StatementEffect.Allow) {
+                return;
+            } else if (effect == StatementEffect.Deny) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                        String.format("user policy denied. user[name: %s, uuid: %s] is denied to execute API[%s]", username, session.getUuid(), msg.getClass().getSimpleName())
+                ));
+            }
+
+            List<PolicyInventory> groupPolicies = getGroupPolicies();
+            effect = decide(groupPolicies);
+            if (effect == StatementEffect.Allow) {
+                return;
+            } else if (effect == StatementEffect.Deny) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                        String.format("group policy denied. user[name: %s, uuid: %s] in a group is denied to execute API[%s]", username, session.getUuid(), msg.getClass().getSimpleName())
+                ));
+            }
+
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                    String.format("user[name: %s, uuid: %s] has no policy set for this operation, API[%s] is denied by default. You may either create policies for this user" +
+                            " or add the user into a group with polices set", username, session.getUserUuid(), msg.getClass().getSimpleName())
+            ));
+        }
+
+        @Transactional(readOnly = true)
+        private List<PolicyInventory> getGroupPolicies() {
+            String sql = "select p from PolicyVO p, UserGroupUserRefVO ref, UserGroupPolicyRefVO gref where" +
+                    " p.uuid = gref.policyUuid and gref.groupUuid = ref.groupUuid and ref.userUuid = :uuid";
+            TypedQuery<PolicyVO> q = dbf.getEntityManager().createQuery(sql, PolicyVO.class);
+            q.setParameter("uuid", session.getUserUuid());
+            return PolicyInventory.valueOf(q.getResultList());
+        }
+
+        private StatementEffect decide(List<PolicyInventory> userPolicies) {
+            for (String a : action.actions) {
+                for (PolicyInventory p : userPolicies) {
+                    for (Statement s : p.getStatements()) {
+                        for (String ac : s.getActions()) {
+                            Pattern pattern = Pattern.compile(ac);
+                            Matcher m = pattern.matcher(a);
+                            boolean ret = m.matches();
+                            if (ret) {
+                                return s.getEffect();
+                            }
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        @Transactional(readOnly = true)
+        private List<PolicyInventory> getUserPolicies() {
+            String sql = "select p from PolicyVO p, UserPolicyRefVO ref where ref.userUuid = :uuid and ref.policyUuid = p.uuid";
+            TypedQuery<PolicyVO> q = dbf.getEntityManager().createQuery(sql, PolicyVO.class);
+            q.setParameter("uuid", session.getUserUuid());
+            return PolicyInventory.valueOf(q.getResultList());
+        }
+
+        private void sessionCheck() {
+            if (msg.getSession() == null) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.INVALID_SESSION,
+                        String.format("session of message[%s] is null", msg.getMessageName())));
+            }
+
+            if (msg.getSession().getUuid() == null) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.INVALID_SESSION,
+                        "session uuid is null"));
+            }
+
+            SessionInventory session = sessions.get(msg.getSession().getUuid());
+            if (session == null) {
+                SessionVO svo = dbf.findByUuid(msg.getSession().getUuid(), SessionVO.class);
+                if (svo == null) {
+                    throw new BadCredentialsException("Session expired");
+                }
+                session = SessionInventory.valueOf(svo);
+                sessions.put(session.getUuid(), session);
+            }
+
+            Timestamp curr = getCurrentSqlDate();
+            if (curr.after(session.getExpiredDate())) {
+                logger.debug(String.format("session expired[%s < %s] for account[uuid:%s]", curr, session.getExpiredDate(), session.getAccountUuid()));
+                logOutSession(session.getUuid());
+                throw new BadCredentialsException("Session expired");
+            }
+
+            this.session = session;
+        }
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        new Auth().validate(msg);
+
+        if (msg instanceof APIResetAccountPasswordMsg) {
+            validate((APIResetAccountPasswordMsg) msg);
+        } else if (msg instanceof APICreatePolicyMsg) {
+            validate((APICreatePolicyMsg) msg);
+        } else if (msg instanceof APIAddUserToGroupMsg) {
+            validate((APIAddUserToGroupMsg) msg);
+        } else if (msg instanceof APIAttachPolicyToUserGroupMsg) {
+            validate((APIAttachPolicyToUserGroupMsg) msg);
+        } else if (msg instanceof APIAttachPolicyToUserMsg) {
+            validate((APIAttachPolicyToUserMsg) msg);
+        } else if (msg instanceof APIDetachPolicyFromUserGroupMsg) {
+            validate((APIDetachPolicyFromUserGroupMsg) msg);
+        } else if (msg instanceof APIDetachPolicyFromUserMsg) {
+            validate((APIDetachPolicyFromUserMsg) msg);
+        }
+
+        setServiceId(msg);
+
+        return msg;
+    }
+
+    private void validate(APIDetachPolicyFromUserMsg msg) {
+        PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
+        UserVO user = dbf.findByUuid(msg.getUserUuid(), UserVO.class);
+        if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid())
+            ));
+        }
+        if (!user.getAccountUuid().equals(msg.getAccountUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid())
+            ));
+        }
+    }
+
+    private void validate(APIDetachPolicyFromUserGroupMsg msg) {
+        PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
+        UserGroupVO group = dbf.findByUuid(msg.getGroupUuid(), UserGroupVO.class);
+        if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid())
+            ));
+        }
+        if (!group.getAccountUuid().equals(msg.getAccountUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid())
+            ));
+        }
+    }
+
+    private void validate(APIAttachPolicyToUserMsg msg) {
+        PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
+        UserVO user = dbf.findByUuid(msg.getUserUuid(), UserVO.class);
+        if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid())
+            ));
+        }
+        if (!user.getAccountUuid().equals(msg.getAccountUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid())
+            ));
+        }
+    }
+
+    private void validate(APIAttachPolicyToUserGroupMsg msg) {
+        PolicyVO policy = dbf.findByUuid(msg.getPolicyUuid(), PolicyVO.class);
+        UserGroupVO group = dbf.findByUuid(msg.getGroupUuid(), UserGroupVO.class);
+        if (!policy.getAccountUuid().equals(msg.getAccountUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("policy[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            policy.getName(), policy.getUuid(), msg.getSession().getAccountUuid())
+            ));
+        }
+        if (!group.getAccountUuid().equals(msg.getAccountUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid())
+            ));
+        }
+    }
+
+    private void validate(APIAddUserToGroupMsg msg) {
+        UserVO user = dbf.findByUuid(msg.getUserUuid(), UserVO.class);
+        UserGroupVO group = dbf.findByUuid(msg.getGroupUuid(), UserGroupVO.class);
+        if (!user.getAccountUuid().equals(msg.getAccountUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("user[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            user.getName(), user.getUuid(), msg.getSession().getAccountUuid())
+            ));
+        }
+        if (!group.getAccountUuid().equals(msg.getSession().getAccountUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("group[name: %s, uuid: %s] doesn't belong to the account[uuid: %s]",
+                            group.getName(), group.getUuid(), msg.getSession().getAccountUuid())
+            ));
+        }
+    }
+
+    private void validate(APICreatePolicyMsg msg) {
+        for (Statement s : msg.getStatements()) {
+            if (s.getEffect() == null) {
+                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                        String.format("a statement must have effect field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s))
+                ));
+            }
+            if (s.getActions() == null) {
+                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                        String.format("a statement must have action field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s))
+                ));
+            }
+            if (s.getActions().isEmpty()) {
+                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                        String.format("a statement must have a non-empty action field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s))
+                ));
+            }
+        }
+    }
+
+    private void validate(APIResetAccountPasswordMsg msg) {
+        AccountVO account = dbf.findByUuid(msg.getSession().getAccountUuid(), AccountVO.class);
+        if (account.getType() != AccountType.Normal && !account.getUuid().equals(msg.getUuid())) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("account[uuid: %s, name: %s] is a normal account, it cannot reset the password of another account[uuid: %s]",
+                            account.getUuid(), account.getName(), msg.getUuid())
+            ));
+        }
+    }
+
+    private void setServiceId(APIMessage msg) {
+        if (msg instanceof AccountMessage) {
+            AccountMessage amsg = (AccountMessage) msg;
+            bus.makeTargetServiceIdByResourceUuid(msg, AccountConstant.SERVICE_ID, amsg.getAccountUuid());
+        }
+    }
+
+    public void setResourceTypeForAccountRef(List<String> resourceTypeForAccountRef) {
+        this.resourceTypeForAccountRef = resourceTypeForAccountRef;
     }
 }

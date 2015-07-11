@@ -1,16 +1,16 @@
 package org.zstack.header.identity;
 
-import org.zstack.header.search.SqlTrigger;
-import org.zstack.header.search.TriggerIndex;
+import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
 
 @Entity
 @Table
-@Inheritance(strategy=InheritanceType.JOINED)
-@TriggerIndex
-@SqlTrigger
 public class PolicyVO {
     @Id
     @Column
@@ -20,14 +20,8 @@ public class PolicyVO {
     private String name;
     
     @Column
-    private String description;
-    
-    @Column
+    @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String accountUuid;
-    
-    @Enumerated(EnumType.STRING)
-    @Column
-    private PolicyType type;
     
     @Column
     private String data;
@@ -46,13 +40,6 @@ public class PolicyVO {
         this.uuid = uuid;
     }
 
-    public PolicyType getType() {
-        return type;
-    }
-
-    public void setType(PolicyType type) {
-        this.type = type;
-    }
 
     public String getData() {
         return data;
@@ -76,14 +63,6 @@ public class PolicyVO {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public Timestamp getCreateDate() {

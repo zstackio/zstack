@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 
@@ -41,6 +42,7 @@ import org.zstack.header.message.APIParam;
  *
  * @result
  */
+@Action(category = VmInstanceConstant.ACTION_CATEGORY)
 public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid

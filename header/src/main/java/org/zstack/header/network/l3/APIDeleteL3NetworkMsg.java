@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 /**
@@ -40,6 +41,7 @@ import org.zstack.header.message.APIParam;
  * @result
  * see :ref:`APIDeleteL3NetworkEvent`
  */
+@Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APIDeleteL3NetworkMsg extends APIDeleteMessage implements L3NetworkMessage {
     /**
      * @desc l3NetworkUuid

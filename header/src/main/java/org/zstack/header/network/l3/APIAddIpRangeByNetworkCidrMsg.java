@@ -1,11 +1,14 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**
  */
+@Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APIAddIpRangeByNetworkCidrMsg extends APICreateMessage implements L3NetworkMessage {
     @APIParam(maxLength = 255)
     private String name;

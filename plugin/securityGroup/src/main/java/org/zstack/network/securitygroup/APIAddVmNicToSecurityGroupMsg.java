@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
@@ -48,6 +49,7 @@ import java.util.List;
  *
  * see :ref:`APIAddVmNicToSecurityGroupEvent`
  */
+@Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 public class APIAddVmNicToSecurityGroupMsg extends APIMessage {
     /**
      * @desc security group uuid

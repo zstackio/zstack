@@ -3,22 +3,27 @@ package org.zstack.identity;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.search.SearchQuery;
+import org.zstack.utils.gson.JSONObjectUtil;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AccountBase extends AbstractAccount {
     @Autowired
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ErrorFacade errf;
+    @Autowired
+    private AccountManager acntMgr;
 
     private AccountVO vo;
 
@@ -40,25 +45,13 @@ public class AccountBase extends AbstractAccount {
         }
     }
 
-    @Transactional
-    private AccountVO resetAccountPassword(AccountVO avo, UserVO uvo, String password) {
-        avo.setPassword(password);
-        avo = dbf.getEntityManager().merge(avo);
-        uvo.setPassword(password);
-        dbf.getEntityManager().merge(uvo);
-        return avo;
-    }
-
     private void handle(APIResetAccountPasswordMsg msg) {
-        String accountUuidToReset = msg.getAccountUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID) ? msg.getAccountUuidToReset() : vo.getUuid();
-        SimpleQuery<UserVO> uq = dbf.createQuery(UserVO.class);
-        uq.add(UserVO_.accountUuid, Op.EQ, accountUuidToReset);
-        uq.add(UserVO_.name, Op.EQ, vo.getName());
-        UserVO uvo = uq.find();
+        AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
+        account.setPassword(msg.getPassword());
+        account = dbf.updateAndRefresh(account);
 
-        vo = resetAccountPassword(vo, uvo, msg.getPassword());
         APIResetAccountPasswordEvent evt = new APIResetAccountPasswordEvent(msg.getId());
-        evt.setInventory(AccountInventory.valueOf(vo));
+        evt.setInventory(AccountInventory.valueOf(account));
         bus.publish(evt);
     }
 
@@ -79,52 +72,96 @@ public class AccountBase extends AbstractAccount {
             handle((APICreateUserGroupMsg)msg);
         } else if (msg instanceof APIAttachPolicyToUserGroupMsg) {
             handle((APIAttachPolicyToUserGroupMsg)msg);
-        } else if (msg instanceof APIAttachUserToUserGroupMsg) {
-            handle((APIAttachUserToUserGroupMsg)msg);
-        } else if (msg instanceof APISearchUserMsg) {
-            handle((APISearchUserMsg) msg);
-        } else if (msg instanceof APISearchUserGroupMsg) {
-            handle((APISearchUserGroupMsg) msg);
-        } else if (msg instanceof APISearchPolicyMsg) {
-            handle((APISearchPolicyMsg) msg);
+        } else if (msg instanceof APIAddUserToGroupMsg) {
+            handle((APIAddUserToGroupMsg) msg);
+        } else if (msg instanceof APIDeleteUserGroupMsg) {
+            handle((APIDeleteUserGroupMsg) msg);
+        } else if (msg instanceof APIDeleteUserMsg) {
+            handle((APIDeleteUserMsg) msg);
+        } else if (msg instanceof APIDeletePolicyMsg) {
+            handle((APIDeletePolicyMsg) msg);
+        } else if (msg instanceof APIDetachPolicyFromUserMsg) {
+            handle((APIDetachPolicyFromUserMsg) msg);
+        } else if (msg instanceof APIDetachPolicyFromUserGroupMsg) {
+            handle((APIDetachPolicyFromUserGroupMsg) msg);
+        } else if (msg instanceof APIRemoveUserFromGroupMsg) {
+            handle((APIRemoveUserFromGroupMsg) msg);
+        } else if (msg instanceof APIResetUserPasswordMsg) {
+            handle((APIResetUserPasswordMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    private void handle(APISearchPolicyMsg msg) {
-        SearchQuery<PolicyInventory> query = SearchQuery.create(msg, PolicyInventory.class);
-        query.addAccountAsAnd(msg);
-        String content = query.listAsString();
-        APISearchPolicyReply reply = new APISearchPolicyReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
+    private void handle(APIResetUserPasswordMsg msg) {
+        UserVO user = dbf.findByUuid(msg.getUuid(), UserVO.class);
+        user.setPassword(msg.getPassword());
+        dbf.update(user);
+
+        APIResetUserPasswordEvent evt = new APIResetUserPasswordEvent(msg.getId());
+        bus.publish(evt);
     }
 
-    private void handle(APISearchUserGroupMsg msg) {
-        SearchQuery<UserGroupInventory> query = SearchQuery.create(msg, UserGroupInventory.class);
-        query.addAccountAsAnd(msg);
-        String content = query.listAsString();
-        APISearchUserGroupReply reply = new APISearchUserGroupReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
+    private void handle(APIRemoveUserFromGroupMsg msg) {
+        SimpleQuery<UserGroupUserRefVO> q = dbf.createQuery(UserGroupUserRefVO.class);
+        q.add(UserGroupUserRefVO_.groupUuid, Op.EQ, msg.getGroupUuid());
+        q.add(UserGroupUserRefVO_.userUuid, Op.EQ, msg.getUserUuid());
+        UserGroupUserRefVO ref = q.find();
+        if (ref != null) {
+            dbf.remove(ref);
+        }
+
+        bus.publish(new APIRemoveUserFromGroupEvent(msg.getId()));
     }
 
-    private void handle(APISearchUserMsg msg) {
-        SearchQuery<UserInventory> query = SearchQuery.create(msg, UserInventory.class);
-        query.addAccountAsAnd(msg);
-        String content = query.listAsString();
-        APISearchUserReply reply = new APISearchUserReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
+    private void handle(APIDetachPolicyFromUserGroupMsg msg) {
+        SimpleQuery<UserGroupPolicyRefVO> q = dbf.createQuery(UserGroupPolicyRefVO.class);
+        q.add(UserGroupPolicyRefVO_.groupUuid, Op.EQ, msg.getGroupUuid());
+        q.add(UserGroupPolicyRefVO_.policyUuid, Op.EQ, msg.getPolicyUuid());
+        UserGroupPolicyRefVO ref = q.find();
+        if (ref != null) {
+            dbf.remove(ref);
+        }
+
+        bus.publish(new APIDetachPolicyFromUserGroupEvent(msg.getId()));
     }
 
-    private void handle(APIAttachUserToUserGroupMsg msg) {
+    private void handle(APIDetachPolicyFromUserMsg msg) {
+        SimpleQuery<UserPolicyRefVO> q = dbf.createQuery(UserPolicyRefVO.class);
+        q.add(UserPolicyRefVO_.policyUuid, Op.EQ, msg.getPolicyUuid());
+        q.add(UserPolicyRefVO_.userUuid, Op.EQ, msg.getUserUuid());
+        UserPolicyRefVO ref = q.find();
+        if (ref != null) {
+            dbf.remove(ref);
+        }
+
+        bus.publish(new APIDetachPolicyFromUserEvent(msg.getId()));
+    }
+
+    private void handle(APIDeletePolicyMsg msg) {
+        dbf.removeByPrimaryKey(msg.getUuid(), PolicyVO.class);
+        APIDeletePolicyEvent evt = new APIDeletePolicyEvent(msg.getId());
+        bus.publish(evt);
+    }
+
+    private void handle(APIDeleteUserMsg msg) {
+        dbf.removeByPrimaryKey(msg.getUuid(), UserVO.class);
+        APIDeleteUserEvent evt = new APIDeleteUserEvent(msg.getId());
+        bus.publish(evt);
+    }
+
+    private void handle(APIDeleteUserGroupMsg msg) {
+        dbf.removeByPrimaryKey(msg.getUuid(), UserGroupVO.class);
+        APIDeleteUserGroupEvent evt = new APIDeleteUserGroupEvent(msg.getId());
+        bus.publish(evt);
+    }
+
+    private void handle(APIAddUserToGroupMsg msg) {
         UserGroupUserRefVO ugvo = new UserGroupUserRefVO();
         ugvo.setGroupUuid(msg.getGroupUuid());
         ugvo.setUserUuid(msg.getUserUuid());
         dbf.persist(ugvo);
-        APIAttachUserToUserGroupEvent evt = new APIAttachUserToUserGroupEvent(msg.getId());
+        APIAddUserToGroupEvent evt = new APIAddUserToGroupEvent(msg.getId());
         bus.publish(evt);
     }
 
@@ -148,6 +185,9 @@ public class AccountBase extends AbstractAccount {
         gvo.setDescription(msg.getGroupDescription());
         gvo.setName(msg.getGroupName());
         dbf.persistAndRefresh(gvo);
+
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), gvo.getUuid(), UserGroupVO.class);
+
         UserGroupInventory inv = UserGroupInventory.valueOf(gvo);
         APICreateUserGroupEvent evt = new APICreateUserGroupEvent(msg.getId());
         evt.setInventory(inv);
@@ -173,16 +213,18 @@ public class AccountBase extends AbstractAccount {
         }
         pvo.setAccountUuid(vo.getUuid());
         pvo.setName(msg.getName());
-        pvo.setDescription(msg.getDescription());
-        pvo.setData(msg.getPolicyData());
-        PolicyType type = vo.getType() == AccountType.SystemAdmin ? PolicyType.System : PolicyType.User;
-        pvo.setType(type);
+        pvo.setData(JSONObjectUtil.toJsonString(msg.getStatements()));
         pvo = dbf.persistAndRefresh(pvo);
+
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), pvo.getUuid(), PolicyVO.class);
+
         PolicyInventory pinv = PolicyInventory.valueOf(pvo);
         APICreatePolicyEvent evt = new APICreatePolicyEvent(msg.getId());
         evt.setInventory(pinv);
         bus.publish(evt);
     }
+
+
 
     private void handle(APICreateUserMsg msg) {
         APICreateUserEvent evt = new APICreateUserEvent(msg.getId());
@@ -196,6 +238,9 @@ public class AccountBase extends AbstractAccount {
         uvo.setName(msg.getUserName());
         uvo.setPassword(msg.getPassword());
         uvo = dbf.persistAndRefresh(uvo);
+
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), uvo.getUuid(), UserVO.class);
+
         UserInventory inv = UserInventory.valueOf(uvo);
         evt.setInventory(inv);
         bus.publish(evt);

@@ -3,16 +3,19 @@ package org.zstack.header.identity;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
-@NeedRoles(roles = {IdentityRoles.ATTACH_USER_TO_USER_GROUP_ROLE})
-public class APIAttachUserToUserGroupMsg extends APIMessage implements AccountMessage {
-    @APIParam
+/**
+ * Created by frank on 7/9/2015.
+ */
+@Action(category = AccountConstant.ACTION_CATEGORY)
+public class APIRemoveUserFromGroupMsg extends APIMessage implements AccountMessage {
+    @APIParam(resourceType = UserVO.class)
     private String userUuid;
-    @APIParam
+    @APIParam(resourceType = UserGroupVO.class)
     private String groupUuid;
-    
+
     @Override
     public String getAccountUuid() {
-        return this.getSession().getAccountUuid();
+        return getSession().getAccountUuid();
     }
 
     public String getUserUuid() {

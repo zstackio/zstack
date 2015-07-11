@@ -1,11 +1,13 @@
 package org.zstack.network.securitygroup;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**
  * Created by frank on 6/15/2015.
  */
+@Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 public class APIUpdateSecurityGroupMsg extends APIMessage implements SecurityGroupMessage {
     @APIParam(resourceType = SecurityGroupVO.class)
     private String uuid;

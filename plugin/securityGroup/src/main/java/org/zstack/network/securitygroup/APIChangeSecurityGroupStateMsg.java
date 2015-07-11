@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
@@ -43,6 +44,7 @@ import org.zstack.header.message.APIParam;
  * @result
  * see :ref:`APIChangeSecurityGroupStateEvent`
  */
+@Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 public class APIChangeSecurityGroupStateMsg extends APIMessage {
     @APIParam(resourceType = SecurityGroupVO.class)
     private String uuid;

@@ -1,11 +1,13 @@
 package org.zstack.header.image;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.storage.backup.BackupStorageVO;
 
 import java.util.List;
 
+@Action(category = ImageConstant.ACTION_CATEGORY)
 public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage {
 	@APIParam
 	private String uuid;

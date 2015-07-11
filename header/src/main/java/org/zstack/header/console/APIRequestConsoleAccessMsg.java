@@ -1,8 +1,8 @@
 package org.zstack.header.console;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceVO;
 
 /**
@@ -11,6 +11,7 @@ import org.zstack.header.vm.VmInstanceVO;
  * Time: 11:27 PM
  * To change this template use File | Settings | File Templates.
  */
+@Action(category = ConsoleConstants.ACTION_CATEGORY)
 public class APIRequestConsoleAccessMsg extends APIMessage {
     @APIParam(resourceType = VmInstanceVO.class)
     private String vmInstanceUuid;

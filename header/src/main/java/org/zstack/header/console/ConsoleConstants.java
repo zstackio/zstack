@@ -9,6 +9,8 @@ package org.zstack.header.console;
 public interface ConsoleConstants {
     public static final String SERVICE_ID = "console";
 
+    public static final String ACTION_CATEGORY = "console";
+
     public static final String MANAGEMENT_SERVER_CONSOLE_PROXY_BACKEND = "ManagementServerConsoleProxyBackend";
 
     public static final String CONSOLE_PROXY_ESTABLISH_PROXY_PATH = "/establish";

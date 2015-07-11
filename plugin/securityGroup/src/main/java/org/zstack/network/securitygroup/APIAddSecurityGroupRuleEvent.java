@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 /**
  *@apiResult
@@ -48,6 +49,7 @@ import org.zstack.header.message.APIEvent;
 }
 }
  */
+
 public class APIAddSecurityGroupRuleEvent extends APIEvent {
     /**
      * @desc see :ref:`SecurityGroupInventory`

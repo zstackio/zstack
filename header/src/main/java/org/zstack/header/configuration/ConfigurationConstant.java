@@ -4,6 +4,8 @@ public interface ConfigurationConstant {
     public static final String SERVICE_ID = "configuration";
     public static final String USER_VM_INSTANCE_OFFERING_TYPE = "UserVm";
 
+    public static final String ACTION_CATEGORY = "configuration";
+
     public static enum GlobalConfig {
         publicKey("key.public"),
         privateKey("key.private");

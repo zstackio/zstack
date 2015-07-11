@@ -1,5 +1,6 @@
 package org.zstack.header.volume;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
@@ -44,6 +45,7 @@ import org.zstack.header.volume.VolumeVO;
  *
  * See :ref:`APIDetachDataVolumeEvent`
  */
+@Action(category = VolumeConstant.ACTION_CATEGORY)
 public class APIDetachDataVolumeFromVmMsg extends APIMessage implements VolumeMessage {
     /**
      * @desc data volume uuid. See :ref:`VolumeInventory`

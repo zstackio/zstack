@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
@@ -44,6 +45,7 @@ import java.util.List;
  * @result
  * see :ref:`APIDeleteSecurityGroupRuleEvent`
  */
+@Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 public class APIDeleteSecurityGroupRuleMsg extends APIMessage {
     /**
      * @desc a list of rule uuid

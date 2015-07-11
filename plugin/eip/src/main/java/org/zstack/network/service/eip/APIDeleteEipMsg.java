@@ -1,5 +1,6 @@
 package org.zstack.network.service.eip;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -42,6 +43,7 @@ import org.zstack.header.message.APIParam;
  * @result
  * see :ref:`APIDetachEipEvent`
  */
+@Action(category = EipConstant.ACTION_CATEGORY)
 public class APIDeleteEipMsg extends APIDeleteMessage implements EipMessage {
     /**
      * @desc eip uuid

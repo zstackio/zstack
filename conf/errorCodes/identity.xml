@@ -10,5 +10,10 @@
         <id>1001</id>
         <description>The session is invalid, either wrong session id or the session has been expired</description>
     </code>
+
+    <code>
+        <id>1002</id>
+        <description>The user doesn't have permission to perform the operation</description>
+    </code>
 </error>
 

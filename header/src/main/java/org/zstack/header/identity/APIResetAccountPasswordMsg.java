@@ -3,10 +3,10 @@ package org.zstack.header.identity;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
-@NeedRoles(roles = {IdentityRoles.RESET_ACCOUNT_PASSWORD_ROLE})
+@Action(category = AccountConstant.ACTION_CATEGORY)
 public class APIResetAccountPasswordMsg extends APIMessage implements AccountMessage {
     @APIParam
-    private String accountUuidToReset;
+    private String uuid;
     @APIParam
     private String password;
     
@@ -20,10 +20,10 @@ public class APIResetAccountPasswordMsg extends APIMessage implements AccountMes
     public String getAccountUuid() {
         return this.getSession().getAccountUuid();
     }
-    public String getAccountUuidToReset() {
-        return accountUuidToReset;
+    public String getUuid() {
+        return uuid;
     }
-    public void setAccountUuidToReset(String accountUuidToReset) {
-        this.accountUuidToReset = accountUuidToReset;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

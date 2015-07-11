@@ -1,11 +1,13 @@
 package org.zstack.network.service.portforwarding;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**
  * Created by frank on 6/15/2015.
  */
+@Action(category = PortForwardingConstant.ACTION_CATEGORY)
 public class APIUpdatePortForwardingRuleMsg extends APIMessage {
     @APIParam(resourceType = PortForwardingRuleVO.class)
     private String uuid;

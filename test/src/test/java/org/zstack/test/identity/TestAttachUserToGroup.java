@@ -38,7 +38,5 @@ public class TestAttachUserToGroup {
         SimpleQuery<UserVO> uq = dbf.createQuery(UserVO.class);
         uq.add(UserVO_.name, Op.EQ, "TestUser");
         UserVO uvo = uq.find();
-        Assert.assertTrue(!uvo.getGroups().isEmpty());
-        Assert.assertEquals(uvo.getGroups().iterator().next().getUuid(), vo.getUuid());
     }
 }

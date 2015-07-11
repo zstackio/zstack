@@ -19,6 +19,8 @@
 			<zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
 			<zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint" />
 			<zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint" />
+			<zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
 		</zstack:plugin>
 
 		<property name="resourceTypeForAccountRef">
@@ -33,25 +35,9 @@
 				<value>org.zstack.network.service.portforwarding.PortForwardingRuleVO</value>
 				<value>org.zstack.network.service.eip.EipVO</value>
 				<value>org.zstack.header.storage.snapshot.VolumeSnapshotVO</value>
-			</list>
-		</property>
-	</bean>
-
-	<bean id="authenticationManager"
-		class="org.springframework.security.authentication.ProviderManager">
-		<property name="providers">
-			<list>
-				<ref local="CredentialChecker" />
-			</list>
-		</property>
-	</bean>
-	
-	<bean id="UserRoleVoter" class="org.zstack.identity.UserRoleVoter" />
-	
-	<bean id="accessDecisionManager" class="org.zstack.identity.UserRoleDecisionManager">
-		<property name="decisionVoters">
-			<list>
-				<ref local="UserRoleVoter" />
+				<value>org.zstack.header.identity.UserGroupVO</value>
+				<value>org.zstack.header.identity.PolicyVO</value>
+				<value>org.zstack.header.identity.UserVO</value>
 			</list>
 		</property>
 	</bean>
@@ -61,17 +47,5 @@
 			<zstack:extension interface="org.zstack.query.MysqlQuerySubQueryExtension" />
 		</zstack:plugin>
 	</bean>
-
-	<bean id="CredentialChecker" class="org.zstack.identity.CredentialCheckerImpl">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.Component" />
-		</zstack:plugin>
-	</bean>
-
-    <bean id="IdentityApiInterceptor" class="org.zstack.identity.IdentityApiInterceptor">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
-		</zstack:plugin>
-    </bean>
 </beans>
 	

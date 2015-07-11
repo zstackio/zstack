@@ -1,5 +1,6 @@
 package org.zstack.header.storage.snapshot;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
@@ -7,6 +8,7 @@ import org.zstack.header.rest.APINoSee;
 /**
  * Created by frank on 6/14/2015.
  */
+@Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
 public class APIUpdateVolumeSnapshotMsg extends APIMessage implements VolumeSnapshotMessage {
     @APIParam(resourceType = VolumeSnapshotVO.class)
     private String uuid;

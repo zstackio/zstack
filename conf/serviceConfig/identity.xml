@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <service xmlns="http://zstack.org/schema/zstack">
     <id>identity</id>
-    <interceptor>IdentityApiInterceptor</interceptor>
+    <interceptor>AccountManager</interceptor>
     
     <message>
         <name>org.zstack.header.identity.APICreateAccountMsg</name>
@@ -36,7 +36,7 @@
     </message>
     
     <message>
-        <name>org.zstack.header.identity.APIAttachUserToUserGroupMsg</name>
+        <name>org.zstack.header.identity.APIAddUserToGroupMsg</name>
     </message>
     
     <message>
@@ -60,30 +60,34 @@
     </message>
     
     <message>
-        <name>org.zstack.header.identity.APISearchUserGroupMsg</name>
-    </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APISearchUserMsg</name>
-    </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APIGetAccountMsg</name>
-    </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APIGetUserMsg</name>
-    </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APIGetUserGroupMsg</name>
-    </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APIGetPolicyMsg</name>
+        <name>org.zstack.header.identity.APIValidateSessionMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.header.identity.APIValidateSessionMsg</name>
+        <name>org.zstack.header.identity.APIDeletePolicyMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIDeleteUserGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIDeleteUserMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIDetachPolicyFromUserGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIDetachPolicyFromUserMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIRemoveUserFromGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIResetUserPasswordMsg</name>
     </message>
 </service>

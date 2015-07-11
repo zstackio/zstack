@@ -4,7 +4,7 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
-@NeedRoles(roles = {IdentityRoles.CREATE_USER_GROUP_ROLE})
+@Action(category = AccountConstant.ACTION_CATEGORY)
 public class APICreateUserGroupMsg extends APICreateMessage implements AccountMessage {
     @APIParam
     private String groupName;

@@ -18,7 +18,6 @@ import org.zstack.header.allocator.APIGetCpuMemoryCapacityMsg;
 import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply;
 import org.zstack.header.allocator.APIGetHostAllocatorStrategiesMsg;
 import org.zstack.header.allocator.APIGetHostAllocatorStrategiesReply;
-import org.zstack.header.apimediator.APIIsReadyToGoReply;
 import org.zstack.header.apimediator.APIIsReadyToGoMsg;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.cluster.*;
@@ -29,9 +28,9 @@ import org.zstack.header.console.ConsoleInventory;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.identity.*;
+import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.image.*;
 import org.zstack.header.managementnode.*;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.message.Event;
 import org.zstack.header.network.l2.*;
@@ -1373,8 +1372,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public VmInstanceInventory stopVmInstance(String uuid) throws ApiSenderException {
+        return stopVmInstance(uuid, null);
+    }
+
+    public VmInstanceInventory stopVmInstance(String uuid, SessionInventory session) throws ApiSenderException {
         APIStopVmInstanceMsg msg = new APIStopVmInstanceMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -1383,8 +1386,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public VmInstanceInventory rebootVmInstance(String uuid) throws ApiSenderException {
+        return rebootVmInstance(uuid, null);
+    }
+
+    public VmInstanceInventory rebootVmInstance(String uuid, SessionInventory session) throws ApiSenderException {
         APIRebootVmInstanceMsg msg = new APIRebootVmInstanceMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -1393,8 +1400,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public void destroyVmInstance(String uuid) throws ApiSenderException {
+        destroyVmInstance(uuid, null);
+    }
+
+    public void destroyVmInstance(String uuid, SessionInventory session) throws ApiSenderException {
         APIDestroyVmInstanceMsg msg = new APIDestroyVmInstanceMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -1402,8 +1413,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public VmInstanceInventory startVmInstance(String uuid) throws ApiSenderException {
+        return startVmInstance(uuid, null);
+    }
+
+    public VmInstanceInventory startVmInstance(String uuid, SessionInventory session) throws ApiSenderException {
         APIStartVmInstanceMsg msg = new APIStartVmInstanceMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -1412,9 +1427,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public VmInstanceInventory migrateVmInstance(String vmUuid, String destHostUuid) throws ApiSenderException {
+        return migrateVmInstance(vmUuid, destHostUuid, null);
+    }
+
+    public VmInstanceInventory migrateVmInstance(String vmUuid, String destHostUuid, SessionInventory session) throws ApiSenderException {
         APIMigrateVmMsg msg = new APIMigrateVmMsg();
         msg.setVmUuid(vmUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setHostUuid(destHostUuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -1573,7 +1592,7 @@ public class Api implements CloudBusEventListener {
         APIResetAccountPasswordMsg msg = new APIResetAccountPasswordMsg();
         msg.setSession(session);
         msg.setPassword(password);
-        msg.setAccountUuidToReset(uuid);
+        msg.setUuid(uuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIResetAccountPasswordEvent evt = sender.send(msg, APIResetAccountPasswordEvent.class);
@@ -1591,15 +1610,45 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public PolicyInventory createPolicy(String accountUuid, String name, String data, SessionInventory session) throws ApiSenderException {
+    public void resetUserPassword(String uuid, String password, SessionInventory session) throws ApiSenderException {
+        APIResetUserPasswordMsg msg = new APIResetUserPasswordMsg();
+        msg.setUuid(uuid);
+        msg.setPassword(password);
+        msg.setSession(session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIResetUserPasswordEvent.class);
+    }
+
+    public PolicyInventory createPolicy(String name, List<Statement> s, SessionInventory session) throws ApiSenderException {
         APICreatePolicyMsg msg = new APICreatePolicyMsg();
         msg.setSession(session);
         msg.setName(name);
-        msg.setPolicyData(data);
+        msg.setStatements(s);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreatePolicyEvent evt = sender.send(msg, APICreatePolicyEvent.class);
         return evt.getInventory();
+    }
+
+    public void attachPolicyToUser(String userUuid, String policyUuid, SessionInventory session) throws ApiSenderException {
+        APIAttachPolicyToUserMsg msg = new APIAttachPolicyToUserMsg();
+        msg.setSession(session);
+        msg.setUserUuid(userUuid);
+        msg.setPolicyUuid(policyUuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIAttachPolicyToUserEvent.class);
+    }
+
+    public void detachPolicyFromUser(String userUuid, String policyUuid, SessionInventory session) throws ApiSenderException {
+        APIDetachPolicyFromUserMsg msg = new APIDetachPolicyFromUserMsg();
+        msg.setSession(session);
+        msg.setUserUuid(userUuid);
+        msg.setPolicyUuid(policyUuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDetachPolicyFromUserEvent.class);
     }
 
     public void attachPolicyToUser(String accountUuid, String userUuid, String policyUuid, SessionInventory session) throws ApiSenderException {
@@ -1622,6 +1671,53 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public void deleteGroup(String uuid, SessionInventory session) throws ApiSenderException {
+        APIDeleteUserGroupMsg msg = new APIDeleteUserGroupMsg();
+        msg.setSession(session);
+        msg.setUuid(uuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteUserGroupEvent.class);
+    }
+
+    public void deleteUser(String uuid, SessionInventory session) throws ApiSenderException {
+        APIDeleteUserMsg msg = new APIDeleteUserMsg();
+        msg.setSession(session);
+        msg.setUuid(uuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteUserEvent.class);
+    }
+
+    public void deletePolicy(String uuid, SessionInventory session) throws ApiSenderException {
+        APIDeletePolicyMsg msg = new APIDeletePolicyMsg();
+        msg.setSession(session);
+        msg.setUuid(uuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeletePolicyEvent.class);
+    }
+
+    public void attachPolicyToGroup(String groupUuid, String policyUuid, SessionInventory session) throws ApiSenderException {
+        APIAttachPolicyToUserGroupMsg msg = new APIAttachPolicyToUserGroupMsg();
+        msg.setGroupUuid(groupUuid);
+        msg.setPolicyUuid(policyUuid);
+        msg.setSession(session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIAttachPolicyToUserGroupEvent.class);
+    }
+
+    public void detachPolicyFromGroup(String groupUuid, String policyUuid, SessionInventory session) throws ApiSenderException {
+        APIDetachPolicyFromUserGroupMsg msg = new APIDetachPolicyFromUserGroupMsg();
+        msg.setGroupUuid(groupUuid);
+        msg.setPolicyUuid(policyUuid);
+        msg.setSession(session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDetachPolicyFromUserGroupEvent.class);
+    }
+
     public void attachPolicyToGroup(String accountUuid, String groupUuid, String policyUuid, SessionInventory session) throws ApiSenderException {
         APIAttachPolicyToUserGroupMsg msg = new APIAttachPolicyToUserGroupMsg();
         msg.setGroupUuid(groupUuid);
@@ -1632,14 +1728,34 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIAttachPolicyToUserGroupEvent.class);
     }
 
-    public void attachUserToGroup(String accountUuid, String userUuid, String groupUuid, SessionInventory session) throws ApiSenderException {
-        APIAttachUserToUserGroupMsg msg = new APIAttachUserToUserGroupMsg();
+    public void addUserToGroup(String userUuid, String groupUuid, SessionInventory session) throws ApiSenderException {
+        APIAddUserToGroupMsg msg = new APIAddUserToGroupMsg();
         msg.setUserUuid(userUuid);
         msg.setGroupUuid(groupUuid);
         msg.setSession(session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        sender.send(msg, APIAttachUserToUserGroupEvent.class);
+        sender.send(msg, APIAddUserToGroupEvent.class);
+    }
+
+    public void removeUserFromGroup(String userUuid, String groupUuid, SessionInventory session) throws ApiSenderException {
+        APIRemoveUserFromGroupMsg msg = new APIRemoveUserFromGroupMsg();
+        msg.setUserUuid(userUuid);
+        msg.setGroupUuid(groupUuid);
+        msg.setSession(session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIRemoveUserFromGroupEvent.class);
+    }
+
+    public void attachUserToGroup(String accountUuid, String userUuid, String groupUuid, SessionInventory session) throws ApiSenderException {
+        APIAddUserToGroupMsg msg = new APIAddUserToGroupMsg();
+        msg.setUserUuid(userUuid);
+        msg.setGroupUuid(groupUuid);
+        msg.setSession(session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIAddUserToGroupEvent.class);
     }
 
     public void deleteAllIndex() throws ApiSenderException {

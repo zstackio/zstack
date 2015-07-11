@@ -1,5 +1,6 @@
 package org.zstack.network.service.vip;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -47,6 +48,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
  *
  * see :ref:`APICreateVipEvent`
  */
+@Action(category = VipConstant.ACTION_CATEGORY)
 public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessage, IpAllocateMessage {
     /**
      * @desc max length of 255 characters

@@ -1,11 +1,13 @@
 package org.zstack.network.service.eip;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.network.service.vip.VipVO;
 
 /**
  */
+@Action(category = EipConstant.ACTION_CATEGORY)
 public class APIGetEipAttachableVmNicsMsg extends APISyncCallMessage {
     @APIParam(required = false, resourceType = EipVO.class)
     private String eipUuid;

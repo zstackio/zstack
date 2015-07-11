@@ -1,5 +1,6 @@
 package org.zstack.network.service.portforwarding;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.vm.VmNicVO;
@@ -57,6 +58,7 @@ import org.zstack.network.service.vip.VipVO;
  *
  * see :ref:`APICreatePortForwardingRuleEvent`
  */
+@Action(category = PortForwardingConstant.ACTION_CATEGORY)
 public class APICreatePortForwardingRuleMsg extends APICreateMessage {
     /**
      * @desc uuid of vip the rule is being created on

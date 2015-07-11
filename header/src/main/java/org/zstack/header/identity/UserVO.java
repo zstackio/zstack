@@ -1,19 +1,23 @@
 package org.zstack.header.identity;
 
-import javax.persistence.*;
+import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ForeignKey.ReferenceOption;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table
-@Inheritance(strategy=InheritanceType.JOINED)
 public class UserVO {
     @Id
     @Column
     private String uuid;
     
     @Column
+    @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String accountUuid;
     
     @Column
@@ -34,20 +38,6 @@ public class UserVO {
     @Column
     private Timestamp lastOpDate;
     
-    @ManyToMany(fetch=FetchType.EAGER)
-    @JoinTable(
-        name="UserPolicyRefVO",
-        joinColumns={@JoinColumn(name="userUuid", referencedColumnName="uuid", insertable=false, updatable=false)},
-        inverseJoinColumns={@JoinColumn(name="policyUuid", referencedColumnName="uuid", insertable=false, updatable=false)})
-    private Set<PolicyVO> policies = new HashSet<PolicyVO>();
-    
-    @ManyToMany(fetch=FetchType.EAGER)
-    @JoinTable(
-        name="UserGroupUserRefVO",
-        joinColumns={@JoinColumn(name="userUuid", referencedColumnName="uuid", insertable=false, updatable=false)},
-        inverseJoinColumns={@JoinColumn(name="groupUuid", referencedColumnName="uuid", insertable=false, updatable=false)})
-    private Set<UserGroupVO> groups = new HashSet<UserGroupVO>();
-
     public String getUuid() {
         return uuid;
     }
@@ -94,22 +84,6 @@ public class UserVO {
 
     public void setToken(String token) {
         this.token = token;
-    }
-
-    public Set<PolicyVO> getPolicies() {
-        return policies;
-    }
-
-    public void setPolicies(Set<PolicyVO> policies) {
-        this.policies = policies;
-    }
-
-    public Set<UserGroupVO> getGroups() {
-        return groups;
-    }
-
-    public void setGroups(Set<UserGroupVO> groups) {
-        this.groups = groups;
     }
 
     public Timestamp getCreateDate() {

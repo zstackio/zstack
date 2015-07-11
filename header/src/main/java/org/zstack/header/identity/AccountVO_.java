@@ -9,6 +9,7 @@ public class AccountVO_ {
     public static volatile SingularAttribute<AccountVO, String> uuid;
     public static volatile SingularAttribute<AccountVO, String> name;
     public static volatile SingularAttribute<AccountVO, String> password;
+    public static volatile SingularAttribute<AccountVO, AccountType> type;
     public static volatile SingularAttribute<AccountVO, Timestamp> createDate;
     public static volatile SingularAttribute<AccountVO, Timestamp> lastOpDate;
 }

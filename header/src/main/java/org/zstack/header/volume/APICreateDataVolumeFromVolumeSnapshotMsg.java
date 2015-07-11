@@ -1,5 +1,6 @@
 package org.zstack.header.volume;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
@@ -46,6 +47,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
  *
  * see :ref:`APICreateDataVolumeFromVolumeSnapshotEvent`
  */
+@Action(category = VolumeConstant.ACTION_CATEGORY)
 public class APICreateDataVolumeFromVolumeSnapshotMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters

@@ -1,5 +1,7 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 
@@ -49,6 +51,7 @@ import org.zstack.header.message.APIParam;
  * @result
  * see :ref:`APIAddIpRangeEvent`
  */
+@Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APIAddIpRangeMsg extends APICreateMessage implements L3NetworkMessage {
     /**
      * @desc l3Network uuid

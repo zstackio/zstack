@@ -1,11 +1,13 @@
 package org.zstack.header.image;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**
  * Created by frank on 6/14/2015.
  */
+@Action(category = ImageConstant.ACTION_CATEGORY)
 public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
     @APIParam(resourceType = ImageVO.class)
     private String uuid;

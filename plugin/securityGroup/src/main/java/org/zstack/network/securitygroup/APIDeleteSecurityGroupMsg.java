@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -41,6 +42,7 @@ import org.zstack.header.message.APIParam;
  * @result
  * see :ref:`APIDeleteSecurityGroupEvent`
  */
+@Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 public class APIDeleteSecurityGroupMsg extends APIDeleteMessage {
     /**
      * @desc security group uuid

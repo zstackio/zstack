@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
-	<TestCase class="org.zstack.test.identity.TestCreateAccount"/>
+	<TestCase class="org.zstack.test.identity.TestIdentity1"/>
 	<TestCase class="org.zstack.test.identity.TestCredentialFailure"/>
 	<TestCase class="org.zstack.test.identity.TestListAccount"/>
 	<TestCase class="org.zstack.test.identity.TestResetAccountPassword"/>
 	<TestCase class="org.zstack.test.identity.TestCreateUser"/>
 	<TestCase class="org.zstack.test.identity.TestCreatePolicy"/>
-	<TestCase class="org.zstack.test.identity.TestAttachPolicy"/>
+	<TestCase class="org.zstack.test.identity.TestIdentity5"/>
 	<TestCase class="org.zstack.test.identity.TestAttachPolicyToGroup"/>
 	<TestCase class="org.zstack.test.identity.TestAttachUserToGroup"/>
 	<TestCase class="org.zstack.test.identity.TestCreateGroup"/>

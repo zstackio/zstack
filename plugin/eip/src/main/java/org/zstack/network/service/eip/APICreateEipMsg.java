@@ -1,5 +1,6 @@
 package org.zstack.network.service.eip;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -50,6 +51,7 @@ import org.zstack.network.service.vip.VipVO;
  *
  * see :ref:`APICreateEipEvent`
  */
+@Action(category = EipConstant.ACTION_CATEGORY)
 public class APICreateEipMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters

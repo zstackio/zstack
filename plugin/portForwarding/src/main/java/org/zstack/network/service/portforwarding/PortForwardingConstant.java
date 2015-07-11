@@ -5,7 +5,8 @@ import org.zstack.header.network.service.NetworkServiceType;
 public interface PortForwardingConstant {
     public static String SERVICE_ID = "portForwarding";
     public static String PORTFORWARDING_NETWORK_SERVICE_TYPE = "PortForwarding";
-    
+    public static String ACTION_CATEGORY = "portForwarding";
+
     public static NetworkServiceType PORTFORWARDING_TYPE = new NetworkServiceType(PORTFORWARDING_NETWORK_SERVICE_TYPE);
 
     public static enum Params {

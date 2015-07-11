@@ -1,5 +1,6 @@
 package org.zstack.header.storage.snapshot;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
@@ -43,6 +44,7 @@ import org.zstack.header.rest.APINoSee;
  * see :ref:`APIRevertVolumeFromSnapshotEvent`
  */
 
+@Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
 public class APIRevertVolumeFromSnapshotMsg extends APIMessage implements VolumeSnapshotMessage {
     /**
      * @desc volume snapshot uuid

@@ -5,6 +5,7 @@ import org.zstack.header.configuration.PythonClass;
 @PythonClass
 public interface VmInstanceConstant {
     public static final String SERVICE_ID = "vmInstance";
+    public static final String ACTION_CATEGORY = "instance";
     @PythonClass
     public static final String USER_VM_TYPE = "UserVm";
     

@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
@@ -7,6 +8,7 @@ import org.zstack.header.rest.APINoSee;
 /**
  * Created by frank on 6/16/2015.
  */
+@Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APIUpdateIpRangeMsg extends APIMessage implements L3NetworkMessage, IpRangeMessage {
     @APIParam(resourceType = IpRangeVO.class)
     private String uuid;

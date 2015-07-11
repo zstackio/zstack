@@ -1,6 +1,7 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.host.HostVO;
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 /**
@@ -42,6 +43,7 @@ import org.zstack.header.message.APIParam;
  *
  * See :ref:`APIMigrateVmEvent`
  */
+@Action(category = VmInstanceConstant.ACTION_CATEGORY)
 public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid

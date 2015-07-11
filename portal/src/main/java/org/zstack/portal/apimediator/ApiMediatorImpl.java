@@ -5,28 +5,29 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.*;
-import org.zstack.header.identity.AuthorizationInfo;
-import org.zstack.header.identity.CredentialChecker;
-import org.zstack.header.identity.CredentialDeniedException;
-import org.zstack.header.identity.SuppressCredentialCheck;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.managementnode.IsManagementNodeReadyMsg;
 import org.zstack.header.managementnode.IsManagementNodeReadyReply;
 import org.zstack.header.managementnode.ManagementNodeConstant;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionDSL.map;
 
 public class ApiMediatorImpl extends AbstractService implements ApiMediator, GlobalApiMessageInterceptor {
@@ -34,8 +35,6 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
 
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private CredentialChecker cchecker;
     @Autowired
     private ThreadFacade thdf;
     @Autowired
@@ -56,17 +55,6 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
             return;
         }
 
-        if (!desc.getClazz().isAnnotationPresent(SuppressCredentialCheck.class)) {
-            try {
-                AuthorizationInfo info = new AuthorizationInfo();
-                info.setNeedRoles(desc.getRoles());
-                cchecker.authenticateAndAuthorize(msg, info);
-            } catch (CredentialDeniedException e) {
-                logger.trace("", e);
-                bus.replyErrorByMessageType(msg, e.getError());
-                return;
-            }
-        }
 
         try {
             msg.setServiceId(null);

@@ -2,84 +2,115 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.identity.AccountConstant.StatementEffect;
 import org.zstack.header.search.Inventory;
+import org.zstack.utils.gson.JSONObjectUtil;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 @Inventory(mappingVOClass = PolicyVO.class)
 @PythonClassInventory
 public class PolicyInventory {
-    private String uuid;
-    private String name;
-    private String accountUuid;
-    private String type;
-    private String data;
-    private Timestamp createDate;
-    private Timestamp lastOpDate;
-    
+    public static class Statement {
+        private String name;
+        private StatementEffect effect;
+        private List<String> principals;
+        private List<String> actions;
+        private List<String> resources;
+
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public StatementEffect getEffect() {
+            return effect;
+        }
+
+        public void setEffect(StatementEffect effect) {
+            this.effect = effect;
+        }
+
+        public List<String> getPrincipals() {
+            return principals;
+        }
+
+        public void setPrincipals(List<String> principals) {
+            this.principals = principals;
+        }
+
+        public List<String> getActions() {
+            return actions;
+        }
+
+        public void setActions(List<String> actions) {
+            this.actions = actions;
+        }
+
+        public List<String> getResources() {
+            return resources;
+        }
+
+        public void setResources(List<String> resources) {
+            this.resources = resources;
+        }
+
+        public void addAction(String a) {
+            if (actions == null) {
+                actions = new ArrayList<String>();
+            }
+            actions.add(a);
+        }
+    }
+
     public static PolicyInventory valueOf(PolicyVO vo) {
         PolicyInventory inv = new PolicyInventory();
         inv.setName(vo.getName());
         inv.setUuid(vo.getUuid());
-        inv.setAccountUuid(vo.getAccountUuid());
-        inv.setData(vo.getData());
-        inv.setType(vo.getType().toString());
-        inv.setCreateDate(vo.getCreateDate());
-        inv.setLastOpDate(vo.getLastOpDate());
+        inv.setStatements(JSONObjectUtil.toCollection(vo.getData(), ArrayList.class, Statement.class));
         return inv;
     }
-    
+
     public static List<PolicyInventory> valueOf(Collection<PolicyVO> vos) {
-        List<PolicyInventory> invs = new ArrayList<PolicyInventory>(vos.size());
+        List<PolicyInventory> invs = new ArrayList<PolicyInventory>();
         for (PolicyVO vo : vos) {
-            invs.add(PolicyInventory.valueOf(vo));
+            invs.add(valueOf(vo));
         }
         return invs;
     }
-    
-    public String getUuid() {
-        return uuid;
-    }
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-    public String getAccountUuid() {
-        return accountUuid;
-    }
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
-    }
-    public String getType() {
-        return type;
-    }
-    public void setType(String type) {
-        this.type = type;
-    }
-    public String getData() {
-        return data;
-    }
-    public void setData(String data) {
-        this.data = data;
+
+    private List<Statement> statements;
+    private String name;
+    private String uuid;
+
+    public void addStatement(Statement s) {
+        if (statements == null) {
+            statements = new ArrayList<Statement>();
+        }
+
+        statements.add(s);
     }
 
-    public Timestamp getCreateDate() {
-        return createDate;
+    public void addStatement(List<Statement> s) {
+        if (statements == null) {
+            statements = new ArrayList<Statement>();
+        }
+
+        statements.addAll(s);
     }
 
-    public void setCreateDate(Timestamp createDate) {
-        this.createDate = createDate;
+    public List<Statement> getStatements() {
+        return statements;
     }
 
-    public Timestamp getLastOpDate() {
-        return lastOpDate;
-    }
-
-    public void setLastOpDate(Timestamp lastOpDate) {
-        this.lastOpDate = lastOpDate;
+    public void setStatements(List<Statement> statements) {
+        this.statements = statements;
     }
 
     public String getName() {
@@ -88,5 +119,13 @@ public class PolicyInventory {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

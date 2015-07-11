@@ -1,5 +1,6 @@
 package org.zstack.network.service.eip;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.vm.VmNicVO;
@@ -43,6 +44,7 @@ import org.zstack.header.vm.VmNicVO;
  *
  * see :ref:`APIAttachEipEvent`
  */
+@Action(category = EipConstant.ACTION_CATEGORY)
 public class APIAttachEipMsg extends APIMessage implements EipMessage {
     /**
      * @desc eip uuid

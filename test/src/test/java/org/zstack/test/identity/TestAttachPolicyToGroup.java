@@ -33,14 +33,5 @@ public class TestAttachPolicyToGroup {
 
     @Test
     public void test() {
-        SimpleQuery<UserGroupVO> q = dbf.createQuery(UserGroupVO.class);
-        q.add(UserVO_.name, Op.EQ, "TestGroup1");
-        UserGroupVO vo = q.find();
-        Assert.assertTrue(!vo.getPolicies().isEmpty());
-        SimpleQuery<PolicyVO> pq = dbf.createQuery(PolicyVO.class);
-        pq.add(PolicyVO_.name, Op.EQ, "TestPolicy");
-        PolicyVO pvo = pq.find();
-        PolicyVO pvo1 = vo.getPolicies().iterator().next();
-        Assert.assertEquals(pvo.getUuid(), pvo1.getUuid());
     }
 }
