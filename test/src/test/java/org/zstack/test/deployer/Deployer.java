@@ -669,23 +669,6 @@ public class Deployer {
         }
     }
 
-    private void deployPolicy(AccountConfig ac, AccountInventory ainv) throws IOException, ApiSenderException {
-        /*
-        SessionInventory session = api.loginByAccount(ainv.getName(), ac.getPassword());
-        for (PolicyConfig pc : ac.getPolicy()) {
-            URL configFile = this.getClass().getClassLoader().getResource(pc.getPolicyFilePath());
-            if (configFile == null) {
-                throw new IllegalArgumentException(String.format("Can not find policy xml file[%s] in classpath", pc.getPolicyFilePath()));
-            }
-            String data = FileUtils.readFileToString(new File(configFile.getPath()));
-            PolicyInventory pinv = api.createPolicy(ainv.getUuid(), pc.getName(), data, session);
-            api.attachPolicyToUser(ainv.getUuid(), ainv.getUuid(), pinv.getUuid(), session);
-            polices.put(pc.getName(), pinv);
-        }
-        */
-        throw new CloudRuntimeException("not implemented");
-    }
-
     private void attachPolicyToUser(String policyName, UserInventory uinv, SessionInventory session) throws ApiSenderException {
         PolicyInventory pinv = polices.get(policyName);
         assert pinv != null;
@@ -731,7 +714,6 @@ public class Deployer {
     private void deployAccount() throws ApiSenderException, IOException {
         for (AccountConfig ac : config.getAccount()) {
             AccountInventory inv = api.createAccount(ac.getName(), ac.getPassword());
-            deployPolicy(ac, inv);
             deployGroup(ac, inv);
             deployUser(ac, inv);
             this.accounts.put(inv.getName(), inv);

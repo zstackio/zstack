@@ -17,6 +17,7 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.test.identity.IdentityCreator;
 import org.zstack.test.search.QueryTestValidator;
 import org.zstack.utils.data.SizeUnit;
 
@@ -42,6 +43,8 @@ public class TestQueryVolume {
     
     @Test
     public void test() throws ApiSenderException, InterruptedException {
+        IdentityCreator identityCreator = new IdentityCreator(api);
+        identityCreator.createAccount("TestAccount", "password");
         SessionInventory session = api.loginByAccount("TestAccount", "password");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         List<VolumeInventory> volumes = vm.getAllVolumes();

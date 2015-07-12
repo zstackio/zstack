@@ -4,7 +4,7 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
-@Action(category = AccountConstant.ACTION_CATEGORY)
+@Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 public class APICreateUserGroupMsg extends APICreateMessage implements AccountMessage {
     @APIParam
     private String groupName;

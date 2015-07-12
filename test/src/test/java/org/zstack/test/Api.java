@@ -175,8 +175,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeSnapshotInventory createSnapshot(String volUuid) throws ApiSenderException {
+        return createSnapshot(volUuid, null);
+    }
+
+    public VolumeSnapshotInventory createSnapshot(String volUuid, SessionInventory session) throws ApiSenderException {
         APICreateVolumeSnapshotMsg msg = new APICreateVolumeSnapshotMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName("Snapshot-" + volUuid);
         msg.setDescription("Test snapshot");
         msg.setVolumeUuid(volUuid);
@@ -188,16 +192,28 @@ public class Api implements CloudBusEventListener {
     }
 
     public ImageInventory createTemplateFromSnapshot(String snapshotUuid) throws ApiSenderException {
-        return createTemplateFromSnapshot(snapshotUuid, (List) null);
+        return createTemplateFromSnapshot(snapshotUuid, (SessionInventory) null);
+    }
+
+    public ImageInventory createTemplateFromSnapshot(String snapshotUuid, SessionInventory session) throws ApiSenderException {
+        return createTemplateFromSnapshot(snapshotUuid, (List) null, session);
     }
 
     public VolumeInventory createDataVolumeFromSnapshot(String snapshotUuid) throws ApiSenderException {
-        return createDataVolumeFromSnapshot(snapshotUuid, null);
+        return createDataVolumeFromSnapshot(snapshotUuid, (SessionInventory)null);
+    }
+
+    public VolumeInventory createDataVolumeFromSnapshot(String snapshotUuid, SessionInventory session) throws ApiSenderException {
+        return createDataVolumeFromSnapshot(snapshotUuid, null, session);
     }
 
     public VolumeInventory createDataVolumeFromSnapshot(String snapshotUuid, String priUuid) throws ApiSenderException {
+        return createDataVolumeFromSnapshot(snapshotUuid, priUuid, null);
+    }
+
+    public VolumeInventory createDataVolumeFromSnapshot(String snapshotUuid, String priUuid, SessionInventory session) throws ApiSenderException {
         APICreateDataVolumeFromVolumeSnapshotMsg msg = new APICreateDataVolumeFromVolumeSnapshotMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setPrimaryStorageUuid(priUuid);
         msg.setName("volume-form-snapshot" + snapshotUuid);
         msg.setVolumeSnapshotUuid(snapshotUuid);
@@ -209,8 +225,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public ImageInventory createTemplateFromSnapshot(String snapshotUuid, List<String> backupStorageUuids) throws ApiSenderException {
+        return createTemplateFromSnapshot(snapshotUuid, backupStorageUuids, null);
+    }
+
+    public ImageInventory createTemplateFromSnapshot(String snapshotUuid, List<String> backupStorageUuids, SessionInventory session) throws ApiSenderException {
         APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg = new APICreateRootVolumeTemplateFromVolumeSnapshotMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setBackupStorageUuids(backupStorageUuids);
         msg.setSnapshotUuid(snapshotUuid);
         msg.setName(String.format("image-from-snapshot-%s", snapshotUuid));
@@ -227,8 +247,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public void deleteSnapshot(String snapshotUuid) throws ApiSenderException {
+        deleteSnapshot(snapshotUuid, null);
+    }
+
+    public void deleteSnapshot(String snapshotUuid, SessionInventory session) throws ApiSenderException {
         APIDeleteVolumeSnapshotMsg msg = new APIDeleteVolumeSnapshotMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setUuid(snapshotUuid);
         ApiSender sender = new ApiSender();
@@ -237,8 +261,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public void revertVolumeToSnapshot(String snapshotUuid) throws ApiSenderException {
+        revertVolumeToSnapshot(snapshotUuid, null);
+    }
+
+    public void revertVolumeToSnapshot(String snapshotUuid, SessionInventory session) throws ApiSenderException {
         APIRevertVolumeFromSnapshotMsg msg = new APIRevertVolumeFromSnapshotMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setUuid(snapshotUuid);
         ApiSender sender = new ApiSender();
@@ -655,10 +683,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public ImageInventory addImage(ImageInventory inv, String...bsUuids) throws ApiSenderException {
+        return addImage(inv, null, bsUuids);
+    }
+
+    public ImageInventory addImage(ImageInventory inv, SessionInventory session, String...bsUuids) throws ApiSenderException {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIAddImageMsg msg = new APIAddImageMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setDescription(inv.getDescription());
         msg.setMediaType(inv.getMediaType());
         msg.setGuestOsType(inv.getGuestOsType());
@@ -674,16 +706,24 @@ public class Api implements CloudBusEventListener {
     }
 
     public void deleteImage(String uuid, List<String> bsUuids) throws ApiSenderException {
+        deleteImage(uuid, bsUuids, null);
+    }
+
+    public void deleteImage(String uuid, List<String> bsUuids, SessionInventory session) throws ApiSenderException {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIDeleteImageMsg msg = new APIDeleteImageMsg(uuid);
         msg.setBackupStorageUuids(bsUuids);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         sender.send(msg, APIDeleteImageEvent.class);
     }
 
+    public void deleteImage(String uuid, SessionInventory session) throws ApiSenderException {
+        deleteImage(uuid, null, session);
+    }
+
     public void deleteImage(String uuid) throws ApiSenderException {
-        deleteImage(uuid, null);
+        deleteImage(uuid, null, null);
     }
 
     public List<ImageInventory> listImage(List<String> uuids) throws ApiSenderException {
@@ -703,10 +743,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public InstanceOfferingInventory changeInstanceOfferingState(String uuid, InstanceOfferingStateEvent sevt) throws ApiSenderException {
+        return changeInstanceOfferingState(uuid, sevt, null);
+    }
+
+    public InstanceOfferingInventory changeInstanceOfferingState(String uuid, InstanceOfferingStateEvent sevt, SessionInventory session) throws ApiSenderException {
         APIChangeInstanceOfferingStateMsg msg = new APIChangeInstanceOfferingStateMsg();
         msg.setUuid(uuid);
         msg.setStateEvent(sevt.toString());
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -715,10 +759,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public InstanceOfferingInventory addInstanceOffering(InstanceOfferingInventory inv) throws ApiSenderException {
+        return addInstanceOffering(inv, null);
+    }
+
+    public InstanceOfferingInventory addInstanceOffering(InstanceOfferingInventory inv, SessionInventory session) throws ApiSenderException {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateInstanceOfferingMsg msg = new APICreateInstanceOfferingMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(inv.getName());
         msg.setCpuNum(inv.getCpuNum());
         msg.setCpuSpeed(inv.getCpuSpeed());
@@ -746,10 +794,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public void deleteInstanceOffering(String uuid) throws ApiSenderException {
+        deleteInstanceOffering(uuid, null);
+    }
+
+    public void deleteInstanceOffering(String uuid, SessionInventory session) throws ApiSenderException {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIDeleteInstanceOfferingMsg msg = new APIDeleteInstanceOfferingMsg(uuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         sender.send(msg, APIDeleteInstanceOfferingEvent.class);
     }
 
@@ -782,18 +834,26 @@ public class Api implements CloudBusEventListener {
     }
 
     public void deleteDiskOffering(String uuid) throws ApiSenderException {
+        deleteDiskOffering(uuid, null);
+    }
+
+    public void deleteDiskOffering(String uuid, SessionInventory session) throws ApiSenderException {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIDeleteDiskOfferingMsg msg = new APIDeleteDiskOfferingMsg(uuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         sender.send(msg, APIDeleteDiskOfferingEvent.class);
     }
 
     public VolumeInventory createDataVolume(String name, String diskOfferingUuid) throws ApiSenderException {
+        return createDataVolume(name, diskOfferingUuid, null);
+    }
+
+    public VolumeInventory createDataVolume(String name, String diskOfferingUuid, SessionInventory session) throws ApiSenderException {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateDataVolumeMsg msg = new APICreateDataVolumeMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(name);
         msg.setDiskOfferingUuid(diskOfferingUuid);
         APICreateDataVolumeEvent e = sender.send(msg, APICreateDataVolumeEvent.class);
@@ -801,8 +861,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeInventory changeVolumeState(String uuid, VolumeStateEvent stateEvent) throws ApiSenderException {
+        return changeVolumeState(uuid, stateEvent, null);
+    }
+
+    public VolumeInventory changeVolumeState(String uuid, VolumeStateEvent stateEvent, SessionInventory session) throws ApiSenderException {
         APIChangeVolumeStateMsg msg = new APIChangeVolumeStateMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
         msg.setStateEvent(stateEvent.toString());
         ApiSender sender = new ApiSender();
@@ -828,10 +892,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public void deleteDataVolume(String uuid) throws ApiSenderException {
+        deleteDataVolume(uuid, null);
+    }
+
+    public void deleteDataVolume(String uuid, SessionInventory session) throws ApiSenderException {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIDeleteDataVolumeMsg msg = new APIDeleteDataVolumeMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
         sender.send(msg, APIDeleteDataVolumeEvent.class);
     }
@@ -1284,10 +1352,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public DiskOfferingInventory addDiskOfferingByFullConfig(DiskOfferingInventory inv) throws ApiSenderException {
+        return addDiskOfferingByFullConfig(inv, null);
+    }
+
+    public DiskOfferingInventory addDiskOfferingByFullConfig(DiskOfferingInventory inv, SessionInventory session) throws ApiSenderException {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateDiskOfferingMsg msg = new APICreateDiskOfferingMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(inv.getName());
         msg.setDiskSize(inv.getDiskSize());
         msg.setDescription(inv.getDescription());
@@ -1462,8 +1534,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeInventory attachVolumeToVm(String vmUuid, String volumeUuid) throws ApiSenderException {
+        return attachVolumeToVm(vmUuid, volumeUuid, null);
+    }
+
+    public VolumeInventory attachVolumeToVm(String vmUuid, String volumeUuid, SessionInventory session) throws ApiSenderException {
         APIAttachDataVolumeToVmMsg msg = new APIAttachDataVolumeToVmMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setVmUuid(vmUuid);
         msg.setVolumeUuid(volumeUuid);
         ApiSender sender = new ApiSender();
@@ -1473,10 +1549,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeInventory createDataVolumeFromTemplate(String imageUuid, String primaryStorageUuid) throws ApiSenderException {
+        return createDataVolumeFromTemplate(imageUuid, primaryStorageUuid, null);
+    }
+
+    public VolumeInventory createDataVolumeFromTemplate(String imageUuid, String primaryStorageUuid, SessionInventory session) throws ApiSenderException {
         APICreateDataVolumeFromVolumeTemplateMsg msg = new APICreateDataVolumeFromVolumeTemplateMsg();
         msg.setPrimaryStorageUuid(primaryStorageUuid);
         msg.setImageUuid(imageUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName("data");
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -1485,10 +1565,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public ImageInventory addDataVolumeTemplateFromDataVolume(String volUuid, List<String> bsUuids) throws ApiSenderException {
+        return addDataVolumeTemplateFromDataVolume(volUuid, bsUuids, null);
+    }
+
+    public ImageInventory addDataVolumeTemplateFromDataVolume(String volUuid, List<String> bsUuids, SessionInventory session) throws ApiSenderException {
         APICreateDataVolumeTemplateFromVolumeMsg msg = new APICreateDataVolumeTemplateFromVolumeMsg();
         msg.setName("data-vol");
         msg.setVolumeUuid(volUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setBackupStorageUuids(bsUuids);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -1506,8 +1590,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeInventory detachVolumeFromVm(String volumeUuid) throws ApiSenderException {
+        return detachVolumeFromVm(volumeUuid, null);
+    }
+
+    public VolumeInventory detachVolumeFromVm(String volumeUuid, SessionInventory session) throws ApiSenderException {
         APIDetachDataVolumeFromVmMsg msg = new APIDetachDataVolumeFromVmMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setUuid(volumeUuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2102,12 +2190,16 @@ public class Api implements CloudBusEventListener {
     }
 
     public ImageInventory createTemplateFromRootVolume(String name, String rootVolumeUuid, List<String> backupStorageUuids) throws ApiSenderException {
+        return createTemplateFromRootVolume(name, rootVolumeUuid, backupStorageUuids, null);
+    }
+
+    public ImageInventory createTemplateFromRootVolume(String name, String rootVolumeUuid, List<String> backupStorageUuids, SessionInventory session) throws ApiSenderException {
         APICreateRootVolumeTemplateFromRootVolumeMsg msg = new APICreateRootVolumeTemplateFromRootVolumeMsg();
         msg.setName(name);
         msg.setBackupStorageUuids(backupStorageUuids);
         msg.setRootVolumeUuid(rootVolumeUuid);
         msg.setGuestOsType("test");
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2116,7 +2208,11 @@ public class Api implements CloudBusEventListener {
     }
 
     public ImageInventory createTemplateFromRootVolume(String name, String rootVolumeUuid, String backupStorageUuid) throws ApiSenderException {
-        return createTemplateFromRootVolume(name, rootVolumeUuid, Arrays.asList(backupStorageUuid));
+        return createTemplateFromRootVolume(name, rootVolumeUuid, backupStorageUuid, null);
+    }
+
+    public ImageInventory createTemplateFromRootVolume(String name, String rootVolumeUuid, String backupStorageUuid, SessionInventory session) throws ApiSenderException {
+        return createTemplateFromRootVolume(name, rootVolumeUuid, Arrays.asList(backupStorageUuid), session);
     }
 
     public List<VmNicInventory> listVmNic(List<String> uuids) throws ApiSenderException {
@@ -2353,16 +2449,20 @@ public class Api implements CloudBusEventListener {
         return reply.getBackupStorageTypes();
     }
 
-    public ImageInventory changeImageState(String uuid, ImageStateEvent evt) throws ApiSenderException {
+    public ImageInventory changeImageState(String uuid, ImageStateEvent evt, SessionInventory session) throws ApiSenderException {
         APIChangeImageStateMsg msg = new APIChangeImageStateMsg();
         msg.setUuid(uuid);
         msg.setStateEvent(evt.toString());
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIChangeImageStateEvent revt = sender.send(msg, APIChangeImageStateEvent.class);
         return revt.getInventory();
+    }
+
+    public ImageInventory changeImageState(String uuid, ImageStateEvent evt) throws ApiSenderException {
+        return changeImageState(uuid, evt, null);
     }
 
     public List<String> getHostAllocatorStrategies() throws ApiSenderException {
@@ -2386,9 +2486,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public DiskOfferingInventory changeDiskOfferingState(String uuid, DiskOfferingStateEvent sevt) throws ApiSenderException {
+        return changeDiskOfferingState(uuid, sevt, null);
+    }
+
+    public DiskOfferingInventory changeDiskOfferingState(String uuid, DiskOfferingStateEvent sevt, SessionInventory session) throws ApiSenderException {
         APIChangeDiskOfferingStateMsg msg = new APIChangeDiskOfferingStateMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
         msg.setStateEvent(sevt.toString());
         ApiSender sender = new ApiSender();
@@ -2513,15 +2617,19 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeSnapshotInventory backupSnapshot(String snapshotUuid) throws ApiSenderException {
-        return backupSnapshot(snapshotUuid, null);
+        return backupSnapshot(snapshotUuid, null, null);
     }
 
     public VolumeSnapshotInventory backupSnapshot(String snapshotUuid, String backupStorageUuid) throws ApiSenderException {
+        return backupSnapshot(snapshotUuid, backupStorageUuid, null);
+    }
+
+    public VolumeSnapshotInventory backupSnapshot(String snapshotUuid, String backupStorageUuid, SessionInventory session) throws ApiSenderException {
         APIBackupVolumeSnapshotMsg msg = new APIBackupVolumeSnapshotMsg();
         msg.setUuid(snapshotUuid);
         msg.setBackupStorageUuid(backupStorageUuid);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIBackupVolumeSnapshotEvent evt = sender.send(msg, APIBackupVolumeSnapshotEvent.class);
@@ -2529,6 +2637,10 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeSnapshotInventory deleteSnapshotFromBackupStorage(String snapshotUuid, String...bsUuids) throws ApiSenderException {
+        return deleteSnapshotFromBackupStorage(snapshotUuid, null, bsUuids);
+    }
+
+    public VolumeSnapshotInventory deleteSnapshotFromBackupStorage(String snapshotUuid, SessionInventory session, String...bsUuids) throws ApiSenderException {
         APIDeleteVolumeSnapshotFromBackupStorageMsg msg = new APIDeleteVolumeSnapshotFromBackupStorageMsg();
         msg.setUuid(snapshotUuid);
         if (bsUuids != null) {
@@ -2537,7 +2649,7 @@ public class Api implements CloudBusEventListener {
             msg.setBackupStorageUuids(new ArrayList<String>());
         }
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIDeleteVolumeSnapshotFromBackupStorageEvent evt = sender.send(msg, APIDeleteVolumeSnapshotFromBackupStorageEvent.class);
@@ -2739,8 +2851,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeInventory updateVolume(VolumeInventory inv) throws ApiSenderException {
+        return updateVolume(inv, null);
+    }
+
+    public VolumeInventory updateVolume(VolumeInventory inv, SessionInventory session) throws ApiSenderException {
         APIUpdateVolumeMsg msg = new APIUpdateVolumeMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
         msg.setUuid(inv.getUuid());
@@ -2751,8 +2867,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeSnapshotInventory updateVolumeSnapshot(VolumeSnapshotInventory inv) throws ApiSenderException {
+        return updateVolumeSnapshot(inv, null);
+    }
+
+    public VolumeSnapshotInventory updateVolumeSnapshot(VolumeSnapshotInventory inv, SessionInventory session) throws ApiSenderException {
         APIUpdateVolumeSnapshotMsg msg = new APIUpdateVolumeSnapshotMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
         msg.setUuid(inv.getUuid());
@@ -2827,8 +2947,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public DiskOfferingInventory updateDiskOffering(DiskOfferingInventory inv) throws ApiSenderException {
+        return updateDiskOffering(inv, null);
+    }
+
+    public DiskOfferingInventory updateDiskOffering(DiskOfferingInventory inv, SessionInventory session) throws ApiSenderException {
         APIUpdateDiskOfferingMsg msg = new APIUpdateDiskOfferingMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
         msg.setUuid(inv.getUuid());
@@ -2839,8 +2963,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public InstanceOfferingInventory updateInstanceOffering(InstanceOfferingInventory inv) throws ApiSenderException {
+        return updateInstanceOffering(inv, null);
+    }
+
+    public InstanceOfferingInventory updateInstanceOffering(InstanceOfferingInventory inv, SessionInventory session) throws ApiSenderException {
         APIUpdateInstanceOfferingMsg msg = new APIUpdateInstanceOfferingMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
         msg.setUuid(inv.getUuid());

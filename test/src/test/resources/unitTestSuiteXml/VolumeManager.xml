@@ -11,4 +11,5 @@
     <TestCase class="org.zstack.test.storage.volume.TestVmGetAttachableVolume"/>
     <TestCase class="org.zstack.test.storage.volume.TestGetVolumeFormat"/>
     <TestCase class="org.zstack.test.storage.volume.TestUpdateVolume"/>
+    <TestCase class="org.zstack.test.storage.volume.TestPolicyForVolume"/>
 </UnitTestSuiteConfig>

@@ -6,7 +6,7 @@ import org.zstack.header.message.APIParam;
 /**
  * Created by frank on 7/9/2015.
  */
-@Action(category = AccountConstant.ACTION_CATEGORY)
+@Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 public class APIDetachPolicyFromUserGroupMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = PolicyVO.class)
     private String policyUuid;

@@ -13,4 +13,5 @@
     <TestCase class="org.zstack.test.configuration.TestChangeDiskOfferingState"/>
     <TestCase class="org.zstack.test.configuration.TestUpdateDiskOffering"/>
     <TestCase class="org.zstack.test.configuration.TestUpdateInstanceOffering"/>
+    <TestCase class="org.zstack.test.configuration.TestPolicyForConfiguration"/>
 </UnitTestSuiteConfig>

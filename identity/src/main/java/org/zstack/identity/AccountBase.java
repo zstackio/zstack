@@ -3,6 +3,7 @@ package org.zstack.identity;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
@@ -238,6 +239,16 @@ public class AccountBase extends AbstractAccount {
         uvo.setName(msg.getUserName());
         uvo.setPassword(msg.getPassword());
         uvo = dbf.persistAndRefresh(uvo);
+
+        SimpleQuery<PolicyVO> q = dbf.createQuery(PolicyVO.class);
+        q.add(PolicyVO_.name, Op.EQ, String.format("DEFAULT-READ-%s", vo.getUuid()));
+        PolicyVO p = q.find();
+        if (p != null) {
+            UserPolicyRefVO uref = new UserPolicyRefVO();
+            uref.setPolicyUuid(p.getUuid());
+            uref.setUserUuid(uvo.getUuid());
+            dbf.persist(uref);
+        }
 
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), uvo.getUuid(), UserVO.class);
 

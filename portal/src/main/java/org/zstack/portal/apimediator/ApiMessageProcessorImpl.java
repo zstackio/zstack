@@ -279,7 +279,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                         if (!col.isEmpty()) {
                             List<String> uuids = new FunctionNoArg<List<String>>() {
                                 @Override
-                                @Transactional
+                                @Transactional(readOnly = true)
                                 public List<String> call() {
                                     String sql = String.format("select e.uuid from %s e where e.uuid in (:uuids)", at.resourceType().getSimpleName());
                                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);

@@ -2,7 +2,7 @@ package org.zstack.header.identity;
 
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-@Action(category = AccountConstant.ACTION_CATEGORY)
+@Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 public class APIAttachPolicyToUserGroupMsg extends APIMessage implements AccountMessage {
     @APIParam
     private String policyUuid;

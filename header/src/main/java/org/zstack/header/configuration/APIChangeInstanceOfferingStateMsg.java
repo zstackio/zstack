@@ -1,5 +1,6 @@
 package org.zstack.header.configuration;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
@@ -9,6 +10,7 @@ import org.zstack.header.message.APIParam;
  * Time: 9:02 PM
  * To change this template use File | Settings | File Templates.
  */
+@Action(category = ConfigurationConstant.ACTION_CATEGORY)
 public class APIChangeInstanceOfferingStateMsg extends APIMessage implements  InstanceOfferingMessage {
     @APIParam(resourceType = InstanceOfferingVO.class)
     private String uuid;

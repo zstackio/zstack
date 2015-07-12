@@ -1,11 +1,13 @@
 package org.zstack.header.configuration;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**
  * Created by frank on 6/15/2015.
  */
+@Action(category = ConfigurationConstant.ACTION_CATEGORY)
 public class APIUpdateDiskOfferingMsg extends APIMessage implements DiskOfferingMessage {
     @APIParam(resourceType = DiskOfferingVO.class)
     private String uuid;

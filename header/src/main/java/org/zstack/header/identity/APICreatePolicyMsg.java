@@ -7,7 +7,7 @@ import org.zstack.header.message.APIParam;
 
 import java.util.List;
 
-@Action(category = AccountConstant.ACTION_CATEGORY)
+@Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 public class APICreatePolicyMsg extends APICreateMessage implements AccountMessage {
     @APIParam
     private String name;

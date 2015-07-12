@@ -65,6 +65,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         boolean adminOnly;
         List<String> actions;
         String category;
+        boolean accountOnly;
     }
 
     private Map<Class, MessageAction> actions = new HashMap<Class, MessageAction>();
@@ -228,6 +229,17 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         vo.setType(msg.getType() != null ? AccountType.valueOf(msg.getType()) : AccountType.Normal);
         vo = dbf.persistAndRefresh(vo);
 
+        PolicyVO p = new PolicyVO();
+        p.setUuid(Platform.getUuid());
+        p.setAccountUuid(vo.getUuid());
+        p.setName(String.format("DEFAULT-READ-%s", vo.getUuid()));
+        Statement s = new Statement();
+        s.setName(String.format("read-permission-for-account-%s", vo.getUuid()));
+        s.setEffect(StatementEffect.Allow);
+        s.addAction(".*:read");
+        p.setData(JSONObjectUtil.toJsonString(list(s)));
+        dbf.persist(p);
+
         AccountInventory inv = AccountInventory.valueOf(vo);
         APICreateAccountEvent evt = new APICreateAccountEvent(msg.getId());
         evt.setInventory(inv);
@@ -311,15 +323,17 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 logger.debug(String.format("API message[%s] doesn't have annotation @Action, assume it's an admin only API", clz));
                 MessageAction ma = new MessageAction();
                 ma.adminOnly = true;
+                ma.accountOnly = true;
                 actions.put(clz, ma);
                 continue;
             }
 
             MessageAction ma = new MessageAction();
+            ma.accountOnly = a.accountOnly();
             ma.adminOnly = a.adminOnly();
             ma.category = a.category();
             ma.actions = new ArrayList<String>();
-            for (String ac : ma.actions) {
+            for (String ac : a.names()) {
                 ma.actions.add(String.format("%s:%s", ma.category, ac));
             }
             ma.actions.add(String.format("%s:%s", ma.category, clz.getSimpleName()));
@@ -446,6 +460,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         APIMessage msg;
         SessionInventory session;
         MessageAction action;
+        String username;
 
         void validate(APIMessage msg) {
             this.msg = msg;
@@ -461,54 +476,66 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             msg.setSession(session);
         }
 
-        private void policyCheck() {
-            if (session.isAccountSession()) {
-                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-                q.select(AccountVO_.type);
-                q.add(AccountVO_.uuid, Op.EQ, session.getAccountUuid());
-                AccountType type = q.findValue();
-                if (action.adminOnly && type != AccountType.SystemAdmin) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                            String.format("API[%s] is admin only", msg.getClass().getSimpleName())));
-                }
+        private void useDecision(Decision d, boolean userPolicy) {
+            String policyCategory = userPolicy ? "user policy" : "group policy";
 
+            if (d.effect == StatementEffect.Allow) {
+                logger.debug(String.format("API[name: %s, action: %s] is approved by a %s[name: %s, uuid: %s]," +
+                        " statement[name: %s, action: %s]", msg.getClass().getSimpleName(), d.action, policyCategory, d.policy.getName(),
+                        d.policy.getUuid(), d.statement.getName(), d.actionRule));
+            } else {
+                logger.debug(String.format("API[name: %s, action: %s] is denied by a %s[name: %s, uuid: %s]," +
+                                " statement[name: %s, action: %s]", msg.getClass().getSimpleName(), d.action, policyCategory, d.policy.getName(),
+                        d.policy.getUuid(), d.statement.getName(), d.actionRule));
+
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                        String.format("%s denied. user[name: %s, uuid: %s] is denied to execute API[%s]", policyCategory, username, session.getUuid(), msg.getClass().getSimpleName())
+                ));
+            }
+        }
+        private void policyCheck() {
+            SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+            q.select(AccountVO_.type);
+            q.add(AccountVO_.uuid, Op.EQ, session.getAccountUuid());
+            AccountType type = q.findValue();
+
+            if (type == AccountType.SystemAdmin) {
+                return;
+            }
+
+            if (action.adminOnly) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                        String.format("API[%s] is admin only", msg.getClass().getSimpleName())));
+            }
+
+            if (action.accountOnly && !session.isAccountSession()) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                        String.format("API[%s] can only be called by an account, the current session is a user session[user uuid:%s]",
+                                msg.getClass().getSimpleName(), session.getUserUuid())
+                        ));
+            }
+
+            if (session.isAccountSession()) {
                 return;
             }
 
             SimpleQuery<UserVO> uq = dbf.createQuery(UserVO.class);
             uq.select(UserVO_.name);
             uq.add(UserVO_.uuid, Op.EQ, session.getUserUuid());
-            String username = uq.findValue();
-
-            Statement readPermission = new Statement();
-            readPermission.setEffect(StatementEffect.Allow);
-            readPermission.setName(AccountConstant.READ_PERMISSION_POLICY);
-            readPermission.addAction(".*:read");
-            PolicyInventory readPolicy = new PolicyInventory();
-            readPolicy.setStatements(list(readPermission));
-            StatementEffect effect = decide(list(readPolicy));
-            if (effect == StatementEffect.Allow) {
-                return;
-            }
+            username = uq.findValue();
 
             List<PolicyInventory> userPolicies = getUserPolicies();
-            effect = decide(userPolicies);
-            if (effect == StatementEffect.Allow) {
+            Decision d = decide(userPolicies);
+            if (d != null) {
+                useDecision(d, true);
                 return;
-            } else if (effect == StatementEffect.Deny) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                        String.format("user policy denied. user[name: %s, uuid: %s] is denied to execute API[%s]", username, session.getUuid(), msg.getClass().getSimpleName())
-                ));
             }
 
             List<PolicyInventory> groupPolicies = getGroupPolicies();
-            effect = decide(groupPolicies);
-            if (effect == StatementEffect.Allow) {
+            d = decide(groupPolicies);
+            if (d != null) {
+                useDecision(d, false);
                 return;
-            } else if (effect == StatementEffect.Deny) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                        String.format("group policy denied. user[name: %s, uuid: %s] in a group is denied to execute API[%s]", username, session.getUuid(), msg.getClass().getSimpleName())
-                ));
             }
 
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
@@ -526,7 +553,15 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             return PolicyInventory.valueOf(q.getResultList());
         }
 
-        private StatementEffect decide(List<PolicyInventory> userPolicies) {
+        class Decision {
+            PolicyInventory policy;
+            String action;
+            Statement statement;
+            String actionRule;
+            StatementEffect effect;
+        }
+
+        private Decision decide(List<PolicyInventory> userPolicies) {
             for (String a : action.actions) {
                 for (PolicyInventory p : userPolicies) {
                     for (Statement s : p.getStatements()) {
@@ -535,7 +570,19 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                             Matcher m = pattern.matcher(a);
                             boolean ret = m.matches();
                             if (ret) {
-                                return s.getEffect();
+                                Decision d = new Decision();
+                                d.policy = p;
+                                d.action = a;
+                                d.statement = s;
+                                d.actionRule = ac;
+                                d.effect = s.getEffect();
+                                return d;
+                            }
+
+                            if (logger.isTraceEnabled()) {
+                                logger.trace(String.format("API[name: %s, action: %s] is not matched by policy[name: %s, uuid: %s" +
+                                        ", statement[name: %s, action: %s, effect: %s]", msg.getClass().getSimpleName(), a, p.getName(),
+                                        p.getUuid(), s.getName(), ac, s.getEffect()));
                             }
                         }
                     }

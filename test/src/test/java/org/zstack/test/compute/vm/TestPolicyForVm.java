@@ -15,6 +15,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.UserInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.query.QueryCondition;
 import org.zstack.header.vm.*;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -22,6 +23,8 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.VmCreator;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
+
+import java.util.ArrayList;
 
 /**
  * 1. create a user
@@ -32,6 +35,22 @@ import org.zstack.test.identity.IdentityCreator;
  * 3. assign creating/stopping/rebooting/destroying/migrating permission of deny to the user
  *
  * confirm the user can not create/start/stop/reboot/destroy/migrate the vm
+ *
+ * 4. assign .* permission to the user
+ *
+ * confirm the user can create/start/stop/reboot/destroy/migrate the vm
+ *
+ * 5. create a group
+ * 6. add the user to the group
+ * 7. assign creating/stopping/rebooting/destroying/migrating permission of allow to the group
+ *
+ * confirm the user can create/start/stop/reboot/destroy/migrate the vm
+ *
+ * 8. assign creating/stopping/rebooting/destroying/migrating permission of deny to the group
+ *
+ * confirm the user can not create/start/stop/reboot/destroy/migrate the vm
+ *
+ * confirm the user can query vms without setting policies
  */
 public class TestPolicyForVm {
     Deployer deployer;
@@ -89,7 +108,7 @@ public class TestPolicyForVm {
         api.migrateVmInstance(vm.getUuid(), host2.getUuid(), session);
         api.destroyVmInstance(vm.getUuid(), session);
 
-        identityCreator.deletePolicy("allow");
+        identityCreator.detachPolicyFromUser("user", "allow");
 
         s = new Statement();
         s.setName("deny");
@@ -151,7 +170,7 @@ public class TestPolicyForVm {
         }
         Assert.assertTrue(success);
 
-        identityCreator.deletePolicy("allowcreate");
+        identityCreator.detachPolicyFromUser("user", "allowcreate");
 
         s = new Statement();
         s.setName("denycreate");
@@ -169,6 +188,96 @@ public class TestPolicyForVm {
             }
         }
         Assert.assertTrue(success);
-    }
 
+        identityCreator.detachPolicyFromUser("user", "denycreate");
+        identityCreator.detachPolicyFromUser("user", "deny");
+
+        s = new Statement();
+        s.setName("allowall");
+        s.setEffect(StatementEffect.Allow);
+        s.addAction(String.format("%s:.*", VmInstanceConstant.ACTION_CATEGORY));
+        identityCreator.createPolicy("allowall", s);
+        identityCreator.attachPolicyToUser("user", "allowall");
+
+        vm = vmCreator.create();
+        api.stopVmInstance(vm.getUuid(), session);
+        api.startVmInstance(vm.getUuid(), session);
+        api.rebootVmInstance(vm.getUuid(), session);
+        api.migrateVmInstance(vm.getUuid(), host2.getUuid(), session);
+        api.destroyVmInstance(vm.getUuid(), session);
+
+        // User1 and Group
+        identityCreator.createUser("user1", "password");
+        identityCreator.createGroup("group");
+        identityCreator.attachPolicyToGroup("group", "allow");
+        identityCreator.addUserToGroup("user1", "group");
+
+        session = identityCreator.userLogin("user1", "password");
+        vmCreator.session = session;
+        vm = vmCreator.create();
+        api.stopVmInstance(vm.getUuid(), session);
+        api.startVmInstance(vm.getUuid(), session);
+        api.rebootVmInstance(vm.getUuid(), session);
+        api.migrateVmInstance(vm.getUuid(), host2.getUuid(), session);
+        api.destroyVmInstance(vm.getUuid(), session);
+
+        vm = vmCreator.create();
+        identityCreator.detachPolicyFromGroup("group", "allow");
+        identityCreator.attachPolicyToGroup("group", "deny");
+        identityCreator.attachPolicyToGroup("group", "denycreate");
+
+        success = false;
+        try {
+            api.stopVmInstance(vm.getUuid(), session);
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                success = true;
+            }
+        }
+        Assert.assertTrue(success);
+
+        success = false;
+        try {
+            api.rebootVmInstance(vm.getUuid(), session);
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                success = true;
+            }
+        }
+        Assert.assertTrue(success);
+
+        success = false;
+        try {
+            api.migrateVmInstance(vm.getUuid(), host2.getUuid(), session);
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                success = true;
+            }
+        }
+        Assert.assertTrue(success);
+
+        success = false;
+        try {
+            api.destroyVmInstance(vm.getUuid(), session);
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                success = true;
+            }
+        }
+        Assert.assertTrue(success);
+
+        success = false;
+        try {
+            vmCreator.create();
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                success = true;
+            }
+        }
+        Assert.assertTrue(success);
+
+        APIQueryVmInstanceMsg qmsg = new APIQueryVmInstanceMsg();
+        qmsg.setConditions(new ArrayList<QueryCondition>());
+        api.query(qmsg, APIQueryVmInstanceReply.class, session);
+    }
 }

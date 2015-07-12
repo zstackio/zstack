@@ -1,5 +1,6 @@
 package org.zstack.header.configuration;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
@@ -9,6 +10,7 @@ import org.zstack.header.message.APIParam;
  * Time: 2:35 PM
  * To change this template use File | Settings | File Templates.
  */
+@Action(category = ConfigurationConstant.ACTION_CATEGORY)
 public class APIChangeDiskOfferingStateMsg extends APIMessage implements DiskOfferingMessage {
     @APIParam(resourceType = DiskOfferingVO.class)
     private String uuid;

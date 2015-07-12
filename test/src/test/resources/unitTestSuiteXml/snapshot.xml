@@ -53,4 +53,5 @@
     <TestCase class="org.zstack.test.storage.snapshot.TestGetSnapshotTree"/>
     <TestCase class="org.zstack.test.storage.snapshot.TestQuerySnapshotTree"/>
     <TestCase class="org.zstack.test.storage.snapshot.TestUpdateSnapshot"/>
+    <TestCase class="org.zstack.test.storage.snapshot.TestPolicyForSnapshot"/>
 </UnitTestSuiteConfig>
