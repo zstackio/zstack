@@ -200,7 +200,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeInventory createDataVolumeFromSnapshot(String snapshotUuid) throws ApiSenderException {
-        return createDataVolumeFromSnapshot(snapshotUuid, (SessionInventory)null);
+        return createDataVolumeFromSnapshot(snapshotUuid, (SessionInventory) null);
     }
 
     public VolumeInventory createDataVolumeFromSnapshot(String snapshotUuid, SessionInventory session) throws ApiSenderException {
@@ -998,8 +998,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public L3NetworkInventory createL3BasicNetwork(String l2NetworkUuid) throws ApiSenderException {
+        return createL3BasicNetwork(l2NetworkUuid, null);
+    }
+
+    public L3NetworkInventory createL3BasicNetwork(String l2NetworkUuid, SessionInventory session) throws ApiSenderException {
         APICreateL3NetworkMsg msg = new APICreateL3NetworkMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setL2NetworkUuid(l2NetworkUuid);
         msg.setType(L3NetworkConstant.L3_BASIC_NETWORK_TYPE);
         msg.setName("Test-L3Network");
@@ -1011,10 +1015,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public L3NetworkInventory changeL3NetworkState(String uuid, L3NetworkStateEvent sevnt) throws ApiSenderException {
+        return changeL3NetworkState(uuid, sevnt, null);
+    }
+
+    public L3NetworkInventory changeL3NetworkState(String uuid, L3NetworkStateEvent sevnt, SessionInventory session) throws ApiSenderException {
         APIChangeL3NetworkStateMsg msg = new APIChangeL3NetworkStateMsg();
         msg.setUuid(uuid);
         msg.setStateEvent(sevnt.toString());
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIChangeL3NetworkStateEvent e = sender.send(msg, APIChangeL3NetworkStateEvent.class);
@@ -1022,8 +1030,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public void deleteL3Network(String uuid) throws ApiSenderException {
+        deleteL3Network(uuid, null);
+    }
+
+    public void deleteL3Network(String uuid, SessionInventory session) throws ApiSenderException {
         APIDeleteL3NetworkMsg msg = new APIDeleteL3NetworkMsg(uuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APIDeleteL3NetworkEvent.class);
@@ -1057,8 +1069,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public APIGetIpAddressCapacityReply getIpAddressCapacityByAll() throws ApiSenderException {
+        return getIpAddressCapacityByAll(null);
+    }
+
+    public APIGetIpAddressCapacityReply getIpAddressCapacityByAll(SessionInventory session) throws ApiSenderException {
         APIGetIpAddressCapacityMsg msg = new APIGetIpAddressCapacityMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setAll(true);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -1066,8 +1082,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public IpRangeInventory addIpRangeByCidr(String l3NetworkUuid, String cidr) throws ApiSenderException {
+        return addIpRangeByCidr(l3NetworkUuid, cidr, null);
+    }
+
+    public IpRangeInventory addIpRangeByCidr(String l3NetworkUuid, String cidr, SessionInventory session) throws ApiSenderException {
         APIAddIpRangeByNetworkCidrMsg msg = new APIAddIpRangeByNetworkCidrMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setL3NetworkUuid(l3NetworkUuid);
         msg.setNetworkCidr(cidr);
         msg.setName("TestIpRange");
@@ -1079,8 +1099,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public IpRangeInventory addIpRange(String l3NetworkUuid, String startIp, String endIp, String gateway, String netmask) throws ApiSenderException {
+        return addIpRange(l3NetworkUuid, startIp, endIp, gateway, netmask, null);
+    }
+
+    public IpRangeInventory addIpRange(String l3NetworkUuid, String startIp, String endIp, String gateway, String netmask, SessionInventory session) throws ApiSenderException {
         APIAddIpRangeMsg msg = new APIAddIpRangeMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setL3NetworkUuid(l3NetworkUuid);
         msg.setStartIp(startIp);
         msg.setEndIp(endIp);
@@ -1099,8 +1123,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<FreeIpInventory> getFreeIp(String l3Uuid, String ipRangeUuid, int limit) throws ApiSenderException {
+        return getFreeIp(l3Uuid, ipRangeUuid, limit, null);
+    }
+
+    public List<FreeIpInventory> getFreeIp(String l3Uuid, String ipRangeUuid, int limit, SessionInventory session) throws ApiSenderException {
         APIGetFreeIpMsg msg = new APIGetFreeIpMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setL3NetworkUuid(l3Uuid);
         msg.setIpRangeUuid(ipRangeUuid);
         msg.setLimit(limit);
@@ -1127,18 +1155,26 @@ public class Api implements CloudBusEventListener {
     }
 
     public void deleteIpRange(String uuid) throws ApiSenderException {
+        deleteIpRange(uuid, null);
+    }
+
+    public void deleteIpRange(String uuid, SessionInventory session) throws ApiSenderException {
         APIDeleteIpRangeMsg msg = new APIDeleteIpRangeMsg(uuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         sender.send(msg, APIDeleteIpRangeEvent.class);
     }
 
 
     public L3NetworkInventory removeDnsFromL3Network(String dns, String l3NetworkUuid) throws ApiSenderException {
+        return removeDnsFromL3Network(dns, l3NetworkUuid, null);
+    }
+
+    public L3NetworkInventory removeDnsFromL3Network(String dns, String l3NetworkUuid, SessionInventory session) throws ApiSenderException {
         APIRemoveDnsFromL3NetworkMsg msg = new APIRemoveDnsFromL3NetworkMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setDns(dns);
         msg.setL3NetworkUuid(l3NetworkUuid);
         ApiSender sender = new ApiSender();
@@ -1952,12 +1988,16 @@ public class Api implements CloudBusEventListener {
     }
 
     public L3NetworkInventory attachNetworkServiceToL3Network(String l3NetworkUuid, String providerUuid, List<String> types) throws ApiSenderException {
+        return attachNetworkServiceToL3Network(l3NetworkUuid, providerUuid, types, null);
+    }
+
+    public L3NetworkInventory attachNetworkServiceToL3Network(String l3NetworkUuid, String providerUuid, List<String> types, SessionInventory session) throws ApiSenderException {
         APIAttachNetworkServiceToL3NetworkMsg msg = new APIAttachNetworkServiceToL3NetworkMsg();
         Map<String, List<String>> ntypes = new HashMap<String, List<String>>(1);
         ntypes.put(providerUuid, types);
         msg.setL3NetworkUuid(l3NetworkUuid);
         msg.setNetworkServices(ntypes);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -1976,10 +2016,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public L3NetworkInventory addDns(String l3NetworkUuid, String dns) throws ApiSenderException {
+        return addDns(l3NetworkUuid, dns, null);
+    }
+
+    public L3NetworkInventory addDns(String l3NetworkUuid, String dns, SessionInventory session) throws ApiSenderException {
         APIAddDnsToL3NetworkMsg msg = new APIAddDnsToL3NetworkMsg();
         msg.setL3NetworkUuid(l3NetworkUuid);
         msg.setDns(dns);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2254,11 +2298,16 @@ public class Api implements CloudBusEventListener {
         bus.call(msg);
     }
 
+
     public VipInventory acquireIp(String l3NetworkUuid, String requiredIp) throws ApiSenderException {
+        return acquireIp(l3NetworkUuid, requiredIp, null);
+    }
+
+    public VipInventory acquireIp(String l3NetworkUuid, String requiredIp, SessionInventory session) throws ApiSenderException {
         APICreateVipMsg msg = new APICreateVipMsg();
         msg.setName("vip");
         msg.setL3NetworkUuid(l3NetworkUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setRequiredIp(requiredIp);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
@@ -2268,14 +2317,22 @@ public class Api implements CloudBusEventListener {
     }
 
     public VipInventory acquireIp(String l3NetworkUuid) throws ApiSenderException {
-        return acquireIp(l3NetworkUuid, null);
+        return acquireIp(l3NetworkUuid, (SessionInventory) null);
+    }
+
+    public VipInventory acquireIp(String l3NetworkUuid, SessionInventory session) throws ApiSenderException {
+        return acquireIp(l3NetworkUuid, null, session);
     }
 
     public VipInventory changeVipSate(String uuid, VipStateEvent sevt) throws ApiSenderException {
+        return changeVipSate(uuid, sevt, null);
+    }
+
+    public VipInventory changeVipSate(String uuid, VipStateEvent sevt, SessionInventory session) throws ApiSenderException {
         APIChangeVipStateMsg msg = new APIChangeVipStateMsg();
         msg.setStateEvent(sevt.toString());
         msg.setUuid(uuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2284,9 +2341,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public void releaseIp(String ipUuid) throws ApiSenderException {
+        releaseIp(ipUuid, null);
+    }
+
+    public void releaseIp(String ipUuid, SessionInventory session) throws ApiSenderException {
         APIDeleteVipMsg msg = new APIDeleteVipMsg();
         msg.setUuid(ipUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2294,10 +2355,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public PortForwardingRuleInventory changePortForwardingRuleState(String uuid, PortForwardingRuleStateEvent sevt) throws ApiSenderException {
+        return changePortForwardingRuleState(uuid, sevt, null);
+    }
+
+    public PortForwardingRuleInventory changePortForwardingRuleState(String uuid, PortForwardingRuleStateEvent sevt, SessionInventory session) throws ApiSenderException {
         APIChangePortForwardingRuleStateMsg msg = new APIChangePortForwardingRuleStateMsg();
         msg.setUuid(uuid);
         msg.setStateEvent(sevt.toString());
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2306,6 +2371,10 @@ public class Api implements CloudBusEventListener {
     }
 
     public PortForwardingRuleInventory createPortForwardingRuleByFullConfig(PortForwardingRuleInventory rule) throws ApiSenderException {
+        return createPortForwardingRuleByFullConfig(rule, null);
+    }
+
+    public PortForwardingRuleInventory createPortForwardingRuleByFullConfig(PortForwardingRuleInventory rule, SessionInventory session) throws ApiSenderException {
         APICreatePortForwardingRuleMsg msg = new APICreatePortForwardingRuleMsg();
         msg.setName(rule.getName());
         msg.setDescription(rule.getDescription());
@@ -2317,7 +2386,7 @@ public class Api implements CloudBusEventListener {
         msg.setVipPortStart(rule.getVipPortStart());
         msg.setVmNicUuid(rule.getVmNicUuid());
         msg.setProtocolType(rule.getProtocolType());
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2326,8 +2395,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public void revokePortForwardingRule(String ruleUuid) throws ApiSenderException {
+        revokePortForwardingRule(ruleUuid, null);
+    }
+
+    public void revokePortForwardingRule(String ruleUuid, SessionInventory session) throws ApiSenderException {
         APIDeletePortForwardingRuleMsg msg = new APIDeletePortForwardingRuleMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setUuid(ruleUuid);
         ApiSender sender = new ApiSender();
@@ -2336,8 +2409,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public PortForwardingRuleInventory attachPortForwardingRule(String ruleUuid, String vmNicUuid) throws ApiSenderException {
+        return attachPortForwardingRule(ruleUuid, vmNicUuid, null);
+    }
+
+    public PortForwardingRuleInventory attachPortForwardingRule(String ruleUuid, String vmNicUuid, SessionInventory session) throws ApiSenderException {
         APIAttachPortForwardingRuleMsg msg = new APIAttachPortForwardingRuleMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setRuleUuid(ruleUuid);
         msg.setVmNicUuid(vmNicUuid);
@@ -2348,8 +2425,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public PortForwardingRuleInventory detachPortForwardingRule(String ruleUuid) throws ApiSenderException {
+        return detachPortForwardingRule(ruleUuid, null);
+    }
+
+    public PortForwardingRuleInventory detachPortForwardingRule(String ruleUuid, SessionInventory session) throws ApiSenderException {
         APIDetachPortForwardingRuleMsg msg = new APIDetachPortForwardingRuleMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setUuid(ruleUuid);
         ApiSender sender = new ApiSender();
@@ -2420,9 +2501,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<String> getL3NetworkTypes() throws ApiSenderException {
+        return getL3NetworkTypes(null);
+    }
+
+    public List<String> getL3NetworkTypes(SessionInventory session) throws ApiSenderException {
         APIGetL3NetworkTypesMsg msg = new APIGetL3NetworkTypesMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIGetL3NetworkTypesReply reply = sender.call(msg, APIGetL3NetworkTypesReply.class);
@@ -2525,13 +2610,17 @@ public class Api implements CloudBusEventListener {
     }
 
     public EipInventory createEip(String name, String vipUuid, String vmNicUuid) throws ApiSenderException {
+        return createEip(name, vipUuid, vmNicUuid, null);
+    }
+
+    public EipInventory createEip(String name, String vipUuid, String vmNicUuid, SessionInventory session) throws ApiSenderException {
         APICreateEipMsg msg = new APICreateEipMsg();
         msg.setName(name);
         msg.setDescription(name);
         msg.setVipUuid(vipUuid);
         msg.setVmNicUuid(vmNicUuid);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateEipEvent evt = sender.send(msg, APICreateEipEvent.class);
@@ -2539,21 +2628,29 @@ public class Api implements CloudBusEventListener {
     }
 
     public void removeEip(String eipUuid) throws ApiSenderException {
+        removeEip(eipUuid, null);
+    }
+
+    public void removeEip(String eipUuid, SessionInventory session) throws ApiSenderException {
         APIDeleteEipMsg msg = new APIDeleteEipMsg();
         msg.setUuid(eipUuid);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APIDeleteEipEvent.class);
     }
 
     public EipInventory attachEip(String eipUuid, String vmNicUuid) throws ApiSenderException {
+        return attachEip(eipUuid, vmNicUuid, null);
+    }
+
+    public EipInventory attachEip(String eipUuid, String vmNicUuid, SessionInventory session) throws ApiSenderException {
         APIAttachEipMsg msg = new APIAttachEipMsg();
         msg.setVmNicUuid(vmNicUuid);
         msg.setEipUuid(eipUuid);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIAttachEipEvent evt = sender.send(msg, APIAttachEipEvent.class);
@@ -2561,11 +2658,15 @@ public class Api implements CloudBusEventListener {
     }
 
     public EipInventory changeEipState(String eipUuid, EipStateEvent sevt) throws ApiSenderException {
+        return changeEipState(eipUuid, sevt, null);
+    }
+
+    public EipInventory changeEipState(String eipUuid, EipStateEvent sevt, SessionInventory session) throws ApiSenderException {
         APIChangeEipStateMsg msg = new APIChangeEipStateMsg();
         msg.setUuid(eipUuid);
         msg.setStateEvent(sevt.toString());
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIChangeEipStateEvent evt = sender.send(msg, APIChangeEipStateEvent.class);
@@ -2573,10 +2674,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public EipInventory detachEip(String eipUuid) throws ApiSenderException {
+        return detachEip(eipUuid, null);
+    }
+
+    public EipInventory detachEip(String eipUuid, SessionInventory session) throws ApiSenderException {
         APIDetachEipMsg msg = new APIDetachEipMsg();
         msg.setUuid(eipUuid);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIDetachEipEvent evt = sender.send(msg, APIDetachEipEvent.class);
@@ -2883,8 +2988,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public VipInventory updateVip(VipInventory inv) throws ApiSenderException {
+        return updateVip(inv, null);
+    }
+
+    public VipInventory updateVip(VipInventory inv, SessionInventory session) throws ApiSenderException {
         APIUpdateVipMsg msg = new APIUpdateVipMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
         msg.setUuid(inv.getUuid());
@@ -2895,8 +3004,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public PortForwardingRuleInventory updatePortForwardingRule(PortForwardingRuleInventory inv) throws ApiSenderException {
+        return updatePortForwardingRule(inv, null);
+    }
+
+    public PortForwardingRuleInventory updatePortForwardingRule(PortForwardingRuleInventory inv, SessionInventory session) throws ApiSenderException {
         APIUpdatePortForwardingRuleMsg msg = new APIUpdatePortForwardingRuleMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
         msg.setUuid(inv.getUuid());
@@ -2935,8 +3048,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public EipInventory updateEip(EipInventory inv) throws ApiSenderException {
+        return updateEip(inv, null);
+    }
+
+    public EipInventory updateEip(EipInventory inv, SessionInventory session) throws ApiSenderException {
         APIUpdateEipMsg msg = new APIUpdateEipMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
         msg.setUuid(inv.getUuid());
@@ -2991,8 +3108,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public L3NetworkInventory updateL3Network(L3NetworkInventory inv) throws ApiSenderException {
+        return updateL3Network(inv, null);
+    }
+
+    public L3NetworkInventory updateL3Network(L3NetworkInventory inv, SessionInventory session) throws ApiSenderException {
         APIUpdateL3NetworkMsg msg = new APIUpdateL3NetworkMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
         msg.setUuid(inv.getUuid());

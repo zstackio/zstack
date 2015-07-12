@@ -1,7 +1,9 @@
 package org.zstack.header.network.service;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
 
@@ -54,6 +56,7 @@ import java.util.Map;
  *
  * see :ref:`APIAttachNetworkServiceToL3NetworkEvent`
  */
+@Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements L3NetworkMessage {
     /**
      * @desc l3Network uuid

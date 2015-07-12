@@ -1,6 +1,9 @@
 package org.zstack.header.network.service;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkConstant;
 
 /**
  * @api
@@ -36,5 +39,6 @@ import org.zstack.header.message.APISyncCallMessage;
  * @result
  * see :ref:`APIGetNetworkServiceTypesReply`
  */
+@Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
 public class APIGetNetworkServiceTypesMsg extends APISyncCallMessage {
 }

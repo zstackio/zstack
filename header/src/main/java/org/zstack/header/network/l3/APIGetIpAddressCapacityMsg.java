@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  */
-@Action(category = L3NetworkConstant.ACTION_CATEGORY)
+@Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
 public class APIGetIpAddressCapacityMsg extends APISyncCallMessage {
     @APIParam(required = false, resourceType = ZoneVO.class)
     private List<String> zoneUuids;
