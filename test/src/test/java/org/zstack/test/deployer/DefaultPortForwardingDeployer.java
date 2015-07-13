@@ -1,5 +1,6 @@
 package org.zstack.test.deployer;
 
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
@@ -45,14 +46,17 @@ public class DefaultPortForwardingDeployer implements PortForwardingDeployer<Por
             pfinv.setAllowedCidr(pf.getAllowedCidr());
             pfinv.setDescription(pf.getDescription());
             pfinv.setName(pf.getName());
-            pfinv.setPrivatePortEnd((int)pf.getPrivatePortEnd());
+            pfinv.setPrivatePortEnd((int) pf.getPrivatePortEnd());
             pfinv.setPrivatePortStart(pf.getPrivatePortStart().intValue());
             pfinv.setProtocolType(pf.getProtocolType());
             pfinv.setVipUuid(pubIp.getUuid());
-            pfinv.setVipPortEnd((int)pf.getPublicPortEnd());
+            pfinv.setVipPortEnd((int) pf.getPublicPortEnd());
             pfinv.setVipPortStart(pf.getPublicPortStart().intValue());
             pfinv.setVmNicUuid(vmNicUuid);
-            pfinv = deployer.getApi().createPortForwardingRuleByFullConfig(pfinv);
+
+            SessionInventory session = pf.getAccountRef() == null ? null : deployer.loginByAccountRef(pf.getAccountRef(), config);
+
+            pfinv = deployer.getApi().createPortForwardingRuleByFullConfig(pfinv ,session);
             deployer.portForwardingRules.put(pfinv.getName(), pfinv);
         }
     }

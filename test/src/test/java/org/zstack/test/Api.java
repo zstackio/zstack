@@ -1301,8 +1301,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public ImageInventory addImageByFullConfig(ImageInventory inv, String bsUuid) throws ApiSenderException {
+        return addImageByFullConfig(inv, bsUuid, null);
+    }
+
+    public ImageInventory addImageByFullConfig(ImageInventory inv, String bsUuid, SessionInventory session) throws ApiSenderException {
         APIAddImageMsg msg = new APIAddImageMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.getBackupStorageUuids().add(bsUuid);
         msg.setDescription(inv.getDescription());
         msg.setMediaType(inv.getMediaType());

@@ -13,6 +13,7 @@
     <xsd:complexType name="ImageConfig">
         <xsd:sequence>
             <xsd:element name="backupStorageRef" type="xsd:string" maxOccurs="unbounded" minOccurs="1"/>
+            <xsd:element name="accountRef" type="xsd:string" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
         <xsd:attribute name="description" type="xsd:string"></xsd:attribute>

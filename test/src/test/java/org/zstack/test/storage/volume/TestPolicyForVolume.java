@@ -82,7 +82,7 @@ public class TestPolicyForVolume {
         api.stopVmInstance(vm.getUuid());
 
         IdentityCreator identityCreator = new IdentityCreator(api);
-        identityCreator.createAccount("test", "password");
+        identityCreator.useAccount("test");
         identityCreator.createUser("user1", "password");
         Statement s = new Statement();
         s.setName("allow");

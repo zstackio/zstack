@@ -31,6 +31,9 @@
     </xsd:complexType>
 
 	<xsd:complexType name="InstanceOfferingConfig">
+        <xsd:sequence>
+            <xsd:element name="accountRef" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
 		<xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
 		<xsd:attribute name="description" type="xsd:string"></xsd:attribute>
 		<xsd:attribute name="memoryCapacity" type="xsd:string" default="2G"></xsd:attribute>
@@ -41,6 +44,9 @@
 	</xsd:complexType>
 
 	<xsd:complexType name="DiskOfferingConfig">
+        <xsd:sequence>
+            <xsd:element name="accountRef" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
 		<xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
 		<xsd:attribute name="description" type="xsd:string"></xsd:attribute>
 		<xsd:attribute name="diskSize" type="xsd:string" default="50G"></xsd:attribute>

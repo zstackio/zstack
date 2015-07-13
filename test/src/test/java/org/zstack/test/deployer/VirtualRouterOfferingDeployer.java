@@ -3,6 +3,7 @@ package org.zstack.test.deployer;
 import org.zstack.header.configuration.APICreateInstanceOfferingEvent;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.zone.ZoneInventory;
@@ -44,7 +45,9 @@ public class VirtualRouterOfferingDeployer implements InstanceOfferingDeployer<V
 			if (zone == null) {
 				throw new CloudRuntimeException(String.format("unable to find zone[%s]", ic.getZoneRef()));
 			}
-            msg.setSession(deployer.getApi().getAdminSession());
+
+			SessionInventory session = ic.getAccountRef() == null ? deployer.getApi().getAdminSession() : deployer.loginByAccountRef(ic.getAccountRef(), config);
+            msg.setSession(session);
 			msg.setAllocatorStrategy(ic.getAllocatorStrategy());
 			msg.setCpuNum((int) ic.getCpuNum());
 			msg.setCpuSpeed((int) ic.getCpuSpeed());

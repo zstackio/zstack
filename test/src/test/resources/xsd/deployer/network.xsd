@@ -85,6 +85,7 @@
 
     <xsd:complexType name="EipConfig">
         <xsd:sequence>
+            <xsd:element name="accountRef" type="xsd:string" minOccurs="0"/>
             <xsd:element name="name" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="description" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="publicL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
@@ -95,6 +96,7 @@
 
     <xsd:complexType name="PortForwardingConfig">
         <xsd:sequence>
+            <xsd:element name="accountRef" type="xsd:string" minOccurs="0"/>
             <xsd:element name="name" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="description" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="publicL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>

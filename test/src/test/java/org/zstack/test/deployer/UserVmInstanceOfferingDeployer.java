@@ -3,6 +3,7 @@ package org.zstack.test.deployer;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.deployer.schema.DeployerConfig;
 import org.zstack.test.deployer.schema.InstanceOfferingConfig;
@@ -27,7 +28,10 @@ public class UserVmInstanceOfferingDeployer implements InstanceOfferingDeployer<
 			inv.setDescription(ic.getDescription());
 			inv.setMemorySize(deployer.parseSizeCapacity(ic.getMemoryCapacity()));
 			inv.setName(ic.getName());
-			inv = deployer.getApi().addInstanceOffering(inv);
+
+			SessionInventory sessoin = ic.getAccountRef() == null ? null : deployer.loginByAccountRef(ic.getAccountRef(), config);
+
+			inv = deployer.getApi().addInstanceOffering(inv, sessoin);
 			deployer.instanceOfferings.put(inv.getName(), inv);
 		}
 	}

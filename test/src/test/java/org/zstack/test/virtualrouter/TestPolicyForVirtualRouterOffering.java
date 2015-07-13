@@ -68,7 +68,7 @@ public class TestPolicyForVirtualRouterOffering {
         ImageInventory img = deployer.images.get("TestImage");
 
         IdentityCreator identityCreator = new IdentityCreator(api);
-        identityCreator.createAccount("test", "password");
+        identityCreator.useAccount("test");
         identityCreator.createUser("user1", "password");
         Statement s = new Statement();
         s.setName("allow");

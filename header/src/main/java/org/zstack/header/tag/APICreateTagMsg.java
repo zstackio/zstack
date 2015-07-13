@@ -8,7 +8,7 @@ import org.zstack.header.message.APIParam;
 public abstract class APICreateTagMsg extends APIMessage {
     @APIParam
     private String resourceType;
-    @APIParam
+    @APIParam(checkAccount = true)
     private String resourceUuid;
     @APIParam
     private String tag;

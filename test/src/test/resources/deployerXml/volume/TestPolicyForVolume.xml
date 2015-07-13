@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <account name="test" password="password"></account>
     <instanceOfferings>
         <instanceOffering name="TestInstanceOffering"
-            description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000" />
+            description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000">
+            <accountRef>test</accountRef>
+        </instanceOffering>
     </instanceOfferings>
 
     <backupStorages>
@@ -12,15 +15,22 @@
     <images>
         <image name="TestImage" description="Test" format="qcow2">
             <backupStorageRef>TestBackupStorage</backupStorageRef>
+            <accountRef>test</accountRef>
         </image>
     </images>
 
     <diskOffering name="TestRootDiskOffering" description="Test"
-        diskSize="50G" />
+        diskSize="50G">
+        <accountRef>test</accountRef>
+    </diskOffering>
     <diskOffering name="TestDataDiskOffering1" description="Test"
-        diskSize="120G" />
+        diskSize="120G">
+        <accountRef>test</accountRef>
+    </diskOffering>
     <diskOffering name="TestDataDiskOffering2" description="Test"
-        diskSize="100G" />
+        diskSize="100G">
+        <accountRef>test</accountRef>
+    </diskOffering>
 
     <vm>
         <userVm name="TestVm" description="Test">
@@ -30,6 +40,7 @@
             <l3NetworkRef>TestL3Network1</l3NetworkRef>
             <diskOfferingRef>TestDataDiskOffering1</diskOfferingRef>
             <diskOfferingRef>TestDataDiskOffering2</diskOfferingRef>
+            <accountRef>test</accountRef>
         </userVm>
     </vm>
 
@@ -53,6 +64,7 @@
                         <l3BasicNetwork name="TestL3Network1" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
                                 endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                            <accountRef>test</accountRef>
                         </l3BasicNetwork>
                     </l3Networks>
                 </l2NoVlanNetwork>

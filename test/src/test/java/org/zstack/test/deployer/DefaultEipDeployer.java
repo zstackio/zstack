@@ -1,5 +1,6 @@
 package org.zstack.test.deployer;
 
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
@@ -41,8 +42,10 @@ public class DefaultEipDeployer implements EipDeployer<EipConfig> {
                 nicUuid = nic.getUuid();
             }
 
+            SessionInventory session = eip.getAccountRef() == null ? null : deployer.loginByAccountRef(eip.getAccountRef(), config);
+
             VipInventory vip = deployer.getApi().acquireIp(publ3.getUuid());
-            EipInventory inv = deployer.getApi().createEip(eip.getName(), vip.getUuid(), nicUuid);
+            EipInventory inv = deployer.getApi().createEip(eip.getName(), vip.getUuid(), nicUuid, session);
             deployer.eips.put(inv.getName(), inv);
         }
     }

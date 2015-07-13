@@ -9,10 +9,13 @@
 			<managementL3NetworkRef>PublicNetwork</managementL3NetworkRef>
 			<publicL3NetworkRef>PublicNetwork</publicL3NetworkRef>
 			<imageRef>TestImage</imageRef>
+			<accountRef>test</accountRef>
 		</virtualRouterOffering>
 		
 		<instanceOffering name="TestInstanceOffering"
-			description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000" />
+			description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000">
+			<accountRef>test</accountRef>
+		</instanceOffering>
 	</instanceOfferings>
 
 	<backupStorages>
@@ -23,6 +26,7 @@
 	<images>
         <image name="TestImage" description="Test">
 			<backupStorageRef>sftp</backupStorageRef>
+			<accountRef>test</accountRef>
 		</image>
 	</images>
 	
@@ -55,11 +59,13 @@
 						<l3BasicNetwork name="PublicNetwork" description="Test">
 							<ipRange name="TestIpRange" description="Test" startIp="192.168.1.10"
 								endIp="192.168.1.100" gateway="192.168.1.1" netmask="255.255.255.0" />
+							<accountRef>test</accountRef>
 						</l3BasicNetwork>
 						
 						<l3BasicNetwork name="GuestNetwork" description="Test">
 							<ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
 								endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
+							<accountRef>test</accountRef>
 
 							<networkService provider="VirtualRouter">
 								<serviceType>Eip</serviceType>

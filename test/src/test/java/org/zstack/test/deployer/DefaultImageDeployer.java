@@ -1,6 +1,7 @@
 package org.zstack.test.deployer;
 
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.test.ApiSenderException;
@@ -31,7 +32,10 @@ public class DefaultImageDeployer implements ImageDeployer<ImageConfig> {
                 iinv.setFormat(ic.getFormat());
                 iinv.setName(ic.getName());
                 iinv.setUrl(ic.getUrl());
-                iinv = deployer.getApi().addImageByFullConfig(iinv, bs.getUuid());
+
+                SessionInventory session = ic.getAccountRef() == null ? null : deployer.loginByAccountRef(ic.getAccountRef(), config);
+
+                iinv = deployer.getApi().addImageByFullConfig(iinv, bs.getUuid(), session);
                 deployer.images.put(iinv.getName(), iinv);
             }
         }

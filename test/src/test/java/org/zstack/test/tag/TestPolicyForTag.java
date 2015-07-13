@@ -191,5 +191,32 @@ public class TestPolicyForTag {
         APIQuerySystemTagMsg smsg = new APIQuerySystemTagMsg();
         smsg.setConditions(new ArrayList<QueryCondition>());
         api.query(smsg, APIQuerySystemTagReply.class, session);
+
+        IdentityCreator identityCreator1 = new IdentityCreator(api);
+        identityCreator1.createAccount("test2", "password");
+        session = identityCreator1.accountLogin("test2", "password");
+
+        success = false;
+        try {
+            api.deleteTag(utag.getUuid(), session);
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                success = true;
+            }
+        }
+        Assert.assertTrue(success);
+
+        success = false;
+        try {
+            api.deleteTag(stag.getUuid(), session);
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                success = true;
+            }
+        }
+        Assert.assertTrue(success);
+
+        api.deleteTag(utag.getUuid());
+        api.deleteTag(stag.getUuid());
     }
 }

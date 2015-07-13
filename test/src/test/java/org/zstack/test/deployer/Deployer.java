@@ -496,7 +496,10 @@ public class Deployer {
             dinv.setDescription(dc.getDescription());
             dinv.setDiskSize(parseSizeCapacity(dc.getDiskSize()));
             dinv.setAllocatorStrategy(dc.getAllocatorStrategy());
-            dinv = api.addDiskOfferingByFullConfig(dinv);
+
+            SessionInventory session = dc.getAccountRef() == null ? null : loginByAccountRef(dc.getAccountRef(), config);
+
+            dinv = api.addDiskOfferingByFullConfig(dinv, session);
             diskOfferings.put(dinv.getName(), dinv);
         }
     }
@@ -736,8 +739,7 @@ public class Deployer {
             }
         }
         assert targetAccount != null;
-        
-        SessionInventory session = api.loginByAccount(targetAccount.getName(), targetAccount.getPassword());
-        return session;
+
+        return api.loginByAccount(targetAccount.getName(), targetAccount.getPassword());
     }
 }
