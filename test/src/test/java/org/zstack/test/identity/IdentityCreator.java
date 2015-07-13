@@ -34,6 +34,10 @@ public class IdentityCreator {
     Map<String, PolicyInventory> policies = new HashMap<String, PolicyInventory>();
     SessionInventory accountSession;
 
+    public SessionInventory getAccountSession() {
+        return accountSession;
+    }
+
     public IdentityCreator(Api api) {
         this.api = api;
     }

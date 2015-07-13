@@ -44,8 +44,8 @@ public class TestQueryVolume {
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         IdentityCreator identityCreator = new IdentityCreator(api);
-        identityCreator.createAccount("TestAccount", "password");
-        SessionInventory session = api.loginByAccount("TestAccount", "password");
+        identityCreator.useAccount("test");
+        SessionInventory session = identityCreator.getAccountSession();
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         List<VolumeInventory> volumes = vm.getAllVolumes();
         for (VolumeInventory vol : volumes) {

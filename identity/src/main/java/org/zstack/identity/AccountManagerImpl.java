@@ -521,7 +521,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 } else if (Collection.class.isAssignableFrom(af.field.getType())) {
                     resourceUuids.addAll((Collection)value);
                 }
+            }
 
+            if (resourceUuids.isEmpty()) {
+                return;
             }
 
             SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);

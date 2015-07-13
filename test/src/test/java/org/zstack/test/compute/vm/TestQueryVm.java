@@ -47,7 +47,7 @@ public class TestQueryVm {
     
     @Test
     public void test() throws ApiSenderException {
-        SessionInventory session = api.loginByAccount("TestAccount", "password");
+        SessionInventory session = api.loginByAccount("test", "password");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         QueryTestValidator.validateEQ(new APIQueryVmInstanceMsg(), api, APIQueryVmInstanceReply.class, vm, session);
         QueryTestValidator.validateRandomEQConjunction(new APIQueryVmInstanceMsg(), api, APIQueryVmInstanceReply.class, vm, session, 3);

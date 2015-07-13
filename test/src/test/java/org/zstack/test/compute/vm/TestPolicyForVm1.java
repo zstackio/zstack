@@ -56,7 +56,7 @@ public class TestPolicyForVm1 {
         HostInventory host2 = deployer.hosts.get("TestHost2");
 
         IdentityCreator identityCreator = new IdentityCreator(api);
-        identityCreator.createAccount("test", "password");
+        identityCreator.useAccount("test");
         UserInventory user = identityCreator.createUser("user", "password");
         Statement s = new Statement();
         s.setName("allow");

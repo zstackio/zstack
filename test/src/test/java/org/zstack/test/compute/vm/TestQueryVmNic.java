@@ -41,7 +41,7 @@ public class TestQueryVmNic {
     
     @Test
     public void test() throws ApiSenderException {
-        SessionInventory session = api.loginByAccount("TestAccount", "password");
+        SessionInventory session = api.loginByAccount("test", "password");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory nic = vm.getVmNics().get(0);
         QueryTestValidator.validateEQ(new APIQueryVmNicMsg(), api, APIQueryVmNicReply.class, nic, session);

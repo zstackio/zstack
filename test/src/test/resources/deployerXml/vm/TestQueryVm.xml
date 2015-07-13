@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployerConfig xmlns="http://zstack.org/schema/zstack">
-	<account name="TestAccount" password="password" >
-		<policy name="systemAdminPolicy" policyFilePath="PolicyXml/SystemAdminPolicy.xml" />
+	<account name="test" password="password" >
 	</account>
 	
     <instanceOfferings>
         <instanceOffering name="TestInstanceOffering"
-            description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000" />
+            description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000">
+            <accountRef>test</accountRef>
+        </instanceOffering>
     </instanceOfferings>
 
     <backupStorages>
@@ -16,13 +17,18 @@
     <images>
         <image name="TestImage" description="Test" format="simulator">
             <backupStorageRef>TestBackupStorage</backupStorageRef>
+            <accountRef>test</accountRef>
         </image>
     </images>
 
     <diskOffering name="TestRootDiskOffering" description="Test"
-        diskSize="50G" />
+        diskSize="50G">
+        <accountRef>test</accountRef>
+    </diskOffering>
     <diskOffering name="TestDataDiskOffering" description="Test"
-        diskSize="120G" />
+        diskSize="120G">
+        <accountRef>test</accountRef>
+    </diskOffering>
 
     <vm>
         <userVm name="TestVm" description="Test">
@@ -34,7 +40,7 @@
             <l3NetworkRef>TestL3Network3</l3NetworkRef>
             <defaultL3NetworkRef>TestL3Network1</defaultL3NetworkRef>
             <diskOfferingRef>TestDataDiskOffering</diskOfferingRef>
-            <accountRef>TestAccount</accountRef>
+            <accountRef>test</accountRef>
         </userVm>
     </vm>
 
@@ -60,14 +66,17 @@
                         <l3BasicNetwork name="TestL3Network1" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
                                 endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                            <accountRef>test</accountRef>
                         </l3BasicNetwork>
                         <l3BasicNetwork name="TestL3Network2" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
                                 endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
+                            <accountRef>test</accountRef>
                         </l3BasicNetwork>
                         <l3BasicNetwork name="TestL3Network3" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.20.3.100"
                                 endIp="10.30.3.200" gateway="10.20.3.1" netmask="255.0.0.0" />
+                            <accountRef>test</accountRef>
                         </l3BasicNetwork>
                     </l3Networks>
                 </l2NoVlanNetwork>
