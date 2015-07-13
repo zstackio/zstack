@@ -2061,9 +2061,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public SecurityGroupInventory createSecurityGroup(String name) throws ApiSenderException {
+        return createSecurityGroup(name, null);
+    }
+
+    public SecurityGroupInventory createSecurityGroup(String name, SessionInventory session) throws ApiSenderException {
         APICreateSecurityGroupMsg msg = new APICreateSecurityGroupMsg();
         msg.setName(name);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2072,10 +2076,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public SecurityGroupInventory changeSecurityGroupState(String uuid, SecurityGroupStateEvent sevt) throws ApiSenderException {
+        return changeSecurityGroupState(uuid, sevt, null);
+    }
+
+    public SecurityGroupInventory changeSecurityGroupState(String uuid, SecurityGroupStateEvent sevt, SessionInventory session) throws ApiSenderException {
         APIChangeSecurityGroupStateMsg msg = new APIChangeSecurityGroupStateMsg();
         msg.setStateEvent(sevt.toString());
         msg.setUuid(uuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2140,9 +2148,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public SecurityGroupInventory removeSecurityGroupRule(List<String> ruleUuids) throws ApiSenderException {
+        return removeSecurityGroupRule(ruleUuids, null);
+    }
+
+    public SecurityGroupInventory removeSecurityGroupRule(List<String> ruleUuids, SessionInventory session) throws ApiSenderException {
         APIDeleteSecurityGroupRuleMsg msg = new APIDeleteSecurityGroupRuleMsg();
         msg.setRuleUuids(ruleUuids);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2151,10 +2163,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public void removeVmNicFromSecurityGroup(String securityGroupUuid, String vmNicUuid) throws ApiSenderException {
+        removeVmNicFromSecurityGroup(securityGroupUuid, vmNicUuid, null);
+    }
+
+    public void removeVmNicFromSecurityGroup(String securityGroupUuid, String vmNicUuid, SessionInventory session) throws ApiSenderException {
         APIDeleteVmNicFromSecurityGroupMsg msg = new APIDeleteVmNicFromSecurityGroupMsg();
         msg.setSecurityGroupUuid(securityGroupUuid);
         msg.setVmNicUuids(Arrays.asList(vmNicUuid));
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2168,9 +2184,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public void addVmNicToSecurityGroup(String securityGroupUuid, List<String> vmNicUuids) throws ApiSenderException {
+        addVmNicToSecurityGroup(securityGroupUuid, vmNicUuids, null);
+    }
+
+    public void addVmNicToSecurityGroup(String securityGroupUuid, List<String> vmNicUuids, SessionInventory session) throws ApiSenderException {
         APIAddVmNicToSecurityGroupMsg msg = new APIAddVmNicToSecurityGroupMsg();
         msg.setSecurityGroupUuid(securityGroupUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setVmNicUuids(vmNicUuids);
         ApiSender sender = new ApiSender();
@@ -2179,10 +2199,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public SecurityGroupInventory attachSecurityGroupToL3Network(String securityGroupUuid, String l3NetworkUuid) throws ApiSenderException {
+        return attachSecurityGroupToL3Network(securityGroupUuid, l3NetworkUuid, null);
+    }
+
+    public SecurityGroupInventory attachSecurityGroupToL3Network(String securityGroupUuid, String l3NetworkUuid, SessionInventory session) throws ApiSenderException {
         APIAttachSecurityGroupToL3NetworkMsg msg = new APIAttachSecurityGroupToL3NetworkMsg();
         msg.setL3NetworkUuid(l3NetworkUuid);
         msg.setSecurityGroupUuid(securityGroupUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2191,10 +2215,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public SecurityGroupInventory detachSecurityGroupFromL3Network(String securityGroupUuid, String l3NetworkUuid) throws ApiSenderException {
+        return detachSecurityGroupFromL3Network(securityGroupUuid, l3NetworkUuid, null);
+    }
+
+    public SecurityGroupInventory detachSecurityGroupFromL3Network(String securityGroupUuid, String l3NetworkUuid, SessionInventory session) throws ApiSenderException {
         APIDetachSecurityGroupFromL3NetworkMsg msg = new APIDetachSecurityGroupFromL3NetworkMsg();
         msg.setL3NetworkUuid(l3NetworkUuid);
         msg.setSecurityGroupUuid(securityGroupUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2203,9 +2231,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public void deleteSecurityGroup(String securityGroupUuid) throws ApiSenderException {
+        deleteSecurityGroup(securityGroupUuid, null);
+    }
+
+    public void deleteSecurityGroup(String securityGroupUuid, SessionInventory session) throws ApiSenderException {
         APIDeleteSecurityGroupMsg msg = new APIDeleteSecurityGroupMsg();
         msg.setUuid(securityGroupUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -2762,6 +2794,10 @@ public class Api implements CloudBusEventListener {
     }
 
     private TagInventory createTag(String resourceUuid, String tag, Class entityClass, TagType type) throws ApiSenderException {
+        return createTag(resourceUuid, tag, entityClass, type, null);
+    }
+
+    private TagInventory createTag(String resourceUuid, String tag, Class entityClass, TagType type, SessionInventory session) throws ApiSenderException {
         APICreateTagMsg msg;
         if (type == TagType.System) {
             msg = new APICreateSystemTagMsg();
@@ -2770,7 +2806,7 @@ public class Api implements CloudBusEventListener {
         }
 
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setResourceType(entityClass.getSimpleName());
         msg.setResourceUuid(resourceUuid);
         msg.setTag(tag);
@@ -2786,17 +2822,29 @@ public class Api implements CloudBusEventListener {
     }
 
     public TagInventory createUserTag(String resourceUuid, String tag, Class entitiClass) throws ApiSenderException {
-        return createTag(resourceUuid, tag, entitiClass, TagType.User);
+        return createUserTag(resourceUuid, tag, entitiClass, null);
+    }
+
+    public TagInventory createUserTag(String resourceUuid, String tag, Class entitiClass, SessionInventory session) throws ApiSenderException {
+        return createTag(resourceUuid, tag, entitiClass, TagType.User, session);
     }
 
     public TagInventory createSystemTag(String resourceUuid, String tag, Class entitiClass) throws ApiSenderException {
-        return createTag(resourceUuid, tag, entitiClass, TagType.System);
+        return createSystemTag(resourceUuid, tag, entitiClass, null);
+    }
+
+    public TagInventory createSystemTag(String resourceUuid, String tag, Class entitiClass, SessionInventory session) throws ApiSenderException {
+        return createTag(resourceUuid, tag, entitiClass, TagType.System, session);
     }
 
     public void deleteTag(String tagUuid) throws ApiSenderException {
+        deleteTag(tagUuid, null);
+    }
+
+    public void deleteTag(String tagUuid, SessionInventory session) throws ApiSenderException {
         APIDeleteTagMsg msg = new APIDeleteTagMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setUuid(tagUuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -3020,8 +3068,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public SecurityGroupInventory updateSecurityGroup(SecurityGroupInventory inv) throws ApiSenderException {
+        return updateSecurityGroup(inv, null);
+    }
+
+    public SecurityGroupInventory updateSecurityGroup(SecurityGroupInventory inv, SessionInventory session) throws ApiSenderException {
         APIUpdateSecurityGroupMsg msg = new APIUpdateSecurityGroupMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
         msg.setUuid(inv.getUuid());

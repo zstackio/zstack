@@ -1,11 +1,15 @@
 package org.zstack.network.service.virtualrouter;
 
 import org.zstack.header.configuration.APICreateInstanceOfferingMsg;
+import org.zstack.header.configuration.ConfigurationConstant;
+import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.tag.TagConstant;
 import org.zstack.header.zone.ZoneVO;
 
+@Action(category = VirtualRouterConstant.ACTION_CATEGORY)
 public class APICreateVirtualRouterOfferingMsg extends APICreateInstanceOfferingMsg {
 	@APIParam(resourceType = ZoneVO.class)
 	private String zoneUuid;

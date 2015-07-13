@@ -1,14 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployerConfig xmlns="http://zstack.org/schema/zstack">
-	<instanceOfferings>
-		<virtualRouterOffering name="virtualRouterOffering" isDefault="true">
-			<zoneRef>Zone1</zoneRef>
-			<managementL3NetworkRef>TestL3Network1</managementL3NetworkRef>
-			<publicL3NetworkRef>TestL3Network2</publicL3NetworkRef>
-			<imageRef>TestImage</imageRef>
-		</virtualRouterOffering>
-	</instanceOfferings>
-
 	<backupStorages>
 		<sftpBackupStorage name="sftp" description="Test"
 			url="nfs://test" />

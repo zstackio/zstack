@@ -12,6 +12,8 @@ public interface VirtualRouterConstant {
     @PythonClass
 	public static final String VIRTUAL_ROUTER_OFFERING_TYPE = "VirtualRouter";
 
+	public static final String ACTION_CATEGORY = "virtualRouter";
+
     public static final NetworkServiceProviderType PROVIDER_TYPE = new NetworkServiceProviderType(VIRTUAL_ROUTER_PROVIDER_TYPE);
 
 	public static final String VR_RESULT_VM = "ResultVirtualRouterVm";
