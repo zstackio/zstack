@@ -51,12 +51,12 @@ public class APIAttachNicToVmMsg extends APIMessage implements VmInstanceMessage
     /**
      * @desc vm uuid
      */
-    @APIParam(resourceType = VmInstanceVO.class)
+    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true)
     private String vmInstanceUuid;
     /**
      * @desc uuid of L3Network where the nic will be created
      */
-    @APIParam(resourceType = L3NetworkVO.class)
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
     private String l3NetworkUuid;
 
     @Override

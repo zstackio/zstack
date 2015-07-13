@@ -10,7 +10,7 @@ import org.zstack.header.rest.APINoSee;
  */
 @Action(category = VolumeSnapshotConstant.ACTION_CATEGORY)
 public class APIUpdateVolumeSnapshotMsg extends APIMessage implements VolumeSnapshotMessage {
-    @APIParam(resourceType = VolumeSnapshotVO.class)
+    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

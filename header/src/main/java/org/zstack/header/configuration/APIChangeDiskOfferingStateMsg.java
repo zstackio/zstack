@@ -12,7 +12,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
 public class APIChangeDiskOfferingStateMsg extends APIMessage implements DiskOfferingMessage {
-    @APIParam(resourceType = DiskOfferingVO.class)
+    @APIParam(resourceType = DiskOfferingVO.class, checkAccount = true)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})
     private String stateEvent;

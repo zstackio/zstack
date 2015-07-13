@@ -8,7 +8,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = EipConstant.ACTION_CATEGORY)
 public class APIChangeEipStateMsg extends APIMessage implements EipMessage {
-    @APIParam(resourceType = EipVO.class)
+    @APIParam(resourceType = EipVO.class, checkAccount = true)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})
     private String stateEvent;

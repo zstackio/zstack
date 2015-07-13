@@ -49,7 +49,7 @@ public class APIAddDnsToL3NetworkMsg extends APIMessage implements L3NetworkMess
     /**
      * @desc l3Network uuid
      */
-	@APIParam(resourceType = L3NetworkVO.class)
+	@APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
 	private String l3NetworkUuid;
     /**
      * @desc dns in IPv4

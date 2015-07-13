@@ -61,7 +61,7 @@ public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements
     /**
      * @desc l3Network uuid
      */
-	@APIParam(resourceType = L3NetworkVO.class)
+	@APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
 	private String l3NetworkUuid;
     /**
      * @desc a map where key is network service provider uuid and value is list of network service types

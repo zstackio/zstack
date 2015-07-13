@@ -9,7 +9,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = VipConstant.ACTION_CATEGORY)
 public class APIUpdateVipMsg extends APIMessage {
-    @APIParam(resourceType = VipVO.class)
+    @APIParam(resourceType = VipVO.class, checkAccount = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

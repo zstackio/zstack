@@ -8,9 +8,9 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 public class APIDetachPolicyFromUserMsg extends APIMessage implements AccountMessage {
-    @APIParam(resourceType = PolicyVO.class)
+    @APIParam(resourceType = PolicyVO.class, checkAccount = true)
     private String policyUuid;
-    @APIParam(resourceType = UserVO.class)
+    @APIParam(resourceType = UserVO.class, checkAccount = true)
     private String userUuid;
 
     public String getPolicyUuid() {

@@ -11,7 +11,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
  */
 @Action(category = VolumeConstant.ACTION_CATEGORY)
 public class APICreateDataVolumeFromVolumeTemplateMsg extends APICreateMessage {
-    @APIParam(resourceType = ImageVO.class)
+    @APIParam(resourceType = ImageVO.class, checkAccount = true)
     private String imageUuid;
     @APIParam(maxLength = 255)
     private String name;

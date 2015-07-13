@@ -9,7 +9,7 @@ import java.util.List;
 
 @Action(category = ImageConstant.ACTION_CATEGORY)
 public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage {
-	@APIParam
+	@APIParam(checkAccount = true)
 	private String uuid;
     @APIParam(required = false, nonempty = true, resourceType = BackupStorageVO.class)
     private List<String> backupStorageUuids;

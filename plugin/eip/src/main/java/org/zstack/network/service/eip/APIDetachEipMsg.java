@@ -45,7 +45,7 @@ public class APIDetachEipMsg extends APIMessage implements EipMessage {
     /**
      * @desc eip uuid
      */
-    @APIParam(resourceType = EipVO.class)
+    @APIParam(resourceType = EipVO.class, checkAccount = true)
     private String uuid;
 
     public String getUuid() {

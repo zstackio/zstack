@@ -8,7 +8,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 public class APIDeleteUserGroupMsg extends APIDeleteMessage implements AccountMessage {
-    @APIParam(resourceType = UserGroupVO.class)
+    @APIParam(resourceType = UserGroupVO.class, checkAccount = true)
     private String uuid;
 
     @Override

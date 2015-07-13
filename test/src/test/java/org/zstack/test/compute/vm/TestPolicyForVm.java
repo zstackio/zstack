@@ -279,5 +279,54 @@ public class TestPolicyForVm {
         APIQueryVmInstanceMsg qmsg = new APIQueryVmInstanceMsg();
         qmsg.setConditions(new ArrayList<QueryCondition>());
         api.query(qmsg, APIQueryVmInstanceReply.class, session);
+
+        vmCreator.session = identityCreator.accountLogin("test", "password");
+        vm = vmCreator.create();
+
+        // operate the vm using another account
+        IdentityCreator identityCreator1 = new IdentityCreator(api);
+        identityCreator1.createAccount("test2", "password");
+        session = identityCreator1.accountLogin("test2", "password");
+
+        success = false;
+        try {
+            api.stopVmInstance(vm.getUuid(), session);
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                success = true;
+            }
+        }
+        Assert.assertTrue(success);
+
+        success = false;
+        try {
+            api.rebootVmInstance(vm.getUuid(), session);
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                success = true;
+            }
+        }
+        Assert.assertTrue(success);
+
+        success = false;
+        try {
+            api.migrateVmInstance(vm.getUuid(), host2.getUuid(), session);
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                success = true;
+            }
+        }
+        Assert.assertTrue(success);
+
+        success = false;
+        try {
+            api.destroyVmInstance(vm.getUuid(), session);
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                success = true;
+            }
+        }
+        Assert.assertTrue(success);
+
     }
 }

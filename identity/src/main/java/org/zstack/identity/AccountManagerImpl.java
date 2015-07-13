@@ -23,15 +23,19 @@ import org.zstack.header.identity.AccountConstant.StatementEffect;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIParam;
 import org.zstack.header.message.Message;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,11 +65,17 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private List<Class> resourceTypes;
     private Map<String, SessionInventory> sessions = new ConcurrentHashMap<String, SessionInventory>();
 
+    class AccountCheckField {
+        Field field;
+        APIParam param;
+    }
+
     class MessageAction {
         boolean adminOnly;
         List<String> actions;
         String category;
         boolean accountOnly;
+        List<AccountCheckField> accountCheckFields;
     }
 
     private Map<Class, MessageAction> actions = new HashMap<Class, MessageAction>();
@@ -333,9 +343,31 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             ma.adminOnly = a.adminOnly();
             ma.category = a.category();
             ma.actions = new ArrayList<String>();
+            ma.accountCheckFields = new ArrayList<AccountCheckField>();
             for (String ac : a.names()) {
                 ma.actions.add(String.format("%s:%s", ma.category, ac));
             }
+
+            List<Field> allFields = FieldUtils.getAllFields(clz);
+            for (Field f : allFields) {
+                APIParam at = f.getAnnotation(APIParam.class);
+                if (at == null || !at.checkAccount()) {
+                    continue;
+                }
+
+                if (!String.class.isAssignableFrom(f.getType()) && !Collection.class.isAssignableFrom(f.getType())) {
+                    throw new CloudRuntimeException(String.format("@APIParam of %s.%s has checkAccount = true, however," +
+                                    " the type of the field is not String or Collection but %s. This field must be a resource UUID or a collection(e.g. List) of UUIDs",
+                            clz.getName(), f.getName(), f.getType()));
+                }
+
+                AccountCheckField af = new AccountCheckField();
+                f.setAccessible(true);
+                af.field = f;
+                af.param = at;
+                ma.accountCheckFields.add(af);
+            }
+
             ma.actions.add(String.format("%s:%s", ma.category, clz.getSimpleName()));
             actions.put(clz, ma);
         }
@@ -476,6 +508,45 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             msg.setSession(session);
         }
 
+        private void accountFieldCheck() throws IllegalAccessException {
+            List resourceUuids = new ArrayList();
+            for (AccountCheckField af : action.accountCheckFields) {
+                Object value = af.field.get(msg);
+                if (value == null) {
+                    continue;
+                }
+
+                if (String.class.isAssignableFrom(af.field.getType())) {
+                    resourceUuids.add(value);
+                } else if (Collection.class.isAssignableFrom(af.field.getType())) {
+                    resourceUuids.addAll((Collection)value);
+                }
+
+            }
+
+            SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
+            q.select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceUuid, AccountResourceRefVO_.resourceType);
+            q.add(AccountResourceRefVO_.resourceUuid, Op.IN, resourceUuids);
+            List<Tuple> ts = q.listTuple();
+
+            for (Tuple t : ts) {
+                String auuid = t.get(0, String.class);
+                String ruuid = t.get(1, String.class);
+                String type = t.get(2, String.class);
+                if (!session.getAccountUuid().equals(auuid)) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                            String.format("operation denied. The resource[uuid: %s, type: %s] doesn't belong to the account[uuid: %s]",
+                                    ruuid, type, session.getAccountUuid())
+                    ));
+                } else {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("account-check pass. The resource[uuid: %s, type: %s] belongs to the account[uuid: %s]",
+                                ruuid, type, session.getAccountUuid()));
+                    }
+                }
+            }
+        }
+
         private void useDecision(Decision d, boolean userPolicy) {
             String policyCategory = userPolicy ? "user policy" : "group policy";
 
@@ -493,6 +564,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 ));
             }
         }
+
         private void policyCheck() {
             SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
             q.select(AccountVO_.type);
@@ -513,6 +585,16 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                         String.format("API[%s] can only be called by an account, the current session is a user session[user uuid:%s]",
                                 msg.getClass().getSimpleName(), session.getUserUuid())
                         ));
+            }
+
+            if (action.accountCheckFields != null && !action.accountCheckFields.isEmpty()) {
+                try {
+                    accountFieldCheck();
+                } catch (ApiMessageInterceptionException ae) {
+                    throw ae;
+                } catch (Exception e) {
+                    throw new CloudRuntimeException(e);
+                }
             }
 
             if (session.isAccountSession()) {

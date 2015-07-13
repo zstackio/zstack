@@ -10,7 +10,7 @@ import org.zstack.header.rest.APINoSee;
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APIUpdateIpRangeMsg extends APIMessage implements L3NetworkMessage, IpRangeMessage {
-    @APIParam(resourceType = IpRangeVO.class)
+    @APIParam(resourceType = IpRangeVO.class, checkAccount = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

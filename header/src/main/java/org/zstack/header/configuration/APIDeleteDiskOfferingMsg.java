@@ -6,7 +6,7 @@ import org.zstack.header.message.APIParam;
 
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
 public class APIDeleteDiskOfferingMsg extends APIDeleteMessage implements DiskOfferingMessage {
-	@APIParam
+	@APIParam(checkAccount = true)
 	private String uuid;
 
 	public APIDeleteDiskOfferingMsg() {

@@ -82,17 +82,17 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
     /**
      * @desc uuid of instance offering. See :ref:`InstanceOfferingInventory`
      */
-    @APIParam(resourceType = InstanceOfferingVO.class)
+    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true)
     private String instanceOfferingUuid;
     /**
      * @desc uuid of image. See :ref:`ImageInventory`
      */
-    @APIParam(resourceType = ImageVO.class)
+    @APIParam(resourceType = ImageVO.class, checkAccount = true)
     private String imageUuid;
     /**
      * @desc a list of L3Network uuid the vm will create nic on. See :ref:`L3NetworkInventory`
      */
-    @APIParam(resourceType = L3NetworkVO.class, nonempty = true)
+    @APIParam(resourceType = L3NetworkVO.class, nonempty = true, checkAccount = true)
     private List<String> l3NetworkUuids;
     /**
      * @desc see type of :ref:`VmInstanceInventory`
@@ -107,12 +107,12 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
      * mandatory when vm is created from ISO. See 'mediaType' of :ref:`ImageInventory`
      * @optional
      */
-    @APIParam(required = false, resourceType = DiskOfferingVO.class)
+    @APIParam(required = false, resourceType = DiskOfferingVO.class, checkAccount = true)
     private String rootDiskOfferingUuid;
     /**
      * @desc disk offering uuid for data volumes. See :ref:`DiskOfferingInventory`
      */
-    @APIParam(required = false, resourceType = DiskOfferingVO.class)
+    @APIParam(required = false, resourceType = DiskOfferingVO.class, checkAccount = true)
     private List<String> dataDiskOfferingUuids;
     /**
      * @desc when not null, vm will be created in the zone this uuid specified

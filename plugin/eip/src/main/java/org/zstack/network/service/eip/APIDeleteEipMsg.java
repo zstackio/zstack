@@ -48,7 +48,7 @@ public class APIDeleteEipMsg extends APIDeleteMessage implements EipMessage {
     /**
      * @desc eip uuid
      */
-    @APIParam
+    @APIParam(checkAccount = true)
     private String uuid;
 
     public String getUuid() {

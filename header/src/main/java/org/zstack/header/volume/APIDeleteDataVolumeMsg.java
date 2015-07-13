@@ -47,7 +47,7 @@ public class APIDeleteDataVolumeMsg extends APIDeleteMessage implements VolumeMe
     /**
      * @desc data volume uuid
      */
-	@APIParam
+	@APIParam(checkAccount = true)
 	private String uuid;
 
 	public String getUuid() {

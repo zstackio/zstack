@@ -50,7 +50,7 @@ public class APIDetachDataVolumeFromVmMsg extends APIMessage implements VolumeMe
     /**
      * @desc data volume uuid. See :ref:`VolumeInventory`
      */
-    @APIParam(resourceType = VolumeVO.class)
+    @APIParam(resourceType = VolumeVO.class, checkAccount = true)
     private String uuid;
 
     public String getUuid() {

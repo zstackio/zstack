@@ -12,4 +12,5 @@ public @interface APIParam {
     int maxLength() default Integer.MIN_VALUE;
     boolean nonempty() default false;
     long[] numberRange() default {};
+    boolean checkAccount() default false;
 }

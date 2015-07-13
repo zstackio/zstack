@@ -48,12 +48,12 @@ public class APIAttachDataVolumeToVmMsg extends APIMessage implements VolumeMess
     /**
      * @desc vm uuid. see :ref:`VmInstanceInventory`
      */
-    @APIParam(resourceType = VmInstanceVO.class)
+    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true)
     private String vmInstanceUuid;
     /**
      * @desc data volume uuid.
      */
-    @APIParam(resourceType = VolumeVO.class)
+    @APIParam(resourceType = VolumeVO.class, checkAccount = true)
     private String volumeUuid;
     
     public String getVmUuid() {

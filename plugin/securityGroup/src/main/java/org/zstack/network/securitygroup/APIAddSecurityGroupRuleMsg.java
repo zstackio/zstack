@@ -180,7 +180,7 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage {
     /**
      * @desc security group uuid
      */
-    @APIParam(resourceType = SecurityGroupVO.class)
+    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true)
     private String securityGroupUuid;
     /**
      * @desc a list of :ref:`SecurityGroupRuleAO` that describe rules

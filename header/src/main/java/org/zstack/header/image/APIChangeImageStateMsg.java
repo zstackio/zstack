@@ -12,7 +12,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = ImageConstant.ACTION_CATEGORY)
 public class APIChangeImageStateMsg  extends APIMessage implements ImageMessage{
-    @APIParam(resourceType = ImageVO.class)
+    @APIParam(resourceType = ImageVO.class, checkAccount = true)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})
     private String stateEvent;

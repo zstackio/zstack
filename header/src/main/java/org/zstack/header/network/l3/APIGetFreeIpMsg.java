@@ -9,9 +9,9 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
 public class APIGetFreeIpMsg extends APIMessage implements L3NetworkMessage {
-    @APIParam(resourceType = L3NetworkVO.class, required = false)
+    @APIParam(resourceType = L3NetworkVO.class, required = false, checkAccount = true)
     private String l3NetworkUuid;
-    @APIParam(resourceType = IpRangeVO.class, required = false)
+    @APIParam(resourceType = IpRangeVO.class, required = false, checkAccount = true)
     private String ipRangeUuid;
 
     private int limit = 100;

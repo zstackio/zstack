@@ -9,7 +9,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = EipConstant.ACTION_CATEGORY)
 public class APIUpdateEipMsg extends APIMessage implements EipMessage {
-    @APIParam(resourceType = EipVO.class)
+    @APIParam(resourceType = EipVO.class, checkAccount = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

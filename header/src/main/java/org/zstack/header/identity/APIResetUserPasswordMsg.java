@@ -8,7 +8,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = AccountConstant.ACTION_CATEGORY)
 public class APIResetUserPasswordMsg extends APIMessage implements AccountMessage {
-    @APIParam(resourceType = UserVO.class)
+    @APIParam(resourceType = UserVO.class, checkAccount = true)
     private String uuid;
     @APIParam(maxLength = 255)
     private String password;

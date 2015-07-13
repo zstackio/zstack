@@ -5,9 +5,9 @@ import org.zstack.header.message.APIParam;
 
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 public class APIAddUserToGroupMsg extends APIMessage implements AccountMessage {
-    @APIParam
+    @APIParam(checkAccount = true)
     private String userUuid;
-    @APIParam
+    @APIParam(checkAccount = true)
     private String groupUuid;
     
     @Override

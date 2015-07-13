@@ -56,7 +56,7 @@ public class APIAddIpRangeMsg extends APICreateMessage implements L3NetworkMessa
     /**
      * @desc l3Network uuid
      */
-    @APIParam(resourceType = L3NetworkVO.class)
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
     private String l3NetworkUuid;
     /**
      * @desc max length of 255 characters

@@ -60,7 +60,7 @@ public class APICreateDataVolumeMsg extends APICreateMessage {
     /**
      * @desc uuid of disk offering the volume is created from
      */
-	@APIParam(resourceType = DiskOfferingVO.class)
+	@APIParam(resourceType = DiskOfferingVO.class, checkAccount = true)
 	private String diskOfferingUuid;
 	
 	public String getName() {
