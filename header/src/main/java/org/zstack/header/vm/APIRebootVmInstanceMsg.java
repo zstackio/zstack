@@ -46,7 +46,7 @@ public class APIRebootVmInstanceMsg extends APIMessage implements VmInstanceMess
     /**
      * @desc vm uuid
      */
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true)
+    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
     public String getUuid() {

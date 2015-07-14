@@ -54,12 +54,12 @@ public class APIAddVmNicToSecurityGroupMsg extends APIMessage {
     /**
      * @desc security group uuid
      */
-    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true)
+    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true, operationTarget = true)
     private String securityGroupUuid;
     /**
      * @desc a list of vm nic uuid. See :ref:`VmNicInventory`
      */
-    @APIParam(nonempty = true, checkAccount = true)
+    @APIParam(nonempty = true, checkAccount = true, operationTarget = true)
     private List<String> vmNicUuids;
     
     public String getSecurityGroupUuid() {

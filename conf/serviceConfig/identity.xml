@@ -88,6 +88,14 @@
     </message>
 
     <message>
+        <name>org.zstack.header.identity.APIShareResourceMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIRevokeResourceSharingMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.identity.APIResetUserPasswordMsg</name>
     </message>
 </service>

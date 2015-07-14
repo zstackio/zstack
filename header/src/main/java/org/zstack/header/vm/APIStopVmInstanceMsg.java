@@ -44,7 +44,7 @@ public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessag
     /**
      * @desc vm uuid
      */
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true)
+    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     
     public String getUuid() {

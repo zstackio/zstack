@@ -12,7 +12,7 @@ import java.util.List;
  */
 @Action(category = ImageConstant.ACTION_CATEGORY)
 public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateMessage {
-    @APIParam(resourceType = VolumeSnapshotVO.class)
+    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
     private String snapshotUuid;
     @APIParam(maxLength = 255)
     private String name;

@@ -17,6 +17,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
+import org.zstack.identity.AccountManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -34,6 +35,8 @@ public class VmAllocateNicFlow implements Flow {
     protected CloudBus bus;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    protected AccountManager acntMgr;
 
     private VmNicVO persistAndRetryIfMacCollision(VmNicVO vo) {
         int tries = 5;
@@ -126,6 +129,12 @@ public class VmAllocateNicFlow implements Flow {
                     trigger.fail(err);
                 } else {
                     persistNicToDb(spec.getDestNics());
+
+                    String acntUuid = acntMgr.getOwnerAccountUuidOfResource(spec.getVmInventory().getUuid());
+                    for (VmNicInventory nic : spec.getDestNics()) {
+                        acntMgr.createAccountResourceRef(acntUuid, nic.getUuid(), VmNicVO.class);
+                    }
+
                     trigger.next();
                 }
             }

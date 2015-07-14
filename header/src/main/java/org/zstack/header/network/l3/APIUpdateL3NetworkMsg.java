@@ -9,7 +9,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APIUpdateL3NetworkMsg extends APIMessage implements L3NetworkMessage {
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

@@ -17,7 +17,7 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
     private String guestOsType;
     @APIParam(required = false, nonempty = true, resourceType = BackupStorageVO.class)
     private List<String> backupStorageUuids;
-    @APIParam(resourceType = VolumeVO.class)
+    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
     private String rootVolumeUuid;
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization"})
     private String platform;

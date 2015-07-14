@@ -9,7 +9,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
 public class APIUpdateInstanceOfferingMsg extends APIMessage implements InstanceOfferingMessage {
-    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true)
+    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam
     private String name;

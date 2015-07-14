@@ -44,7 +44,7 @@ public class APIDetachPortForwardingRuleMsg extends APIMessage {
     /**
      * @desc rule uuid
      */
-    @APIParam(resourceType = PortForwardingRuleVO.class, checkAccount = true)
+    @APIParam(resourceType = PortForwardingRuleVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
     public String getUuid() {

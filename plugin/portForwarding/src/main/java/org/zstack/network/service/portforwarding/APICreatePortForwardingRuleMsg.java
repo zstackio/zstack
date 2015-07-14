@@ -63,7 +63,7 @@ public class APICreatePortForwardingRuleMsg extends APICreateMessage {
     /**
      * @desc uuid of vip the rule is being created on
      */
-    @APIParam(resourceType = VipVO.class, checkAccount = true)
+    @APIParam(resourceType = VipVO.class, checkAccount = true, operationTarget = true)
     private String vipUuid;
     /**
      * @desc start port to be mapped
@@ -104,7 +104,7 @@ public class APICreatePortForwardingRuleMsg extends APICreateMessage {
      * to any vm nic
      * @optional
      */
-    @APIParam(required = false, resourceType = VmNicVO.class)
+    @APIParam(required = false, resourceType = VmNicVO.class, operationTarget = true)
     private String vmNicUuid;
     /**
      * @desc if not null, the rule only applies to traffic from this CIDR, other traffic are denied

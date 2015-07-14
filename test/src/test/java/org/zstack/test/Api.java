@@ -1730,7 +1730,7 @@ public class Api implements CloudBusEventListener {
     public UserInventory createUser(String accountUuid, String userName, String password, SessionInventory session) throws ApiSenderException {
         APICreateUserMsg msg = new APICreateUserMsg();
         msg.setSession(session);
-        msg.setUserName(userName);
+        msg.setName(userName);
         msg.setPassword(password);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -1792,7 +1792,7 @@ public class Api implements CloudBusEventListener {
     public UserGroupInventory createGroup(String accountUuid, String name, SessionInventory session) throws ApiSenderException {
         APICreateUserGroupMsg msg = new APICreateUserGroupMsg();
         msg.setSession(session);
-        msg.setGroupName(name);
+        msg.setName(name);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateUserGroupEvent evt = sender.send(msg, APICreateUserGroupEvent.class);
@@ -3229,5 +3229,45 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APISyncPrimaryStorageCapacityEvent evt = sender.send(msg, APISyncPrimaryStorageCapacityEvent.class);
         return evt.getInventory();
+    }
+
+    public void revokeResourceSharing(List<String> resUuids, List<String> accountUuids, boolean toPublic) throws ApiSenderException {
+        revokeResourceSharing(resUuids, accountUuids, toPublic, null);
+    }
+
+    public void revokeResourceSharing(List<String> resUuids, List<String> accountUuids, boolean toPublic, SessionInventory session) throws ApiSenderException {
+        APIRevokeResourceSharingMsg msg = new APIRevokeResourceSharingMsg();
+        msg.setResourceUuids(resUuids);
+        msg.setAccountUuids(accountUuids);
+        msg.setToPublic(toPublic);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIRevokeResourceSharingEvent.class);
+    }
+
+    public void revokeAllResourceSharing(List<String> resUuids, SessionInventory session) throws ApiSenderException {
+        APIRevokeResourceSharingMsg msg = new APIRevokeResourceSharingMsg();
+        msg.setAll(true);
+        msg.setResourceUuids(resUuids);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIRevokeResourceSharingEvent.class);
+    }
+
+    public void shareResource(List<String> resUuids, List<String> accountUuids, boolean toPublic) throws ApiSenderException {
+        shareResource(resUuids, accountUuids, toPublic, null);
+    }
+
+    public void shareResource(List<String> resUuids, List<String> accountUuids, boolean toPublic, SessionInventory session) throws ApiSenderException {
+        APIShareResourceMsg msg = new APIShareResourceMsg();
+        msg.setAccountUuids(accountUuids);
+        msg.setResourceUuids(resUuids);
+        msg.setToPublic(toPublic);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIShareResourceEvent.class);
     }
 }

@@ -6,6 +6,7 @@ import java.lang.annotation.Target;
 @Target(java.lang.annotation.ElementType.FIELD)
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 public @interface APIParam {
+    boolean operationTarget() default false;
 	boolean required() default true;
     String[] validValues() default {};
     Class resourceType() default Object.class;

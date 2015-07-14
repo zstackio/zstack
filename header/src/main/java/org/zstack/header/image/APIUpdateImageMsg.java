@@ -9,7 +9,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = ImageConstant.ACTION_CATEGORY)
 public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
-    @APIParam(resourceType = ImageVO.class, checkAccount = true)
+    @APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

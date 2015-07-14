@@ -21,6 +21,23 @@ CREATE TABLE  `zstack`.`LocalStorageResourceRefVO` (
     PRIMARY KEY  (`resourceUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE  `zstack`.`SharedResourceVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `ownerAccountUuid` varchar(32) NOT NULL,
+    `receiverAccountUuid` varchar(32) DEFAULT NULL,
+    `toPublic` tinyint(1) unsigned NOT NULL DEFAULT 0,
+    `resourceType` varchar(256) NOT NULL,
+    `resourceUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# Foreign keys for table SharedResourceVO
+
+ALTER TABLE SharedResourceVO ADD CONSTRAINT fkSharedResourceVOAccountVO FOREIGN KEY (ownerAccountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;
+ALTER TABLE SharedResourceVO ADD CONSTRAINT fkSharedResourceVOAccountVO1 FOREIGN KEY (receiverAccountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;
+
 # Foreign keys for table LocalStorageHostRefVO
 
 ALTER TABLE LocalStorageHostRefVO ADD CONSTRAINT fkLocalStorageHostRefVOHostEO FOREIGN KEY (hostUuid) REFERENCES HostEO (uuid) ON DELETE CASCADE;

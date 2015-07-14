@@ -56,7 +56,7 @@ public class APIDeleteVolumeSnapshotFromBackupStorageMsg extends APIDeleteMessag
     /**
      * @desc volume snapshot uuid
      */
-    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true)
+    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     /**
      * @desc

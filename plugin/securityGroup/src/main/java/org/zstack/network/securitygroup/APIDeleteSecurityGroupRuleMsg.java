@@ -50,7 +50,7 @@ public class APIDeleteSecurityGroupRuleMsg extends APIMessage {
     /**
      * @desc a list of rule uuid
      */
-    @APIParam(nonempty = true, checkAccount = true)
+    @APIParam(nonempty = true, checkAccount = true, operationTarget = true)
     private List<String> ruleUuids;
 
     public List<String> getRuleUuids() {

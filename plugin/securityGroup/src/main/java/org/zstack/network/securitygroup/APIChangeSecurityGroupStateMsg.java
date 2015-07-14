@@ -46,7 +46,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 public class APIChangeSecurityGroupStateMsg extends APIMessage {
-    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true)
+    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})
     private String stateEvent;

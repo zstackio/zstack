@@ -46,7 +46,7 @@ public class APIDeleteL3NetworkMsg extends APIDeleteMessage implements L3Network
     /**
      * @desc l3NetworkUuid
      */
-    @APIParam(checkAccount = true)
+    @APIParam(checkAccount = true, operationTarget = true)
     private String uuid;
 
     public APIDeleteL3NetworkMsg() {

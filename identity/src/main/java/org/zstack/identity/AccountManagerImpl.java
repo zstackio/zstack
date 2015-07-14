@@ -510,6 +510,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         private void accountFieldCheck() throws IllegalAccessException {
             List resourceUuids = new ArrayList();
+            List operationTargetResourceUuids = new ArrayList();
+
             for (AccountCheckField af : action.accountCheckFields) {
                 Object value = af.field.get(msg);
                 if (value == null) {
@@ -517,12 +519,43 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 }
 
                 if (String.class.isAssignableFrom(af.field.getType())) {
-                    resourceUuids.add(value);
+                    if (af.param.operationTarget()) {
+                        operationTargetResourceUuids.add(value);
+                    } else {
+                        resourceUuids.add(value);
+                    }
                 } else if (Collection.class.isAssignableFrom(af.field.getType())) {
-                    resourceUuids.addAll((Collection)value);
+                    if (af.param.operationTarget()) {
+                        operationTargetResourceUuids.addAll((Collection)value);
+                    } else {
+                        resourceUuids.addAll((Collection)value);
+                    }
                 }
             }
 
+            if (resourceUuids.isEmpty() && operationTargetResourceUuids.isEmpty()) {
+                return;
+            }
+
+            // if a resource uuid represents an operation target, it cannot be bypassed by
+            // the shared resources, as we don't support roles for cross-account sharing.
+            if (!resourceUuids.isEmpty()) {
+                SimpleQuery<SharedResourceVO> sq = dbf.createQuery(SharedResourceVO.class);
+                sq.select(SharedResourceVO_.receiverAccountUuid, SharedResourceVO_.toPublic, SharedResourceVO_.resourceUuid);
+                sq.add(SharedResourceVO_.resourceUuid, Op.IN, resourceUuids);
+                List<Tuple> ts = sq.listTuple();
+                for (Tuple t : ts) {
+                    String ruuid = t.get(0, String.class);
+                    Boolean toPublic = t.get(1, Boolean.class);
+                    String resUuid = t.get(2, String.class);
+                    if (toPublic || session.getAccountUuid().equals(ruuid)) {
+                        // this resource is shared to the account
+                        resourceUuids.remove(resUuid);
+                    }
+                }
+            }
+
+            resourceUuids.addAll(operationTargetResourceUuids);
             if (resourceUuids.isEmpty()) {
                 return;
             }
@@ -735,11 +768,31 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APIDetachPolicyFromUserGroupMsg) msg);
         } else if (msg instanceof APIDetachPolicyFromUserMsg) {
             validate((APIDetachPolicyFromUserMsg) msg);
+        } else if (msg instanceof APIShareResourceMsg) {
+            validate((APIShareResourceMsg) msg);
+        } else if (msg instanceof APIRevokeResourceSharingMsg) {
+            validate((APIRevokeResourceSharingMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIRevokeResourceSharingMsg msg) {
+        if (!msg.isAll() && (msg.getAccountUuids() == null || msg.getAccountUuids().isEmpty())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    "all is set to false, accountUuids cannot be null or empty"
+            ));
+        }
+    }
+
+    private void validate(APIShareResourceMsg msg) {
+        if (!msg.isToPublic() && (msg.getAccountUuids() == null || msg.getAccountUuids().isEmpty())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    "toPublic is set to false, accountUuids cannot be null or empty"
+            ));
+        }
     }
 
     private void validate(APIDetachPolicyFromUserMsg msg) {

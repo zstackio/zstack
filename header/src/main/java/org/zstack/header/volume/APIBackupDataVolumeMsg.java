@@ -47,7 +47,7 @@ public class APIBackupDataVolumeMsg extends APIMessage implements VolumeMessage 
      * @desc
      * data volume uuid
      */
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true)
+    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     /**
      * @desc

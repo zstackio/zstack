@@ -1,13 +1,13 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 public class APICreateUserMsg extends APICreateMessage implements AccountMessage {
-    @APIParam
-    private String userName;
+    @APIParam(maxLength = 255)
+    private String name;
+    @APIParam(maxLength = 255)
     private String password;
 
     @Override
@@ -15,12 +15,12 @@ public class APICreateUserMsg extends APICreateMessage implements AccountMessage
         return this.getSession().getAccountUuid();
     }
 
-    public String getUserName() {
-        return userName;
+    public String getName() {
+        return name;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getPassword() {

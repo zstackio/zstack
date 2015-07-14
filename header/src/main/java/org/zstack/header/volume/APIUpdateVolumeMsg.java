@@ -9,7 +9,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = VolumeConstant.ACTION_CATEGORY)
 public class APIUpdateVolumeMsg extends APIMessage implements VolumeMessage {
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true)
+    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

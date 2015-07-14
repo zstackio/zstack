@@ -34,6 +34,7 @@ import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
+import org.zstack.identity.AccountManager;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -67,6 +68,8 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     private GlobalConfigFacade gcf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private AccountManager acntMgr;
 
 
     private Set<String> generatedPythonClassName;
@@ -905,6 +908,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         InstanceOfferingInventory inv = f.createInstanceOffering(vo, msg);
 
         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), InstanceOfferingVO.class.getSimpleName());
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), InstanceOfferingVO.class);
 
         evt.setInventory(inv);
         bus.publish(evt);
@@ -918,7 +922,6 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         reply.setInventories(invs);
         bus.reply(msg, reply);
     }
-
 
 
     private void handle(APICreateDiskOfferingMsg msg) {
@@ -949,6 +952,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         DiskOfferingInventory inv = f.createDiskOffering(vo, msg);
 
         tagMgr.createTagsFromAPICreateMessage(msg, inv.getUuid(), DiskOfferingVO.class.getSimpleName());
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), DiskOfferingVO.class);
 
         APICreateDiskOfferingEvent evt = new APICreateDiskOfferingEvent(msg.getId());
         evt.setInventory(inv);

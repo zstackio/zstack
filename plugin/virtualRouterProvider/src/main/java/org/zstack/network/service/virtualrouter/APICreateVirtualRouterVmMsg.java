@@ -1,14 +1,15 @@
 package org.zstack.network.service.virtualrouter;
 
 import org.zstack.header.message.APIParam;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 
 import java.util.Set;
 
 public class APICreateVirtualRouterVmMsg extends APICreateVmInstanceMsg {
-	@APIParam
+	@APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
     private String managementNetworkUuid;
-	@APIParam
+	@APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
     private String publicNetworkUuid;
 	@APIParam
 	private Set<String> networkServicesProvided;

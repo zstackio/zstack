@@ -10,10 +10,18 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.utils.gson.JSONObjectUtil;
+
+import javax.persistence.Query;
+import javax.persistence.Tuple;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AccountBase extends AbstractAccount {
@@ -89,9 +97,96 @@ public class AccountBase extends AbstractAccount {
             handle((APIRemoveUserFromGroupMsg) msg);
         } else if (msg instanceof APIResetUserPasswordMsg) {
             handle((APIResetUserPasswordMsg) msg);
+        } else if (msg instanceof APIShareResourceMsg) {
+            handle((APIShareResourceMsg) msg);
+        } else if (msg instanceof APIRevokeResourceSharingMsg) {
+            handle((APIRevokeResourceSharingMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    @Transactional
+    private void handle(APIRevokeResourceSharingMsg msg) {
+        Query q = null;
+        if (msg.isAll()) {
+            String sql = "delete from SharedResourceVO vo where vo.ownerAccountUuid = :auuid and vo.resourceUuid in (:resUuids)";
+            q = dbf.getEntityManager().createQuery(sql);
+            q.setParameter("auuid", vo.getUuid());
+            q.setParameter("resUuids", msg.getResourceUuids());
+        }
+
+        if (msg.isToPublic()) {
+            String sql = "delete from SharedResourceVO vo where vo.toPublic = :public and vo.ownerAccountUuid = :auuid and vo.resourceUuid in (:resUuids)";
+            q = dbf.getEntityManager().createQuery(sql);
+            q.setParameter("public", msg.isToPublic());
+            q.setParameter("auuid", vo.getUuid());
+            q.setParameter("resUuids", msg.getResourceUuids());
+        }
+
+        if (msg.getAccountUuids() != null && !msg.getAccountUuids().isEmpty()) {
+            String sql = "delete from SharedResourceVO vo where vo.receiverAccountUuid in (:ruuids) and vo.ownerAccountUuid = :auuid and vo.resourceUuid in (:resUuids)";
+            q = dbf.getEntityManager().createQuery(sql);
+            q.setParameter("auuid", vo.getUuid());
+            q.setParameter("ruuids", msg.getAccountUuids());
+            q.setParameter("resUuids", msg.getResourceUuids());
+        }
+
+        if (q != null) {
+            q.executeUpdate();
+        }
+
+        APIRevokeResourceSharingEvent evt = new APIRevokeResourceSharingEvent(msg.getId());
+        bus.publish(evt);
+    }
+
+    private void handle(APIShareResourceMsg msg) {
+        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
+        q.select(AccountResourceRefVO_.resourceUuid, AccountResourceRefVO_.resourceType);
+        q.add(AccountResourceRefVO_.resourceUuid, Op.IN, msg.getResourceUuids());
+        List<Tuple> ts = q.listTuple();
+        Map<String, String> uuidType = new HashMap<String, String>();
+        for (Tuple t : ts) {
+            String resUuid = t.get(0, String.class);
+            String resType = t.get(1, String.class);
+            uuidType.put(resUuid, resType);
+        }
+
+        for (String ruuid : msg.getResourceUuids()) {
+            if (!uuidType.containsKey(ruuid)) {
+                throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                        String.format("the account[uuid: %s] doesn't have a resource[uuid: %s]", vo.getUuid(), ruuid)
+                ));
+            }
+        }
+
+        List<SharedResourceVO> vos = new ArrayList<SharedResourceVO>();
+        if (msg.isToPublic()) {
+            for (String ruuid : msg.getResourceUuids()) {
+                SharedResourceVO svo = new SharedResourceVO();
+                svo.setOwnerAccountUuid(msg.getAccountUuid());
+                svo.setResourceType(uuidType.get(ruuid));
+                svo.setResourceUuid(ruuid);
+                svo.setToPublic(true);
+                vos.add(svo);
+            }
+        } else {
+            for (String ruuid : msg.getResourceUuids()) {
+                for (String auuid : msg.getAccountUuids()) {
+                    SharedResourceVO svo = new SharedResourceVO();
+                    svo.setOwnerAccountUuid(msg.getAccountUuid());
+                    svo.setResourceType(uuidType.get(ruuid));
+                    svo.setResourceUuid(ruuid);
+                    svo.setReceiverAccountUuid(auuid);
+                    vos.add(svo);
+                }
+            }
+        }
+
+        dbf.persistCollection(vos);
+
+        APIShareResourceEvent evt = new APIShareResourceEvent(msg.getId());
+        bus.publish(evt);
     }
 
     private void handle(APIResetUserPasswordMsg msg) {
@@ -183,8 +278,8 @@ public class AccountBase extends AbstractAccount {
             gvo.setUuid(Platform.getUuid());
         }
         gvo.setAccountUuid(vo.getUuid());
-        gvo.setDescription(msg.getGroupDescription());
-        gvo.setName(msg.getGroupName());
+        gvo.setDescription(msg.getDescription());
+        gvo.setName(msg.getName());
         dbf.persistAndRefresh(gvo);
 
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), gvo.getUuid(), UserGroupVO.class);
@@ -236,7 +331,7 @@ public class AccountBase extends AbstractAccount {
             uvo.setUuid(Platform.getUuid());
         }
         uvo.setAccountUuid(vo.getUuid());
-        uvo.setName(msg.getUserName());
+        uvo.setName(msg.getName());
         uvo.setPassword(msg.getPassword());
         uvo = dbf.persistAndRefresh(uvo);
 

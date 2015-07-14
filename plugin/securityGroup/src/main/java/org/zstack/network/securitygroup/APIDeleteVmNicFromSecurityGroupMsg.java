@@ -52,12 +52,12 @@ public class APIDeleteVmNicFromSecurityGroupMsg extends APIMessage {
     /**
      * @desc security group uuid
      */
-    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true)
+    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true, operationTarget = true)
     private String securityGroupUuid;
     /**
      * @desc vm nic uuid. See :ref:`VmNicInventory`
      */
-    @APIParam(resourceType = VmNicVO.class, nonempty = true, checkAccount = true)
+    @APIParam(resourceType = VmNicVO.class, nonempty = true, checkAccount = true, operationTarget = true)
     private List<String> vmNicUuids;
 
     public String getSecurityGroupUuid() {

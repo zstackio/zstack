@@ -50,7 +50,7 @@ public class APIDeletePortForwardingRuleMsg extends APIDeleteMessage {
      * @desc
      * rule uuid
      */
-    @APIParam(checkAccount = true)
+    @APIParam(checkAccount = true, operationTarget = true)
     private String uuid;
 
     public String getUuid() {

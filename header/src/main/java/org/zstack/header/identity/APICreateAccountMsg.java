@@ -4,9 +4,9 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 
 public class APICreateAccountMsg extends APICreateMessage {
-    @APIParam
+    @APIParam(maxLength = 255)
     private String name;
-    @APIParam
+    @APIParam(maxLength = 255)
     private String password;
     @APIParam(validValues = {"SystemAdmin", "Normal"}, required = false)
     private String type;

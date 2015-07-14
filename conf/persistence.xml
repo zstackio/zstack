@@ -71,6 +71,7 @@
         <class>org.zstack.header.identity.UserGroupVO</class>
         <class>org.zstack.header.identity.UserGroupPolicyRefVO</class>
         <class>org.zstack.header.identity.UserGroupUserRefVO</class>
+        <class>org.zstack.header.identity.SharedResourceVO</class>
         <class>org.zstack.header.search.DeleteVO</class>
         <class>org.zstack.header.search.InsertVO</class>
         <class>org.zstack.header.search.UpdateVO</class>

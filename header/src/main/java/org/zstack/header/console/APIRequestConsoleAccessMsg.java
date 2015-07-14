@@ -13,7 +13,7 @@ import org.zstack.header.vm.VmInstanceVO;
  */
 @Action(category = ConsoleConstants.ACTION_CATEGORY)
 public class APIRequestConsoleAccessMsg extends APIMessage {
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true)
+    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String vmInstanceUuid;
 
     public String getVmInstanceUuid() {

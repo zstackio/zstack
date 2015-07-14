@@ -48,7 +48,7 @@ public class APIRemoveDnsFromL3NetworkMsg extends APIMessage implements L3Networ
     /**
      * @desc l3Network uuid
      */
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
     private String l3NetworkUuid;
     /**
      * @desc dns ip address

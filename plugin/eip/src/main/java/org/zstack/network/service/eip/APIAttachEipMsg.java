@@ -49,12 +49,12 @@ public class APIAttachEipMsg extends APIMessage implements EipMessage {
     /**
      * @desc eip uuid
      */
-    @APIParam(resourceType = EipVO.class, checkAccount = true)
+    @APIParam(resourceType = EipVO.class, checkAccount = true, operationTarget = true)
     private String eipUuid;
     /**
      * @desc vm nic uuid. See :ref:`VmNicInventory`
      */
-    @APIParam(resourceType = VmNicVO.class, checkAccount = true)
+    @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
     private String vmNicUuid;
 
     public String getEipUuid() {

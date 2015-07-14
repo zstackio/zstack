@@ -8,7 +8,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = PortForwardingConstant.ACTION_CATEGORY)
 public class APIChangePortForwardingRuleStateMsg extends APIMessage {
-    @APIParam(resourceType = PortForwardingRuleVO.class, checkAccount = true)
+    @APIParam(resourceType = PortForwardingRuleVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})
     private String stateEvent;

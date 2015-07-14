@@ -8,9 +8,9 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 public class APIRemoveUserFromGroupMsg extends APIMessage implements AccountMessage {
-    @APIParam(resourceType = UserVO.class, checkAccount = true)
+    @APIParam(resourceType = UserVO.class, checkAccount = true, operationTarget = true)
     private String userUuid;
-    @APIParam(resourceType = UserGroupVO.class, checkAccount = true)
+    @APIParam(resourceType = UserGroupVO.class, checkAccount = true, operationTarget = true)
     private String groupUuid;
 
     @Override

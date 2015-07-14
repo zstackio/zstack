@@ -12,7 +12,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
 public class APIChangeInstanceOfferingStateMsg extends APIMessage implements  InstanceOfferingMessage {
-    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true)
+    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(validValues = {"enable", "disable"})
     private String stateEvent;

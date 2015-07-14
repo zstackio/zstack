@@ -51,7 +51,7 @@ public class APIRevertVolumeFromSnapshotMsg extends APIMessage implements Volume
      *
      * .. note:: volume uuid is retrieved from snapshot
      */
-    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true)
+    @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
     /**

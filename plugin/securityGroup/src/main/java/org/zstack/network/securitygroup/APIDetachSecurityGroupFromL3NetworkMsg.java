@@ -41,12 +41,12 @@ public class APIDetachSecurityGroupFromL3NetworkMsg extends APIMessage {
     /**
      * @desc security group uuid
      */
-    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true)
+    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true, operationTarget = true)
     private String securityGroupUuid;
     /**
      * @desc l3Network uuid
      */
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
     private String l3NetworkUuid;
 
     public String getSecurityGroupUuid() {

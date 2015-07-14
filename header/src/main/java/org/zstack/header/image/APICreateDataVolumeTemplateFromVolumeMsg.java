@@ -16,7 +16,7 @@ public class APICreateDataVolumeTemplateFromVolumeMsg extends APICreateMessage {
     private String name;
     @APIParam(required = false, maxLength = 2048)
     private String description;
-    @APIParam(resourceType = VolumeVO.class)
+    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
     private String volumeUuid;
     @APIParam(required = false, nonempty = true, resourceType = BackupStorageVO.class)
     private List<String> backupStorageUuids;

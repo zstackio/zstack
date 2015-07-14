@@ -49,7 +49,7 @@ public class APIChangeL3NetworkStateMsg extends APIMessage implements L3NetworkM
      * @desc
      * l3Network uuid
      */
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     /**
      * @desc

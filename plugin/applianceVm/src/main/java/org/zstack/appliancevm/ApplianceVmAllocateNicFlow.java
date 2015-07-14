@@ -17,6 +17,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.identity.AccountManager;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Query;
@@ -36,6 +37,8 @@ public class ApplianceVmAllocateNicFlow implements Flow {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private AccountManager acntMgr;
 
     private UsedIpInventory acquireIp(String l3NetworkUuid, String stratgey) {
         AllocateIpMsg msg = new AllocateIpMsg();
@@ -133,6 +136,11 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         }
 
         persistNicInDb(spec.getDestNics());
+        String acntUuid = acntMgr.getOwnerAccountUuidOfResource(spec.getVmInventory().getUuid());
+        for (VmNicInventory nic : spec.getDestNics()) {
+            acntMgr.createAccountResourceRef(acntUuid, nic.getUuid(), VmNicVO.class);
+        }
+
         ApplianceVmVO apvm = dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
         apvm.setManagementNetworkUuid(mgmtNic.getL3NetworkUuid());
         dbf.update(apvm);

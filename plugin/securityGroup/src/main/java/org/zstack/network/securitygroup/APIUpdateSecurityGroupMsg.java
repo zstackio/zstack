@@ -9,7 +9,7 @@ import org.zstack.header.message.APIParam;
  */
 @Action(category = SecurityGroupConstant.ACTION_CATEGORY)
 public class APIUpdateSecurityGroupMsg extends APIMessage implements SecurityGroupMessage {
-    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true)
+    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String name;

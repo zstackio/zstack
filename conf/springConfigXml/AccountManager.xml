@@ -26,6 +26,7 @@
 		<property name="resourceTypeForAccountRef">
 			<list>
 				<value>org.zstack.header.vm.VmInstanceVO</value>
+				<value>org.zstack.header.vm.VmNicVO</value>
 				<value>org.zstack.header.volume.VolumeVO</value>
 				<value>org.zstack.header.image.ImageVO</value>
 				<value>org.zstack.header.network.l3.L3NetworkVO</value>
@@ -38,6 +39,8 @@
 				<value>org.zstack.header.identity.UserGroupVO</value>
 				<value>org.zstack.header.identity.PolicyVO</value>
 				<value>org.zstack.header.identity.UserVO</value>
+				<value>org.zstack.header.configuration.InstanceOfferingVO</value>
+				<value>org.zstack.header.configuration.DiskOfferingVO</value>
 			</list>
 		</property>
 	</bean>

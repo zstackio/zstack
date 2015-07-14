@@ -9,8 +9,9 @@ import java.util.List;
 
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 public class APICreatePolicyMsg extends APICreateMessage implements AccountMessage {
-    @APIParam
+    @APIParam(maxLength = 255)
     private String name;
+    @APIParam(maxLength = 2048, required = false)
     private String description;
     @APIParam(nonempty = true)
     private List<Statement> statements;

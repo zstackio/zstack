@@ -66,13 +66,13 @@ public class APICreateEipMsg extends APICreateMessage {
     /**
      * @desc vip uuid. See :ref:`VipInventory`
      */
-    @APIParam(resourceType = VipVO.class, checkAccount = true)
+    @APIParam(resourceType = VipVO.class, checkAccount = true, operationTarget = true)
     private String vipUuid;
     /**
      * @desc vm nic uuid, see :ref:`VmNicInventory`. If omitted, the eip is created without attaching to any vm nic
      * @optional
      */
-    @APIParam(required = false, resourceType = VmNicVO.class, checkAccount = true)
+    @APIParam(required = false, resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
     private String vmNicUuid;
 
     public String getVipUuid() {

@@ -9,7 +9,7 @@ import org.zstack.header.vm.VmInstanceMessage;
  */
 @Action(category = VirtualRouterConstant.ACTION_CATEGORY)
 public class APIReconnectVirtualRouterMsg extends APIMessage implements VmInstanceMessage {
-    @APIParam(resourceType = VirtualRouterVmVO.class, checkAccount = true)
+    @APIParam(resourceType = VirtualRouterVmVO.class, checkAccount = true, operationTarget = true)
     private String vmInstanceUuid;
 
     @Override
