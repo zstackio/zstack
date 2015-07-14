@@ -23,6 +23,12 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostStatusChangeNotifyPoint;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
@@ -30,6 +36,7 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
@@ -37,12 +44,16 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -51,7 +62,9 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
-public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager, HostStatusChangeNotifyPoint {
+import static org.zstack.utils.CollectionDSL.list;
+
+public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager, HostStatusChangeNotifyPoint, ReportQuotaExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<String, VmInstanceFactory>());
     private List<String> createVmWorkFlowElements;
@@ -111,12 +124,12 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             bus.replyErrorByMessageType((Message)msg, err);
             return;
         }
-        
+
         VmInstanceFactory factory = getVmInstanceFactory(VmInstanceType.valueOf(vo.getType()));
         VmInstance vm = factory.getVmInstance(vo);
         vm.handleMessage((Message)msg);
     }
-    
+
     private void handleLocalMessage(Message msg) {
         if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage)msg);
@@ -179,7 +192,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         reply.setInventories(invs);
         bus.reply(msg, reply);
     }
-    
+
 
     private void handle(final APICreateVmInstanceMsg msg) {
         VmInstanceVO vo = new VmInstanceVO();
@@ -210,7 +223,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         vo.setCpuSpeed(iovo.getCpuSpeed());
         vo.setMemorySize(iovo.getMemorySize());
         vo.setAllocatorStrategy(iovo.getAllocatorStrategy());
-        
+
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VmInstanceVO.class);
 
         String vmType = msg.getType() == null ? VmInstanceConstant.USER_VM_TYPE : msg.getType();
@@ -392,7 +405,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         return factory;
     }
 
-  
+
 
     @Transactional
     protected void putVmToUnknownState(String hostUuid) {
@@ -411,7 +424,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             bus.send(msg);
         }
     }
-    
+
     @Override
     public void notifyHostConnectionStateChange(HostInventory host, HostStatus previousState, HostStatus currentState) {
         if (currentState == HostStatus.Disconnected) {
@@ -480,5 +493,147 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
     public void setAttachVolumeWorkFlowElements(List<String> attachVolumeWorkFlowElements) {
         this.attachVolumeWorkFlowElements = attachVolumeWorkFlowElements;
+    }
+
+
+    @Override
+    public List<Quota> reportQuota() {
+        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+            @Override
+            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
+                if (msg instanceof APICreateVmInstanceMsg) {
+                    check((APICreateVmInstanceMsg) msg, pairs);
+                } 
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APICreateVmInstanceMsg msg, Map<String, QuotaPair> pairs) {
+                long vmNum = pairs.get(VmInstanceConstant.QUOTA_VM_NUM).getValue();
+                long cpuNum = pairs.get(VmInstanceConstant.QUOTA_CPU_NUM).getValue();
+                long memory = pairs.get(VmInstanceConstant.QUOTA_VM_MEMORY).getValue();
+                long volNum = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
+                long volSize = pairs.get(VolumeConstant.QUOTA_VOLUME_SIZE).getValue();
+
+                String sql = "select sum(vm), sum(vm.cpuNum), sum(vm.memorySize) from VmInstanceVO vm, AccountResourceRefVO ref where" +
+                        " vm.uuid = ref.resourceUuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
+                Tuple t = q.getSingleResult();
+                long vnum = t.get(0, Long.class);
+                long cnum = t.get(1, Long.class);
+                long msize = t.get(2, Long.class);
+
+                if (vnum > vmNum) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_VM_NUM, vmNum)
+                    ));
+                }
+
+                if (cnum > cpuNum) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_CPU_NUM, cpuNum)
+                    ));
+                }
+
+                if (msize > memory) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_VM_MEMORY, memory)
+                    ));
+                }
+
+                // check data volume num
+                if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
+                    sql = "select sum(vol) from VolumeVO vol, AccountResourceRefVO ref where vol.type = :vtype and" +
+                            " ref.resourceUuid = vol.uuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                    TypedQuery<Long> vq = dbf.getEntityManager().createQuery(sql, Long.class);
+                    vq.setParameter("auuid", msg.getSession().getAccountUuid());
+                    vq.setParameter("rtype", VolumeVO.class.getSimpleName());
+                    vq.setParameter("vtype", VolumeType.Data);
+                    Long n = vq.getSingleResult();
+
+                    if (n + msg.getDataDiskOfferingUuids().size() > volNum) {
+                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                                String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                        msg.getSession().getAccountUuid(), VolumeConstant.QUOTA_DATA_VOLUME_NUM, memory)
+                        ));
+                    }
+                }
+
+                long requiredVolSize = 0;
+
+                sql = "select img.size, img.mediaType from ImageVO img where img.uuid = :iuuid";
+                TypedQuery<Tuple> iq = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                iq.setParameter("iuuid", msg.getImageUuid());
+                Tuple it = iq.getSingleResult();
+                long imgSize = it.get(0, Long.class);
+                ImageMediaType imgType = it.get(1, ImageMediaType.class);
+
+                List<String> diskOfferingUuids = new ArrayList<String>();
+                if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
+                    diskOfferingUuids.addAll(msg.getDataDiskOfferingUuids());
+                }
+                if (imgType == ImageMediaType.RootVolumeTemplate) {
+                    requiredVolSize += imgSize;
+                } else if (imgType == ImageMediaType.ISO) {
+                    diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
+                }
+                if (!diskOfferingUuids.isEmpty()) {
+                    sql = "select sum(d.size) from DiskOfferingVO d where d.uuid in (:uuids)";
+                    TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
+                    dq.setParameter("uuids", diskOfferingUuids);
+                    Long dsize = dq.getSingleResult();
+                    requiredVolSize += dsize;
+                }
+
+                sql = "select sum(vol.size) from VolumeVO vol, AccountResourceRefVO ref where" +
+                        " ref.resourceUuid = vol.uuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                TypedQuery<Long> vq = dbf.getEntityManager().createQuery(sql, Long.class);
+                vq.setParameter("auuid", msg.getSession().getAccountUuid());
+                vq.setParameter("rtype", VolumeVO.class.getSimpleName());
+                long vsize = vq.getSingleResult();
+
+                if (vsize + requiredVolSize > volSize) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), VolumeConstant.QUOTA_VOLUME_SIZE, volSize)
+                    ));
+                }
+            }
+        };
+
+        Quota quota = new Quota();
+        QuotaPair p  = new QuotaPair();
+        p.setName(VmInstanceConstant.QUOTA_VM_NUM);
+        p.setValue(20);
+        quota.addPair(p);
+
+        p  = new QuotaPair();
+        p.setName(VmInstanceConstant.QUOTA_CPU_NUM);
+        p.setValue(80);
+        quota.addPair(p);
+
+        p  = new QuotaPair();
+        p.setName(VmInstanceConstant.QUOTA_VM_MEMORY);
+        p.setValue(SizeUnit.GIGABYTE.toByte(80));
+        quota.addPair(p);
+
+        p  = new QuotaPair();
+        p.setName(VolumeConstant.QUOTA_DATA_VOLUME_NUM);
+        p.setValue(40);
+        quota.addPair(p);
+
+        p  = new QuotaPair();
+        p.setName(VolumeConstant.QUOTA_VOLUME_SIZE);
+        p.setValue(SizeUnit.TERABYTE.toByte(10));
+        quota.addPair(p);
+
+        quota.setMessageNeedValidation(APICreateVmInstanceMsg.class);
+        quota.setChecker(checker);
+
+        return list(quota);
     }
 }

@@ -6,6 +6,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.config.GlobalConfigVO;
+import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -21,6 +25,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
 import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -60,10 +65,15 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private ErrorFacade errf;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private PluginRegistry pluginRgty;
+    @Autowired
+    private GlobalConfigFacade gcf;
 
     private List<String> resourceTypeForAccountRef;
     private List<Class> resourceTypes;
     private Map<String, SessionInventory> sessions = new ConcurrentHashMap<String, SessionInventory>();
+    private Map<Class, Quota> messageQuotaMap = new HashMap<Class, Quota>();
 
     class AccountCheckField {
         Field field;
@@ -250,6 +260,26 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         p.setData(JSONObjectUtil.toJsonString(list(s)));
         dbf.persist(p);
 
+        SimpleQuery<GlobalConfigVO> q = dbf.createQuery(GlobalConfigVO.class);
+        q.select(GlobalConfigVO_.name, GlobalConfigVO_.value);
+        q.add(GlobalConfigVO_.category, Op.EQ, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY);
+        List<Tuple> ts = q.listTuple();
+
+        List<QuotaVO> quotas = new ArrayList<QuotaVO>();
+        for (Tuple t : ts) {
+            String rtype = t.get(0, String.class);
+            long quota = Long.valueOf(t.get(1, String.class));
+
+            QuotaVO qvo = new QuotaVO();
+            qvo.setIdentityType(AccountVO.class.getSimpleName());
+            qvo.setIdentityUuid(vo.getUuid());
+            qvo.setName(rtype);
+            qvo.setValue(quota);
+            quotas.add(qvo);
+        }
+
+        dbf.persistCollection(quotas);
+
         AccountInventory inv = AccountInventory.valueOf(vo);
         APICreateAccountEvent evt = new APICreateAccountEvent(msg.getId());
         evt.setInventory(inv);
@@ -275,10 +305,67 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             buildResourceTypes();
             buildActions();
             startExpiredSessionCollector();
+            collectDefaultQuota();
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
         return true;
+    }
+
+    private void collectDefaultQuota() {
+        Map<String, Long> defaultQuota = new HashMap<String, Long>();
+
+        for (ReportQuotaExtensionPoint ext : pluginRgty.getExtensionList(ReportQuotaExtensionPoint.class)) {
+            List<Quota> quotas = ext.reportQuota();
+            if (quotas == null) {
+                continue;
+            }
+
+            for (Quota quota : quotas) {
+                DebugUtils.Assert(quota.getQuotaPairs() != null, String.format("%s reports a quota containing a null quotaPairs", ext.getClass()));
+
+                for (QuotaPair p : quota.getQuotaPairs()) {
+                    if (defaultQuota.containsKey(p.getName())) {
+                        throw new CloudRuntimeException(String.format("duplicate DefaultQuota[resourceType: %s] reported by %s", p.getName(), ext.getClass()));
+                    }
+
+                    defaultQuota.put(p.getName(), p.getValue());
+                }
+
+                DebugUtils.Assert(quota.getMessageNeedValidation()!= null, String.format("%s reports a quota containing a null messagesNeedValidation", ext.getClass()));
+                messageQuotaMap.put(quota.getMessageNeedValidation(), quota);
+            }
+        }
+
+        SimpleQuery<GlobalConfigVO> q = dbf.createQuery(GlobalConfigVO.class);
+        q.select(GlobalConfigVO_.name);
+        q.add(GlobalConfigVO_.category, Op.EQ, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY);
+        List<String> existingQuota = q.listValue();
+
+        List<GlobalConfigVO> quotaConfigs = new ArrayList<GlobalConfigVO>();
+        for (Map.Entry<String, Long> e : defaultQuota.entrySet()) {
+            String rtype = e.getKey();
+            Long value = e.getValue();
+            if (existingQuota.contains(rtype)) {
+                continue;
+            }
+
+            GlobalConfigVO g = new GlobalConfigVO();
+            g.setCategory(AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY);
+            g.setDefaultValue(value.toString());
+            g.setValue(g.getDefaultValue());
+            g.setName(rtype);
+            g.setDescription(String.format("default quota for %s", rtype));
+            quotaConfigs.add(g);
+
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("create default quota[name: %s, value: %s] global config", rtype, value));
+            }
+        }
+
+        if (!quotaConfigs.isEmpty()) {
+            dbf.persistCollection(quotaConfigs);
+        }
     }
 
     private void startExpiredSessionCollector() {
@@ -424,6 +511,21 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.setParameter("res1Type", res1Type);
         q.setParameter("res2Type", res2Type);
         return q.getResultList();
+    }
+
+    @Override
+    public long getQuota(String identityUuid, String identityType, String quotaName) {
+        SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
+        q.select(QuotaVO_.value);
+        q.add(QuotaVO_.identityUuid, Op.EQ, identityUuid);
+        q.add(QuotaVO_.identityType, Op.EQ, identityType);
+        q.add(QuotaVO_.name, Op.EQ, quotaName);
+        Long quota = q.findValue();
+        if (quota != null) {
+            return quota;
+        }
+
+        return gcf.getConfigValue(AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY, quotaName, Long.class);
     }
 
     @Override
@@ -633,6 +735,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 }
             }
 
+            quotaCheck();
+
             if (session.isAccountSession()) {
                 return;
             }
@@ -660,6 +764,42 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     String.format("user[name: %s, uuid: %s] has no policy set for this operation, API[%s] is denied by default. You may either create policies for this user" +
                             " or add the user into a group with polices set", username, session.getUserUuid(), msg.getClass().getSimpleName())
             ));
+        }
+
+        private void quotaCheck() {
+            Quota quota = messageQuotaMap.get(msg.getClass());
+            if (quota == null) {
+                return;
+            }
+            
+            Map<String, QuotaPair> pairs = makeQuotaPairs(quota);
+            quota.getChecker().checkQuota(msg, pairs);
+        }
+
+        private Map<String, QuotaPair> makeQuotaPairs(Quota quota) {
+            List<String> names = new ArrayList<String>();
+            for (QuotaPair p : quota.getQuotaPairs()) {
+                names.add(p.getName());
+            }
+
+            SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
+            q.select(QuotaVO_.name, QuotaVO_.value);
+            q.add(QuotaVO_.identityType, Op.EQ, AccountVO.class.getSimpleName());
+            q.add(QuotaVO_.identityUuid, Op.EQ, session.getAccountUuid());
+            q.add(QuotaVO_.name, Op.IN, names);
+            List<Tuple> ts = q.listTuple();
+
+            Map<String, QuotaPair> pairs = new HashMap<String, QuotaPair>();
+            for (Tuple t : ts) {
+                String name = t.get(0, String.class);
+                long value = t.get(1, Long.class);
+                QuotaPair p = new QuotaPair();
+                p.setName(name);
+                p.setValue(value);
+                pairs.put(name, p);
+            }
+
+            return pairs;
         }
 
         @Transactional(readOnly = true)

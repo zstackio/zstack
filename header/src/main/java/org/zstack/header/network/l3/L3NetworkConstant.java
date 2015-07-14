@@ -13,4 +13,6 @@ public interface L3NetworkConstant {
     public static final String FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY = "FirstAvailableIpAllocatorStrategy";
     @PythonClass
     public static final String RANDOM_IP_ALLOCATOR_STRATEGY = "RandomIpAllocatorStrategy";
+
+    public static final String QUOTA_L3_NUM = "l3.num";
 }

@@ -20,6 +20,8 @@ public interface AccountConstant {
 
     public static final String ACTION_CATEGORY = "identity";
     public static final String READ_PERMISSION_POLICY = "default-read-permission";
+
+    public static final String QUOTA_GLOBAL_CONFIG_CATETORY = "quota";
     
     public static enum RoleDecision {
         EXPLICIT_DENY,

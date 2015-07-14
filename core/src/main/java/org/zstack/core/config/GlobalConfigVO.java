@@ -4,7 +4,7 @@ import javax.persistence.*;
 
 @Entity
 @Table
-class GlobalConfigVO {
+public class GlobalConfigVO {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column

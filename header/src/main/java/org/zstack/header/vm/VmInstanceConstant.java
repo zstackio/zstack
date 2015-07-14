@@ -25,4 +25,8 @@ public interface VmInstanceConstant {
         Migrate,
         AttachVolume,
     }
+
+    String QUOTA_VM_NUM = "vm.num";
+    String QUOTA_VM_MEMORY = "vm.memorySize";
+    String QUOTA_CPU_NUM = "vm.cpuNum";
 }

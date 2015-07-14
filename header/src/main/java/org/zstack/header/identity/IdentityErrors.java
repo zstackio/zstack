@@ -5,7 +5,8 @@ package org.zstack.header.identity;
 public enum IdentityErrors {
     AUTHENTICATION_ERROR(1000),
     INVALID_SESSION(1001),
-    PERMISSION_DENIED(1002);
+    PERMISSION_DENIED(1002),
+    QUOTA_EXCEEDING(1003);
 
     private String code;
 
