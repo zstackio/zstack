@@ -3,6 +3,10 @@ package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.gson.JSONObjectUtil;
 
@@ -12,6 +16,18 @@ import java.util.List;
 
 @Inventory(mappingVOClass = PolicyVO.class)
 @PythonClassInventory
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "account", inventoryClass = AccountInventory.class,
+                foreignKey = "accountUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "groupRef", inventoryClass = UserGroupPolicyRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "groupUuid", hidden = true),
+        @ExpandedQuery(expandedField = "userRef", inventoryClass = UserPolicyRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "userUuid", hidden = true)
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(alias = "group", expandedField = "groupRef.group"),
+        @ExpandedQueryAlias(alias = "user", expandedField = "userRef.user")
+})
 public class PolicyInventory {
     public static class Statement {
         private String name;
@@ -74,6 +90,7 @@ public class PolicyInventory {
         inv.setName(vo.getName());
         inv.setUuid(vo.getUuid());
         inv.setStatements(JSONObjectUtil.toCollection(vo.getData(), ArrayList.class, Statement.class));
+        inv.setAccountUuid(vo.getAccountUuid());
         return inv;
     }
 
@@ -88,6 +105,15 @@ public class PolicyInventory {
     private List<Statement> statements;
     private String name;
     private String uuid;
+    private String accountUuid;
+
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
 
     public void addStatement(Statement s) {
         if (statements == null) {

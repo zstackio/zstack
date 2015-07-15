@@ -1,7 +1,21 @@
 package org.zstack.header.identity;
 
-import java.sql.Timestamp;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.search.Inventory;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+@Inventory(mappingVOClass = UserGroupUserRefVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "user", inventoryClass = UserInventory.class,
+                foreignKey = "userUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "group", inventoryClass = UserGroupInventory.class,
+                foreignKey = "groupUuid", expandedInventoryKey = "uuid")
+})
 public class UserGroupUserRefInventory {
     private long id;
     private String userUuid;
@@ -17,6 +31,14 @@ public class UserGroupUserRefInventory {
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
+    }
+
+    public static List<UserGroupUserRefInventory> valueOf(Collection<UserGroupUserRefVO> vos) {
+        List<UserGroupUserRefInventory> invs = new ArrayList<UserGroupUserRefInventory>();
+        for (UserGroupUserRefVO vo : vos) {
+            invs.add(valueOf(vo));
+        }
+        return invs;
     }
     
     public long getId() {

@@ -1,6 +1,8 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -9,6 +11,16 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 @Inventory(mappingVOClass = AccountVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "user", inventoryClass = UserInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "accountUuid"),
+        @ExpandedQuery(expandedField = "group", inventoryClass = UserGroupInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "accountUuid"),
+        @ExpandedQuery(expandedField = "policy", inventoryClass = PolicyInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "accountUuid"),
+        @ExpandedQuery(expandedField = "quota", inventoryClass = QuotaInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "identityUuid")
+})
 @PythonClassInventory
 public class AccountInventory {
     private String uuid;

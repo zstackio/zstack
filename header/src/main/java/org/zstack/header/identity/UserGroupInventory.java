@@ -1,6 +1,10 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -8,6 +12,18 @@ import java.util.*;
 
 @Inventory(mappingVOClass = UserGroupVO.class)
 @PythonClassInventory
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "account", inventoryClass = AccountInventory.class,
+                foreignKey = "accountUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "userRef", inventoryClass = UserGroupUserRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "userUuid", hidden = true),
+        @ExpandedQuery(expandedField = "policyRef", inventoryClass = UserGroupPolicyRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "policyUuid", hidden = true)
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(alias = "user", expandedField = "userRef.user"),
+        @ExpandedQueryAlias(alias = "policy", expandedField = "policyRef.policy")
+})
 public class UserGroupInventory {
     private String uuid;
     private String accountUuid;

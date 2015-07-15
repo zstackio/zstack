@@ -102,4 +102,29 @@
     <message>
         <name>org.zstack.header.identity.APIUpdateQuotaMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIQueryAccountMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIQueryPolicyMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIQueryUserGroupMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIQueryUserMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIQueryQuotaMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

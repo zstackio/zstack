@@ -7,14 +7,13 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.AccountInventory;
-import org.zstack.header.identity.AccountVO;
-import org.zstack.header.identity.QuotaVO;
+import org.zstack.header.identity.*;
+import org.zstack.header.query.QueryOp;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+import org.zstack.test.search.QueryTestValidator;
 
 import java.util.List;
 
@@ -44,5 +43,8 @@ public class TestIdentity1 {
         IdentityCreator creator = new IdentityCreator(api);
         AccountInventory a = creator.createAccount("test", "test");
         Assert.assertTrue(dbf.isExist(a.getUuid(), AccountVO.class));
+
+        QueryTestValidator.validateEQ(new APIQueryAccountMsg(), api, APIQueryAccountReply.class, a);
+        QueryTestValidator.validateRandomEQConjunction(new APIQueryAccountMsg(), api, APIQueryAccountReply.class, a, 3);
     }
 }

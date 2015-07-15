@@ -1,7 +1,21 @@
 package org.zstack.header.identity;
 
-import java.sql.Timestamp;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.search.Inventory;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+@Inventory(mappingVOClass = UserPolicyRefVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "user", inventoryClass = UserInventory.class,
+                foreignKey = "userUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "policy", inventoryClass = PolicyInventory.class,
+                foreignKey = "policyUuid", expandedInventoryKey = "uuid")
+})
 public class UserPolicyRefInventory {
     private long id;
     private String userUuid;
@@ -17,6 +31,15 @@ public class UserPolicyRefInventory {
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
+    }
+
+    public List<UserPolicyRefInventory> valueOf(Collection<UserPolicyRefVO> vos) {
+        List<UserPolicyRefInventory> invs = new ArrayList<UserPolicyRefInventory>();
+        for (UserPolicyRefVO vo : vos) {
+            invs.add(valueOf(vo));
+        }
+
+        return invs;
     }
     
     public long getId() {

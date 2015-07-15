@@ -1,14 +1,46 @@
 package org.zstack.header.identity;
 
-import java.sql.Timestamp;
-import java.util.Date;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.search.Inventory;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+
+@Inventory(mappingVOClass = UserGroupPolicyRefVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "group", inventoryClass = UserGroupInventory.class,
+                foreignKey = "groupUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "policy", inventoryClass = PolicyInventory.class,
+                foreignKey = "policyUuid", expandedInventoryKey = "uuid")
+})
 public class UserGroupPolicyRefInventory {
     private long id;
     private String groupUuid;
     private String policyUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+
+    public static UserGroupPolicyRefInventory valueOf(UserGroupPolicyRefVO vo) {
+        UserGroupPolicyRefInventory inv = new UserGroupPolicyRefInventory();
+        inv.setCreateDate(vo.getCreateDate());
+        inv.setGroupUuid(vo.getGroupUuid());
+        inv.setId(vo.getId());
+        inv.setLastOpDate(vo.getLastOpDate());
+        inv.setPolicyUuid(vo.getPolicyUuid());
+        return inv;
+    }
+
+    public static List<UserGroupPolicyRefInventory> valueOf(Collection<UserGroupPolicyRefVO> vos) {
+        List<UserGroupPolicyRefInventory> invs = new ArrayList<UserGroupPolicyRefInventory>();
+        for (UserGroupPolicyRefVO vo : vos) {
+            invs.add(valueOf(vo));
+        }
+        return invs;
+    }
 
     public long getId() {
         return id;

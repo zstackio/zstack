@@ -1,6 +1,10 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -11,12 +15,22 @@ import java.util.List;
 
 @Inventory(mappingVOClass = UserVO.class)
 @PythonClassInventory
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "account", inventoryClass = AccountInventory.class,
+                foreignKey = "accountUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "groupRef", inventoryClass = UserGroupUserRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "userUuid", hidden = true),
+        @ExpandedQuery(expandedField = "policyRef", inventoryClass = UserPolicyRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "userUuid", hidden = true)
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(alias = "group", expandedField = "groupRef.group"),
+        @ExpandedQueryAlias(alias = "policy", expandedField = "policyRef.policy")
+})
 public class UserInventory {
     private String uuid;
     private String accountUuid;
     private String name;
-    private String securityKey;
-    private String token;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -26,8 +40,6 @@ public class UserInventory {
         inv.setAccountUuid(vo.getAccountUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setName(vo.getName());
-        inv.setSecurityKey(vo.getSecurityKey());
-        inv.setToken(vo.getToken());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
     }
@@ -57,18 +69,6 @@ public class UserInventory {
     }
     public void setName(String name) {
         this.name = name;
-    }
-    public String getSecurityKey() {
-        return securityKey;
-    }
-    public void setSecurityKey(String securityKey) {
-        this.securityKey = securityKey;
-    }
-    public String getToken() {
-        return token;
-    }
-    public void setToken(String token) {
-        this.token = token;
     }
 
     public Timestamp getCreateDate() {

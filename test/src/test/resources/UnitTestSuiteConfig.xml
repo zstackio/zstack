@@ -26,6 +26,7 @@
     <Import resource="unitTestSuiteXml/managementNode.xml"/>
 	<Import resource="unitTestSuiteXml/iscsiFilesystemPrimaryStorage.xml"/>
 	<Import resource="unitTestSuiteXml/localStorage.xml"/>
+	<Import resource="unitTestSuiteXml/AccountManager.xml"/>
 
 	<!--
     <Import resource="unitTestSuiteXml/MultiNodes.xml"/>

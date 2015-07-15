@@ -7,17 +7,15 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
-import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyInventory.Statement;
-import org.zstack.header.identity.UserInventory;
-import org.zstack.header.identity.UserPolicyRefVO;
-import org.zstack.header.identity.UserPolicyRefVO_;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.test.search.QueryTestValidator;
 
 public class TestIdentity5 {
     Deployer deployer;
@@ -52,5 +50,8 @@ public class TestIdentity5 {
         q.add(UserPolicyRefVO_.userUuid, Op.EQ, u.getUuid());
         q.add(UserPolicyRefVO_.policyUuid, Op.EQ, p.getUuid());
         Assert.assertTrue(q.isExists());
+
+        QueryTestValidator.validateEQ(new APIQueryPolicyMsg(), api, APIQueryPolicyReply.class, p);
+        QueryTestValidator.validateRandomEQConjunction(new APIQueryPolicyMsg(), api, APIQueryPolicyReply.class, p, 3);
     }
 }

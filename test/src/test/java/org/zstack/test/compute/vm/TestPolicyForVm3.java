@@ -13,13 +13,11 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.AccountInventory;
-import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.QuotaVO;
+import org.zstack.header.identity.*;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.query.QueryOp;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeConstant;
@@ -29,6 +27,7 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.VmCreator;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
+import org.zstack.test.search.QueryTestValidator;
 import org.zstack.utils.data.SizeUnit;
 
 import java.util.List;
@@ -213,6 +212,14 @@ public class TestPolicyForVm3 {
             }
         }
         Assert.assertTrue(success);
+
+        APIQueryQuotaMsg msg = new APIQueryQuotaMsg();
+        msg.addQueryCondition("identityUuid", QueryOp.EQ, test.getUuid());
+        APIQueryQuotaReply reply = api.query(msg, APIQueryQuotaReply.class);
+        QuotaInventory quota = reply.getInventories().get(0);
+
+        QueryTestValidator.validateEQ(new APIQueryQuotaMsg(), api, APIQueryQuotaReply.class, quota);
+        QueryTestValidator.validateRandomEQConjunction(new APIQueryQuotaMsg(), api, APIQueryQuotaReply.class, quota, 3);
     }
 }
 

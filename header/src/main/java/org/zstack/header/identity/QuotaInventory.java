@@ -1,5 +1,7 @@
 package org.zstack.header.identity;
 
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -11,17 +13,21 @@ import java.util.List;
  * Created by frank on 7/14/2015.
  */
 @Inventory(mappingVOClass = QuotaVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "account", inventoryClass = AccountInventory.class,
+                foreignKey = "identityUuid", expandedInventoryKey = "uuid")
+})
 public class QuotaInventory {
     private String name;
     private String identityUuid;
     private String identityType;
-    private long value;
+    private Long value;
     private Timestamp lastOpDate;
     private Timestamp createDate;
 
     public static QuotaInventory valueOf(QuotaVO vo) {
         QuotaInventory inv = new QuotaInventory();
-        inv.setName(vo.getIdentityUuid());
+        inv.setName(vo.getName());
         inv.setIdentityType(vo.getIdentityType());
         inv.setIdentityUuid(vo.getIdentityUuid());
         inv.setValue(vo.getValue());
