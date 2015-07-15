@@ -33,16 +33,6 @@ import java.util.ArrayList;
 
 /**
  * 
- * @author frank
- * 
- * @condition
- * 1. create a pf rule
- * 2. attach pf rule
- * 3. delete pf
- * 2. delete vip
- *
- * @test
- * confirm rule and vip are removed
  */
 public class TestPolicyForPortForwarding {
     Deployer deployer;

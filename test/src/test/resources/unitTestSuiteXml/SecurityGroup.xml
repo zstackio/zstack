@@ -42,4 +42,5 @@
     <TestCase class="org.zstack.test.securitygroup.TestKvmSecurityGroupRefreshOnReconnect"/>
 	<TestCase class="org.zstack.test.securitygroup.TestUpdateSecurityGroup"/>
 	<TestCase class="org.zstack.test.securitygroup.TestPolicyForSecurityGroup"/>
+	<TestCase class="org.zstack.test.securitygroup.TestPolicyForSecurityGroup1"/>
 </UnitTestSuiteConfig>

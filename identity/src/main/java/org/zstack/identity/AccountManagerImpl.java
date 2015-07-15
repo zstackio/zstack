@@ -317,9 +317,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         for (ReportQuotaExtensionPoint ext : pluginRgty.getExtensionList(ReportQuotaExtensionPoint.class)) {
             List<Quota> quotas = ext.reportQuota();
-            if (quotas == null) {
-                continue;
-            }
+            DebugUtils.Assert(quotas != null, String.format("%s.getQuotaPairs() returns null", ext.getClass()));
 
             for (Quota quota : quotas) {
                 DebugUtils.Assert(quota.getQuotaPairs() != null, String.format("%s reports a quota containing a null quotaPairs", ext.getClass()));

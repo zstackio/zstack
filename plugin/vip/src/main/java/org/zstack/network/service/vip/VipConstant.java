@@ -13,4 +13,6 @@ public interface VipConstant {
         GUEST_L3NETWORK_VIP_FOR,
         RELEASE_PEER_L3NETWORK,
     }
+
+    String QUOTA_VIP_NUM = "vip.num";
 }

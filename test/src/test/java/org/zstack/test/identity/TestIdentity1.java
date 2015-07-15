@@ -4,13 +4,19 @@ import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.QuotaVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+
+import java.util.List;
 
 /**
  * 1. create an account

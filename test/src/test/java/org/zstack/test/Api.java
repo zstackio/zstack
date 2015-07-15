@@ -1696,6 +1696,18 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public QuotaInventory updateQuota(String identityUuid, String name, long value) throws ApiSenderException {
+        APIUpdateQuotaMsg msg = new APIUpdateQuotaMsg();
+        msg.setIdentityUuid(identityUuid);
+        msg.setName(name);
+        msg.setValue(value);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateQuotaEvent evt = sender.send(msg, APIUpdateQuotaEvent.class);
+        return evt.getInventory();
+    }
+
     public List<ManagementNodeInventory> listManagementNodes() throws ApiSenderException {
         APIListManagementNodeMsg msg = new APIListManagementNodeMsg();
         msg.setSession(adminSession);

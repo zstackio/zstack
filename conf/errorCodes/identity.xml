@@ -15,5 +15,10 @@
         <id>1002</id>
         <description>The user doesn't have permission to perform the operation</description>
     </code>
+
+    <code>
+        <id>1003</id>
+        <description>The user exceeds a quota of a resource</description>
+    </code>
 </error>
 

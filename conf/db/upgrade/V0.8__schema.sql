@@ -15,10 +15,21 @@ CREATE TABLE  `zstack`.`LocalStorageResourceRefVO` (
     `primaryStorageUuid` varchar(32) NOT NULL,
     `hostUuid` varchar(32),
     `size` bigint unsigned DEFAULT 0,
-    `resourceType` varchar(256),
+    `resourceType` varchar(255),
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY  (`resourceUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`QuotaVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `name` varchar(255) NOT NULL,
+    `identityUuid` varchar(32) DEFAULT NULL,
+    `identityType` varchar(255) NOT NULL,
+    `value` bigint unsigned DEFAULT 0,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `zstack`.`SharedResourceVO` (

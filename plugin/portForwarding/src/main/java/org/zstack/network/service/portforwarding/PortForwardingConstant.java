@@ -9,6 +9,8 @@ public interface PortForwardingConstant {
 
     public static NetworkServiceType PORTFORWARDING_TYPE = new NetworkServiceType(PORTFORWARDING_NETWORK_SERVICE_TYPE);
 
+    String QUOTA_PF_NUM = "portForwarding.num";
+
     public static enum Params {
         PORTFORWARDING_STRUCT,
         PORTFORWARDING_SERVICE_PROVIDER_TYPE,

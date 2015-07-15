@@ -50,5 +50,6 @@
 	<TestCase class="org.zstack.test.compute.vm.TestPolicyForVm"/>
 	<TestCase class="org.zstack.test.compute.vm.TestPolicyForVm1"/>
 	<TestCase class="org.zstack.test.compute.vm.TestPolicyForVm2"/>
+	<TestCase class="org.zstack.test.compute.vm.TestPolicyForVm3"/>
 	<TestCase class="org.zstack.test.compute.vm.TestQueryVm6"/>
 </UnitTestSuiteConfig>

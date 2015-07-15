@@ -8,4 +8,6 @@ public interface SecurityGroupConstant {
     public static String SECURITY_GROUP_PROVIDER_TYPE = "SecurityGroup";
     public static String SECURITY_GROUP_NETWORK_SERVICE_TYPE = "SecurityGroup";
     public static String WORLD_OPEN_CIDR = "0.0.0.0/0";
+
+    String QUOTA_SG_NUM = "securityGroup.num";
 }

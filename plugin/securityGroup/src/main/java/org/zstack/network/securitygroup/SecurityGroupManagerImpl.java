@@ -12,14 +12,21 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -47,8 +54,10 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 public class SecurityGroupManagerImpl extends AbstractService implements SecurityGroupManager, ManagementNodeChangeListener,
-          VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint {
+          VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
     private static CLogger logger = Utils.getLogger(SecurityGroupManagerImpl.class);
 
     @Autowired
@@ -67,11 +76,56 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     private AccountManager acntMgr;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ErrorFacade errf;
 
     protected Map<String, SecurityGroupHypervisorBackend> hypervisorBackends;
     private int failureHostWorkerInterval;
     private int failureHostEachTimeTake;
     private Future<Void> failureHostCopingThread;
+
+    @Override
+    public List<Quota> reportQuota() {
+        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+            @Override
+            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
+                if (msg instanceof APICreateSecurityGroupMsg) {
+                    check((APICreateSecurityGroupMsg)msg, pairs);
+                }
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APICreateSecurityGroupMsg msg, Map<String, QuotaPair> pairs) {
+                long sgNum = pairs.get(SecurityGroupConstant.QUOTA_SG_NUM).getValue();
+
+                String sql = "select count(sg) from SecurityGroupVO sg, AccountResourceRefVO ref where ref.resourceUuid = sg.uuid" +
+                        " and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("rtype", SecurityGroupVO.class.getSimpleName());
+                Long sgn = q.getSingleResult();
+                sgn = sgn == null ? 0 : sgn;
+
+                if (sgn + 1 > sgNum) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), SecurityGroupConstant.QUOTA_SG_NUM, sgNum)
+                    ));
+                }
+            }
+        };
+
+        Quota quota = new Quota();
+        quota.setChecker(checker);
+        quota.setMessageNeedValidation(APICreateSecurityGroupMsg.class);
+
+        QuotaPair p = new QuotaPair();
+        p.setName(SecurityGroupConstant.QUOTA_SG_NUM);
+        p.setValue(20);
+        quota.addPair(p);
+
+        return list(quota);
+    }
 
     private class RuleCalculator {
         private List<String> vmNicUuids;

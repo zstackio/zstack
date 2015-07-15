@@ -13,10 +13,16 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.AbstractService;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.L2NetworkVO;
@@ -36,7 +42,9 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-public class L3NetworkManagerImpl extends AbstractService implements L3NetworkManager {
+import static org.zstack.utils.CollectionDSL.list;
+
+public class L3NetworkManagerImpl extends AbstractService implements L3NetworkManager, ReportQuotaExtensionPoint {
     private static final CLogger logger = Utils.getLogger(L3NetworkManagerImpl.class);
 
     @Autowired
@@ -375,4 +383,46 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         Collections.sort(used);
 		return used;
 	}
+
+    @Override
+    public List<Quota> reportQuota() {
+        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+            @Override
+            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
+                if (msg instanceof APICreateL3NetworkMsg) {
+                    check((APICreateL3NetworkMsg)msg, pairs);
+                }
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APICreateL3NetworkMsg msg, Map<String, QuotaPair> pairs) {
+                long l3Num = pairs.get(L3NetworkConstant.QUOTA_L3_NUM).getValue();
+
+                String sql = "select count(l3) from L3NetworkVO l3, AccountResourceRefVO ref where l3.uuid = ref.resourceUuid and " +
+                        "ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("rtype", L3NetworkVO.class.getSimpleName());
+                Long l3n = q.getSingleResult();
+                l3n = l3n == null ? 0 : l3n;
+                if (l3n + 1 > l3Num) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), L3NetworkConstant.QUOTA_L3_NUM, l3Num)
+                    ));
+                }
+            }
+        };
+
+        Quota quota = new Quota();
+        quota.setChecker(checker);
+        quota.setMessageNeedValidation(APICreateL3NetworkMsg.class);
+
+        QuotaPair p = new QuotaPair();
+        p.setName(L3NetworkConstant.QUOTA_L3_NUM);
+        p.setValue(20);
+        quota.addPair(p);
+
+        return list(quota);
+    }
 }

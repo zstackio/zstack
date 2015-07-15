@@ -10,6 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -19,6 +20,11 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -45,7 +51,10 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
-public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager, VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint {
+import static org.zstack.utils.CollectionDSL.list;
+
+public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager,
+        VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
     private static CLogger logger = Utils.getLogger(PortForwardingManagerImpl.class);
     
     @Autowired
@@ -762,5 +771,47 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     @Override
     public List<ExpandedQueryAliasStruct> getExpandedQueryAliasesStructs() {
         return null;
+    }
+
+    @Override
+    public List<Quota> reportQuota() {
+        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+            @Override
+            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
+                if (msg instanceof APICreatePortForwardingRuleMsg) {
+                    check((APICreatePortForwardingRuleMsg) msg, pairs);
+                }
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APICreatePortForwardingRuleMsg msg, Map<String, QuotaPair> pairs) {
+                long pfNum = pairs.get(PortForwardingConstant.QUOTA_PF_NUM).getValue();
+
+                String sql = "select count(pf) from PortForwardingRuleVO pf, AccountResourceRefVO ref where pf.uuid = ref.resourceUuid" +
+                        " and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("rtype", PortForwardingRuleVO.class.getSimpleName());
+                Long pfn = q.getSingleResult();
+                pfn = pfn == null ? 0 : pfn;
+
+                if (pfn + 1 > pfNum) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), PortForwardingConstant.QUOTA_PF_NUM, pfNum)
+                    ));
+                }
+            }
+        };
+
+        Quota quota = new Quota();
+        quota.setChecker(checker);
+        quota.setMessageNeedValidation(APICreatePortForwardingRuleMsg.class);
+
+        QuotaPair p = new QuotaPair();
+        p.setName(PortForwardingConstant.QUOTA_PF_NUM);
+        p.setValue(20);
+        quota.addPair(p);
+        return list(quota);
     }
 }

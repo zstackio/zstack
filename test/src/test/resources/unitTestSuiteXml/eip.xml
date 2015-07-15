@@ -30,4 +30,5 @@
     <TestCase class="org.zstack.test.eip.TestEipPortForwardingAttachableNic"/>
     <TestCase class="org.zstack.test.eip.TestUpdateVirtualRouterEip"/>
     <TestCase class="org.zstack.test.eip.TestPolicyForEip"/>
+    <TestCase class="org.zstack.test.eip.TestPolicyForEip1"/>
 </UnitTestSuiteConfig>

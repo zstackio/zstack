@@ -2,4 +2,5 @@
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="180">
     <TestCase class="org.zstack.test.vip.TestVipDeletion"/>
     <TestCase class="org.zstack.test.vip.TestPolicyForVip"/>
+    <TestCase class="org.zstack.test.vip.TestPolicyForVip1"/>
 </UnitTestSuiteConfig>

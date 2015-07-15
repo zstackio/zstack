@@ -101,9 +101,31 @@ public class AccountBase extends AbstractAccount {
             handle((APIShareResourceMsg) msg);
         } else if (msg instanceof APIRevokeResourceSharingMsg) {
             handle((APIRevokeResourceSharingMsg) msg);
+        } else if (msg instanceof APIUpdateQuotaMsg) {
+            handle((APIUpdateQuotaMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateQuotaMsg msg) {
+        SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
+        q.add(QuotaVO_.identityUuid, Op.EQ, msg.getIdentityUuid());
+        q.add(QuotaVO_.name, Op.EQ, msg.getName());
+        QuotaVO quota = q.find();
+
+        if (quota == null) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                    String.format("cannot find Quota[name: %s] for the account[uuid: %s]", msg.getName(), msg.getIdentityUuid())
+            ));
+        }
+
+        quota.setValue(msg.getValue());
+        quota = dbf.updateAndRefresh(quota);
+
+        APIUpdateQuotaEvent evt = new APIUpdateQuotaEvent(msg.getId());
+        evt.setInventory(QuotaInventory.valueOf(quota));
+        bus.publish(evt);
     }
 
     @Transactional

@@ -1,6 +1,7 @@
 package org.zstack.network.service.vip;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -12,6 +13,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -21,6 +23,11 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -32,14 +39,17 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.TypedQuery;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  */
-public class VipManagerImpl extends AbstractService implements VipManager  {
+public class VipManagerImpl extends AbstractService implements VipManager, ReportQuotaExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VipManagerImpl.class);
 
     @Autowired
@@ -568,5 +578,48 @@ public class VipManagerImpl extends AbstractService implements VipManager  {
 
     public void setReleaseVipByApiFlowNames(List<String> releaseVipByApiFlowNames) {
         this.releaseVipByApiFlowNames = releaseVipByApiFlowNames;
+    }
+
+    @Override
+    public List<Quota> reportQuota() {
+        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+            @Override
+            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
+                if (msg instanceof APICreateVipMsg) {
+                    check((APICreateVipMsg)msg, pairs);
+                }
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APICreateVipMsg msg, Map<String, QuotaPair> pairs) {
+                long vipNum = pairs.get(VipConstant.QUOTA_VIP_NUM).getValue();
+
+                String sql = "select count(vip) from VipVO vip, AccountResourceRefVO ref where ref.resourceUuid = vip.uuid" +
+                        " and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("rtype", VipVO.class.getSimpleName());
+                Long vn = q.getSingleResult();
+                vn = vn == null ? 0 : vn;
+
+                if (vn + 1 > vipNum) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), VipConstant.QUOTA_VIP_NUM, vipNum)
+                    ));
+                }
+            }
+        };
+
+        Quota quota = new Quota();
+        quota.setMessageNeedValidation(APICreateVipMsg.class);
+        quota.setChecker(checker);
+
+        QuotaPair p = new QuotaPair();
+        p.setName(VipConstant.QUOTA_VIP_NUM);
+        p.setValue(20);
+        quota.addPair(p);
+
+        return list(quota);
     }
 }

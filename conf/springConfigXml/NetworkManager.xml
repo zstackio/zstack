@@ -49,6 +49,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
+            <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
         </zstack:plugin>
     </bean>
     

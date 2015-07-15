@@ -9,14 +9,21 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.workflow.*;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -27,8 +34,8 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.network.service.vip.*;
 import org.zstack.network.service.NetworkServiceManager;
+import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -37,9 +44,12 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  */
-public class EipManagerImpl extends AbstractService implements EipManager, VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint {
+public class EipManagerImpl extends AbstractService implements EipManager, VipReleaseExtensionPoint,
+        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
     private static final CLogger logger = Utils.getLogger(EipManagerImpl.class);
 
     @Autowired
@@ -56,6 +66,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     private VipManager vipMgr;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ErrorFacade errf;
 
     private Map<String, EipBackend> backends = new HashMap<String, EipBackend>();
     private List<String> createEipFlowNames;
@@ -599,5 +611,49 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     @Override
     public List<ExpandedQueryAliasStruct> getExpandedQueryAliasesStructs() {
         return null;
+    }
+
+    @Override
+    public List<Quota> reportQuota() {
+        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+            @Override
+            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
+                if (msg instanceof APICreateEipMsg) {
+                    check((APICreateEipMsg)msg, pairs);
+                }
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APICreateEipMsg msg, Map<String, QuotaPair> pairs) {
+                long eipNum = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
+
+                String sql = "select count(eip) from EipVO eip, AccountResourceRefVO ref where ref.resourceUuid = eip.uuid and " +
+                        "ref.accountUuid = :auuid and ref.resourceType = :rtype";
+
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("rtype", EipVO.class.getSimpleName());
+                Long en = q.getSingleResult();
+                en = en == null ? 0 : en;
+
+                if (en + 1 > eipNum) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), EipConstant.QUOTA_EIP_NUM, eipNum)
+                    ));
+                }
+            }
+        };
+
+        Quota quota = new Quota();
+        quota.setMessageNeedValidation(APICreateEipMsg.class);
+        quota.setChecker(checker);
+
+        QuotaPair p = new QuotaPair();
+        p.setName(EipConstant.QUOTA_EIP_NUM);
+        p.setValue(20);
+        quota.addPair(p);
+
+        return list(quota);
     }
 }
