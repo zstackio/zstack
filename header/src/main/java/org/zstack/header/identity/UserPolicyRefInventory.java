@@ -17,7 +17,6 @@ import java.util.List;
                 foreignKey = "policyUuid", expandedInventoryKey = "uuid")
 })
 public class UserPolicyRefInventory {
-    private long id;
     private String userUuid;
     private String policyUuid;
     private Timestamp createDate;
@@ -25,7 +24,6 @@ public class UserPolicyRefInventory {
     
     public UserPolicyRefInventory valueOf(UserPolicyRefVO vo) {
         UserPolicyRefInventory inv = new UserPolicyRefInventory();
-        inv.setId(vo.getId());
         inv.setUserUuid(vo.getUserUuid());
         inv.setPolicyUuid(vo.getPolicyUuid());
         inv.setCreateDate(vo.getCreateDate());
@@ -42,12 +40,6 @@ public class UserPolicyRefInventory {
         return invs;
     }
     
-    public long getId() {
-        return id;
-    }
-    public void setId(long id) {
-        this.id = id;
-    }
     public String getUserUuid() {
         return userUuid;
     }

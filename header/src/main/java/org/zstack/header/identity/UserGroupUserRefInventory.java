@@ -17,7 +17,6 @@ import java.util.List;
                 foreignKey = "groupUuid", expandedInventoryKey = "uuid")
 })
 public class UserGroupUserRefInventory {
-    private long id;
     private String userUuid;
     private String groupUuid;
     private Timestamp createDate;
@@ -25,7 +24,6 @@ public class UserGroupUserRefInventory {
     
     public static UserGroupUserRefInventory valueOf(UserGroupUserRefVO vo) {
         UserGroupUserRefInventory inv = new UserGroupUserRefInventory();
-        inv.setId(vo.getId());
         inv.setUserUuid(vo.getUserUuid());
         inv.setGroupUuid(vo.getGroupUuid());
         inv.setCreateDate(vo.getCreateDate());
@@ -41,14 +39,6 @@ public class UserGroupUserRefInventory {
         return invs;
     }
     
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
     public String getUserUuid() {
         return userUuid;
     }

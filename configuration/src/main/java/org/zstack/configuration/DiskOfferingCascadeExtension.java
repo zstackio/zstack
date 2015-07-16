@@ -2,18 +2,18 @@ package org.zstack.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.cascade.*;
+import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
+import org.zstack.core.cascade.CascadeAction;
+import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.configuration.ConfigurationConstant;
 import org.zstack.header.configuration.DiskOfferingDeletionMsg;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.PrimaryStorage;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

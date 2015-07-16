@@ -143,7 +143,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void handle(APIValidateSessionMsg msg) {
         APIValidateSessionReply reply = new APIValidateSessionReply();
-        reply.setValidSession(sessions.containsKey(msg.getSessionUuid()));
+        boolean s = sessions.containsKey(msg.getSessionUuid());
+        if (!s) {
+            SimpleQuery<SessionVO> q = dbf.createQuery(SessionVO.class);
+            q.add(SessionVO_.uuid, Op.EQ, msg.getSessionUuid());
+            s = q.isExists();
+        }
+        reply.setValidSession(s);
         bus.reply(msg, reply);
     }
 
@@ -173,7 +179,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(sessionTimeout);
         svo.setExpiredDate(new Timestamp(expiredTime));
         svo = dbf.persistAndRefresh(svo);
-        return SessionInventory.valueOf(svo);
+        SessionInventory session = SessionInventory.valueOf(svo);
+        sessions.put(session.getUuid(), session);
+        return session;
     }
 
     private void handle(APILogInByUserMsg msg) {

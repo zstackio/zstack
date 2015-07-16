@@ -18,7 +18,6 @@ import java.util.List;
                 foreignKey = "policyUuid", expandedInventoryKey = "uuid")
 })
 public class UserGroupPolicyRefInventory {
-    private long id;
     private String groupUuid;
     private String policyUuid;
     private Timestamp createDate;
@@ -28,7 +27,6 @@ public class UserGroupPolicyRefInventory {
         UserGroupPolicyRefInventory inv = new UserGroupPolicyRefInventory();
         inv.setCreateDate(vo.getCreateDate());
         inv.setGroupUuid(vo.getGroupUuid());
-        inv.setId(vo.getId());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setPolicyUuid(vo.getPolicyUuid());
         return inv;
@@ -40,14 +38,6 @@ public class UserGroupPolicyRefInventory {
             invs.add(valueOf(vo));
         }
         return invs;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
 
     public String getGroupUuid() {

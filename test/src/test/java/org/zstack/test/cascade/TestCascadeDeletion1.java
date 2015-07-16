@@ -88,12 +88,10 @@ public class TestCascadeDeletion1 {
         referenceValidator.noReference(IpRangeVO.class);
         DiskOfferingVO dvo = dbf.findByUuid(do1.getUuid(), DiskOfferingVO.class);
         Assert.assertNotNull(dvo);
-        referenceValidator.noReference(DiskOfferingVO.class);
         dvo = dbf.findByUuid(do2.getUuid(), DiskOfferingVO.class);
         Assert.assertNotNull(dvo);
         InstanceOfferingVO ivo = dbf.findByUuid(io.getUuid(), InstanceOfferingVO.class);
         Assert.assertNotNull(ivo);
-        referenceValidator.noReference(InstanceOfferingVO.class);
         BackupStorageVO bvo = dbf.findByUuid(bs.getUuid(), BackupStorageVO.class);
         Assert.assertNotNull(bvo);
 

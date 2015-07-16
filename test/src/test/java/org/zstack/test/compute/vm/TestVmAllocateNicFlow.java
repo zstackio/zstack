@@ -20,6 +20,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.header.vm.*;
+import org.zstack.identity.AccountManager;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -37,6 +38,7 @@ public class TestVmAllocateNicFlow {
     CloudBus bus;
     DatabaseFacade dbf;
     CountDownLatch latch = new CountDownLatch(1);
+    AccountManager acntMgr;
     boolean isSuccess = false;
 
     @Before
@@ -48,6 +50,7 @@ public class TestVmAllocateNicFlow {
         loader = deployer.getComponentLoader();
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
+        acntMgr = loader.getComponent(AccountManager.class);
     }
 
     @Test
@@ -69,6 +72,8 @@ public class TestVmAllocateNicFlow {
         vo.setUuid(Platform.getUuid());
         vo.setInternalId(10);
         dbf.persist(vo);
+
+        acntMgr.createAccountResourceRef(api.getAdminSession().getAccountUuid(), vo.getUuid(), VmInstanceVO.class);
         
         VmInstanceInventory vminv = VmInstanceInventory.valueOf(vo);
         VmInstanceSpec spec = new VmInstanceSpec();
