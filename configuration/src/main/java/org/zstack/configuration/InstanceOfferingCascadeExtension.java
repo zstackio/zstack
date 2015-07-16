@@ -8,16 +8,20 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.ConfigurationConstant;
-import org.zstack.header.configuration.InstanceOfferingDeletionMsg;
-import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.configuration.*;
 import org.zstack.header.core.Completion;
+import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.identity.Account;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,7 +66,7 @@ public class InstanceOfferingCascadeExtension extends AbstractAsyncCascadeExtens
 
     private void handleDeletion(final CascadeAction action, final Completion completion) {
         final List<InstanceOfferingInventory> ioinvs = instanceOfferingFromAction(action);
-        if (ioinvs == null) {
+        if (ioinvs == null || ioinvs.isEmpty()) {
             completion.success();
             return;
         }
@@ -99,7 +103,7 @@ public class InstanceOfferingCascadeExtension extends AbstractAsyncCascadeExtens
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList();
+        return Arrays.asList(AccountVO.class.getSimpleName());
     }
 
     @Override
@@ -108,13 +112,40 @@ public class InstanceOfferingCascadeExtension extends AbstractAsyncCascadeExtens
     }
 
     private List<InstanceOfferingInventory> instanceOfferingFromAction(CascadeAction action) {
-        return action.getParentIssuerContext();
+        if (NAME.equals(action.getParentIssuer())) {
+            return action.getParentIssuerContext();
+        } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            return getForAccount((List<AccountInventory>) action.getParentIssuerContext());
+        }
+
+        throw new CloudRuntimeException("should not be here");
+    }
+
+    @Transactional(readOnly = true)
+    private List<InstanceOfferingInventory> getForAccount(List<AccountInventory> invs) {
+        List<String> accountUuids = CollectionUtils.transformToList(invs, new Function<String, AccountInventory>() {
+            @Override
+            public String call(AccountInventory arg) {
+                return arg.getUuid();
+            }
+        });
+
+        String sql = "select d from InstanceOfferingVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
+                " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+        TypedQuery<InstanceOfferingVO> q = dbf.getEntityManager().createQuery(sql, InstanceOfferingVO.class);
+        q.setParameter("rtype", InstanceOfferingVO.class.getSimpleName());
+        q.setParameter("auuids", accountUuids);
+        List<InstanceOfferingVO> vos = q.getResultList();
+        return InstanceOfferingInventory.valueOf(vos);
     }
 
     @Override
     public CascadeAction createActionForChildResource(CascadeAction action) {
         if (CascadeConstant.DELETION_CODES.contains(action.getActionCode())) {
-            return action;
+            List<InstanceOfferingInventory> ctx = instanceOfferingFromAction(action);
+            if (ctx != null && !ctx.isEmpty()) {
+                return action.copy().setParentIssuer(NAME).setParentIssuerContext(ctx);
+            }
         }
 
         return null;

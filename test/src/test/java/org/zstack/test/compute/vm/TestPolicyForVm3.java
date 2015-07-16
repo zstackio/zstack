@@ -168,7 +168,7 @@ public class TestPolicyForVm3 {
                 success = true;
             }
         }
-        //Assert.assertTrue(success);
+        Assert.assertTrue(success);
 
         api.updateQuota(test.getUuid(), VolumeConstant.QUOTA_DATA_VOLUME_NUM, 10);
         vm = vmCreator.create();
@@ -220,6 +220,12 @@ public class TestPolicyForVm3 {
 
         QueryTestValidator.validateEQ(new APIQueryQuotaMsg(), api, APIQueryQuotaReply.class, quota);
         QueryTestValidator.validateRandomEQConjunction(new APIQueryQuotaMsg(), api, APIQueryQuotaReply.class, quota, 3);
+
+        api.deleteAccount(test.getUuid(), identityCreator.getAccountSession());
+        SimpleQuery<QuotaVO> qq = dbf.createQuery(QuotaVO.class);
+        qq.add(QuotaVO_.identityUuid, Op.EQ, test.getUuid());
+        Assert.assertFalse(qq.isExists());
+        Assert.assertFalse(dbf.isExist(test.getUuid(), AccountVO.class));
     }
 }
 

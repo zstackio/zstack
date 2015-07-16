@@ -1,0 +1,98 @@
+package org.zstack.test.compute.vm;
+
+import junit.framework.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.ComponentLoader;
+import org.zstack.core.config.GlobalConfigVO;
+import org.zstack.core.config.GlobalConfigVO_;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.identity.*;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageVO;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.query.QueryOp;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.VmCreator;
+import org.zstack.test.deployer.Deployer;
+import org.zstack.test.identity.IdentityCreator;
+import org.zstack.test.search.QueryTestValidator;
+import org.zstack.utils.data.SizeUnit;
+
+import java.util.List;
+
+/**
+ * 1. delete the account
+ *
+ * confirm resources created by the account are deleted
+ */
+public class TestPolicyForVm4 {
+    Deployer deployer;
+    Api api;
+    ComponentLoader loader;
+    CloudBus bus;
+    DatabaseFacade dbf;
+
+    @Before
+    public void setUp() throws Exception {
+        DBUtil.reDeployDB();
+        deployer = new Deployer("deployerXml/vm/TestPolicyForVm3.xml");
+        deployer.build();
+        api = deployer.getApi();
+        loader = deployer.getComponentLoader();
+        bus = loader.getComponent(CloudBus.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
+    }
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
+        ImageInventory img = deployer.images.get("TestImage");
+        L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
+        DiskOfferingInventory dov = deployer.diskOfferings.get("disk50G");
+
+        IdentityCreator identityCreator = new IdentityCreator(api);
+        AccountInventory test = identityCreator.useAccount("test");
+
+        VmCreator vmCreator = new VmCreator(api);
+        vmCreator.imageUuid = img.getUuid();
+        vmCreator.addL3Network(l3.getUuid());
+        vmCreator.addDisk(dov.getUuid());
+        vmCreator.instanceOfferingUuid = ioinv.getUuid();
+        vmCreator.name = "vm";
+        vmCreator.session = identityCreator.getAccountSession();
+        vmCreator.create();
+
+        api.deleteAccount(test.getUuid(), identityCreator.getAccountSession());
+
+        long count = dbf.count(VmInstanceVO.class);
+        Assert.assertEquals(0, count);
+        count = dbf.count(InstanceOfferingVO.class);
+        Assert.assertEquals(0, count);
+        count = dbf.count(DiskOfferingVO.class);
+        Assert.assertEquals(0, count);
+        count = dbf.count(ImageVO.class);
+        Assert.assertEquals(0, count);
+        count = dbf.count(L3NetworkVO.class);
+        Assert.assertEquals(0, count);
+        count = dbf.count(VolumeVO.class);
+        Assert.assertEquals(0, count);
+    }
+}
+

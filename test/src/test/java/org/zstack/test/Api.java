@@ -1820,6 +1820,15 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIDeleteUserGroupEvent.class);
     }
 
+    public void deleteAccount(String uuid, SessionInventory session) throws ApiSenderException {
+        APIDeleteAccountMsg msg = new APIDeleteAccountMsg();
+        msg.setSession(session == null ? adminSession : session);
+        msg.setUuid(uuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteAccountEvent.class);
+    }
+
     public void deleteUser(String uuid, SessionInventory session) throws ApiSenderException {
         APIDeleteUserMsg msg = new APIDeleteUserMsg();
         msg.setSession(session);

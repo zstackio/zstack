@@ -19,6 +19,8 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2Network;
 import org.zstack.header.network.l2.L2NetworkConstant;
@@ -96,6 +98,10 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
         if (InstanceOfferingVO.class.getSimpleName().equals(action.getParentIssuer())) {
             return OP_REMOVE_INSTANCE_OFFERING;
+        }
+
+        if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            return OP_DELETION;
         }
 
         return OP_NOPE;
@@ -340,7 +346,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
     public List<String> getEdgeNames() {
         return Arrays.asList(HostVO.class.getSimpleName(), L3NetworkVO.class.getSimpleName(),
                 IpRangeVO.class.getSimpleName(), PrimaryStorageVO.class.getSimpleName(), L2NetworkVO.class.getSimpleName(),
-                InstanceOfferingVO.class.getSimpleName());
+                InstanceOfferingVO.class.getSimpleName(), AccountVO.class.getSimpleName());
     }
 
     @Override
@@ -474,6 +480,30 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
                     q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Stopping));
                     q.setParameter("uuids", ipruuids);
+                    return q.getResultList();
+                }
+            }.call();
+
+            if (!vmvos.isEmpty()) {
+                ret = VmInstanceInventory.valueOf(vmvos);
+            }
+        } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
+                @Override
+                public String call(AccountInventory arg) {
+                    return arg.getUuid();
+                }
+            });
+
+            List<VmInstanceVO> vmvos = new Callable<List<VmInstanceVO>>() {
+                @Override
+                @Transactional(readOnly = true)
+                public List<VmInstanceVO> call() {
+                    String sql = "select d from VmInstanceVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
+                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+                    TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+                    q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
+                    q.setParameter("auuids", auuids);
                     return q.getResultList();
                 }
             }.call();

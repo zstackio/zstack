@@ -13,19 +13,26 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.*;
+import org.zstack.identity.Account;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  */
@@ -63,6 +70,10 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
             return OP_UPDATE_DISK_OFFERING_COLUMN;
         }
 
+        if (action.getParentIssuer().equals(AccountVO.class.getSimpleName())) {
+            return OP_DELETE_VOLUME;
+        }
+
         throw new CloudRuntimeException(String.format("unknown edge [%s]", action.getParentIssuer()));
     }
 
@@ -89,6 +100,31 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                 q.add(VolumeVO_.primaryStorageUuid, Op.IN, psUuids);
                 List<VolumeVO> vos = q.list();
                 return VolumeInventory.valueOf(vos);
+            } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
+                final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
+                    @Override
+                    public String call(AccountInventory arg) {
+                        return arg.getUuid();
+                    }
+                });
+
+                List<VolumeVO> vos = new Callable<List<VolumeVO>>() {
+                    @Override
+                    @Transactional(readOnly = true)
+                    public List<VolumeVO> call() {
+                        String sql = "select d from VolumeVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
+                                " r.resourceType = :rtype and r.accountUuid in (:auuids) and d.type = :dtype";
+                        TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
+                        q.setParameter("auuids", auuids);
+                        q.setParameter("rtype", VolumeVO.class.getSimpleName());
+                        q.setParameter("dtype", VolumeType.Data);
+                        return q.getResultList();
+                    }
+                }.call();
+
+                if (!vos.isEmpty()) {
+                    return VolumeInventory.valueOf(vos);
+                }
             }
         }
 
@@ -166,7 +202,8 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(PrimaryStorageVO.class.getSimpleName(), DiskOfferingVO.class.getSimpleName());
+        return Arrays.asList(PrimaryStorageVO.class.getSimpleName(),
+                DiskOfferingVO.class.getSimpleName(), AccountVO.class.getSimpleName());
     }
 
     @Override

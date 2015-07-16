@@ -127,4 +127,8 @@
         <name>org.zstack.header.identity.APIQueryQuotaMsg</name>
         <serviceId>query</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIDeleteAccountMsg</name>
+    </message>
 </service>

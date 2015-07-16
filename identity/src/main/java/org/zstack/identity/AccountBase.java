@@ -5,13 +5,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.cascade.CascadeConstant;
+import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
+import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -23,6 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AccountBase extends AbstractAccount {
     @Autowired
@@ -33,6 +44,8 @@ public class AccountBase extends AbstractAccount {
     private ErrorFacade errf;
     @Autowired
     private AccountManager acntMgr;
+    @Autowired
+    private CascadeFacade casf;
 
     private AccountVO vo;
 
@@ -41,16 +54,12 @@ public class AccountBase extends AbstractAccount {
     }
 
     @Override
+    @MessageSafe
     public void handleMessage(Message msg) {
-        try {
-            if (msg instanceof APIMessage) {
-                handleApiMessage((APIMessage) msg);
-            } else {
-                handleLocalMessage(msg);
-            }
-        } catch (Exception e) {
-            bus.logExceptionWithMessageDump(msg, e);
-            bus.replyErrorByMessageType(msg, e);
+        if (msg instanceof APIMessage) {
+            handleApiMessage((APIMessage) msg);
+        } else {
+            handleLocalMessage(msg);
         }
     }
 
@@ -65,7 +74,139 @@ public class AccountBase extends AbstractAccount {
     }
 
     private void handleLocalMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof AccountDeletionMsg) {
+            handle((AccountDeletionMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+
+    private void handle(final APIDeleteAccountMsg msg) {
+        final APIDeleteAccountEvent evt = new APIDeleteAccountEvent(msg.getId());
+
+        final AccountVO vo = dbf.findByUuid(msg.getUuid(), AccountVO.class);
+        if (vo == null) {
+            bus.publish(evt);
+            return;
+        }
+
+        final String issuer = AccountVO.class.getSimpleName();
+        final List<AccountInventory> ctx = list(AccountInventory.valueOf(vo));
+        final FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("delete-account-%s", vo.getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                if (msg.getDeletionMode() == DeletionMode.Permissive) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "check-before-deleting";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "delete";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    flow(new NoRollbackFlow() {
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        dbf.remove(vo);
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setErrorCode(errCode);
+                        bus.publish(evt);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    @Transactional
+    private void deleteRelatedResources() {
+        String sql = "delete from QuotaVO q where q.identityUuid = :uuid and q.identityType = :itype";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("uuid", vo.getUuid());
+        q.setParameter("itype", AccountVO.class.getSimpleName());
+        q.executeUpdate();
+
+        sql = "delete from UserVO u where u.accountUuid = :uuid";
+        q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("uuid", vo.getUuid());
+        q.executeUpdate();
+
+        sql = "delete from UserGroupVO g where g.accountUuid = :uuid";
+        q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("uuid", vo.getUuid());
+        q.executeUpdate();
+
+        sql = "delete from PolicyVO p where p.accountUuid = :uuid";
+        q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("uuid", vo.getUuid());
+        q.executeUpdate();
+
+        sql = "delete from SharedResourceVO s where s.ownerAccountUuid = :uuid or s.receiverAccountUuid = :uuid";
+        q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("uuid", vo.getUuid());
+        q.executeUpdate();
+    }
+
+    private void handle(AccountDeletionMsg msg) {
+        AccountDeletionReply reply = new AccountDeletionReply();
+        deleteRelatedResources();
+        bus.reply(msg, reply);
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -103,6 +244,8 @@ public class AccountBase extends AbstractAccount {
             handle((APIRevokeResourceSharingMsg) msg);
         } else if (msg instanceof APIUpdateQuotaMsg) {
             handle((APIUpdateQuotaMsg) msg);
+        } else if (msg instanceof APIDeleteAccountMsg) {
+            handle((APIDeleteAccountMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
