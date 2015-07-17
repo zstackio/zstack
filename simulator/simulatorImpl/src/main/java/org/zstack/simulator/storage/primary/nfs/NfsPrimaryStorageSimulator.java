@@ -72,6 +72,7 @@ public class NfsPrimaryStorageSimulator {
         AgentResponse rsp = new AgentResponse();
         if (config.unmountSuccess) {
             rsp.setSuccess(true);
+            config.unmountCmds.add(cmd);
             logger.debug(String.format("Unmount %s", cmd.getMountPath()));
         } else {
             rsp.setSuccess(false);

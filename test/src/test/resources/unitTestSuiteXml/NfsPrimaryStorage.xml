@@ -3,4 +3,5 @@
 	<TestCase class="org.zstack.test.storage.primary.nfs.TestExpungeVolumeOnNfsPrimaryStorageForKvm"/>
     <TestCase class="org.zstack.test.storage.primary.nfs.TestImageCacheMissing"/>
     <TestCase class="org.zstack.test.storage.primary.nfs.TestImageCacheMissingFailure"/>
+    <TestCase class="org.zstack.test.storage.primary.nfs.TestDeleteNfsPrimaryStorage"/>
 </UnitTestSuiteConfig>

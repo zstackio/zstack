@@ -90,6 +90,26 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
+    @Override
+    public void deleteHook() {
+        List<String> cuuids = CollectionUtils.transformToList(self.getAttachedClusterRefs(), new Function<String, PrimaryStorageClusterRefVO>() {
+            @Override
+            public String call(PrimaryStorageClusterRefVO arg) {
+                return arg.getClusterUuid();
+            }
+        });
+
+        for (String cuuid : cuuids) {
+            NfsPrimaryStorageBackend backend = getBackendByClusterUuid(cuuid);
+            try {
+                backend.detachFromCluster(getSelfInventory(), cuuid);
+            } catch (NfsPrimaryStorageException e) {
+                logger.warn(String.format("failed to detach the nfs primary storage[uuid: %s] from the cluster[uuid: %s]",
+                        self.getUuid(), cuuid));
+            }
+        }
+    }
+
     private void handle(final MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
         final MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
 

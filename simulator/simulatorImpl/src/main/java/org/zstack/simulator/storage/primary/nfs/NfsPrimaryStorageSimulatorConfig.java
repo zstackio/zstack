@@ -14,6 +14,7 @@ public class NfsPrimaryStorageSimulatorConfig {
     public volatile boolean mountException = false;
     public volatile boolean mountSuccess = true;
     public volatile List<MountCmd> mountCmds = new ArrayList<MountCmd>();
+    public volatile List<UnmountCmd> unmountCmds = new ArrayList<UnmountCmd>();
     public volatile boolean unmountSuccess = true;
     public volatile boolean unmountException = false;
     public volatile boolean createEmptyVolumeSuccess = true;
