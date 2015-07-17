@@ -13,8 +13,16 @@ import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
+import org.zstack.network.service.NetworkServiceConstant;
+
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  */
@@ -70,6 +78,23 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                     String.format("image[uuid:%s] is not a RootVolumeTemplate, it's %s", msg.getImageUuid(), type)
             ));
+        }
+
+        SimpleQuery<NetworkServiceL3NetworkRefVO> nq = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
+        nq.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.IN, list(msg.getPublicNetworkUuid(), msg.getManagementNetworkUuid()));
+        List<NetworkServiceL3NetworkRefVO> nrefs= nq.list();
+        for (NetworkServiceL3NetworkRefVO nref : nrefs) {
+            if (NetworkServiceType.SNAT.toString().equals(nref.getNetworkServiceType())) {
+                if (nref.getL3NetworkUuid().equals(msg.getManagementNetworkUuid())) {
+                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                            String.format("the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a management network", msg.getManagementNetworkUuid())
+                    ));
+                } else if (nref.getL3NetworkUuid().equals(msg.getPublicNetworkUuid())) {
+                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                            String.format("the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a public network", msg.getPublicNetworkUuid())
+                    ));
+                }
+            }
         }
     }
 
