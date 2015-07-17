@@ -1467,6 +1467,16 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public VmInstanceInventory changeInstanceOffering(String vmUuid, String instanceOfferingUuid) throws ApiSenderException {
+        APIChangeInstanceOfferingMsg msg = new APIChangeInstanceOfferingMsg();
+        msg.setVmInstanceUuid(vmUuid);
+        msg.setInstanceOfferingUuid(instanceOfferingUuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIChangeInstanceOfferingEvent evt = sender.send(msg, APIChangeInstanceOfferingEvent.class);
+        return evt.getInventory();
+    }
 
     public VmInstanceInventory createVmByFullConfig(VmInstanceInventory inv, String rootDiskOfferingUuid, List<String> l3NetworkUuids,
             List<String> diskOfferingUuids) throws ApiSenderException {

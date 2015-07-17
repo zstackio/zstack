@@ -1034,9 +1034,52 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIGetVmAttachableDataVolumeMsg) msg);
         } else if (msg instanceof APIUpdateVmInstanceMsg) {
             handle((APIUpdateVmInstanceMsg) msg);
+        } else if (msg instanceof APIChangeInstanceOfferingMsg) {
+            handle((APIChangeInstanceOfferingMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APIChangeInstanceOfferingMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                changeOffering(msg);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "change-instance-offering";
+            }
+        });
+    }
+
+    private void changeOffering(APIChangeInstanceOfferingMsg msg) {
+        APIChangeInstanceOfferingEvent evt = new APIChangeInstanceOfferingEvent(msg.getId());
+
+        refreshVO();
+        ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (allowed != null) {
+            bus.replyErrorByMessageType(msg, allowed);
+            return;
+        }
+
+        InstanceOfferingVO iovo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
+        self.setInstanceOfferingUuid(iovo.getUuid());
+        self.setCpuNum(iovo.getCpuNum());
+        self.setCpuSpeed(iovo.getCpuSpeed());
+        self.setMemorySize(iovo.getMemorySize());
+        self = dbf.updateAndRefresh(self);
+
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     private void handle(final APIUpdateVmInstanceMsg msg) {

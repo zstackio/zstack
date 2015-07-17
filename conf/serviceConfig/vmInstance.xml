@@ -53,4 +53,7 @@
     <message>
         <name>org.zstack.header.vm.APIUpdateVmInstanceMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIChangeInstanceOfferingMsg</name>
+    </message>
 </service>
