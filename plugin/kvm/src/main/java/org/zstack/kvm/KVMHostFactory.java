@@ -28,7 +28,6 @@ import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -48,6 +47,7 @@ public class KVMHostFactory implements HypervisorFactory, Component, ManagementN
 
     static {
         RAW_FORMAT.newFormatInputOutputMapping(hypervisorType, QCOW2_FORMAT.toString());
+        QCOW2_FORMAT.setFirstChoice(hypervisorType);
     }
 
     @Autowired

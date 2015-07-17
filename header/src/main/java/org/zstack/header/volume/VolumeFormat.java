@@ -19,6 +19,7 @@ public class VolumeFormat {
     private final List<HypervisorType> attachableHypervisorTypes = new ArrayList<HypervisorType>();
     private final Map<HypervisorType, Map<String, String>> inputOuputFormatsMap = new HashMap<HypervisorType, Map<String, String>>();
     private boolean exposed = true;
+    private HypervisorType firstChoice;
 
     public static Collection<VolumeFormat> getAllFormats() {
         HashSet<VolumeFormat> exposedFormats = new HashSet<VolumeFormat>();
@@ -28,6 +29,14 @@ public class VolumeFormat {
             }
         }
         return exposedFormats;
+    }
+
+    public HypervisorType getFirstChoice() {
+        return firstChoice;
+    }
+
+    public void setFirstChoice(HypervisorType firstChoice) {
+        this.firstChoice = firstChoice;
     }
 
     public boolean isExposed() {
@@ -101,6 +110,12 @@ public class VolumeFormat {
     }
 
     public static VolumeFormat getVolumeFormatByMasterHypervisorType(String hvType) {
+        for (VolumeFormat f : types.values()) {
+            if (f.getFirstChoice() != null && f.getFirstChoice().toString().equals(hvType)) {
+                return f;
+            }
+        }
+
         for (VolumeFormat f : types.values()) {
             if (f.getMasterHypervisorType() != null && f.getMasterHypervisorType().toString().equals(hvType)) {
                 return f;

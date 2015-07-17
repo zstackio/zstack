@@ -12,8 +12,10 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.kvm.KVMAgentCommands.BootDev;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
@@ -66,6 +68,8 @@ public class TestCreateVmOnKvmIso {
 
         Assert.assertEquals(BootDev.cdrom.toString(), scmd.getBootDev());
         Assert.assertEquals(isoCache.getInstallUrl(), scmd.getBootIso().getPath());
-    }
 
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        Assert.assertEquals("qcow2", vm.getRootVolume().getFormat());
+    }
 }
