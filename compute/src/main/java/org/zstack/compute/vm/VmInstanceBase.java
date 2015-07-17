@@ -9,6 +9,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.allocator.HostAllocatorError;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -371,7 +372,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(MessageReply re) {
                 if (!re.isSuccess()) {
-                    completion.fail(re.getError());
+                    if (HostAllocatorError.NO_AVAILABLE_HOST.toString().equals(re.getError().getCode())) {
+                        completion.success(new ArrayList<HostInventory>());
+                    } else {
+                        completion.fail(re.getError());
+                    }
                 } else {
                     completion.success(((AllocateHostDryRunReply) re).getHosts());
                 }

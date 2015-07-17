@@ -8,6 +8,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
+import org.zstack.header.allocator.HostAllocatorError;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -92,7 +93,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 });
 
                 if (candidates.isEmpty()) {
-                    throw new OperationFailureException(errf.stringToOperationError(
+                    throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
                             String.format("the local primary storage has no hosts with enough disk capacity[%s bytes] required by the vm[uuid:%s]",
                                     spec.getDiskSize(), spec.getVmInstance().getUuid())
                     ));
@@ -109,7 +110,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 });
 
                 if (candidates.isEmpty()) {
-                    throw new OperationFailureException(errf.stringToOperationError(
+                    throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
                             String.format("the vm[uuid: %s] using local primary storage can only be started on the host[uuid: %s], but the host is either not having enough CPU/memory or in" +
                                     " the state[Enabled] or status[Connected] to start the vm", spec.getVmInstance().getUuid(), ref.getHostUuid())
                     ));
@@ -118,7 +119,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         } else if (VmOperation.Migrate.toString().equals(spec.getVmOperation())) {
             final LocalStorageResourceRefVO ref = dbf.findByUuid(spec.getVmInstance().getRootVolumeUuid(), LocalStorageResourceRefVO.class);
             if (ref != null) {
-                throw new OperationFailureException(errf.stringToOperationError(
+                throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
                         String.format("the vm[uuid: %s] cannot migrate because of using local primary storage on the host[uuid: %s]",
                                 spec.getVmInstance().getUuid(), ref.getHostUuid())
                 ));
