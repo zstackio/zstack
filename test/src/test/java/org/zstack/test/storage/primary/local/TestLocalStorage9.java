@@ -26,7 +26,7 @@ import org.zstack.utils.data.SizeUnit;
  * 1. use local storage
  * 2. create a vm
  * 3. create a data volume
- * 4. attach teh data volume to the vm
+ * 4. attach the data volume to the vm
  *
  * confirm the data volume is allocated on the same host with vm's root volume
  */

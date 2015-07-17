@@ -24,4 +24,5 @@
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage22"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage23"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage24"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage25"/>
 </UnitTestSuiteConfig>

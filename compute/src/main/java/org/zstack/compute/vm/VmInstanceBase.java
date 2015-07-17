@@ -25,6 +25,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageEO;
 import org.zstack.header.image.ImageInventory;
@@ -1080,6 +1081,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         List<String> formats = VolumeFormat.getVolumeFormatSupportedByHypervisorTypeInString(self.getHypervisorType());
+        if (formats.isEmpty()) {
+            throw new CloudRuntimeException(String.format("cannot find volume formats for the hypervisor type[%s]", self.getHypervisorType()));
+        }
 
         String sql = "select vol from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref where vol.type = :type and vol.state = :volState and vol.status = :volStatus and vol.uuid in (:volUuids) and vol.format in (:formats) and vol.vmInstanceUuid is null and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = vol.primaryStorageUuid group by vol.uuid";
         TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
@@ -1097,6 +1101,13 @@ public class VmInstanceBase extends AbstractVmInstance {
         q.setParameter("volStatus", VolumeStatus.NotInstantiated);
         q.setParameter("volUuids", volUuids);
         vos.addAll(q.getResultList());
+
+        for (GetAttachableVolumeExtensionPoint ext : pluginRgty.getExtensionList(GetAttachableVolumeExtensionPoint.class)) {
+            if (!vos.isEmpty()) {
+                vos = ext.returnAttachableVolumes(getSelfInventory(), vos);
+            }
+        }
+
         return vos;
     }
 

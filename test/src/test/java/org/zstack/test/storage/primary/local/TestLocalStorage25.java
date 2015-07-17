@@ -27,11 +27,10 @@ import java.util.List;
  * 2. create a two vms: vm1 and vm2 on different hosts
  * 3. attach a data volume to the vm1
  * 4. detach the data volume from the vm1
- * 5. attach the data volume to the vm2
  *
- * confirm the attaching success
+ * confirm the the volume is attachable for the vm1 but unattachable for the vm2
  */
-public class TestLocalStorage12 {
+public class TestLocalStorage25 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -45,7 +44,7 @@ public class TestLocalStorage12 {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/localStorage/TestLocalStorage12.xml", con);
+        deployer = new Deployer("deployerXml/localStorage/TestLocalStorage25.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
         deployer.addSpringConfig("localStorageSimulator.xml");
         deployer.addSpringConfig("localStorage.xml");
@@ -71,7 +70,6 @@ public class TestLocalStorage12 {
 	@Test
 	public void test() throws ApiSenderException {
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
-        PrimaryStorageInventory nfs = deployer.primaryStorages.get("nfs");
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm1");
         DiskOfferingInventory dof = deployer.diskOfferings.get("TestDiskOffering1");
@@ -80,9 +78,12 @@ public class TestLocalStorage12 {
         data = api.attachVolumeToVm(vm1.getUuid(), data.getUuid());
         data = api.detachVolumeFromVm(data.getUuid());
 
-        List<VolumeInventory> vols = api.getVmAttachableVolume(vm2.getUuid());
+        List<VolumeInventory> vols  = api.getVmAttachableVolume(vm1.getUuid());
         Assert.assertEquals(1, vols.size());
+        VolumeInventory vol = vols.get(0);
+        Assert.assertEquals(data.getUuid(), vol.getUuid());
 
-        api.attachVolumeToVm(vm2.getUuid(), data.getUuid());
+        vols  = api.getVmAttachableVolume(vm2.getUuid());
+        Assert.assertTrue(vols.isEmpty());
     }
 }

@@ -131,7 +131,7 @@ public class VolumeFormat {
     public static List<VolumeFormat> getVolumeFormatSupportedByHypervisorType(HypervisorType hvType) {
         List<VolumeFormat> formats = new ArrayList<VolumeFormat>();
         for (VolumeFormat format : types.values()) {
-            if (format.getMasterHypervisorType() == hvType || format.getAttachableHypervisorTypes().contains(hvType))  {
+            if (hvType.equals(format.getMasterHypervisorType()) || format.getAttachableHypervisorTypes().contains(hvType))  {
                 formats.add(format);
             }
         }
