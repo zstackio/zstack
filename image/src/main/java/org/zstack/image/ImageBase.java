@@ -182,6 +182,10 @@ public class ImageBase implements Image {
             self.setFormat(msg.getFormat());
             update = true;
         }
+        if (msg.getPlatform() != null) {
+            self.setPlatform(ImagePlatform.valueOf(msg.getPlatform()));
+            update = true;
+        }
         if (update) {
             self = dbf.updateAndRefresh(self);
         }

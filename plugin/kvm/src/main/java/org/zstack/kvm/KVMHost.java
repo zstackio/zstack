@@ -774,7 +774,7 @@ public class KVMHost extends HostBase implements Host {
         to.setDeviceId(vol.getDeviceId());
         to.setDeviceType(getVolumeTOType(vol));
         to.setVolumeUuid(vol.getUuid());
-        to.setUseVirtio(ImagePlatform.Linux.toString().equals(vm.getPlatform()) || ImagePlatform.Paravirtualization.toString().equals(vm.getPlatform()));
+        to.setUseVirtio(ImagePlatform.Linux.toString().equals(vm.getPlatform()) || ImagePlatform.Paravirtualization.toString().equals(vm.getPlatform()) || ImagePlatform.Windows.toString().equals(vm.getPlatform()));
 
         final AttachVolumeToVmOnHypervisorReply reply = new AttachVolumeToVmOnHypervisorReply();
         final AttachDataVolumeCmd cmd = new AttachDataVolumeCmd();

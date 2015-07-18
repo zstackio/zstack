@@ -7,6 +7,7 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.Component;
 import org.zstack.header.console.*;
@@ -37,12 +38,15 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     protected CloudBus bus;
     @Autowired
     protected AnsibleFacade asf;
+    @Autowired
+    protected ErrorFacade errf;
 
     protected static final String ANSIBLE_PLAYBOOK_NAME = "consoleproxy.yaml";
 
     protected abstract ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo);
     protected abstract ConsoleProxy getConsoleProxy(SessionInventory session, VmInstanceInventory vm);
     protected abstract void connectAgent();
+    protected abstract boolean isAgentConnected();
 
     private void establishNewProxy(ConsoleProxy proxy, SessionInventory session, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleInventory> complete) {
         proxy.establishProxy(session, vm, new ReturnValueCompletion<ConsoleProxyInventory>() {
@@ -75,6 +79,13 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
     @Override
     public void grantConsoleAccess(final SessionInventory session, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleInventory> complete) {
+        if (!isAgentConnected()) {
+            complete.fail(errf.stringToOperationError(
+                    "the console agent is not connected; it's mostly like the management node just starts, please wait for the console agent connected."
+            ));
+            return;
+        }
+
         SimpleQuery<ConsoleProxyVO> q = dbf.createQuery(ConsoleProxyVO.class);
         q.add(ConsoleProxyVO_.vmInstanceUuid, SimpleQuery.Op.EQ, vm.getUuid());
         q.add(ConsoleProxyVO_.status, SimpleQuery.Op.EQ, ConsoleProxyStatus.Active);

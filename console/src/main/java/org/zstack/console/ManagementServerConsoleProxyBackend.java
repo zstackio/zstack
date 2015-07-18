@@ -36,6 +36,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     private static final CLogger logger = Utils.getLogger(ManagementServerConsoleProxyBackend.class);
     private int agentPort = 7758;
     private String agentPackageName = ConsoleGlobalPropery.AGENT_PACKAGE_NAME;
+    private boolean connected = false;
 
     protected ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo) {
         return new ConsoleProxyBase(vo, getAgentPort());
@@ -91,17 +92,24 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
             runner.run(new Completion() {
                 @Override
                 public void success() {
-                    logger.debug(String.format("successfully deploy console proxy agent by ansible"));
+                    connected = true;
+                    logger.debug("successfully deploy console proxy agent by ansible");
                 }
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    connected = false;
                     logger.warn(String.format("failed to deploy console proxy agent by ansible, %s", errorCode));
                 }
             });
         } catch (IOException e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    @Override
+    protected boolean isAgentConnected() {
+        return connected;
     }
 
     @Override
