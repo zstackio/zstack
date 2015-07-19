@@ -310,36 +310,54 @@ public class VolumeBase implements Volume {
 
 
     @Transactional(readOnly = true)
-    private List<VmInstanceVO> getCandidateVmForAttaching() {
-        List<String> vmUuids = acntMgr.getSiblingResourceUuids(self.getUuid(), VolumeVO.class.getSimpleName(), VmInstanceVO.class.getSimpleName());
-        if (vmUuids.isEmpty()) {
+    private List<VmInstanceVO> getCandidateVmForAttaching(String accountUuid) {
+        List<String> vmUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VmInstanceVO.class);
+
+        if (vmUuids != null && vmUuids.isEmpty()) {
             return new ArrayList<VmInstanceVO>();
         }
 
         TypedQuery<VmInstanceVO> q = null;
-        String sql = null;
-        if (self.getStatus() == VolumeStatus.Ready) {
-            sql = "select vm from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol where vm.uuid in (:vmUuids) and vm.state in (:vmStates) and vol.uuid = :volUuid and vm.hypervisorType in (:hvTypes) and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = vol.primaryStorageUuid group by vm.uuid";
-            q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
-            q.setParameter("volUuid", self.getUuid());
-            List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
-            q.setParameter("hvTypes", hvTypes);
-        } else if (self.getStatus() == VolumeStatus.NotInstantiated){
-            sql = "select vm from VmInstanceVO vm where vm.uuid in (:vmUuids) and vm.state in (:vmStates) group by vm.uuid";
-            q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+        String sql;
+        if (vmUuids == null) {
+            // all vms
+            if (self.getStatus() == VolumeStatus.Ready) {
+                sql = "select vm from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol where vm.state in (:vmStates) and vol.uuid = :volUuid and vm.hypervisorType in (:hvTypes) and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = vol.primaryStorageUuid group by vm.uuid";
+                q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+                q.setParameter("volUuid", self.getUuid());
+                List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
+                q.setParameter("hvTypes", hvTypes);
+            } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
+                sql = "select vm from VmInstanceVO vm where vm.state in (:vmStates) group by vm.uuid";
+                q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+            } else {
+                DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
+            }
         } else {
-            DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
+            if (self.getStatus() == VolumeStatus.Ready) {
+                sql = "select vm from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol where vm.uuid in (:vmUuids) and vm.state in (:vmStates) and vol.uuid = :volUuid and vm.hypervisorType in (:hvTypes) and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = vol.primaryStorageUuid group by vm.uuid";
+                q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+                q.setParameter("volUuid", self.getUuid());
+                List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
+                q.setParameter("hvTypes", hvTypes);
+            } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
+                sql = "select vm from VmInstanceVO vm where vm.uuid in (:vmUuids) and vm.state in (:vmStates) group by vm.uuid";
+                q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+            } else {
+                DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
+            }
+
+            q.setParameter("vmUuids", vmUuids);
         }
 
 
-        q.setParameter("vmUuids", vmUuids);
         q.setParameter("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped));
         return q.getResultList();
     }
 
     private void handle(APIGetDataVolumeAttachableVmMsg msg) {
         APIGetDataVolumeAttachableVmReply reply = new APIGetDataVolumeAttachableVmReply();
-        reply.setInventories(VmInstanceInventory.valueOf(getCandidateVmForAttaching()));
+        reply.setInventories(VmInstanceInventory.valueOf(getCandidateVmForAttaching(msg.getSession().getAccountUuid())));
         bus.reply(msg, reply);
     }
 

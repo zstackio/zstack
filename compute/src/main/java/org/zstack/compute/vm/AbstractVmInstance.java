@@ -3,9 +3,7 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.statemachine.StateMachine;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
@@ -35,11 +33,11 @@ public abstract class AbstractVmInstance implements VmInstance {
                 DetachDataVolumeFromVmMsg.class.getName(),
                 AttachNicToVmMsg.class.getName(),
                 VmAttachNicMsg.class.getName(),
-                APIAttachNicToVmMsg.class.getName(),
+                APIAttachL3NetworkToVmMsg.class.getName(),
                 GetVmMigrationTargetHostMsg.class.getName(),
                 APIChangeInstanceOfferingMsg.class.getName(),
                 APIGetVmMigrationCandidateHostsMsg.class.getName(),
-                APIDetachNicFromVmMsg.class.getName(),
+                APIDetachL3NetworkFromVmMsg.class.getName(),
                 DetachNicFromVmMsg.class.getName()
         );
 
@@ -53,10 +51,10 @@ public abstract class AbstractVmInstance implements VmInstance {
                 DetachDataVolumeFromVmMsg.class.getName(),
                 CreateTemplateFromVmRootVolumeMsg.class.getName(),
                 VmAttachNicMsg.class.getName(),
-                APIAttachNicToVmMsg.class.getName(),
+                APIAttachL3NetworkToVmMsg.class.getName(),
                 APIChangeInstanceOfferingMsg.class.getName(),
                 StopVmInstanceMsg.class.getName(),
-                APIDetachNicFromVmMsg.class.getName(),
+                APIDetachL3NetworkFromVmMsg.class.getName(),
                 DetachNicFromVmMsg.class.getName()
         );
 

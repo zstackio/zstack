@@ -36,6 +36,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkState;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageMsg;
@@ -60,7 +61,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 
@@ -579,6 +579,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 flowChain.setName(String.format("attachNic-vm-%s-l3-%s", self.getUuid(), l3Uuid));
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
                 flowChain.then(new VmAllocateNicFlow());
+                flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
                 if (self.getState() == VmInstanceState.Running) {
                     flowChain.then(new VmInstantiateResourceOnAttachingNicFlow());
                     flowChain.then(new VmAttachNicOnHypervisorFlow());
@@ -1081,8 +1082,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIStartVmInstanceMsg) msg);
         } else if (msg instanceof APIMigrateVmMsg) {
             handle((APIMigrateVmMsg) msg);
-        } else if (msg instanceof APIAttachNicToVmMsg) {
-            handle((APIAttachNicToVmMsg) msg);
+        } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
+            handle((APIAttachL3NetworkToVmMsg) msg);
         } else if (msg instanceof APIGetVmMigrationCandidateHostsMsg) {
             handle((APIGetVmMigrationCandidateHostsMsg) msg);
         } else if (msg instanceof APIGetVmAttachableDataVolumeMsg) {
@@ -1091,14 +1092,52 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIUpdateVmInstanceMsg) msg);
         } else if (msg instanceof APIChangeInstanceOfferingMsg) {
             handle((APIChangeInstanceOfferingMsg) msg);
-        } else if (msg instanceof APIDetachNicFromVmMsg) {
-            handle((APIDetachNicFromVmMsg) msg);
+        } else if (msg instanceof APIDetachL3NetworkFromVmMsg) {
+            handle((APIDetachL3NetworkFromVmMsg) msg);
+        } else if (msg instanceof APIGetVmAttachableL3NetworkMsg) {
+            handle((APIGetVmAttachableL3NetworkMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    private void handle(final APIDetachNicFromVmMsg msg) {
+    @Transactional(readOnly = true)
+    private List<L3NetworkInventory> getAttachableL3Network(String accountUuid) {
+        List<String> l3Uuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
+        if (l3Uuids != null && l3Uuids.isEmpty()) {
+            return new ArrayList<L3NetworkInventory>();
+        }
+
+        String sql;
+        TypedQuery<L3NetworkVO> q;
+        if (l3Uuids == null) {
+            // accessed by a system admin
+            sql = "select l3 from L3NetworkVO l3, VmNicVO nic, VmInstanceVO vm, L2NetworkVO l2, L2NetworkClusterRefVO l2ref" +
+                    " where nic.l3NetworkUuid != l3.uuid and nic.vmInstanceUuid = vm.uuid and vm.uuid = :uuid and vm.clusterUuid = l2ref.clusterUuid" +
+                    " and l2ref.l2NetworkUuid = l2.uuid and l2.uuid = l3.l2NetworkUuid and l3.state = :l3State group by l3.uuid";
+            q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
+        } else {
+            // accessed by a normal account
+            sql = "select l3 from L3NetworkVO l3, VmNicVO nic, VmInstanceVO vm, L2NetworkVO l2, L2NetworkClusterRefVO l2ref" +
+                    " where nic.l3NetworkUuid != l3.uuid and nic.vmInstanceUuid = vm.uuid and vm.uuid = :uuid and vm.clusterUuid = l2ref.clusterUuid" +
+                    " and l2ref.l2NetworkUuid = l2.uuid and l2.uuid = l3.l2NetworkUuid and l3.state = :l3State and l3.uuid in (:l3uuids) group by l3.uuid";
+            q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
+            q.setParameter("l3uuids", l3Uuids);
+        }
+
+        q.setParameter("l3State", L3NetworkState.Enabled);
+        q.setParameter("uuid", self.getUuid());
+        List<L3NetworkVO> l3s = q.getResultList();
+        return L3NetworkInventory.valueOf(l3s);
+    }
+
+    private void handle(APIGetVmAttachableL3NetworkMsg msg) {
+        APIGetVmAttachableL3NetworkReply reply = new APIGetVmAttachableL3NetworkReply();
+        reply.setInventories(getAttachableL3Network(msg.getSession().getAccountUuid()));
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final APIDetachL3NetworkFromVmMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -1107,7 +1146,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                final APIDetachNicFromVmEvent evt = new APIDetachNicFromVmEvent(msg.getId());
+                final APIDetachL3NetworkFromVmEvent evt = new APIDetachL3NetworkFromVmEvent(msg.getId());
 
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
@@ -1118,7 +1157,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                detachNic(msg.getNicUuid(), new Completion(msg, chain) {
+
+                detachNic(msg.getVmNicUuid(), new Completion(msg, chain) {
                     @Override
                     public void success() {
                         self = dbf.reload(self);
@@ -1267,6 +1307,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     self.setState(VmInstanceState.valueOf(msg.getState()));
                     update = true;
                 }
+                if (msg.getDefaultL3NetworkUuid() != null) {
+                    self.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
+                    update = true;
+                }
                 if (update) {
                     self = dbf.updateAndRefresh(self);
                 }
@@ -1285,9 +1329,9 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     @Transactional(readOnly = true)
-    private List<VolumeVO> getAttachableVolume() {
-        List<String> volUuids = acntMgr.getSiblingResourceUuids(self.getUuid(), VmInstanceVO.class.getSimpleName(), VolumeVO.class.getSimpleName());
-        if (volUuids.isEmpty()) {
+    private List<VolumeVO> getAttachableVolume(String accountUuid) {
+        List<String> volUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VolumeVO.class);
+        if (volUuids != null && volUuids.isEmpty()) {
             return new ArrayList<VolumeVO>();
         }
 
@@ -1296,22 +1340,46 @@ public class VmInstanceBase extends AbstractVmInstance {
             throw new CloudRuntimeException(String.format("cannot find volume formats for the hypervisor type[%s]", self.getHypervisorType()));
         }
 
-        String sql = "select vol from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref where vol.type = :type and vol.state = :volState and vol.status = :volStatus and vol.uuid in (:volUuids) and vol.format in (:formats) and vol.vmInstanceUuid is null and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = vol.primaryStorageUuid group by vol.uuid";
-        TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
-        q.setParameter("volState", VolumeState.Enabled);
-        q.setParameter("volStatus", VolumeStatus.Ready);
-        q.setParameter("formats", formats);
-        q.setParameter("volUuids", volUuids);
-        q.setParameter("type", VolumeType.Data);
-        List<VolumeVO> vos = q.getResultList();
+        String sql;
+        List<VolumeVO> vos;
+        if (volUuids == null) {
+            // accessed by a system admin
+            sql = "select vol from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref where vol.type = :type and vol.state = :volState and vol.status = :volStatus and vol.format in (:formats) and vol.vmInstanceUuid is null and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = vol.primaryStorageUuid group by vol.uuid";
+            TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
+            q.setParameter("volState", VolumeState.Enabled);
+            q.setParameter("volStatus", VolumeStatus.Ready);
+            q.setParameter("formats", formats);
+            q.setParameter("type", VolumeType.Data);
+            vos = q.getResultList();
 
-        sql = "select vol from VolumeVO vol where vol.type = :type and vol.status = :volStatus and vol.state = :volState and vol.uuid in (:volUuids) group by vol.uuid";
-        q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
-        q.setParameter("type", VolumeType.Data);
-        q.setParameter("volState", VolumeState.Enabled);
-        q.setParameter("volStatus", VolumeStatus.NotInstantiated);
-        q.setParameter("volUuids", volUuids);
-        vos.addAll(q.getResultList());
+            sql = "select vol from VolumeVO vol where vol.type = :type and vol.status = :volStatus and vol.state = :volState group by vol.uuid";
+            q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
+            q.setParameter("type", VolumeType.Data);
+            q.setParameter("volState", VolumeState.Enabled);
+            q.setParameter("volStatus", VolumeStatus.NotInstantiated);
+            vos.addAll(q.getResultList());
+        } else {
+            // accessed by a normal account
+            sql = "select vol from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref where vol.type = :type and vol.state = :volState and vol.status = :volStatus" +
+                    " and vol.format in (:formats) and vol.vmInstanceUuid is null and vm.clusterUuid = ref.clusterUuid and" +
+                    " ref.primaryStorageUuid = vol.primaryStorageUuid and vol.uuid in (:volUuids) group by vol.uuid";
+            TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
+            q.setParameter("volState", VolumeState.Enabled);
+            q.setParameter("volStatus", VolumeStatus.Ready);
+            q.setParameter("formats", formats);
+            q.setParameter("type", VolumeType.Data);
+            q.setParameter("volUuids", volUuids);
+            vos = q.getResultList();
+
+            sql = "select vol from VolumeVO vol where vol.type = :type and vol.status = :volStatus and" +
+                    " vol.state = :volState and vol.uuid in (:volUuids) group by vol.uuid";
+            q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
+            q.setParameter("type", VolumeType.Data);
+            q.setParameter("volState", VolumeState.Enabled);
+            q.setParameter("volUuids", volUuids);
+            q.setParameter("volStatus", VolumeStatus.NotInstantiated);
+            vos.addAll(q.getResultList());
+        }
 
         for (GetAttachableVolumeExtensionPoint ext : pluginRgty.getExtensionList(GetAttachableVolumeExtensionPoint.class)) {
             if (!vos.isEmpty()) {
@@ -1324,7 +1392,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(APIGetVmAttachableDataVolumeMsg msg) {
         APIGetVmAttachableDataVolumeReply reply = new APIGetVmAttachableDataVolumeReply();
-        reply.setInventories(VolumeInventory.valueOf(getAttachableVolume()));
+        reply.setInventories(VolumeInventory.valueOf(getAttachableVolume(msg.getSession().getAccountUuid())));
         bus.reply(msg, reply);
     }
 
@@ -1345,8 +1413,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void handle(final APIAttachNicToVmMsg msg) {
-        final APIAttachNicToVmEvent evt = new APIAttachNicToVmEvent(msg.getId());
+    private void handle(final APIAttachL3NetworkToVmMsg msg) {
+        final APIAttachL3NetworkToVmEvent evt = new APIAttachL3NetworkToVmEvent(msg.getId());
         attachNic(msg, msg.getL3NetworkUuid(), new ReturnValueCompletion<VmNicInventory>(msg) {
             @Override
             public void success(VmNicInventory returnValue) {

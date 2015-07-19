@@ -54,4 +54,5 @@
 	<TestCase class="org.zstack.test.compute.vm.TestPolicyForVm4"/>
 	<TestCase class="org.zstack.test.compute.vm.TestQueryVm6"/>
 	<TestCase class="org.zstack.test.compute.vm.TestChangeVmInstanceOffering"/>
+	<TestCase class="org.zstack.test.compute.vm.TestVmGetAttachableL3Networks"/>
 </UnitTestSuiteConfig>

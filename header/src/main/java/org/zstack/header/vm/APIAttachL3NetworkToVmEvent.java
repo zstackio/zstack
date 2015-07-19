@@ -114,16 +114,16 @@ import org.zstack.header.message.APIEvent;
 }
  */
 
-public class APIAttachNicToVmEvent extends APIEvent {
+public class APIAttachL3NetworkToVmEvent extends APIEvent {
     /**
      * @desc see :ref:`VmInstanceInventory`
      */
     private VmInstanceInventory inventory;
 
-    public APIAttachNicToVmEvent() {
+    public APIAttachL3NetworkToVmEvent() {
     }
 
-    public APIAttachNicToVmEvent(String apiId) {
+    public APIAttachL3NetworkToVmEvent(String apiId) {
         super(apiId);
     }
 

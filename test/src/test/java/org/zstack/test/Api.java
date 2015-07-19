@@ -1564,9 +1564,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<VmInstanceInventory> getDataVolumeCandidateVmForAttaching(String volUuid) throws ApiSenderException {
+        return getDataVolumeCandidateVmForAttaching(volUuid, null);
+    }
+
+    public List<VmInstanceInventory> getDataVolumeCandidateVmForAttaching(String volUuid, SessionInventory session) throws ApiSenderException {
         APIGetDataVolumeAttachableVmMsg msg = new APIGetDataVolumeAttachableVmMsg();
         msg.setVolumeUuid(volUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIGetDataVolumeAttachableVmReply reply = sender.call(msg, APIGetDataVolumeAttachableVmReply.class);
@@ -1574,9 +1578,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<VolumeInventory> getVmAttachableVolume(String vmUuid) throws ApiSenderException {
+        return getVmAttachableVolume(vmUuid, null);
+    }
+
+    public List<VolumeInventory> getVmAttachableVolume(String vmUuid, SessionInventory session) throws ApiSenderException {
         APIGetVmAttachableDataVolumeMsg msg = new APIGetVmAttachableDataVolumeMsg();
         msg.setVmInstanceUuid(vmUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIGetVmAttachableDataVolumeReply reply = sender.call(msg, APIGetVmAttachableDataVolumeReply.class);
@@ -2654,29 +2662,44 @@ public class Api implements CloudBusEventListener {
     }
 
     public VmInstanceInventory attachNic(String vmUuid, String l3Uuid) throws ApiSenderException {
-        APIAttachNicToVmMsg msg = new APIAttachNicToVmMsg();
+        APIAttachL3NetworkToVmMsg msg = new APIAttachL3NetworkToVmMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setSession(adminSession);
         msg.setVmInstanceUuid(vmUuid);
         msg.setL3NetworkUuid(l3Uuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIAttachNicToVmEvent evt = sender.send(msg, APIAttachNicToVmEvent.class);
+        APIAttachL3NetworkToVmEvent evt = sender.send(msg, APIAttachL3NetworkToVmEvent.class);
         return evt.getInventory();
+    }
+
+    public List<L3NetworkInventory> getVmAttachableL3Networks(String vmUuid) throws ApiSenderException {
+        return getVmAttachableL3Networks(vmUuid, null);
+    }
+
+    public List<L3NetworkInventory> getVmAttachableL3Networks(String vmUuid, SessionInventory session) throws ApiSenderException {
+        APIGetVmAttachableL3NetworkMsg msg = new APIGetVmAttachableL3NetworkMsg();
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        msg.setSession(session == null ? adminSession : session);
+        msg.setVmInstanceUuid(vmUuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVmAttachableL3NetworkReply reply = sender.call(msg, APIGetVmAttachableL3NetworkReply.class);
+        return reply.getInventories();
     }
 
     public VmInstanceInventory detachNic(String nicUuid) throws ApiSenderException {
         return detachNic(nicUuid, null);
     }
 
-    public VmInstanceInventory detachNic(String nicUuid, SessionInventory session) throws ApiSenderException {
-        APIDetachNicFromVmMsg msg = new APIDetachNicFromVmMsg();
+    public VmInstanceInventory detachNic(String niUuid, SessionInventory session) throws ApiSenderException {
+        APIDetachL3NetworkFromVmMsg msg = new APIDetachL3NetworkFromVmMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setSession(session == null ? adminSession : session);
-        msg.setNicUuid(nicUuid);
+        msg.setVmNicUuid(niUuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIDetachNicFromVmEvent evt = sender.send(msg, APIDetachNicFromVmEvent.class);
+        APIDetachL3NetworkFromVmEvent evt = sender.send(msg, APIDetachL3NetworkFromVmEvent.class);
         return evt.getInventory();
     }
 
@@ -3021,6 +3044,7 @@ public class Api implements CloudBusEventListener {
         msg.setDescription(inv.getDescription());
         msg.setUuid(inv.getUuid());
         msg.setState(inv.getState());
+        msg.setDefaultL3NetworkUuid(inv.getDefaultL3NetworkUuid());
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIUpdateVmInstanceEvent evt = sender.send(msg, APIUpdateVmInstanceEvent.class);

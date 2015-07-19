@@ -5,7 +5,7 @@ import org.zstack.header.message.APIEvent;
 /**
  * Created by frank on 7/18/2015.
  */
-public class APIDetachNicFromVmEvent extends APIEvent {
+public class APIDetachL3NetworkFromVmEvent extends APIEvent {
     private VmInstanceInventory inventory;
 
     public VmInstanceInventory getInventory() {
@@ -16,10 +16,10 @@ public class APIDetachNicFromVmEvent extends APIEvent {
         this.inventory = inventory;
     }
 
-    public APIDetachNicFromVmEvent() {
+    public APIDetachL3NetworkFromVmEvent() {
     }
 
-    public APIDetachNicFromVmEvent(String apiId) {
+    public APIDetachL3NetworkFromVmEvent(String apiId) {
         super(apiId);
     }
 }

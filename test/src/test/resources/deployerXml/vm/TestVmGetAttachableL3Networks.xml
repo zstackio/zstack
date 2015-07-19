@@ -12,7 +12,6 @@
         <simulatorBackupStorage name="TestBackupStorage"
             description="Test" url="nfs://test" />
     </backupStorages>
-
     <images>
         <image name="TestImage" description="Test" format="simulator">
             <backupStorageRef>TestBackupStorage</backupStorageRef>
@@ -37,17 +36,9 @@
             <l3NetworkRef>TestL3Network1</l3NetworkRef>
             <l3NetworkRef>TestL3Network2</l3NetworkRef>
             <l3NetworkRef>TestL3Network3</l3NetworkRef>
+            <defaultL3NetworkRef>TestL3Network1</defaultL3NetworkRef>
+            <diskOfferingRef>TestDataDiskOffering</diskOfferingRef>
             <accountRef>test</accountRef>
-            <defaultL3NetworkRef>TestL3Network1</defaultL3NetworkRef>
-        </userVm>
-        <userVm name="TestVm1" description="Test">
-            <rootDiskOfferingRef>TestRootDiskOffering</rootDiskOfferingRef>
-            <imageRef>TestImage</imageRef>
-            <instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
-            <l3NetworkRef>TestL3Network1</l3NetworkRef>
-            <l3NetworkRef>TestL3Network2</l3NetworkRef>
-            <l3NetworkRef>TestL3Network3</l3NetworkRef>
-            <defaultL3NetworkRef>TestL3Network1</defaultL3NetworkRef>
         </userVm>
     </vm>
 
@@ -62,7 +53,6 @@
                             managementIp="10.0.0.12" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
                     </hosts>
                     <primaryStorageRef>TestPrimaryStorage</primaryStorageRef>
-                    <primaryStorageRef>TestPrimaryStorage1</primaryStorageRef>
                     <l2NetworkRef>TestL2Network</l2NetworkRef>
                 </cluster>
             </clusters>
@@ -72,17 +62,17 @@
                     physicalInterface="eth0">
                     <l3Networks>
                         <l3BasicNetwork name="TestL3Network1" description="Test">
-                            <ipRange name="TestIpRange1" description="Test" startIp="10.0.0.100"
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
                                 endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
                             <accountRef>test</accountRef>
                         </l3BasicNetwork>
                         <l3BasicNetwork name="TestL3Network2" description="Test">
-                            <ipRange name="TestIpRange2" description="Test" startIp="10.10.2.100"
+                            <ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
                                 endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
                             <accountRef>test</accountRef>
                         </l3BasicNetwork>
                         <l3BasicNetwork name="TestL3Network3" description="Test">
-                            <ipRange name="TestIpRange3" description="Test" startIp="10.20.3.100"
+                            <ipRange name="TestIpRange" description="Test" startIp="10.20.3.100"
                                 endIp="10.30.3.200" gateway="10.20.3.1" netmask="255.0.0.0" />
                             <accountRef>test</accountRef>
                         </l3BasicNetwork>
@@ -93,10 +83,7 @@
             <primaryStorages>
                 <simulatorPrimaryStorage name="TestPrimaryStorage"
                     description="Test" totalCapacity="1T" url="nfs://test" />
-                <simulatorPrimaryStorage name="TestPrimaryStorage1"
-                                         description="Test" totalCapacity="1T" url="nfs://test1" />
             </primaryStorages>
-
             <backupStorageRef>TestBackupStorage</backupStorageRef>
         </zone>
     </zones>

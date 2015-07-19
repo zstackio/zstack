@@ -3,6 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.network.l3.L3NetworkVO;
 
 /**
  * Created by frank on 6/14/2015.
@@ -17,6 +18,16 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     private String description;
     @APIParam(validValues = {"Stopped", "Running"}, required = false)
     private String state;
+    @APIParam(resourceType = L3NetworkVO.class, required = false)
+    private String defaultL3NetworkUuid;
+
+    public String getDefaultL3NetworkUuid() {
+        return defaultL3NetworkUuid;
+    }
+
+    public void setDefaultL3NetworkUuid(String defaultL3NetworkUuid) {
+        this.defaultL3NetworkUuid = defaultL3NetworkUuid;
+    }
 
     public String getUuid() {
         return uuid;

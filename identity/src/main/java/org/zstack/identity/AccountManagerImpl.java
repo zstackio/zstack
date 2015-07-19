@@ -14,6 +14,7 @@ import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -518,29 +519,42 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return resourceTypes.contains(entityClass);
     }
 
-    @Override
-    public List<String> getSiblingResourceUuids(String res1Uuid, String res1Type, String res2Type) {
-        String sql = "select ref2.resourceUuid from AccountResourceRefVO ref1, AccountResourceRefVO ref2 where (ref1.accountUuid = ref2.accountUuid or ref1.accountUuid = ref2.ownerAccountUuid or ref1.ownerAccountUuid = ref2.accountUuid or ref1.ownerAccountUuid = ref2.ownerAccountUuid) and ref1.resourceUuid = :res1Uuid and ref1.resourceType = :res1Type and ref2.resourceType = :res2Type";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("res1Uuid", res1Uuid);
-        q.setParameter("res1Type", res1Type);
-        q.setParameter("res2Type", res2Type);
-        return q.getResultList();
-    }
 
     @Override
-    public long getQuota(String identityUuid, String identityType, String quotaName) {
-        SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
-        q.select(QuotaVO_.value);
-        q.add(QuotaVO_.identityUuid, Op.EQ, identityUuid);
-        q.add(QuotaVO_.identityType, Op.EQ, identityType);
-        q.add(QuotaVO_.name, Op.EQ, quotaName);
-        Long quota = q.findValue();
-        if (quota != null) {
-            return quota;
+    @Transactional(readOnly = true)
+    public List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType) {
+        String sql = "select a.type from AccountVO a where a.uuid = :auuid";
+        TypedQuery<AccountType> q = dbf.getEntityManager().createQuery(sql, AccountType.class);
+        q.setParameter("auuid", accountUuid);
+        List<AccountType> types = q.getResultList();
+        if (types.isEmpty()) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                    String.format("cannot find the account[uuid:%s]", accountUuid)
+            ));
         }
 
-        return gcf.getConfigValue(AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY, quotaName, Long.class);
+        AccountType atype = types.get(0);
+        if (AccountType.SystemAdmin == atype) {
+            return null;
+        }
+
+        sql = "select r.resourceUuid from AccountResourceRefVO r where r.accountUuid = :auuid" +
+                " and r.resourceType = :rtype";
+        TypedQuery<String> rq = dbf.getEntityManager().createQuery(sql, String.class);
+        rq.setParameter("auuid", accountUuid);
+        rq.setParameter("rtype", resourceType.getSimpleName());
+        List<String> ownResourceUuids = rq.getResultList();
+
+        sql = "select r.resourceUuid from SharedResourceVO r where" +
+                " (r.toPublic = :toPublic or r.receiverAccountUuid = :auuid) and r.resourceType = :rtype";
+        TypedQuery<String> srq = dbf.getEntityManager().createQuery(sql, String.class);
+        srq.setParameter("toPublic", true);
+        srq.setParameter("auuid", accountUuid);
+        srq.setParameter("rtype", resourceType.getSimpleName());
+        List<String> shared = srq.getResultList();
+        shared.addAll(ownResourceUuids);
+
+        return shared;
     }
 
     @Override

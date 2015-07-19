@@ -9,7 +9,5 @@ public interface AccountManager {
     
     boolean isResourceHavingAccountReference(Class entityClass);
 
-    List<String> getSiblingResourceUuids(String res1Uuid, String res1Type, String res2Type);
-
-    long getQuota(String identityUuid, String identityType, String quotaName);
+    List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType);
 }

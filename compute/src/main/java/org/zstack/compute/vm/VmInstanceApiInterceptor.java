@@ -65,40 +65,77 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateVmInstanceMsg)msg);
         } else if (msg instanceof APIGetVmAttachableDataVolumeMsg) {
             validate((APIGetVmAttachableDataVolumeMsg) msg);
-        } else if (msg instanceof APIDetachNicFromVmMsg) {
-            validate((APIDetachNicFromVmMsg) msg);
-        } else if (msg instanceof APIAttachNicToVmMsg) {
-            validate((APIAttachNicToVmMsg) msg);
+        } else if (msg instanceof APIDetachL3NetworkFromVmMsg) {
+            validate((APIDetachL3NetworkFromVmMsg) msg);
+        } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
+            validate((APIAttachL3NetworkToVmMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
     }
 
-    private void validate(APIAttachNicToVmMsg msg) {
+    private void validate(APIAttachL3NetworkToVmMsg msg) {
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-        q.select(VmInstanceVO_.type);
+        q.select(VmInstanceVO_.type, VmInstanceVO_.state);
         q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
-        String type = q.findValue();
+        Tuple t = q.findTuple();
+        String type = t.get(0, String.class);
+        VmInstanceState state = t.get(1, VmInstanceState.class);
         if (!VmInstanceConstant.USER_VM_TYPE.equals(type)) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("unable to attach a nic. The vm[uuid: %s] is not a user vm", type)
+                    String.format("unable to attach a L3 network. The vm[uuid: %s] is not a user vm", type)
+            ));
+        }
+
+        if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
+                            msg.getVmInstanceUuid(), state)
+            ));
+        }
+
+        SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
+        nq.add(VmNicVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+        nq.add(VmNicVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
+        if (nq.isExists()) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                            msg.getL3NetworkUuid(), msg.getVmInstanceUuid())
+            ));
+        }
+
+        SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
+        l3q.select(L3NetworkVO_.state);
+        l3q.add(L3NetworkVO_.uuid, Op.EQ, msg.getL3NetworkUuid());
+        L3NetworkState l3state = l3q.findValue();
+        if (l3state == L3NetworkState.Disabled) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid())
             ));
         }
     }
 
     @Transactional(readOnly = true)
-    private void validate(APIDetachNicFromVmMsg msg) {
-        String sql = "select vm.uuid, vm.type from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :uuid";
+    private void validate(APIDetachL3NetworkFromVmMsg msg) {
+        String sql = "select vm.uuid, vm.type, vm.state from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :uuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        q.setParameter("uuid", msg.getNicUuid());
+        q.setParameter("uuid", msg.getVmNicUuid());
         Tuple t = q.getSingleResult();
         String vmUuid = t.get(0, String.class);
         String vmType = t.get(1, String.class);
+        VmInstanceState state = t.get(2, VmInstanceState.class);
 
         if (!VmInstanceConstant.USER_VM_TYPE.equals(vmType)) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("unable to detach a nic. The vm[uuid: %s] is not a user vm", vmUuid)
+                    String.format("unable to detach a L3 network. The vm[uuid: %s] is not a user vm", msg.getVmInstanceUuid())
+            ));
+        }
+
+        if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
+                            msg.getVmInstanceUuid(), state)
             ));
         }
 

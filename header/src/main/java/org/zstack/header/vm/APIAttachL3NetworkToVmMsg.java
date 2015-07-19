@@ -47,7 +47,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
  * see :ref:`APIAttachNicToVmEvent`
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
-public class APIAttachNicToVmMsg extends APIMessage implements VmInstanceMessage {
+public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid
      */
