@@ -6,11 +6,14 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -37,8 +40,10 @@ public class TestAttachNicOnKvm {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/kvm/TestCreateVmOnKvm.xml", con);
+        deployer = new Deployer("deployerXml/kvm/TestAttachNicOnKvm.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
+        deployer.addSpringConfig("VirtualRouter.xml");
+        deployer.addSpringConfig("VirtualRouterSimulator.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
@@ -78,5 +83,8 @@ public class TestAttachNicOnKvm {
         });
 
         Assert.assertNotNull(to);
+
+        long count = dbf.count(VirtualRouterVmVO.class);
+        Assert.assertEquals(1, count);
     }
 }

@@ -86,6 +86,7 @@
             <zstack:extension interface="org.zstack.header.vm.VmReleaseResourceExtensionPoint" order="-1"/>
             <zstack:extension interface="org.zstack.header.vm.PostVmInstantiateResourceExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint"/>
         </zstack:plugin>
     </bean>
     

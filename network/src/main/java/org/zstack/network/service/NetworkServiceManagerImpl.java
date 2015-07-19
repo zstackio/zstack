@@ -39,7 +39,8 @@ import java.util.List;
 import java.util.Map;
 
 public class NetworkServiceManagerImpl extends AbstractService implements NetworkServiceManager, PreVmInstantiateResourceExtensionPoint,
-        VmReleaseResourceExtensionPoint, PostVmInstantiateResourceExtensionPoint, ReleaseNetworkServiceOnDetachingNicExtensionPoint {
+        VmReleaseResourceExtensionPoint, PostVmInstantiateResourceExtensionPoint, ReleaseNetworkServiceOnDetachingNicExtensionPoint,
+        InstantiateResourceOnAttachingNicExtensionPoint {
 	private static final CLogger logger = Utils.getLogger(NetworkServiceManagerImpl.class);
 
 	@Autowired
@@ -443,5 +444,28 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
     @Override
     public void releaseResourceOnDetachingNic(VmInstanceSpec spec, VmNicInventory nic, NoErrorCompletion completion) {
         releaseNetworkServices(spec, null, completion);
+    }
+
+    @Override
+    public void instantiateResourceOnAttachingNic(VmInstanceSpec spec, L3NetworkInventory l3, Completion completion) {
+        preInstantiateVmResource(spec, completion);
+    }
+
+    @Override
+    public void releaseResourceOnAttachingNic(final VmInstanceSpec spec, final L3NetworkInventory l3, final NoErrorCompletion completion) {
+        releaseVmResource(spec, new Completion(completion) {
+            @Override
+            public void success() {
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                //TODO
+                logger.warn(String.format("failed to release a network service when rolling back attaching l3[uuid:%s] to vm[uuid:%s], %s",
+                        l3.getUuid(), spec.getVmInventory().getUuid(), errorCode));
+                completion.done();
+            }
+        });
     }
 }

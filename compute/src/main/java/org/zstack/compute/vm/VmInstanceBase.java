@@ -567,11 +567,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                final VmInstanceSpec spec = new VmInstanceSpec();
+                final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory());
                 spec.setVmInventory(VmInstanceInventory.valueOf(self));
                 spec.setCurrentVmOperation(VmOperation.AttachNic);
                 L3NetworkVO l3vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
-                spec.setL3Networks(Arrays.asList(L3NetworkInventory.valueOf(l3vo)));
+                spec.setL3Networks(list(L3NetworkInventory.valueOf(l3vo)));
+                spec.setDestNics(new ArrayList<VmNicInventory>());
 
                 FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
                 setFlowMarshaller(flowChain);
@@ -579,6 +580,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
                 flowChain.then(new VmAllocateNicFlow());
                 if (self.getState() == VmInstanceState.Running) {
+                    flowChain.then(new VmInstantiateResourceOnAttachingNicFlow());
                     flowChain.then(new VmAttachNicOnHypervisorFlow());
                 }
 
