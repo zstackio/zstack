@@ -15,6 +15,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -38,7 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 public class NetworkServiceManagerImpl extends AbstractService implements NetworkServiceManager, PreVmInstantiateResourceExtensionPoint,
-        VmReleaseResourceExtensionPoint, PostVmInstantiateResourceExtensionPoint {
+        VmReleaseResourceExtensionPoint, PostVmInstantiateResourceExtensionPoint, ReleaseNetworkServiceOnDetachingNicExtensionPoint {
 	private static final CLogger logger = Utils.getLogger(NetworkServiceManagerImpl.class);
 
 	@Autowired
@@ -347,8 +348,8 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
         }
         
         if (targetRef == null) {
-            throw new CloudRuntimeException(String.format("L3Network[uuid:%s] doesn't have network service[type:%s] enabled or no provider provides this network service",
-                    l3NetworkUuid, serviceType));
+            throw new OperationFailureException(errf.stringToOperationError(String.format("L3Network[uuid:%s] doesn't have network service[type:%s] enabled or no provider provides this network service",
+                    l3NetworkUuid, serviceType)));
         }
         
         SimpleQuery<NetworkServiceProviderVO> q = dbf.createQuery(NetworkServiceProviderVO.class);
@@ -360,7 +361,12 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 
     @Override
     public void preReleaseVmResource(final VmInstanceSpec spec, final Completion completion) {
-        releaseNetworkServices(spec, NetworkServiceExtensionPosition.BEFORE_VM_CREATED, completion);
+        releaseNetworkServices(spec, NetworkServiceExtensionPosition.BEFORE_VM_CREATED, new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                completion.success();
+            }
+        });
     }
 
     @Override
@@ -372,14 +378,14 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
         applyNetworkServices(spec, NetworkServiceExtensionPosition.AFTER_VM_CREATED, completion);
     }
 
-    private void releaseNetworkServices(final VmInstanceSpec spec, NetworkServiceExtensionPosition position, final Completion completion) {
+    private void releaseNetworkServices(final VmInstanceSpec spec, NetworkServiceExtensionPosition position, final NoErrorCompletion completion) {
         if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
-            completion.success();
+            completion.done();
             return;
         }
 
         if (nsExts.isEmpty()) {
-            completion.success();
+            completion.done();
             return;
         }
 
@@ -405,22 +411,37 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             schain.then(flow);
         }
 
-        schain.done(new FlowDoneHandler() {
+        schain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
                 logger.debug(String.format("successfully released network services for vm[uuid:%s,  name:%s]", spec.getVmInventory().getUuid(), spec.getVmInventory().getName()));
-                completion.success();
+                completion.done();
             }
         }).start();
     }
 
     @Override
     public void postReleaseVmResource(final VmInstanceSpec spec, final Completion completion) {
-        releaseNetworkServices(spec, NetworkServiceExtensionPosition.AFTER_VM_CREATED, completion);
+        releaseNetworkServices(spec, NetworkServiceExtensionPosition.AFTER_VM_CREATED, new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                completion.success();
+            }
+        });
     }
 
     @Override
-    public void releaseVmResource(VmInstanceSpec spec, Completion completion) {
+    public void releaseVmResource(VmInstanceSpec spec, final Completion completion) {
+        releaseNetworkServices(spec, null, new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                completion.success();
+            }
+        });
+    }
+
+    @Override
+    public void releaseResourceOnDetachingNic(VmInstanceSpec spec, VmNicInventory nic, NoErrorCompletion completion) {
         releaseNetworkServices(spec, null, completion);
     }
 }

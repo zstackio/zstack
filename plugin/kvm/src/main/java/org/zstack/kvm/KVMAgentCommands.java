@@ -37,8 +37,42 @@ public class KVMAgentCommands {
     public static class AgentCommand {
     }
 
-    public static class AttachNicCommand extends AgentCommand {
+    public static class DetachNicCommand extends AgentCommand {
+        private String vmUuid;
         private NicTO nic;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public NicTO getNic() {
+            return nic;
+        }
+
+        public void setNic(NicTO nic) {
+            this.nic = nic;
+        }
+    }
+
+    public static class DetachNicRsp extends AgentResponse {
+
+    }
+
+    public static class AttachNicCommand extends AgentCommand {
+        private String vmUuid;
+        private NicTO nic;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
 
         public NicTO getNic() {
             return nic;
@@ -275,8 +309,17 @@ public class KVMAgentCommands {
     	private String nicInternalName;
     	private int deviceId;
     	private String metaData;
-    	
-		public String getMac() {
+        private Boolean useVirtio;
+
+        public Boolean getUseVirtio() {
+            return useVirtio;
+        }
+
+        public void setUseVirtio(Boolean useVirtio) {
+            this.useVirtio = useVirtio;
+        }
+
+        public String getMac() {
 			return mac;
 		}
 		public void setMac(String mac) {

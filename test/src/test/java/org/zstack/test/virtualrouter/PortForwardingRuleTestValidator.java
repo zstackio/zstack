@@ -37,18 +37,27 @@ public class PortForwardingRuleTestValidator {
         q.select(VmNicVO_.ip);
         q.add(VmNicVO_.uuid, Op.EQ, inv.getVmNicUuid());
         String privateIp = q.findValue();
-        
+
+        boolean ret;
         if (to.getAllowedCidr() == null && inv.getAllowedCidr() == null) {
-            return (to.getPrivateIp().equals(privateIp)
+            ret = (to.getPrivateIp().equals(privateIp)
                     && to.getPrivatePortEnd() == inv.getPrivatePortEnd() && to.getPrivatePortStart() == inv.getPrivatePortStart()
                     && to.getProtocolType().equals(inv.getProtocolType())
                     && to.getVipPortStart() == inv.getVipPortStart() && to.getVipPortStart() == inv.getVipPortStart());
         } else {
-            return (to.getAllowedCidr().equals(inv.getAllowedCidr()) && to.getPrivateIp().equals(privateIp)
+            ret = (to.getAllowedCidr().equals(inv.getAllowedCidr()) && to.getPrivateIp().equals(privateIp)
                     && to.getPrivatePortEnd() == inv.getPrivatePortEnd() && to.getPrivatePortStart() == inv.getPrivatePortStart()
                     && to.getProtocolType().equals(inv.getProtocolType())
                     && to.getVipPortStart() == inv.getVipPortStart() && to.getVipPortStart() == inv.getVipPortStart());
         }
+
+        if (!ret) {
+            logger.warn(String.format("port forwarding rule mismatching:\n" +
+                    "expected: %s\n" +
+                    "actual: %s\n", JSONObjectUtil.toJsonString(to), JSONObjectUtil.toJsonString(inv)));
+        }
+
+        return ret;
     }
     
     public void validate(List<PortForwardingRuleTO> actual, Collection<PortForwardingRuleInventory> expected) {

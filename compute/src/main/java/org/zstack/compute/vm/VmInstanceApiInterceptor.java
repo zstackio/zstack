@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
@@ -31,6 +32,7 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 
 import javax.persistence.Tuple;
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,10 +65,44 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateVmInstanceMsg)msg);
         } else if (msg instanceof APIGetVmAttachableDataVolumeMsg) {
             validate((APIGetVmAttachableDataVolumeMsg) msg);
+        } else if (msg instanceof APIDetachNicFromVmMsg) {
+            validate((APIDetachNicFromVmMsg) msg);
+        } else if (msg instanceof APIAttachNicToVmMsg) {
+            validate((APIAttachNicToVmMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIAttachNicToVmMsg msg) {
+        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+        q.select(VmInstanceVO_.type);
+        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
+        String type = q.findValue();
+        if (!VmInstanceConstant.USER_VM_TYPE.equals(type)) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("unable to attach a nic. The vm[uuid: %s] is not a user vm", type)
+            ));
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private void validate(APIDetachNicFromVmMsg msg) {
+        String sql = "select vm.uuid, vm.type from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :uuid";
+        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        q.setParameter("uuid", msg.getNicUuid());
+        Tuple t = q.getSingleResult();
+        String vmUuid = t.get(0, String.class);
+        String vmType = t.get(1, String.class);
+
+        if (!VmInstanceConstant.USER_VM_TYPE.equals(vmType)) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("unable to detach a nic. The vm[uuid: %s] is not a user vm", vmUuid)
+            ));
+        }
+
+        msg.setVmInstanceUuid(vmUuid);
     }
 
     private void validate(APIGetVmAttachableDataVolumeMsg msg) {

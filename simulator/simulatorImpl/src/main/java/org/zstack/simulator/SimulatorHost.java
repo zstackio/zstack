@@ -103,10 +103,17 @@ class SimulatorHost extends HostBase {
             handle((RemoveVmOnSimulatorMsg) msg);
         } else if (msg instanceof TakeSnapshotOnHypervisorMsg) {
             handle((TakeSnapshotOnHypervisorMsg) msg);
+        } else if (msg instanceof DetachNicFromVmOnHypervisorMsg) {
+            handle((DetachNicFromVmOnHypervisorMsg) msg);
 	    } else {
 	        super.handleLocalMessage(msg);
 	    }
 	}
+
+    private void handle(DetachNicFromVmOnHypervisorMsg msg) {
+        DetachNicFromVmOnHypervisorReply reply = new DetachNicFromVmOnHypervisorReply();
+        bus.reply(msg, reply);
+    }
 
     private void handle(TakeSnapshotOnHypervisorMsg msg) {
         TakeSnapshotOnHypervisorReply reply = new TakeSnapshotOnHypervisorReply();

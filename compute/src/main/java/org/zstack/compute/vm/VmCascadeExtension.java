@@ -66,6 +66,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final int OP_STOP = 1;
     private static final int OP_DELETION = 2;
     private static final int OP_REMOVE_INSTANCE_OFFERING = 3;
+    private static final int OP_DETACH_NIC = 4;
 
     private int toDeletionOpCode(CascadeAction action) {
         if (!CascadeConstant.DELETION_CODES.contains(action.getActionCode())) {
@@ -85,7 +86,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         }
 
         if (L3NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            return OP_STOP;
+            return OP_DETACH_NIC;
         }
 
         if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer()) && IpRangeVO.class.getSimpleName().equals(action.getRootIssuer())) {
@@ -301,6 +302,34 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             }
 
             bus.send(msgs, 20, new CloudBusListCallBack(completion) {
+                @Override
+                public void run(List<MessageReply> replies) {
+                    if (!action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
+                        for (MessageReply r : replies) {
+                            if (!r.isSuccess()) {
+                                completion.fail(r.getError());
+                                return;
+                            }
+                        }
+                    }
+
+                    completion.success();
+                }
+            });
+        } else if (op == OP_DETACH_NIC) {
+            List<DetachNicFromVmMsg> msgs = new ArrayList<DetachNicFromVmMsg>();
+            List<L3NetworkInventory> l3s = action.getParentIssuerContext();
+            for (VmInstanceInventory vm : vminvs) {
+                for (L3NetworkInventory l3 : l3s) {
+                    DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
+                    msg.setVmInstanceUuid(vm.getUuid());
+                    msg.setVmNicUuid(vm.findNic(l3.getUuid()).getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getUuid());
+                    msgs.add(msg);
+                }
+            }
+
+            bus.send(msgs, new CloudBusListCallBack(completion) {
                 @Override
                 public void run(List<MessageReply> replies) {
                     if (!action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {

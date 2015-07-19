@@ -38,7 +38,10 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIAttachNicToVmMsg.class.getName(),
                 GetVmMigrationTargetHostMsg.class.getName(),
                 APIChangeInstanceOfferingMsg.class.getName(),
-                APIGetVmMigrationCandidateHostsMsg.class.getName());
+                APIGetVmMigrationCandidateHostsMsg.class.getName(),
+                APIDetachNicFromVmMsg.class.getName(),
+                DetachNicFromVmMsg.class.getName()
+        );
 
         allowedOperations.addState(VmInstanceState.Stopped,
                 APIStopVmInstanceMsg.class.getName(),
@@ -52,7 +55,10 @@ public abstract class AbstractVmInstance implements VmInstance {
                 VmAttachNicMsg.class.getName(),
                 APIAttachNicToVmMsg.class.getName(),
                 APIChangeInstanceOfferingMsg.class.getName(),
-                StopVmInstanceMsg.class.getName());
+                StopVmInstanceMsg.class.getName(),
+                APIDetachNicFromVmMsg.class.getName(),
+                DetachNicFromVmMsg.class.getName()
+        );
 
         allowedOperations.addState(VmInstanceState.Unknown,
                 APIDestroyVmInstanceMsg.class.getName(),

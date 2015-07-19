@@ -17,6 +17,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -100,13 +101,15 @@ public class VmAllocateNicFlow implements Flow {
             msgs.add(msg);
         }
 
+
         bus.send(msgs, new CloudBusListCallBack(trigger) {
             @Override
             public void run(List<MessageReply> replies) {
                 ErrorCode err = null;
                 for (MessageReply r : replies) {
                     if (r.isSuccess()) {
-                        int deviceId = replies.indexOf(r);
+                        int index = replies.indexOf(r);
+                        int deviceId = spec.getCurrentVmOperation() == VmOperation.AttachNic ? index + spec.getVmInventory().getVmNics().size() : index;
                         AllocateIpReply areply = r.castReply();
                         VmNicInventory nic = new VmNicInventory();
                         nic.setUuid(Platform.getUuid());

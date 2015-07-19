@@ -9,23 +9,26 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.allocator.HostAllocatorError;
-import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.workflow.*;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
 import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.configuration.*;
+import org.zstack.header.allocator.HostAllocatorError;
+import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.configuration.DiskOfferingVO_;
+import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageEO;
@@ -47,6 +50,7 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
@@ -56,6 +60,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 
@@ -236,9 +241,55 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((ChangeVmMetaDataMsg) msg);
         } else if (msg instanceof LockVmInstanceMsg) {
             handle((LockVmInstanceMsg) msg);
+        } else if (msg instanceof DetachNicFromVmMsg) {
+            handle((DetachNicFromVmMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final DetachNicFromVmMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final DetachNicFromVmReply reply = new DetachNicFromVmReply();
+
+                refreshVO();
+                final ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    reply.setError(allowed);
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                detachNic(msg.getVmNicUuid(), new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+
+            }
+
+            @Override
+            public String getName() {
+                return "detach-nic";
+            }
+        });
     }
 
     private void handle(final LockVmInstanceMsg msg) {
@@ -518,10 +569,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 final VmInstanceSpec spec = new VmInstanceSpec();
                 spec.setVmInventory(VmInstanceInventory.valueOf(self));
+                spec.setCurrentVmOperation(VmOperation.AttachNic);
                 L3NetworkVO l3vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
                 spec.setL3Networks(Arrays.asList(L3NetworkInventory.valueOf(l3vo)));
 
                 FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
+                setFlowMarshaller(flowChain);
                 flowChain.setName(String.format("attachNic-vm-%s-l3-%s", self.getUuid(), l3Uuid));
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
                 flowChain.then(new VmAllocateNicFlow());
@@ -1036,9 +1089,117 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIUpdateVmInstanceMsg) msg);
         } else if (msg instanceof APIChangeInstanceOfferingMsg) {
             handle((APIChangeInstanceOfferingMsg) msg);
+        } else if (msg instanceof APIDetachNicFromVmMsg) {
+            handle((APIDetachNicFromVmMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APIDetachNicFromVmMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final APIDetachNicFromVmEvent evt = new APIDetachNicFromVmEvent(msg.getId());
+
+                refreshVO();
+                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    evt.setErrorCode(allowed);
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+
+                detachNic(msg.getNicUuid(), new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        self = dbf.reload(self);
+                        evt.setInventory(getSelfInventory());
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setErrorCode(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "detach-nic";
+            }
+        });
+    }
+
+    private void detachNic(final String nicUuid, final Completion completion) {
+        final VmNicInventory nic = VmNicInventory.valueOf(
+                CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
+                    @Override
+                    public VmNicVO call(VmNicVO arg) {
+                        return arg.getUuid().equals(nicUuid) ? arg : null;
+                    }
+                })
+        );
+
+        for (VmDetachNicExtensionPoint ext : pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class)) {
+            ext.preDetachNic(nic);
+        }
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class), new ForEachFunction<VmDetachNicExtensionPoint>() {
+            @Override
+            public void run(VmDetachNicExtensionPoint arg) {
+                arg.beforeDetachNic(nic);
+            }
+        });
+
+        final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory());
+        spec.setVmInventory(VmInstanceInventory.valueOf(self));
+        spec.setCurrentVmOperation(VmOperation.DetachNic);
+        spec.setDestNics(list(nic));
+        spec.setL3Networks(list(L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class))));
+
+        FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
+        setFlowMarshaller(flowChain);
+        flowChain.setName(String.format("detachNic-vm-%s-nic-%s", self.getUuid(), nicUuid));
+        flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        if (self.getState() == VmInstanceState.Running) {
+            flowChain.then(new VmDetachNicOnHypervisorFlow());
+        }
+        flowChain.then(new VmReleaseResourceOnDetachingNicFlow());
+        flowChain.then(new VmDetachNicFlow());
+        flowChain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class), new ForEachFunction<VmDetachNicExtensionPoint>() {
+                    @Override
+                    public void run(VmDetachNicExtensionPoint arg) {
+                        arg.afterDetachNic(nic);
+                    }
+                });
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(final ErrorCode errCode, Map data) {
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class), new ForEachFunction<VmDetachNicExtensionPoint>() {
+                    @Override
+                    public void run(VmDetachNicExtensionPoint arg) {
+                        arg.failedToDetachNic(nic, errCode);
+                    }
+                });
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     private void handle(final APIChangeInstanceOfferingMsg msg) {
@@ -1386,6 +1547,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (allowed != null) {
             completion.fail(allowed);
             return;
+        }
+
+
+        if (self.getVmNics().isEmpty()) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("unable to start the vm[uuid:%s]. It doesn't have any nic, please attach a nic and try again",
+                            self.getUuid())
+            ));
         }
 
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);

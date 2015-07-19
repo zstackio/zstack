@@ -29,15 +29,7 @@ public class DefaultEipDeployer implements EipDeployer<EipConfig> {
             if (eip.getVmRef() != null) {
                 VmInstanceInventory vm = deployer.vms.get(eip.getVmRef());
                 assert vm != null;
-                VmNicInventory nic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-                    @Override
-                    public VmNicInventory call(VmNicInventory arg) {
-                        if (arg.getL3NetworkUuid().equals(arg.getL3NetworkUuid())) {
-                            return arg;
-                        }
-                        return null;
-                    }
-                });
+                VmNicInventory nic = vm.findNic(privl3.getUuid());
                 assert nic != null;
                 nicUuid = nic.getUuid();
             }

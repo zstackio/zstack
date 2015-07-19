@@ -24,6 +24,8 @@ public interface VmInstanceConstant {
         Destroy,
         Migrate,
         AttachVolume,
+        AttachNic,
+        DetachNic,
     }
 
     String QUOTA_VM_NUM = "vm.num";

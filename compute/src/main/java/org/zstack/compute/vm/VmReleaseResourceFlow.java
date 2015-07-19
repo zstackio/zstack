@@ -41,7 +41,7 @@ public class VmReleaseResourceFlow implements Flow {
         }
 
         VmReleaseResourceExtensionPoint ext = it.next();
-        ext.releaseVmResource(spec, new Completion() {
+        ext.releaseVmResource(spec, new Completion(chain) {
             @Override
             public void success() {
                 fireExtensions(it, spec, ctx, chain);

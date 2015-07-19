@@ -14,6 +14,8 @@ import org.zstack.header.search.Inventory;
 import org.zstack.header.search.TypeField;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.ZoneInventory;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.function.Function;
 
 import javax.persistence.JoinColumn;
 import java.io.Serializable;
@@ -329,6 +331,15 @@ public class VmInstanceInventory implements Serializable, Cloneable {
 
     public void setDefaultL3NetworkUuid(String defaultL3NetworkUuid) {
         this.defaultL3NetworkUuid = defaultL3NetworkUuid;
+    }
+
+    public VmNicInventory findNic(final String l3Uuid) {
+        return CollectionUtils.find(vmNics, new Function<VmNicInventory, VmNicInventory>() {
+            @Override
+            public VmNicInventory call(VmNicInventory arg) {
+                return l3Uuid.equals(arg.getL3NetworkUuid()) ? arg : null;
+            }
+        });
     }
 
     public static VmInstanceInventory copyFrom(VmInstanceInventory origin) {

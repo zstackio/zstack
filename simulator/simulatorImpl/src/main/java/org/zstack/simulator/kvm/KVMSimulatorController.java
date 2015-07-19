@@ -61,9 +61,24 @@ public class KVMSimulatorController {
             rsp.setSuccess(false);
             rsp.setError("fail on purpose");
         } else {
+            config.attachNicCommands.add(cmd);
             config.attachedNics.put(cmd.getNic().getNicInternalName(), cmd.getNic());
         }
 
+        replyer.reply(entity, rsp);
+    }
+
+    @RequestMapping(value=KVMConstant.KVM_DETACH_NIC_PATH, method=RequestMethod.POST)
+    public @ResponseBody String detachNic(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        doDetachNic(entity);
+        return null;
+    }
+
+    private void doDetachNic(HttpEntity<String> entity) {
+        DetachNicCommand cmd = JSONObjectUtil.toObject(entity.getBody(), DetachNicCommand.class);
+        DetachNicRsp rsp = new DetachNicRsp();
+        config.detachNicCommands.add(cmd);
         replyer.reply(entity, rsp);
     }
 

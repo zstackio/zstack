@@ -85,6 +85,7 @@ public class KVMHost extends HostBase implements Host {
     private String detachDataVolumePath;
     private String echoPath;
     private String attachNicPath;
+    private String detachNicPath;
     private String migrateVmPath;
     private String snapshotPath;
     private String mergeSnapshotPath;
@@ -143,6 +144,10 @@ public class KVMHost extends HostBase implements Host {
         attachNicPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_DETACH_NIC_PATH);
+        detachNicPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_MIGRATE_VM_PATH);
         migrateVmPath = ub.build().toString();
 
@@ -194,9 +199,72 @@ public class KVMHost extends HostBase implements Host {
             handle((KVMHostAsyncHttpCallMsg) msg);
         } else if (msg instanceof KVMHostSyncHttpCallMsg) {
             handle((KVMHostSyncHttpCallMsg) msg);
+        } else if (msg instanceof DetachNicFromVmOnHypervisorMsg) {
+            handle((DetachNicFromVmOnHypervisorMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final DetachNicFromVmOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return id;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                detachNic(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "detach-nic-on-kvm-host-" + self.getUuid();
+            }
+
+
+            @Override
+            protected int getSyncLevel() {
+                return getHostSyncLevel();
+            }
+        });
+    }
+
+    private void detachNic(final DetachNicFromVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        final DetachNicFromVmOnHypervisorReply reply = new DetachNicFromVmOnHypervisorReply();
+        NicTO to = completeNicInfo(msg.getNic());
+
+        DetachNicCommand cmd = new DetachNicCommand();
+        cmd.setVmUuid(msg.getVmInstanceUuid());
+        cmd.setNic(to);
+        restf.asyncJsonPost(detachNicPath, cmd, new JsonAsyncRESTCallback<DetachNicRsp>(msg, completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void success(DetachNicRsp ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                }
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public Class<DetachNicRsp> getReturnClass() {
+                return DetachNicRsp.class;
+            }
+        });
     }
 
     private void handle(final KVMHostSyncHttpCallMsg msg) {
@@ -627,6 +695,7 @@ public class KVMHost extends HostBase implements Host {
 
         final VmAttachNicOnHypervisorReply reply = new VmAttachNicOnHypervisorReply();
         AttachNicCommand cmd = new AttachNicCommand();
+        cmd.setVmUuid(msg.getNicInventory().getVmInstanceUuid());
         cmd.setNic(to);
         restf.asyncJsonPost(attachNicPath, cmd, new JsonAsyncRESTCallback<AttachNicResponse>(msg, completion) {
             @Override
@@ -1092,7 +1161,20 @@ public class KVMHost extends HostBase implements Host {
     private NicTO completeNicInfo(VmNicInventory nic) {
         L2NetworkInventory l2inv = getL2NetworkTypeFromL3NetworkUuid(nic.getL3NetworkUuid());
         KVMCompleteNicInformationExtensionPoint extp = factory.getCompleteNicInfoExtension(L2NetworkType.valueOf(l2inv.getType()));
-        return extp.completeNicInformation(l2inv, nic);
+        NicTO to = extp.completeNicInformation(l2inv, nic);
+
+        if (to.getUseVirtio() == null) {
+            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+            q.select(VmInstanceVO_.platform);
+            q.add(VmInstanceVO_.uuid, Op.EQ, nic.getVmInstanceUuid());
+            String platform = q.findValue();
+
+            to.setUseVirtio(
+                    platform.equals(ImagePlatform.Linux.toString()) || platform.equals(ImagePlatform.Paravirtualization.toString())
+            );
+        }
+
+        return to;
     }
 
     private String getVolumeTOType(VolumeInventory vol) {

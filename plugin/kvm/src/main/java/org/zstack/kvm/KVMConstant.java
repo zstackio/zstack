@@ -30,6 +30,7 @@ public interface KVMConstant {
     public static final String KVM_ATTACH_VOLUME = "/vm/attachdatavolume";
     public static final String KVM_DETACH_VOLUME = "/vm/detachdatavolume";
     public static final String KVM_ATTACH_NIC_PATH = "/vm/attachnic";
+    public static final String KVM_DETACH_NIC_PATH = "/vm/detachnic";
     public static final String KVM_TAKE_VOLUME_SNAPSHOT_PATH = "/vm/volume/takesnapshot";
     public static final String KVM_MERGE_SNAPSHOT_PATH = "/vm/volume/mergesnapshot";
     public static final String KVM_LOGOUT_ISCSI_PATH = "/iscsi/target/logout";

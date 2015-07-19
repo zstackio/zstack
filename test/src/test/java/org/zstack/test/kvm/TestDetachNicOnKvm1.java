@@ -10,7 +10,6 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -18,12 +17,17 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-public class TestAttachNicOnKvm {
+/**
+ * 1. attach a nic to vm
+ * 2. stop the vm
+ * 3. detach the nic
+ *
+ * confirm the nic detached successfully
+ */
+public class TestDetachNicOnKvm1 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;
     Api api;
@@ -54,29 +58,20 @@ public class TestAttachNicOnKvm {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         vm = api.attachNic(vm.getUuid(), l3.getUuid());
         Assert.assertEquals(4, vm.getVmNics().size());
+        api.stopVmInstance(vm.getUuid());
 
-        final VmNicInventory nic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                if (arg.getL3NetworkUuid().equals(l3.getUuid())) {
-                    return arg;
-                }
-                return null;
-            }
-        });
+        VmNicInventory nic = vm.getVmNics().get(0);
+        vm = api.detachNic(nic.getUuid());
+        Assert.assertEquals(3, vm.getVmNics().size());
+        Assert.assertTrue(config.detachNicCommands.isEmpty());
 
-        Assert.assertEquals(3, nic.getDeviceId());
+        String l3Uuid = nic.getL3NetworkUuid();
+        nic = vm.findNic(l3Uuid);
+        Assert.assertNull(nic);
 
-        KVMAgentCommands.NicTO to = CollectionUtils.find(config.attachedNics.values(), new Function<KVMAgentCommands.NicTO, KVMAgentCommands.NicTO>() {
-            @Override
-            public KVMAgentCommands.NicTO call(KVMAgentCommands.NicTO arg) {
-                if (arg.getNicInternalName().equals(nic.getInternalName())) {
-                    return arg;
-                }
-                return null;
-            }
-        });
-
-        Assert.assertNotNull(to);
+        vm = api.startVmInstance(vm.getUuid());
+        Assert.assertEquals(3, vm.getVmNics().size());
+        nic = vm.findNic(l3Uuid);
+        Assert.assertNull(nic);
     }
 }

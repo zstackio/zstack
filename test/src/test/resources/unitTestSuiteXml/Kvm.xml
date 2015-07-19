@@ -87,4 +87,11 @@
     <TestCase class="org.zstack.test.kvm.TestCreateVmOnKvmIso"/>
     <TestCase class="org.zstack.test.kvm.TestUpdateKvmHost"/>
     <TestCase class="org.zstack.test.kvm.TestSyncPrimaryStorageCapacityOnKvm"/>
+    <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm"/>
+    <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm1"/>
+    <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm2"/>
+    <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm3"/>
+    <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm4"/>
+    <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm5"/>
+    <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm6"/>
 </UnitTestSuiteConfig>

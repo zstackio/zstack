@@ -5,45 +5,40 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.host.DetachNicFromVmOnHypervisorMsg;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.VmAttachNicOnHypervisorMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicInventory;
 
 import java.util.Map;
 
 /**
+ * Created by frank on 7/18/2015.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VmAttachNicOnHypervisorFlow extends NoRollbackFlow {
-
+public class VmDetachNicOnHypervisorFlow extends NoRollbackFlow {
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private ErrorFacade errf;
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
-        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        VmNicInventory nic = spec.getDestNics().get(0);
+        final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        VmAttachNicOnHypervisorMsg msg = new VmAttachNicOnHypervisorMsg();
+        DetachNicFromVmOnHypervisorMsg msg = new DetachNicFromVmOnHypervisorMsg();
         msg.setHostUuid(spec.getVmInventory().getHostUuid());
-        msg.setNicInventory(nic);
+        msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
+        msg.setNic(spec.getDestNics().get(0));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(msg, new CloudBusCallBack(trigger) {
             @Override
             public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    trigger.fail(reply.getError());
-                } else {
+                if (reply.isSuccess()) {
                     trigger.next();
+                } else {
+                    trigger.fail(reply.getError());
                 }
             }
         });

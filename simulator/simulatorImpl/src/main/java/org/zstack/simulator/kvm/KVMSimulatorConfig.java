@@ -65,4 +65,6 @@ public class KVMSimulatorConfig {
     public volatile List<CreateBridgeCmd> createBridgeCmds = new ArrayList<CreateBridgeCmd>();
     public volatile List<LogoutIscsiTargetCmd> logoutIscsiTargetCmds = new ArrayList<LogoutIscsiTargetCmd>();
     public volatile List<LoginIscsiTargetCmd> loginIscsiTargetCmds = new ArrayList<LoginIscsiTargetCmd>();
+    public volatile List<AttachNicCommand> attachNicCommands = new ArrayList<AttachNicCommand>();
+    public volatile List<DetachNicCommand> detachNicCommands = new ArrayList<DetachNicCommand>();
 }

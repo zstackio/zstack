@@ -2665,6 +2665,21 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public VmInstanceInventory detachNic(String nicUuid) throws ApiSenderException {
+        return detachNic(nicUuid, null);
+    }
+
+    public VmInstanceInventory detachNic(String nicUuid, SessionInventory session) throws ApiSenderException {
+        APIDetachNicFromVmMsg msg = new APIDetachNicFromVmMsg();
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        msg.setSession(session == null ? adminSession : session);
+        msg.setNicUuid(nicUuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIDetachNicFromVmEvent evt = sender.send(msg, APIDetachNicFromVmEvent.class);
+        return evt.getInventory();
+    }
+
     public ConsoleInventory getConsole(String vmUuid) throws ApiSenderException {
         APIRequestConsoleAccessMsg msg = new APIRequestConsoleAccessMsg();
         msg.setVmInstanceUuid(vmUuid);

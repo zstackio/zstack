@@ -23,7 +23,13 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-public class TestAttachNicOnKvm {
+/**
+ * 1. attach a nic to vm
+ * 2. detach the nic
+ *
+ * confirm the nic detached successfully
+ */
+public class TestDetachNicOnKvm {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;
     Api api;
@@ -55,28 +61,19 @@ public class TestAttachNicOnKvm {
         vm = api.attachNic(vm.getUuid(), l3.getUuid());
         Assert.assertEquals(4, vm.getVmNics().size());
 
-        final VmNicInventory nic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                if (arg.getL3NetworkUuid().equals(l3.getUuid())) {
-                    return arg;
-                }
-                return null;
-            }
-        });
+        VmNicInventory nic = vm.getVmNics().get(0);
+        vm = api.detachNic(nic.getUuid());
+        Assert.assertEquals(3, vm.getVmNics().size());
+        Assert.assertFalse(config.detachNicCommands.isEmpty());
 
-        Assert.assertEquals(3, nic.getDeviceId());
+        String l3Uuid = nic.getL3NetworkUuid();
+        nic = vm.findNic(l3Uuid);
+        Assert.assertNull(nic);
 
-        KVMAgentCommands.NicTO to = CollectionUtils.find(config.attachedNics.values(), new Function<KVMAgentCommands.NicTO, KVMAgentCommands.NicTO>() {
-            @Override
-            public KVMAgentCommands.NicTO call(KVMAgentCommands.NicTO arg) {
-                if (arg.getNicInternalName().equals(nic.getInternalName())) {
-                    return arg;
-                }
-                return null;
-            }
-        });
-
-        Assert.assertNotNull(to);
+        api.stopVmInstance(vm.getUuid());
+        vm = api.startVmInstance(vm.getUuid());
+        Assert.assertEquals(3, vm.getVmNics().size());
+        nic = vm.findNic(l3Uuid);
+        Assert.assertNull(nic);
     }
 }

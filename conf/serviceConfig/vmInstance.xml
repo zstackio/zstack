@@ -56,4 +56,7 @@
     <message>
         <name>org.zstack.header.vm.APIChangeInstanceOfferingMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIDetachNicFromVmMsg</name>
+    </message>
 </service>
