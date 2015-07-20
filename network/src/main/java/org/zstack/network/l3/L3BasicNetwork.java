@@ -285,6 +285,10 @@ public class L3BasicNetwork implements L3Network {
             self.setDescription(msg.getDescription());
             update = true;
         }
+        if (msg.getSystem() != null) {
+            self.setSystem(msg.getSystem());
+            update = true;
+        }
         if (update) {
             self = dbf.updateAndRefresh(self);
         }

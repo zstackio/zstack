@@ -15,6 +15,15 @@ public class APIUpdateL3NetworkMsg extends APIMessage implements L3NetworkMessag
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
+    private Boolean system;
+
+    public Boolean getSystem() {
+        return system;
+    }
+
+    public void setSystem(Boolean system) {
+        this.system = system;
+    }
 
     public String getUuid() {
         return uuid;
