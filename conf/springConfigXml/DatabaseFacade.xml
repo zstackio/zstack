@@ -47,6 +47,7 @@
         <property name="idleConnectionTestPeriod" value="${DbFacadeDataSource.idleConnectionTestPeriod:3000}" />
         <property name="loginTimeout" value="${DbFacadeDataSource.loginTimeout:300}" />
         <property name="connectionCustomizerClassName" value="org.zstack.core.db.TransactionIsolationLevelSetter" />
+        <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}"/>
     </bean>
 
     <bean id="entityManagerFactory"
