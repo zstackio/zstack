@@ -6,9 +6,9 @@ import org.zstack.header.message.APISyncCallMessage;
 
 /**
  */
-@Action(category = SecurityGroupConstant.ACTION_CATEGORY)
+@Action(category = SecurityGroupConstant.ACTION_CATEGORY, names = {"read"})
 public class APIGetCandidateVmNicForSecurityGroupMsg extends APISyncCallMessage {
-    @APIParam(resourceType = SecurityGroupVO.class)
+    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true)
     private String securityGroupUuid;
 
     public String getSecurityGroupUuid() {

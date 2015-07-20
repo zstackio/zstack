@@ -2161,10 +2161,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<VmNicInventory> getCandidateVmNicFromSecurityGroup(String sgUuid) throws ApiSenderException {
+        return getCandidateVmNicFromSecurityGroup(sgUuid, null);
+    }
+
+    public List<VmNicInventory> getCandidateVmNicFromSecurityGroup(String sgUuid, SessionInventory session) throws ApiSenderException {
         APIGetCandidateVmNicForSecurityGroupMsg msg = new APIGetCandidateVmNicForSecurityGroupMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setSecurityGroupUuid(sgUuid);
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIGetCandidateVmNicForSecurityGroupReply reply = sender.call(msg, APIGetCandidateVmNicForSecurityGroupReply.class);

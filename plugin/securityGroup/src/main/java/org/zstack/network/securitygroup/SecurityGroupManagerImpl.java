@@ -531,30 +531,59 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     @Transactional(readOnly = true)
-    private void handle(APIGetCandidateVmNicForSecurityGroupMsg msg) {
+    private List<VmNicVO> getCandidateVmNic(String sgId, String accountUuid) {
+        List<String> nicUuidsToInclude = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VmNicVO.class);
+        if (nicUuidsToInclude != null && nicUuidsToInclude.isEmpty()) {
+            return new ArrayList<VmNicVO>();
+        }
+
         String sql = "select ref.vmNicUuid from VmNicSecurityGroupRefVO ref where ref.securityGroupUuid = :sgUuid";
         TypedQuery<String> nq = dbf.getEntityManager().createQuery(sql, String.class);
-        nq.setParameter("sgUuid", msg.getSecurityGroupUuid());
-        List<String> nicUuids = nq.getResultList();
+        nq.setParameter("sgUuid", sgId);
+        List<String> nicUuidsToExclued = nq.getResultList();
 
         TypedQuery<VmNicVO> q;
-        if (nicUuids.isEmpty()) {
-            sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
-                    "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                    " and sg.uuid = :sgUuid and vm.type = :vmType group by nic.uuid";
-            q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
-        } else {
-            sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
-                    "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                    " and sg.uuid = :sgUuid and vm.type = :vmType and nic.uuid not in (:nicUuids) group by nic.uuid";
-            q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
-            q.setParameter("nicUuids", nicUuids);
+        if (nicUuidsToInclude == null)  {
+            // accessed by an admin
+            if (nicUuidsToExclued.isEmpty()) {
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
+                        "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                        " and sg.uuid = :sgUuid and vm.type = :vmType group by nic.uuid";
+                q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
+            } else {
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
+                        "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                        " and sg.uuid = :sgUuid and vm.type = :vmType and nic.uuid not in (:nicUuids) group by nic.uuid";
+                q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
+                q.setParameter("nicUuids", nicUuidsToExclued);
+            }
+        } else  {
+            // accessed by a normal account
+            if (nicUuidsToExclued.isEmpty()) {
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
+                        "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                        " and sg.uuid = :sgUuid and vm.type = :vmType and nic.uuid in (:iuuids) group by nic.uuid";
+                q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
+                q.setParameter("iuuids", nicUuidsToInclude);
+            } else {
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
+                        "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                        " and sg.uuid = :sgUuid and vm.type = :vmType and nic.uuid not in (:nicUuids) and nic.uuid in (:iuuids) group by nic.uuid";
+                q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
+                q.setParameter("nicUuids", nicUuidsToExclued);
+                q.setParameter("iuuids", nicUuidsToInclude);
+            }
         }
-        q.setParameter("sgUuid", msg.getSecurityGroupUuid());
+
+
+        q.setParameter("sgUuid", sgId);
         q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-        List<VmNicVO> nics = q.getResultList();
+        return q.getResultList();
+    }
+
+    private void handle(APIGetCandidateVmNicForSecurityGroupMsg msg) {
         APIGetCandidateVmNicForSecurityGroupReply reply = new APIGetCandidateVmNicForSecurityGroupReply();
-        reply.setInventories(VmNicInventory.valueOf(nics));
+        reply.setInventories(VmNicInventory.valueOf(getCandidateVmNic(msg.getSecurityGroupUuid(), msg.getSession().getAccountUuid())));
         bus.reply(msg, reply);
     }
 
