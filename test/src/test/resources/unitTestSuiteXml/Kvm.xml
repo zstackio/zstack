@@ -41,6 +41,7 @@
 	<TestCase class="org.zstack.test.kvm.TestDetachDataVolumeFromVmOnKvmFailure"/>
     <TestCase class="org.zstack.test.kvm.TestAttachNicOnKvm"/>
     <TestCase class="org.zstack.test.kvm.TestAttachNicOnKvm1"/>
+    <TestCase class="org.zstack.test.kvm.TestAttachNicOnKvm2"/>
     <TestCase class="org.zstack.test.kvm.TestAttachNicOnKvmFailure"/>
     <TestCase class="org.zstack.test.kvm.TestKvmAttachL2Network"/>
     <TestCase class="org.zstack.test.kvm.TestKvmAttachL2Network1"/>
@@ -94,4 +95,5 @@
     <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm4"/>
     <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm5"/>
     <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm6"/>
+    <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm7"/>
 </UnitTestSuiteConfig>
