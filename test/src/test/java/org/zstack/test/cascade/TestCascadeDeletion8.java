@@ -98,7 +98,7 @@ public class TestCascadeDeletion8 {
         BackupStorageVO bvo = dbf.findByUuid(bs.getUuid(), BackupStorageVO.class);
         Assert.assertNotNull(bvo);
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-        Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
+        Assert.assertEquals(VmInstanceState.Running, vmvo.getState());
 
         SimpleQuery<NetworkServiceL3NetworkRefVO> l3refq = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
         l3refq.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, l3.getUuid());

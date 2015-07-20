@@ -88,9 +88,8 @@ public class TestCascadeDeletion9 {
         BackupStorageVO bvo = dbf.findByUuid(bs.getUuid(), BackupStorageVO.class);
         Assert.assertNotNull(bvo);
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-        Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
+        Assert.assertEquals(VmInstanceState.Running, vmvo.getState());
 
-        api.startVmInstance(vmvo.getUuid());
         vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(2, vmvo.getVmNics().size());
     }

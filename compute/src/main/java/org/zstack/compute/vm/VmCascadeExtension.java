@@ -454,7 +454,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
                     String sql = "select vm from VmInstanceVO vm, VolumeVO vol, PrimaryStorageVO pr where vm.type = :vmType and vm.uuid = vol.vmInstanceUuid" +
-                            " and vol.primaryStorageUuid = pr.uuid and vol.type = :volType and pr.uuid in (:uuids)";
+                            " and vol.primaryStorageUuid = pr.uuid and vol.type = :volType and pr.uuid in (:uuids) group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
                     q.setParameter("uuids", pruuids);
@@ -479,7 +479,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
                     String sql = "select vm from VmInstanceVO vm, L3NetworkVO l3, VmNicVO nic where vm.type = :vmType and vm.uuid = nic.vmInstanceUuid and vm.state not in (:vmStates)" +
-                            " and nic.l3NetworkUuid = l3.uuid and l3.uuid in (:uuids)";
+                            " and nic.l3NetworkUuid = l3.uuid and l3.uuid in (:uuids) group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
                     q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Stopping));
@@ -504,7 +504,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
                     String sql = "select vm from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip, IpRangeVO ipr where vm.type = :vmType and vm.uuid = nic.vmInstanceUuid and vm.state not in (:vmStates)" +
-                            " and nic.usedIpUuid = ip.uuid and ip.ipRangeUuid = ipr.uuid and ipr.uuid in (:uuids)";
+                            " and nic.usedIpUuid = ip.uuid and ip.ipRangeUuid = ipr.uuid and ipr.uuid in (:uuids) group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
                     q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Stopping));
@@ -529,7 +529,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
                     String sql = "select d from VmInstanceVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+                            " r.resourceType = :rtype and r.accountUuid in (:auuids) group by d.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
                     q.setParameter("auuids", auuids);

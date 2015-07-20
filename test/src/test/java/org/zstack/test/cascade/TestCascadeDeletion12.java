@@ -101,7 +101,7 @@ public class TestCascadeDeletion12 {
         BackupStorageVO bvo = dbf.findByUuid(bs.getUuid(), BackupStorageVO.class);
         Assert.assertNotNull(bvo);
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-        Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
+        Assert.assertEquals(VmInstanceState.Running, vmvo.getState());
 
         CascadeTestHelper helper = new CascadeTestHelper();
         helper.zeroInDatabase(
