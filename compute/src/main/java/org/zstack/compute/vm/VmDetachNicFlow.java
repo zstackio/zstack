@@ -3,9 +3,12 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.ReturnIpMsg;
 import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
@@ -19,6 +22,8 @@ import java.util.Map;
 public class VmDetachNicFlow extends NoRollbackFlow {
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private CloudBus bus;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -38,6 +43,12 @@ public class VmDetachNicFlow extends NoRollbackFlow {
             vm.setDefaultL3NetworkUuid(l3Uuid);
             dbf.update(vm);
         }
+
+        ReturnIpMsg msg = new ReturnIpMsg();
+        msg.setUsedIpUuid(nic.getUsedIpUuid());
+        msg.setL3NetworkUuid(nic.getL3NetworkUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+        bus.send(msg);
 
         dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
         trigger.next();

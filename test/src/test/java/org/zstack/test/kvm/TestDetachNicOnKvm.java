@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.network.l3.APIGetIpAddressCapacityReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
@@ -58,6 +59,10 @@ public class TestDetachNicOnKvm {
 	public void test() throws ApiSenderException {
         final L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network4");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
+
+        APIGetIpAddressCapacityReply ipcap = api.getIpAddressCapacityByAll();
+        long avail1 = ipcap.getAvailableCapacity();
+
         vm = api.attachNic(vm.getUuid(), l3.getUuid());
         Assert.assertEquals(4, vm.getVmNics().size());
 
@@ -65,6 +70,11 @@ public class TestDetachNicOnKvm {
         vm = api.detachNic(nic.getUuid());
         Assert.assertEquals(3, vm.getVmNics().size());
         Assert.assertFalse(config.detachNicCommands.isEmpty());
+
+        ipcap = api.getIpAddressCapacityByAll();
+        long avail2 = ipcap.getAvailableCapacity();
+
+        Assert.assertEquals(avail1, avail2);
 
         String l3Uuid = nic.getL3NetworkUuid();
         nic = vm.findNic(l3Uuid);

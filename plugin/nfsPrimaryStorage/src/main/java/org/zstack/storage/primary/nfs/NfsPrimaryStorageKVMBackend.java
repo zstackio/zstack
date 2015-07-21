@@ -860,6 +860,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         RebaseAndMergeSnapshotsCmd cmd = new RebaseAndMergeSnapshotsCmd();
                         cmd.setSnapshotInstallPaths(snapshotInstallPaths);
                         cmd.setWorkspaceInstallPath(workspaceInstallPath);
+                        cmd.setUuid(pinv.getUuid());
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setCommand(cmd);
