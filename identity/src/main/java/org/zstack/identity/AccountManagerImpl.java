@@ -1,5 +1,7 @@
 package org.zstack.identity;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,19 +38,24 @@ import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
+import org.zstack.header.message.APIListMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.Message;
+import org.zstack.header.search.APIGetMessage;
+import org.zstack.header.search.APISearchMessage;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.io.File;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
@@ -113,7 +120,47 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void handleLocalMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof GenerateMessageIdentityCategoryMsg) {
+            handle((GenerateMessageIdentityCategoryMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(GenerateMessageIdentityCategoryMsg msg) {
+        List<String> adminMsgs = new ArrayList<String>();
+        List<String> userMsgs = new ArrayList<String>();
+
+        List<Class> apiMsgClasses = BeanUtils.scanClassByType("org.zstack", APIMessage.class);
+        for (Class clz : apiMsgClasses) {
+            if (APISearchMessage.class.isAssignableFrom(clz) || APIGetMessage.class.isAssignableFrom(clz)
+                    || APIListMessage.class.isAssignableFrom(clz)) {
+                continue;
+            }
+
+            String name = clz.getSimpleName().replaceAll("API", "").replaceAll("Msg", "");
+
+            if (clz.isAnnotationPresent(Action.class)) {
+                userMsgs.add(name);
+            } else {
+                adminMsgs.add(name);
+            }
+        }
+
+        try {
+            String folder = PathUtil.join(System.getProperty("user.home"), "zstack-identity");
+            FileUtils.deleteDirectory(new File(folder));
+
+            new File(folder).mkdirs();
+
+            String userMsgsPath = PathUtil.join(folder, "non-admin-api.txt");
+            FileUtils.writeStringToFile(new File(userMsgsPath), StringUtils.join(userMsgs, "\n"));
+            String adminMsgsPath = PathUtil.join(folder, "admin-api.txt");
+            FileUtils.writeStringToFile(new File(adminMsgsPath), StringUtils.join(adminMsgs, "\n"));
+            bus.reply(msg, new GenerateMessageIdentityCategoryReply());
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 
     private void passThrough(AccountMessage msg) {
