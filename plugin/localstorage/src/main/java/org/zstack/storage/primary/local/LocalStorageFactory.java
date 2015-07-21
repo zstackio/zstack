@@ -235,6 +235,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         });
 
+        if (volUuids.isEmpty()) {
+            return candidates;
+        }
+
         String hostUuid =  VmInstanceState.Running.toString().equals(vm.getState()) ? vm.getHostUuid() : vm.getLastHostUuid();
         if (hostUuid == null) {
             throw new CloudRuntimeException(String.format("hostUuid is null; vm[uuid: %s, state: %s, hostUuid: %s, lastHostUuid: %s]",

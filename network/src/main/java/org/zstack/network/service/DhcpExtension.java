@@ -129,7 +129,8 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
         struct.setIp(nic.getIp());
         struct.setDnsDomain(l3.getDnsDomain());
         struct.setL3Network(l3);
-        struct.setDefaultL3Network(spec.getVmInventory().getDefaultL3NetworkUuid().equals(l3.getUuid()));
+        struct.setDefaultL3Network(spec.getVmInventory().getDefaultL3NetworkUuid() != null &&
+                spec.getVmInventory().getDefaultL3NetworkUuid().equals(l3.getUuid()));
         struct.setMac(nic.getMac());
         struct.setNetmask(nic.getNetmask());
         return struct;
