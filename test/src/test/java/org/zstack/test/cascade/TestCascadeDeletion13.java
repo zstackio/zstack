@@ -51,7 +51,7 @@ public class TestCascadeDeletion13 {
         dbf = loader.getComponent(DatabaseFacade.class);
     }
 
-    @Test(expected = ApiSenderException.class)
+    @Test
     public void test() throws ApiSenderException, InterruptedException {
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
@@ -88,8 +88,6 @@ public class TestCascadeDeletion13 {
         BackupStorageVO bvo = dbf.findByUuid(bs.getUuid(), BackupStorageVO.class);
         Assert.assertNotNull(bvo);
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-        Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
-
-        api.startVmInstance(vmvo.getUuid());
+        Assert.assertEquals(VmInstanceState.Running, vmvo.getState());
     }
 }

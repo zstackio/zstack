@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
 import org.zstack.configuration.TypeScriptApiWriter
 import org.zstack.header.exception.CloudRuntimeException
+import org.zstack.header.identity.AccountConstant
 import org.zstack.header.message.APIMessage
 import org.zstack.header.message.Message
 import org.zstack.header.query.Unqueryable
@@ -37,12 +38,13 @@ public class TypeScriptApiWriterImpl implements TypeScriptApiWriter {
             return clz.getSimpleName();
         }
 
+        logger.debug(String.format("building %s ...", clz))
         generatedClassName.add(clz.getSimpleName())
-        List<Field> fs = FieldUtils.getAllFields(clz);
-        List<String> fields = [];
-        fs.each {
+        List<Field> fs = FieldUtils.getAllFields(clz)
+        List<String> fields = []
+        for (Field it : fs) {
             if (it.isAnnotationPresent(APINoSee.class)) {
-                return;
+                continue;
             }
 
             logger.debug(String.format("building field[%s] of class[%s]", it.getName(), clz.getName()))
@@ -95,9 +97,11 @@ ${StringUtils.join(fields, "\n")}
                 return type.getClass().getSimpleName();
             }
 
+            List enums = new ArrayList();
+            Collections.addAll(enums, ((Class)type).enumConstants)
             def str = """\
 export enum ${f.type.getSimpleName()} {
-${StringUtils.join(type.class.getEnumConstants(), ",\n")}
+${StringUtils.join(enums, ",\n")}
 }
 """
             addContent(str, type.getClass().getSimpleName())

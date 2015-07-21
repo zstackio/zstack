@@ -13,6 +13,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -101,5 +102,12 @@ public class TestVmGetAttachableL3Networks {
         for (L3NetworkInventory l3 : l3s) {
             Assert.assertFalse(l3.getUuid().equals(l31.getUuid()));
         }
+
+        for (VmNicInventory nic : vm.getVmNics()) {
+            api.detachNic(nic.getUuid());
+        }
+
+        l3s = api.getVmAttachableL3Networks(vm.getUuid());
+        Assert.assertEquals(4, l3s.size());
     }
 }
