@@ -207,6 +207,8 @@ public class AnsibleRunner {
                     } finally {
                         output.close();
                     }
+                } else {
+                    logger.debug(String.format("found target ip[%s] in %s", targetIp, AnsibleConstant.INVENTORY_FILE));
                 }
             }
         } finally {

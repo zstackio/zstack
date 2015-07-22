@@ -149,19 +149,25 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 arguments.putAll(getVariables());
                 String playBookPath = PathUtil.join(AnsibleConstant.ROOT_DIR, msg.getPlayBookName());
                 try {
+                    String output;
                     if (AnsibleGlobalProperty.DEBUG_MODE2) {
-                        ShellUtils.run(String.format("%s %s -i %s -vvvv --private-key %s -e '%s' | tee -a %s",
+                        output = ShellUtils.run(String.format("%s %s -i %s -vvvv --private-key %s -e '%s' | tee -a %s",
                                 AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments), AnsibleConstant.LOG_PATH),
                                 AnsibleConstant.ROOT_DIR);
                     } else if (AnsibleGlobalProperty.DEBUG_MODE) {
-                        ShellUtils.run(String.format("%s %s -i %s -vvvv --private-key %s -e '%s'",
+                        output = ShellUtils.run(String.format("%s %s -i %s -vvvv --private-key %s -e '%s'",
                                 AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     } else {
-                        ShellUtils.run(String.format("%s %s -i %s --private-key %s -e '%s'",
+                        output = ShellUtils.run(String.format("%s %s -i %s --private-key %s -e '%s'",
                                 AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     }
+
+                    if (output.contains("skipping: no hosts matched")) {
+                        throw new OperationFailureException(errf.stringToOperationError(output));
+                    }
+
                 } catch (ShellException se) {
                     logger.warn(se.getMessage(), se);
                     throw new OperationFailureException(errf.stringToOperationError(se.getMessage()));
