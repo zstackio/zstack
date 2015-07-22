@@ -12,6 +12,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.CheckNetworkPhysicalInterfaceMsg;
 import org.zstack.header.network.l2.CheckNetworkPhysicalInterfaceReply;
 import org.zstack.header.simulator.*;
+import org.zstack.header.vm.VmAttachNicOnHypervisorMsg;
+import org.zstack.header.vm.VmAttachNicOnHypervisorReply;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -105,10 +107,16 @@ class SimulatorHost extends HostBase {
             handle((TakeSnapshotOnHypervisorMsg) msg);
         } else if (msg instanceof DetachNicFromVmOnHypervisorMsg) {
             handle((DetachNicFromVmOnHypervisorMsg) msg);
+        } else if (msg instanceof VmAttachNicOnHypervisorMsg) {
+            handle((VmAttachNicOnHypervisorMsg) msg);
 	    } else {
 	        super.handleLocalMessage(msg);
 	    }
 	}
+
+    private void handle(VmAttachNicOnHypervisorMsg msg) {
+        bus.reply(msg, new VmAttachNicOnHypervisorReply());
+    }
 
     private void handle(DetachNicFromVmOnHypervisorMsg msg) {
         DetachNicFromVmOnHypervisorReply reply = new DetachNicFromVmOnHypervisorReply();

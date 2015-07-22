@@ -109,5 +109,11 @@ public class TestVmGetAttachableL3Networks {
 
         l3s = api.getVmAttachableL3Networks(vm.getUuid());
         Assert.assertEquals(4, l3s.size());
+
+        api.attachNic(vm.getUuid(), l31.getUuid());
+        l3s = api.getVmAttachableL3Networks(vm.getUuid());
+        for (L3NetworkInventory l3 : l3s) {
+            Assert.assertFalse(l3.getUuid().equals(l31.getUuid()));
+        }
     }
 }

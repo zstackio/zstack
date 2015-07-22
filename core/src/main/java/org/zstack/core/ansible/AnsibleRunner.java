@@ -179,14 +179,18 @@ public class AnsibleRunner {
         BufferedReader bf = new BufferedReader(new FileReader(AnsibleConstant.INVENTORY_FILE));
         String line;
 
-        while ((line = bf.readLine()) != null) {
-            line = StringUtils.strip(line.trim(), "\t\r\n");
-            if (line.equals(ip.trim())) {
-                return true;
+        try {
+            while ((line = bf.readLine()) != null) {
+                line = StringUtils.strip(line.trim(), "\t\r\n");
+                if (line.equals(ip.trim())) {
+                    return true;
+                }
             }
-        }
 
-        return false;
+            return false;
+        } finally {
+            bf.close();
+        }
     }
 
     private void setupHostsFile() throws IOException {
@@ -200,13 +204,8 @@ public class AnsibleRunner {
                 }
             } else {
                 if (!findIpInHostFile(targetIp)) {
-                    PrintWriter output = new PrintWriter (new FileWriter(AnsibleConstant.INVENTORY_FILE, true));
-                    try {
-                        output.println(targetIp);
-                        logger.debug(String.format("add target ip[%s] to %s", targetIp, AnsibleConstant.INVENTORY_FILE));
-                    } finally {
-                        output.close();
-                    }
+                    FileUtils.writeStringToFile(hostsFile, String.format("%s\n", targetIp), true);
+                    logger.debug(String.format("add target ip[%s] to %s", targetIp, AnsibleConstant.INVENTORY_FILE));
                 } else {
                     logger.debug(String.format("found target ip[%s] in %s", targetIp, AnsibleConstant.INVENTORY_FILE));
                 }
