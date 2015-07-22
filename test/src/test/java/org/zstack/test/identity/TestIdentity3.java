@@ -5,8 +5,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
@@ -41,6 +43,26 @@ public class TestIdentity3 {
         creator.resetAccountPassword("password");
         AccountVO vo = dbf.findByUuid(a.getUuid(), AccountVO.class);
         Assert.assertEquals("password", vo.getPassword());
-        api.loginByAccount("test", "password");
+        SessionInventory session = api.loginByAccount("test", "password");
+        api.resetAccountPassword(null, "new", session);
+        vo = dbf.findByUuid(a.getUuid(), AccountVO.class);
+        Assert.assertEquals("new", vo.getPassword());
+
+        boolean s = false;
+        try {
+            api.resetAccountPassword(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, "new", session);
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
+
+        AccountInventory a2 = api.createAccount("account2", "password");
+        s = false;
+        try {
+            api.resetAccountPassword(a2.getUuid(), "new", session);
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
     }
 }

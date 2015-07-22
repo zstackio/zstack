@@ -31,6 +31,7 @@ public class UserInventory {
     private String uuid;
     private String accountUuid;
     private String name;
+    private String description;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -41,6 +42,7 @@ public class UserInventory {
         inv.setCreateDate(vo.getCreateDate());
         inv.setName(vo.getName());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setDescription(vo.getDescription());
         return inv;
     }
     
@@ -51,7 +53,15 @@ public class UserInventory {
         }
         return invs;
     }
-    
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public String getUuid() {
         return uuid;
     }

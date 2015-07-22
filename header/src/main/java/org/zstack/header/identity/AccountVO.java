@@ -20,7 +20,10 @@ public class AccountVO {
     @Column
     @Index
     private String name;
-    
+
+    @Column
+    private String description;
+
     @Column
     private String password;
     
@@ -32,7 +35,15 @@ public class AccountVO {
     
 	@Column
 	@Enumerated(EnumType.STRING)
-	private AccountType type; 
+	private AccountType type;
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     public String getUuid() {
         return uuid;

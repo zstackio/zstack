@@ -10,6 +10,16 @@ public class APICreateAccountMsg extends APICreateMessage {
     private String password;
     @APIParam(validValues = {"SystemAdmin", "Normal"}, required = false)
     private String type;
+    @APIParam(maxLength = 2048, required = false)
+    private String description;
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     public String getType() {
         return type;

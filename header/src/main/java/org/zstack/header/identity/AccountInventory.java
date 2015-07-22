@@ -25,6 +25,7 @@ import java.util.List;
 public class AccountInventory {
     private String uuid;
     private String name;
+    private String description;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     
@@ -32,6 +33,7 @@ public class AccountInventory {
         AccountInventory inv = new AccountInventory();
         inv.setUuid(vo.getUuid());
         inv.setName(vo.getName());
+        inv.setDescription(vo.getDescription());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -43,6 +45,14 @@ public class AccountInventory {
             lst.add(AccountInventory.valueOf(vo));
         }
         return lst;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getUuid() {

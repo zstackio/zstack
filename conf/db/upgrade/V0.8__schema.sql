@@ -44,6 +44,9 @@ CREATE TABLE  `zstack`.`SharedResourceVO` (
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE AccountVO ADD description VARCHAR(2048) DEFAULT NULL;
+ALTER TABLE UserVO ADD description VARCHAR(2048) DEFAULT NULL;
+
 # Foreign keys for table SharedResourceVO
 
 ALTER TABLE SharedResourceVO ADD CONSTRAINT fkSharedResourceVOAccountVO FOREIGN KEY (ownerAccountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;

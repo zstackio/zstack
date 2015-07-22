@@ -147,6 +147,29 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }
 
+        List<String> quotas = new ArrayList<String>();
+        for (Quota q : messageQuotaMap.values()) {
+            for (QuotaPair p : q.getQuotaPairs()) {
+                quotas.add(String.format("%s        %s", p.getName(), p.getValue()));
+            }
+        }
+
+        List<String> as = new ArrayList<String>();
+        for (Map.Entry<Class, MessageAction> e : actions.entrySet()) {
+            Class api = e.getKey();
+            MessageAction a = e.getValue();
+            if (a.adminOnly || a.accountOnly) {
+                continue;
+            }
+
+            String name = api.getSimpleName().replaceAll("API", "").replaceAll("Msg", "");
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("%s: ", name));
+            sb.append(StringUtils.join(a.actions, ", "));
+            sb.append("\n");
+            as.add(sb.toString());
+        }
+
         try {
             String folder = PathUtil.join(System.getProperty("user.home"), "zstack-identity");
             FileUtils.deleteDirectory(new File(folder));
@@ -157,6 +180,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             FileUtils.writeStringToFile(new File(userMsgsPath), StringUtils.join(userMsgs, "\n"));
             String adminMsgsPath = PathUtil.join(folder, "admin-api.txt");
             FileUtils.writeStringToFile(new File(adminMsgsPath), StringUtils.join(adminMsgs, "\n"));
+            String quotaPath = PathUtil.join(folder, "quota.txt");
+            FileUtils.writeStringToFile(new File(quotaPath), StringUtils.join(quotas, "\n"));
+            String apiIdentityPath = PathUtil.join(folder, "api-identity.txt");
+            FileUtils.writeStringToFile(new File(apiIdentityPath), StringUtils.join(as, "\n"));
             bus.reply(msg, new GenerateMessageIdentityCategoryReply());
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
@@ -310,10 +337,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             vo.setUuid(Platform.getUuid());
         }
         vo.setName(msg.getName());
+        vo.setDescription(msg.getDescription());
         vo.setPassword(msg.getPassword());
         vo.setType(msg.getType() != null ? AccountType.valueOf(msg.getType()) : AccountType.Normal);
         vo = dbf.persistAndRefresh(vo);
 
+        List<PolicyVO> ps = new ArrayList<PolicyVO>();
         PolicyVO p = new PolicyVO();
         p.setUuid(Platform.getUuid());
         p.setAccountUuid(vo.getUuid());
@@ -323,7 +352,20 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         s.setEffect(StatementEffect.Allow);
         s.addAction(".*:read");
         p.setData(JSONObjectUtil.toJsonString(list(s)));
-        dbf.persist(p);
+        ps.add(p);
+
+        p = new PolicyVO();
+        p.setUuid(Platform.getUuid());
+        p.setAccountUuid(vo.getUuid());
+        p.setName(String.format("USER-RESET-PASSWORD-%s", vo.getUuid()));
+        s = new Statement();
+        s.setName(String.format("user-reset-password-%s", vo.getUuid()));
+        s.setEffect(StatementEffect.Allow);
+        s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIResetUserPasswordMsg.class.getSimpleName()));
+        p.setData(JSONObjectUtil.toJsonString(list(s)));
+        ps.add(p);
+
+        dbf.persistCollection(ps);
 
         SimpleQuery<GlobalConfigVO> q = dbf.createQuery(GlobalConfigVO.class);
         q.select(GlobalConfigVO_.name, GlobalConfigVO_.value);
@@ -988,11 +1030,35 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APIShareResourceMsg) msg);
         } else if (msg instanceof APIRevokeResourceSharingMsg) {
             validate((APIRevokeResourceSharingMsg) msg);
+        } else if (msg instanceof APIResetUserPasswordMsg) {
+            validate((APIResetUserPasswordMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIResetUserPasswordMsg msg) {
+        if (msg.getUuid() == null && msg.getSession().isAccountSession()) {
+            throw new ApiMessageInterceptionException (errf.stringToInvalidArgumentError(
+                    "the current session is an account session. You need to specify the field 'uuid'" +
+                            " to the user you want to reset the password"
+            ));
+        }
+
+        if (msg.getSession().isAccountSession()) {
+            return;
+        }
+
+        if (msg.getUuid() != null && !msg.getSession().getUserUuid().equals(msg.getUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("cannot change the password, you are not the owner user of user[uuid:%s]",
+                            msg.getUuid())
+            ));
+        }
+
+        msg.setUuid(msg.getSession().getUserUuid());
     }
 
     private void validate(APIRevokeResourceSharingMsg msg) {
@@ -1117,8 +1183,17 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void validate(APIResetAccountPasswordMsg msg) {
-        AccountVO account = dbf.findByUuid(msg.getSession().getAccountUuid(), AccountVO.class);
-        if (account.getType() != AccountType.Normal && !account.getUuid().equals(msg.getUuid())) {
+        AccountVO a = dbf.findByUuid(msg.getSession().getAccountUuid(), AccountVO.class);
+        if (msg.getUuid() == null) {
+            msg.setUuid(msg.getSession().getAccountUuid());
+        }
+
+        if (a.getType() == AccountType.SystemAdmin) {
+            return;
+        }
+
+        AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
+        if (!account.getUuid().equals(a.getUuid())) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("account[uuid: %s, name: %s] is a normal account, it cannot reset the password of another account[uuid: %s]",
                             account.getUuid(), account.getName(), msg.getUuid())

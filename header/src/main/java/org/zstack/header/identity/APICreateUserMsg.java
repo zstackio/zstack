@@ -9,6 +9,16 @@ public class APICreateUserMsg extends APICreateMessage implements AccountMessage
     private String name;
     @APIParam(maxLength = 255)
     private String password;
+    @APIParam(maxLength = 2048, required = false)
+    private String description;
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     @Override
     public String getAccountUuid() {

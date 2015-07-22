@@ -5,7 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.UserInventory;
 import org.zstack.header.identity.UserVO;
 import org.zstack.test.Api;
@@ -44,6 +46,21 @@ public class TestIdentity4 {
         creator.resetUserPassword("test", "password");
         UserVO user = dbf.findByUuid(u.getUuid(), UserVO.class);
         Assert.assertEquals("password", user.getPassword());
-        api.loginByUser("test", "password", a.getUuid());
+        SessionInventory session = api.loginByUser("test", "password", a.getUuid());
+        api.resetUserPassword(null, "new", session);
+        user = dbf.findByUuid(u.getUuid(), UserVO.class);
+        Assert.assertEquals("new", user.getPassword());
+
+        UserInventory user2 =  creator.createUser("user2", "password");
+
+        boolean s = false;
+        try {
+            api.resetUserPassword(user2.getUuid(), "new", session);
+        } catch (ApiSenderException e) {
+            if (SysErrors.INVALID_ARGUMENT_ERROR.toString().equals(e.getError().getCode())) {
+                s = true;
+            }
+        }
+        Assert.assertTrue(s);
     }
 }

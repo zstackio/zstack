@@ -25,7 +25,8 @@ public class TestGenerateApiCategory {
         DBUtil.reDeployDB();
         BeanConstructor con = new BeanConstructor();
         /* This loads spring application context */
-        loader = con.addXml("PortalForUnitTest.xml").addXml("AccountManager.xml").build();
+        con.addAllConfigInZstackXml();
+        loader = con.build();
         dbf = loader.getComponent(DatabaseFacade.class);
         bus = loader.getComponent(CloudBus.class);
         api = new Api();

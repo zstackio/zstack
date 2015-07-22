@@ -498,11 +498,22 @@ public class AccountBase extends AbstractAccount {
         uvo.setAccountUuid(vo.getUuid());
         uvo.setName(msg.getName());
         uvo.setPassword(msg.getPassword());
+        uvo.setDescription(msg.getDescription());
         uvo = dbf.persistAndRefresh(uvo);
 
         SimpleQuery<PolicyVO> q = dbf.createQuery(PolicyVO.class);
         q.add(PolicyVO_.name, Op.EQ, String.format("DEFAULT-READ-%s", vo.getUuid()));
         PolicyVO p = q.find();
+        if (p != null) {
+            UserPolicyRefVO uref = new UserPolicyRefVO();
+            uref.setPolicyUuid(p.getUuid());
+            uref.setUserUuid(uvo.getUuid());
+            dbf.persist(uref);
+        }
+
+        q = dbf.createQuery(PolicyVO.class);
+        q.add(PolicyVO_.name, Op.EQ, String.format("USER-RESET-PASSWORD-%s", vo.getUuid()));
+        p = q.find();
         if (p != null) {
             UserPolicyRefVO uref = new UserPolicyRefVO();
             uref.setPolicyUuid(p.getUuid());

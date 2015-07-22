@@ -22,7 +22,10 @@ public class UserVO {
     
     @Column
     private String name;
-    
+
+    @Column
+    private String description;
+
     @Column
     private String password;
     
@@ -37,7 +40,15 @@ public class UserVO {
     
     @Column
     private Timestamp lastOpDate;
-    
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public String getUuid() {
         return uuid;
     }
