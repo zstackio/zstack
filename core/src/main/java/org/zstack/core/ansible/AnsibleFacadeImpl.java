@@ -3,6 +3,7 @@ package org.zstack.core.ansible;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.DirectoryWalker;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.ini4j.Wini;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
@@ -18,22 +19,18 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.ShellUtils;
+import org.zstack.utils.*;
 import org.zstack.utils.ShellUtils.ShellException;
-import org.zstack.utils.StringDSL;
-import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  */
@@ -51,6 +48,33 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     private ErrorFacade errf;
     @Autowired
     private ThreadFacade thdf;
+
+    private static List<String> hostIPs = new ArrayList<String>();
+    private static File hostsFile = new File(AnsibleConstant.INVENTORY_FILE);
+
+    private static ReentrantLock lock = new ReentrantLock();
+
+    {
+        try {
+            if (!hostsFile.exists()) {
+                hostsFile.createNewFile();
+            }
+
+            if (AnsibleGlobalProperty.KEEP_HOSTS_FILE_IN_MEMORY) {
+                String ipStr = FileUtils.readFileToString(hostsFile);
+                for (String ip : ipStr.split("\n")) {
+                    ip = ip.trim();
+                    ip = StringUtils.strip(ip, "\n\t\r");
+                    if (ip.equals("")) {
+                        continue;
+                    }
+                    hostIPs.add(ip);
+                }
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
 
     private void placePip703() {
         File pip = PathUtil.findFileOnClassPath("tools/pip-7.0.3.tar.gz");
@@ -120,6 +144,47 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         }
     }
 
+    private boolean findIpInHostFile(String ip) throws IOException {
+        BufferedReader bf = new BufferedReader(new FileReader(AnsibleConstant.INVENTORY_FILE));
+        String line;
+
+        try {
+            while ((line = bf.readLine()) != null) {
+                line = StringUtils.strip(line.trim(), "\t\r\n");
+                if (line.equals(ip.trim())) {
+                    return true;
+                }
+            }
+
+            return false;
+        } finally {
+            bf.close();
+        }
+    }
+
+    private void setupHostsFile(String targetIp) throws IOException {
+        lock.lock();
+        try {
+            if (AnsibleGlobalProperty.KEEP_HOSTS_FILE_IN_MEMORY) {
+                if (!hostIPs.contains(targetIp)) {
+                    hostIPs.add(targetIp);
+                    FileUtils.writeStringToFile(hostsFile, StringUtils.join(hostIPs, "\n"), false);
+                    logger.debug(String.format("add target ip[%s] to %s", targetIp, AnsibleConstant.INVENTORY_FILE));
+                }
+            } else {
+                if (!findIpInHostFile(targetIp)) {
+                    FileUtils.writeStringToFile(hostsFile, String.format("%s\n", targetIp), true);
+                    logger.debug(String.format("add target ip[%s] to %s", targetIp, AnsibleConstant.INVENTORY_FILE));
+                } else {
+                    logger.debug(String.format("found target ip[%s] in %s", targetIp, AnsibleConstant.INVENTORY_FILE));
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+
     private void handle(final RunAnsibleMsg msg) {
         thdf.syncSubmit(new SyncTask<Object>() {
             @Override
@@ -138,6 +203,13 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             }
 
             private void run(Completion completion) {
+
+                try {
+                    setupHostsFile(msg.getTargetIp());
+                } catch (Exception e) {
+                    throw new CloudRuntimeException(e);
+                }
+
                 logger.debug(String.format("start running ansible for playbook[%s]", msg.getPlayBookName()));
                 Map<String, Object> arguments = new HashMap<String, Object>();
                 if (msg.getArguments() != null) {
@@ -152,15 +224,15 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     String output;
                     if (AnsibleGlobalProperty.DEBUG_MODE2) {
                         output = ShellUtils.run(String.format("%s %s -i %s -vvvv --private-key %s -e '%s' | tee -a %s",
-                                AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments), AnsibleConstant.LOG_PATH),
+                                        AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments), AnsibleConstant.LOG_PATH),
                                 AnsibleConstant.ROOT_DIR);
                     } else if (AnsibleGlobalProperty.DEBUG_MODE) {
                         output = ShellUtils.run(String.format("%s %s -i %s -vvvv --private-key %s -e '%s'",
-                                AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
+                                        AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     } else {
                         output = ShellUtils.run(String.format("%s %s -i %s --private-key %s -e '%s'",
-                                AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
+                                        AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     }
 

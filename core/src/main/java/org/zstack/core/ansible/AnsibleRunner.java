@@ -1,7 +1,5 @@
 package org.zstack.core.ansible;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -18,13 +16,13 @@ import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  */
@@ -37,12 +35,8 @@ public class AnsibleRunner {
     @Autowired
     private CloudBus bus;
 
-    private static ReentrantLock lock = new ReentrantLock();
     private static String privKeyFile;
     private List<AnsibleChecker> checkers = new ArrayList<AnsibleChecker>();
-
-    private static List<String> hostIPs = new ArrayList<String>();
-    private static File hostsFile = new File(AnsibleConstant.INVENTORY_FILE);
 
     static {
         privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY).getAbsolutePath();
@@ -50,25 +44,6 @@ public class AnsibleRunner {
 
     {
         fullDeploy = AnsibleGlobalProperty.FULL_DEPLOY;
-        try {
-            if (!hostsFile.exists()) {
-                hostsFile.createNewFile();
-            }
-
-            if (AnsibleGlobalProperty.KEEP_HOSTS_FILE_IN_MEMORY) {
-                String ipStr = FileUtils.readFileToString(hostsFile);
-                for (String ip : ipStr.split("\n")) {
-                    ip = ip.trim();
-                    ip = StringUtils.strip(ip, "\n\t\r");
-                    if (ip.equals("")) {
-                        continue;
-                    }
-                    hostIPs.add(ip);
-                }
-            }
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
-        }
     }
 
     private String targetIp;
@@ -175,46 +150,6 @@ public class AnsibleRunner {
         this.fullDeploy = fullDeploy;
     }
 
-    private boolean findIpInHostFile(String ip) throws IOException {
-        BufferedReader bf = new BufferedReader(new FileReader(AnsibleConstant.INVENTORY_FILE));
-        String line;
-
-        try {
-            while ((line = bf.readLine()) != null) {
-                line = StringUtils.strip(line.trim(), "\t\r\n");
-                if (line.equals(ip.trim())) {
-                    return true;
-                }
-            }
-
-            return false;
-        } finally {
-            bf.close();
-        }
-    }
-
-    private void setupHostsFile() throws IOException {
-        lock.lock();
-        try {
-            if (AnsibleGlobalProperty.KEEP_HOSTS_FILE_IN_MEMORY) {
-                if (!hostIPs.contains(targetIp)) {
-                    hostIPs.add(targetIp);
-                    FileUtils.writeStringToFile(hostsFile, StringUtils.join(hostIPs, "\n"), false);
-                    logger.debug(String.format("add target ip[%s] to %s", targetIp, AnsibleConstant.INVENTORY_FILE));
-                }
-            } else {
-                if (!findIpInHostFile(targetIp)) {
-                    FileUtils.writeStringToFile(hostsFile, String.format("%s\n", targetIp), true);
-                    logger.debug(String.format("add target ip[%s] to %s", targetIp, AnsibleConstant.INVENTORY_FILE));
-                } else {
-                    logger.debug(String.format("found target ip[%s] in %s", targetIp, AnsibleConstant.INVENTORY_FILE));
-                }
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-
     private void setupPublicKey() throws IOException {
         File pubKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PUBLIC_KEY);
         String script = PathUtil.findFileOnClassPath(AnsibleConstant.IMPORT_PUBLIC_KEY_SCRIPT_PATH, true).getAbsolutePath();
@@ -316,7 +251,6 @@ public class AnsibleRunner {
             putArgument("trusted_host", Platform.getManagementServerIp());
 
             logger.debug(String.format("starts to run ansbile[%s]", playBookName));
-            setupHostsFile();
             setupPublicKey();
             callAnsible(completion);
         } catch (Exception e) {
