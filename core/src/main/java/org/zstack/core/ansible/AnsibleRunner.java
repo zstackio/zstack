@@ -251,6 +251,7 @@ public class AnsibleRunner {
             putArgument("trusted_host", Platform.getManagementServerIp());
 
             logger.debug(String.format("starts to run ansbile[%s]", playBookName));
+            new PrepareAnsible().setTargetIp(targetIp).prepare();
             setupPublicKey();
             callAnsible(completion);
         } catch (Exception e) {
