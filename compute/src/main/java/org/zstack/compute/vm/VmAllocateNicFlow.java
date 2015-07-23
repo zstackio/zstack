@@ -24,6 +24,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
@@ -101,6 +102,11 @@ public class VmAllocateNicFlow implements Flow {
             msgs.add(msg);
         }
 
+        // it's unlikely a vm having more than 512 nics
+        final BitSet deviceIdBitmap = new BitSet(512);
+        for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
+            deviceIdBitmap.set(nic.getDeviceId());
+        }
 
         bus.send(msgs, new CloudBusListCallBack(trigger) {
             @Override
@@ -108,8 +114,8 @@ public class VmAllocateNicFlow implements Flow {
                 ErrorCode err = null;
                 for (MessageReply r : replies) {
                     if (r.isSuccess()) {
-                        int index = replies.indexOf(r);
-                        int deviceId = spec.getCurrentVmOperation() == VmOperation.AttachNic ? index + spec.getVmInventory().getVmNics().size() : index;
+                        int deviceId = deviceIdBitmap.nextClearBit(0);
+                        deviceIdBitmap.set(deviceId);
                         AllocateIpReply areply = r.castReply();
                         VmNicInventory nic = new VmNicInventory();
                         nic.setUuid(Platform.getUuid());

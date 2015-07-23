@@ -20,6 +20,9 @@ import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * 1. detach all nic
  *
@@ -33,6 +36,11 @@ import org.zstack.utils.logging.CLogger;
  * 4. update the default L3
  *
  * confirm the default L3 is updated
+ *
+ * 5. detach a nic
+ * 6. attach the nic back
+ *
+ * confirm no duplicate deviceId
  */
 public class TestDetachNicOnKvm7 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
@@ -83,5 +91,16 @@ public class TestDetachNicOnKvm7 {
         update.setDefaultL3NetworkUuid(l31.getUuid());
         vm = api.updateVm(update);
         Assert.assertEquals(l31.getUuid(), vm.getDefaultL3NetworkUuid());
+
+        VmNicInventory tnic = vm.getVmNics().get(0);
+        api.detachNic(tnic.getUuid());
+        vm = api.attachNic(vm.getUuid(), tnic.getL3NetworkUuid());
+        vm = api.attachNic(vm.getUuid(), deployer.l3Networks.get("TestL3Network1").getUuid());
+        vm = api.attachNic(vm.getUuid(), deployer.l3Networks.get("TestL3Network2").getUuid());
+        Set<Integer> deviceIds = new HashSet<Integer>();
+        for (VmNicInventory nic : vm.getVmNics()) {
+            deviceIds.add(nic.getDeviceId());
+        }
+        Assert.assertEquals(vm.getVmNics().size(), deviceIds.size());
     }
 }
