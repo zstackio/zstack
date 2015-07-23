@@ -991,7 +991,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             if (session == null) {
                 SessionVO svo = dbf.findByUuid(msg.getSession().getUuid(), SessionVO.class);
                 if (svo == null) {
-                    throw new BadCredentialsException("Session expired");
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.INVALID_SESSION, "Session expired"));
                 }
                 session = SessionInventory.valueOf(svo);
                 sessions.put(session.getUuid(), session);
@@ -1001,7 +1001,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             if (curr.after(session.getExpiredDate())) {
                 logger.debug(String.format("session expired[%s < %s] for account[uuid:%s]", curr, session.getExpiredDate(), session.getAccountUuid()));
                 logOutSession(session.getUuid());
-                throw new BadCredentialsException("Session expired");
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.INVALID_SESSION, "Session expired"));
             }
 
             this.session = session;
