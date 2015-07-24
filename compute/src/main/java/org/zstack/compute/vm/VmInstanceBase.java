@@ -1128,14 +1128,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         } else {
             if (l3Uuids == null) {
                 // accessed by a system admin
-                sql = "select l3 from L3NetworkVO l3, VmNicVO nic, VmInstanceVO vm, L2NetworkVO l2, L2NetworkClusterRefVO l2ref" +
-                        " where nic.l3NetworkUuid != l3.uuid and nic.vmInstanceUuid = vm.uuid and vm.uuid = :uuid and vm.clusterUuid = l2ref.clusterUuid" +
+                sql = "select l3 from L3NetworkVO l3, VmInstanceVO vm, L2NetworkVO l2, L2NetworkClusterRefVO l2ref" +
+                        " where l3.uuid not in (select nic.l3NetworkUuid from VmNicVO nic where nic.vmInstanceUuid = :uuid) and vm.uuid = :uuid and vm.clusterUuid = l2ref.clusterUuid" +
                         " and l2ref.l2NetworkUuid = l2.uuid and l2.uuid = l3.l2NetworkUuid and l3.state = :l3State group by l3.uuid";
                 q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
             } else {
                 // accessed by a normal account
-                sql = "select l3 from L3NetworkVO l3, VmNicVO nic, VmInstanceVO vm, L2NetworkVO l2, L2NetworkClusterRefVO l2ref" +
-                        " where nic.l3NetworkUuid != l3.uuid and nic.vmInstanceUuid = vm.uuid and vm.uuid = :uuid and vm.clusterUuid = l2ref.clusterUuid" +
+                sql = "select l3 from L3NetworkVO l3, VmInstanceVO vm, L2NetworkVO l2, L2NetworkClusterRefVO l2ref" +
+                        " where l3.uuid not in (select nic.l3NetworkUuid from VmNicVO nic where nic.vmInstanceUuid = :uuid) and vm.uuid = :uuid and vm.clusterUuid = l2ref.clusterUuid" +
                         " and l2ref.l2NetworkUuid = l2.uuid and l2.uuid = l3.l2NetworkUuid and l3.state = :l3State and l3.uuid in (:l3uuids) group by l3.uuid";
                 q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
                 q.setParameter("l3uuids", l3Uuids);

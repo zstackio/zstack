@@ -45,6 +45,10 @@ public class TestVmGetAttachableL3Networks {
     
     @Test
     public void test() throws ApiSenderException, InterruptedException {
+        VmInstanceInventory cvm = deployer.vms.get("TestVm");
+        List<L3NetworkInventory> cl3s = api.getVmAttachableL3Networks(cvm.getUuid());
+        Assert.assertTrue(cl3s.isEmpty());
+
         IdentityCreator identityCreator = new IdentityCreator(api);
         AccountInventory account1 = identityCreator.useAccount("test");
         SessionInventory session1 = identityCreator.getAccountSession();
