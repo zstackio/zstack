@@ -98,6 +98,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.configuration.APIGetGlobalPropertyMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.query.APIGenerateQueryableFieldsMsg</name>
         <serviceId>query</serviceId>
     </message>

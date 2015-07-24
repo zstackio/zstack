@@ -170,12 +170,29 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 handle((APIGenerateSqlForeignKeyMsg) msg);
             } else if (msg instanceof APIGenerateSqlIndexMsg) {
                 handle((APIGenerateSqlIndexMsg) msg);
+            } else if (msg instanceof APIGetGlobalPropertyMsg) {
+                handle((APIGetGlobalPropertyMsg) msg);
             } else {
                 bus.dealWithUnknownMessage(msg);
             }
         } catch (IOException e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    private void handle(APIGetGlobalPropertyMsg msg) {
+        Properties p = System.getProperties();
+        Enumeration keys = p.keys();
+        List<String> pps = new ArrayList<String>();
+        while (keys.hasMoreElements()) {
+            String key = (String)keys.nextElement();
+            String value = (String)p.get(key);
+            pps.add(String.format("%s = %s", key, value));
+        }
+
+        APIGetGlobalPropertyReply reply = new APIGetGlobalPropertyReply();
+        reply.setProperties(pps);
+        bus.reply(msg, reply);
     }
 
     private void handle(APIGenerateSqlIndexMsg msg) {
