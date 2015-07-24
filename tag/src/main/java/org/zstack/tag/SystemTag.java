@@ -138,6 +138,15 @@ public class SystemTag {
         return resourceClass;
     }
 
+
+    public void delete(String resourceUuid) {
+        tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), false);
+    }
+
+    public void deleteInherentTag(String resourceUuid) {
+        tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
+    }
+
     private SystemTagInventory createTag(String resourceUuid, Class resourceClass, boolean inherent, boolean recreate) {
         if (recreate) {
             tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), inherent);

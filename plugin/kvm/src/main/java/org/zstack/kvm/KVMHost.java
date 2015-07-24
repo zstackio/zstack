@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostBase;
+import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleConstant;
@@ -1440,11 +1441,18 @@ public class KVMHost extends HostBase implements Host {
                         rsp.getError());
                 errCode = errf.stringToOperationError(err);
             } else {
-                if (rsp.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_LIVESNAPSHOT_VERSION) >= 0 &&
-                        rsp.getQemuVersion().compareTo(KVMConstant.MIN_QEMU_LIVESNAPSHOT_VERSION) >= 0) {
-                    logger.debug(String.format("kvm host[uuid:%s, name:%s, ip:%s] supports live snapshot with libvirt[version:%s], qemu[version:%s]",
-                            self.getUuid(), self.getName(), self.getManagementIp(), rsp.getLibvirtVersion(), rsp.getQemuVersion()));
+                boolean liveSnapshot = rsp.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_LIVESNAPSHOT_VERSION) >= 0 &&
+                        rsp.getQemuVersion().compareTo(KVMConstant.MIN_QEMU_LIVESNAPSHOT_VERSION) >= 0;
+
+                String hostOS = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(self.getUuid(), HostSystemTags.OS_DISTRIBUTION_TOKEN);
+                liveSnapshot = liveSnapshot && (!"CentOS".equals(hostOS) || KVMGlobalConfig.ALLOW_LIVE_SNAPSHOT_ON_REDHAT.value(Boolean.class));
+
+                if (liveSnapshot) {
+                    logger.debug(String.format("kvm host[OS:%s, uuid:%s, name:%s, ip:%s] supports live snapshot with libvirt[version:%s], qemu[version:%s]",
+                            hostOS, self.getUuid(), self.getName(), self.getManagementIp(), rsp.getLibvirtVersion(), rsp.getQemuVersion()));
                     HostSystemTags.LIVE_SNAPSHOT.reCreateInherentTag(self.getUuid());
+                } else {
+                    HostSystemTags.LIVE_SNAPSHOT.deleteInherentTag(self.getUuid());
                 }
             }
         } catch (RestClientException e) {
@@ -1623,52 +1631,52 @@ public class KVMHost extends HostBase implements Host {
                                 trigger.next();
                             }
                         });
-
-                        flow(new NoRollbackFlow() {
-                            String __name__ = "collect-kvm-host-facts";
-
-                            @Override
-                            public void run(final FlowTrigger trigger, Map data) {
-                                HostFactCmd cmd = new HostFactCmd();
-                                restf.asyncJsonPost(hostFactPath, cmd, new JsonAsyncRESTCallback<HostFactResponse>() {
-                                    @Override
-                                    public void fail(ErrorCode err) {
-                                        trigger.fail(err);
-                                    }
-
-                                    @Override
-                                    public void success(HostFactResponse ret) {
-                                        if (!ret.isSuccess()) {
-                                            trigger.fail(errf.stringToOperationError(ret.getError()));
-                                            return;
-                                        }
-
-                                        if (ret.getHvmCpuFlag() == null) {
-                                            trigger.fail(errf.stringToOperationError(
-                                                    String.format("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting")
-                                            ));
-                                            return;
-                                        }
-
-                                        KVMSystemTags.QEMU_IMG_VERSION.createTag(self.getUuid(), map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion())));
-                                        KVMSystemTags.LIBVIRT_VERSION.createTag(self.getUuid(), map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion())));
-                                        KVMSystemTags.HVM_CPU_FLAG.createTag(self.getUuid(), map(e(KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag())));
-
-                                        if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
-                                            KVMSystemTags.VIRTIO_SCSI.reCreateInherentTag(self.getUuid());
-                                        }
-
-                                        trigger.next();
-                                    }
-
-                                    @Override
-                                    public Class<HostFactResponse> getReturnClass() {
-                                        return HostFactResponse.class;
-                                    }
-                                });
-                            }
-                        });
                     }
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "collect-kvm-host-facts";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            HostFactCmd cmd = new HostFactCmd();
+                            restf.asyncJsonPost(hostFactPath, cmd, new JsonAsyncRESTCallback<HostFactResponse>() {
+                                @Override
+                                public void fail(ErrorCode err) {
+                                    trigger.fail(err);
+                                }
+
+                                @Override
+                                public void success(HostFactResponse ret) {
+                                    if (!ret.isSuccess()) {
+                                        trigger.fail(errf.stringToOperationError(ret.getError()));
+                                        return;
+                                    }
+
+                                    if (ret.getHvmCpuFlag() == null) {
+                                        trigger.fail(errf.stringToOperationError(
+                                                "cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"
+                                        ));
+                                        return;
+                                    }
+
+                                    KVMSystemTags.QEMU_IMG_VERSION.recreateTag(self.getUuid(), map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion())));
+                                    KVMSystemTags.LIBVIRT_VERSION.recreateTag(self.getUuid(), map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion())));
+                                    KVMSystemTags.HVM_CPU_FLAG.recreateTag(self.getUuid(), map(e(KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag())));
+
+                                    if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
+                                        KVMSystemTags.VIRTIO_SCSI.reCreateInherentTag(self.getUuid());
+                                    }
+
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public Class<HostFactResponse> getReturnClass() {
+                                    return HostFactResponse.class;
+                                }
+                            });
+                        }
+                    });
 
                     error(new FlowErrorHandler(complete) {
                         @Override

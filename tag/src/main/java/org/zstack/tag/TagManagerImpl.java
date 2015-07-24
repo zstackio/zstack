@@ -329,7 +329,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private void deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit, boolean useLike) {
-        DebugUtils.Assert(tag != null || resourceUuid != null || resourceType != null, String.format("tag, resourceUuid, resourceType cannot all be null"));
+        DebugUtils.Assert(tag != null || resourceUuid != null || resourceType != null, "tag, resourceUuid, resourceType cannot all be null");
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         if (tag != null) {
             if (useLike) {
