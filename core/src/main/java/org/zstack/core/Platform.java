@@ -40,6 +40,8 @@ public class Platform {
 
     public static final String COMPONENT_CLASSPATH_HOME = "componentsHome";
 
+    private static final Map<String, String> globalProperties = new HashMap<String, String>();
+
     private static Map<String, String> linkGlobalPropertyMap(String prefix) {
         Map<String, String> ret = new HashMap<String, String>();
         Map<String, String> map = getGlobalPropertiesStartWith(prefix);
@@ -119,11 +121,16 @@ public class Platform {
             f.setAccessible(true);
             try {
                 f.set(null, valueToSet);
+                globalProperties.put(name, valueToSet == null ? "null" : valueToSet.toString());
                 logger.debug(String.format("linked global property[%s.%s], value: %s", clz.getName(), f.getName(), valueToSet));
             } catch (IllegalAccessException e) {
                 throw new CloudRuntimeException(String.format("unable to link global property[%s.%s]", clz.getName(), f.getName()), e);
             }
         }
+    }
+
+    public static Map<String, String> getGlobalProperties() {
+        return globalProperties;
     }
 
     private static List linkGlobalPropertyList(String name) {
@@ -356,7 +363,7 @@ public class Platform {
             }
         }
 
-        String err = String.format("cannot get management server ip of this machine. there are three ways to get the ip.\n1) search for 'management.server.ip' java property\n2) search for 'ZSTACK_MANAGEMENT_SERVER_IP' environment variable\n3) search for default route printed out by '/sbin/ip route'\nhowever, all above methods failed");
+        String err = "cannot get management server ip of this machine. there are three ways to get the ip.\n1) search for 'management.server.ip' java property\n2) search for 'ZSTACK_MANAGEMENT_SERVER_IP' environment variable\n3) search for default route printed out by '/sbin/ip route'\nhowever, all above methods failed";
         if (defaultLine == null) {
             throw new CloudRuntimeException(err);
         }

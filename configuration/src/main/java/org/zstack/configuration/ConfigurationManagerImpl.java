@@ -181,6 +181,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     }
 
     private void handle(APIGetGlobalPropertyMsg msg) {
+        /*
         Properties p = System.getProperties();
         Enumeration keys = p.keys();
         List<String> pps = new ArrayList<String>();
@@ -188,6 +189,12 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             String key = (String)keys.nextElement();
             String value = (String)p.get(key);
             pps.add(String.format("%s = %s", key, value));
+        }
+        */
+
+        List<String> pps = new ArrayList<String>();
+        for (Map.Entry<String, String> e : Platform.getGlobalProperties().entrySet()) {
+            pps.add(String.format("%s: %s", e.getKey(), e.getValue()));
         }
 
         APIGetGlobalPropertyReply reply = new APIGetGlobalPropertyReply();
