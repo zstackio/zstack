@@ -7,6 +7,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostBase;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.host.HostSystemTags;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
@@ -1186,21 +1187,28 @@ public class KVMHost extends HostBase implements Host {
         checkStateAndStatus();
         final StartVmCmd cmd = new StartVmCmd();
 
+        boolean virtio;
+        String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
+                spec.getVmInventory().getPlatform();
+
+        if (ImagePlatform.Windows.toString().equals(platform)) {
+            virtio = VmSystemTags.WINDOWS_VOLUME_ON_VIRTIO.hasTag(spec.getVmInventory().getUuid());
+        } else {
+            virtio = ImagePlatform.Linux.toString().equals(platform) || ImagePlatform.Paravirtualization.toString().equals(platform);
+        }
+
         cmd.setVmName(spec.getVmInventory().getName());
         cmd.setVmUuid(spec.getVmInventory().getUuid());
         cmd.setCpuNum(spec.getVmInventory().getCpuNum());
         cmd.setCpuSpeed(spec.getVmInventory().getCpuSpeed());
         cmd.setMemory(spec.getVmInventory().getMemorySize());
-        cmd.setUseVirtio(
-                ImagePlatform.Linux.toString().equals(spec.getImageSpec().getInventory().getPlatform())
-                || ImagePlatform.Paravirtualization.toString().equals(spec.getImageSpec().getInventory().getPlatform())
-        );
+        cmd.setUseVirtio(virtio);
         VolumeTO rootVolume = new VolumeTO();
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
         rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
-        rootVolume.setUseVirtio(ImagePlatform.Linux.toString().equals(spec.getVmInventory().getPlatform()) || ImagePlatform.Paravirtualization.toString().equals(spec.getVmInventory().getPlatform()));
+        rootVolume.setUseVirtio(virtio);
         cmd.setRootVolume(rootVolume);
         cmd.setTimeout(TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout()));
         List<VolumeTO> dataVolumes = new ArrayList<VolumeTO>(spec.getDestDataVolumes().size());
@@ -1210,7 +1218,7 @@ public class KVMHost extends HostBase implements Host {
             v.setDeviceId(data.getDeviceId());
             v.setDeviceType(getVolumeTOType(data));
             v.setVolumeUuid(data.getUuid());
-            v.setUseVirtio(ImagePlatform.Linux.toString().equals(spec.getVmInventory().getPlatform()) || ImagePlatform.Paravirtualization.toString().equals(spec.getVmInventory().getPlatform()));
+            v.setUseVirtio(virtio);
             dataVolumes.add(v);
         }
         cmd.setDataVolumes(dataVolumes);
@@ -1223,7 +1231,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setNics(nics);
 
         ImageInventory image = spec.getImageSpec().getInventory();
-        if (ImageMediaType.ISO.toString().equals(image.getMediaType()) && spec.getCurrentVmOperation() == VmOperation.NewCreate) {
+        if (spec.getCurrentVmOperation() == VmOperation.NewCreate && ImageMediaType.ISO.toString().equals(image.getMediaType())) {
             IsoSpec iso = spec.getDestIso();
 
             if (iso.getInstallPath().startsWith("http")) {
