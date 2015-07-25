@@ -10,13 +10,9 @@ import java.util.Date;
 @PythonClassInventory
 public class SessionInventory implements Serializable {
     private String uuid;
-    @APINoSee
     private String accountUuid;
-    @APINoSee
     private String userUuid;
-    @APINoSee
     private Timestamp expiredDate;
-    @APINoSee
     private Timestamp createDate;
     
     public static SessionInventory valueOf(SessionVO vo) {
