@@ -3,12 +3,13 @@ package org.zstack.header.network.l3;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.APISyncCallMessage;
 
 /**
  * Created by frank on 6/15/2015.
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
-public class APIGetFreeIpMsg extends APIMessage implements L3NetworkMessage {
+public class APIGetFreeIpMsg extends APISyncCallMessage implements L3NetworkMessage {
     @APIParam(resourceType = L3NetworkVO.class, required = false, checkAccount = true)
     private String l3NetworkUuid;
     @APIParam(resourceType = IpRangeVO.class, required = false, checkAccount = true)
