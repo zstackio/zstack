@@ -8,7 +8,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>0.7.0</version>
+        <version>0.8.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>tool</artifactId>
