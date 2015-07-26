@@ -132,8 +132,7 @@ public class VirtualRouterPortForwardingBackend implements PortForwardingBackend
         }
 
         final PortForwardingStruct struct = it.next();
-        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(struct.getRule().getUuid());
-        vrMgr.acquireVirtualRouterVm(struct.getGuestL3Network(), accountUuid, new VirtualRouterOfferingValidator() {
+        vrMgr.acquireVirtualRouterVm(struct.getGuestL3Network(), new VirtualRouterOfferingValidator() {
             @Override
             public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                 if (!offering.getPublicNetworkUuid().equals(struct.getVip().getL3NetworkUuid())) {

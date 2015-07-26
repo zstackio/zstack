@@ -161,12 +161,7 @@ public class VirtualRouterVipBackend implements VipBackend {
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
-                SimpleQuery<AccountResourceRefVO> aq = dbf.createQuery(AccountResourceRefVO.class);
-                aq.select(AccountResourceRefVO_.ownerAccountUuid);
-                aq.add(AccountResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, vip.getUuid());
-                String accountUuid = aq.findValue();
-
-                vrMgr.acquireVirtualRouterVm(guestNw, accountUuid, new VirtualRouterOfferingValidator() {
+                vrMgr.acquireVirtualRouterVm(guestNw, new VirtualRouterOfferingValidator() {
                     @Override
                     public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                         if (!offering.getPublicNetworkUuid().equals(vip.getL3NetworkUuid())) {

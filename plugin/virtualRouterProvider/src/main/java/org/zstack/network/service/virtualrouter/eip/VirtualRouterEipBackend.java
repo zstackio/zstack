@@ -171,14 +171,9 @@ public class VirtualRouterEipBackend implements EipBackend {
 
     @Override
     public void applyEip(final EipStruct struct, final Completion completion) {
-        SimpleQuery<AccountResourceRefVO> aq = dbf.createQuery(AccountResourceRefVO.class);
-        aq.select(AccountResourceRefVO_.ownerAccountUuid);
-        aq.add(AccountResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, struct.getEip().getUuid());
-        String accountUuid = aq.findValue();
-
         L3NetworkVO l3vo = dbf.findByUuid(struct.getNic().getL3NetworkUuid(), L3NetworkVO.class);
         final L3NetworkInventory l3inv = L3NetworkInventory.valueOf(l3vo);
-        vrMgr.acquireVirtualRouterVm(l3inv, accountUuid, new VirtualRouterOfferingValidator() {
+        vrMgr.acquireVirtualRouterVm(l3inv, new VirtualRouterOfferingValidator() {
             @Override
             public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                 if (!offering.getPublicNetworkUuid().equals(struct.getVip().getL3NetworkUuid())) {

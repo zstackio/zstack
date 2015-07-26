@@ -45,6 +45,7 @@ import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.identity.AccountManager;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
@@ -102,6 +103,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private ErrorFacade errf;
     @Autowired
     private JobQueueFacade jobf;
+    @Autowired
+    private AccountManager acntMgr;
 
 	@Override
     @MessageSafe
@@ -322,7 +325,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     @Override
-    public void acquireVirtualRouterVm(final L3NetworkInventory l3Nw, String accountUuid,
+    public void acquireVirtualRouterVm(final L3NetworkInventory l3Nw,
                                        VirtualRouterOfferingValidator validator,
                                        final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
         VirtualRouterVmInventory vr = new Callable<VirtualRouterVmInventory>() {
@@ -369,6 +372,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             validator.validate(offering);
         }
 
+        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(l3Nw.getUuid());
         CreateVirtualRouterJob job = new CreateVirtualRouterJob();
         job.setL3Network(l3Nw);
         job.setAccountUuid(accountUuid);
@@ -383,11 +387,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VmInstanceSpec servedVm, VirtualRouterOfferingValidator vrOfferingValidator, ReturnValueCompletion<VirtualRouterVmInventory> completion) {
-        SimpleQuery<AccountResourceRefVO> aq = dbf.createQuery(AccountResourceRefVO.class);
-        aq.select(AccountResourceRefVO_.ownerAccountUuid);
-        aq.add(AccountResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, servedVm.getVmInventory().getUuid());
-        String accountUuid = aq.findValue();
-        acquireVirtualRouterVm(l3Nw, accountUuid, vrOfferingValidator, completion);
+        acquireVirtualRouterVm(l3Nw, vrOfferingValidator, completion);
     }
 
     @Override

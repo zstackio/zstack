@@ -67,12 +67,7 @@ public class VirtualRouterSnatBackend implements NetworkServiceSnatBackend {
         final SnatStruct struct = it.next();
         final L3NetworkInventory guestL3 = struct.getL3Network();
 
-        SimpleQuery<AccountResourceRefVO> aq = dbf.createQuery(AccountResourceRefVO.class);
-        aq.select(AccountResourceRefVO_.ownerAccountUuid);
-        aq.add(AccountResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, spec.getVmInventory().getUuid());
-        String accountUuid = aq.findValue();
-
-        vrMgr.acquireVirtualRouterVm(struct.getL3Network(), accountUuid, new VirtualRouterOfferingValidator() {
+        vrMgr.acquireVirtualRouterVm(struct.getL3Network(), new VirtualRouterOfferingValidator() {
             @Override
             public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                 if (offering.getPublicNetworkUuid().equals(guestL3.getUuid())) {

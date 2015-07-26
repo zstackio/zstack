@@ -26,7 +26,7 @@ public interface VirtualRouterManager {
 
     void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VmInstanceSpec servedVm, VirtualRouterOfferingValidator vrOfferingValidator, ReturnValueCompletion<VirtualRouterVmInventory> completion);
 
-    void acquireVirtualRouterVm(L3NetworkInventory l3Nw, String accountUuid, VirtualRouterOfferingValidator vrOfferingValidator, ReturnValueCompletion<VirtualRouterVmInventory> completion);
+    void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VirtualRouterOfferingValidator vrOfferingValidator, ReturnValueCompletion<VirtualRouterVmInventory> completion);
 
 
     VirtualRouterVmInventory getVirtualRouterVm(L3NetworkInventory l3Nw);
