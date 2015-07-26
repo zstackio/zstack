@@ -26,6 +26,7 @@ public class AccountInventory {
     private String uuid;
     private String name;
     private String description;
+    private String type;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     
@@ -34,6 +35,7 @@ public class AccountInventory {
         inv.setUuid(vo.getUuid());
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
+        inv.setType(vo.getType().toString());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -45,6 +47,14 @@ public class AccountInventory {
             lst.add(AccountInventory.valueOf(vo));
         }
         return lst;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getDescription() {

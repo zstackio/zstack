@@ -1023,11 +1023,63 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APIRevokeResourceSharingMsg) msg);
         } else if (msg instanceof APIUpdateUserMsg) {
             validate((APIUpdateUserMsg) msg);
+        } else if (msg instanceof APIDeleteAccountMsg) {
+            validate((APIDeleteAccountMsg) msg);
+        } else if (msg instanceof APICreateAccountMsg) {
+            validate((APICreateAccountMsg) msg);
+        } else if (msg instanceof APICreateUserMsg) {
+            validate((APICreateUserMsg) msg);
+        } else if (msg instanceof APICreateUserGroupMsg) {
+            validate((APICreateUserGroupMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APICreateUserGroupMsg msg) {
+        SimpleQuery<UserGroupVO> q = dbf.createQuery(UserGroupVO.class);
+        q.add(UserGroupVO_.accountUuid, Op.EQ, msg.getAccountUuid());
+        q.add(UserGroupVO_.name, Op.EQ, msg.getName());
+        if (q.isExists()) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("unable to create a group. A group called %s is already under the account[uuid:%s]", msg.getName(), msg.getAccountUuid())
+            ));
+        }
+    }
+
+    private void validate(APICreateUserMsg msg) {
+        SimpleQuery<UserVO> q = dbf.createQuery(UserVO.class);
+        q.add(UserVO_.accountUuid, Op.EQ, msg.getAccountUuid());
+        q.add(UserVO_.name, Op.EQ, msg.getName());
+        if (q.isExists()) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("unable to create a user. A user called %s is already under the account[uuid:%s]", msg.getName(), msg.getAccountUuid())
+            ));
+        }
+    }
+
+    private void validate(APICreateAccountMsg msg) {
+        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+        q.add(AccountVO_.name, Op.EQ, msg.getName());
+        if (q.isExists()) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("unable to create an account. An account already called %s", msg.getName())
+            ));
+        }
+    }
+
+    private void validate(APIDeleteAccountMsg msg) {
+        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+        q.select(AccountVO_.type);
+        q.add(AccountVO_.uuid, Op.EQ, msg.getUuid());
+        AccountType type = q.findValue();
+        if (AccountType.SystemAdmin == type) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    "unable to delete an account. The account is an admin account"
+            ));
+        }
     }
 
     private void validate(APIUpdateUserMsg msg) {
