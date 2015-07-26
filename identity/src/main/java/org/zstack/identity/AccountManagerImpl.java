@@ -6,8 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
-import org.zstack.core.cascade.CascadeConstant;
-import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -16,19 +14,13 @@ import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -37,7 +29,6 @@ import org.zstack.header.identity.AccountConstant.StatementEffect;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
-import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.APIListMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -361,7 +352,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         s = new Statement();
         s.setName(String.format("user-reset-password-%s", vo.getUuid()));
         s.setEffect(StatementEffect.Allow);
-        s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIResetUserPasswordMsg.class.getSimpleName()));
+        s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
         p.setData(JSONObjectUtil.toJsonString(list(s)));
         ps.add(p);
 
@@ -1012,8 +1003,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         new Auth().validate(msg);
 
-        if (msg instanceof APIResetAccountPasswordMsg) {
-            validate((APIResetAccountPasswordMsg) msg);
+        if (msg instanceof APIUpdateAccountMsg) {
+            validate((APIUpdateAccountMsg) msg);
         } else if (msg instanceof APICreatePolicyMsg) {
             validate((APICreatePolicyMsg) msg);
         } else if (msg instanceof APIAddUserToGroupMsg) {
@@ -1030,8 +1021,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APIShareResourceMsg) msg);
         } else if (msg instanceof APIRevokeResourceSharingMsg) {
             validate((APIRevokeResourceSharingMsg) msg);
-        } else if (msg instanceof APIResetUserPasswordMsg) {
-            validate((APIResetUserPasswordMsg) msg);
+        } else if (msg instanceof APIUpdateUserMsg) {
+            validate((APIUpdateUserMsg) msg);
         }
 
         setServiceId(msg);
@@ -1039,7 +1030,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return msg;
     }
 
-    private void validate(APIResetUserPasswordMsg msg) {
+    private void validate(APIUpdateUserMsg msg) {
         if (msg.getUuid() == null && msg.getSession().isAccountSession()) {
             throw new ApiMessageInterceptionException (errf.stringToInvalidArgumentError(
                     "the current session is an account session. You need to specify the field 'uuid'" +
@@ -1182,7 +1173,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
     }
 
-    private void validate(APIResetAccountPasswordMsg msg) {
+    private void validate(APIUpdateAccountMsg msg) {
         AccountVO a = dbf.findByUuid(msg.getSession().getAccountUuid(), AccountVO.class);
         if (msg.getUuid() == null) {
             msg.setUuid(msg.getSession().getAccountUuid());

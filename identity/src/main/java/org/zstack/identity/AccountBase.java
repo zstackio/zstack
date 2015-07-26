@@ -63,12 +63,12 @@ public class AccountBase extends AbstractAccount {
         }
     }
 
-    private void handle(APIResetAccountPasswordMsg msg) {
+    private void handle(APIUpdateAccountMsg msg) {
         AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
         account.setPassword(msg.getPassword());
         account = dbf.updateAndRefresh(account);
 
-        APIResetAccountPasswordEvent evt = new APIResetAccountPasswordEvent(msg.getId());
+        APIUpdateAccountEvent evt = new APIUpdateAccountEvent(msg.getId());
         evt.setInventory(AccountInventory.valueOf(account));
         bus.publish(evt);
     }
@@ -210,8 +210,8 @@ public class AccountBase extends AbstractAccount {
     }
 
     private void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APIResetAccountPasswordMsg) {
-            handle((APIResetAccountPasswordMsg) msg);
+        if (msg instanceof APIUpdateAccountMsg) {
+            handle((APIUpdateAccountMsg) msg);
         } else if (msg instanceof APICreateUserMsg) {
             handle((APICreateUserMsg) msg);
         } else if (msg instanceof APICreatePolicyMsg) {
@@ -236,8 +236,8 @@ public class AccountBase extends AbstractAccount {
             handle((APIDetachPolicyFromUserGroupMsg) msg);
         } else if (msg instanceof APIRemoveUserFromGroupMsg) {
             handle((APIRemoveUserFromGroupMsg) msg);
-        } else if (msg instanceof APIResetUserPasswordMsg) {
-            handle((APIResetUserPasswordMsg) msg);
+        } else if (msg instanceof APIUpdateUserMsg) {
+            handle((APIUpdateUserMsg) msg);
         } else if (msg instanceof APIShareResourceMsg) {
             handle((APIShareResourceMsg) msg);
         } else if (msg instanceof APIRevokeResourceSharingMsg) {
@@ -354,12 +354,12 @@ public class AccountBase extends AbstractAccount {
         bus.publish(evt);
     }
 
-    private void handle(APIResetUserPasswordMsg msg) {
+    private void handle(APIUpdateUserMsg msg) {
         UserVO user = dbf.findByUuid(msg.getUuid(), UserVO.class);
         user.setPassword(msg.getPassword());
         dbf.update(user);
 
-        APIResetUserPasswordEvent evt = new APIResetUserPasswordEvent(msg.getId());
+        APIUpdateUserEvent evt = new APIUpdateUserEvent(msg.getId());
         bus.publish(evt);
     }
 

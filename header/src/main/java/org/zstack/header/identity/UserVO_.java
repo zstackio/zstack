@@ -12,6 +12,7 @@ public class UserVO_ {
     public static volatile SingularAttribute<UserVO, Timestamp> createDate;
     public static volatile SingularAttribute<UserVO, String> accountUuid;
     public static volatile SingularAttribute<UserVO, String> securityKey;
+    public static volatile SingularAttribute<UserVO, String> description;
     public static volatile SingularAttribute<UserVO, String> token;
     public static volatile SingularAttribute<UserVO, Timestamp> lastOpDate;
 }

@@ -1747,13 +1747,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public AccountInventory resetAccountPassword(String uuid, String password, SessionInventory session) throws ApiSenderException {
-        APIResetAccountPasswordMsg msg = new APIResetAccountPasswordMsg();
+        APIUpdateAccountMsg msg = new APIUpdateAccountMsg();
         msg.setSession(session);
         msg.setPassword(password);
         msg.setUuid(uuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIResetAccountPasswordEvent evt = sender.send(msg, APIResetAccountPasswordEvent.class);
+        APIUpdateAccountEvent evt = sender.send(msg, APIUpdateAccountEvent.class);
         return evt.getInventory();
     }
 
@@ -1769,13 +1769,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public void resetUserPassword(String uuid, String password, SessionInventory session) throws ApiSenderException {
-        APIResetUserPasswordMsg msg = new APIResetUserPasswordMsg();
+        APIUpdateUserMsg msg = new APIUpdateUserMsg();
         msg.setUuid(uuid);
         msg.setPassword(password);
         msg.setSession(session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        sender.send(msg, APIResetUserPasswordEvent.class);
+        sender.send(msg, APIUpdateUserEvent.class);
     }
 
     public PolicyInventory createPolicy(String name, List<Statement> s, SessionInventory session) throws ApiSenderException {

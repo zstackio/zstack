@@ -12,7 +12,7 @@
     </message>
     
     <message>
-        <name>org.zstack.header.identity.APIResetAccountPasswordMsg</name>
+        <name>org.zstack.header.identity.APIUpdateAccountMsg</name>
     </message>
     
     <message>
@@ -96,7 +96,7 @@
     </message>
 
     <message>
-        <name>org.zstack.header.identity.APIResetUserPasswordMsg</name>
+        <name>org.zstack.header.identity.APIUpdateUserMsg</name>
     </message>
 
     <message>

@@ -2,14 +2,14 @@ package org.zstack.header.identity;
 
 import org.zstack.header.message.APIEvent;
 
-public class APIResetAccountPasswordEvent extends APIEvent {
+public class APIUpdateAccountEvent extends APIEvent {
     private AccountInventory inventory;
     
-    public APIResetAccountPasswordEvent(String apiId) {
+    public APIUpdateAccountEvent(String apiId) {
         super(apiId);
     }
     
-    public APIResetAccountPasswordEvent() {
+    public APIUpdateAccountEvent() {
         super(null);
     }
 

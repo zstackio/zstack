@@ -5,11 +5,11 @@ import org.zstack.header.message.APIEvent;
 /**
  * Created by frank on 7/10/2015.
  */
-public class APIResetUserPasswordEvent extends APIEvent {
-    public APIResetUserPasswordEvent() {
+public class APIUpdateUserEvent extends APIEvent {
+    public APIUpdateUserEvent() {
     }
 
-    public APIResetUserPasswordEvent(String apiId) {
+    public APIUpdateUserEvent(String apiId) {
         super(apiId);
     }
 }
