@@ -1,0 +1,40 @@
+package org.zstack.storage.ceph;
+
+import org.zstack.utils.ssh.Ssh;
+
+/**
+ * Created by frank on 7/27/2015.
+ */
+public class CephMonBase {
+    protected CephMonAO self;
+
+    private String hostname;
+    private String sshUsername;
+    private String sshPassword;
+
+    public CephMonBase(CephMonAO self) {
+        this.self = self;
+    }
+
+    protected void checkTools() {
+        Ssh ssh = new Ssh();
+        ssh.setHostname(hostname).setUsername(sshUsername).setPassword(sshPassword)
+                .checkTool("ceph", "rbd").runErrorByExceptionAndClose();
+    }
+
+    public CephMonAO getSelf() {
+        return self;
+    }
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    public String getSshUsername() {
+        return sshUsername;
+    }
+
+    public String getSshPassword() {
+        return sshPassword;
+    }
+}
