@@ -22,6 +22,17 @@ public class CephBackupStorageVO extends BackupStorageVO {
     @NoView
     private Set<CephBackupStorageMonVO> mons = new HashSet<CephBackupStorageMonVO>();
 
+    @Column
+    private String fsid;
+
+    public String getFsid() {
+        return fsid;
+    }
+
+    public void setFsid(String fsid) {
+        this.fsid = fsid;
+    }
+
     public CephBackupStorageVO() {
     }
 

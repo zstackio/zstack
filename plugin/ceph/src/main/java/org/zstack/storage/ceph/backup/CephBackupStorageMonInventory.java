@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.backup;
 
 import org.zstack.header.search.Inventory;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -12,10 +13,14 @@ import java.util.List;
 @Inventory(mappingVOClass = CephBackupStorageMonVO.class)
 public class CephBackupStorageMonInventory {
     private String hostname;
+    private Timestamp createDate;
+    private Timestamp lastOpDate;
 
     public static CephBackupStorageMonInventory valueOf(CephBackupStorageMonVO vo) {
         CephBackupStorageMonInventory inv = new CephBackupStorageMonInventory();
         inv.setHostname(vo.getHostname());
+        inv.setCreateDate(vo.getCreateDate());
+        inv.setLastOpDate(vo.getLastOpDate());
         return inv;
     }
 
@@ -26,6 +31,22 @@ public class CephBackupStorageMonInventory {
         }
 
         return invs;
+    }
+
+    public Timestamp getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Timestamp createDate) {
+        this.createDate = createDate;
+    }
+
+    public Timestamp getLastOpDate() {
+        return lastOpDate;
+    }
+
+    public void setLastOpDate(Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
     }
 
     public String getHostname() {

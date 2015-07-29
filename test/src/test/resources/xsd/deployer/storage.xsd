@@ -44,6 +44,28 @@
         </xsd:complexContent>
     </xsd:complexType>
 
+    <xsd:complexType name="CephPrimaryStorageConfig">
+        <xsd:complexContent>
+            <xsd:extension base="PrimaryStorageConfigBase">
+                <xsd:sequence>
+                    <xsd:element name="fsid" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+                    <xsd:element name="monUrl" type="xsd:string" maxOccurs="unbounded" minOccurs="1"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="CephBackupStorageConfig">
+        <xsd:complexContent>
+            <xsd:extension base="BackupStorageConfigBase">
+                <xsd:sequence>
+                    <xsd:element name="fsid" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+                    <xsd:element name="monUrl" type="xsd:string" maxOccurs="unbounded" minOccurs="1"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
     <xsd:complexType name="LocalPrimaryStorageConfig">
         <xsd:complexContent>
             <xsd:extension base="PrimaryStorageConfigBase">

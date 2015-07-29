@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <message>
+        <name>org.zstack.storage.ceph.backup.APIAddCephBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.ceph.primary.APIAddCephPrimaryStorageMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+</service>

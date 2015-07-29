@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <name>image.download.timeout</name>
+        <description>timeout of command of downloading images to ceph backup storage, in seconds.</description>
+        <category>ceph.backupStorage</category>
+        <defaultValue>3600</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+</globalConfig>

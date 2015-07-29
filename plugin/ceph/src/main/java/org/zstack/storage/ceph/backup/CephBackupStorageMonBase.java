@@ -1,6 +1,8 @@
 package org.zstack.storage.ceph.backup;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -8,6 +10,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.storage.ceph.CephMonAO;
 import org.zstack.storage.ceph.CephMonBase;
+import org.zstack.storage.ceph.MonStatus;
 
 import java.util.Map;
 
@@ -15,6 +18,9 @@ import java.util.Map;
  * Created by frank on 7/27/2015.
  */
 public class CephBackupStorageMonBase extends CephMonBase {
+    @Autowired
+    private DatabaseFacade dbf;
+
     public CephBackupStorageMonBase(CephMonAO self) {
         super(self);
     }
@@ -54,6 +60,8 @@ public class CephBackupStorageMonBase extends CephMonBase {
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
+                        self.setStatus(MonStatus.Connected);
+                        dbf.update(self);
                         completion.success();
                     }
                 });

@@ -1,7 +1,12 @@
 package org.zstack.storage.ceph.backup;
 
+import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageInventory;
@@ -9,33 +14,52 @@ import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
+import org.zstack.storage.ceph.CephCapacityUpdater;
 import org.zstack.storage.ceph.MonStatus;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created by frank on 7/27/2015.
  */
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class CephBackupStorageBase extends BackupStorageBase {
 
     @Autowired
     protected RESTFacade restf;
 
     public static class AgentCommand {
+        String fsid;
+        String uuid;
+
+        public String getFsid() {
+            return fsid;
+        }
+
+        public void setFsid(String fsid) {
+            this.fsid = fsid;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
     }
 
     public static class AgentResponse {
         String error;
         boolean success;
-        long totalCapacity;
-        long availCapacity;
+        Long totalCapacity;
+        Long availCapacity;
 
         public String getError() {
             return error;
@@ -51,6 +75,38 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         public void setSuccess(boolean success) {
             this.success = success;
+        }
+
+        public Long getTotalCapacity() {
+            return totalCapacity;
+        }
+
+        public void setTotalCapacity(Long totalCapacity) {
+            this.totalCapacity = totalCapacity;
+        }
+
+        public Long getAvailCapacity() {
+            return availCapacity;
+        }
+
+        public void setAvailCapacity(Long availCapacity) {
+            this.availCapacity = availCapacity;
+        }
+    }
+
+    public static class InitCmd extends AgentCommand {
+        List<String> poolNames;
+    }
+
+    public static class InitRsp extends AgentResponse {
+        String fsid;
+
+        public String getFsid() {
+            return fsid;
+        }
+
+        public void setFsid(String fsid) {
+            this.fsid = fsid;
         }
     }
 
@@ -110,6 +166,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     public static final int AGENT_PORT = 7761;
+    public static final String INIT_PATH = "/init";
     public static final String DOWNLOAD_IMAGE_PATH = "/image/download";
     public static final String DELETE_IMAGE_PATH = "/image/delete";
     public static final String PING_PATH = "/ping";
@@ -118,8 +175,12 @@ public class CephBackupStorageBase extends BackupStorageBase {
         return String.format("http://%s:%s%s", ip, AGENT_PORT, path);
     }
 
+    protected String getTemplatePoolName() {
+        return String.format("bak-t-%s", self.getUuid());
+    }
+
     protected String makeImageInstallPath(String imageUuid) {
-        return String.format("%s/%s", self.getUuid(), imageUuid);
+        return String.format("%s/%s", getTemplatePoolName(), imageUuid);
     }
 
     private <T> void httpCall(final String path, final AgentCommand cmd, final JsonAsyncRESTCallback<T> callback) {
@@ -127,6 +188,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     private <T> void httpCall(final String path, final AgentCommand cmd, final JsonAsyncRESTCallback<T> callback, final long timeout, final TimeUnit timeUnit) {
+        cmd.setFsid(getSelf().getFsid());
+        cmd.setUuid(self.getUuid());
+
         final List<CephBackupStorageMonBase> mons = new ArrayList<CephBackupStorageMonBase>();
         for (CephBackupStorageMonVO monvo : getSelf().getMons()) {
             if (monvo.getStatus() == MonStatus.Connected) {
@@ -157,7 +221,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                 CephBackupStorageMonBase base = it.next();
 
-                restf.asyncJsonPost(makeHttpPath(base.getHostname(), DOWNLOAD_IMAGE_PATH), cmd, new JsonAsyncRESTCallback<AgentResponse>() {
+                restf.asyncJsonPost(makeHttpPath(base.getHostname(), path), cmd, new JsonAsyncRESTCallback<AgentResponse>() {
                     @Override
                     public void fail(ErrorCode err) {
                         errorCodes.add(err);
@@ -169,6 +233,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                         if (!ret.success) {
                             callback.fail(errf.stringToOperationError(ret.error));
                         } else {
+                            updateCapacityIfNeeded(ret);
                             callback.success((T)ret);
                         }
                     }
@@ -194,6 +259,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     protected CephBackupStorageInventory getInventory() {
         return CephBackupStorageInventory.valueOf(getSelf());
+    }
+
+    private void updateCapacityIfNeeded(AgentResponse rsp) {
+        new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availCapacity);
     }
 
     @Override
@@ -324,15 +393,15 @@ public class CephBackupStorageBase extends BackupStorageBase {
             List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
             Iterator<CephBackupStorageMonBase> it = mons.iterator();
 
-            void connect() {
+            void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
                     if (errorCodes.size() == mons.size()) {
-                        completion.fail(errf.stringToOperationError(
+                        trigger.fail(errf.stringToOperationError(
                                 String.format("unable to connect to the ceph backup storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
                                         self.getUuid(), JSONObjectUtil.toJsonString(errorCodes))
                         ));
                     } else {
-                        completion.success();
+                        trigger.next();
                     }
                     return;
                 }
@@ -341,19 +410,80 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 base.connect(new Completion(completion) {
                     @Override
                     public void success() {
-                        connect();
+                        connect(trigger);
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
                         errorCodes.add(errorCode);
-                        connect();
+                        connect(trigger);
                     }
                 });
             }
         }
 
-        new Connector().connect();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("connect-ceph-backup-storage-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "connect-monitor";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new Connector().connect(trigger);
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "init";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        InitCmd cmd = new InitCmd();
+                        cmd.poolNames = list(getTemplatePoolName());
+
+                        httpCall(INIT_PATH, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                trigger.fail(err);
+                            }
+
+                            @Override
+                            public void success(InitRsp ret) {
+                                if (getSelf().getFsid() == null) {
+                                    getSelf().setFsid(ret.fsid);
+                                    self = dbf.updateAndRefresh(self);
+                                }
+
+                                CephCapacityUpdater updater = new CephCapacityUpdater();
+                                updater.update(ret.fsid, ret.totalCapacity, ret.availCapacity);
+                            }
+
+                            @Override
+                            public Class<InitRsp> getReturnClass() {
+                                return InitRsp.class;
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override

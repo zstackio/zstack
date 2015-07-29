@@ -1,16 +1,19 @@
 package org.zstack.storage.ceph;
 
+import org.zstack.header.core.Completion;
 import org.zstack.utils.ssh.Ssh;
 
 /**
  * Created by frank on 7/27/2015.
  */
-public class CephMonBase {
+public abstract class CephMonBase {
     protected CephMonAO self;
 
     private String hostname;
     private String sshUsername;
     private String sshPassword;
+
+    public abstract void connect(Completion completion);
 
     public CephMonBase(CephMonAO self) {
         this.self = self;
