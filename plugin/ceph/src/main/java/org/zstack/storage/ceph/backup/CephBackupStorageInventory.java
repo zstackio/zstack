@@ -13,13 +13,23 @@ import java.util.List;
 @Inventory(mappingVOClass = CephBackupStorageVO.class, collectionValueOfMethod = "valueOf1")
 public class CephBackupStorageInventory extends BackupStorageInventory {
     private List<CephBackupStorageMonInventory> mons = new ArrayList<CephBackupStorageMonInventory>();
+    private String fsid;
 
     public CephBackupStorageInventory(CephBackupStorageVO vo) {
         super(vo);
         mons = CephBackupStorageMonInventory.valueOf(vo.getMons());
+        fsid = vo.getFsid();
     }
 
     public CephBackupStorageInventory() {
+    }
+
+    public String getFsid() {
+        return fsid;
+    }
+
+    public void setFsid(String fsid) {
+        this.fsid = fsid;
     }
 
     public static CephBackupStorageInventory valueOf(CephBackupStorageVO vo) {

@@ -22,6 +22,9 @@ public class CephMonAO {
     private String hostname;
 
     @Column
+    private int monPort = 6789;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private MonStatus status;
 
@@ -30,6 +33,14 @@ public class CephMonAO {
 
     @Column
     private Timestamp lastOpDate;
+
+    public int getMonPort() {
+        return monPort;
+    }
+
+    public void setMonPort(int monPort) {
+        this.monPort = monPort;
+    }
 
     public String getUuid() {
         return uuid;

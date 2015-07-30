@@ -39,6 +39,7 @@ import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;

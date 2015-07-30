@@ -132,4 +132,34 @@ public class CephPrimaryStorageSimulator {
         reply(entity, rsp);
         return null;
     }
+
+    @RequestMapping(value= CephPrimaryStorageBase.FLATTEN_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String flatten(HttpEntity<String> entity) {
+        FlattenCmd cmd = JSONObjectUtil.toObject(entity.getBody(), FlattenCmd.class);
+        config.flattenCmds.add(cmd);
+
+        reply(entity, new FlatenRsp());
+        return null;
+    }
+
+    @RequestMapping(value= CephPrimaryStorageBase.SFTP_UPLOAD_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String sftpUpload(HttpEntity<String> entity) {
+        SftpUpLoadCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SftpUpLoadCmd.class);
+        config.sftpUpLoadCmds.add(cmd);
+
+        reply(entity, new SftpUpLoadCmd());
+        return null;
+    }
+
+    @RequestMapping(value= CephPrimaryStorageBase.SFTP_DOWNLOAD_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String sftpDownload(HttpEntity<String> entity) {
+        SftpDownloadCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SftpDownloadCmd.class);
+        config.sftpDownloadCmds.add(cmd);
+
+        reply(entity, new SftpDownloadRsp());
+        return null;
+    }
 }

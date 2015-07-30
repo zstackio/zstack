@@ -183,7 +183,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     protected String makeImageInstallPath(String imageUuid) {
-        return String.format("%s/%s", getTemplatePoolName(), imageUuid);
+        return String.format("ceph://%s/%s", getTemplatePoolName(), imageUuid);
     }
 
     private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, Class<T> retClass, final ReturnValueCompletion<T> callback) {
@@ -268,7 +268,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
-        new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availCapacity);
+        if (rsp.getTotalCapacity() != null && rsp.getAvailCapacity() != null) {
+            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availCapacity);
+        }
     }
 
     @Override

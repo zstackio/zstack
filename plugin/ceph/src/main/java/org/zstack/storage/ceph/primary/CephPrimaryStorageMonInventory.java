@@ -13,12 +13,14 @@ import java.util.List;
 @Inventory(mappingVOClass = CephPrimaryStorageMonVO.class)
 public class CephPrimaryStorageMonInventory {
     private String hostname;
+    private Integer monPort;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
     public static CephPrimaryStorageMonInventory valueOf(CephPrimaryStorageMonVO vo) {
         CephPrimaryStorageMonInventory inv = new CephPrimaryStorageMonInventory();
         inv.setHostname(vo.getHostname());
+        inv.setMonPort(vo.getMonPort());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -31,6 +33,14 @@ public class CephPrimaryStorageMonInventory {
         }
 
         return invs;
+    }
+
+    public Integer getMonPort() {
+        return monPort;
+    }
+
+    public void setMonPort(Integer monPort) {
+        this.monPort = monPort;
     }
 
     public String getHostname() {

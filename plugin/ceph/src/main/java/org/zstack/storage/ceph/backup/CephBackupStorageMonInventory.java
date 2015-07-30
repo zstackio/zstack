@@ -13,12 +13,14 @@ import java.util.List;
 @Inventory(mappingVOClass = CephBackupStorageMonVO.class)
 public class CephBackupStorageMonInventory {
     private String hostname;
+    private Integer monPort;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
     public static CephBackupStorageMonInventory valueOf(CephBackupStorageMonVO vo) {
         CephBackupStorageMonInventory inv = new CephBackupStorageMonInventory();
         inv.setHostname(vo.getHostname());
+        inv.setMonPort(vo.getMonPort());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -31,6 +33,14 @@ public class CephBackupStorageMonInventory {
         }
 
         return invs;
+    }
+
+    public Integer getMonPort() {
+        return monPort;
+    }
+
+    public void setMonPort(Integer monPort) {
+        this.monPort = monPort;
     }
 
     public Timestamp getCreateDate() {

@@ -13,6 +13,7 @@ import java.util.List;
 @Inventory(mappingVOClass = CephPrimaryStorageVO.class, collectionValueOfMethod = "valueOf1")
 public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
     private List<CephPrimaryStorageMonInventory> mons;
+    private String fsid;
 
     public List<CephPrimaryStorageMonInventory> getMons() {
         return mons;
@@ -28,6 +29,7 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
     public CephPrimaryStorageInventory(CephPrimaryStorageVO vo) {
         super(vo);
         setMons(CephPrimaryStorageMonInventory.valueOf(vo.getMons()));
+        setFsid(vo.getFsid());
     }
 
     public static CephPrimaryStorageInventory valueOf(CephPrimaryStorageVO vo) {
@@ -41,5 +43,13 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
         }
 
         return invs;
+    }
+
+    public String getFsid() {
+        return fsid;
+    }
+
+    public void setFsid(String fsid) {
+        this.fsid = fsid;
     }
 }

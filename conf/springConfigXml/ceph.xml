@@ -22,6 +22,9 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageFactory" />
             <zstack:extension interface="org.zstack.storage.ceph.CephCapacityUpdateExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMAttachVolumeExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMDetachVolumeExtensionPoint" />
         </zstack:plugin>
     </bean>
 

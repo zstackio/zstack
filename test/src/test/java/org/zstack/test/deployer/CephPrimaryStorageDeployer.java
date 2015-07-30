@@ -13,6 +13,7 @@ import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.deployer.schema.CephPrimaryStorageConfig;
 import org.zstack.test.deployer.schema.DeployerConfig;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.SizeUtils;
 
 import java.util.List;
@@ -32,6 +33,7 @@ public class CephPrimaryStorageDeployer implements PrimaryStorageDeployer<CephPr
         for (CephPrimaryStorageConfig c : primaryStorages) {
             CephPrimaryStorageSimulatorConfig.CephPrimaryStorageConfig sc = new CephPrimaryStorageSimulatorConfig.CephPrimaryStorageConfig();
             sc.fsid = c.getFsid();
+            DebugUtils.Assert(sc.fsid != null, "fsid cannot be null");
             sc.totalCapacity = SizeUtils.sizeStringToBytes(c.getTotalCapacity());
             sc.availCapacity = SizeUtils.sizeStringToBytes(c.getAvailableCapacity());
             sconfig.config.put(c.getName(), sc);

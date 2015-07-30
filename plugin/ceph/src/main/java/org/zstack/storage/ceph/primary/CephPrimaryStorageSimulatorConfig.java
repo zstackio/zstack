@@ -1,9 +1,6 @@
 package org.zstack.storage.ceph.primary;
 
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.CloneCmd;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.CreateEmptyVolumeCmd;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.DeleteCmd;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.PrepareForCloneCmd;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,4 +22,7 @@ public class CephPrimaryStorageSimulatorConfig {
     public List<DeleteCmd> deleteCmds = new ArrayList<DeleteCmd>();
     public List<PrepareForCloneCmd> prepareForCloneCmds = new ArrayList<PrepareForCloneCmd>();
     public List<CloneCmd> cloneCmds = new ArrayList<CloneCmd>();
+    public List<FlattenCmd> flattenCmds = new ArrayList<FlattenCmd>();
+    public List<SftpDownloadCmd> sftpDownloadCmds = new ArrayList<SftpDownloadCmd>();
+    public List<SftpUpLoadCmd> sftpUpLoadCmds = new ArrayList<SftpUpLoadCmd>();
 }
