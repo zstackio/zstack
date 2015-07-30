@@ -22,6 +22,7 @@ public class CephMonAO {
     private String hostname;
 
     @Column
+    @Enumerated(EnumType.STRING)
     private MonStatus status;
 
     @Column

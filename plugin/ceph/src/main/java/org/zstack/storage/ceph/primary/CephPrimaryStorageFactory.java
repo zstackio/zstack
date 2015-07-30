@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
@@ -31,9 +32,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     public PrimaryStorageInventory createPrimaryStorage(PrimaryStorageVO vo, APIAddPrimaryStorageMsg msg) {
         APIAddCephPrimaryStorageMsg cmsg = (APIAddCephPrimaryStorageMsg) msg;
 
-        vo.setType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
+        CephPrimaryStorageVO cvo = new CephPrimaryStorageVO(vo);
+        cvo.setType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
 
-        dbf.getEntityManager().persist(vo);
+        dbf.getEntityManager().persist(cvo);
 
         for (String url : cmsg.getMonUrls()) {
             CephPrimaryStorageMonVO mvo = new CephPrimaryStorageMonVO();
@@ -43,16 +45,17 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             mvo.setHostname(uri.getHostname());
             mvo.setSshUsername(uri.getSshUsername());
             mvo.setSshPassword(uri.getSshPassword());
-            mvo.setPrimaryStorageUuid(vo.getUuid());
+            mvo.setPrimaryStorageUuid(cvo.getUuid());
             dbf.getEntityManager().persist(mvo);
         }
 
-        return PrimaryStorageInventory.valueOf(vo);
+        return PrimaryStorageInventory.valueOf(cvo);
     }
 
     @Override
     public PrimaryStorage getPrimaryStorage(PrimaryStorageVO vo) {
-        return new CephPrimaryStorageBase(vo);
+        CephPrimaryStorageVO cvo = dbf.findByUuid(vo.getUuid(), CephPrimaryStorageVO.class);
+        return new CephPrimaryStorageBase(cvo);
     }
 
     @Override
@@ -66,12 +69,15 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         String sql = "select cap from PrimaryStorageCapacityVO cap, CephPrimaryStorageVO pri where pri.uuid = cap.uuid and pri.fsid = :fsid";
         TypedQuery<PrimaryStorageCapacityVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageCapacityVO.class);
         q.setParameter("fsid", fsid);
-        PrimaryStorageCapacityVO cap = q.getSingleResult();
-
-        cap.setTotalCapacity(total);
-        cap.setAvailableCapacity(avail);
-        cap.setTotalPhysicalCapacity(total);
-        cap.setAvailableCapacity(avail);
-        dbf.update(cap);
+        try {
+            PrimaryStorageCapacityVO cap = q.getSingleResult();
+            cap.setTotalCapacity(total);
+            cap.setAvailableCapacity(avail);
+            cap.setTotalPhysicalCapacity(total);
+            cap.setAvailableCapacity(avail);
+            dbf.getEntityManager().merge(cap);
+        } catch (EmptyResultDataAccessException e) {
+            return;
+        }
     }
 }

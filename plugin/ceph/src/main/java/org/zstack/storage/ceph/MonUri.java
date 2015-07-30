@@ -17,7 +17,7 @@ public class MonUri {
         try {
             URI uri = new URI(url);
             hostname = uri.getHost();
-            String[] ssh = uri.getRawAuthority().split(":");
+            String[] ssh = uri.getAuthority().split(":");
             sshUsername = ssh[0];
             sshPassword = ssh[1];
         } catch (URISyntaxException e) {

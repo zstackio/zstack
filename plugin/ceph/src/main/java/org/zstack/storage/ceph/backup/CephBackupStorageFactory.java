@@ -1,10 +1,10 @@
 package org.zstack.storage.ceph.backup;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.ceph.CephCapacityUpdateExtensionPoint;
 import org.zstack.storage.ceph.CephConstants;
@@ -13,8 +13,6 @@ import org.zstack.storage.ceph.MonUri;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by frank on 7/27/2015.
@@ -35,9 +33,10 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
     public BackupStorageInventory createBackupStorage(final BackupStorageVO vo, APIAddBackupStorageMsg msg) {
         APIAddCephBackupStorageMsg cmsg = (APIAddCephBackupStorageMsg)msg;
 
-        vo.setType(CephConstants.CEPH_BACKUP_STORAGE_TYPE);
+        CephBackupStorageVO cvo = new CephBackupStorageVO(vo);
+        cvo.setType(CephConstants.CEPH_BACKUP_STORAGE_TYPE);
 
-        dbf.getEntityManager().persist(vo);
+        dbf.getEntityManager().persist(cvo);
 
         for (String url : cmsg.getMonUrls()) {
             CephBackupStorageMonVO monvo = new CephBackupStorageMonVO();
@@ -47,16 +46,17 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
             monvo.setHostname(uri.getHostname());
             monvo.setSshUsername(uri.getSshUsername());
             monvo.setSshPassword(uri.getSshPassword());
-            monvo.setBackupStorageUuid(vo.getUuid());
+            monvo.setBackupStorageUuid(cvo.getUuid());
             dbf.getEntityManager().persist(monvo);
         }
 
-        return BackupStorageInventory.valueOf(vo);
+        return BackupStorageInventory.valueOf(cvo);
     }
 
     @Override
     public BackupStorage getBackupStorage(BackupStorageVO vo) {
-        return new CephBackupStorageBase(vo);
+        CephBackupStorageVO cvo = dbf.findByUuid(vo.getUuid(), CephBackupStorageVO.class);
+        return new CephBackupStorageBase(cvo);
     }
 
     @Override
@@ -71,10 +71,13 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
         TypedQuery<CephBackupStorageVO> q = dbf.getEntityManager().createQuery(sql, CephBackupStorageVO.class);
         q.setParameter("fsid", fsid);
         q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
-        CephBackupStorageVO vo = q.getSingleResult();
-
-        vo.setTotalCapacity(total);
-        vo.setAvailableCapacity(avail);
-        dbf.getEntityManager().merge(vo);
+        try {
+            CephBackupStorageVO vo = q.getSingleResult();
+            vo.setTotalCapacity(total);
+            vo.setAvailableCapacity(avail);
+            dbf.getEntityManager().merge(vo);
+        } catch (EmptyResultDataAccessException e) {
+            return;
+        }
     }
 }

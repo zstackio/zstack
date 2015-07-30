@@ -36,6 +36,9 @@ public class CephBackupStorageVO extends BackupStorageVO {
     public CephBackupStorageVO() {
     }
 
+    public CephBackupStorageVO(BackupStorageVO vo) {
+        super(vo);
+    }
 
     public CephBackupStorageVO(CephBackupStorageVO other) {
         super(other);

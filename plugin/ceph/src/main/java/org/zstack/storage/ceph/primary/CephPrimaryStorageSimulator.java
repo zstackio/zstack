@@ -66,7 +66,7 @@ public class CephPrimaryStorageSimulator {
 
     @RequestMapping(value= CephPrimaryStorageBase.INIT_PATH, method= RequestMethod.POST)
     public @ResponseBody
-    String init(HttpEntity<String> entity) {
+    String initialize(HttpEntity<String> entity) {
         InitCmd cmd = JSONObjectUtil.toObject(entity.getBody(), InitCmd.class);
         CephPrimaryStorageConfig cpc = getConfig(cmd);
 
@@ -99,7 +99,7 @@ public class CephPrimaryStorageSimulator {
 
     @RequestMapping(value= CephPrimaryStorageBase.DELETE_PATH, method= RequestMethod.POST)
     public @ResponseBody
-    String delete(HttpEntity<String> entity) {
+    String doDelete(HttpEntity<String> entity) {
         DeleteCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteCmd.class);
         config.deleteCmds.add(cmd);
         Long size = bitSizeMap.get(cmd.getInstallPath());

@@ -9,10 +9,6 @@ import org.zstack.utils.ssh.Ssh;
 public abstract class CephMonBase {
     protected CephMonAO self;
 
-    private String hostname;
-    private String sshUsername;
-    private String sshPassword;
-
     public abstract void connect(Completion completion);
 
     public CephMonBase(CephMonAO self) {
@@ -21,23 +17,11 @@ public abstract class CephMonBase {
 
     protected void checkTools() {
         Ssh ssh = new Ssh();
-        ssh.setHostname(hostname).setUsername(sshUsername).setPassword(sshPassword)
+        ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword())
                 .checkTool("ceph", "rbd").runErrorByExceptionAndClose();
     }
 
     public CephMonAO getSelf() {
         return self;
-    }
-
-    public String getHostname() {
-        return hostname;
-    }
-
-    public String getSshUsername() {
-        return sshUsername;
-    }
-
-    public String getSshPassword() {
-        return sshPassword;
     }
 }

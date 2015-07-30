@@ -18,11 +18,12 @@ public class CephBackupStorageSimulatorConfig {
         public long totalCapacity;
         public long availCapacity;
         public String fsid;
+        public String name;
     }
 
-    List<InitCmd> initCmds = new ArrayList<InitCmd>();
-    Map<String, CephBackupStorageConfig> config = new HashMap<String, CephBackupStorageConfig>();
-    List<DownloadCmd> downloadCmds = new ArrayList<DownloadCmd>();
-    List<DeleteCmd> deleteCmds = new ArrayList<DeleteCmd>();
-    List<PingCmd> pingCmds = new ArrayList<PingCmd>();
+    public List<InitCmd> initCmds = new ArrayList<InitCmd>();
+    public Map<String, CephBackupStorageConfig> config = new HashMap<String, CephBackupStorageConfig>();
+    public List<DownloadCmd> downloadCmds = new ArrayList<DownloadCmd>();
+    public List<DeleteCmd> deleteCmds = new ArrayList<DeleteCmd>();
+    public List<PingCmd> pingCmds = new ArrayList<PingCmd>();
 }

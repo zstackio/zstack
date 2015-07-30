@@ -1,6 +1,8 @@
 package org.zstack.storage.ceph.primary;
 
+import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -17,6 +19,7 @@ import java.util.Map;
 /**
  * Created by frank on 7/28/2015.
  */
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
 public class CephPrimaryStorageMonBase extends CephMonBase {
 
     @Autowired
@@ -28,14 +31,23 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
     @Override
     public void connect(final Completion completion) {
-        checkTools();
-
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("connect-mon-%s-ceph-primary-storage-%s", self.getHostname(), getSelf().getPrimaryStorageUuid()));
+        chain.allowEmptyFlow();
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
                 if (!CoreGlobalProperty.UNIT_TEST_ON) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "check-tools";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            checkTools();
+                            trigger.next();
+                        }
+                    });
+
                     flow(new NoRollbackFlow() {
                         String __name__ = "deploy-agent";
 

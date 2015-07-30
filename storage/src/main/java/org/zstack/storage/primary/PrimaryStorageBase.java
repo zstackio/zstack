@@ -212,6 +212,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         connectHook(msg, new Completion(msg) {
             @Override
             public void success() {
+                self = dbf.reload(self);
                 self.setStatus(PrimaryStorageStatus.Connected);
                 self = dbf.updateAndRefresh(self);
                 reply.setConnected(true);

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -15,7 +16,10 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.ceph.CephCapacityUpdater;
+import org.zstack.storage.ceph.CephGlobalProperty;
 import org.zstack.storage.ceph.MonStatus;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageBase;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.AgentResponse;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -57,7 +61,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     public static class AgentResponse {
         String error;
-        boolean success;
+        boolean success = true;
         Long totalCapacity;
         Long availCapacity;
 
@@ -165,14 +169,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     }
 
-    public static final int AGENT_PORT = 7761;
-    public static final String INIT_PATH = "/init";
-    public static final String DOWNLOAD_IMAGE_PATH = "/image/download";
-    public static final String DELETE_IMAGE_PATH = "/image/delete";
-    public static final String PING_PATH = "/ping";
+    public static final String INIT_PATH = "/ceph/backupstorage/init";
+    public static final String DOWNLOAD_IMAGE_PATH = "/ceph/backupstorage/image/download";
+    public static final String DELETE_IMAGE_PATH = "/ceph/backupstorage/image/delete";
+    public static final String PING_PATH = "/ceph/backupstorage/ping";
 
     protected String makeHttpPath(String ip, String path) {
-        return String.format("http://%s:%s%s", ip, AGENT_PORT, path);
+        return String.format("http://%s:%s%s", ip, CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT, path);
     }
 
     protected String getTemplatePoolName() {
@@ -183,11 +186,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
         return String.format("%s/%s", getTemplatePoolName(), imageUuid);
     }
 
-    private <T> void httpCall(final String path, final AgentCommand cmd, final JsonAsyncRESTCallback<T> callback) {
-        httpCall(path, cmd, callback, 5, TimeUnit.MINUTES);
+    private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, Class<T> retClass, final ReturnValueCompletion<T> callback) {
+        httpCall(path, cmd, retClass, callback, 5, TimeUnit.MINUTES);
     }
 
-    private <T> void httpCall(final String path, final AgentCommand cmd, final JsonAsyncRESTCallback<T> callback, final long timeout, final TimeUnit timeUnit) {
+    private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, final long timeout, final TimeUnit timeUnit) {
         cmd.setFsid(getSelf().getFsid());
         cmd.setUuid(self.getUuid());
 
@@ -221,7 +224,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                 CephBackupStorageMonBase base = it.next();
 
-                restf.asyncJsonPost(makeHttpPath(base.getHostname(), path), cmd, new JsonAsyncRESTCallback<AgentResponse>() {
+                restf.asyncJsonPost(makeHttpPath(base.getSelf().getHostname(), path), cmd, new JsonAsyncRESTCallback<T>() {
                     @Override
                     public void fail(ErrorCode err) {
                         errorCodes.add(err);
@@ -229,18 +232,21 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     }
 
                     @Override
-                    public void success(AgentResponse ret) {
+                    public void success(T ret) {
                         if (!ret.success) {
                             callback.fail(errf.stringToOperationError(ret.error));
                         } else {
-                            updateCapacityIfNeeded(ret);
-                            callback.success((T)ret);
+                            if (!(cmd instanceof InitCmd)) {
+                                updateCapacityIfNeeded(ret);
+                            }
+
+                            callback.success(ret);
                         }
                     }
 
                     @Override
-                    public Class<AgentResponse> getReturnClass() {
-                        return AgentResponse.class;
+                    public Class<T> getReturnClass() {
+                        return retClass;
                     }
                 }, timeUnit, timeout);
             }
@@ -272,7 +278,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         cmd.installPath = makeImageInstallPath(msg.getImageInventory().getUuid());
 
         final DownloadImageReply reply = new DownloadImageReply();
-        httpCall(DOWNLOAD_IMAGE_PATH, cmd, new JsonAsyncRESTCallback<DownloadRsp>(msg) {
+        httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -285,11 +291,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 reply.setSize(ret.size);
                 reply.setMd5sum("not calculated");
                 bus.reply(msg, reply);
-            }
-
-            @Override
-            public Class<DownloadRsp> getReturnClass() {
-                return null;
             }
         }, CephBackupStorageGlobalConfig.DOWNLOAD_IMAGE_TIMEOUT.value(Long.class), TimeUnit.SECONDS);
     }
@@ -301,7 +302,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         cmd.installPath = makeImageInstallPath(msg.getVolume().getUuid());
 
         final DownloadVolumeReply reply = new DownloadVolumeReply();
-        httpCall(DOWNLOAD_IMAGE_PATH, cmd, new JsonAsyncRESTCallback<DownloadRsp>(msg) {
+        httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -315,11 +316,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 reply.setMd5sum("not calculated");
                 bus.reply(msg, reply);
             }
-
-            @Override
-            public Class<DownloadRsp> getReturnClass() {
-                return null;
-            }
         }, CephBackupStorageGlobalConfig.DOWNLOAD_IMAGE_TIMEOUT.value(Long.class), TimeUnit.SECONDS);
     }
 
@@ -329,7 +325,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         cmd.installPath = msg.getInstallPath();
 
         final DeleteBitsOnBackupStorageReply reply = new DeleteBitsOnBackupStorageReply();
-        httpCall(DELETE_IMAGE_PATH, cmd, new JsonAsyncRESTCallback<DeleteRsp>() {
+        httpCall(DELETE_IMAGE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
             @Override
             public void fail(ErrorCode err) {
                 //TODO
@@ -341,11 +337,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
             public void success(DeleteRsp ret) {
                 bus.reply(msg, reply);
             }
-
-            @Override
-            public Class<DeleteRsp> getReturnClass() {
-                return DeleteRsp.class;
-            }
         });
     }
 
@@ -354,7 +345,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         PingCmd cmd = new PingCmd();
 
         final PingBackupStorageReply reply = new PingBackupStorageReply();
-        httpCall(PING_PATH, cmd, new JsonAsyncRESTCallback<PingRsp>() {
+        httpCall(PING_PATH, cmd, PingRsp.class, new ReturnValueCompletion<PingRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -364,11 +355,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
             @Override
             public void success(PingRsp ret) {
                 bus.reply(msg, reply);
-            }
-
-            @Override
-            public Class<PingRsp> getReturnClass() {
-                return PingRsp.class;
             }
         });
     }
@@ -444,7 +430,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                         InitCmd cmd = new InitCmd();
                         cmd.poolNames = list(getTemplatePoolName());
 
-                        httpCall(INIT_PATH, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
+                        httpCall(INIT_PATH, cmd, InitRsp.class, new ReturnValueCompletion<InitRsp>(trigger) {
                             @Override
                             public void fail(ErrorCode err) {
                                 trigger.fail(err);
@@ -459,11 +445,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
                                 updater.update(ret.fsid, ret.totalCapacity, ret.availCapacity);
-                            }
-
-                            @Override
-                            public Class<InitRsp> getReturnClass() {
-                                return InitRsp.class;
+                                trigger.next();
                             }
                         });
                     }

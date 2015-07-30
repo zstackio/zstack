@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.backup;
 
 import org.zstack.header.message.APIParam;
 import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
+import org.zstack.storage.ceph.CephConstants;
 
 import java.util.List;
 
@@ -18,5 +19,10 @@ public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg {
 
     public void setMonUrls(List<String> monUrls) {
         this.monUrls = monUrls;
+    }
+
+    @Override
+    public String getType() {
+        return CephConstants.CEPH_BACKUP_STORAGE_TYPE;
     }
 }

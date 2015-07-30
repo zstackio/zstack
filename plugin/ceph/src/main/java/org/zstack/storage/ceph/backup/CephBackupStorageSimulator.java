@@ -19,6 +19,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.storage.ceph.backup.CephBackupStorageBase.*;
 import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig.CephBackupStorageConfig;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -60,15 +61,19 @@ public class CephBackupStorageSimulator {
             throw new CloudRuntimeException(String.format("cannot find CephBackupStorageConfig by name[%s], uuid[%s]", name, cmd.getUuid()));
         }
 
+        c.name = name;
+
         return c;
     }
 
     @RequestMapping(value=CephBackupStorageBase.INIT_PATH, method= RequestMethod.POST)
     public @ResponseBody
-    String init(HttpEntity<String> entity) {
+    String initialize(HttpEntity<String> entity) {
         InitCmd cmd = JSONObjectUtil.toObject(entity.getBody(), InitCmd.class);
         CephBackupStorageConfig cbc = getConfig(cmd);
         config.initCmds.add(cmd);
+
+        DebugUtils.Assert(cbc.fsid != null, String.format("fsid for ceph backup storage[%s] is null", cbc.name));
 
         InitRsp rsp = new InitRsp();
         rsp.fsid = cbc.fsid;
@@ -91,7 +96,7 @@ public class CephBackupStorageSimulator {
 
     @RequestMapping(value=CephBackupStorageBase.DELETE_IMAGE_PATH, method= RequestMethod.POST)
     public @ResponseBody
-    String delete(HttpEntity<String> entity) {
+    String doDelete(HttpEntity<String> entity) {
         DeleteCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteCmd.class);
         config.deleteCmds.add(cmd);
         DeleteRsp rsp = new DeleteRsp();

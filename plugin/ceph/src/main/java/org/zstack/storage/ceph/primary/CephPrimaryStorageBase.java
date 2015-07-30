@@ -20,6 +20,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.ceph.CephCapacityUpdater;
+import org.zstack.storage.ceph.CephGlobalProperty;
 import org.zstack.storage.ceph.MonStatus;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.utils.CollectionUtils;
@@ -213,12 +214,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class PrepareForCloneRsp extends AgentResponse {
     }
 
-    public static final int AGENT_PORT = 7762;
-    public static final String INIT_PATH = "/init";
-    public static final String CREATE_VOLUME_PATH = "/volume/createempty";
-    public static final String DELETE_PATH = "/delete";
-    public static final String PREPARE_CLONE_PATH = "/volume/prepareclone";
-    public static final String CLONE_PATH = "/volume/clone";
+    public static final String INIT_PATH = "/ceph/primarystorage/init";
+    public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
+    public static final String DELETE_PATH = "/ceph/primarystorage/delete";
+    public static final String PREPARE_CLONE_PATH = "/ceph/primarystorage/volume/prepareclone";
+    public static final String CLONE_PATH = "/ceph/primarystorage/volume/clone";
 
     private String getVolumePoolName() {
         return String.format("pri-v-%s", self.getUuid());
@@ -488,7 +488,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     protected String makeHttpPath(String ip, String path) {
-        return String.format("http://%s:%s%s", ip, AGENT_PORT, path);
+        return String.format("http://%s:%s%s", ip, CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT, path);
     }
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
@@ -529,7 +529,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 CephPrimaryStorageMonBase base = it.next();
 
-                restf.asyncJsonPost(makeHttpPath(base.getHostname(), path), cmd, new JsonAsyncRESTCallback<AgentResponse>() {
+                restf.asyncJsonPost(makeHttpPath(base.getSelf().getHostname(), path), cmd, new JsonAsyncRESTCallback<AgentResponse>() {
                     @Override
                     public void fail(ErrorCode err) {
                         errorCodes.add(err);
@@ -541,7 +541,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         if (!ret.success) {
                             callback.fail(errf.stringToOperationError(ret.error));
                         } else {
-                            updateCapacityIfNeeded(ret);
+                            if (!(cmd instanceof InitCmd)) {
+                                updateCapacityIfNeeded(ret);
+                            }
                             callback.success((T)ret);
                         }
                     }
@@ -636,6 +638,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
                                 updater.update(ret.fsid, ret.totalCapacity, ret.availCapacity);
+                                trigger.next();
                             }
 
                             @Override

@@ -35,7 +35,7 @@ CREATE TABLE  `zstack`.`CephPrimaryStorageMonVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `zstack`.`CephCapacityVO` (
-    `fsid` varchar(32) NOT NULL UNIQUE,
+    `fsid` varchar(64) NOT NULL UNIQUE,
     `totalCapacity` bigint unsigned DEFAULT 0,
     `availableCapacity` bigint unsigned DEFAULT 0,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,

@@ -18,10 +18,16 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="CephBackupStorageFactory" class="org.zstack.storage.ceph.backup.CephBackupStorageFactory">
+    <bean id="CephPrimaryStorageFactory" class="org.zstack.storage.ceph.primary.CephPrimaryStorageFactory">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.storage.backup.BackupStorageFactory" />
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageFactory" />
             <zstack:extension interface="org.zstack.storage.ceph.CephCapacityUpdateExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="CephApiInterceptor" class="org.zstack.storage.ceph.CephApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
 </beans>

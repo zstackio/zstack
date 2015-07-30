@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <service xmlns="http://zstack.org/schema/zstack">
+    <interceptor>CephApiInterceptor</interceptor>
+
     <message>
         <name>org.zstack.storage.ceph.backup.APIAddCephBackupStorageMsg</name>
         <serviceId>storage.backup</serviceId>

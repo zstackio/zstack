@@ -25,6 +25,19 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
     @Column
     private String fsid;
 
+    public CephPrimaryStorageVO() {
+    }
+
+    public CephPrimaryStorageVO(PrimaryStorageVO other) {
+        super(other);
+    }
+
+    public CephPrimaryStorageVO(CephPrimaryStorageVO other) {
+        super(other);
+        this.mons = other.mons;
+        this.fsid = other.fsid;
+    }
+
     public Set<CephPrimaryStorageMonVO> getMons() {
         return mons;
     }

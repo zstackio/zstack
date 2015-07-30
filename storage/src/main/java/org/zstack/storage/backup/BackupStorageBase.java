@@ -193,6 +193,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         connectHook(new Completion(msg) {
             @Override
             public void success() {
+                self = dbf.reload(self);
                 changeStatus(BackupStorageStatus.Connected);
                 tracker.track(self.getUuid());
                 bus.reply(msg, reply);
