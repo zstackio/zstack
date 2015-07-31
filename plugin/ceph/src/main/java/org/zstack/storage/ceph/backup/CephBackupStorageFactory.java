@@ -3,13 +3,13 @@ package org.zstack.storage.ceph.backup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
+import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.Component;
 import org.zstack.header.storage.backup.*;
-import org.zstack.storage.ceph.CephCapacityUpdateExtensionPoint;
-import org.zstack.storage.ceph.CephConstants;
-import org.zstack.storage.ceph.MonStatus;
-import org.zstack.storage.ceph.MonUri;
+import org.zstack.storage.ceph.*;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
@@ -17,9 +17,11 @@ import javax.persistence.TypedQuery;
 /**
  * Created by frank on 7/27/2015.
  */
-public class CephBackupStorageFactory implements BackupStorageFactory, CephCapacityUpdateExtensionPoint {
+public class CephBackupStorageFactory implements BackupStorageFactory, CephCapacityUpdateExtensionPoint, Component {
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private AnsibleFacade asf;
 
     public static final BackupStorageType type = new BackupStorageType(CephConstants.CEPH_BACKUP_STORAGE_TYPE);
 
@@ -80,5 +82,19 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
         } catch (EmptyResultDataAccessException e) {
             return;
         }
+    }
+
+    @Override
+    public boolean start() {
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            asf.deployModule(CephGlobalProperty.BACKUP_STORAGE_MODULE_PATH, CephGlobalProperty.BACKUP_STORAGE_PLAYBOOK_NAME);
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
     }
 }

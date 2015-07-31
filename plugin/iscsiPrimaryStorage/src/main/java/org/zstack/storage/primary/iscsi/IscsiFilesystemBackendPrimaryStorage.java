@@ -1027,7 +1027,6 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                                 trigger.fail(errorCode);
                             }
                         });
-
                     }
                 });
 
