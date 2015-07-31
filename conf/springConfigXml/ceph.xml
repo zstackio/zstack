@@ -15,6 +15,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.storage.backup.BackupStorageFactory" />
             <zstack:extension interface="org.zstack.storage.ceph.CephCapacityUpdateExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>
 
