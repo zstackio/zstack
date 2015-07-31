@@ -348,12 +348,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
         httpCall(PING_PATH, cmd, PingRsp.class, new ReturnValueCompletion<PingRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
-                reply.setError(err);
+                reply.setAvailable(false);
                 bus.reply(msg, reply);
             }
 
             @Override
             public void success(PingRsp ret) {
+                reply.setAvailable(true);
                 bus.reply(msg, reply);
             }
         });

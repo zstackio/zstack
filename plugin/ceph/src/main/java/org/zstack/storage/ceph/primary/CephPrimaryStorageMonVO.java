@@ -3,6 +3,8 @@ package org.zstack.storage.ceph.primary;
 import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.SoftDeletionCascade;
+import org.zstack.header.vo.SoftDeletionCascades;
 import org.zstack.storage.ceph.CephMonAO;
 
 import javax.persistence.*;
@@ -13,6 +15,9 @@ import javax.persistence.*;
 @Entity
 @Table
 @Inheritance(strategy= InheritanceType.JOINED)
+@SoftDeletionCascades({
+        @SoftDeletionCascade(parent = PrimaryStorageEO.class, joinColumn = "primaryStorageUuid")
+})
 public class CephPrimaryStorageMonVO extends CephMonAO {
     @Column
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
