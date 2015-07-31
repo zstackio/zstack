@@ -100,7 +100,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             restf.echo(String.format("http://%s:%s%s", getSelf().getHostname(),
-                                    CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT, ECHO_PATH), new Completion(trigger) {
+                                    CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT, ECHO_PATH), new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     trigger.next();
