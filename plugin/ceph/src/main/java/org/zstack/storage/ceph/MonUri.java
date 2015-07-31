@@ -21,7 +21,7 @@ public class MonUri {
         try {
             URI uri = new URI(url);
             hostname = uri.getHost();
-            String[] ssh = uri.getAuthority().split(":");
+            String[] ssh = uri.getUserInfo().split(":");
             sshUsername = ssh[0];
             sshPassword = ssh[1];
 
