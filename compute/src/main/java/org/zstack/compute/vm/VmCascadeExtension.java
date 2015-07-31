@@ -321,9 +321,14 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             List<L3NetworkInventory> l3s = action.getParentIssuerContext();
             for (VmInstanceInventory vm : vminvs) {
                 for (L3NetworkInventory l3 : l3s) {
+                    VmNicInventory nic = vm.findNic(l3.getUuid());
+                    if (nic == null) {
+                        continue;
+                    }
+
                     DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
                     msg.setVmInstanceUuid(vm.getUuid());
-                    msg.setVmNicUuid(vm.findNic(l3.getUuid()).getUuid());
+                    msg.setVmNicUuid(nic.getUuid());
                     bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getUuid());
                     msgs.add(msg);
                 }
