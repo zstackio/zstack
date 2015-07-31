@@ -18,8 +18,6 @@ import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.ceph.CephCapacityUpdater;
 import org.zstack.storage.ceph.CephGlobalProperty;
 import org.zstack.storage.ceph.MonStatus;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.AgentResponse;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -63,7 +61,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         String error;
         boolean success = true;
         Long totalCapacity;
-        Long availCapacity;
+        Long availableCapacity;
 
         public String getError() {
             return error;
@@ -89,12 +87,12 @@ public class CephBackupStorageBase extends BackupStorageBase {
             this.totalCapacity = totalCapacity;
         }
 
-        public Long getAvailCapacity() {
-            return availCapacity;
+        public Long getAvailableCapacity() {
+            return availableCapacity;
         }
 
-        public void setAvailCapacity(Long availCapacity) {
-            this.availCapacity = availCapacity;
+        public void setAvailableCapacity(Long availableCapacity) {
+            this.availableCapacity = availableCapacity;
         }
     }
 
@@ -268,8 +266,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
-        if (rsp.getTotalCapacity() != null && rsp.getAvailCapacity() != null) {
-            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availCapacity);
+        if (rsp.getTotalCapacity() != null && rsp.getAvailableCapacity() != null) {
+            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availableCapacity);
         }
     }
 
@@ -446,7 +444,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 }
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
-                                updater.update(ret.fsid, ret.totalCapacity, ret.availCapacity);
+                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity);
                                 trigger.next();
                             }
                         });

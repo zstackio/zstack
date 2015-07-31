@@ -78,7 +78,7 @@ public class CephBackupStorageSimulator {
         InitRsp rsp = new InitRsp();
         rsp.fsid = cbc.fsid;
         rsp.totalCapacity = cbc.totalCapacity;
-        rsp.availCapacity = cbc.availCapacity;
+        rsp.availableCapacity = cbc.availCapacity;
         reply(entity, rsp);
         return null;
     }
