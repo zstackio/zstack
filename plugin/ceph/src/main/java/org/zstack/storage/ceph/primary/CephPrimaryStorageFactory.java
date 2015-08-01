@@ -145,6 +145,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         KVMCephVolumeTO cto = new KVMCephVolumeTO(to);
         cto.setMonInfo(monInfos);
+        cto.setDeviceType(VolumeTO.CEPH);
         return cto;
     }
 

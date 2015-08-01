@@ -355,6 +355,7 @@ public class KVMAgentCommands {
     public static class VolumeTO {
         public static final String FILE = "file";
         public static final String ISCSI = "iscsi";
+        public static final String CEPH = "ceph";
 
         private String installPath;
         private int deviceId;
