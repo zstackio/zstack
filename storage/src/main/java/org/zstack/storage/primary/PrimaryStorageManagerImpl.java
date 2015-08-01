@@ -235,6 +235,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         final ConnectPrimaryStorageMsg cmsg = new ConnectPrimaryStorageMsg();
         cmsg.setPrimaryStorageUuid(inv.getUuid());
+        cmsg.setNewAdded(true);
         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
         final PrimaryStorageVO finalVo = vo;
         bus.send(cmsg, new CloudBusCallBack(msg) {
