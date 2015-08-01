@@ -23,6 +23,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.virtualrouter.APIUpdateVirtualRouterOfferingMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingMsg</name>
         <serviceId>query</serviceId>
     </message>

@@ -15,6 +15,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.JobQueueFacade;
+import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -125,9 +126,36 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             handle((APISearchVirtualRouterOffingMsg)msg);
         } else if (msg instanceof APIGetVirtualRouterOfferingMsg) {
             handle((APIGetVirtualRouterOfferingMsg) msg);
+        } else if (msg instanceof APIUpdateVirtualRouterOfferingMsg) {
+            handle((APIUpdateVirtualRouterOfferingMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateVirtualRouterOfferingMsg msg) {
+        VirtualRouterOfferingVO ovo = dbf.findByUuid(msg.getUuid(), VirtualRouterOfferingVO.class);
+        boolean updated = false;
+        if (msg.getName() != null) {
+            ovo.setName(msg.getName());
+            updated = true;
+        }
+        if (msg.getDescription() != null) {
+            ovo.setDescription(msg.getDescription());
+            updated = true;
+        }
+        if (msg.getIsDefault() != null) {
+            ovo.setDefault(msg.getIsDefault());
+            updated = true;
+        }
+
+        if (updated) {
+            ovo = dbf.updateAndRefresh(ovo);
+        }
+
+        APIUpdateInstanceOfferingEvent evt = new APIUpdateInstanceOfferingEvent(msg.getId());
+        evt.setInventory(VirtualRouterOfferingInventory.valueOf(ovo));
+        bus.publish(evt);
     }
 
     private void handle(APIGetVirtualRouterOfferingMsg msg) {

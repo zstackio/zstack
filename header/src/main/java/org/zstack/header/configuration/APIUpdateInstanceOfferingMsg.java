@@ -11,9 +11,9 @@ import org.zstack.header.message.APIParam;
 public class APIUpdateInstanceOfferingMsg extends APIMessage implements InstanceOfferingMessage {
     @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
-    @APIParam
+    @APIParam(required = false, maxLength = 255)
     private String name;
-    @APIParam
+    @APIParam(required = false, maxLength = 2048)
     private String description;
 
     public String getUuid() {

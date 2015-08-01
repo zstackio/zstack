@@ -36,4 +36,5 @@
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPing2"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPing3"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestPolicyForVirtualRouterOffering"/>
+	<TestCase class="org.zstack.test.virtualrouter.TestUpdateVirtualRouterOffering"/>
 </UnitTestSuiteConfig>

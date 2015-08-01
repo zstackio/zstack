@@ -65,6 +65,8 @@ import org.zstack.network.service.portforwarding.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.APIReconnectVirtualRouterEvent;
 import org.zstack.network.service.virtualrouter.APIReconnectVirtualRouterMsg;
+import org.zstack.network.service.virtualrouter.APIUpdateVirtualRouterOfferingMsg;
+import org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory;
 import org.zstack.portal.managementnode.ManagementNodeManager;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageEvent;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageMsg;
@@ -3208,6 +3210,19 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIUpdateDiskOfferingEvent evt = sender.send(msg, APIUpdateDiskOfferingEvent.class);
         return evt.getInventory();
+    }
+
+    public VirtualRouterOfferingInventory updateVirtualRouterOffering(VirtualRouterOfferingInventory offering) throws ApiSenderException {
+        APIUpdateVirtualRouterOfferingMsg msg = new APIUpdateVirtualRouterOfferingMsg();
+        msg.setSession(adminSession);
+        msg.setUuid(offering.getUuid());
+        msg.setName(offering.getName());
+        msg.setDescription(offering.getDescription());
+        msg.setIsDefault(offering.isDefault());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateInstanceOfferingEvent evt = sender.send(msg, APIUpdateInstanceOfferingEvent.class);
+        return (VirtualRouterOfferingInventory) evt.getInventory();
     }
 
     public InstanceOfferingInventory updateInstanceOffering(InstanceOfferingInventory inv) throws ApiSenderException {
