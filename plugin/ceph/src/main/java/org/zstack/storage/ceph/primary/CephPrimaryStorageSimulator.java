@@ -73,7 +73,7 @@ public class CephPrimaryStorageSimulator {
         InitRsp rsp = new InitRsp();
         rsp.fsid = cpc.fsid;
         rsp.totalCapacity = cpc.totalCapacity;
-        rsp.availCapacity = cpc.availCapacity;
+        rsp.availableCapacity = cpc.availCapacity;
         reply(entity, rsp);
         return null;
     }
@@ -81,7 +81,7 @@ public class CephPrimaryStorageSimulator {
     private void setCapacity(AgentCommand cmd, AgentResponse rsp, long size) {
         CephPrimaryStorageConfig cpc = getConfig(cmd);
         rsp.totalCapacity = cpc.totalCapacity;
-        rsp.availCapacity = cpc.availCapacity + size;
+        rsp.availableCapacity = cpc.availCapacity + size;
     }
 
     @RequestMapping(value= CephPrimaryStorageBase.CREATE_VOLUME_PATH, method= RequestMethod.POST)

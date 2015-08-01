@@ -85,7 +85,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String error;
         boolean success = true;
         Long totalCapacity;
-        Long availCapacity;
+        Long availableCapacity;
 
         public String getError() {
             return error;
@@ -111,12 +111,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             this.totalCapacity = totalCapacity;
         }
 
-        public Long getAvailCapacity() {
-            return availCapacity;
+        public Long getAvailableCapacity() {
+            return availableCapacity;
         }
 
-        public void setAvailCapacity(Long availCapacity) {
-            this.availCapacity = availCapacity;
+        public void setAvailableCapacity(Long availableCapacity) {
+            this.availableCapacity = availableCapacity;
         }
     }
 
@@ -1211,8 +1211,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
-        if (rsp.totalCapacity != null && rsp.availCapacity != null) {
-            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availCapacity);
+        if (rsp.totalCapacity != null && rsp.availableCapacity != null) {
+            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availableCapacity);
         }
     }
 
@@ -1358,7 +1358,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 }
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
-                                updater.update(ret.fsid, ret.totalCapacity, ret.availCapacity);
+                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity);
                                 trigger.next();
                             }
                         });
