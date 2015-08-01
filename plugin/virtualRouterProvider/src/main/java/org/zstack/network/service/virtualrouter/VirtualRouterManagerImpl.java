@@ -144,17 +144,21 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             ovo.setDescription(msg.getDescription());
             updated = true;
         }
-        if (msg.getIsDefault() != null) {
-            ovo.setDefault(msg.getIsDefault());
-            updated = true;
-        }
 
         if (updated) {
             ovo = dbf.updateAndRefresh(ovo);
         }
 
+        if (msg.getIsDefault() != null) {
+            DefaultVirtualRouterOfferingSelector selector = new DefaultVirtualRouterOfferingSelector();
+            selector.setZoneUuid(ovo.getZoneUuid());
+            selector.setPreferToBeDefault(msg.getIsDefault());
+            selector.setOfferingUuid(ovo.getUuid());
+            selector.selectDefaultOffering();
+        }
+
         APIUpdateInstanceOfferingEvent evt = new APIUpdateInstanceOfferingEvent(msg.getId());
-        evt.setInventory(VirtualRouterOfferingInventory.valueOf(ovo));
+        evt.setInventory(VirtualRouterOfferingInventory.valueOf(dbf.reload(ovo)));
         bus.publish(evt);
     }
 

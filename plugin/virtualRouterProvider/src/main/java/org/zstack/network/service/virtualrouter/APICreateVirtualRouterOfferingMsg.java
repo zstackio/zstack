@@ -19,7 +19,7 @@ public class APICreateVirtualRouterOfferingMsg extends APICreateInstanceOffering
 	private String imageUuid;
     @APIParam(required = false, resourceType = L3NetworkVO.class, checkAccount = true)
 	private String publicNetworkUuid;
-	private boolean isDefault;
+	private Boolean isDefault;
 
     public String getType() {
         return VirtualRouterConstant.VIRTUAL_ROUTER_OFFERING_TYPE;
@@ -43,12 +43,15 @@ public class APICreateVirtualRouterOfferingMsg extends APICreateInstanceOffering
 	public void setPublicNetworkUuid(String publicNetworkUuid) {
 		this.publicNetworkUuid = publicNetworkUuid;
 	}
-	public boolean isDefault() {
+
+	public Boolean isDefault() {
 		return isDefault;
 	}
-	public void setDefault(boolean isDefault) {
+
+	public void setDefault(Boolean isDefault) {
 		this.isDefault = isDefault;
 	}
+
 	public String getImageUuid() {
 		return imageUuid;
 	}

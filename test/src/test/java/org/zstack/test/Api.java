@@ -63,10 +63,7 @@ import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroup
 import org.zstack.network.service.eip.*;
 import org.zstack.network.service.portforwarding.*;
 import org.zstack.network.service.vip.*;
-import org.zstack.network.service.virtualrouter.APIReconnectVirtualRouterEvent;
-import org.zstack.network.service.virtualrouter.APIReconnectVirtualRouterMsg;
-import org.zstack.network.service.virtualrouter.APIUpdateVirtualRouterOfferingMsg;
-import org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory;
+import org.zstack.network.service.virtualrouter.*;
 import org.zstack.portal.managementnode.ManagementNodeManager;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageEvent;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageMsg;
@@ -3212,9 +3209,37 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public VirtualRouterOfferingInventory createVirtualRouterOffering(VirtualRouterOfferingInventory inv) throws ApiSenderException {
+        return createVirtualRouterOffering(inv, null);
+    }
+
+    public VirtualRouterOfferingInventory createVirtualRouterOffering(VirtualRouterOfferingInventory inv, SessionInventory session) throws ApiSenderException {
+        APICreateVirtualRouterOfferingMsg msg = new APICreateVirtualRouterOfferingMsg();
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setPublicNetworkUuid(inv.getPublicNetworkUuid());
+        msg.setManagementNetworkUuid(inv.getManagementNetworkUuid());
+        msg.setZoneUuid(inv.getZoneUuid());
+        msg.setImageUuid(inv.getImageUuid());
+        msg.setDefault(inv.isDefault());
+        msg.setCpuSpeed(inv.getCpuSpeed());
+        msg.setCpuNum(inv.getCpuNum());
+        msg.setAllocatorStrategy(inv.getAllocatorStrategy());
+        msg.setMemorySize(inv.getMemorySize());
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICreateInstanceOfferingEvent evt = sender.send(msg, APICreateInstanceOfferingEvent.class);
+        return (VirtualRouterOfferingInventory) evt.getInventory();
+    }
+
     public VirtualRouterOfferingInventory updateVirtualRouterOffering(VirtualRouterOfferingInventory offering) throws ApiSenderException {
+        return updateVirtualRouterOffering(offering, null);
+    }
+
+    public VirtualRouterOfferingInventory updateVirtualRouterOffering(VirtualRouterOfferingInventory offering, SessionInventory session) throws ApiSenderException {
         APIUpdateVirtualRouterOfferingMsg msg = new APIUpdateVirtualRouterOfferingMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setUuid(offering.getUuid());
         msg.setName(offering.getName());
         msg.setDescription(offering.getDescription());

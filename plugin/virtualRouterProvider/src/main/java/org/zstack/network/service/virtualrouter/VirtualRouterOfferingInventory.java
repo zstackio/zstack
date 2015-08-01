@@ -32,7 +32,10 @@ public class VirtualRouterOfferingInventory extends InstanceOfferingInventory {
     private String zoneUuid;	
     private Boolean isDefault;
     private String imageUuid;
-    
+
+	public VirtualRouterOfferingInventory() {
+	}
+
 	protected VirtualRouterOfferingInventory(VirtualRouterOfferingVO vo) {
 		super(vo);
 		this.setManagementNetworkUuid(vo.getManagementNetworkUuid());
@@ -79,11 +82,11 @@ public class VirtualRouterOfferingInventory extends InstanceOfferingInventory {
 		this.zoneUuid = zoneUuid;
 	}
 
-	public boolean isDefault() {
+	public Boolean isDefault() {
 		return isDefault;
 	}
 
-	public void setDefault(boolean isDefault) {
+	public void setDefault(Boolean isDefault) {
 		this.isDefault = isDefault;
 	}
 

@@ -7,6 +7,10 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.identity.AccountType;
+import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.AccountVO_;
+import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
@@ -38,12 +42,42 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             validate((APIQueryVirtualRouterOfferingMsg) msg);
         } else if (msg instanceof APICreateVirtualRouterOfferingMsg) {
             validate((APICreateVirtualRouterOfferingMsg) msg);
+        } else if (msg instanceof APIUpdateVirtualRouterOfferingMsg) {
+            validate((APIUpdateVirtualRouterOfferingMsg) msg);
         }
 
         return msg;
     }
 
+    private void validate(APIUpdateVirtualRouterOfferingMsg msg) {
+        if (msg.getIsDefault() != null) {
+            SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+            q.select(AccountVO_.type);
+            q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
+            AccountType type = q.findValue();
+
+            if (type != AccountType.SystemAdmin) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                        "cannot change the default field of a virtual router offering; only admin can do the operation"
+                ));
+            }
+        }
+    }
+
     private void validate(APICreateVirtualRouterOfferingMsg msg) {
+        if (msg.isDefault() != null) {
+            SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+            q.select(AccountVO_.type);
+            q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
+            AccountType type = q.findValue();
+
+            if (type != AccountType.SystemAdmin) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                        "cannot create a virtual router offering with the default field set; only admin can do the operation"
+                ));
+            }
+        }
+
         if (msg.getPublicNetworkUuid() == null) {
             msg.setPublicNetworkUuid(msg.getManagementNetworkUuid());
         }

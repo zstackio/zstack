@@ -723,8 +723,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         private void accountFieldCheck() throws IllegalAccessException {
-            List resourceUuids = new ArrayList();
-            List operationTargetResourceUuids = new ArrayList();
+            Set resourceUuids = new HashSet();
+            Set operationTargetResourceUuids = new HashSet();
 
             for (AccountCheckField af : action.accountCheckFields) {
                 Object value = af.field.get(msg);
