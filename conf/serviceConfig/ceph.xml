@@ -8,6 +8,16 @@
     </message>
 
     <message>
+        <name>org.zstack.storage.ceph.backup.APIAddMonToCephBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.ceph.backup.APIRemoveMonFromCephBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
         <name>org.zstack.storage.ceph.primary.APIAddCephPrimaryStorageMsg</name>
         <serviceId>storage.primary</serviceId>
     </message>
