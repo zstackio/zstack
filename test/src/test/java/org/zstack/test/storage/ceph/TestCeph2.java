@@ -45,9 +45,6 @@ public class TestCeph2 {
     
 	@Test
 	public void test() {
-        Assert.assertFalse(config.prepareForCloneCmds.isEmpty());
         Assert.assertFalse(config.cloneCmds.isEmpty());
-
-
     }
 }

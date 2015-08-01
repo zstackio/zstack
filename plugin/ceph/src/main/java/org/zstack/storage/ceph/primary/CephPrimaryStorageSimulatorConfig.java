@@ -20,7 +20,9 @@ public class CephPrimaryStorageSimulatorConfig {
     public Map<String, CephPrimaryStorageConfig> config = new HashMap<String, CephPrimaryStorageConfig>();
     public List<CreateEmptyVolumeCmd> createEmptyVolumeCmds = new ArrayList<CreateEmptyVolumeCmd>();
     public List<DeleteCmd> deleteCmds = new ArrayList<DeleteCmd>();
-    public List<PrepareForCloneCmd> prepareForCloneCmds = new ArrayList<PrepareForCloneCmd>();
+    public List<CreateSnapshotCmd> createSnapshotCmds = new ArrayList<CreateSnapshotCmd>();
+    public List<DeleteSnapshotCmd> deleteSnapshotCmds = new ArrayList<DeleteSnapshotCmd>();
+    public List<ProtectSnapshotCmd> protectSnapshotCmds = new ArrayList<ProtectSnapshotCmd>();
     public List<CloneCmd> cloneCmds = new ArrayList<CloneCmd>();
     public List<FlattenCmd> flattenCmds = new ArrayList<FlattenCmd>();
     public List<SftpDownloadCmd> sftpDownloadCmds = new ArrayList<SftpDownloadCmd>();

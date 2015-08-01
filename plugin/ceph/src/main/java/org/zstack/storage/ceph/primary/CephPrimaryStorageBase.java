@@ -38,8 +38,10 @@ import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +52,8 @@ import static org.zstack.utils.CollectionDSL.list;
  * Created by frank on 7/28/2015.
  */
 public class CephPrimaryStorageBase extends PrimaryStorageBase {
+    private static final CLogger logger = Utils.getLogger(CephPrimaryStorageBase.class);
+
     @Autowired
     private RESTFacade restf;
     @Autowired
@@ -216,32 +220,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    public static class FlatenRsp extends AgentResponse {
+    public static class FlattenRsp extends AgentResponse {
 
-    }
-
-    public static class PrepareForCloneCmd extends AgentCommand {
-        String srcPath;
-        String dstPath;
-
-        public String getSrcPath() {
-            return srcPath;
-        }
-
-        public void setSrcPath(String srcPath) {
-            this.srcPath = srcPath;
-        }
-
-        public String getDstPath() {
-            return dstPath;
-        }
-
-        public void setDstPath(String dstPath) {
-            this.dstPath = dstPath;
-        }
-    }
-
-    public static class PrepareForCloneRsp extends AgentResponse {
     }
 
     public static class SftpDownloadCmd extends AgentCommand {
@@ -328,14 +308,61 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class SftpUploadRsp extends AgentResponse {
     }
 
+    public static class CreateSnapshotCmd extends AgentCommand {
+        String snapshotPath;
+
+        public String getSnapshotPath() {
+            return snapshotPath;
+        }
+
+        public void setSnapshotPath(String snapshotPath) {
+            this.snapshotPath = snapshotPath;
+        }
+    }
+
+    public static class CreateSnapshotRsp extends AgentResponse {
+    }
+
+    public static class DeleteSnapshotCmd extends AgentCommand {
+        String snapshotPath;
+
+        public String getSnapshotPath() {
+            return snapshotPath;
+        }
+
+        public void setSnapshotPath(String snapshotPath) {
+            this.snapshotPath = snapshotPath;
+        }
+    }
+
+    public static class DeleteSnapshotRsp extends AgentResponse {
+    }
+
+    public static class ProtectSnapshotCmd extends AgentCommand {
+        String snapshotPath;
+
+        public String getSnapshotPath() {
+            return snapshotPath;
+        }
+
+        public void setSnapshotPath(String snapshotPath) {
+            this.snapshotPath = snapshotPath;
+        }
+    }
+
+    public static class ProtectSnapshotRsp extends AgentResponse {
+    }
+
     public static final String INIT_PATH = "/ceph/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/ceph/primarystorage/delete";
-    public static final String PREPARE_CLONE_PATH = "/ceph/primarystorage/volume/prepareclone";
     public static final String CLONE_PATH = "/ceph/primarystorage/volume/clone";
     public static final String FLATTEN_PATH = "/ceph/primarystorage/volume/flatten";
     public static final String SFTP_DOWNLOAD_PATH = "/ceph/primarystorage/sftpbackupstorage/download";
     public static final String SFTP_UPLOAD_PATH = "/ceph/primarystorage/sftpbackupstorage/upload";
+    public static final String CREATE_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/create";
+    public static final String DELETE_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/delete";
+    public static final String PROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/protect";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -679,9 +706,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             FlattenCmd cmd = new FlattenCmd();
                             cmd.path = backupStorageInstallPath;
 
-                            httpCall(FLATTEN_PATH, cmd, FlatenRsp.class, new ReturnValueCompletion<FlatenRsp>(trigger) {
+                            httpCall(FLATTEN_PATH, cmd, FlattenRsp.class, new ReturnValueCompletion<FlattenRsp>(trigger) {
                                 @Override
-                                public void success(FlatenRsp returnValue) {
+                                public void success(FlattenRsp returnValue) {
                                     trigger.next();
                                 }
 
@@ -782,6 +809,170 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     class DownloadToCache {
         ImageSpec image;
 
+        private void doDownload(final ReturnValueCompletion<String> completion, final SyncTaskChain next) {
+            SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+            q.select(ImageCacheVO_.installUrl);
+            q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getInventory().getUuid());
+            q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+            String cachePath = q.findValue();
+            if (cachePath != null) {
+                completion.success(cachePath);
+                next.next();
+                return;
+            }
+
+            final FlowChain chain = FlowChainBuilder.newShareFlowChain();
+            chain.setName(String.format("prepare-image-cache-ceph-%s", self.getUuid()));
+            chain.then(new ShareFlow() {
+                String cachePath;
+                String snapshotPath;
+
+                @Override
+                public void setup() {
+                    flow(new Flow() {
+                        String __name__ = "download-from-backup-storage";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            DownloadParam param = new DownloadParam();
+                            param.image = image;
+                            param.installPath = makeCacheInstallPath(image.getInventory().getUuid());
+                            BackupStorageMediator mediator = getBackupStorageMediator(image.getSelectedBackupStorage().getBackupStorageUuid());
+                            mediator.param = param;
+
+                            mediator.download(new ReturnValueCompletion<String>(trigger) {
+                                @Override
+                                public void success(String path) {
+                                    cachePath = path;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void rollback(FlowTrigger trigger, Map data) {
+                            if (cachePath != null) {
+                                DeleteCmd cmd = new DeleteCmd();
+                                cmd.installPath = cachePath;
+                                httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
+                                    @Override
+                                    public void success(DeleteRsp returnValue) {
+                                        logger.debug(String.format("successfully deleted %s", cachePath));
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        //TODO
+                                        logger.warn(String.format("unable to delete %s, %s. Need a cleanup", cachePath, errorCode));
+                                    }
+                                });
+                            }
+
+                            trigger.rollback();
+                        }
+                    });
+
+                    flow(new Flow() {
+                        String __name__ = "create-snapshot";
+
+                        boolean needCleanup = false;
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            snapshotPath =  String.format("%s@%s", cachePath, image.getInventory().getUuid());
+                            CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+                            cmd.snapshotPath = snapshotPath;
+                            httpCall(CREATE_SNAPSHOT_PATH, cmd, CreateSnapshotRsp.class, new ReturnValueCompletion<CreateSnapshotRsp>(trigger) {
+                                @Override
+                                public void success(CreateSnapshotRsp returnValue) {
+                                    needCleanup = true;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void rollback(FlowTrigger trigger, Map data) {
+                            if (needCleanup) {
+                                DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
+                                cmd.snapshotPath = snapshotPath;
+                                httpCall(DELETE_SNAPSHOT_PATH, cmd, DeleteSnapshotRsp.class, new ReturnValueCompletion<DeleteSnapshotRsp>() {
+                                    @Override
+                                    public void success(DeleteSnapshotRsp returnValue) {
+                                        logger.debug(String.format("successfully deleted the snapshot %s", snapshotPath));
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        //TODO
+                                        logger.warn(String.format("unable to delete the snapshot %s, %s. Need a cleanup", snapshotPath, errorCode));
+                                    }
+                                });
+                            }
+
+                            trigger.rollback();
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "protect-snapshot";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            ProtectSnapshotCmd cmd = new ProtectSnapshotCmd();
+                            cmd.snapshotPath = snapshotPath;
+                            httpCall(PROTECT_SNAPSHOT_PATH, cmd, ProtectSnapshotRsp.class, new ReturnValueCompletion<ProtectSnapshotRsp>(trigger) {
+                                @Override
+                                public void success(ProtectSnapshotRsp returnValue) {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+
+                    done(new FlowDoneHandler(completion, next) {
+                        @Override
+                        public void handle(Map data) {
+                            ImageCacheVO cvo = new ImageCacheVO();
+                            cvo.setMd5sum("not calculated");
+                            cvo.setSize(image.getInventory().getSize());
+                            cvo.setInstallUrl(snapshotPath);
+                            cvo.setImageUuid(image.getInventory().getUuid());
+                            cvo.setPrimaryStorageUuid(self.getUuid());
+                            cvo.setMediaType(ImageMediaType.valueOf(image.getInventory().getMediaType()));
+                            cvo.setState(ImageCacheState.ready);
+                            dbf.persist(cvo);
+
+                            completion.success(snapshotPath);
+                            next.next();
+                        }
+                    });
+
+                    error(new FlowErrorHandler(completion, next) {
+                        @Override
+                        public void handle(ErrorCode errCode, Map data) {
+                            completion.fail(errCode);
+                        }
+                    });
+                }
+            }).start();
+        }
+
         void download(final ReturnValueCompletion<String> completion) {
             thdf.chainSubmit(new ChainTask(completion) {
                 @Override
@@ -791,49 +982,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 @Override
                 public void run(final SyncTaskChain chain) {
-                    SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
-                    q.select(ImageCacheVO_.installUrl);
-                    q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getInventory().getUuid());
-                    q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-                    String cachePath = q.findValue();
-                    if (cachePath != null) {
-                        completion.success(cachePath);
-                        chain.next();
-                        return;
-                    }
-
-                    cachePath = makeCacheInstallPath(image.getInventory().getUuid());
-
-                    DownloadParam param = new DownloadParam();
-                    param.image = image;
-                    param.installPath = cachePath;
-                    BackupStorageMediator mediator = getBackupStorageMediator(image.getSelectedBackupStorage().getBackupStorageUuid());
-                    mediator.param = param;
-
-                    final String finalCachePath = cachePath;
-                    mediator.download(new ReturnValueCompletion<String>(completion, chain) {
-                        @Override
-                        public void success(String path) {
-                            ImageCacheVO cvo = new ImageCacheVO();
-                            cvo.setMd5sum("not calculated");
-                            cvo.setSize(image.getInventory().getSize());
-                            cvo.setInstallUrl(path);
-                            cvo.setImageUuid(image.getInventory().getUuid());
-                            cvo.setPrimaryStorageUuid(self.getUuid());
-                            cvo.setMediaType(ImageMediaType.valueOf(image.getInventory().getMediaType()));
-                            cvo.setState(ImageCacheState.ready);
-                            dbf.persist(cvo);
-
-                            completion.success(finalCachePath);
-                            chain.next();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            completion.fail(errorCode);
-                            chain.next();
-                        }
-                    });
+                    doDownload(completion, chain);
                 }
 
                 @Override
@@ -878,27 +1027,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "prepare-for-clone";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        PrepareForCloneCmd cmd = new PrepareForCloneCmd();
-                        cmd.srcPath = msg.getTemplateSpec().getSelectedBackupStorage().getInstallPath();
-                        cmd.dstPath = cloneInstallPath;
-                        httpCall(PREPARE_CLONE_PATH, cmd, PrepareForCloneRsp.class, new ReturnValueCompletion<PrepareForCloneRsp>(trigger) {
-                            @Override
-                            public void fail(ErrorCode err) {
-                                trigger.fail(err);
-                            }
-
-                            @Override
-                            public void success(PrepareForCloneRsp ret) {
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "clone-image";

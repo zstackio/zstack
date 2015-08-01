@@ -111,14 +111,33 @@ public class CephPrimaryStorageSimulator {
         return null;
     }
 
-    @RequestMapping(value= CephPrimaryStorageBase.PREPARE_CLONE_PATH, method= RequestMethod.POST)
+    @RequestMapping(value= CephPrimaryStorageBase.CREATE_SNAPSHOT_PATH, method= RequestMethod.POST)
     public @ResponseBody
-    String prepareClone(HttpEntity<String> entity) {
-        PrepareForCloneCmd cmd = JSONObjectUtil.toObject(entity.getBody(), PrepareForCloneCmd.class);
-        config.prepareForCloneCmds.add(cmd);
+    String createSnapshot(HttpEntity<String> entity) {
+        CreateSnapshotCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateSnapshotCmd.class);
+        config.createSnapshotCmds.add(cmd);
 
-        PrepareForCloneRsp rsp = new PrepareForCloneRsp();
-        reply(entity, rsp);
+        reply(entity, new CreateSnapshotRsp());
+        return null;
+    }
+
+    @RequestMapping(value= CephPrimaryStorageBase.DELETE_SNAPSHOT_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String deleteSnapshot(HttpEntity<String> entity) {
+        DeleteSnapshotCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteSnapshotCmd.class);
+        config.deleteSnapshotCmds.add(cmd);
+
+        reply(entity, new DeleteSnapshotRsp());
+        return null;
+    }
+
+    @RequestMapping(value= CephPrimaryStorageBase.PROTECT_SNAPSHOT_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String protectSnapshot(HttpEntity<String> entity) {
+        ProtectSnapshotCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ProtectSnapshotCmd.class);
+        config.protectSnapshotCmds.add(cmd);
+
+        reply(entity, new ProtectSnapshotRsp());
         return null;
     }
 
@@ -139,7 +158,7 @@ public class CephPrimaryStorageSimulator {
         FlattenCmd cmd = JSONObjectUtil.toObject(entity.getBody(), FlattenCmd.class);
         config.flattenCmds.add(cmd);
 
-        reply(entity, new FlatenRsp());
+        reply(entity, new FlattenRsp());
         return null;
     }
 

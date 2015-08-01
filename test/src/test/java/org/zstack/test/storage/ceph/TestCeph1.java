@@ -54,7 +54,8 @@ public class TestCeph1 {
     
 	@Test
 	public void test() throws ApiSenderException {
-        Assert.assertFalse(config.prepareForCloneCmds.isEmpty());
+        Assert.assertFalse(config.createSnapshotCmds.isEmpty());
+        Assert.assertFalse(config.protectSnapshotCmds.isEmpty());
         Assert.assertFalse(config.cloneCmds.isEmpty());
 
         VmInstanceInventory vm = deployer.vms.get("TestVm");
