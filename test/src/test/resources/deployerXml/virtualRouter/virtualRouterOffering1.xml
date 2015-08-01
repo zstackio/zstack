@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<instanceOfferings>
+		<virtualRouterOffering name="virtualRouterOffering">
+			<zoneRef>Zone1</zoneRef>
+			<managementL3NetworkRef>TestL3Network1</managementL3NetworkRef>
+			<publicL3NetworkRef>TestL3Network2</publicL3NetworkRef>
+			<imageRef>TestImage</imageRef>
+		</virtualRouterOffering>
+
+		<virtualRouterOffering name="virtualRouterOffering2">
+			<zoneRef>Zone2</zoneRef>
+			<managementL3NetworkRef>TestL3Network21</managementL3NetworkRef>
+			<publicL3NetworkRef>TestL3Network22</publicL3NetworkRef>
+			<imageRef>TestImage</imageRef>
+		</virtualRouterOffering>
+	</instanceOfferings>
+
+	<backupStorages>
+		<sftpBackupStorage name="sftp" description="Test"
+			url="nfs://test" />
+	</backupStorages>
+	
+	<images>
+        <image name="TestImage" description="Test">
+			<backupStorageRef>sftp</backupStorageRef>
+		</image>
+	</images>
+
+	<zones>
+		<zone name="Zone1" description="Test">
+			<l2Networks>
+				<l2NoVlanNetwork name="TestL2Network" description="Test"
+					physicalInterface="eth0">
+					<l3Networks>
+						<l3BasicNetwork name="TestL3Network1" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+								endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+						</l3BasicNetwork>
+						<l3BasicNetwork name="TestL3Network2" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
+								endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
+						</l3BasicNetwork>
+					</l3Networks>
+				</l2NoVlanNetwork>
+			</l2Networks>
+		</zone>
+
+		<zone name="Zone2" description="Test">
+			<l2Networks>
+				<l2NoVlanNetwork name="TestL2Network2" description="Test"
+								 physicalInterface="eth0">
+					<l3Networks>
+						<l3BasicNetwork name="TestL3Network21" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+									 endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+						</l3BasicNetwork>
+						<l3BasicNetwork name="TestL3Network22" description="Test">
+							<ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
+									 endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
+						</l3BasicNetwork>
+					</l3Networks>
+				</l2NoVlanNetwork>
+			</l2Networks>
+		</zone>
+	</zones>
+</deployerConfig>

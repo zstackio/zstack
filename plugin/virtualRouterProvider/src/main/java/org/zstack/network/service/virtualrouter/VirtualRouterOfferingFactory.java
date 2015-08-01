@@ -3,6 +3,8 @@ package org.zstack.network.service.virtualrouter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.header.configuration.*;
 
@@ -34,8 +36,11 @@ public class VirtualRouterOfferingFactory implements InstanceOfferingFactory {
 		rvo.setPublicNetworkUuid(amsg.getPublicNetworkUuid());
 		rvo.setZoneUuid(amsg.getZoneUuid());
 		rvo.setImageUuid(amsg.getImageUuid());
-        long existingOfferingCount = dbf.count(VirtualRouterOfferingVO.class);
-        if (existingOfferingCount == 0) {
+
+		SimpleQuery<VirtualRouterOfferingVO> q = dbf.createQuery(VirtualRouterOfferingVO.class);
+		q.add(VirtualRouterOfferingVO_.zoneUuid, Op.EQ, amsg.getZoneUuid());
+		q.add(VirtualRouterOfferingVO_.isDefault, Op.EQ, true);
+        if (!q.isExists()) {
             rvo.setDefault(true);
         } else {
             rvo.setDefault(amsg.isDefault());
