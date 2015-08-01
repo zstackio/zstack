@@ -3,11 +3,14 @@ package org.zstack.storage.ceph.primary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
+import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.storage.primary.*;
@@ -19,10 +22,7 @@ import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.DetachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
 import org.zstack.kvm.KVMAgentCommands.VolumeTO;
-import org.zstack.storage.ceph.CephCapacityUpdateExtensionPoint;
-import org.zstack.storage.ceph.CephConstants;
-import org.zstack.storage.ceph.MonStatus;
-import org.zstack.storage.ceph.MonUri;
+import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
@@ -37,13 +37,15 @@ import java.util.List;
  * Created by frank on 7/28/2015.
  */
 public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCapacityUpdateExtensionPoint, KVMStartVmExtensionPoint,
-        KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint {
+        KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, Component {
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
 
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private AnsibleFacade asf;
 
     @Override
     public PrimaryStorageType getPrimaryStorageType() {
@@ -204,5 +206,18 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public void startVmOnKvmFailed(KVMHostInventory host, VmInstanceSpec spec, ErrorCode err) {
 
+    }
+
+    @Override
+    public boolean start() {
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            asf.deployModule(CephGlobalProperty.PRIMARY_STORAGE_MODULE_PATH, CephGlobalProperty.PRIMARY_STORAGE_PLAYBOOK_NAME);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
     }
 }

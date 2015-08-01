@@ -18,4 +18,10 @@ public class CephGlobalProperty {
     public static String BACKUP_STORAGE_PLAYBOOK_NAME;
     @GlobalProperty(name="Ceph.backupStorage.ansibleModulePath", defaultValue = "ansible/cephb")
     public static String BACKUP_STORAGE_MODULE_PATH;
+    @GlobalProperty(name="Ceph.primaryStorage.agentPackageName", defaultValue = "cephprimarystorage-0.9.tar.gz")
+    public static String PRIMARY_STORAGE_PACKAGE_NAME;
+    @GlobalProperty(name="Ceph.primaryStorage.ansiblePlaybook", defaultValue = "cephp.yaml")
+    public static String PRIMARY_STORAGE_PLAYBOOK_NAME;
+    @GlobalProperty(name="Ceph.primaryStorage.ansibleModulePath", defaultValue = "ansible/cephp")
+    public static String PRIMARY_STORAGE_MODULE_PATH;
 }
