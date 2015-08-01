@@ -14,14 +14,24 @@ import java.util.List;
 public class CephBackupStorageInventory extends BackupStorageInventory {
     private List<CephBackupStorageMonInventory> mons = new ArrayList<CephBackupStorageMonInventory>();
     private String fsid;
+    private String poolName;
 
     public CephBackupStorageInventory(CephBackupStorageVO vo) {
         super(vo);
         mons = CephBackupStorageMonInventory.valueOf(vo.getMons());
         fsid = vo.getFsid();
+        poolName = vo.getPoolName();
     }
 
     public CephBackupStorageInventory() {
+    }
+
+    public String getPoolName() {
+        return poolName;
+    }
+
+    public void setPoolName(String poolName) {
+        this.poolName = poolName;
     }
 
     public String getFsid() {

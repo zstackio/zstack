@@ -11,4 +11,5 @@ import javax.persistence.metamodel.StaticMetamodel;
 @StaticMetamodel(CephBackupStorageVO.class)
 public class CephBackupStorageVO_ extends BackupStorageVO_ {
     public static volatile SingularAttribute<CephBackupStorageVO, String> fsid;
+    public static volatile SingularAttribute<CephBackupStorageVO, String> poolName;
 }

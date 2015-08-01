@@ -25,6 +25,47 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
     @Column
     private String fsid;
 
+    @Column
+    private String rootVolumePoolName;
+    @Column
+    private String dataVolumePoolName;
+    @Column
+    private String imageCachePoolName;
+    @Column
+    private String snapshotPoolName;
+
+    public String getRootVolumePoolName() {
+        return rootVolumePoolName;
+    }
+
+    public void setRootVolumePoolName(String rootVolumePoolName) {
+        this.rootVolumePoolName = rootVolumePoolName;
+    }
+
+    public String getDataVolumePoolName() {
+        return dataVolumePoolName;
+    }
+
+    public void setDataVolumePoolName(String dataVolumePoolName) {
+        this.dataVolumePoolName = dataVolumePoolName;
+    }
+
+    public String getImageCachePoolName() {
+        return imageCachePoolName;
+    }
+
+    public void setImageCachePoolName(String imageCachePoolName) {
+        this.imageCachePoolName = imageCachePoolName;
+    }
+
+    public String getSnapshotPoolName() {
+        return snapshotPoolName;
+    }
+
+    public void setSnapshotPoolName(String snapshotPoolName) {
+        this.snapshotPoolName = snapshotPoolName;
+    }
+
     public CephPrimaryStorageVO() {
     }
 

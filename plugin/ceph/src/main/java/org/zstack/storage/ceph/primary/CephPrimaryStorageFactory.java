@@ -58,6 +58,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         CephPrimaryStorageVO cvo = new CephPrimaryStorageVO(vo);
         cvo.setType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
         cvo.setMountPath(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
+        cvo.setRootVolumePoolName(cmsg.getRootVolumePoolName() == null ? String.format("pri-v-r-%s", vo.getUuid()) : cmsg.getRootVolumePoolName());
+        cvo.setDataVolumePoolName(cmsg.getDataVolumePoolName() == null ? String.format("pri-v-d-%s", vo.getUuid()) : cmsg.getDataVolumePoolName());
+        cvo.setImageCachePoolName(cmsg.getImageCachePoolName() == null ? String.format("pri-c-%s", vo.getUuid()) : cmsg.getImageCachePoolName());
+        cvo.setSnapshotPoolName(cmsg.getSnapshotPoolName() == null ? String.format("pri-sp-%s", vo.getUuid()) : cmsg.getSnapshotPoolName());
 
         dbf.getEntityManager().persist(cvo);
 

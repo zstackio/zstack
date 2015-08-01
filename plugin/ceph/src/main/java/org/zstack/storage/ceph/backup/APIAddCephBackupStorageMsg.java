@@ -12,6 +12,16 @@ import java.util.List;
 public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg {
     @APIParam(nonempty = false)
     private List<String> monUrls;
+    @APIParam(required = false, maxLength = 255)
+    private String poolName;
+
+    public String getPoolName() {
+        return poolName;
+    }
+
+    public void setPoolName(String poolName) {
+        this.poolName = poolName;
+    }
 
     public List<String> getMonUrls() {
         return monUrls;

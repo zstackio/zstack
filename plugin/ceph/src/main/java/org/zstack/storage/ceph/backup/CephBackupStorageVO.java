@@ -23,6 +23,17 @@ public class CephBackupStorageVO extends BackupStorageVO {
     private Set<CephBackupStorageMonVO> mons = new HashSet<CephBackupStorageMonVO>();
 
     @Column
+    private String poolName;
+
+    public String getPoolName() {
+        return poolName;
+    }
+
+    public void setPoolName(String poolName) {
+        this.poolName = poolName;
+    }
+
+    @Column
     private String fsid;
 
     public String getFsid() {

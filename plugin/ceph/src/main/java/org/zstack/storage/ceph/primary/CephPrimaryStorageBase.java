@@ -722,28 +722,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         return mediator;
     }
 
-    private String getRootVolumePoolName() {
-        return String.format("pri-v-r-%s", self.getUuid());
-    }
-
-    private String getImageCachePoolName() {
-        return String.format("pri-c-%s", self.getUuid());
-    }
-
-    private String getDataVolumePoolName() {
-        return String.format("pri-v-d-%s", self.getUuid());
-    }
-
     private String makeRootVolumeInstallPath(String volUuid) {
-        return String.format("ceph://%s/%s", getRootVolumePoolName(), volUuid);
+        return String.format("ceph://%s/%s", getSelf().getRootVolumePoolName(), volUuid);
     }
 
     private String makeDataVolumeInstallPath(String volUuid) {
-        return String.format("ceph://%s/%s", getDataVolumePoolName(), volUuid);
+        return String.format("ceph://%s/%s", getSelf().getDataVolumePoolName(), volUuid);
     }
 
     private String makeCacheInstallPath(String uuid) {
-        return String.format("ceph://%s/%s", getImageCachePoolName(), uuid);
+        return String.format("ceph://%s/%s", getSelf().getImageCachePoolName(), uuid);
     }
 
     public CephPrimaryStorageBase(PrimaryStorageVO self) {
@@ -1226,7 +1214,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         InitCmd cmd = new InitCmd();
-                        cmd.poolNames = list(getImageCachePoolName(), getRootVolumePoolName(), getDataVolumePoolName());
+                        cmd.poolNames = list(getSelf().getRootVolumePoolName(), getSelf().getDataVolumePoolName(), getSelf().getImageCachePoolName(), getSelf().getSnapshotPoolName());
 
                         httpCall(INIT_PATH, cmd, InitRsp.class, new ReturnValueCompletion<InitRsp>(trigger) {
                             @Override

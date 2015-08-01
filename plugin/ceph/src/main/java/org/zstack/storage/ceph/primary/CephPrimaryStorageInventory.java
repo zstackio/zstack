@@ -14,6 +14,10 @@ import java.util.List;
 public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
     private List<CephPrimaryStorageMonInventory> mons;
     private String fsid;
+    private String rootVolumePoolName;
+    private String dataVolumePoolName;
+    private String imageCachePoolName;
+    private String snapshotPoolName;
 
     public List<CephPrimaryStorageMonInventory> getMons() {
         return mons;
@@ -23,6 +27,38 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
         this.mons = mons;
     }
 
+    public String getRootVolumePoolName() {
+        return rootVolumePoolName;
+    }
+
+    public void setRootVolumePoolName(String rootVolumePoolName) {
+        this.rootVolumePoolName = rootVolumePoolName;
+    }
+
+    public String getDataVolumePoolName() {
+        return dataVolumePoolName;
+    }
+
+    public void setDataVolumePoolName(String dataVolumePoolName) {
+        this.dataVolumePoolName = dataVolumePoolName;
+    }
+
+    public String getImageCachePoolName() {
+        return imageCachePoolName;
+    }
+
+    public void setImageCachePoolName(String imageCachePoolName) {
+        this.imageCachePoolName = imageCachePoolName;
+    }
+
+    public String getSnapshotPoolName() {
+        return snapshotPoolName;
+    }
+
+    public void setSnapshotPoolName(String snapshotPoolName) {
+        this.snapshotPoolName = snapshotPoolName;
+    }
+
     public CephPrimaryStorageInventory() {
     }
 
@@ -30,6 +66,10 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
         super(vo);
         setMons(CephPrimaryStorageMonInventory.valueOf(vo.getMons()));
         setFsid(vo.getFsid());
+        rootVolumePoolName = vo.getRootVolumePoolName();
+        dataVolumePoolName = vo.getDataVolumePoolName();
+        imageCachePoolName = vo.getImageCachePoolName();
+        snapshotPoolName = vo.getSnapshotPoolName();
     }
 
     public static CephPrimaryStorageInventory valueOf(CephPrimaryStorageVO vo) {

@@ -1,6 +1,7 @@
 CREATE TABLE  `zstack`.`CephBackupStorageVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `fsid` varchar(64) DEFAULT NULL,
+    `poolName` varchar(255) NOT NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -20,6 +21,10 @@ CREATE TABLE  `zstack`.`CephBackupStorageMonVO` (
 CREATE TABLE  `zstack`.`CephPrimaryStorageVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `fsid` varchar(64) DEFAULT NULL,
+    `rootVolumePoolName` varchar(64) NOT NULL,
+    `dataVolumePoolName` varchar(64) NOT NULL,
+    `imageCachePoolName` varchar(64) NOT NULL,
+    `snapshotPoolName` varchar(64) NOT NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

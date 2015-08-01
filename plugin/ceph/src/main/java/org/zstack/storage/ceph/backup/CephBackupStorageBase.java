@@ -176,12 +176,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
         return String.format("http://%s:%s%s", ip, CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT, path);
     }
 
-    protected String getTemplatePoolName() {
-        return String.format("bak-t-%s", self.getUuid());
-    }
-
     protected String makeImageInstallPath(String imageUuid) {
-        return String.format("ceph://%s/%s", getTemplatePoolName(), imageUuid);
+        return String.format("ceph://%s/%s", getSelf().getPoolName(), imageUuid);
     }
 
     private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, Class<T> retClass, final ReturnValueCompletion<T> callback) {
@@ -429,7 +425,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         InitCmd cmd = new InitCmd();
-                        cmd.poolNames = list(getTemplatePoolName());
+                        cmd.poolNames = list(getSelf().getPoolName());
 
                         httpCall(INIT_PATH, cmd, InitRsp.class, new ReturnValueCompletion<InitRsp>(trigger) {
                             @Override

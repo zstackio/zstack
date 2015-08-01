@@ -37,6 +37,8 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
 
         CephBackupStorageVO cvo = new CephBackupStorageVO(vo);
         cvo.setType(CephConstants.CEPH_BACKUP_STORAGE_TYPE);
+        String poolName = cmsg.getPoolName() == null ? String.format("bak-t-%s", vo.getUuid()) : cmsg.getPoolName();
+        cvo.setPoolName(poolName);
 
         dbf.getEntityManager().persist(cvo);
 
