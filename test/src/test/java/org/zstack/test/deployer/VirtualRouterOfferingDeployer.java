@@ -61,7 +61,9 @@ public class VirtualRouterOfferingDeployer implements InstanceOfferingDeployer<V
 			}
 			msg.setZoneUuid(zone.getUuid());
 			msg.setImageUuid(image.getUuid());
-			msg.setDefault(ic.isIsDefault());
+			if (ic.getAccountRef() == null) {
+				msg.setDefault(ic.isIsDefault());
+			}
 			ApiSender sender = deployer.getApi().getApiSender();
 			APICreateInstanceOfferingEvent evt = sender.send(msg, APICreateInstanceOfferingEvent.class);
 			InstanceOfferingInventory iinv = evt.getInventory();

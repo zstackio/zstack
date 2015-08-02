@@ -3,8 +3,7 @@
 	<account name="test" password="password"></account>
 
 	<instanceOfferings>
-		<virtualRouterOffering name="virtualRouterOffering"
-			isDefault="true">
+		<virtualRouterOffering name="virtualRouterOffering">
 			<zoneRef>Zone1</zoneRef>
 			<managementL3NetworkRef>PublicNetwork</managementL3NetworkRef>
 			<publicL3NetworkRef>PublicNetwork</publicL3NetworkRef>
