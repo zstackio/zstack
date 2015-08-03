@@ -1289,8 +1289,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         new HttpCaller().call();
     }
 
-    @Override
-    protected void connectHook(ConnectPrimaryStorageMsg msg, final Completion completion) {
+    private void connect(final Completion completion) {
         final List<CephPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
             @Override
             public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
@@ -1394,11 +1393,42 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void connectHook(ConnectPrimaryStorageMsg msg, final Completion completion) {
+        connect(completion);
+    }
+
+    @Override
     protected void syncPhysicalCapacity(ReturnValueCompletion<PhysicalCapacityUsage> completion) {
         PrimaryStorageCapacityVO cap = dbf.findByUuid(self.getUuid(), PrimaryStorageCapacityVO.class);
         PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
         usage.availablePhysicalSize = cap.getAvailablePhysicalCapacity();
         usage.totalPhysicalSize =  cap.getTotalPhysicalCapacity();
         completion.success(usage);
+    }
+
+    @Override
+    protected void handle(APIReconnectPrimaryStorageMsg msg) {
+        final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
+        self.setStatus(PrimaryStorageStatus.Connecting);
+        dbf.update(self);
+        connect(new Completion(msg) {
+            @Override
+            public void success() {
+                self = dbf.reload(self);
+                self.setStatus(PrimaryStorageStatus.Connected);
+                self = dbf.updateAndRefresh(self);
+                evt.setInventory(getSelfInventory());
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                self = dbf.reload(self);
+                self.setStatus(PrimaryStorageStatus.Disconnected);
+                self = dbf.updateAndRefresh(self);
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 }

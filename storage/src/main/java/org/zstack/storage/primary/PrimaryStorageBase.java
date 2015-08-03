@@ -493,7 +493,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         bus.publish(evt);
     }
 
-    private void handle(APIReconnectPrimaryStorageMsg msg) {
+    protected void handle(APIReconnectPrimaryStorageMsg msg) {
         APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
