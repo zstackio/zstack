@@ -33,6 +33,16 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
     private String imageCachePoolName;
     @Column
     private String snapshotPoolName;
+    @Column
+    private String userKey;
+
+    public String getUserKey() {
+        return userKey;
+    }
+
+    public void setUserKey(String userKey) {
+        this.userKey = userKey;
+    }
 
     public String getRootVolumePoolName() {
         return rootVolumePoolName;

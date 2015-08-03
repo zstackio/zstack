@@ -134,6 +134,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     public static class InitRsp extends AgentResponse {
         String fsid;
+        String userKey;
+
+        public String getUserKey() {
+            return userKey;
+        }
+
+        public void setUserKey(String userKey) {
+            this.userKey = userKey;
+        }
 
         public String getFsid() {
             return fsid;
@@ -1354,8 +1363,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             public void success(InitRsp ret) {
                                 if (getSelf().getFsid() == null) {
                                     getSelf().setFsid(ret.fsid);
-                                    self = dbf.updateAndRefresh(self);
                                 }
+
+                                getSelf().setUserKey(ret.userKey);
+                                self = dbf.updateAndRefresh(self);
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
                                 updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity);

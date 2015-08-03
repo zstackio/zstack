@@ -15,4 +15,5 @@ public class CephPrimaryStorageVO_ extends PrimaryStorageVO_ {
     public static volatile SingularAttribute<CephPrimaryStorageVO, String> dataVolumePoolName;
     public static volatile SingularAttribute<CephPrimaryStorageVO, String> imageCachePoolName;
     public static volatile SingularAttribute<CephPrimaryStorageVO, String> snapshotPoolName;
+    public static volatile SingularAttribute<CephPrimaryStorageVO, String> userKey;
 }

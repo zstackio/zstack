@@ -37,6 +37,15 @@ public class KVMCephVolumeTO extends VolumeTO {
     }
 
     private List<MonInfo> monInfo;
+    private String userKey;
+
+    public String getUserKey() {
+        return userKey;
+    }
+
+    public void setUserKey(String userKey) {
+        this.userKey = userKey;
+    }
 
     public List<MonInfo> getMonInfo() {
         return monInfo;

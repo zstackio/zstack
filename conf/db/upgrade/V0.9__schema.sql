@@ -25,6 +25,7 @@ CREATE TABLE  `zstack`.`CephPrimaryStorageVO` (
     `dataVolumePoolName` varchar(64) NOT NULL,
     `imageCachePoolName` varchar(64) NOT NULL,
     `snapshotPoolName` varchar(64) NOT NULL,
+    `userKey` varchar(255) DEFAULT NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

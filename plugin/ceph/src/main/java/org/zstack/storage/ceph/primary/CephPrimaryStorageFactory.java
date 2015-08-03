@@ -13,6 +13,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -114,7 +115,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     private VolumeTO convertVolumeToCephIfNeeded(VolumeInventory vol, VolumeTO to) {
-        if (!vol.getInstallPath().startsWith("ceph://")) {
+        if (!vol.getInstallPath().startsWith(VolumeTO.CEPH)) {
             return to;
         }
 
@@ -143,7 +144,16 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             }
         });
 
+        SimpleQuery<CephPrimaryStorageVO> cq = dbf.createQuery(CephPrimaryStorageVO.class);
+        cq.select(CephPrimaryStorageVO_.userKey);
+        cq.add(CephPrimaryStorageVO_.uuid, Op.EQ, vol.getPrimaryStorageUuid());
+        String userKey = cq.findValue();
+        if (userKey == null) {
+            throw new CloudRuntimeException(String.format("ceph primary storage[uuid:%s] doesn't have a user key", vol.getPrimaryStorageUuid()));
+        }
+
         KVMCephVolumeTO cto = new KVMCephVolumeTO(to);
+        cto.setUserKey(userKey);
         cto.setMonInfo(monInfos);
         cto.setDeviceType(VolumeTO.CEPH);
         return cto;
