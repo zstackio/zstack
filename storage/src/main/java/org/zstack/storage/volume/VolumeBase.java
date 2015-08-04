@@ -373,8 +373,8 @@ public class VolumeBase implements Volume {
             @Override
             public void run(MessageReply reply) {
                 final APIAttachDataVolumeToVmEvent evt = new APIAttachDataVolumeToVmEvent(msg.getId());
+                self = dbf.reload(self);
                 if (reply.isSuccess()) {
-                    self = dbf.reload(self);
                     AttachDataVolumeToVmReply ar = reply.castReply();
                     self.setVmInstanceUuid(msg.getVmInstanceUuid());
                     self.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(ar.getHypervisorType()).toString());
