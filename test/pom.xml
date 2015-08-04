@@ -103,6 +103,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>ceph</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.shrinkwrap</groupId>
             <artifactId>shrinkwrap-api</artifactId>
             <version>1.0.0-alpha-12</version>

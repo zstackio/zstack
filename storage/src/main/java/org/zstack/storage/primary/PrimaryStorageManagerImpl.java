@@ -235,15 +235,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         final ConnectPrimaryStorageMsg cmsg = new ConnectPrimaryStorageMsg();
         cmsg.setPrimaryStorageUuid(inv.getUuid());
+        cmsg.setNewAdded(true);
         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
         final PrimaryStorageVO finalVo = vo;
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    ConnectPrimaryStorageReply cr = reply.castReply();
-                    finalVo.setStatus(cr.isConnected() ? PrimaryStorageStatus.Connected : PrimaryStorageStatus.Disconnected);
-                    dbf.update(finalVo);
                     PrimaryStorageInventory pinv = factory.getInventory(finalVo.getUuid());
                     logger.debug(String.format("successfully add primary storage[uuid:%s, name:%s, url: %s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
                     evt.setInventory(pinv);

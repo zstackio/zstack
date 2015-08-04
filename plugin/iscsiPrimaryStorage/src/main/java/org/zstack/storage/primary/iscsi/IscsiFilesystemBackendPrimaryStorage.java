@@ -954,15 +954,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APIReconnectPrimaryStorageMsg) {
-            handle((APIReconnectPrimaryStorageMsg) msg);
-        } else {
-            super.handleApiMessage(msg);
-        }
-    }
-
-    private void handle(APIReconnectPrimaryStorageMsg msg) {
+    protected void handle(APIReconnectPrimaryStorageMsg msg) {
         final APIReconnectPrimaryStorageEvent evt  = new APIReconnectPrimaryStorageEvent(msg.getId());
         self.setStatus(PrimaryStorageStatus.Connecting);
         self = dbf.updateAndRefresh(self);
@@ -1027,7 +1019,6 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                                 trigger.fail(errorCode);
                             }
                         });
-
                     }
                 });
 

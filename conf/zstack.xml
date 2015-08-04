@@ -75,4 +75,5 @@
     <import resource="springConfigXml/jmx.xml" />
     <import resource="springConfigXml/iscsiBtrfsPrimaryStorage.xml" />
     <import resource="springConfigXml/localStorage.xml" />
+    <import resource="springConfigXml/ceph.xml" />
 </beans>

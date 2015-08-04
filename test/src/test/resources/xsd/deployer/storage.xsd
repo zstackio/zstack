@@ -10,6 +10,7 @@
             <xsd:element name="nfsPrimaryStorage" type="NfsPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
             <xsd:element name="iscsiBtrfsPrimaryStorage" type="IscsiFileSystemPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
             <xsd:element name="localPrimaryStorage" type="LocalPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="cephPrimaryStorage" type="CephPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
@@ -17,6 +18,7 @@
         <xsd:sequence>
             <xsd:element name="simulatorBackupStorage" type="SimulatorBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
             <xsd:element name="sftpBackupStorage" type="SftpBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="cephBackupStorage" type="CephBackupStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
@@ -40,6 +42,24 @@
         <xsd:complexContent>
             <xsd:extension base="PrimaryStorageConfigBase">
                 <xsd:attribute name="placeHolder" type="xsd:string"></xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="CephPrimaryStorageConfig">
+        <xsd:complexContent>
+            <xsd:extension base="PrimaryStorageConfigBase">
+                <xsd:attribute name="fsid" type="xsd:string"></xsd:attribute>
+                <xsd:attribute name="monUrl" type="xsd:string"></xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="CephBackupStorageConfig">
+        <xsd:complexContent mixed="false">
+            <xsd:extension base="BackupStorageConfigBase">
+                <xsd:attribute name="fsid" type="xsd:string"></xsd:attribute>
+                <xsd:attribute name="monUrl" type="xsd:string"></xsd:attribute>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

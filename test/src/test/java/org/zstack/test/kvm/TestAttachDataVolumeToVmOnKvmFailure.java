@@ -1,5 +1,6 @@
 package org.zstack.test.kvm;
 
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -9,6 +10,8 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeStatus;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -44,12 +47,23 @@ public class TestAttachDataVolumeToVmOnKvmFailure {
         session = api.loginAsAdmin();
     }
     
-	@Test(expected = ApiSenderException.class)
+	@Test
 	public void test() throws ApiSenderException {
 	    config.attachVolumeSuccess = false;
 	    VmInstanceInventory vm = deployer.vms.get("TestVm");
 	    DiskOfferingInventory dinv = deployer.diskOfferings.get("DataOffering");
 	    VolumeInventory vol = api.createDataVolume("d1", dinv.getUuid());
-	    vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
+
+        boolean s = false;
+        try {
+            api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
+
+        VolumeVO vo = dbf.findByUuid(vol.getUuid(), VolumeVO.class);
+        Assert.assertEquals(VolumeStatus.Ready, vo.getStatus());
+        Assert.assertNull(vo.getDeviceId());
 	}
 }

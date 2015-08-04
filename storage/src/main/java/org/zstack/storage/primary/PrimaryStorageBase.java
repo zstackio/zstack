@@ -39,6 +39,7 @@ import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -212,6 +213,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         connectHook(msg, new Completion(msg) {
             @Override
             public void success() {
+                self = dbf.reload(self);
                 self.setStatus(PrimaryStorageStatus.Connected);
                 self = dbf.updateAndRefresh(self);
                 reply.setConnected(true);
@@ -221,10 +223,15 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                self.setStatus(PrimaryStorageStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
-                logger.debug(String.format("failed to connect primary storage[uuid:%s], %s", self.getUuid(), errorCode));
-                reply.setConnected(false);
+                if (msg.isNewAdded()) {
+                    reply.setError(errorCode);
+                } else {
+                    self.setStatus(PrimaryStorageStatus.Disconnected);
+                    self = dbf.updateAndRefresh(self);
+                    logger.debug(String.format("failed to connect primary storage[uuid:%s], %s", self.getUuid(), errorCode));
+                    reply.setConnected(false);
+                }
+
                 bus.reply(msg, reply);
             }
         });
@@ -486,7 +493,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         bus.publish(evt);
     }
 
-    private void handle(APIReconnectPrimaryStorageMsg msg) {
+    protected void handle(APIReconnectPrimaryStorageMsg msg) {
         APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
         evt.setInventory(getSelfInventory());
         bus.publish(evt);

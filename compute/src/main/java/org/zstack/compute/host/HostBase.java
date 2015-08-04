@@ -501,6 +501,11 @@ public abstract class HostBase extends AbstractHost {
 
     private void handle(final PingHostMsg msg) {
         final PingHostReply reply = new PingHostReply();
+        if (self.getStatus() == HostStatus.Connecting) {
+            reply.setError(errf.stringToOperationError("host is connecting"));
+            bus.reply(msg, reply);
+            return;
+        }
 
         pingHook(new Completion(msg) {
             @Override

@@ -103,5 +103,10 @@
         <class>org.zstack.storage.primary.iscsi.IscsiIsoVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageResourceRefVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageHostRefVO</class>
+        <class>org.zstack.storage.ceph.backup.CephBackupStorageVO</class>
+        <class>org.zstack.storage.ceph.backup.CephBackupStorageMonVO</class>
+        <class>org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO</class>
+        <class>org.zstack.storage.ceph.primary.CephPrimaryStorageVO</class>
+        <class>org.zstack.storage.ceph.CephCapacityVO</class>
     </persistence-unit>
 </persistence>

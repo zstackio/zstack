@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<backupStorages>
+		<cephBackupStorage name="ceph-bk" description="Test"
+			url="/path1" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost,root:password@127.0.0.1"
+				totalCapacity="1T" availableCapacity="500G"/>
+	</backupStorages>
+
+	<images>
+		<image name="TestImage" description="Test">
+			<backupStorageRef>ceph-bk</backupStorageRef>
+		</image>
+	</images>
+
+	<zones>
+		<zone name="Zone1" description="Test">
+			<backupStorageRef>ceph-bk</backupStorageRef>
+		</zone>
+	</zones>
+</deployerConfig>
