@@ -49,6 +49,7 @@ public class VmInstantiateAttachingVolumeFlow extends NoRollbackFlow {
                     VolumeVO vo = dbf.findByUuid(r.getVolume().getUuid(), VolumeVO.class);
                     vo.setPrimaryStorageUuid(pinv.getUuid());
                     vo.setInstallPath(r.getVolume().getInstallPath());
+                    vo.setFormat(r.getVolume().getFormat());
                     vo.setStatus(VolumeStatus.Ready);
                     vo = dbf.updateAndRefresh(vo);
                     ctx.put(VmInstanceConstant.Params.AttachingVolumeInventory.toString(), VolumeInventory.valueOf(vo));
