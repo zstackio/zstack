@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+    <TestCase class="org.zstack.test.storage.ceph.TestCephBackupStorage"/>
+    <TestCase class="org.zstack.test.storage.ceph.TestCeph1"/>
+    <TestCase class="org.zstack.test.storage.ceph.TestCeph2"/>
+    <TestCase class="org.zstack.test.storage.ceph.TestCeph3"/>
+</UnitTestSuiteConfig>

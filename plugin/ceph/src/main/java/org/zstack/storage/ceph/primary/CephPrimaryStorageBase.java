@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -42,6 +43,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import sun.management.Agent;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -362,6 +364,21 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class ProtectSnapshotRsp extends AgentResponse {
     }
 
+    public static class UnprotectedSnapshotCmd extends AgentCommand {
+        String snapshotPath;
+
+        public String getSnapshotPath() {
+            return snapshotPath;
+        }
+
+        public void setSnapshotPath(String snapshotPath) {
+            this.snapshotPath = snapshotPath;
+        }
+    }
+
+    public static class UnprotectedSnapshotRsp extends AgentResponse {
+    }
+
     public static final String INIT_PATH = "/ceph/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/ceph/primarystorage/delete";
@@ -372,6 +389,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String CREATE_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/create";
     public static final String DELETE_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/delete";
     public static final String PROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/protect";
+    public static final String UNPROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/unprotect";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -639,6 +657,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             chain.setName(String.format("upload-image-ceph-%s-to-ceph-%s", self.getUuid(), backupStorage.getUuid()));
             chain.then(new ShareFlow() {
                 String backupStorageInstallPath;
+                String snapshotPath;
 
                 @Override
                 public void setup() {
@@ -667,17 +686,65 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     });
 
                     flow(new Flow() {
-                        String __name__ = "create-a-clone";
+                        String __name__ = "create-a-temp-snapshot";
+
+                        boolean success = false;
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            CloneCmd cmd = new CloneCmd();
-                            cmd.srcPath = uparam.primaryStorageInstallPath;
-                            cmd.dstPath = backupStorageInstallPath;
-
-                            httpCall(CLONE_PATH, cmd, CloneRsp.class, new ReturnValueCompletion<CloneRsp>(trigger) {
+                            snapshotPath = String.format("%s@%s", uparam.primaryStorageInstallPath, Platform.getUuid());
+                            CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+                            cmd.snapshotPath = snapshotPath;
+                            httpCall(CREATE_SNAPSHOT_PATH, cmd, CreateSnapshotRsp.class, new ReturnValueCompletion<CreateSnapshotRsp>(trigger) {
                                 @Override
-                                public void success(CloneRsp returnValue) {
+                                public void success(CreateSnapshotRsp returnValue) {
+                                    success = true;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void rollback(FlowTrigger trigger, Map data) {
+                            if (success) {
+                                DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
+                                cmd.snapshotPath = snapshotPath;
+                                httpCall(DELETE_SNAPSHOT_PATH, cmd, DeleteSnapshotRsp.class, new ReturnValueCompletion<DeleteSnapshotRsp>() {
+                                    @Override
+                                    public void success(DeleteSnapshotRsp returnValue) {
+                                        logger.debug(String.format("successfully deleted the snapshot[%s]", snapshotPath));
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        //TODO
+                                        logger.warn(String.format("failed to delete the snapshot[%s], %s. Need a cleanup", snapshotPath, errorCode));
+                                    }
+                                });
+                            }
+
+                            trigger.rollback();
+                        }
+                    });
+
+                    flow(new Flow() {
+                        String __name__ = "protected-the-temp-snapshot";
+
+                        boolean success = false;
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            ProtectSnapshotCmd cmd = new ProtectSnapshotCmd();
+                            cmd.snapshotPath = snapshotPath;
+                            httpCall(PROTECT_SNAPSHOT_PATH, cmd, ProtectSnapshotRsp.class, new ReturnValueCompletion<ProtectSnapshotRsp>(trigger) {
+                                @Override
+                                public void success(ProtectSnapshotRsp returnValue) {
+                                    success = true;
                                     trigger.next();
                                 }
 
@@ -690,20 +757,75 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void rollback(final FlowTrigger trigger, Map data) {
-                            DeleteCmd cmd = new DeleteCmd();
-                            cmd.installPath = backupStorageInstallPath;
+                            if (!success) {
+                                trigger.rollback();
+                                return;
+                            }
 
-                            httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(trigger) {
+                            UnprotectedSnapshotCmd cmd = new UnprotectedSnapshotCmd();
+                            cmd.snapshotPath = snapshotPath;
+                            httpCall(UNPROTECT_SNAPSHOT_PATH, cmd, UnprotectedSnapshotRsp.class, new ReturnValueCompletion<UnprotectedSnapshotRsp>(trigger) {
                                 @Override
-                                public void success(DeleteRsp returnValue) {
+                                public void success(UnprotectedSnapshotRsp returnValue) {
+                                    trigger.rollback();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    //TODO
+                                    logger.warn(String.format("failed to unprotect the snapshot[%s], %s. Need a cleanup", snapshotPath, errorCode));
+                                    trigger.rollback();
+                                }
+                            });
+                        }
+                    });
+
+                    flow(new Flow() {
+                        String __name__ = "create-a-clone";
+
+                        boolean success = false;
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            CloneCmd cmd = new CloneCmd();
+                            cmd.srcPath = snapshotPath;
+                            cmd.dstPath = backupStorageInstallPath;
+
+                            httpCall(CLONE_PATH, cmd, CloneRsp.class, new ReturnValueCompletion<CloneRsp>(trigger) {
+                                @Override
+                                public void success(CloneRsp returnValue) {
+                                    success = true;
                                     trigger.next();
                                 }
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    trigger.setError(errorCode);
+                                    trigger.fail(errorCode);
                                 }
                             });
+                        }
+
+                        @Override
+                        public void rollback(final FlowTrigger trigger, Map data) {
+                            if (success) {
+                                DeleteCmd cmd = new DeleteCmd();
+                                cmd.installPath = backupStorageInstallPath;
+
+                                httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
+                                    @Override
+                                    public void success(DeleteRsp returnValue) {
+                                        logger.debug(String.format("successfully deleted %s", backupStorageInstallPath));
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        //TODO
+                                        logger.warn(String.format("failed to delete %s, %s; need a cleanup", backupStorageInstallPath, errorCode));
+                                    }
+                                });
+                            }
+
+                            trigger.rollback();
                         }
                     });
 
@@ -726,6 +848,54 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     trigger.fail(errorCode);
                                 }
                             });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "unprotecte-the-tmep-snapshot";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            UnprotectedSnapshotCmd cmd = new UnprotectedSnapshotCmd();
+                            cmd.snapshotPath = snapshotPath;
+                            httpCall(UNPROTECT_SNAPSHOT_PATH, cmd, UnprotectedSnapshotRsp.class, new ReturnValueCompletion<UnprotectedSnapshotRsp>(trigger) {
+                                @Override
+                                public void success(UnprotectedSnapshotRsp returnValue) {
+                                    logger.debug(String.format("successfully unprotected the snapshot[%s]", snapshotPath));
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    //TODO
+                                    logger.warn(String.format("failed to unprotect the snapshot[%s], %s. Need a cleanup", snapshotPath, errorCode));
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "delete-the-temp-snapshot";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
+                            cmd.snapshotPath = snapshotPath;
+                            httpCall(DELETE_SNAPSHOT_PATH, cmd, DeleteSnapshotRsp.class, new ReturnValueCompletion<DeleteSnapshotRsp>() {
+                                @Override
+                                public void success(DeleteSnapshotRsp returnValue) {
+                                    logger.debug(String.format("successfully deleted the snapshot[%s]", snapshotPath));
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    //TODO
+                                    logger.warn(String.format("failed to delete the snapshot[%s], %s. Need a cleanup", snapshotPath, errorCode));
+                                }
+                            });
+
+                            trigger.next();
                         }
                     });
 
@@ -1110,6 +1280,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         UploadParam param = new UploadParam();
         param.image = msg.getImageInventory();
         param.primaryStorageInstallPath = msg.getVolumeInventory().getInstallPath();
+        mediator.param = param;
         mediator.upload(new ReturnValueCompletion<String>(msg) {
             @Override
             public void success(String returnValue) {
@@ -1368,7 +1539,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 self = dbf.updateAndRefresh(self);
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
-                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity);
+                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity, true);
                                 trigger.next();
                             }
                         });

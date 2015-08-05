@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -72,6 +73,7 @@ public class CephPrimaryStorageSimulator {
 
         InitRsp rsp = new InitRsp();
         rsp.fsid = cpc.fsid;
+        rsp.userKey = Platform.getUuid();
         rsp.totalCapacity = cpc.totalCapacity;
         rsp.availableCapacity = cpc.availCapacity;
         reply(entity, rsp);
@@ -138,6 +140,16 @@ public class CephPrimaryStorageSimulator {
         config.protectSnapshotCmds.add(cmd);
 
         reply(entity, new ProtectSnapshotRsp());
+        return null;
+    }
+
+    @RequestMapping(value= CephPrimaryStorageBase.UNPROTECT_SNAPSHOT_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String unprotectSnapshot(HttpEntity<String> entity) {
+        UnprotectedSnapshotCmd cmd = JSONObjectUtil.toObject(entity.getBody(), UnprotectedSnapshotCmd.class);
+        config.unprotectedSnapshotCmds.add(cmd);
+
+        reply(entity, new UnprotectedSnapshotRsp());
         return null;
     }
 

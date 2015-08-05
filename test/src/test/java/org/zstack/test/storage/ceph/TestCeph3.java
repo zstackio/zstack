@@ -11,7 +11,6 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeFormat;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
@@ -21,13 +20,13 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
- * 1. use ceph for primary storage and backup storage
+ * 1. use ceph for primary storage but sftp for backup storage
  * 2. create a vm
  * 3. create an image from the vm's root volume
  *
  * confirm the volume created successfully
  */
-public class TestCeph2 {
+public class TestCeph3 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -41,7 +40,7 @@ public class TestCeph2 {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/ceph/TestCeph1.xml", con);
+        deployer = new Deployer("deployerXml/ceph/TestCeph3.xml", con);
         deployer.addSpringConfig("ceph.xml");
         deployer.addSpringConfig("cephSimulator.xml");
         deployer.addSpringConfig("KVMRelated.xml");
@@ -59,17 +58,11 @@ public class TestCeph2 {
 	public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
+        Assert.assertFalse(config.sftpDownloadCmds.isEmpty());
 
-        config.cloneCmds.clear();
-        config.flattenCmds.clear();
-        BackupStorageInventory bs = deployer.backupStorages.get("ceph-bk");
+        BackupStorageInventory bs = deployer.backupStorages.get("sftp");
         ImageInventory img = api.createTemplateFromRootVolume("root", vm.getRootVolumeUuid(), bs.getUuid());
-        Assert.assertFalse(config.createSnapshotCmds.isEmpty());
-        Assert.assertFalse(config.protectSnapshotCmds.isEmpty());
-        Assert.assertFalse(config.cloneCmds.isEmpty());
-        Assert.assertFalse(config.flattenCmds.isEmpty());
-        Assert.assertFalse(config.unprotectedSnapshotCmds.isEmpty());
-        Assert.assertFalse(config.deleteSnapshotCmds.isEmpty());
+        Assert.assertFalse(config.sftpUpLoadCmds.isEmpty());
         Assert.assertEquals(VolumeConstant.VOLUME_FORMAT_RAW, img.getFormat());
     }
 }

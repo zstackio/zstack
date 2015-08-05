@@ -24,6 +24,12 @@ import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+/**
+ * 1. use ceph for backup storage and primary storage
+ * 2. create a vm
+ *
+ * confirm the vm created successfully
+ */
 public class TestCeph1 {
     Deployer deployer;
     Api api;

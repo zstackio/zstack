@@ -662,7 +662,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
                                 if (success) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, String.format("failed to create image from root volume[uuid:%s] on all backup storage, see cause for one of errros",
+                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, String.format("failed to create image from root volume[uuid:%s] on all backup storage, see cause for one of errors",
                                             msg.getRootVolumeUuid()), err));
                                 }
                             }

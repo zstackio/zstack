@@ -446,7 +446,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 }
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
-                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity);
+                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity, true);
                                 trigger.next();
                             }
                         });
