@@ -379,6 +379,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class UnprotectedSnapshotRsp extends AgentResponse {
     }
 
+    public static class CpCmd extends AgentCommand {
+        String srcPath;
+        String dstPath;
+
+        public String getSrcPath() {
+            return srcPath;
+        }
+
+        public void setSrcPath(String srcPath) {
+            this.srcPath = srcPath;
+        }
+
+        public String getDstPath() {
+            return dstPath;
+        }
+
+        public void setDstPath(String dstPath) {
+            this.dstPath = dstPath;
+        }
+    }
+
+    public static class CpRsp extends AgentResponse {
+    }
+
     public static final String INIT_PATH = "/ceph/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/ceph/primarystorage/delete";
@@ -390,6 +414,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String DELETE_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/delete";
     public static final String PROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/protect";
     public static final String UNPROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/unprotect";
+    public static final String CP_PATH = "/ceph/primarystorage/volume/cp";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -657,7 +682,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             chain.setName(String.format("upload-image-ceph-%s-to-ceph-%s", self.getUuid(), backupStorage.getUuid()));
             chain.then(new ShareFlow() {
                 String backupStorageInstallPath;
-                String snapshotPath;
 
                 @Override
                 public void setup() {
@@ -685,116 +709,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     });
 
-                    flow(new Flow() {
-                        String __name__ = "create-a-temp-snapshot";
-
-                        boolean success = false;
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "cp-to-the-image";
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            snapshotPath = String.format("%s@%s", uparam.primaryStorageInstallPath, Platform.getUuid());
-                            CreateSnapshotCmd cmd = new CreateSnapshotCmd();
-                            cmd.snapshotPath = snapshotPath;
-                            httpCall(CREATE_SNAPSHOT_PATH, cmd, CreateSnapshotRsp.class, new ReturnValueCompletion<CreateSnapshotRsp>(trigger) {
-                                @Override
-                                public void success(CreateSnapshotRsp returnValue) {
-                                    success = true;
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-
-                        @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
-                            if (success) {
-                                DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
-                                cmd.snapshotPath = snapshotPath;
-                                httpCall(DELETE_SNAPSHOT_PATH, cmd, DeleteSnapshotRsp.class, new ReturnValueCompletion<DeleteSnapshotRsp>() {
-                                    @Override
-                                    public void success(DeleteSnapshotRsp returnValue) {
-                                        logger.debug(String.format("successfully deleted the snapshot[%s]", snapshotPath));
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        //TODO
-                                        logger.warn(String.format("failed to delete the snapshot[%s], %s. Need a cleanup", snapshotPath, errorCode));
-                                    }
-                                });
-                            }
-
-                            trigger.rollback();
-                        }
-                    });
-
-                    flow(new Flow() {
-                        String __name__ = "protected-the-temp-snapshot";
-
-                        boolean success = false;
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            ProtectSnapshotCmd cmd = new ProtectSnapshotCmd();
-                            cmd.snapshotPath = snapshotPath;
-                            httpCall(PROTECT_SNAPSHOT_PATH, cmd, ProtectSnapshotRsp.class, new ReturnValueCompletion<ProtectSnapshotRsp>(trigger) {
-                                @Override
-                                public void success(ProtectSnapshotRsp returnValue) {
-                                    success = true;
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-
-                        @Override
-                        public void rollback(final FlowTrigger trigger, Map data) {
-                            if (!success) {
-                                trigger.rollback();
-                                return;
-                            }
-
-                            UnprotectedSnapshotCmd cmd = new UnprotectedSnapshotCmd();
-                            cmd.snapshotPath = snapshotPath;
-                            httpCall(UNPROTECT_SNAPSHOT_PATH, cmd, UnprotectedSnapshotRsp.class, new ReturnValueCompletion<UnprotectedSnapshotRsp>(trigger) {
-                                @Override
-                                public void success(UnprotectedSnapshotRsp returnValue) {
-                                    trigger.rollback();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    //TODO
-                                    logger.warn(String.format("failed to unprotect the snapshot[%s], %s. Need a cleanup", snapshotPath, errorCode));
-                                    trigger.rollback();
-                                }
-                            });
-                        }
-                    });
-
-                    flow(new Flow() {
-                        String __name__ = "create-a-clone";
-
-                        boolean success = false;
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            CloneCmd cmd = new CloneCmd();
-                            cmd.srcPath = snapshotPath;
+                            CpCmd cmd = new CpCmd();
+                            cmd.srcPath = uparam.primaryStorageInstallPath;
                             cmd.dstPath = backupStorageInstallPath;
-
-                            httpCall(CLONE_PATH, cmd, CloneRsp.class, new ReturnValueCompletion<CloneRsp>(trigger) {
+                            httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(trigger) {
                                 @Override
-                                public void success(CloneRsp returnValue) {
-                                    success = true;
+                                public void success(CpRsp returnValue) {
                                     trigger.next();
                                 }
 
@@ -803,99 +728,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     trigger.fail(errorCode);
                                 }
                             });
-                        }
-
-                        @Override
-                        public void rollback(final FlowTrigger trigger, Map data) {
-                            if (success) {
-                                DeleteCmd cmd = new DeleteCmd();
-                                cmd.installPath = backupStorageInstallPath;
-
-                                httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
-                                    @Override
-                                    public void success(DeleteRsp returnValue) {
-                                        logger.debug(String.format("successfully deleted %s", backupStorageInstallPath));
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        //TODO
-                                        logger.warn(String.format("failed to delete %s, %s; need a cleanup", backupStorageInstallPath, errorCode));
-                                    }
-                                });
-                            }
-
-                            trigger.rollback();
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "flatten-image";
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            FlattenCmd cmd = new FlattenCmd();
-                            cmd.path = backupStorageInstallPath;
-
-                            httpCall(FLATTEN_PATH, cmd, FlattenRsp.class, new ReturnValueCompletion<FlattenRsp>(trigger) {
-                                @Override
-                                public void success(FlattenRsp returnValue) {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "unprotecte-the-tmep-snapshot";
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            UnprotectedSnapshotCmd cmd = new UnprotectedSnapshotCmd();
-                            cmd.snapshotPath = snapshotPath;
-                            httpCall(UNPROTECT_SNAPSHOT_PATH, cmd, UnprotectedSnapshotRsp.class, new ReturnValueCompletion<UnprotectedSnapshotRsp>(trigger) {
-                                @Override
-                                public void success(UnprotectedSnapshotRsp returnValue) {
-                                    logger.debug(String.format("successfully unprotected the snapshot[%s]", snapshotPath));
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    //TODO
-                                    logger.warn(String.format("failed to unprotect the snapshot[%s], %s. Need a cleanup", snapshotPath, errorCode));
-                                    trigger.next();
-                                }
-                            });
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "delete-the-temp-snapshot";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
-                            cmd.snapshotPath = snapshotPath;
-                            httpCall(DELETE_SNAPSHOT_PATH, cmd, DeleteSnapshotRsp.class, new ReturnValueCompletion<DeleteSnapshotRsp>() {
-                                @Override
-                                public void success(DeleteSnapshotRsp returnValue) {
-                                    logger.debug(String.format("successfully deleted the snapshot[%s]", snapshotPath));
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    //TODO
-                                    logger.warn(String.format("failed to delete the snapshot[%s], %s. Need a cleanup", snapshotPath, errorCode));
-                                }
-                            });
-
-                            trigger.next();
                         }
                     });
 

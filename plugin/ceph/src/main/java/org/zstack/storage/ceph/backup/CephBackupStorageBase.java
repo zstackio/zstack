@@ -3,6 +3,7 @@ package org.zstack.storage.ceph.backup;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -27,6 +28,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -320,12 +322,27 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }, CephBackupStorageGlobalConfig.DOWNLOAD_IMAGE_TIMEOUT.value(Long.class), TimeUnit.SECONDS);
     }
 
+    @Transactional(readOnly = true)
+    private boolean canDelete(String installPath) {
+        String sql = "select count(c) from ImageBackupStorageRefVO img, ImageCacheVO c where img.imageUuid = c.imageUuid and img.backupStorageUuid = :bsUuid and img.installPath = :installPath";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("bsUuid", self.getUuid());
+        q.setParameter("installPath", installPath);
+        return q.getSingleResult() == 0;
+    }
+
     @Override
     protected void handle(final DeleteBitsOnBackupStorageMsg msg) {
+        final DeleteBitsOnBackupStorageReply reply = new DeleteBitsOnBackupStorageReply();
+        if (!canDelete(msg.getInstallPath())) {
+            //TODO: the image is still referred, need to cleanup
+            bus.reply(msg, reply);
+            return;
+        }
+
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getInstallPath();
 
-        final DeleteBitsOnBackupStorageReply reply = new DeleteBitsOnBackupStorageReply();
         httpCall(DELETE_IMAGE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
             @Override
             public void fail(ErrorCode err) {

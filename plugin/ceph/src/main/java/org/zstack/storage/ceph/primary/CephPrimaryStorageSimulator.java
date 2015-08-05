@@ -174,6 +174,16 @@ public class CephPrimaryStorageSimulator {
         return null;
     }
 
+    @RequestMapping(value= CephPrimaryStorageBase.CP_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String cp(HttpEntity<String> entity) {
+        CpCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CpCmd.class);
+        config.cpCmds.add(cmd);
+
+        reply(entity, new CpRsp());
+        return null;
+    }
+
     @RequestMapping(value= CephPrimaryStorageBase.SFTP_UPLOAD_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String sftpUpload(HttpEntity<String> entity) {

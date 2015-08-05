@@ -26,6 +26,7 @@ public class CephPrimaryStorageSimulatorConfig {
     public List<UnprotectedSnapshotCmd> unprotectedSnapshotCmds = new ArrayList<UnprotectedSnapshotCmd>();
     public List<CloneCmd> cloneCmds = new ArrayList<CloneCmd>();
     public List<FlattenCmd> flattenCmds = new ArrayList<FlattenCmd>();
+    public List<CpCmd> cpCmds = new ArrayList<CpCmd>();
     public List<SftpDownloadCmd> sftpDownloadCmds = new ArrayList<SftpDownloadCmd>();
     public List<SftpUpLoadCmd> sftpUpLoadCmds = new ArrayList<SftpUpLoadCmd>();
 }

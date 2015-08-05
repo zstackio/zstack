@@ -64,12 +64,7 @@ public class TestCeph2 {
         config.flattenCmds.clear();
         BackupStorageInventory bs = deployer.backupStorages.get("ceph-bk");
         ImageInventory img = api.createTemplateFromRootVolume("root", vm.getRootVolumeUuid(), bs.getUuid());
-        Assert.assertFalse(config.createSnapshotCmds.isEmpty());
-        Assert.assertFalse(config.protectSnapshotCmds.isEmpty());
-        Assert.assertFalse(config.cloneCmds.isEmpty());
-        Assert.assertFalse(config.flattenCmds.isEmpty());
-        Assert.assertFalse(config.unprotectedSnapshotCmds.isEmpty());
-        Assert.assertFalse(config.deleteSnapshotCmds.isEmpty());
+        Assert.assertFalse(config.cpCmds.isEmpty());
         Assert.assertEquals(VolumeConstant.VOLUME_FORMAT_RAW, img.getFormat());
     }
 }
