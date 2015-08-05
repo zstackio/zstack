@@ -1480,36 +1480,24 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void continueConnect(final boolean newAdded, final Completion completion) {
-        restf.echo(echoPath, new Completion(completion) {
-            @Override
-            public void success() {
-                ErrorCode errCode = connectToAgent();
-                if (errCode != null) {
-                    completion.fail(errCode);
-                    return;
-                }
-                
-                for (KVMHostConnectExtensionPoint extp : factory.getConnectExtensions()) {
-                    try {
-                        KVMHostConnectedContext ctx = new KVMHostConnectedContext(factory.getHostContext(self.getUuid()), newAdded);
-                        extp.kvmHostConnected(ctx);
-                    } catch (Exception e) {
-                        String err = String.format("connection error for KVM host[uuid:%s, ip:%s] when calling %s, because %s", self.getUuid(),
-                                self.getManagementIp(), extp.getClass().getName(), e.getMessage());
-                        logger.warn(err, e);
-                        completion.fail(errf.instantiateErrorCode(HostErrors.CONNECTION_ERROR, err));
-                        return;
-                    }
-                }
+        ErrorCode errCode = connectToAgent();
+        if (errCode != null) {
+            throw new OperationFailureException(errCode);
+        }
 
-                completion.success();
+        for (KVMHostConnectExtensionPoint extp : factory.getConnectExtensions()) {
+            try {
+                KVMHostConnectedContext ctx = new KVMHostConnectedContext(factory.getHostContext(self.getUuid()), newAdded);
+                extp.kvmHostConnected(ctx);
+            } catch (Exception e) {
+                String err = String.format("connection error for KVM host[uuid:%s, ip:%s] when calling %s, because %s", self.getUuid(),
+                        self.getManagementIp(), extp.getClass().getName(), e.getMessage());
+                logger.warn(err, e);
+                throw new OperationFailureException(errf.instantiateErrorCode(HostErrors.CONNECTION_ERROR, err));
             }
+        }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
+        completion.success();
     }
 
     private void createHostVersionSystemTags(String distro, String release, String version) {
@@ -1562,7 +1550,7 @@ public class KVMHost extends HostBase implements Host {
                     }
 
                     flow(new NoRollbackFlow() {
-                        String __name__ = String.format("apply-ansible-playbook");
+                        String __name__ = "apply-ansible-playbook";
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
@@ -1589,6 +1577,25 @@ public class KVMHost extends HostBase implements Host {
                             runner.putArgument("pkg_kvmagent", agentPackageName);
                             runner.putArgument("hostname", String.format("%s.zstack.org",self.getManagementIp().replaceAll("\\.", "-")));
                             runner.run(new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "echo-host";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            restf.echo(echoPath, new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     trigger.next();
