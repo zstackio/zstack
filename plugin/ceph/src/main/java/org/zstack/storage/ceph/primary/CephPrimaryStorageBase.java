@@ -10,7 +10,9 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -18,15 +20,24 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageVO;
+import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotReply.CreateTemplateFromVolumeSnapshotResult;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotStruct;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
@@ -332,6 +343,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CreateSnapshotRsp extends AgentResponse {
+        long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
     }
 
     public static class DeleteSnapshotCmd extends AgentCommand {
@@ -401,6 +421,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CpRsp extends AgentResponse {
+        long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+    }
+
+    public static class RollbackSnapshotCmd extends AgentCommand {
+        String snapshotPath;
+
+        public String getSnapshotPath() {
+            return snapshotPath;
+        }
+
+        public void setSnapshotPath(String snapshotPath) {
+            this.snapshotPath = snapshotPath;
+        }
+    }
+
+    public static class RollbackSnapshotRsp extends AgentResponse {
     }
 
     public static final String INIT_PATH = "/ceph/primarystorage/init";
@@ -413,6 +457,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String CREATE_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/create";
     public static final String DELETE_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/delete";
     public static final String PROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/protect";
+    public static final String ROLLBACK_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/rollback";
     public static final String UNPROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/unprotect";
     public static final String CP_PATH = "/ceph/primarystorage/volume/cp";
 
@@ -1431,6 +1476,189 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 self = dbf.updateAndRefresh(self);
                 evt.setErrorCode(errorCode);
                 bus.publish(evt);
+            }
+        });
+    }
+
+    @Override
+    protected void handleLocalMessage(Message msg) {
+        if (msg instanceof TakeSnapshotMsg) {
+            handle((TakeSnapshotMsg) msg);
+        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
+            handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
+            handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else {
+            super.handleLocalMessage(msg);
+        }
+    }
+
+    private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        if (msg.isNeedDownload()) {
+            throw new OperationFailureException(errf.stringToOperationError("downloading snapshots to create template is not supported"));
+        }
+
+        final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
+
+        final String volPath = makeDataVolumeInstallPath(msg.getVolumeUuid());
+        SnapshotDownloadInfo sp = msg.getSnapshots().get(0);
+        CpCmd cmd = new CpCmd();
+        cmd.srcPath = sp.getSnapshot().getPrimaryStorageInstallPath();
+        cmd.dstPath = volPath;
+        httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(msg) {
+            @Override
+            public void success(CpRsp rsp) {
+                reply.setInstallPath(volPath);
+                reply.setSize(rsp.size);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        if (msg.isNeedDownload()) {
+            throw new OperationFailureException(errf.stringToOperationError("downloading snapshots to create template is not supported"));
+        }
+
+        final CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply();
+
+        final SnapshotDownloadInfo sp = msg.getSnapshotsDownloadInfo().get(0);
+        final ImageInventory image = ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class));
+
+        List<BackupStorageMediator> mediators = CollectionUtils.transformToList(msg.getBackupStorage(), new Function<BackupStorageMediator, BackupStorageInventory>() {
+            @Override
+            public BackupStorageMediator call(BackupStorageInventory bs) {
+                BackupStorageMediator mediator = getBackupStorageMediator(bs.getUuid());
+                UploadParam param = new UploadParam();
+                param.primaryStorageInstallPath = sp.getSnapshot().getPrimaryStorageInstallPath();
+                param.image = image;
+                mediator.param = param;
+                return mediator;
+            }
+        });
+
+        final List<CreateTemplateFromVolumeSnapshotResult> results = new ArrayList<CreateTemplateFromVolumeSnapshotResult>();
+        final List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+
+        final AsyncLatch latch = new AsyncLatch(mediators.size(), new NoErrorCompletion() {
+            @Override
+            public void done() {
+                if (results.isEmpty()) {
+                    reply.setError(errf.stringToOperationError(String.format("uploading failed on all backup storage. An error list is %s", JSONObjectUtil.toJsonString(errorCodes))));
+                } else {
+                    reply.setResults(results);
+                }
+
+                bus.reply(msg, reply);
+            }
+        });
+
+        for (final BackupStorageMediator m : mediators) {
+            m.upload(new ReturnValueCompletion<String>() {
+                @Override
+                public void success(String returnValue) {
+                    CreateTemplateFromVolumeSnapshotResult ret = new CreateTemplateFromVolumeSnapshotResult();
+                    ret.setInstallPath(returnValue);
+                    ret.setBackupStorageUuid(m.backupStorage.getUuid());
+                    synchronized (results) {
+                        results.add(ret);
+                    }
+                    latch.ack();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    synchronized (errorCodes) {
+                        errorCodes.add(errorCode);
+                    }
+                    latch.ack();
+                }
+            });
+        }
+    }
+
+    private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
+        final RevertVolumeFromSnapshotOnPrimaryStorageReply reply  = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
+        RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
+        cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
+        httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
+            @Override
+            public void success(RollbackSnapshotRsp returnValue) {
+                reply.setNewVolumeInstallPath(msg.getVolume().getInstallPath());
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
+        final DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
+        DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
+        cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
+        httpCall(DELETE_SNAPSHOT_PATH, cmd, DeleteSnapshotRsp.class, new ReturnValueCompletion<DeleteSnapshotRsp>(msg) {
+            @Override
+            public void success(DeleteSnapshotRsp returnValue) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
+        MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final TakeSnapshotMsg msg) {
+        final TakeSnapshotReply reply = new TakeSnapshotReply();
+
+        final VolumeSnapshotInventory sp = msg.getStruct().getCurrent();
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.installPath);
+        q.add(VolumeVO_.uuid, Op.EQ, sp.getVolumeUuid());
+        String volumePath = q.findValue();
+
+        final String spPath = String.format("%s@%s", volumePath, sp.getUuid());
+        CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+        cmd.snapshotPath = spPath;
+        httpCall(CREATE_SNAPSHOT_PATH, cmd, CreateSnapshotRsp.class, new ReturnValueCompletion<CreateSnapshotRsp>(msg) {
+            @Override
+            public void success(CreateSnapshotRsp rsp) {
+                sp.setSize(rsp.getSize());
+                sp.setPrimaryStorageUuid(self.getUuid());
+                sp.setPrimaryStorageInstallPath(spPath);
+                sp.setType(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString());
+                sp.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                reply.setInventory(sp);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }

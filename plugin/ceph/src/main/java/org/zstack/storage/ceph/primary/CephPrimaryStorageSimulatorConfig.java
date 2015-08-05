@@ -29,4 +29,5 @@ public class CephPrimaryStorageSimulatorConfig {
     public List<CpCmd> cpCmds = new ArrayList<CpCmd>();
     public List<SftpDownloadCmd> sftpDownloadCmds = new ArrayList<SftpDownloadCmd>();
     public List<SftpUpLoadCmd> sftpUpLoadCmds = new ArrayList<SftpUpLoadCmd>();
+    public List<RollbackSnapshotCmd> rollbackSnapshotCmds = new ArrayList<RollbackSnapshotCmd>();
 }

@@ -203,4 +203,14 @@ public class CephPrimaryStorageSimulator {
         reply(entity, new SftpDownloadRsp());
         return null;
     }
+
+    @RequestMapping(value= CephPrimaryStorageBase.ROLLBACK_SNAPSHOT_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String rollback(HttpEntity<String> entity) {
+        RollbackSnapshotCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RollbackSnapshotCmd.class);
+        config.rollbackSnapshotCmds.add(cmd);
+
+        reply(entity, new RollbackSnapshotRsp());
+        return null;
+    }
 }
