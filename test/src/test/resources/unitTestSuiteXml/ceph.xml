@@ -5,4 +5,5 @@
     <TestCase class="org.zstack.test.storage.ceph.TestCeph2"/>
     <TestCase class="org.zstack.test.storage.ceph.TestCeph3"/>
     <TestCase class="org.zstack.test.storage.ceph.TestCeph4"/>
+    <TestCase class="org.zstack.test.storage.ceph.TestCeph5"/>
 </UnitTestSuiteConfig>

@@ -20,10 +20,7 @@ import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
-import org.zstack.storage.ceph.CephCapacityUpdater;
-import org.zstack.storage.ceph.CephGlobalProperty;
-import org.zstack.storage.ceph.MonStatus;
-import org.zstack.storage.ceph.MonUri;
+import org.zstack.storage.ceph.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -295,7 +292,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 reply.setMd5sum("not calculated");
                 bus.reply(msg, reply);
             }
-        }, CephBackupStorageGlobalConfig.DOWNLOAD_IMAGE_TIMEOUT.value(Long.class), TimeUnit.SECONDS);
+        }, CephGlobalConfig.BACKUP_STORAGE_DOWNLOAD_IMAGE_TIMEOUT.value(Long.class), TimeUnit.SECONDS);
     }
 
     @Override
@@ -319,7 +316,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 reply.setMd5sum("not calculated");
                 bus.reply(msg, reply);
             }
-        }, CephBackupStorageGlobalConfig.DOWNLOAD_IMAGE_TIMEOUT.value(Long.class), TimeUnit.SECONDS);
+        }, CephGlobalConfig.BACKUP_STORAGE_DOWNLOAD_IMAGE_TIMEOUT.value(Long.class), TimeUnit.SECONDS);
     }
 
     @Transactional(readOnly = true)

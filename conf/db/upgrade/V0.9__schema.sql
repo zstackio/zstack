@@ -61,3 +61,19 @@ CREATE TABLE  `zstack`.`GarbageCollectorVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`ImageCacheVolumeRefVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `imageCacheId` bigint unsigned NOT NULL,
+    `volumeUuid` varchar(32) NOT NULL,
+    `primaryStorageUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# Foreign keys for table ImageCacheVolumeRefVO
+
+ALTER TABLE ImageCacheVolumeRefVO ADD CONSTRAINT fkImageCacheVolumeRefVOImageCacheVO FOREIGN KEY (imageCacheId) REFERENCES ImageCacheVO (id) ON DELETE RESTRICT;
+ALTER TABLE ImageCacheVolumeRefVO ADD CONSTRAINT fkImageCacheVolumeRefVOPrimaryStorageEO FOREIGN KEY (primaryStorageUuid) REFERENCES PrimaryStorageEO (uuid) ON DELETE CASCADE;
+ALTER TABLE ImageCacheVolumeRefVO ADD CONSTRAINT fkImageCacheVolumeRefVOVolumeEO FOREIGN KEY (volumeUuid) REFERENCES VolumeEO (uuid) ON DELETE CASCADE;

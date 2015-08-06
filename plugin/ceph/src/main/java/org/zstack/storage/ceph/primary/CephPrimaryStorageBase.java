@@ -865,14 +865,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     class DownloadToCache {
         ImageSpec image;
 
-        private void doDownload(final ReturnValueCompletion<String> completion, final SyncTaskChain next) {
+        private void doDownload(final ReturnValueCompletion<ImageCacheVO> completion, final SyncTaskChain next) {
             SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
-            q.select(ImageCacheVO_.installUrl);
             q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getInventory().getUuid());
             q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-            String cachePath = q.findValue();
-            if (cachePath != null) {
-                completion.success(cachePath);
+            ImageCacheVO cache = q.find();
+            if (cache != null) {
+                completion.success(cache);
                 next.next();
                 return;
             }
@@ -1012,9 +1011,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             cvo.setPrimaryStorageUuid(self.getUuid());
                             cvo.setMediaType(ImageMediaType.valueOf(image.getInventory().getMediaType()));
                             cvo.setState(ImageCacheState.ready);
-                            dbf.persist(cvo);
+                            cvo = dbf.persistAndRefresh(cvo);
 
-                            completion.success(snapshotPath);
+                            completion.success(cvo);
                             next.next();
                         }
                     });
@@ -1029,7 +1028,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             }).start();
         }
 
-        void download(final ReturnValueCompletion<String> completion) {
+        void download(final ReturnValueCompletion<ImageCacheVO> completion) {
             thdf.chainSubmit(new ChainTask(completion) {
                 @Override
                 public String getSyncSignature() {
@@ -1058,6 +1057,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         chain.then(new ShareFlow() {
             String cloneInstallPath;
             String volumePath = makeRootVolumeInstallPath(msg.getVolume().getUuid());
+            ImageCacheVO cache;
 
             @Override
             public void setup() {
@@ -1068,10 +1068,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     public void run(final FlowTrigger trigger, Map data) {
                         DownloadToCache downloadToCache = new DownloadToCache();
                         downloadToCache.image = msg.getTemplateSpec();
-                        downloadToCache.download(new ReturnValueCompletion<String>(trigger) {
+                        downloadToCache.download(new ReturnValueCompletion<ImageCacheVO>(trigger) {
                             @Override
-                            public void success(String returnValue) {
-                                cloneInstallPath = returnValue;
+                            public void success(ImageCacheVO returnValue) {
+                                cloneInstallPath = returnValue.getInstallUrl();
+                                cache = returnValue;
                                 trigger.next();
                             }
 
@@ -1113,6 +1114,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         VolumeInventory vol = msg.getVolume();
                         vol.setInstallPath(volumePath);
                         reply.setVolume(vol);
+
+                        ImageCacheVolumeRefVO ref = new ImageCacheVolumeRefVO();
+                        ref.setImageCacheId(cache.getId());
+                        ref.setPrimaryStorageUuid(self.getUuid());
+                        ref.setVolumeUuid(vol.getUuid());
+                        dbf.persist(ref);
+
                         bus.reply(msg, reply);
                     }
                 });
@@ -1228,10 +1236,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         final DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
         DownloadToCache downloadToCache = new DownloadToCache();
         downloadToCache.image = msg.getIsoSpec();
-        downloadToCache.download(new ReturnValueCompletion<String>(msg) {
+        downloadToCache.download(new ReturnValueCompletion<ImageCacheVO>(msg) {
             @Override
-            public void success(String returnValue) {
-                reply.setInstallPath(returnValue);
+            public void success(ImageCacheVO returnValue) {
+                reply.setInstallPath(returnValue.getInstallUrl());
                 bus.reply(msg, reply);
             }
 

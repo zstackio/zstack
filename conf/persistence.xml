@@ -109,5 +109,6 @@
         <class>org.zstack.storage.ceph.primary.CephPrimaryStorageVO</class>
         <class>org.zstack.storage.ceph.CephCapacityVO</class>
         <class>org.zstack.core.gc.GarbageCollectorVO</class>
+        <class>org.zstack.header.storage.primary.ImageCacheVolumeRefVO</class>
     </persistence-unit>
 </persistence>
