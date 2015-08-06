@@ -25,4 +25,6 @@ public interface ThreadFacade extends Component {
     void unregisterHook(ThreadAroundHook hook);
     
     ThreadFacadeImpl.TimeoutTaskReceipt submitTimeoutTask(Runnable task, TimeUnit unit, long delay);
+
+    void submitTimerTask(TimerTask task, TimeUnit unit, long delay);
 }

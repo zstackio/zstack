@@ -128,4 +128,9 @@
     <TestCase class="org.zstack.test.aop.TestFutureReturnValueCompletion1" />
     <TestCase class="org.zstack.test.aop.TestFutureReturnValueCompletion2" />
     <TestCase class="org.zstack.test.aop.TestFutureReturnValueCompletion3" />
+
+    <TestCase class="org.zstack.test.core.gc.TestGC" />
+    <TestCase class="org.zstack.test.core.gc.TestGC1" />
+    <TestCase class="org.zstack.test.core.gc.TestGC2" />
+    <TestCase class="org.zstack.test.core.gc.TestGC3" />
 </UnitTestSuiteConfig>

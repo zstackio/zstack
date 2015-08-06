@@ -1,6 +1,5 @@
 package org.zstack.core.thread;
 
-import com.google.common.primitives.UnsignedLong;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.jmx.JmxFacade;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -226,7 +225,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
 	public TimeoutTaskReceipt submitTimeoutTask(final Runnable task, TimeUnit unit, long delay) {
         final TimerWrapper timer = timerPool.getTimer();
 
-        class TimerTaskWorker extends TimerTask implements TimeoutTaskReceipt {
+        class TimerTaskWorker extends java.util.TimerTask implements TimeoutTaskReceipt {
             @Override
             @AsyncThread
             public void run() {
@@ -250,6 +249,23 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         TimerTaskWorker worker = new TimerTaskWorker();
 		timer.schedule(worker, unit.toMillis(delay));
 		return worker;
+	}
+
+	@Override
+	public void submitTimerTask(final TimerTask task, TimeUnit unit, long delay) {
+		final TimerWrapper timer = timerPool.getTimer();
+		 timer.schedule(new java.util.TimerTask() {
+			@Override
+			public void run() {
+				try {
+					if (task.run()) {
+						cancel();
+					}
+				} catch (Throwable t) {
+					_logger.warn(String.format("Unhandled exception happened when running %s", task.getClass().getName()), t);
+				}
+			}
+		}, unit.toMillis(delay));
 	}
 
 	@Override

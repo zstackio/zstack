@@ -11,15 +11,14 @@ public class TimeUtils {
     private static CLogger logger = Utils.getLogger(TimeUtils.class);
 
     public static void loopExecuteUntilTimeoutIgnoreException(long period, long interval, TimeUnit unit, Callable<Boolean> runnable) {
-        period = unit.toMillis(period);
-        interval = unit.toMillis(interval);
-
         long count = 0;
         while (count < period) {
             try {
                 if (runnable.call()) {
                     return;
                 }
+
+                unit.sleep(interval);
             } catch (Throwable t) {
                 logger.debug(String.format("%s, after %s ms timeout", t.getMessage(), period-count));
             }

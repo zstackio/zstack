@@ -1,6 +1,5 @@
 package org.zstack.test.deployer;
 
-import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
@@ -14,8 +13,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.*;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceProviderInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
@@ -23,8 +22,8 @@ import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
-import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.eip.EipInventory;
+import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
@@ -35,7 +34,6 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;

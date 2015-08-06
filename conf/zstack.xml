@@ -44,6 +44,7 @@
     <import resource="springConfigXml/HostManager.xml" />
     <import resource="springConfigXml/ImageManager.xml" />
     <import resource="springConfigXml/JobQueueFacade.xml" />
+    <import resource="springConfigXml/gc.xml" />
     <import resource="springConfigXml/Kvm.xml" />
     <import resource="springConfigXml/ManagementNodeManager.xml" />
     <import resource="springConfigXml/NetworkManager.xml" />

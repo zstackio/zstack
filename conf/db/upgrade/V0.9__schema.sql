@@ -50,3 +50,14 @@ CREATE TABLE  `zstack`.`CephCapacityVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`fsid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`GarbageCollectorVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `runnerClass` varchar(512) NOT NULL,
+    `context` text NOT NULL,
+    `status` varchar(64) NOT NULL,
+    `managementNodeUuid` varchar(32) DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
