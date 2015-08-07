@@ -22,6 +22,9 @@ public class CephMonAO {
     private String hostname;
 
     @Column
+    private int sshPort;
+
+    @Column
     private int monPort = 6789;
 
     @Column
@@ -33,6 +36,14 @@ public class CephMonAO {
 
     @Column
     private Timestamp lastOpDate;
+
+    public int getSshPort() {
+        return sshPort;
+    }
+
+    public void setSshPort(int sshPort) {
+        this.sshPort = sshPort;
+    }
 
     public int getMonPort() {
         return monPort;

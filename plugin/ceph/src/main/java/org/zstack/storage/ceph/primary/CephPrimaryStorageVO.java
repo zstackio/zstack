@@ -32,8 +32,6 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
     @Column
     private String imageCachePoolName;
     @Column
-    private String snapshotPoolName;
-    @Column
     private String userKey;
 
     public String getUserKey() {
@@ -66,14 +64,6 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
 
     public void setImageCachePoolName(String imageCachePoolName) {
         this.imageCachePoolName = imageCachePoolName;
-    }
-
-    public String getSnapshotPoolName() {
-        return snapshotPoolName;
-    }
-
-    public void setSnapshotPoolName(String snapshotPoolName) {
-        this.snapshotPoolName = snapshotPoolName;
     }
 
     public CephPrimaryStorageVO() {

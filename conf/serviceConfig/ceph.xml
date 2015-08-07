@@ -21,4 +21,14 @@
         <name>org.zstack.storage.ceph.primary.APIAddCephPrimaryStorageMsg</name>
         <serviceId>storage.primary</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.storage.ceph.primary.APIAddMonToCephPrimaryStorageMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.ceph.primary.APIRemoveMonFromCephPrimaryStorageMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
 </service>

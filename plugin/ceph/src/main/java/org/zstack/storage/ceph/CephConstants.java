@@ -6,4 +6,6 @@ package org.zstack.storage.ceph;
 public interface CephConstants {
     String CEPH_BACKUP_STORAGE_TYPE = "Ceph";
     String CEPH_PRIMARY_STORAGE_TYPE = "Ceph";
+
+    String MON_PARAM_MON_PORT = "monPort";
 }

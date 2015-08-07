@@ -83,7 +83,6 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         cvo.setRootVolumePoolName(cmsg.getRootVolumePoolName() == null ? String.format("pri-v-r-%s", vo.getUuid()) : cmsg.getRootVolumePoolName());
         cvo.setDataVolumePoolName(cmsg.getDataVolumePoolName() == null ? String.format("pri-v-d-%s", vo.getUuid()) : cmsg.getDataVolumePoolName());
         cvo.setImageCachePoolName(cmsg.getImageCachePoolName() == null ? String.format("pri-c-%s", vo.getUuid()) : cmsg.getImageCachePoolName());
-        cvo.setSnapshotPoolName(cmsg.getSnapshotPoolName() == null ? String.format("pri-sp-%s", vo.getUuid()) : cmsg.getSnapshotPoolName());
 
         dbf.getEntityManager().persist(cvo);
 
@@ -94,6 +93,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             mvo.setStatus(MonStatus.Connecting);
             mvo.setHostname(uri.getHostname());
             mvo.setMonPort(uri.getMonPort());
+            mvo.setSshPort(uri.getSshPort());
             mvo.setSshUsername(uri.getSshUsername());
             mvo.setSshPassword(uri.getSshPassword());
             mvo.setPrimaryStorageUuid(cvo.getUuid());

@@ -77,6 +77,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
                             runner.setPassword(getSelf().getSshPassword());
                             runner.setUsername(getSelf().getSshUsername());
                             runner.setTargetIp(getSelf().getHostname());
+                            runner.setSshPort(getSelf().getSshPort());
                             runner.setAgentPort(CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT);
                             runner.setPlayBookName(CephGlobalProperty.BACKUP_STORAGE_PLAYBOOK_NAME);
                             runner.putArgument("pkg_cephbagent", CephGlobalProperty.BACKUP_STORAGE_PACKAGE_NAME);

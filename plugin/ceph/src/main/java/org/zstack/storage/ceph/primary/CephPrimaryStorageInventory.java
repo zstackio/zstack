@@ -1,7 +1,9 @@
 package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.search.Inventory;
+import org.zstack.header.search.Parent;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.storage.ceph.CephConstants;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,14 +12,14 @@ import java.util.List;
 /**
  * Created by frank on 7/28/2015.
  */
-@Inventory(mappingVOClass = CephPrimaryStorageVO.class, collectionValueOfMethod = "valueOf1")
+@Inventory(mappingVOClass = CephPrimaryStorageVO.class, collectionValueOfMethod = "valueOf1",
+        parent = {@Parent(inventoryClass = PrimaryStorageInventory.class, type = CephConstants.CEPH_PRIMARY_STORAGE_TYPE)})
 public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
     private List<CephPrimaryStorageMonInventory> mons;
     private String fsid;
     private String rootVolumePoolName;
     private String dataVolumePoolName;
     private String imageCachePoolName;
-    private String snapshotPoolName;
 
     public List<CephPrimaryStorageMonInventory> getMons() {
         return mons;
@@ -51,14 +53,6 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
         this.imageCachePoolName = imageCachePoolName;
     }
 
-    public String getSnapshotPoolName() {
-        return snapshotPoolName;
-    }
-
-    public void setSnapshotPoolName(String snapshotPoolName) {
-        this.snapshotPoolName = snapshotPoolName;
-    }
-
     public CephPrimaryStorageInventory() {
     }
 
@@ -69,7 +63,6 @@ public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
         rootVolumePoolName = vo.getRootVolumePoolName();
         dataVolumePoolName = vo.getDataVolumePoolName();
         imageCachePoolName = vo.getImageCachePoolName();
-        snapshotPoolName = vo.getSnapshotPoolName();
     }
 
     public static CephPrimaryStorageInventory valueOf(CephPrimaryStorageVO vo) {

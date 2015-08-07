@@ -69,6 +69,8 @@ import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageEvent;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.APIUpdateSftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
+import org.zstack.storage.ceph.backup.*;
+import org.zstack.storage.ceph.primary.*;
 import org.zstack.storage.primary.iscsi.APIUpdateIscsiFileSystemBackendPrimaryStorageMsg;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageInventory;
 import org.zstack.utils.CollectionUtils;
@@ -3384,5 +3386,49 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APIShareResourceEvent.class);
+    }
+
+    public CephBackupStorageInventory addMonToCephBackupStorage(String bsUuid, List<String> monUrls) throws ApiSenderException {
+        APIAddMonToCephBackupStorageMsg msg = new APIAddMonToCephBackupStorageMsg();
+        msg.setUuid(bsUuid);
+        msg.setMonUrls(monUrls);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIAddMonToCephBackupStorageEvent evt = sender.send(msg, APIAddMonToCephBackupStorageEvent.class);
+        return evt.getInventory();
+    }
+
+    public CephPrimaryStorageInventory addMonToCephPrimaryStorage(String psUuid, List<String> monUrls) throws ApiSenderException {
+        APIAddMonToCephPrimaryStorageMsg msg = new APIAddMonToCephPrimaryStorageMsg();
+        msg.setUuid(psUuid);
+        msg.setMonUrls(monUrls);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIAddMonToCephPrimaryStorageEvent evt = sender.send(msg, APIAddMonToCephPrimaryStorageEvent.class);
+        return evt.getInventory();
+    }
+
+    public CephBackupStorageInventory removeMonFromBackupStorage(String bsUuid, List<String> hostnames) throws ApiSenderException {
+        APIRemoveMonFromCephBackupStorageMsg msg = new APIRemoveMonFromCephBackupStorageMsg();
+        msg.setUuid(bsUuid);
+        msg.setMonHostnames(hostnames);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIRemoveMonFromCephBackupStorageEvent evt = sender.send(msg, APIRemoveMonFromCephBackupStorageEvent.class);
+        return evt.getInventory();
+    }
+
+    public CephPrimaryStorageInventory removeMonFromPrimaryStorage(String psUuid, List<String> hostnames) throws ApiSenderException {
+        APIRemoveMonFromCephPrimaryStorageMsg msg = new APIRemoveMonFromCephPrimaryStorageMsg();
+        msg.setUuid(psUuid);
+        msg.setMonHostnames(hostnames);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIRemoveMonFromCephPrimaryStorageEvent evt = sender.send(msg, APIRemoveMonFromCephPrimaryStorageEvent.class);
+        return evt.getInventory();
     }
 }

@@ -18,8 +18,6 @@ public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     private String dataVolumePoolName;
     @APIParam(required = false, maxLength = 255)
     private String imageCachePoolName;
-    @APIParam(required = false, maxLength = 255)
-    private String snapshotPoolName;
 
     public String getRootVolumePoolName() {
         return rootVolumePoolName;
@@ -43,14 +41,6 @@ public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
 
     public void setImageCachePoolName(String imageCachePoolName) {
         this.imageCachePoolName = imageCachePoolName;
-    }
-
-    public String getSnapshotPoolName() {
-        return snapshotPoolName;
-    }
-
-    public void setSnapshotPoolName(String snapshotPoolName) {
-        this.snapshotPoolName = snapshotPoolName;
     }
 
     @Override

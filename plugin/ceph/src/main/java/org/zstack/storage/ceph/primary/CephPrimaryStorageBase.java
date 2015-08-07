@@ -21,6 +21,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -32,19 +33,12 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotReply.CreateTemplateFromVolumeSnapshotResult;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotStruct;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.volume.*;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
-import org.zstack.storage.ceph.CephCapacityUpdater;
-import org.zstack.storage.ceph.CephConstants;
-import org.zstack.storage.ceph.CephGlobalProperty;
-import org.zstack.storage.ceph.MonStatus;
+import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -54,7 +48,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import sun.management.Agent;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -831,7 +824,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void createEmptyVolume(final InstantiateVolumeMsg msg) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
-        cmd.installPath = makeRootVolumeInstallPath(msg.getVolume().getUuid());
+        cmd.installPath = VolumeType.Root.toString().equals(msg.getVolume().getType()) ?
+                makeRootVolumeInstallPath(msg.getVolume().getUuid()) : makeDataVolumeInstallPath(msg.getVolume().getUuid());
         cmd.size = msg.getVolume().getSize();
 
         final InstantiateVolumeReply reply = new InstantiateVolumeReply();
@@ -1406,7 +1400,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         InitCmd cmd = new InitCmd();
-                        cmd.poolNames = list(getSelf().getRootVolumePoolName(), getSelf().getDataVolumePoolName(), getSelf().getImageCachePoolName(), getSelf().getSnapshotPoolName());
+                        cmd.poolNames = list(getSelf().getRootVolumePoolName(), getSelf().getDataVolumePoolName(), getSelf().getImageCachePoolName());
 
                         httpCall(INIT_PATH, cmd, InitRsp.class, new ReturnValueCompletion<InitRsp>(trigger) {
                             @Override
@@ -1486,6 +1480,124 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.publish(evt);
             }
         });
+    }
+
+    @Override
+    protected void handleApiMessage(APIMessage msg) {
+        if (msg instanceof APIAddMonToCephPrimaryStorageMsg) {
+            handle((APIAddMonToCephPrimaryStorageMsg) msg);
+        } else if (msg instanceof APIRemoveMonFromCephPrimaryStorageMsg) {
+            handle((APIRemoveMonFromCephPrimaryStorageMsg) msg);
+        } else {
+            super.handleApiMessage(msg);
+        }
+    }
+
+    private void handle(APIRemoveMonFromCephPrimaryStorageMsg msg) {
+        APIRemoveMonFromCephPrimaryStorageEvent evt = new APIRemoveMonFromCephPrimaryStorageEvent(msg.getId());
+
+        SimpleQuery<CephPrimaryStorageMonVO> q = dbf.createQuery(CephPrimaryStorageMonVO.class);
+        q.add(CephPrimaryStorageMonVO_.hostname, Op.IN, msg.getMonHostnames());
+        List<CephPrimaryStorageMonVO> vos = q.list();
+
+        dbf.removeCollection(vos, CephPrimaryStorageMonVO.class);
+        evt.setInventory(CephPrimaryStorageInventory.valueOf(dbf.reload(getSelf())));
+        bus.publish(evt);
+    }
+
+    private void handle(final APIAddMonToCephPrimaryStorageMsg msg) {
+        final APIAddMonToCephPrimaryStorageEvent evt = new APIAddMonToCephPrimaryStorageEvent(msg.getId());
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("add-mon-ceph-primary-storage-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            List<CephPrimaryStorageMonVO> monVOs = new ArrayList<CephPrimaryStorageMonVO>();
+
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "create-mon-in-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (String url : msg.getMonUrls()) {
+                            CephPrimaryStorageMonVO monvo = new CephPrimaryStorageMonVO();
+                            MonUri uri = new MonUri(url);
+                            monvo.setUuid(Platform.getUuid());
+                            monvo.setStatus(MonStatus.Connecting);
+                            monvo.setHostname(uri.getHostname());
+                            monvo.setMonPort(uri.getMonPort());
+                            monvo.setSshPort(uri.getSshPort());
+                            monvo.setSshUsername(uri.getSshUsername());
+                            monvo.setSshPassword(uri.getSshPassword());
+                            monvo.setPrimaryStorageUuid(self.getUuid());
+                            monVOs.add(monvo);
+                        }
+
+                        dbf.persistCollection(monVOs);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowTrigger trigger, Map data) {
+                        dbf.removeCollection(monVOs, CephPrimaryStorageMonVO.class);
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "connect-mons";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        List<CephPrimaryStorageMonBase> bases = CollectionUtils.transformToList(monVOs, new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
+                            @Override
+                            public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
+                                return new CephPrimaryStorageMonBase(arg);
+                            }
+                        });
+
+                        final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                trigger.next();
+                            }
+                        });
+
+                        for (CephPrimaryStorageMonBase base : bases) {
+                            base.connect(new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    latch.ack();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    // one fails, all fail
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        evt.setInventory(CephPrimaryStorageInventory.valueOf(dbf.reload(getSelf())));
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setErrorCode(errCode);
+                        bus.publish(evt);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override

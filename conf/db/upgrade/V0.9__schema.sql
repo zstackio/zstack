@@ -11,6 +11,7 @@ CREATE TABLE  `zstack`.`CephBackupStorageMonVO` (
     `sshPassword` varchar(255) NOT NULL,
     `hostname` varchar(255) NOT NULL,
     `status` varchar(255) NOT NULL,
+    `sshPort` int unsigned NOT NULL,
     `monPort` int unsigned NOT NULL,
     `backupStorageUuid` varchar(32) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
@@ -21,10 +22,9 @@ CREATE TABLE  `zstack`.`CephBackupStorageMonVO` (
 CREATE TABLE  `zstack`.`CephPrimaryStorageVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `fsid` varchar(64) DEFAULT NULL,
-    `rootVolumePoolName` varchar(64) NOT NULL,
-    `dataVolumePoolName` varchar(64) NOT NULL,
-    `imageCachePoolName` varchar(64) NOT NULL,
-    `snapshotPoolName` varchar(64) NOT NULL,
+    `rootVolumePoolName` varchar(255) NOT NULL,
+    `dataVolumePoolName` varchar(255) NOT NULL,
+    `imageCachePoolName` varchar(255) NOT NULL,
     `userKey` varchar(255) DEFAULT NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -35,6 +35,7 @@ CREATE TABLE  `zstack`.`CephPrimaryStorageMonVO` (
     `sshPassword` varchar(255) NOT NULL,
     `hostname` varchar(255) NOT NULL,
     `status` varchar(255) NOT NULL,
+    `sshPort` int unsigned NOT NULL,
     `monPort` int unsigned NOT NULL,
     `primaryStorageUuid` varchar(32) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
@@ -77,3 +78,20 @@ CREATE TABLE  `zstack`.`ImageCacheVolumeRefVO` (
 ALTER TABLE ImageCacheVolumeRefVO ADD CONSTRAINT fkImageCacheVolumeRefVOImageCacheVO FOREIGN KEY (imageCacheId) REFERENCES ImageCacheVO (id) ON DELETE RESTRICT;
 ALTER TABLE ImageCacheVolumeRefVO ADD CONSTRAINT fkImageCacheVolumeRefVOPrimaryStorageEO FOREIGN KEY (primaryStorageUuid) REFERENCES PrimaryStorageEO (uuid) ON DELETE CASCADE;
 ALTER TABLE ImageCacheVolumeRefVO ADD CONSTRAINT fkImageCacheVolumeRefVOVolumeEO FOREIGN KEY (volumeUuid) REFERENCES VolumeEO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table CephBackupStorageMonVO
+
+ALTER TABLE CephBackupStorageMonVO ADD CONSTRAINT fkCephBackupStorageMonVOBackupStorageEO FOREIGN KEY (backupStorageUuid) REFERENCES BackupStorageEO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table CephBackupStorageVO
+
+ALTER TABLE CephBackupStorageVO ADD CONSTRAINT fkCephBackupStorageVOBackupStorageEO FOREIGN KEY (uuid) REFERENCES BackupStorageEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+# Foreign keys for table CephPrimaryStorageMonVO
+
+ALTER TABLE CephPrimaryStorageMonVO ADD CONSTRAINT fkCephPrimaryStorageMonVOPrimaryStorageEO FOREIGN KEY (primaryStorageUuid) REFERENCES PrimaryStorageEO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table CephPrimaryStorageVO
+
+ALTER TABLE CephPrimaryStorageVO ADD CONSTRAINT fkCephPrimaryStorageVOPrimaryStorageEO FOREIGN KEY (uuid) REFERENCES PrimaryStorageEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+

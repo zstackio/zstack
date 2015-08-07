@@ -9,7 +9,9 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -525,7 +527,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
             @Override
             public void setup() {
-
                 flow(new Flow() {
                     String __name__ = "create-mon-in-db";
 
@@ -538,6 +539,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             monvo.setStatus(MonStatus.Connecting);
                             monvo.setHostname(uri.getHostname());
                             monvo.setMonPort(uri.getMonPort());
+                            monvo.setSshPort(uri.getSshPort());
                             monvo.setSshUsername(uri.getSshUsername());
                             monvo.setSshPassword(uri.getSshPassword());
                             monvo.setBackupStorageUuid(self.getUuid());
@@ -567,30 +569,27 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             }
                         });
 
-                        final Iterator<CephBackupStorageMonBase> it = bases.iterator();
-                        class Connector {
-                            void connect() {
-                                if (!it.hasNext()) {
-                                    trigger.next();
-                                    return;
+                        final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                trigger.next();
+                            }
+                        });
+
+                        for (CephBackupStorageMonBase base : bases) {
+                            base.connect(new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    latch.ack();
                                 }
 
-                                CephBackupStorageMonBase base = it.next();
-                                base.connect(new Completion(trigger) {
-                                    @Override
-                                    public void success() {
-                                        connect();
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        trigger.fail(errorCode);
-                                    }
-                                });
-                            }
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    // one fails, all fail
+                                    trigger.fail(errorCode);
+                                }
+                            });
                         }
-
-                        new Connector().connect();
                     }
                 });
 

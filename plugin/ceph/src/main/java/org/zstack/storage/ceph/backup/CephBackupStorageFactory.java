@@ -49,6 +49,7 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
             monvo.setStatus(MonStatus.Connecting);
             monvo.setHostname(uri.getHostname());
             monvo.setMonPort(uri.getMonPort());
+            monvo.setSshPort(uri.getSshPort());
             monvo.setSshUsername(uri.getSshUsername());
             monvo.setSshPassword(uri.getSshPassword());
             monvo.setBackupStorageUuid(cvo.getUuid());

@@ -1,7 +1,9 @@
 package org.zstack.storage.ceph.backup;
 
 import org.zstack.header.search.Inventory;
+import org.zstack.header.search.Parent;
 import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.storage.ceph.CephConstants;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,7 +12,9 @@ import java.util.List;
 /**
  * Created by frank on 7/27/2015.
  */
-@Inventory(mappingVOClass = CephBackupStorageVO.class, collectionValueOfMethod = "valueOf1")
+@Inventory(mappingVOClass = CephBackupStorageVO.class, collectionValueOfMethod = "valueOf1",
+        parent = {@Parent(inventoryClass = BackupStorageInventory.class, type = CephConstants.CEPH_BACKUP_STORAGE_TYPE)}
+)
 public class CephBackupStorageInventory extends BackupStorageInventory {
     private List<CephBackupStorageMonInventory> mons = new ArrayList<CephBackupStorageMonInventory>();
     private String fsid;
