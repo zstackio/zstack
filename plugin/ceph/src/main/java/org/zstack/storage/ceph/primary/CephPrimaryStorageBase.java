@@ -859,14 +859,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     class DownloadToCache {
         ImageSpec image;
 
-        private void doDownload(final ReturnValueCompletion<ImageCacheVO> completion, final SyncTaskChain next) {
+        private void doDownload(final ReturnValueCompletion<ImageCacheVO> completion) {
             SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
             q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getInventory().getUuid());
             q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
             ImageCacheVO cache = q.find();
             if (cache != null) {
                 completion.success(cache);
-                next.next();
                 return;
             }
 
@@ -994,7 +993,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
                     });
 
-                    done(new FlowDoneHandler(completion, next) {
+                    done(new FlowDoneHandler(completion) {
                         @Override
                         public void handle(Map data) {
                             ImageCacheVO cvo = new ImageCacheVO();
@@ -1008,11 +1007,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             cvo = dbf.persistAndRefresh(cvo);
 
                             completion.success(cvo);
-                            next.next();
                         }
                     });
 
-                    error(new FlowErrorHandler(completion, next) {
+                    error(new FlowErrorHandler(completion) {
                         @Override
                         public void handle(ErrorCode errCode, Map data) {
                             completion.fail(errCode);
@@ -1031,7 +1029,19 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 @Override
                 public void run(final SyncTaskChain chain) {
-                    doDownload(completion, chain);
+                    doDownload(new ReturnValueCompletion<ImageCacheVO>(chain) {
+                        @Override
+                        public void success(ImageCacheVO returnValue) {
+                            completion.success(returnValue);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                            chain.next();
+                        }
+                    });
                 }
 
                 @Override
