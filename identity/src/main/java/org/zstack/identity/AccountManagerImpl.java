@@ -9,7 +9,6 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.*;

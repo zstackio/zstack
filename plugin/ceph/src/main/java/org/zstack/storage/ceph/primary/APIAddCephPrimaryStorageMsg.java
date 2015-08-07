@@ -1,6 +1,8 @@
 package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.OverriddenApiParam;
+import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
 import org.zstack.storage.ceph.CephConstants;
 
@@ -9,6 +11,9 @@ import java.util.List;
 /**
  * Created by frank on 7/28/2015.
  */
+@OverriddenApiParams({
+        @OverriddenApiParam(field = "url", param = @APIParam(maxLength = 2048, required = false))
+})
 public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     @APIParam(nonempty = false)
     private List<String> monUrls;
@@ -18,6 +23,10 @@ public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     private String dataVolumePoolName;
     @APIParam(required = false, maxLength = 255)
     private String imageCachePoolName;
+
+    public String getUrl() {
+        return "not used";
+    }
 
     public String getRootVolumePoolName() {
         return rootVolumePoolName;

@@ -1,6 +1,8 @@
 package org.zstack.storage.ceph.backup;
 
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.OverriddenApiParam;
+import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
 import org.zstack.storage.ceph.CephConstants;
 
@@ -9,11 +11,18 @@ import java.util.List;
 /**
  * Created by frank on 7/27/2015.
  */
+@OverriddenApiParams({
+        @OverriddenApiParam(field = "url", param = @APIParam(maxLength = 2048, required = false))
+})
 public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg {
     @APIParam(nonempty = false)
     private List<String> monUrls;
     @APIParam(required = false, maxLength = 255)
     private String poolName;
+
+    public String getUrl() {
+        return "not used";
+    }
 
     public String getPoolName() {
         return poolName;

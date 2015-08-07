@@ -1,8 +1,12 @@
 package org.zstack.portal.apimediator;
 
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.message.APIParam;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,6 +21,25 @@ public class ApiMessageDescriptor {
     private List<String> roles;
     private List<ApiMessageInterceptor> interceptors;
     private Class<?> clazz;
+    private Map<Field, APIParam> fieldApiParams = new HashMap<Field, APIParam>();
+
+    public Map<Field, APIParam> getFieldApiParams() {
+        return fieldApiParams;
+    }
+
+    public void setFieldApiParams(Map<Field, APIParam> fieldApiParams) {
+        this.fieldApiParams = fieldApiParams;
+    }
+
+    private Map<String, APIParam> overriddenApiParams = new HashMap<String, APIParam>();
+
+    public Map<String, APIParam> getOverriddenApiParams() {
+        return overriddenApiParams;
+    }
+
+    public void setOverriddenApiParams(Map<String, APIParam> overriddenApiParams) {
+        this.overriddenApiParams = overriddenApiParams;
+    }
 
     public String getName() {
         return name;

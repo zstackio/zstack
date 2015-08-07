@@ -40,7 +40,6 @@ public class CephPrimaryStorageDeployer implements PrimaryStorageDeployer<CephPr
 
             APIAddCephPrimaryStorageMsg msg = new APIAddCephPrimaryStorageMsg();
             msg.setName(c.getName());
-            msg.setUrl(c.getUrl());
             msg.setDescription(c.getDescription());
             msg.setSession(api.getAdminSession());
             msg.setZoneUuid(zone.getUuid());

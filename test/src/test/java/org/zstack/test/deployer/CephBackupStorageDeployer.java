@@ -43,7 +43,6 @@ public class CephBackupStorageDeployer implements BackupStorageDeployer<CephBack
             msg.setMonUrls(list(c.getMonUrl().split(",")));
             msg.setSession(api.getAdminSession());
             msg.setName(c.getName());
-            msg.setUrl(c.getUrl());
             ApiSender sender = api.getApiSender();
             APIAddBackupStorageEvent evt = sender.send(msg, APIAddBackupStorageEvent.class);
             BackupStorageInventory inv = evt.getInventory();

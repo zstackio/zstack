@@ -11,19 +11,18 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.apimediator.GlobalApiMessageInterceptor.InterceptorPosition;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor.InterceptorPosition;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.NeedRoles;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
-import org.zstack.header.message.Message;
+import org.zstack.header.message.*;
 import org.zstack.portal.apimediator.schema.Service;
-import org.zstack.utils.*;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.FieldUtils;
+import org.zstack.utils.TypeUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.FunctionNoArg;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -63,17 +62,16 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<Class, ApiMessageDescriptor> e : descriptors.entrySet()) {
             ApiMessageDescriptor desc = e.getValue();
-            sb.append(String.format("\n-------------------------------------------"));
+            sb.append("\n-------------------------------------------");
             sb.append(String.format("\nname: %s", desc.getName()));
             sb.append(String.format("\nconfigured service id: %s", desc.getServiceId()));
             sb.append(String.format("\nconfig path: %s", desc.getConfigPath()));
-            sb.append(String.format("\nroles: %s", desc.getRoles()));
             List<String> inc = new ArrayList<String>();
             for (ApiMessageInterceptor ic : desc.getInterceptors()) {
                 inc.add(ic.getClass().getName());
             }
             sb.append(String.format("\ninterceptors: %s", inc));
-            sb.append(String.format("\n-------------------------------------------"));
+            sb.append("\n-------------------------------------------");
         }
 
         logger.debug(String.format("ApiMessageDescriptor dump:\n%s", sb.toString()));
@@ -174,14 +172,6 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         desc.setInterceptors(all);
     }
 
-    private void prepareRoles(ApiMessageDescriptor desc, Service.Message mschem) {
-        List<String> roles = getNeedRolesFromMessageClass(desc.getClazz());
-        roles.addAll(mschem.getRole());
-        desc.setRoles(roles);
-        if (desc.getRoles().isEmpty()) {
-            desc.getRoles().add(AccountConstant.SYSTEM_ADMIN_ROLE);
-        }
-    }
 
     private void createDescriptor(Service schema, String cfgPath) {
         for (Service.Message mschema : schema.getMessage()) {
@@ -205,24 +195,64 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
             desc.setConfigPath(cfgPath);
             desc.setClazz(msgClz);
 
-            prepareRoles(desc, mschema);
             prepareInterceptors(desc, mschema, schema);
+            buildApiParams(desc);
 
             descriptors.put(msgClz, desc);
         }
     }
 
+    private void buildApiParams(ApiMessageDescriptor desc) {
+        Class msgClz = desc.getClazz();
+        List<Field> fields = FieldUtils.getAllFields(msgClz);
 
-    private void apiParamValidation(Message msg) {
-        List<Field> fields = FieldUtils.getAnnotatedFields(APIParam.class, msg.getClass());
-        if (fields.isEmpty()) {
-            return;
+        class FP {
+            Field field;
+            APIParam param;
         }
 
+        Map<String, FP> fmap = new HashMap<String, FP>();
+        for (Field f : fields) {
+            APIParam at = f.getAnnotation(APIParam.class);
+            if (at == null) {
+                continue;
+            }
+
+            FP fp = new FP();
+            fp.field = f;
+            fp.param = f.getAnnotation(APIParam.class);
+            fmap.put(f.getName(), fp);
+        }
+
+        OverriddenApiParams at = desc.getClazz().getAnnotation(OverriddenApiParams.class);
+        if (at != null) {
+            for (OverriddenApiParam atp : at.value()) {
+                Field f = FieldUtils.getField(atp.field(), msgClz);
+                if (f == null) {
+                    throw new CloudRuntimeException(String.format("cannot find the field[%s] specified in @OverriddenApiParam of class[%s]",
+                            atp.field(), msgClz));
+                }
+
+                FP fp = new FP();
+                fp.field = f;
+                fp.param = atp.param();
+                fmap.put(atp.field(), fp);
+            }
+        }
+
+        for (FP fp : fmap.values()) {
+            desc.getFieldApiParams().put(fp.field, fp.param);
+        }
+    }
+
+
+    private void apiParamValidation(Message msg, ApiMessageDescriptor desc) {
         try {
-            for (Field f : fields) {
+            for (Map.Entry<Field, APIParam> fp : desc.getFieldApiParams().entrySet()) {
+                Field f = fp.getKey();
+                final APIParam at = fp.getValue();
+
                 f.setAccessible(true);
-                final APIParam at = f.getAnnotation(APIParam.class);
                 Object value = f.get(msg);
 
                 if (value != null && at.maxLength() != Integer.MIN_VALUE && (value instanceof String)) {
@@ -327,9 +357,9 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
 
     @Override
     public APIMessage process(APIMessage msg) throws ApiMessageInterceptionException {
-        apiParamValidation(msg);
-
         ApiMessageDescriptor desc = descriptors.get(msg.getClass());
+
+        apiParamValidation(msg, desc);
         if (desc == null) {
             throw new CloudRuntimeException(String.format("Message[%s] has no ApiMessageDescriptor", msg.getClass().getName()));
         }
@@ -361,14 +391,5 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                 }
             }
         }
-    }
-
-    private List<String> getNeedRolesFromMessageClass(Class<?> clazz) {
-        NeedRoles nr = clazz.getAnnotation(NeedRoles.class);
-        List<String> roles = new ArrayList<String>();
-        if (nr != null) {
-            Collections.addAll(roles, nr.roles());
-        }
-        return roles;
     }
 }
