@@ -1,9 +1,12 @@
 package org.zstack.storage.ceph.primary;
 
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.storage.ceph.CephConstants;
+import org.zstack.storage.ceph.backup.CephBackupStorageMonInventory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,6 +17,10 @@ import java.util.List;
  */
 @Inventory(mappingVOClass = CephPrimaryStorageVO.class, collectionValueOfMethod = "valueOf1",
         parent = {@Parent(inventoryClass = PrimaryStorageInventory.class, type = CephConstants.CEPH_PRIMARY_STORAGE_TYPE)})
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "mons", inventoryClass = CephPrimaryStorageMonInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "primaryStorageUuid")
+})
 public class CephPrimaryStorageInventory extends PrimaryStorageInventory {
     private List<CephPrimaryStorageMonInventory> mons;
     private String fsid;

@@ -1,5 +1,7 @@
 package org.zstack.storage.ceph.backup;
 
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.storage.backup.BackupStorageInventory;
@@ -15,6 +17,10 @@ import java.util.List;
 @Inventory(mappingVOClass = CephBackupStorageVO.class, collectionValueOfMethod = "valueOf1",
         parent = {@Parent(inventoryClass = BackupStorageInventory.class, type = CephConstants.CEPH_BACKUP_STORAGE_TYPE)}
 )
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "mons", inventoryClass = CephBackupStorageMonInventory.class,
+        foreignKey = "uuid", expandedInventoryKey = "backupStorageUuid")
+})
 public class CephBackupStorageInventory extends BackupStorageInventory {
     private List<CephBackupStorageMonInventory> mons = new ArrayList<CephBackupStorageMonInventory>();
     private String fsid;

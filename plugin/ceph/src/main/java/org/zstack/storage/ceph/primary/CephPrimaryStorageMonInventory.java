@@ -16,6 +16,7 @@ public class CephPrimaryStorageMonInventory {
     private Integer monPort;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+    private String primaryStorageUuid;
 
     public static CephPrimaryStorageMonInventory valueOf(CephPrimaryStorageMonVO vo) {
         CephPrimaryStorageMonInventory inv = new CephPrimaryStorageMonInventory();
@@ -23,6 +24,7 @@ public class CephPrimaryStorageMonInventory {
         inv.setMonPort(vo.getMonPort());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setPrimaryStorageUuid(vo.getPrimaryStorageUuid());
         return inv;
     }
 
@@ -33,6 +35,14 @@ public class CephPrimaryStorageMonInventory {
         }
 
         return invs;
+    }
+
+    public String getPrimaryStorageUuid() {
+        return primaryStorageUuid;
+    }
+
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
     }
 
     public Integer getMonPort() {

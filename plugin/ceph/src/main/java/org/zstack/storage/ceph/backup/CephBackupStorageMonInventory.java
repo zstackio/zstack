@@ -16,6 +16,7 @@ public class CephBackupStorageMonInventory {
     private Integer monPort;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+    private String backupStorageUuid;
 
     public static CephBackupStorageMonInventory valueOf(CephBackupStorageMonVO vo) {
         CephBackupStorageMonInventory inv = new CephBackupStorageMonInventory();
@@ -23,6 +24,7 @@ public class CephBackupStorageMonInventory {
         inv.setMonPort(vo.getMonPort());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setBackupStorageUuid(vo.getBackupStorageUuid());
         return inv;
     }
 
@@ -33,6 +35,14 @@ public class CephBackupStorageMonInventory {
         }
 
         return invs;
+    }
+
+    public String getBackupStorageUuid() {
+        return backupStorageUuid;
+    }
+
+    public void setBackupStorageUuid(String backupStorageUuid) {
+        this.backupStorageUuid = backupStorageUuid;
     }
 
     public Integer getMonPort() {

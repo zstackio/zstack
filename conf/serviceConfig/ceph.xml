@@ -18,6 +18,11 @@
     </message>
 
     <message>
+        <name>org.zstack.storage.ceph.backup.APIQueryCephBackupStorageMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
         <name>org.zstack.storage.ceph.primary.APIAddCephPrimaryStorageMsg</name>
         <serviceId>storage.primary</serviceId>
     </message>
@@ -30,5 +35,10 @@
     <message>
         <name>org.zstack.storage.ceph.primary.APIRemoveMonFromCephPrimaryStorageMsg</name>
         <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.ceph.primary.APIQueryCephPrimaryStorageMsg</name>
+        <serviceId>query</serviceId>
     </message>
 </service>
