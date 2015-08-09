@@ -1,48 +1,48 @@
 package org.zstack.network.service.lb;
 
-import org.zstack.header.vo.ForeignKey;
-import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.search.Inventory;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Created by frank on 8/8/2015.
  */
-@Entity
-@Table
-public class LoadBalancerListenerVO {
-    @Id
-    @Column
+@Inventory(mappingVOClass = LoadBalancerListenerVO.class)
+public class LoadBalancerListenerInventory {
     private String uuid;
-
-    @Column
-    @ForeignKey(parentEntityClass = LoadBalancerVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
-    private String loadBalancerUuid;
-
-    @Column
     private String name;
-
-    @Column
     private String description;
-
-    @Column
+    private String loadBalancerUuid;
     private int instancePort;
-
-    @Column
     private int loadBalancerPort;
-
-    @Column
     private String protocol;
-
-    @Column
     private Timestamp createDate;
-
-    @Column
     private Timestamp lastOpDate;
+
+    public static LoadBalancerListenerInventory valueOf(LoadBalancerListenerVO vo) {
+        LoadBalancerListenerInventory inv = new LoadBalancerListenerInventory();
+        inv.setUuid(vo.getUuid());
+        inv.setLoadBalancerUuid(vo.getLoadBalancerUuid());
+        inv.setCreateDate(vo.getCreateDate());
+        inv.setLastOpDate(vo.getLastOpDate());
+        inv.setInstancePort(vo.getInstancePort());
+        inv.setLoadBalancerPort(vo.getLoadBalancerPort());
+        inv.setProtocol(vo.getProtocol());
+        inv.setName(vo.getName());
+        inv.setDescription(vo.getDescription());
+        return inv;
+    }
+
+    public static List<LoadBalancerListenerInventory> valueOf(Collection<LoadBalancerListenerVO> vos) {
+        List<LoadBalancerListenerInventory> invs = new ArrayList<LoadBalancerListenerInventory>();
+        for (LoadBalancerListenerVO vo : vos) {
+            invs.add(valueOf(vo));
+        }
+        return invs;
+    }
 
     public String getName() {
         return name;
@@ -66,6 +66,14 @@ public class LoadBalancerListenerVO {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public String getLoadBalancerUuid() {
+        return loadBalancerUuid;
+    }
+
+    public void setLoadBalancerUuid(String loadBalancerUuid) {
+        this.loadBalancerUuid = loadBalancerUuid;
     }
 
     public int getInstancePort() {
@@ -106,13 +114,5 @@ public class LoadBalancerListenerVO {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
-    }
-
-    public String getLoadBalancerUuid() {
-        return loadBalancerUuid;
-    }
-
-    public void setLoadBalancerUuid(String loadBalancerUuid) {
-        this.loadBalancerUuid = loadBalancerUuid;
     }
 }

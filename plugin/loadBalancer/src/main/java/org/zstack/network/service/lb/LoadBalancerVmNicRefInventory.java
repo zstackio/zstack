@@ -1,40 +1,48 @@
 package org.zstack.network.service.lb;
 
-import javax.persistence.*;
+import org.zstack.header.search.Inventory;
+
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Created by frank on 8/8/2015.
  */
-@Entity
-@Table
-public class LoadBalancerVmNicRefVO {
-    @Id
-    @Column
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+@Inventory(mappingVOClass = LoadBalancerVmNicRefVO.class)
+public class LoadBalancerVmNicRefInventory {
     private long id;
-
-    @Column
     private String loadBalancerUuid;
-
-    @Column
     private String vmNicUuid;
-
-    @Column
-    @Enumerated(EnumType.STRING)
-    private LoadBalancerVmNicStatus status;
-
-    @Column
+    private String status;
     private Timestamp createDate;
-
-    @Column
     private Timestamp lastOpDate;
 
-    public LoadBalancerVmNicStatus getStatus() {
+    public static LoadBalancerVmNicRefInventory valueOf(LoadBalancerVmNicRefVO vo) {
+        LoadBalancerVmNicRefInventory inv = new LoadBalancerVmNicRefInventory();
+        inv.setId(vo.getId());
+        inv.setLoadBalancerUuid(vo.getLoadBalancerUuid());
+        inv.setVmNicUuid(vo.getVmNicUuid());
+        inv.setCreateDate(vo.getCreateDate());
+        inv.setLastOpDate(vo.getLastOpDate());
+        inv.setStatus(vo.getStatus().toString());
+        return inv;
+    }
+
+    public static List<LoadBalancerVmNicRefInventory> valueOf(Collection<LoadBalancerVmNicRefVO> vos) {
+        List<LoadBalancerVmNicRefInventory> invs = new ArrayList<LoadBalancerVmNicRefInventory>();
+        for (LoadBalancerVmNicRefVO vo : vos) {
+            invs.add(valueOf(vo));
+        }
+        return invs;
+    }
+
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(LoadBalancerVmNicStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 

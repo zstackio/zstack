@@ -24,6 +24,9 @@ public class LoadBalancerVO {
     private String description;
 
     @Column
+    private String providerType;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private LoadBalancerState state;
 
@@ -50,6 +53,14 @@ public class LoadBalancerVO {
 
     public Set<LoadBalancerListenerVO> getListeners() {
         return listeners;
+    }
+
+    public String getProviderType() {
+        return providerType;
+    }
+
+    public void setProviderType(String providerType) {
+        this.providerType = providerType;
     }
 
     public void setListeners(Set<LoadBalancerListenerVO> listeners) {

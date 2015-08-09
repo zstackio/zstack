@@ -203,14 +203,14 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
         Completion cop = new Completion(completion) {
             @Override
             public void success() {
-                logger.debug(String.format(String.format("successfully released eip[uuid:%s, ip:%s] for vm[uuid:%s, nic uuid:%s]",
-                        struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getVmInstanceUuid(), struct.getNic().getUuid())));
+                logger.debug(String.format("successfully released eip[uuid:%s, ip:%s] for vm[uuid:%s, nic uuid:%s]",
+                        struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getVmInstanceUuid(), struct.getNic().getUuid()));
                 releaseNetworkService(it, providerType, detachInDb, completion);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                String err = String.format("failed tot release eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider should handle the failure, %s",
+                String err = String.format("failed to release eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider should handle the failure, %s",
                         struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getUuid(), providerType, errorCode);
                 logger.warn(err);
                 releaseNetworkService(it, providerType, detachInDb, completion);
