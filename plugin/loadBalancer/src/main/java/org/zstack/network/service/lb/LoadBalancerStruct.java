@@ -12,6 +12,15 @@ public class LoadBalancerStruct {
     private LoadBalancerInventory lb;
     private List<VmNicInventory> vmNics;
     private List<VipInventory> vips;
+    private List<LoadBalancerListenerInventory> listeners;
+
+    public List<LoadBalancerListenerInventory> getListeners() {
+        return listeners;
+    }
+
+    public void setListeners(List<LoadBalancerListenerInventory> listeners) {
+        this.listeners = listeners;
+    }
 
     public LoadBalancerInventory getLb() {
         return lb;

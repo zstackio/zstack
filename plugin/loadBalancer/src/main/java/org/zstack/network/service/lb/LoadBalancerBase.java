@@ -1,6 +1,8 @@
 package org.zstack.network.service.lb;
 
+import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -34,12 +36,15 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Created by frank on 8/8/2015.
  */
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class LoadBalancerBase {
     @Autowired
     private CloudBus bus;
@@ -149,6 +154,17 @@ public class LoadBalancerBase {
         });
     }
 
+    private LoadBalancerStruct removeListenerStruct(LoadBalancerListenerInventory listener) {
+        LoadBalancerStruct s = makeStruct();
+        Iterator<LoadBalancerListenerInventory> it = s.getListeners().iterator();
+        while (it.hasNext()) {
+            if (it.next().getUuid().equals(listener.getUuid())) {
+                it.remove();
+            }
+        }
+        return s;
+    }
+
     private void deleteListener(APIDeleteLoadBalancerListenerMsg msg, final NoErrorCompletion completion) {
         final APIDeleteLoadBalancerListenerEvent evt = new APIDeleteLoadBalancerListenerEvent(msg.getId());
 
@@ -170,7 +186,7 @@ public class LoadBalancerBase {
 
         LoadBalancerListenerInventory listener = LoadBalancerListenerInventory.valueOf(vo);
         LoadBalancerBackend bkd = getBackend();
-        bkd.removeListener(makeStruct(), listener, new Completion(msg, completion) {
+        bkd.removeListener(removeListenerStruct(listener), listener, new Completion(msg, completion) {
             @Override
             public void success() {
                 dbf.remove(vo);
@@ -212,6 +228,17 @@ public class LoadBalancerBase {
         });
     }
 
+    private LoadBalancerStruct removeNicStruct(VmNicInventory nic) {
+        LoadBalancerStruct s = makeStruct();
+        Iterator<VmNicInventory> it = s.getVmNics().iterator();
+        while (it.hasNext()) {
+            if (it.next().getUuid().equals(nic.getUuid())) {
+                it.remove();
+            }
+        }
+        return s;
+    }
+
     private void removeNic(APIRemoveNicFromLoadBalancerMsg msg, final NoErrorCompletion completion) {
         final APIRemoveNicFromLoadBalancerEvent evt = new APIRemoveNicFromLoadBalancerEvent(msg.getId());
 
@@ -227,7 +254,7 @@ public class LoadBalancerBase {
         VmNicInventory nic = VmNicInventory.valueOf(dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class));
 
         LoadBalancerBackend bkd = getBackend();
-        bkd.removeVmNic(makeStruct(), nic, new Completion(msg, completion) {
+        bkd.removeVmNic(removeNicStruct(nic), nic, new Completion(msg, completion) {
             @Override
             public void success() {
                 evt.setInventory(reloadAndGetInventory());
@@ -427,6 +454,17 @@ public class LoadBalancerBase {
         });
     }
 
+    private LoadBalancerStruct removeVipStruct(VipInventory vip) {
+        LoadBalancerStruct s = makeStruct();
+        Iterator<VipInventory> it = s.getVips().iterator();
+        while (it.hasNext()) {
+            if (it.next().getUuid().equals(vip.getUuid())) {
+                it.remove();
+            }
+        }
+        return s;
+    }
+
     private void removeVip(final APIRemoveVipFromLoadBalancerMsg msg, final NoErrorCompletion completion) {
         final APIRemoveVipFromLoadBalancerEvent evt = new APIRemoveVipFromLoadBalancerEvent(msg.getId());
 
@@ -457,7 +495,7 @@ public class LoadBalancerBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         LoadBalancerBackend bkd = getBackend();
-                        bkd.removeVip(makeStruct(), vip, new Completion(trigger) {
+                        bkd.removeVip(removeVipStruct(vip), vip, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -526,6 +564,8 @@ public class LoadBalancerBase {
             }));
             List<VipVO> vips = vq.list();
             struct.setVips(VipInventory.valueOf(vips));
+        } else {
+            struct.setVips(new ArrayList<VipInventory>());
         }
 
         if (!self.getVmNicRefs().isEmpty()) {
@@ -538,7 +578,11 @@ public class LoadBalancerBase {
             }));
             List<VmNicVO> nics = nq.list();
             struct.setVmNics(VmNicInventory.valueOf(nics));
+        } else {
+            struct.setVmNics(new ArrayList<VmNicInventory>());
         }
+
+        struct.setListeners(LoadBalancerListenerInventory.valueOf(self.getListeners()));
 
         return struct;
     }
