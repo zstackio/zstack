@@ -338,7 +338,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     private String classToInventoryPythonClass(Class<?> clazz) {
         StringBuilder sb = new StringBuilder();
         boolean hasParent = (clazz.getSuperclass() != Object.class);
-        
+
         if (hasParent && !isPythonClassGenerated(clazz.getSuperclass())) {
             sb.append(classToInventoryPythonClass(clazz.getSuperclass()));
         }
@@ -523,27 +523,16 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     
     private String classToApiMessagePythonClass(Class<?> clazz) {
         StringBuilder sb = new StringBuilder();
-        boolean hasParent = (clazz.getSuperclass() != Object.class);
         boolean emptyLine = true;
-        
-        if (hasParent && !isPythonClassGenerated(clazz.getSuperclass())) {
-            sb.append(classToApiMessagePythonClass(clazz.getSuperclass()));
-        }
         
         String signature = String.format("%s_FULL_NAME", clazz.getSimpleName()).toUpperCase();
         sb.append(String.format("\n%s = '%s'", signature, clazz.getName()));
-        if (hasParent) {
-            sb.append(String.format("\nclass %s(%s):", clazz.getSimpleName(), clazz.getSuperclass().getSimpleName()));
-            sb.append(String.format("\n%sFULL_NAME='%s'", whiteSpace(4), clazz.getName()));
-            sb.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
-            sb.append(String.format("\n%ssuper(%s, self).__init__()", whiteSpace(8), clazz.getSimpleName()));
-            emptyLine = false;
-        } else {
-            sb.append(String.format("\nclass %s(object):", clazz.getSimpleName()));
-            sb.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
-        }
-        
-        Field[] fs = clazz.getDeclaredFields();
+        sb.append(String.format("\nclass %s(object):", clazz.getSimpleName()));
+        sb.append(String.format("\n%sFULL_NAME='%s'", whiteSpace(4), clazz.getName()));
+        sb.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
+
+        List<Field> fs = FieldUtils.getAllFields(clazz);
+
         for (Field f : fs) {
             APINoSee nosee = f.getAnnotation(APINoSee.class);
             if (nosee != null) {
@@ -551,6 +540,16 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             }
 
             APIParam at = f.getAnnotation(APIParam.class);
+            OverriddenApiParams o = clazz.getAnnotation(OverriddenApiParams.class);
+            if (o != null) {
+                for (OverriddenApiParam op : o.value()) {
+                    if (op.field().equals(f.getName())) {
+                        at = op.param();
+                        break;
+                    }
+                }
+            }
+
             if (at != null && at.required()) {
                 sb.append(String.format("\n%s#mandatory field", whiteSpace(8)));
             }
