@@ -1,12 +1,11 @@
 package org.zstack.network.service.virtualrouter;
 
-import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Configurable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by frank on 8/10/2015.
  */
-@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterRoleManager {
     public void makeDhcpRole(String vrUuid) {
         if (!VirtualRouterSystemTags.VR_DHCP_ROLE.hasTag(vrUuid)) {
@@ -42,5 +41,28 @@ public class VirtualRouterRoleManager {
         if (!VirtualRouterSystemTags.VR_LB_ROLE.hasTag(vrUuid)) {
             VirtualRouterSystemTags.VR_LB_ROLE.createInherentTag(vrUuid);
         }
+    }
+
+    public List<String> getAllRoles(String vrUuid) {
+        List<String> roles = new ArrayList<String>();
+        if (VirtualRouterSystemTags.VR_DHCP_ROLE.hasTag(vrUuid)) {
+            roles.add(VirtualRouterSystemTags.VR_DHCP_ROLE.getTagFormat());
+        }
+        if (VirtualRouterSystemTags.VR_DNS_ROLE.hasTag(vrUuid)) {
+            roles.add(VirtualRouterSystemTags.VR_DNS_ROLE.getTagFormat());
+        }
+        if (VirtualRouterSystemTags.VR_SNAT_ROLE.hasTag(vrUuid)) {
+            roles.add(VirtualRouterSystemTags.VR_SNAT_ROLE.getTagFormat());
+        }
+        if (VirtualRouterSystemTags.VR_EIP_ROLE.hasTag(vrUuid)) {
+            roles.add(VirtualRouterSystemTags.VR_EIP_ROLE.getTagFormat());
+        }
+        if (VirtualRouterSystemTags.VR_PORT_FORWARDING_ROLE.hasTag(vrUuid)) {
+            roles.add(VirtualRouterSystemTags.VR_PORT_FORWARDING_ROLE.getTagFormat());
+        }
+        if (VirtualRouterSystemTags.VR_LB_ROLE.hasTag(vrUuid)) {
+            roles.add(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat());
+        }
+        return roles;
     }
 }
