@@ -14,8 +14,8 @@ public class APICreateLoadBalancerMsg extends APICreateMessage {
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
-    @APIParam(resourceType = VipVO.class, required = false, nonempty = true)
-    private List<String> vipUuids;
+    @APIParam(resourceType = VipVO.class)
+    private String vipUuid;
 
     public String getName() {
         return name;
@@ -33,11 +33,11 @@ public class APICreateLoadBalancerMsg extends APICreateMessage {
         this.description = description;
     }
 
-    public List<String> getVipUuids() {
-        return vipUuids;
+    public String getVipUuid() {
+        return vipUuid;
     }
 
-    public void setVipUuids(List<String> vipUuids) {
-        this.vipUuids = vipUuids;
+    public void setVipUuid(String vipUuid) {
+        this.vipUuid = vipUuid;
     }
 }

@@ -28,6 +28,9 @@ public interface VirtualRouterManager {
 
     void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VirtualRouterOfferingValidator vrOfferingValidator, ReturnValueCompletion<VirtualRouterVmInventory> completion);
 
+    void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VirtualRouterOfferingValidator vrOfferingValidator,
+                                VirtualRouterVmSelector selector, ReturnValueCompletion<VirtualRouterVmInventory> completion);
+
 
     VirtualRouterVmInventory getVirtualRouterVm(L3NetworkInventory l3Nw);
 

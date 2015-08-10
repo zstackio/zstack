@@ -1,26 +1,31 @@
-package org.zstack.network.service.lb;
+package org.zstack.network.service.virtualrouter.lb;
 
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
 
 /**
- * Created by frank on 8/8/2015.
+ * Created by frank on 8/9/2015.
  */
 @Entity
 @Table
-public class LoadBalancerVipRefVO {
+public class VirtualRouterLoadBalancerRefVO {
     @Id
     @Column
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private long id;
+    @ForeignKey(parentEntityClass = VipVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.RESTRICT)
+    private String vipUuid;
 
     @Column
-    @ForeignKey(parentEntityClass = VipVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
-    private String vipUuid;
+    @ForeignKey(parentEntityClass = VirtualRouterVmVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
+    private String virtualRouterVmUuid;
 
     @Column
     @ForeignKey(parentEntityClass = LoadBalancerVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
@@ -32,20 +37,20 @@ public class LoadBalancerVipRefVO {
     @Column
     private Timestamp lastOpDate;
 
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
     public String getVipUuid() {
         return vipUuid;
     }
 
     public void setVipUuid(String vipUuid) {
         this.vipUuid = vipUuid;
+    }
+
+    public String getVirtualRouterVmUuid() {
+        return virtualRouterVmUuid;
+    }
+
+    public void setVirtualRouterVmUuid(String virtualRouterVmUuid) {
+        this.virtualRouterVmUuid = virtualRouterVmUuid;
     }
 
     public String getLoadBalancerUuid() {

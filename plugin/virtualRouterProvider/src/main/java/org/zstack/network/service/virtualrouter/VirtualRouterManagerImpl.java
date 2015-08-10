@@ -360,6 +360,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     public void acquireVirtualRouterVm(final L3NetworkInventory l3Nw,
                                        VirtualRouterOfferingValidator validator,
                                        final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
+        acquireVirtualRouterVm(l3Nw, validator, null, completion);
+    }
+
+    @Override
+    public void acquireVirtualRouterVm(final L3NetworkInventory l3Nw, VirtualRouterOfferingValidator validator, final VirtualRouterVmSelector selector, ReturnValueCompletion<VirtualRouterVmInventory> completion) {
         VirtualRouterVmInventory vr = new Callable<VirtualRouterVmInventory>() {
             @Transactional(readOnly = true)
             private VirtualRouterVmVO findVR() {
@@ -374,9 +379,12 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     return null;
                 }
 
-                //TODO: select strategy
-                Collections.shuffle(vrs);
-                return vrs.get(0);
+                if (selector == null) {
+                    Collections.shuffle(vrs);
+                    return vrs.get(0);
+                } else {
+                    return selector.select(vrs);
+                }
             }
 
             @Override

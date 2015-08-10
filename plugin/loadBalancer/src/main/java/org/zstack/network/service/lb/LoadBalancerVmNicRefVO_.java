@@ -9,10 +9,10 @@ import java.sql.Timestamp;
  */
 @StaticMetamodel(LoadBalancerVmNicRefVO.class)
 public class LoadBalancerVmNicRefVO_ {
-    public static volatile SingularAttribute<LoadBalancerVipRefVO, Long> id;
-    public static volatile SingularAttribute<LoadBalancerVipRefVO, String> loadBalancerUuid;
-    public static volatile SingularAttribute<LoadBalancerVipRefVO, String> vmNicUuid;
-    public static volatile SingularAttribute<LoadBalancerVipRefVO, LoadBalancerVmNicStatus> status;
-    public static volatile SingularAttribute<LoadBalancerVipRefVO, Timestamp> createDate;
-    public static volatile SingularAttribute<LoadBalancerVipRefVO, Timestamp> lastOpDate;
+    public static volatile SingularAttribute<LoadBalancerVmNicRefVO, Long> id;
+    public static volatile SingularAttribute<LoadBalancerVmNicRefVO, String> loadBalancerUuid;
+    public static volatile SingularAttribute<LoadBalancerVmNicRefVO, String> vmNicUuid;
+    public static volatile SingularAttribute<LoadBalancerVmNicRefVO, LoadBalancerVmNicStatus> status;
+    public static volatile SingularAttribute<LoadBalancerVmNicRefVO, Timestamp> createDate;
+    public static volatile SingularAttribute<LoadBalancerVmNicRefVO, Timestamp> lastOpDate;
 }

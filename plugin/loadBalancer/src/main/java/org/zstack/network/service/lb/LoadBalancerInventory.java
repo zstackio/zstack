@@ -15,7 +15,7 @@ public class LoadBalancerInventory {
     private String uuid;
     private String description;
     private String state;
-    private List<String> vipUuids;
+    private String vipUuid;
     private List<LoadBalancerVmNicRefInventory> vmNicRefs;
     private List<LoadBalancerListenerInventory> listeners;
 
@@ -25,10 +25,7 @@ public class LoadBalancerInventory {
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
         inv.setState(vo.getState().toString());
-        inv.setVipUuids(new ArrayList<String>());
-        for (LoadBalancerVipRefVO vrf : vo.getVipRefs()) {
-            inv.getVipUuids().add(vrf.getVipUuid());
-        }
+        inv.setVipUuid(vo.getVipUuid());
         inv.setVmNicRefs(LoadBalancerVmNicRefInventory.valueOf(vo.getVmNicRefs()));
         inv.setListeners(LoadBalancerListenerInventory.valueOf(vo.getListeners()));
         return inv;
@@ -42,12 +39,12 @@ public class LoadBalancerInventory {
         return invs;
     }
 
-    public List<String> getVipUuids() {
-        return vipUuids;
+    public String getVipUuid() {
+        return vipUuid;
     }
 
-    public void setVipUuids(List<String> vipUuids) {
-        this.vipUuids = vipUuids;
+    public void setVipUuid(String vipUuid) {
+        this.vipUuid = vipUuid;
     }
 
     public List<LoadBalancerVmNicRefInventory> getVmNicRefs() {

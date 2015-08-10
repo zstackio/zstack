@@ -27,10 +27,7 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
-import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipManager;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.vip.VipVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
@@ -93,10 +90,6 @@ public class LoadBalancerBase {
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateLoadBalancerListenerMsg) {
             handle((APICreateLoadBalancerListenerMsg) msg);
-        } else if (msg instanceof APIAddVipToLoadBalancerMsg) {
-            handle((APIAddVipToLoadBalancerMsg) msg);
-        } else if (msg instanceof APIRemoveVipFromLoadBalancerMsg) {
-            handle((APIRemoveVipFromLoadBalancerMsg) msg);
         } else if (msg instanceof APIAddVmNicToLoadBalancerMsg) {
             handle((APIAddVmNicToLoadBalancerMsg) msg);
         } else if (msg instanceof APIRemoveNicFromLoadBalancerMsg) {
@@ -430,117 +423,6 @@ public class LoadBalancerBase {
         }).start();
     }
 
-    private void handle(final APIRemoveVipFromLoadBalancerMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return getSyncId();
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                removeVip(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return "remove-vip";
-            }
-        });
-    }
-
-    private LoadBalancerStruct removeVipStruct(VipInventory vip) {
-        LoadBalancerStruct s = makeStruct();
-        Iterator<VipInventory> it = s.getVips().iterator();
-        while (it.hasNext()) {
-            if (it.next().getUuid().equals(vip.getUuid())) {
-                it.remove();
-            }
-        }
-        return s;
-    }
-
-    private void removeVip(final APIRemoveVipFromLoadBalancerMsg msg, final NoErrorCompletion completion) {
-        final APIRemoveVipFromLoadBalancerEvent evt = new APIRemoveVipFromLoadBalancerEvent(msg.getId());
-
-        SimpleQuery<LoadBalancerVipRefVO> q = dbf.createQuery(LoadBalancerVipRefVO.class);
-        q.add(LoadBalancerVipRefVO_.vipUuid, Op.EQ, msg.getVipUuid());
-        final LoadBalancerVipRefVO ref = q.find();
-
-        if (!needAction()) {
-            if (ref != null) {
-                dbf.remove(ref);
-            }
-            evt.setInventory(reloadAndGetInventory());
-            bus.publish(evt);
-            completion.done();
-            return;
-        }
-
-        final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(msg.getVipUuid(), VipVO.class));
-
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("remove-vip-%s-from-lb-%s", msg.getVipUuid(), self.getUuid()));
-        chain.then(new ShareFlow() {
-            @Override
-            public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "revoke-vip-from-lb";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        LoadBalancerBackend bkd = getBackend();
-                        bkd.removeVip(removeVipStruct(vip), vip, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "unlock-vip";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        vipMgr.unlockVip(vip);
-                        trigger.next();
-                    }
-                });
-
-                done(new FlowDoneHandler(msg) {
-                    @Override
-                    public void handle(Map data) {
-                        dbf.remove(ref);
-                        evt.setInventory(reloadAndGetInventory());
-                        bus.publish(evt);
-                        completion.done();
-                    }
-                });
-
-                error(new FlowErrorHandler(msg) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
-                        bus.publish(evt);
-                        completion.done();
-                    }
-                });
-            }
-        }).start();
-    }
-
     private boolean needAction() {
         return self.getProviderType() != null && !self.getVmNicRefs().isEmpty();
     }
@@ -553,20 +435,6 @@ public class LoadBalancerBase {
     private LoadBalancerStruct makeStruct() {
         LoadBalancerStruct struct = new LoadBalancerStruct();
         struct.setLb(reloadAndGetInventory());
-
-        if (!self.getVipRefs().isEmpty()) {
-            SimpleQuery<VipVO> vq = dbf.createQuery(VipVO.class);
-            vq.add(VipVO_.uuid, Op.IN, CollectionUtils.transformToList(self.getVipRefs(), new Function<String, LoadBalancerVipRefVO>() {
-                @Override
-                public String call(LoadBalancerVipRefVO arg) {
-                    return arg.getVipUuid();
-                }
-            }));
-            List<VipVO> vips = vq.list();
-            struct.setVips(VipInventory.valueOf(vips));
-        } else {
-            struct.setVips(new ArrayList<VipInventory>());
-        }
 
         if (!self.getVmNicRefs().isEmpty()) {
             SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
@@ -585,111 +453,6 @@ public class LoadBalancerBase {
         struct.setListeners(LoadBalancerListenerInventory.valueOf(self.getListeners()));
 
         return struct;
-    }
-
-    private void handle(final APIAddVipToLoadBalancerMsg msg) {
-        thdf.chainSubmit(new ChainTask() {
-            @Override
-            public String getSyncSignature() {
-                return getSyncId();
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                addVip(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return "add-vip";
-            }
-        });
-    }
-
-    private void addVip(final APIAddVipToLoadBalancerMsg msg, final NoErrorCompletion completion) {
-        final APIAddVipToLoadBalancerEvent evt = new APIAddVipToLoadBalancerEvent(msg.getId());
-
-        LoadBalancerVipRefVO vo = new LoadBalancerVipRefVO();
-        vo.setLoadBalancerUuid(self.getUuid());
-        vo.setVipUuid(msg.getVipUuid());
-        dbf.persist(vo);
-
-        final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(msg.getVipUuid(), VipVO.class));
-
-        if (!needAction()) {
-            vipMgr.lockVip(vip, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
-            evt.setInventory(reloadAndGetInventory());
-            bus.publish(evt);
-            completion.done();
-            return;
-        }
-
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("add-vip-to-lb-%s", self.getUuid()));
-        chain.then(new ShareFlow() {
-            @Override
-            public void setup() {
-                flow(new Flow() {
-                    String __name__ = "lock-vip";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        vipMgr.lockVip(vip, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
-                        vipMgr.unlockVip(vip);
-                        trigger.rollback();
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "apply-vip-to-lb";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        LoadBalancerBackend bkd = getBackend();
-                        bkd.addVip(makeStruct(), vip, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
-                done(new FlowDoneHandler(msg) {
-                    @Override
-                    public void handle(Map data) {
-                        evt.setInventory(reloadAndGetInventory());
-                        bus.publish(evt);
-                        completion.done();
-                    }
-                });
-
-                error(new FlowErrorHandler(msg) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        dbf.remove(vip);
-                        evt.setErrorCode(errCode);
-                        bus.publish(evt);
-                        completion.done();
-                    }
-                });
-            }
-        }).start();
     }
 
     private void handle(final APICreateLoadBalancerListenerMsg msg) {

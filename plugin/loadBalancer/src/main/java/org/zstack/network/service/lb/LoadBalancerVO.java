@@ -30,10 +30,8 @@ public class LoadBalancerVO {
     @Enumerated(EnumType.STRING)
     private LoadBalancerState state;
 
-    @OneToMany(fetch=FetchType.EAGER)
-    @JoinColumn(name="loadBalancerUuid", insertable=false, updatable=false)
-    @NoView
-    private Set<LoadBalancerVipRefVO> vipRefs = new HashSet<LoadBalancerVipRefVO>();
+    @Column
+    private String vipUuid;
 
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="loadBalancerUuid", insertable=false, updatable=false)
@@ -99,12 +97,12 @@ public class LoadBalancerVO {
         this.state = state;
     }
 
-    public Set<LoadBalancerVipRefVO> getVipRefs() {
-        return vipRefs;
+    public String getVipUuid() {
+        return vipUuid;
     }
 
-    public void setVipRefs(Set<LoadBalancerVipRefVO> vipRefs) {
-        this.vipRefs = vipRefs;
+    public void setVipUuid(String vipUuid) {
+        this.vipUuid = vipUuid;
     }
 
     public Timestamp getCreateDate() {

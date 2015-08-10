@@ -11,7 +11,6 @@ import java.util.List;
 public class LoadBalancerStruct {
     private LoadBalancerInventory lb;
     private List<VmNicInventory> vmNics;
-    private List<VipInventory> vips;
     private List<LoadBalancerListenerInventory> listeners;
 
     public List<LoadBalancerListenerInventory> getListeners() {
@@ -36,13 +35,5 @@ public class LoadBalancerStruct {
 
     public void setVmNics(List<VmNicInventory> vmNics) {
         this.vmNics = vmNics;
-    }
-
-    public List<VipInventory> getVips() {
-        return vips;
-    }
-
-    public void setVips(List<VipInventory> vips) {
-        this.vips = vips;
     }
 }

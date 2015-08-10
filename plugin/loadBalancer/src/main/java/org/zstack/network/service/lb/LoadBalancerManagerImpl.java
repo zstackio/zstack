@@ -7,12 +7,20 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipManager;
+import org.zstack.network.service.vip.VipVO;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,20 +85,10 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         vo.setName(msg.getName());
         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
         vo.setDescription(msg.getDescription());
+        vo.setVipUuid(msg.getVipUuid());
         vo = dbf.persistAndRefresh(vo);
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerVipRefVO.class);
-
-        if (msg.getVipUuids() != null) {
-            List<LoadBalancerVipRefVO> refs = new ArrayList<LoadBalancerVipRefVO>();
-            for (String vipUuid : msg.getVipUuids()) {
-                LoadBalancerVipRefVO ref = new LoadBalancerVipRefVO();
-                ref.setLoadBalancerUuid(vo.getUuid());
-                ref.setVipUuid(vipUuid);
-                refs.add(ref);
-            }
-            dbf.persistCollection(refs);
-        }
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerVO.class);
 
         evt.setInventory(LoadBalancerInventory.valueOf(dbf.reload(vo)));
         bus.publish(evt);
