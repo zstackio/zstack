@@ -27,7 +27,6 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
-import org.zstack.network.service.vip.VipManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
@@ -49,8 +48,6 @@ public class LoadBalancerBase {
     private DatabaseFacade dbf;
     @Autowired
     private LoadBalancerManager lbMgr;
-    @Autowired
-    private VipManager vipMgr;
     @Autowired
     private ThreadFacade thdf;
     @Autowired
@@ -321,18 +318,17 @@ public class LoadBalancerBase {
         chain.setName(String.format("add-vm-nic-%s-to-lb-%s", msg.getVmNicUuid(), self.getUuid()));
         chain.then(new ShareFlow() {
             LoadBalancerVmNicRefVO ref;
+            boolean init = false;
 
             @Override
             public void setup() {
                 flow(new Flow() {
-                    boolean updated = false;
-
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         if (self.getProviderType() == null) {
                             self.setProviderType(providerType);
                             self = dbf.updateAndRefresh(self);
-                            updated = true;
+                            init = true;
                         } else {
                             if (!providerType.equals(self.getProviderType())) {
                                 throw new OperationFailureException(errf.stringToOperationError(
@@ -348,7 +344,7 @@ public class LoadBalancerBase {
 
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
-                        if (updated) {
+                        if (init) {
                             self.setProviderType(null);
                             dbf.update(self);
                         }
@@ -385,7 +381,9 @@ public class LoadBalancerBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         LoadBalancerBackend bkd = getBackend();
-                        bkd.addVmNic(makeStruct(), nic, new Completion(trigger) {
+                        LoadBalancerStruct s = makeStruct();
+                        s.setInit(init);
+                        bkd.addVmNic(s, nic, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();

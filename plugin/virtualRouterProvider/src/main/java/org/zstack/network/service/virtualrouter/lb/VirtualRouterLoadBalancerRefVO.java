@@ -6,10 +6,7 @@ import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.sql.Timestamp;
 
 /**
@@ -19,9 +16,9 @@ import java.sql.Timestamp;
 @Table
 public class VirtualRouterLoadBalancerRefVO {
     @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column
-    @ForeignKey(parentEntityClass = VipVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.RESTRICT)
-    private String vipUuid;
+    private long id;
 
     @Column
     @ForeignKey(parentEntityClass = VirtualRouterVmVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
@@ -37,12 +34,12 @@ public class VirtualRouterLoadBalancerRefVO {
     @Column
     private Timestamp lastOpDate;
 
-    public String getVipUuid() {
-        return vipUuid;
+    public long getId() {
+        return id;
     }
 
-    public void setVipUuid(String vipUuid) {
-        this.vipUuid = vipUuid;
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getVirtualRouterVmUuid() {

@@ -9,7 +9,7 @@ import java.sql.Timestamp;
  */
 @StaticMetamodel(VirtualRouterLoadBalancerRefVO.class)
 public class VirtualRouterLoadBalancerRefVO_ {
-    public static volatile SingularAttribute<VirtualRouterLoadBalancerRefVO, String> vipUuid;
+    public static volatile SingularAttribute<VirtualRouterLoadBalancerRefVO, Long> id;
     public static volatile SingularAttribute<VirtualRouterLoadBalancerRefVO, String> virtualRouterVmUuid;
     public static volatile SingularAttribute<VirtualRouterLoadBalancerRefVO, String> loadBalancerUuid;
     public static volatile SingularAttribute<VirtualRouterLoadBalancerRefVO, Timestamp> createDate;

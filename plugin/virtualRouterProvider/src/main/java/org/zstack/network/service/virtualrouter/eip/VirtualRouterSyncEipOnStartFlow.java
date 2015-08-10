@@ -136,6 +136,8 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
             return;
         }
 
+        new VirtualRouterRoleManager().makeEipRole(vr.getUuid());
+
         boolean isNewCreated = data.containsKey(Param.IS_NEW_CREATED.toString());
         List<EipTO> eips = findEipOnThisRouter(vr, data, isNewCreated);
         if (eips.isEmpty()) {

@@ -8,10 +8,6 @@ import org.zstack.network.service.vip.VipInventory;
  * Created by frank on 8/8/2015.
  */
 public interface LoadBalancerBackend {
-    void addVip(LoadBalancerStruct struct, VipInventory vip, Completion completion);
-
-    void removeVip(LoadBalancerStruct struct, VipInventory vip, Completion completion);
-
     void addVmNic(LoadBalancerStruct struct,  VmNicInventory nic, Completion completion);
 
     void removeVmNic(LoadBalancerStruct struct,  VmNicInventory nic, Completion completion);

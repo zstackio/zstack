@@ -12,6 +12,15 @@ public class LoadBalancerStruct {
     private LoadBalancerInventory lb;
     private List<VmNicInventory> vmNics;
     private List<LoadBalancerListenerInventory> listeners;
+    private boolean init;
+
+    public boolean isInit() {
+        return init;
+    }
+
+    public void setInit(boolean init) {
+        this.init = init;
+    }
 
     public List<LoadBalancerListenerInventory> getListeners() {
         return listeners;

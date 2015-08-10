@@ -91,6 +91,7 @@ public class VirtualRouterDhcpBackend implements NetworkServiceDhcpBackend {
                         VirtualRouterAsyncHttpCallReply re = reply.castReply();
                         AddDhcpEntryRsp rsp =  re.toResponse(AddDhcpEntryRsp.class);
                         if (rsp.isSuccess()) {
+                            new VirtualRouterRoleManager().makeDhcpRole(vr.getUuid());
                             logger.debug(String.format("successfully add dhcp entry[%s] to virtual router vm[uuid:%s, ip:%s]", struct, vr.getUuid(), vr.getManagementNic()
                                     .getIp()));
                             applyDhcpEntry(it, spec, completion);

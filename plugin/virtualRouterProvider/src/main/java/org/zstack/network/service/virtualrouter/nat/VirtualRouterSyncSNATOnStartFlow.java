@@ -44,6 +44,8 @@ public class VirtualRouterSyncSNATOnStartFlow extends NoRollbackFlow {
             return;
         }
 
+        new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
+
         final List<SNATInfo> snatInfo = new ArrayList<SNATInfo>();
         for (VmNicInventory nic : vr.getVmNics()) {
             if (nwServed.contains(nic.getL3NetworkUuid())) {

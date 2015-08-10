@@ -36,6 +36,8 @@ public interface VirtualRouterManager {
 
     boolean isVirtualRouterRunningForL3Network(String l3Uuid);
 
+    boolean isVirtualRouterForL3Network(String l3Uuid);
+
     VirtualRouterOfferingInventory findOfferingByGuestL3Network(L3NetworkInventory guestL3);
 
     List<Flow> getPostCreateFlows();

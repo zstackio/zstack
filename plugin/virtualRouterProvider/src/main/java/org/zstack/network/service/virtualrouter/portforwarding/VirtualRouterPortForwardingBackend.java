@@ -144,10 +144,11 @@ public class VirtualRouterPortForwardingBackend implements PortForwardingBackend
             }
         }, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
-            public void success(VirtualRouterVmInventory vr) {
+            public void success(final VirtualRouterVmInventory vr) {
                 applyRule(struct, vr, new Completion(completion) {
                     @Override
                     public void success() {
+                        new VirtualRouterRoleManager().makePortForwardingRole(vr.getUuid());
                         applyRule(it, completion);
                     }
 
@@ -179,7 +180,7 @@ public class VirtualRouterPortForwardingBackend implements PortForwardingBackend
                 SimpleQuery<VirtualRouterPortForwardingRuleRefVO> q = dbf.createQuery(VirtualRouterPortForwardingRuleRefVO.class);
                 q.add(VirtualRouterPortForwardingRuleRefVO_.uuid, Op.EQ, struct.getRule().getUuid());
                 if (!q.isExists()) {
-                    // if virtual router is stopped outside zstack (e.g. the host rebbot)
+                    // if virtual router is stopped outside zstack (e.g. the host reboot)
                     // database will still have VirtualRouterPortForwardingRuleRefVO for this PF rule.
                     // in this case, don't create the record again
                     VirtualRouterPortForwardingRuleRefVO ref = new VirtualRouterPortForwardingRuleRefVO();

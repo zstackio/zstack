@@ -117,6 +117,8 @@ public class VirtualRouterSnatBackend implements NetworkServiceSnatBackend {
                         VirtualRouterAsyncHttpCallReply re = reply.castReply();
                         SetSNATRsp ret = re.toResponse(SetSNATRsp.class);
                         if (!ret.isSuccess()) {
+                            new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
+
                             String err = String.format(
                                     "virtual router[uuid:%s, ip:%s] failed to apply snat[%s] for vm[uuid:%s, name:%s] on L3Network[uuid:%s, name:%s], because %s",
                                     vr.getUuid(), vr.getManagementNic().getIp(), JSONObjectUtil.toJsonString(info), spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),

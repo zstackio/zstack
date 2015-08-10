@@ -50,6 +50,8 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
             return;
         }
 
+        new VirtualRouterRoleManager().makeDnsRole(vr.getUuid());
+
         SimpleQuery<L3NetworkDnsVO> query = dbf.createQuery(L3NetworkDnsVO.class);
         query.select(L3NetworkDnsVO_.dns);
         query.add(L3NetworkDnsVO_.l3NetworkUuid, Op.IN, l3Uuids);

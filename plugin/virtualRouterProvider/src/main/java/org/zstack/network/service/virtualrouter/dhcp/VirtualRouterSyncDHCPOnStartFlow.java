@@ -127,6 +127,8 @@ public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
             return;
         }
 
+        new VirtualRouterRoleManager().makeDhcpRole(vr.getUuid());
+
         AddDhcpEntryCmd cmd = new AddDhcpEntryCmd();
         cmd.setRebuild(true);
         for (String l3uuid : l3Uuids) {

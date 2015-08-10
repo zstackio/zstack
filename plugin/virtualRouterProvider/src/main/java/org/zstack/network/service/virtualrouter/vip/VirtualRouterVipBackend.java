@@ -31,6 +31,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 public class VirtualRouterVipBackend implements VipBackend {
     private static final CLogger logger = Utils.getLogger(VirtualRouterVipBackend.class);
 

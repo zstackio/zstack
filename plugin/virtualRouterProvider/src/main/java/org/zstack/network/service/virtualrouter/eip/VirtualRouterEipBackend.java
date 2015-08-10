@@ -157,6 +157,7 @@ public class VirtualRouterEipBackend implements EipBackend {
                 String info = String.format("successfully created eip[uuid:%s, name:%s, ip:%s] for vm nic[uuid:%s] on virtual router[uuid:%s]",
                         struct.getEip().getUuid(), struct.getEip().getName(), struct.getVip().getIp(), struct.getNic().getUuid(),
                         vr.getUuid());
+                new VirtualRouterRoleManager().makeEipRole(vr.getUuid());
                 logger.debug(info);
                 completion.success();
             }

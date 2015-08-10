@@ -82,6 +82,7 @@ public class VirtualRouterDnsBackend implements NetworkServiceDnsBackend {
                         VirtualRouterAsyncHttpCallReply re = reply.castReply();
                         SetDnsRsp ret = re.toResponse(SetDnsRsp.class);
                         if (ret.isSuccess()) {
+                            new VirtualRouterRoleManager().makeDnsRole(vr.getUuid());
                             logger.debug(String.format("successfully add dns entry[%s] to virtual router vm[uuid:%s, ip:%s]", struct, vr.getUuid(), vr.getManagementNic()
                                     .getIp()));
                             applyDns(it, spec, completion);

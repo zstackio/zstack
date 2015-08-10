@@ -128,6 +128,8 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
             return;
         }
 
+        new VirtualRouterRoleManager().makePortForwardingRole(vr.getUuid());
+
         boolean isNewCreated = data.containsKey(Param.IS_NEW_CREATED.toString());
 
         List<PortForwardingRuleVO> ruleVOs = findRulesForThisRouter(vr, data, isNewCreated);

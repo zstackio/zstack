@@ -380,11 +380,23 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }
 
                 if (selector == null) {
-                    Collections.shuffle(vrs);
-                    return vrs.get(0);
+                    return findTheEarliestOne(vrs);
                 } else {
                     return selector.select(vrs);
                 }
+            }
+
+            private VirtualRouterVmVO findTheEarliestOne(List<VirtualRouterVmVO> vrs) {
+                VirtualRouterVmVO vr = null;
+                for (VirtualRouterVmVO v : vrs) {
+                    if (vr == null) {
+                        vr = v;
+                        continue;
+                    }
+
+                    vr = vr.getCreateDate().before(v.getCreateDate()) ? vr : v;
+                }
+                return vr;
             }
 
             @Override
@@ -453,6 +465,16 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         return count > 0;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isVirtualRouterForL3Network(String l3Uuid) {
+        String sql = "select vm from ApplianceVmVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.l3NetworkUuid = :l3Uuid and nic.metaData in (:guestMeta)";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("l3Uuid", l3Uuid);
+        q.setParameter("guestMeta", VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST);
+        Long count = q.getSingleResult();
+        return count > 0;
+    }
 
     @Override
     @Transactional(readOnly = true)
