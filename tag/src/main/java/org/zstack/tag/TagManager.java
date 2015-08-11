@@ -13,6 +13,12 @@ import java.util.List;
 public interface TagManager {
     SystemTagInventory createNonInherentSystemTag(String resourceUuid, String tag, String resourceType);
 
+    SystemTagInventory createInherentSystemTag(String resourceUuid, String tag, String resourceType);
+
+    void createInherentSystemTags(List<String> sysTags, String resourceUuid, String resourceType);
+
+    void createNonInherentSystemTags(List<String> sysTags, String resourceUuid, String resourceType);
+
     void createTagsFromAPICreateMessage(APICreateMessage msg, String resourceUuid, String resourceType);
 
     TagInventory createSysTag(String resourceUuid, String tag, String resourceType);

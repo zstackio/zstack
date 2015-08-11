@@ -21,6 +21,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipManager;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.tag.TagManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +42,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     private ErrorFacade errf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private TagManager tagMgr;
 
     private Map<String, LoadBalancerBackend> backends = new HashMap<String, LoadBalancerBackend>();
 
@@ -90,6 +93,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         vo = dbf.persistAndRefresh(vo);
 
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerVO.class);
+        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), LoadBalancerVO.class.getSimpleName());
 
         evt.setInventory(LoadBalancerInventory.valueOf(dbf.reload(vo)));
         bus.publish(evt);

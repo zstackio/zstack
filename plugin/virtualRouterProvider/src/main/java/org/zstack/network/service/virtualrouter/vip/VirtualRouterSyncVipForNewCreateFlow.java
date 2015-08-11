@@ -16,6 +16,7 @@ import org.zstack.network.service.portforwarding.PortForwardingConstant;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterManager;
 
@@ -40,7 +41,8 @@ public class VirtualRouterSyncVipForNewCreateFlow implements Flow {
         final VmNicInventory guestNic = vr.getGuestNic();
         final VmNicInventory publicNic = vr.getPublicNic();
         List<String> vipUuids = new ArrayList<String>();
-        if (vrMgr.isL3NetworkNeedingNetworkServiceByVirtualRouter(guestNic.getL3NetworkUuid(), EipConstant.EIP_NETWORK_SERVICE_TYPE)) {
+        if (vrMgr.isL3NetworkNeedingNetworkServiceByVirtualRouter(guestNic.getL3NetworkUuid(), EipConstant.EIP_NETWORK_SERVICE_TYPE) &&
+                !(VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(vr.getUuid()) && !VirtualRouterSystemTags.VR_EIP_ROLE.hasTag(vr.getUuid()))) {
             vipUuids.addAll(new Callable<List<String>>() {
                 @Override
                 @Transactional(readOnly = true)
@@ -54,7 +56,8 @@ public class VirtualRouterSyncVipForNewCreateFlow implements Flow {
                 }
             }.call());
         }
-        if (vrMgr.isL3NetworkNeedingNetworkServiceByVirtualRouter(guestNic.getL3NetworkUuid(), PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE)) {
+        if (vrMgr.isL3NetworkNeedingNetworkServiceByVirtualRouter(guestNic.getL3NetworkUuid(), PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE) &&
+                !(VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(vr.getUuid()) && !VirtualRouterSystemTags.VR_PORT_FORWARDING_ROLE.hasTag(vr.getUuid()))) {
             vipUuids.addAll(new Callable<List<String>>() {
                 @Override
                 @Transactional(readOnly = true)

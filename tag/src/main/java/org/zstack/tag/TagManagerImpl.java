@@ -228,6 +228,39 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     @Override
+    public SystemTagInventory createInherentSystemTag(String resourceUuid, String tag, String resourceType) {
+        if (isTagExisting(resourceUuid, tag, TagType.System, resourceType)) {
+            return null;
+        }
+
+        SystemTagVO vo = new SystemTagVO();
+        vo.setResourceType(resourceType);
+        vo.setUuid(Platform.getUuid());
+        vo.setResourceUuid(resourceUuid);
+        vo.setInherent(true);
+        vo.setTag(tag);
+        vo.setType(TagType.System);
+        vo = dbf.persistAndRefresh(vo);
+        SystemTagInventory inv = SystemTagInventory.valueOf(vo);
+        fireTagCreated(Arrays.asList(inv));
+        return inv;
+    }
+
+    @Override
+    public void createInherentSystemTags(List<String> sysTags, String resourceUuid, String resourceType) {
+        for (String tag : sysTags) {
+            createInherentSystemTag(resourceUuid, tag, resourceType);
+        }
+    }
+
+    @Override
+    public void createNonInherentSystemTags(List<String> sysTags, String resourceUuid, String resourceType) {
+        for (String tag : sysTags) {
+            createNonInherentSystemTag(resourceUuid, tag, resourceType);
+        }
+    }
+
+    @Override
     public void createTagsFromAPICreateMessage(APICreateMessage msg, String resourceUuid, String resourceType) {
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
             for (String sysTag : msg.getSystemTags()) {

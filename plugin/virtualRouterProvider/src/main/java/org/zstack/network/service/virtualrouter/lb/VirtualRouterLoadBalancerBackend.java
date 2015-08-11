@@ -213,14 +213,6 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
 
         final boolean separateVr = LoadBalancerSystemTags.SEPARATE_VR.hasTag(struct.getLb().getUuid());
 
-        final VirtualRouterVmSelector selector = separateVr ? new VirtualRouterVmSelector() {
-            @Override
-            public VirtualRouterVmVO select(List<VirtualRouterVmVO> vrs) {
-                // always create new vr
-                return null;
-            }
-        } : null;
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("add-nic-to-vr-lb-%s", struct.getLb().getUuid()));
         chain.then(new ShareFlow() {
@@ -255,7 +247,17 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            vrMgr.acquireVirtualRouterVm(l3, null, selector, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger) {
+                            VirtualRouterStruct s = new VirtualRouterStruct();
+                            s.setInherentSystemTags(list(VirtualRouterSystemTags.DEDICATED_ROLE_VR.getTagFormat(), VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat()));
+                            s.setVirtualRouterVmSelector(new VirtualRouterVmSelector() {
+                                @Override
+                                public VirtualRouterVmVO select(List<VirtualRouterVmVO> vrs) {
+                                    return null;
+                                }
+                            });
+                            s.setL3Network(l3);
+
+                            vrMgr.acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger) {
                                 @Override
                                 public void success(VirtualRouterVmInventory returnValue) {
                                     vr = returnValue;

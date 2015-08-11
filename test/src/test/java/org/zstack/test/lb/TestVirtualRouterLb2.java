@@ -12,10 +12,16 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerVO;
+import org.zstack.network.service.lb.LoadBalancerSystemTags;
 import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.VirtualRouter;
+import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
+import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -24,17 +30,20 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
+import java.util.List;
+
 /**
  * 
  * @author frank
  * 
  * @condition
  * 1. create a lb
+ * 2. use separate vr
  *
  * @test
- * confirm lb are created successfully
+ * confirm there are two vrs created
  */
-public class TestVirtualRouterLb {
+public class TestVirtualRouterLb2 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -48,7 +57,7 @@ public class TestVirtualRouterLb {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/lb/TestVirtualRouterLb.xml", con);
+        deployer = new Deployer("deployerXml/lb/TestVirtualRouterLb2.xml", con);
         deployer.addSpringConfig("VirtualRouter.xml");
         deployer.addSpringConfig("VirtualRouterSimulator.xml");
         deployer.addSpringConfig("KVMRelated.xml");
@@ -66,34 +75,18 @@ public class TestVirtualRouterLb {
     
     @Test
     public void test() throws ApiSenderException {
-
-        LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
-        LoadBalancerVO lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
-        Assert.assertNotNull(lbvo);
-        Assert.assertNotNull(lbvo.getProviderType());
-        Assert.assertFalse(lbvo.getListeners().isEmpty());
-        Assert.assertFalse(lbvo.getVmNicRefs().isEmpty());
-
-        VipVO vip = dbf.findByUuid(lbvo.getVipUuid(), VipVO.class);
-        Assert.assertNotNull(vip);
-        Assert.assertFalse(vconfig.vips.isEmpty());
-
-        Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());
-        RefreshLbCmd cmd = vconfig.refreshLbCmds.get(0);
-        Assert.assertFalse(cmd.getLbs().isEmpty());
-        LbTO to = cmd.getLbs().get(0);
-        LoadBalancerListenerVO l = lbvo.getListeners().iterator().next();
-        Assert.assertEquals(l.getProtocol(), to.getMode());
-        Assert.assertEquals(l.getInstancePort(), to.getInstancePort());
-        Assert.assertEquals(l.getLoadBalancerPort(), to.getLoadBalancerPort());
-
-        Assert.assertEquals(vip.getIp(), to.getVip());
-
         L3NetworkInventory gnw = deployer.l3Networks.get("GuestNetwork");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory nic = vm.findNic(gnw.getUuid());
-        Assert.assertFalse(to.getNicIps().isEmpty());
-        String nicIp = to.getNicIps().get(0);
-        Assert.assertEquals(nic.getIp(), nicIp);
+        LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
+        api.addVmNicToLoadBalancer(lb.getUuid(), nic.getUuid());
+
+        Assert.assertEquals(2, dbf.count(VirtualRouterVmVO.class));
+        Assert.assertEquals(1, dbf.count(VirtualRouterLoadBalancerRefVO.class));
+        VirtualRouterLoadBalancerRefVO ref = dbf.listAll(VirtualRouterLoadBalancerRefVO.class).get(0);
+        VirtualRouterVmVO vr = dbf.findByUuid(ref.getVirtualRouterVmUuid(), VirtualRouterVmVO.class);
+        List<String> roles = new VirtualRouterRoleManager().getAllRoles(vr.getUuid());
+        Assert.assertEquals(1, roles.size());
+        Assert.assertTrue(roles.contains(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat()));
     }
 }

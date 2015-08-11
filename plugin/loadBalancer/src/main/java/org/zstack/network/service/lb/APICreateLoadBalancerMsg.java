@@ -2,6 +2,7 @@ package org.zstack.network.service.lb;
 
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.tag.TagResourceType;
 import org.zstack.network.service.vip.VipVO;
 
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.List;
 /**
  * Created by frank on 8/8/2015.
  */
+@TagResourceType(LoadBalancerVO.class)
 public class APICreateLoadBalancerMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;

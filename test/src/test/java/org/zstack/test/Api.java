@@ -3460,6 +3460,10 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public LoadBalancerInventory addVmNicToLoadBalancer(String lbUuid, String nicUuid) throws ApiSenderException {
+        return addVmNicToLoadBalancer(lbUuid, nicUuid, null);
+    }
+
     public LoadBalancerInventory addVmNicToLoadBalancer(String lbUuid, String nicUuid, SessionInventory session) throws ApiSenderException {
         APIAddVmNicToLoadBalancerMsg msg = new APIAddVmNicToLoadBalancerMsg();
         msg.setVmNicUuid(nicUuid);

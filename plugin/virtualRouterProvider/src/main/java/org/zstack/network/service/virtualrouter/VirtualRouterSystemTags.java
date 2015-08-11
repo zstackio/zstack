@@ -23,4 +23,6 @@ public class VirtualRouterSystemTags {
     public static PatternedSystemTag VR_EIP_ROLE = new PatternedSystemTag("role::EIP", VmInstanceVO.class);
     public static PatternedSystemTag VR_PORT_FORWARDING_ROLE = new PatternedSystemTag("role::PortForwarding", VmInstanceVO.class);
     public static PatternedSystemTag VR_LB_ROLE = new PatternedSystemTag("role::LoadBalancer", VmInstanceVO.class);
+
+    public static PatternedSystemTag DEDICATED_ROLE_VR = new PatternedSystemTag("dedicatedRole", VmInstanceVO.class);
 }

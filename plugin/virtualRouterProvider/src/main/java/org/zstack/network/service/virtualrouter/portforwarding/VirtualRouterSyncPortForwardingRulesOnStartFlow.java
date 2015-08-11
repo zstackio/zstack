@@ -128,6 +128,11 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
             return;
         }
 
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(vr.getUuid()) && !VirtualRouterSystemTags.VR_PORT_FORWARDING_ROLE.hasTag(vr.getUuid())) {
+            chain.next();
+            return;
+        }
+
         new VirtualRouterRoleManager().makePortForwardingRole(vr.getUuid());
 
         boolean isNewCreated = data.containsKey(Param.IS_NEW_CREATED.toString());

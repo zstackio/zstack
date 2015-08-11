@@ -320,6 +320,7 @@ public class VirtualRouterSimulator {
 
         if (!config.refreshLbSuccess) {
             rsp.setError("on purpose");
+            rsp.setSuccess(false);
         } else {
             config.refreshLbCmds.add(cmd);
         }

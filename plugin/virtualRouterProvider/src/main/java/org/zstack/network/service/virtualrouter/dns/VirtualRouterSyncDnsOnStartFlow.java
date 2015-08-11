@@ -50,6 +50,11 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
             return;
         }
 
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(vr.getUuid()) && !VirtualRouterSystemTags.VR_DNS_ROLE.hasTag(vr.getUuid())) {
+            chain.next();
+            return;
+        }
+
         new VirtualRouterRoleManager().makeDnsRole(vr.getUuid());
 
         SimpleQuery<L3NetworkDnsVO> query = dbf.createQuery(L3NetworkDnsVO.class);

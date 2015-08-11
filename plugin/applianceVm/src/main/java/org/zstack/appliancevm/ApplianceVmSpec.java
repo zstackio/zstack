@@ -29,6 +29,24 @@ public class ApplianceVmSpec implements Serializable {
     private String accountUuid;
     private boolean syncCreate;
     private List<ApplianceVmFirewallRuleInventory> firewallRules;
+    private List<String> inherentSystemTags;
+    private List<String> nonInherentSystemTags;
+
+    public List<String> getNonInherentSystemTags() {
+        return nonInherentSystemTags;
+    }
+
+    public void setNonInherentSystemTags(List<String> nonInherentSystemTags) {
+        this.nonInherentSystemTags = nonInherentSystemTags;
+    }
+
+    public List<String> getInherentSystemTags() {
+        return inherentSystemTags;
+    }
+
+    public void setInherentSystemTags(List<String> inherentSystemTags) {
+        this.inherentSystemTags = inherentSystemTags;
+    }
 
     public List<ApplianceVmFirewallRuleInventory> getFirewallRules() {
         if (firewallRules == null) {

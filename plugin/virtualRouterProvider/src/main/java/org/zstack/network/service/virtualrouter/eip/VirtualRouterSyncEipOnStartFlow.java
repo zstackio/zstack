@@ -136,6 +136,11 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
             return;
         }
 
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(vr.getUuid()) && !VirtualRouterSystemTags.VR_EIP_ROLE.hasTag(vr.getUuid())) {
+            trigger.next();
+            return;
+        }
+
         new VirtualRouterRoleManager().makeEipRole(vr.getUuid());
 
         boolean isNewCreated = data.containsKey(Param.IS_NEW_CREATED.toString());

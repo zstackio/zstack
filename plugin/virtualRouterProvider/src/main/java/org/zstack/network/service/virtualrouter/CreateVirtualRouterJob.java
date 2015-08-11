@@ -52,22 +52,6 @@ public class CreateVirtualRouterJob implements Job {
     @Autowired
     private ApplianceVmFacade apvmf;
 
-    @Transactional
-    private VirtualRouterVmInventory checkIfNeedToCreateVR(L3NetworkInventory l3Network) {
-        String sql = "select vr from VirtualRouterVmVO vr, VmNicVO nic where vr.uuid = nic.vmInstanceUuid and nic.l3NetworkUuid = :l3Uuid and nic.metaData in (:guestMeta)";
-        TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
-        q.setParameter("l3Uuid", l3Network.getUuid());
-        q.setParameter("guestMeta", VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST);
-        List<VirtualRouterVmVO> avos = q.getResultList();
-
-        if (avos.isEmpty()) {
-            return null;
-        }
-
-        //TODO: select strategy
-        VirtualRouterVmVO avo = avos.get(0);
-        return new VirtualRouterVmInventory(avo);
-    }
 
     private void openFirewall(ApplianceVmSpec aspec, String l3NetworkUuid, int port, ApplianceVmFirewallProtocol protocol) {
         ApplianceVmFirewallRuleInventory r = new ApplianceVmFirewallRuleInventory();
@@ -106,21 +90,6 @@ public class CreateVirtualRouterJob implements Job {
         }
     }
 
-    private void checkVrState(VirtualRouterVmInventory vr, L3NetworkInventory l3Network) throws VirtualRouterException {
-        if (!VmInstanceState.Running.toString().equals(vr.getState())) {
-            String err = null;
-            if (false) {
-                err = String
-                        .format("virtual router[uuid:%s] for l3 network[uuid:%s] is not in Running state, current state is %s. This router is HA enabled, please wait management server restarts it and then try starting this vm again",
-                                vr.getUuid(), l3Network.getUuid(), vr.getState());
-            } else {
-                err = String
-                        .format("virtual router[uuid:%s] for l3 network[uuid:%s] is not in Running state, current state is %s. We don't have HA feature now(it's coming soon), please restart it from UI and then try starting this vm again",
-                                vr.getUuid(), l3Network.getUuid(), vr.getState());
-            }
-            throw new VirtualRouterException(err);
-        }
-    }
 
     private String makeVirtualRouterName(String l3NetworkUuid) {
         return String.format("virtualRouter.l3.%s", l3NetworkUuid);
@@ -128,21 +97,6 @@ public class CreateVirtualRouterJob implements Job {
 
     @Override
     public void run(final ReturnValueCompletion<Object> completion) {
-        try {
-            VirtualRouterVmInventory vr = checkIfNeedToCreateVR(l3Network);
-            if (vr != null) {
-                checkVrState(vr, l3Network);
-                logger.debug(String.format("successfully found running virtual router[name: %s, uuid: %s] for L3Network[name:%s, uuid:%s]",
-                        vr.getName(), vr.getUuid(), l3Network.getName(), l3Network.getUuid()));
-                completion.success(vr);
-                return;
-            }
-        } catch (VirtualRouterException e) {
-            logger.warn(e.getMessage(), e);
-            completion.fail(errf.throwableToOperationError(e));
-            return;
-        }
-
         List<String> neededService = l3Network.getNetworkServiceTypesFromProvider(vrMgr.getVirtualRouterProvider().getUuid());
         if (neededService.contains(NetworkServiceType.SNAT.toString()) && offering.getPublicNetworkUuid() == null) {
             String err = String.format("L3Network[uuid:%s, name:%s] requires SNAT service, but default virtual router offering[uuid:%s, name:%s] doesn't have a public network", l3Network.getUuid(), l3Network.getName(), offering.getUuid(), offering.getName());

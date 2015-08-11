@@ -3,11 +3,12 @@ package org.zstack.network.service.virtualrouter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.zstack.appliancevm.ApplianceVmInventory;
+import org.zstack.appliancevm.*;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -15,7 +16,11 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.JobQueueFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -25,19 +30,24 @@ import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkCreateExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.*;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
@@ -54,7 +64,10 @@ import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPort
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -107,19 +120,216 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private JobQueueFacade jobf;
     @Autowired
     private AccountManager acntMgr;
+    @Autowired
+    private ThreadFacade thdf;
+    @Autowired
+    private ApplianceVmFacade apvmf;
+    
 
 	@Override
     @MessageSafe
 	public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
-            handleApiMessage((APIMessage)msg);
+            handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
         }
 	}
 
 	private void handleLocalMessage(Message msg) {
-	    bus.dealWithUnknownMessage(msg);
+        if (msg instanceof CreateVirtualRouterVmMsg) {
+            handle((CreateVirtualRouterVmMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(final CreateVirtualRouterVmMsg msg) {
+        thdf.chainSubmit(new ChainTask() {
+            @Override
+            public String getSyncSignature() {
+                return String.format("create-vr-for-l3-%s", msg.getL3Network().getUuid());
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                createVirtualRouter(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    private void createVirtualRouter(final CreateVirtualRouterVmMsg msg, final NoErrorCompletion completion) {
+        final L3NetworkInventory l3Network = msg.getL3Network();
+        final VirtualRouterOfferingInventory offering = msg.getOffering();
+        final CreateVirtualRouterVmReply reply = new CreateVirtualRouterVmReply();
+        final String accountUuid = acntMgr.getOwnerAccountUuidOfResource(l3Network.getUuid());
+
+        class newVirtualRouterJob {
+            private void failAndReply(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            private void openFirewall(ApplianceVmSpec aspec, String l3NetworkUuid, int port, ApplianceVmFirewallProtocol protocol) {
+                ApplianceVmFirewallRuleInventory r = new ApplianceVmFirewallRuleInventory();
+                r.setL3NetworkUuid(l3NetworkUuid);
+                r.setStartPort(port);
+                r.setEndPort(port);
+                r.setProtocol(protocol.toString());
+                aspec.getFirewallRules().add(r);
+            }
+
+            private void openAdditionalPorts(ApplianceVmSpec aspec, String mgmtNwUuid) {
+                final List<String> tcpPorts = VirtualRouterGlobalProperty.TCP_PORTS_ON_MGMT_NIC;
+                if (!tcpPorts.isEmpty()) {
+                    List<Integer> ports = CollectionUtils.transformToList(tcpPorts, new Function<Integer, String>() {
+                        @Override
+                        public Integer call(String arg) {
+                            return Integer.valueOf(arg);
+                        }
+                    });
+                    for (int p : ports) {
+                        openFirewall(aspec, mgmtNwUuid, p, ApplianceVmFirewallProtocol.tcp);
+                    }
+                }
+
+                final List<String> udpPorts = VirtualRouterGlobalProperty.UDP_PORTS_ON_MGMT_NIC;
+                if (!udpPorts.isEmpty()) {
+                    List<Integer> ports = CollectionUtils.transformToList(udpPorts, new Function<Integer, String>() {
+                        @Override
+                        public Integer call(String arg) {
+                            return Integer.valueOf(arg);
+                        }
+                    });
+                    for (int p : ports) {
+                        openFirewall(aspec, mgmtNwUuid, p, ApplianceVmFirewallProtocol.udp);
+                    }
+                }
+            }
+
+            void create() {
+                List<String> neededService = l3Network.getNetworkServiceTypesFromProvider(getVirtualRouterProvider().getUuid());
+                if (neededService.contains(NetworkServiceType.SNAT.toString()) && offering.getPublicNetworkUuid() == null) {
+                    String err = String.format("L3Network[uuid:%s, name:%s] requires SNAT service, but default virtual router offering[uuid:%s, name:%s] doesn't have a public network", l3Network.getUuid(), l3Network.getName(), offering.getUuid(), offering.getName());
+                    logger.warn(err);
+                    failAndReply(errf.instantiateErrorCode(VirtualRouterErrors.NO_PUBLIC_NETWORK_IN_OFFERING, err));
+                    return;
+                }
+
+                ImageVO imgvo = dbf.findByUuid(offering.getImageUuid(), ImageVO.class);
+
+                final ApplianceVmSpec aspec = new ApplianceVmSpec();
+                aspec.setSyncCreate(false);
+                aspec.setTemplate(ImageInventory.valueOf(imgvo));
+                aspec.setApplianceVmType(VirtualRouterApplianceVmFactory.type);
+                aspec.setInstanceOffering(offering);
+                aspec.setAccountUuid(accountUuid);
+                aspec.setName(String.format("virtualRouter.l3.%s", l3Network.getUuid()));
+                aspec.setInherentSystemTags(msg.getInherentSystemTags());
+
+                L3NetworkInventory mgmtNw = L3NetworkInventory.valueOf(dbf.findByUuid(offering.getManagementNetworkUuid(), L3NetworkVO.class));
+                ApplianceVmNicSpec mgmtNicSpec = new ApplianceVmNicSpec();
+                mgmtNicSpec.setL3NetworkUuid(mgmtNw.getUuid());
+                mgmtNicSpec.setMetaData(VirtualRouterNicMetaData.MANAGEMENT_NIC_MASK.toString());
+                aspec.setManagementNic(mgmtNicSpec);
+
+                String mgmtNwUuid = mgmtNw.getUuid();
+                String pnwUuid;
+
+                // NOTE: don't open 22 port here; 22 port is default opened on mgmt network in virtual router with restricted rules
+                // open 22 here will cause a non-restricted rule to be added
+                openFirewall(aspec, mgmtNwUuid, 7272, ApplianceVmFirewallProtocol.tcp);
+                openAdditionalPorts(aspec, mgmtNwUuid);
+
+                if (offering.getPublicNetworkUuid() != null && !offering.getManagementNetworkUuid().equals(offering.getPublicNetworkUuid())) {
+                    L3NetworkInventory pnw = L3NetworkInventory.valueOf(dbf.findByUuid(offering.getPublicNetworkUuid(), L3NetworkVO.class));
+                    ApplianceVmNicSpec pnicSpec = new ApplianceVmNicSpec();
+                    pnicSpec.setL3NetworkUuid(pnw.getUuid());
+                    pnicSpec.setMetaData(VirtualRouterNicMetaData.PUBLIC_NIC_MASK.toString());
+                    aspec.getAdditionalNics().add(pnicSpec);
+                    pnwUuid = pnicSpec.getL3NetworkUuid();
+                    aspec.setDefaultRouteL3Network(pnw);
+                } else {
+                    // use management nic for both management and public
+                    mgmtNicSpec.setMetaData(VirtualRouterNicMetaData.PUBLIC_AND_MANAGEMENT_NIC_MASK.toString());
+                    pnwUuid = mgmtNwUuid;
+                    aspec.setDefaultRouteL3Network(mgmtNw);
+                }
+
+
+                if (!l3Network.getUuid().equals(mgmtNwUuid) && !l3Network.getUuid().equals(pnwUuid)) {
+                    if (neededService.contains(NetworkServiceType.SNAT.toString())) {
+                        DebugUtils.Assert(!l3Network.getIpRanges().isEmpty(), String.format("how can l3Network[uuid:%s] doesn't have ip range", l3Network.getUuid()));
+                        IpRangeInventory ipr = l3Network.getIpRanges().get(0);
+                        ApplianceVmNicSpec nicSpec = new ApplianceVmNicSpec();
+                        nicSpec.setL3NetworkUuid(l3Network.getUuid());
+                        nicSpec.setAcquireOnNetwork(false);
+                        nicSpec.setNetmask(ipr.getNetmask());
+                        nicSpec.setIp(ipr.getGateway());
+                        nicSpec.setGateway(ipr.getGateway());
+                        aspec.getAdditionalNics().add(nicSpec);
+                    } else {
+                        ApplianceVmNicSpec nicSpec = new ApplianceVmNicSpec();
+                        nicSpec.setL3NetworkUuid(l3Network.getUuid());
+                        aspec.getAdditionalNics().add(nicSpec);
+                    }
+                }
+
+                ApplianceVmNicSpec guestNicSpec = mgmtNicSpec.getL3NetworkUuid().equals(l3Network.getUuid()) ? mgmtNicSpec : CollectionUtils.find(aspec.getAdditionalNics(), new Function<ApplianceVmNicSpec, ApplianceVmNicSpec>() {
+                    @Override
+                    public ApplianceVmNicSpec call(ApplianceVmNicSpec arg) {
+                        return arg.getL3NetworkUuid().equals(l3Network.getUuid()) ? arg : null;
+                    }
+                });
+
+                guestNicSpec.setMetaData(guestNicSpec.getMetaData() == null ? VirtualRouterNicMetaData.GUEST_NIC_MASK.toString()
+                        : String.valueOf(Integer.valueOf(guestNicSpec.getMetaData()) | VirtualRouterNicMetaData.GUEST_NIC_MASK));
+
+                if (neededService.contains(NetworkServiceType.DHCP.toString())) {
+                    openFirewall(aspec, l3Network.getUuid(), 68, ApplianceVmFirewallProtocol.udp);
+                    openFirewall(aspec, l3Network.getUuid(), 67, ApplianceVmFirewallProtocol.udp);
+                }
+                if (neededService.contains(NetworkServiceType.DNS.toString())) {
+                    openFirewall(aspec, l3Network.getUuid(), 53, ApplianceVmFirewallProtocol.udp);
+                }
+
+                logger.debug(String.format("unable to find running virtual for L3Network[name:%s, uuid:%s], is about to create a new one",  l3Network.getName(), l3Network.getUuid()));
+                apvmf.createApplianceVm(aspec, new ReturnValueCompletion<ApplianceVmInventory>(completion) {
+                    @Override
+                    public void success(ApplianceVmInventory apvm) {
+                        String paraDegree = VirtualRouterSystemTags.VR_OFFERING_PARALLELISM_DEGREE.getTokenByResourceUuid(offering.getUuid(), VirtualRouterSystemTags.PARALLELISM_DEGREE_TOKEN);
+                        if (paraDegree != null) {
+                            VirtualRouterSystemTags.VR_PARALLELISM_DEGREE.createTag(apvm.getUuid(), map(e(
+                                    VirtualRouterSystemTags.PARALLELISM_DEGREE_TOKEN,
+                                    paraDegree
+                            )));
+                        }
+
+                        reply.setInventory(VirtualRouterVmInventory.valueOf(dbf.findByUuid(apvm.getUuid(), VirtualRouterVmVO.class)));
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        failAndReply(errorCode);
+                    }
+                });
+            }
+        }
+
+        new newVirtualRouterJob().create();
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -362,11 +572,18 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     public void acquireVirtualRouterVm(final L3NetworkInventory l3Nw,
                                        VirtualRouterOfferingValidator validator,
                                        final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
-        acquireVirtualRouterVm(l3Nw, validator, null, completion);
+        VirtualRouterStruct s = new VirtualRouterStruct();
+        s.setL3Network(l3Nw);
+        s.setOfferingValidator(validator);
+        acquireVirtualRouterVm(s, completion);
     }
 
     @Override
-    public void acquireVirtualRouterVm(final L3NetworkInventory l3Nw, VirtualRouterOfferingValidator validator, final VirtualRouterVmSelector selector, ReturnValueCompletion<VirtualRouterVmInventory> completion) {
+    public void acquireVirtualRouterVm(VirtualRouterStruct struct, final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
+        final L3NetworkInventory l3Nw = struct.getL3Network();
+        final VirtualRouterOfferingValidator validator = struct.getOfferingValidator();
+        final VirtualRouterVmSelector selector = struct.getVirtualRouterVmSelector();
+
         VirtualRouterVmInventory vr = new Callable<VirtualRouterVmInventory>() {
             @Transactional(readOnly = true)
             private VirtualRouterVmVO findVR() {
@@ -404,6 +621,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             @Override
             public VirtualRouterVmInventory call() {
                 VirtualRouterVmVO vr = findVR();
+                if (vr != null && !VmInstanceState.Running.equals(vr.getState())) {
+                    throw new OperationFailureException(errf.stringToOperationError(
+                            String.format("virtual router[uuid:%s] for l3 network[uuid:%s] is not in Running state, current state is %s. We don't have HA feature now(it's coming soon), please restart it from UI and then try starting this vm again",
+                                    vr.getUuid(), l3Nw.getUuid(), vr.getState())
+                    ));
+                }
+
                 return vr == null ? null : new VirtualRouterVmInventory(vr);
             }
         }.call();
@@ -426,12 +650,21 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             validator.validate(offering);
         }
 
-        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(l3Nw.getUuid());
-        CreateVirtualRouterJob job = new CreateVirtualRouterJob();
-        job.setL3Network(l3Nw);
-        job.setAccountUuid(accountUuid);
-        job.setOffering(offering);
-        jobf.execute(String.format("vr.l3.%s", l3Nw.getUuid()), String.format("node.virtualrouter.%s", Platform.getManagementServerId()), job, completion, VirtualRouterVmInventory.class);
+        CreateVirtualRouterVmMsg msg = new CreateVirtualRouterVmMsg();
+        msg.setL3Network(l3Nw);
+        msg.setOffering(offering);
+        msg.setInherentSystemTags(struct.getInherentSystemTags());
+        bus.makeTargetServiceIdByResourceUuid(msg, VirtualRouterConstant.SERVICE_ID, l3Nw.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                } else {
+                    completion.success(((CreateVirtualRouterVmReply) reply).getInventory());
+                }
+            }
+        });
     }
 
     @Override
@@ -456,15 +689,19 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     @Override
-    @Transactional(readOnly = true)
     public boolean isVirtualRouterRunningForL3Network(String l3Uuid) {
+        return countVirtualRouterRunningForL3Network(l3Uuid) > 0;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countVirtualRouterRunningForL3Network(String l3Uuid) {
         String sql = "select count(vm) from ApplianceVmVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and nic.l3NetworkUuid = :l3Uuid and nic.metaData in (:guestMeta)";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("l3Uuid", l3Uuid);
         q.setParameter("vmState", VmInstanceState.Running);
         q.setParameter("guestMeta", VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST);
-        Long count = q.getSingleResult();
-        return count > 0;
+        return q.getSingleResult();
     }
 
     @Override

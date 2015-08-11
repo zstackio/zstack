@@ -348,6 +348,7 @@ public class LoadBalancerBase {
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
                         if (init) {
+                            self = dbf.reload(self);
                             self.setProviderType(null);
                             dbf.update(self);
                         }

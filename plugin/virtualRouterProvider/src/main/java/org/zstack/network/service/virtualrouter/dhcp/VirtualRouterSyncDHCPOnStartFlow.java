@@ -127,6 +127,11 @@ public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
             return;
         }
 
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(vr.getUuid()) && !VirtualRouterSystemTags.VR_DHCP_ROLE.hasTag(vr.getUuid())) {
+            chain.next();
+            return;
+        }
+
         new VirtualRouterRoleManager().makeDhcpRole(vr.getUuid());
 
         AddDhcpEntryCmd cmd = new AddDhcpEntryCmd();

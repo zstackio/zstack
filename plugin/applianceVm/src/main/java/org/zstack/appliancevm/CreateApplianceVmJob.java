@@ -96,6 +96,12 @@ public class CreateApplianceVmJob implements Job {
         avo = factory.persistApplianceVm(spec, avo);
 
         tagMgr.copySystemTag(iovo.getUuid(), InstanceOfferingVO.class.getSimpleName(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
+        if (spec.getInherentSystemTags() != null && !spec.getInherentSystemTags().isEmpty()) {
+            tagMgr.createInherentSystemTags(spec.getInherentSystemTags(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
+        }
+        if (spec.getNonInherentSystemTags() != null && !spec.getNonInherentSystemTags().isEmpty()) {
+            tagMgr.createNonInherentSystemTags(spec.getNonInherentSystemTags(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
+        }
 
 		final ApplianceVmInventory inv = ApplianceVmInventory.valueOf(avo);
 		StartNewCreatedApplianceVmMsg msg = new StartNewCreatedApplianceVmMsg();

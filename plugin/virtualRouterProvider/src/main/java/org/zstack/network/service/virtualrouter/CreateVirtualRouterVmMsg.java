@@ -1,0 +1,48 @@
+package org.zstack.network.service.virtualrouter;
+
+import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.network.l3.L3NetworkInventory;
+
+import java.util.List;
+
+/**
+ * Created by frank on 8/11/2015.
+ */
+public class CreateVirtualRouterVmMsg extends NeedReplyMessage {
+    private L3NetworkInventory l3Network;
+    private VirtualRouterOfferingInventory offering;
+    private List<String> inherentSystemTags;
+    private List<String> nonInherentSystemTags;
+
+    public List<String> getNonInherentSystemTags() {
+        return nonInherentSystemTags;
+    }
+
+    public void setNonInherentSystemTags(List<String> nonInherentSystemTags) {
+        this.nonInherentSystemTags = nonInherentSystemTags;
+    }
+
+    public List<String> getInherentSystemTags() {
+        return inherentSystemTags;
+    }
+
+    public void setInherentSystemTags(List<String> inherentSystemTags) {
+        this.inherentSystemTags = inherentSystemTags;
+    }
+
+    public L3NetworkInventory getL3Network() {
+        return l3Network;
+    }
+
+    public void setL3Network(L3NetworkInventory l3Network) {
+        this.l3Network = l3Network;
+    }
+
+    public VirtualRouterOfferingInventory getOffering() {
+        return offering;
+    }
+
+    public void setOffering(VirtualRouterOfferingInventory offering) {
+        this.offering = offering;
+    }
+}
