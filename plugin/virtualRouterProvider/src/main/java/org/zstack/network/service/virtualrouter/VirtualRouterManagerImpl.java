@@ -12,6 +12,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.GLock;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -74,6 +75,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -578,8 +580,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         acquireVirtualRouterVm(s, completion);
     }
 
-    @Override
-    public void acquireVirtualRouterVm(VirtualRouterStruct struct, final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
+    private void acquireVirtualRouterVmInternal(VirtualRouterStruct struct,  final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
         final L3NetworkInventory l3Nw = struct.getL3Network();
         final VirtualRouterOfferingValidator validator = struct.getOfferingValidator();
         final VirtualRouterVmSelector selector = struct.getVirtualRouterVmSelector();
@@ -663,6 +664,25 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 } else {
                     completion.success(((CreateVirtualRouterVmReply) reply).getInventory());
                 }
+            }
+        });
+    }
+
+    @Override
+    public void acquireVirtualRouterVm(VirtualRouterStruct struct, final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
+        //TODO: find a way to remove the GLock
+        final GLock lock = new GLock(String.format("glock-vr-l3-%s", struct.getL3Network().getUuid()), TimeUnit.HOURS.toSeconds(1));
+        acquireVirtualRouterVmInternal(struct, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
+            @Override
+            public void success(VirtualRouterVmInventory returnValue) {
+                lock.unlock();
+                completion.success(returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                lock.unlock();
+                completion.fail(errorCode);
             }
         });
     }
