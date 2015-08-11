@@ -23,6 +23,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.service.eip.EipInventory;
+import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -67,11 +68,13 @@ public class Deployer {
     public Map<String, PortForwardingRuleInventory> portForwardingRules = new HashMap<String, PortForwardingRuleInventory>();
     public Map<String, EipInventory> eips = new HashMap<String, EipInventory>();
     public Map<String, IpRangeInventory> ipRanges = new HashMap<String, IpRangeInventory>();
+    public Map<String, LoadBalancerInventory> loadBalancers = new HashMap<String, LoadBalancerInventory>();
 
     private Map<String, List<ClusterInventory>> primaryStoragesToAttach = new HashMap<String, List<ClusterInventory>>();
     private Map<String, List<ClusterInventory>> l2NetworksToAttach = new HashMap<String, List<ClusterInventory>>();
     private Map<String, List<ZoneInventory>> backupStoragesToAttach = new HashMap<String, List<ZoneInventory>>();
     private Map<String, List<L3NetworkInventory>> dnsToAttach = new HashMap<String, List<L3NetworkInventory>>();
+
 
     private BeanConstructor beanConstructor;
     private Set<String> springConfigs = new HashSet<String>();
@@ -269,6 +272,23 @@ public class Deployer {
             List val = (List) f.get(eip);
             if (val != null && !val.isEmpty()) {
                 ed.deploy(val, config, this);
+            }
+        }
+    }
+
+    private void deployLb() throws IllegalAccessException, ApiSenderException {
+        LbUnion lb = config.getLbs();
+        if (lb == null) {
+            return;
+        }
+        for (Field f : lb.getClass().getDeclaredFields()) {
+            f.setAccessible(true);
+            exceptionIfNotCollection(f);
+            Class<?> deployerClass = getGenericTypeOfField(f);
+            LbDeployer ld = (LbDeployer) getDeployer(deployerClass);
+            List val = (List) f.get(lb);
+            if (val != null && !val.isEmpty()) {
+                ld.deploy(val, config, this);
             }
         }
     }
@@ -570,6 +590,7 @@ public class Deployer {
             deployVm();
             deployPortForwarding();
             deployEip();
+            deployLb();
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }

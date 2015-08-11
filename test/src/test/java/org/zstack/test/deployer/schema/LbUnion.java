@@ -16,16 +16,16 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for PortForwardingUnion complex type.
+ * <p>Java class for LbUnion complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="PortForwardingUnion">
+ * &lt;complexType name="LbUnion">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="portForwarding" type="{http://zstack.org/schema/zstack}PortForwardingConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="lb" type="{http://zstack.org/schema/zstack}LbConfig" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -35,40 +35,40 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "PortForwardingUnion", propOrder = {
-    "portForwarding"
+@XmlType(name = "LbUnion", propOrder = {
+    "lb"
 })
-public class PortForwardingUnion {
+public class LbUnion {
 
-    protected List<PortForwardingConfig> portForwarding;
+    protected List<LbConfig> lb;
 
     /**
-     * Gets the value of the portForwarding property.
+     * Gets the value of the lb property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the portForwarding property.
+     * This is why there is not a <CODE>set</CODE> method for the lb property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getPortForwarding().add(newItem);
+     *    getLb().add(newItem);
      * </pre>
      * 
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link PortForwardingConfig }
+     * {@link LbConfig }
      * 
      * 
      */
-    public List<PortForwardingConfig> getPortForwarding() {
-        if (portForwarding == null) {
-            portForwarding = new ArrayList<PortForwardingConfig>();
+    public List<LbConfig> getLb() {
+        if (lb == null) {
+            lb = new ArrayList<LbConfig>();
         }
-        return this.portForwarding;
+        return this.lb;
     }
 
 }

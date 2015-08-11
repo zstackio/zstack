@@ -2,6 +2,7 @@ package org.zstack.simulator.virtualrouter;
 
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 
 import java.util.ArrayList;
@@ -34,4 +35,7 @@ public class VirtualRouterSimulatorConfig {
 	public volatile List<VipTO> removedVips = new ArrayList<VipTO>();
 	public volatile List<PingCmd> pingCmds = new ArrayList<PingCmd>();
 	public volatile String uuid;
+	public volatile List<RefreshLbCmd> refreshLbCmds = new ArrayList<RefreshLbCmd>();
+    public volatile boolean refreshLbSuccess = true;
+
 }

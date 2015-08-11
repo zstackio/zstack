@@ -61,6 +61,7 @@ import org.zstack.kvm.KVMHostInventory;
 import org.zstack.network.securitygroup.*;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.network.service.eip.*;
+import org.zstack.network.service.lb.*;
 import org.zstack.network.service.portforwarding.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
@@ -3429,6 +3430,44 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIRemoveMonFromCephPrimaryStorageEvent evt = sender.send(msg, APIRemoveMonFromCephPrimaryStorageEvent.class);
+        return evt.getInventory();
+    }
+
+    public LoadBalancerInventory createLoadBalancer(String name, String vipUuid, List<String> tags, SessionInventory session) throws ApiSenderException {
+        APICreateLoadBalancerMsg msg = new APICreateLoadBalancerMsg();
+        msg.setName(name);
+        msg.setVipUuid(vipUuid);
+        msg.setSystemTags(tags);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICreateLoadBalancerEvent evt = sender.send(msg, APICreateLoadBalancerEvent.class);
+        return evt.getInventory();
+    }
+
+    public LoadBalancerInventory createLoadBalancerListener(LoadBalancerListenerInventory inv, SessionInventory session) throws ApiSenderException {
+        APICreateLoadBalancerListenerMsg msg = new APICreateLoadBalancerListenerMsg();
+        msg.setLoadBalancerUuid(inv.getLoadBalancerUuid());
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setInstancePort(inv.getInstancePort());
+        msg.setLoadBalancerPort(inv.getLoadBalancerPort());
+        msg.setProtocol(inv.getProtocol());
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICreateLoadBalancerListenerEvent evt = sender.send(msg, APICreateLoadBalancerListenerEvent.class);
+        return evt.getInventory();
+    }
+
+    public LoadBalancerInventory addVmNicToLoadBalancer(String lbUuid, String nicUuid, SessionInventory session) throws ApiSenderException {
+        APIAddVmNicToLoadBalancerMsg msg = new APIAddVmNicToLoadBalancerMsg();
+        msg.setVmNicUuid(nicUuid);
+        msg.setLoadBalancerUuid(lbUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIAddVmNicToLoadBalancerEvent evt = sender.send(msg, APIAddVmNicToLoadBalancerEvent.class);
         return evt.getInventory();
     }
 }

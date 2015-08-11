@@ -48,6 +48,7 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.eip.EipConstant;
+import org.zstack.network.service.lb.LoadBalancerConstants;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
@@ -231,6 +232,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 		vo.getNetworkServiceTypes().add(NetworkServiceType.SNAT.toString());
 		vo.getNetworkServiceTypes().add(NetworkServiceType.PortForwarding.toString());
         vo.getNetworkServiceTypes().add(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+        vo.getNetworkServiceTypes().add(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
 		vo.setType(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE);
 		vo = dbf.persistAndRefresh(vo);
 		virtualRouterProvider = NetworkServiceProviderInventory.valueOf(vo);

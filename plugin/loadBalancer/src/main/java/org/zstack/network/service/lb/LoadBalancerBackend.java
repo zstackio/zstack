@@ -16,7 +16,7 @@ public interface LoadBalancerBackend {
 
     void removeListener(LoadBalancerStruct struct,  LoadBalancerListenerInventory listener, Completion completion);
 
-    void destroy(LoadBalancerStruct struct, Completion completion);
+    void destroyLoadBalancer(LoadBalancerStruct struct, Completion completion);
 
     String getNetworkServiceProviderType();
 }

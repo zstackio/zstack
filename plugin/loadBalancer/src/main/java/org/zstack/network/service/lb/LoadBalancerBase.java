@@ -27,6 +27,7 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
+import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
@@ -52,6 +53,8 @@ public class LoadBalancerBase {
     private ThreadFacade thdf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private AccountManager acntMgr;
 
     private LoadBalancerVO self;
 
@@ -270,7 +273,7 @@ public class LoadBalancerBase {
         for (NetworkServiceL3NetworkRefVO ref : l3.getNetworkServices()) {
             if (LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING.equals(ref.getNetworkServiceType())) {
                 sql = "select p.type from NetworkServiceProviderVO p where p.uuid = :uuid";
-                TypedQuery<String> nq = dbf.getEntityManager().createNamedQuery(sql, String.class);
+                TypedQuery<String> nq = dbf.getEntityManager().createQuery(sql, String.class);
                 nq.setParameter("uuid", ref.getNetworkServiceProviderUuid());
                 return nq.getSingleResult();
             }
@@ -488,23 +491,28 @@ public class LoadBalancerBase {
             @Override
             public void setup() {
                 flow(new Flow() {
+                    boolean s = false;
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         vo = new LoadBalancerListenerVO();
                         vo.setLoadBalancerUuid(self.getUuid());
                         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
                         vo.setDescription(vo.getDescription());
-                        vo.setName(vo.getName());
+                        vo.setName(msg.getName());
                         vo.setInstancePort(msg.getInstancePort());
                         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
                         vo.setProtocol(msg.getProtocol());
                         dbf.persist(vo);
+
+                        s = true;
+                        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerListenerVO.class);
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
-                        if (vo != null) {
+                        if (s) {
                             dbf.remove(vo);
                         }
                         trigger.rollback();

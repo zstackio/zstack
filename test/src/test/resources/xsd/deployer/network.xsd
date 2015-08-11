@@ -35,6 +35,12 @@
         </xsd:sequence>
     </xsd:complexType>
 
+    <xsd:complexType name="LbUnion">
+        <xsd:sequence>
+            <xsd:element name="lb" type="LbConfig" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
 
     <xsd:complexType name="IpRangeConfig">
         <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
@@ -91,6 +97,28 @@
             <xsd:element name="publicL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="privateL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="vmRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="LbListenerConfig">
+        <xsd:sequence>
+            <xsd:element name="name" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="description" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="protocol" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="instancePort" type="xsd:unsignedInt" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="loadBalancerPort" type="xsd:unsignedInt" maxOccurs="1" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="LbConfig">
+        <xsd:sequence>
+            <xsd:element name="accountRef" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="name" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="description" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="publicL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="listener" type="LbListenerConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="vmNicRef" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="tag" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 

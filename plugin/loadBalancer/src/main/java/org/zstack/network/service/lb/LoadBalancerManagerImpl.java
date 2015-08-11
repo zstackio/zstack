@@ -86,6 +86,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
         vo.setDescription(msg.getDescription());
         vo.setVipUuid(msg.getVipUuid());
+        vo.setState(LoadBalancerState.Enabled);
         vo = dbf.persistAndRefresh(vo);
 
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerVO.class);

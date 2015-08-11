@@ -180,4 +180,10 @@
             </list>
         </property>
     </bean>
+
+    <bean id="VirtualRouterLoadBalancerBackend" class="org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.network.service.lb.LoadBalancerBackend" />
+        </zstack:plugin>
+    </bean>
 </beans>

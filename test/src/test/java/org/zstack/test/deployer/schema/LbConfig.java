@@ -8,18 +8,20 @@
 
 package org.zstack.test.deployer.schema;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for EipConfig complex type.
+ * <p>Java class for LbConfig complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="EipConfig">
+ * &lt;complexType name="LbConfig">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
@@ -27,8 +29,9 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="name" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="description" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="publicL3NetworkRef" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="privateL3NetworkRef" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="vmRef" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="listener" type="{http://zstack.org/schema/zstack}LbListenerConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="vmNicRef" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="tag" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -38,22 +41,24 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "EipConfig", propOrder = {
+@XmlType(name = "LbConfig", propOrder = {
     "accountRef",
     "name",
     "description",
     "publicL3NetworkRef",
-    "privateL3NetworkRef",
-    "vmRef"
+    "listener",
+    "vmNicRef",
+    "tag"
 })
-public class EipConfig {
+public class LbConfig {
 
     protected String accountRef;
     protected String name;
     protected String description;
     protected String publicL3NetworkRef;
-    protected String privateL3NetworkRef;
-    protected String vmRef;
+    protected List<LbListenerConfig> listener;
+    protected List<String> vmNicRef;
+    protected List<String> tag;
 
     /**
      * Gets the value of the accountRef property.
@@ -152,51 +157,90 @@ public class EipConfig {
     }
 
     /**
-     * Gets the value of the privateL3NetworkRef property.
+     * Gets the value of the listener property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the listener property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getListener().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link LbListenerConfig }
+     * 
+     * 
      */
-    public String getPrivateL3NetworkRef() {
-        return privateL3NetworkRef;
+    public List<LbListenerConfig> getListener() {
+        if (listener == null) {
+            listener = new ArrayList<LbListenerConfig>();
+        }
+        return this.listener;
     }
 
     /**
-     * Sets the value of the privateL3NetworkRef property.
+     * Gets the value of the vmNicRef property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the vmNicRef property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getVmNicRef().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link String }
+     * 
+     * 
      */
-    public void setPrivateL3NetworkRef(String value) {
-        this.privateL3NetworkRef = value;
+    public List<String> getVmNicRef() {
+        if (vmNicRef == null) {
+            vmNicRef = new ArrayList<String>();
+        }
+        return this.vmNicRef;
     }
 
     /**
-     * Gets the value of the vmRef property.
+     * Gets the value of the tag property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getVmRef() {
-        return vmRef;
-    }
-
-    /**
-     * Sets the value of the vmRef property.
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the tag property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getTag().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link String }
+     * 
+     * 
      */
-    public void setVmRef(String value) {
-        this.vmRef = value;
+    public List<String> getTag() {
+        if (tag == null) {
+            tag = new ArrayList<String>();
+        }
+        return this.tag;
     }
 
 }

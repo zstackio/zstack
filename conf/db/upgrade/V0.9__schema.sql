@@ -73,6 +73,50 @@ CREATE TABLE  `zstack`.`ImageCacheVolumeRefVO` (
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE  `zstack`.`LoadBalancerVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `name` varchar(255) NOT NULL,
+    `description` varchar(2048) DEFAULT NULL,
+    `providerType` varchar(255) DEFAULT NULL,
+    `state` varchar(64) NOT NULL,
+    `vipUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`LoadBalancerListenerVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `name` varchar(255) NOT NULL,
+    `description` varchar(2048) DEFAULT NULL,
+    `loadBalancerUuid` varchar(32) NOT NULL,
+    `instancePort` int unsigned NOT NULL,
+    `loadBalancerPort` int unsigned NOT NULL,
+    `protocol` varchar(64) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`LoadBalancerVmNicRefVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `loadBalancerUuid` varchar(32) NOT NULL,
+    `vmNicUuid` varchar(32) NOT NULL,
+    `status` varchar(64) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`VirtualRouterLoadBalancerRefVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `virtualRouterVmUuid` varchar(32) NOT NULL,
+    `loadBalancerUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 # Foreign keys for table ImageCacheVolumeRefVO
 
 ALTER TABLE ImageCacheVolumeRefVO ADD CONSTRAINT fkImageCacheVolumeRefVOImageCacheVO FOREIGN KEY (imageCacheId) REFERENCES ImageCacheVO (id) ON DELETE RESTRICT;

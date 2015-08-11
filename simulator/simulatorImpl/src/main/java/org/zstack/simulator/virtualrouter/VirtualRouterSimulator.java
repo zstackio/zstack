@@ -16,6 +16,9 @@ import org.zstack.network.service.virtualrouter.VirtualRouterKvmBackendCommands.
 import org.zstack.network.service.virtualrouter.VirtualRouterKvmBackendCommands.CreateVritualRouterBootstrapIsoRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterKvmBackendCommands.DeleteVirtualRouterBootstrapIsoCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterKvmBackendCommands.DeleteVirtualRouterBootstrapIsoRsp;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbRsp;
 import org.zstack.simulator.AsyncRESTReplyer;
 import org.zstack.simulator.SimulatorGlobalProperty;
 import org.zstack.utils.Utils;
@@ -306,6 +309,23 @@ public class VirtualRouterSimulator {
             logger.debug(String.format("successfully sync snats: %s", JSONObjectUtil.toJsonString(cmd.getSnats())));
         }
         replyer.reply(entity, rsp);
+    }
+
+    @RequestMapping(value = VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH, method = RequestMethod.POST)
+    private @ResponseBody
+    String refreshLb(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        RefreshLbCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RefreshLbCmd.class);
+        RefreshLbRsp rsp = new RefreshLbRsp();
+
+        if (!config.refreshLbSuccess) {
+            rsp.setError("on purpose");
+        } else {
+            config.refreshLbCmds.add(cmd);
+        }
+
+        replyer.reply(entity, rsp);
+        return null;
     }
 
     @RequestMapping(value = VirtualRouterConstant.VR_SET_SNAT_PATH, method = RequestMethod.POST)

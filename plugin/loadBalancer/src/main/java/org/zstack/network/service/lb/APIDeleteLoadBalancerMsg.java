@@ -10,6 +10,14 @@ public class APIDeleteLoadBalancerMsg extends APIDeleteMessage implements LoadBa
     @APIParam(resourceType = LoadBalancerVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     @Override
     public String getLoadBalancerUuid() {
         return uuid;

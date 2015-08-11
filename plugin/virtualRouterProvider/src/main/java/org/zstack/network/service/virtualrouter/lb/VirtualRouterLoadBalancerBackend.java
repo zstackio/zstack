@@ -26,9 +26,14 @@ import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipManager;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -66,8 +71,133 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
         return  vrs.isEmpty() ? null : VirtualRouterVmInventory.valueOf(vrs.get(0));
     }
 
-    private void refresh(VirtualRouterVmInventory vr, LoadBalancerStruct struct, Completion completion) {
+    public static class LbTO {
+        String lbUuid;
+        String vip;
+        List<String> nicIps;
+        int instancePort;
+        int loadBalancerPort;
+        String mode;
 
+        public String getLbUuid() {
+            return lbUuid;
+        }
+
+        public void setLbUuid(String lbUuid) {
+            this.lbUuid = lbUuid;
+        }
+
+        public String getVip() {
+            return vip;
+        }
+
+        public void setVip(String vip) {
+            this.vip = vip;
+        }
+
+        public List<String> getNicIps() {
+            return nicIps;
+        }
+
+        public void setNicIps(List<String> nicIps) {
+            this.nicIps = nicIps;
+        }
+
+        public int getInstancePort() {
+            return instancePort;
+        }
+
+        public void setInstancePort(int instancePort) {
+            this.instancePort = instancePort;
+        }
+
+        public int getLoadBalancerPort() {
+            return loadBalancerPort;
+        }
+
+        public void setLoadBalancerPort(int loadBalancerPort) {
+            this.loadBalancerPort = loadBalancerPort;
+        }
+
+        public String getMode() {
+            return mode;
+        }
+
+        public void setMode(String mode) {
+            this.mode = mode;
+        }
+    }
+
+    public static class RefreshLbCmd extends AgentCommand {
+        List<LbTO> lbs;
+
+        public List<LbTO> getLbs() {
+            return lbs;
+        }
+
+        public void setLbs(List<LbTO> lbs) {
+            this.lbs = lbs;
+        }
+    }
+
+    public static class RefreshLbRsp extends AgentResponse {
+    }
+
+    public static final String REFRESH_LB_PATH = "/lb/refresh";
+
+    private RefreshLbCmd makeCmd(final LoadBalancerStruct struct) {
+        final List<String> nicIps = CollectionUtils.transformToList(struct.getVmNics(), new Function<String, VmNicInventory>() {
+            @Override
+            public String call(VmNicInventory arg) {
+                return arg.getIp();
+            }
+        });
+
+        SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
+        q.select(VipVO_.ip);
+        q.add(VipVO_.uuid, Op.EQ, struct.getLb().getVipUuid());
+        final String vip = q.findValue();
+
+        List<LbTO> lbs = CollectionUtils.transformToList(struct.getListeners(), new Function<LbTO, LoadBalancerListenerInventory>() {
+            @Override
+            public LbTO call(LoadBalancerListenerInventory l) {
+                LbTO to = new LbTO();
+                to.setInstancePort(l.getInstancePort());
+                to.setLoadBalancerPort(l.getLoadBalancerPort());
+                to.setLbUuid(l.getLoadBalancerUuid());
+                to.setMode(l.getProtocol());
+                to.setVip(vip);
+                to.setNicIps(nicIps);
+                return to;
+            }
+        });
+
+        RefreshLbCmd cmd = new RefreshLbCmd();
+        cmd.lbs = lbs;
+        return cmd;
+    }
+
+    private void refresh(VirtualRouterVmInventory vr, LoadBalancerStruct struct, final Completion completion) {
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setVmInstanceUuid(vr.getUuid());
+        msg.setPath(REFRESH_LB_PATH);
+        msg.setCommand(makeCmd(struct));
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    RefreshLbRsp rsp = ((VirtualRouterAsyncHttpCallReply) reply).toResponse(RefreshLbRsp.class);
+                    if (rsp.isSuccess()) {
+                        completion.success();
+                    } else {
+                        completion.fail(errf.stringToOperationError(rsp.getError()));
+                    }
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
     }
 
     @Override
@@ -299,7 +429,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
     }
 
     @Override
-    public void destroy(LoadBalancerStruct struct, final Completion completion) {
+    public void destroyLoadBalancer(LoadBalancerStruct struct, final Completion completion) {
         VirtualRouterVmInventory vr = findVirutalRouterVm(struct.getLb().getUuid());
         if (vr == null) {
             // the vr has been destroyed
