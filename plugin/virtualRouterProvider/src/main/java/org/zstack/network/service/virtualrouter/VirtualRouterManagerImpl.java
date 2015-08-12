@@ -119,8 +119,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     @Autowired
     private ErrorFacade errf;
     @Autowired
-    private JobQueueFacade jobf;
-    @Autowired
     private AccountManager acntMgr;
     @Autowired
     private ThreadFacade thdf;
@@ -588,11 +586,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         VirtualRouterVmInventory vr = new Callable<VirtualRouterVmInventory>() {
             @Transactional(readOnly = true)
             private VirtualRouterVmVO findVR() {
-                String sql = "select vr from VirtualRouterVmVO vr, VmNicVO nic where vr.uuid = nic.vmInstanceUuid and vr.state = :vrState and nic.l3NetworkUuid = :l3Uuid and nic.metaData in (:guestMeta)";
+                String sql = "select vr from VirtualRouterVmVO vr, VmNicVO nic where vr.uuid = nic.vmInstanceUuid and nic.l3NetworkUuid = :l3Uuid and nic.metaData in (:guestMeta)";
                 TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
                 q.setParameter("l3Uuid", l3Nw.getUuid());
                 q.setParameter("guestMeta", VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST);
-                q.setParameter("vrState", VmInstanceState.Running);
                 List<VirtualRouterVmVO> vrs = q.getResultList();
 
                 if (vrs.isEmpty()) {
@@ -672,6 +669,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     public void acquireVirtualRouterVm(VirtualRouterStruct struct, final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
         //TODO: find a way to remove the GLock
         final GLock lock = new GLock(String.format("glock-vr-l3-%s", struct.getL3Network().getUuid()), TimeUnit.HOURS.toSeconds(1));
+        lock.setMemoryLock(false);
         lock.lock();
         acquireVirtualRouterVmInternal(struct, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override

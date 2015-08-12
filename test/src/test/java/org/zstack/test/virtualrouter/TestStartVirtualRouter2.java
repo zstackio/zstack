@@ -103,5 +103,4 @@ public class TestStartVirtualRouter2 {
 		count = aq.count();
 		Assert.assertEquals(1, count);
 	}
-
 }

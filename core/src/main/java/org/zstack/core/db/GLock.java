@@ -41,6 +41,8 @@ public class GLock {
         }
     };
 
+    private boolean memoryLock;
+
     @Autowired
     private DatabaseFacade dbf;
 
@@ -50,6 +52,13 @@ public class GLock {
         dataSource = dbf.getDataSource();
     }
 
+    public boolean isMemoryLock() {
+        return memoryLock;
+    }
+
+    public void setMemoryLock(boolean memoryLock) {
+        this.memoryLock = memoryLock;
+    }
 
     private void checkInThread() {
         List<String> locks = isLocked.get();
@@ -69,15 +78,17 @@ public class GLock {
         checkInThread();
 
         ReentrantLock mlock = null;
-        synchronized (memLocks) {
-            mlock = memLocks.get(name);
-            if (mlock == null) {
-                mlock = new ReentrantLock();
-                memLocks.put(name, mlock);
-            }
+        if (memoryLock) {
+            synchronized (memLocks) {
+                mlock = memLocks.get(name);
+                if (mlock == null) {
+                    mlock = new ReentrantLock();
+                    memLocks.put(name, mlock);
+                }
 
-            if (memLocks.size() > 100) {
-                logger.warn(String.format("there are more than 100 GLocks[num:%s] are created, something must be wrong in our program", memLocks.size()));
+                if (memLocks.size() > 100) {
+                    logger.warn(String.format("there are more than 100 GLocks[num:%s] are created, something must be wrong in our program", memLocks.size()));
+                }
             }
         }
 
@@ -86,9 +97,11 @@ public class GLock {
                 logger.trace(String.format("[GLock]: thread[%s] is acquiring lock[%s]", Thread.currentThread().getName(), name));
             }
 
-            mlock.lock();
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("[GLock Memory Lock]: thread[%s] got memory lock[%s]", Thread.currentThread().getName(), name));
+            if (memoryLock) {
+                mlock.lock();
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("[GLock Memory Lock]: thread[%s] got memory lock[%s]", Thread.currentThread().getName(), name));
+                }
             }
 
             PreparedStatement pstmt = null;
@@ -128,7 +141,9 @@ public class GLock {
                 }
             }
 
-            mlock.unlock();
+            if (memoryLock) {
+                mlock.unlock();
+            }
 
             success = false;
             checkOutThread();
@@ -152,13 +167,16 @@ public class GLock {
         }
 
         ReentrantLock lock = null;
-        synchronized (memLocks) {
-            lock = memLocks.get(name);
+        if (memoryLock) {
+            synchronized (memLocks) {
+                lock = memLocks.get(name);
+            }
         }
 
-
         try {
-            DebugUtils.Assert(lock!=null, String.format("cannot find LockWrapper for GLock[%s], is unlock mistakenly called twice???", name));
+            if (memoryLock) {
+                DebugUtils.Assert(lock != null, String.format("cannot find LockWrapper for GLock[%s], is unlock mistakenly called twice???", name));
+            }
 
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("[GLock]: thread[%s] is releasing lock[%s]", Thread.currentThread().getName(), name));
@@ -196,8 +214,10 @@ public class GLock {
                 }
             }
         } finally {
-            if (lock != null) {
-                lock.unlock();
+            if (memoryLock) {
+                if (lock != null) {
+                    lock.unlock();
+                }
             }
 
             checkOutThread();
