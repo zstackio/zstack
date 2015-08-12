@@ -2,12 +2,13 @@ package org.zstack.network.service.lb;
 
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.APINoSee;
 
 /**
  * Created by frank on 8/8/2015.
  */
 public class APIDeleteLoadBalancerListenerMsg extends APIMessage implements LoadBalancerMessage {
-    @APIParam(resourceType = LoadBalancerVO.class, checkAccount = true, operationTarget = true)
+    @APINoSee
     private String loadBalancerUuid;
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
     private String listenerUuid;

@@ -19,4 +19,10 @@
 		</zstack:plugin>
     </bean>
 
+	<bean id="LoadBalancerApiInterceptor" class="org.zstack.network.service.lb.LoadBalancerApiInterceptor">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+		</zstack:plugin>
+    </bean>
+
 </beans>

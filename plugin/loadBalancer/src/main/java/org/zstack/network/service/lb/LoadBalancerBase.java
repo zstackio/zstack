@@ -237,7 +237,7 @@ public class LoadBalancerBase {
 
         SimpleQuery<LoadBalancerVmNicRefVO> q = dbf.createQuery(LoadBalancerVmNicRefVO.class);
         q.add(LoadBalancerVmNicRefVO_.vmNicUuid, Op.EQ, msg.getVmNicUuid());
-        LoadBalancerVmNicRefVO ref = q.find();
+        final LoadBalancerVmNicRefVO ref = q.find();
         if (ref == null) {
             evt.setInventory(reloadAndGetInventory());
             bus.publish(evt);
@@ -250,6 +250,7 @@ public class LoadBalancerBase {
         bkd.removeVmNic(removeNicStruct(nic), nic, new Completion(msg, completion) {
             @Override
             public void success() {
+                dbf.remove(ref);
                 evt.setInventory(reloadAndGetInventory());
                 bus.publish(evt);
                 completion.done();
@@ -326,6 +327,8 @@ public class LoadBalancerBase {
             @Override
             public void setup() {
                 flow(new Flow() {
+                    String __name__ = "check-provider-type";
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         if (self.getProviderType() == null) {
@@ -360,6 +363,8 @@ public class LoadBalancerBase {
                 flow(new Flow() {
                     String __name__ = "write-nic-to-db";
 
+                    boolean s = false;
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         ref = new LoadBalancerVmNicRefVO();
@@ -367,12 +372,13 @@ public class LoadBalancerBase {
                         ref.setVmNicUuid(nic.getUuid());
                         ref.setStatus(LoadBalancerVmNicStatus.Pending);
                         ref = dbf.persistAndRefresh(ref);
+                        s = true;
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
-                        if (ref != null) {
+                        if (s) {
                             dbf.remove(ref);
                         }
                         trigger.rollback();
@@ -440,7 +446,7 @@ public class LoadBalancerBase {
 
         if (!self.getVmNicRefs().isEmpty()) {
             SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
-            nq.add(VmNicVO_.uuid, Op.EQ, CollectionUtils.transformToList(self.getVmNicRefs(), new Function<String, LoadBalancerVmNicRefVO>() {
+            nq.add(VmNicVO_.uuid, Op.IN, CollectionUtils.transformToList(self.getVmNicRefs(), new Function<String, LoadBalancerVmNicRefVO>() {
                 @Override
                 public String call(LoadBalancerVmNicRefVO arg) {
                     return arg.getVmNicUuid();

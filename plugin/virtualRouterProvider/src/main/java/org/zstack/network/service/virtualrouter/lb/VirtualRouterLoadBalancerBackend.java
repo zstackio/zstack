@@ -274,6 +274,11 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
 
                         @Override
                         public void rollback(final FlowTrigger trigger, Map data) {
+                            if (vr == null) {
+                                trigger.rollback();
+                                return;
+                            }
+
                             DestroyVmInstanceMsg msg = new DestroyVmInstanceMsg();
                             msg.setVmInstanceUuid(vr.getUuid());
                             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
