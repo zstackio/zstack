@@ -672,6 +672,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     public void acquireVirtualRouterVm(VirtualRouterStruct struct, final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
         //TODO: find a way to remove the GLock
         final GLock lock = new GLock(String.format("glock-vr-l3-%s", struct.getL3Network().getUuid()), TimeUnit.HOURS.toSeconds(1));
+        lock.lock();
         acquireVirtualRouterVmInternal(struct, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
             public void success(VirtualRouterVmInventory returnValue) {
