@@ -1,6 +1,7 @@
 package org.zstack.header.host;
 
 import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 
@@ -10,6 +11,7 @@ import javax.persistence.*;
 @Table
 @Inheritance(strategy=InheritanceType.JOINED)
 @EO(EOClazz = HostEO.class)
+@AutoDeleteTag
 public class HostVO extends HostAO {
     @OneToOne(fetch=FetchType.EAGER)
     @JoinColumn(name="uuid")

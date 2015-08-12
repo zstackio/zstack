@@ -545,35 +545,31 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public List<Class> getEntityClassForSoftDeleteEntityExtension() {
-        List<Class> classes = new ArrayList<Class>();
-        classes.add(ZoneVO.class);
-        classes.add(ClusterVO.class);
-        classes.add(HostVO.class);
-        classes.add(VmInstanceVO.class);
-        classes.add(PrimaryStorageVO.class);
-        classes.add(BackupStorageVO.class);
-        classes.add(L2NetworkVO.class);
-        classes.add(L3NetworkVO.class);
-        classes.add(ImageVO.class);
-        classes.add(VolumeVO.class);
-        classes.add(IpRangeVO.class);
-        classes.add(InstanceOfferingVO.class);
-        classes.add(DiskOfferingVO.class);
-        return classes;
+        return BeanUtils.scanClass("org.zstack", AutoDeleteTag.class);
+    }
+
+    private List<String> getResourceTypes(Class entityClass) {
+        List<String> types = new ArrayList<String>();
+        while (entityClass != Object.class) {
+            types.add(entityClass.getSimpleName());
+            entityClass = entityClass.getSuperclass();
+        }
+        return types;
     }
 
     @Override
     @Transactional
     public void postSoftDelete(Collection entityIds, Class entityClass) {
-        String sql = "delete from SystemTagVO s where s.resourceType = :resourceType and s.resourceUuid in (:resourceUuids)";
+        List<String> rtypes = getResourceTypes(entityClass);
+        String sql = "delete from SystemTagVO s where s.resourceType in (:resourceTypes) and s.resourceUuid in (:resourceUuids)";
         Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("resourceType", entityClass.getSimpleName());
+        q.setParameter("resourceTypes", rtypes);
         q.setParameter("resourceUuids", entityIds);
         q.executeUpdate();
 
-        sql = "delete from UserTagVO s where s.resourceType = :resourceType and s.resourceUuid in (:resourceUuids)";
+        sql = "delete from UserTagVO s where s.resourceType in (:resourceTypes) and s.resourceUuid in (:resourceUuids)";
         q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("resourceType", entityClass.getSimpleName());
+        q.setParameter("resourceTypes", rtypes);
         q.setParameter("resourceUuids", entityIds);
         q.executeUpdate();
     }

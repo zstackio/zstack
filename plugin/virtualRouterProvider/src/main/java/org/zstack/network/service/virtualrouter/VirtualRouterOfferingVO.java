@@ -5,6 +5,7 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.image.ImageEO;
 import org.zstack.header.network.l3.L3Network;
 import org.zstack.header.network.l3.L3NetworkEO;
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
@@ -17,6 +18,7 @@ import javax.persistence.Table;
 @Entity
 @Table
 @EO(EOClazz = InstanceOfferingEO.class, needView = false)
+@AutoDeleteTag
 public class VirtualRouterOfferingVO extends InstanceOfferingVO {
     @Column
     @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.CASCADE)

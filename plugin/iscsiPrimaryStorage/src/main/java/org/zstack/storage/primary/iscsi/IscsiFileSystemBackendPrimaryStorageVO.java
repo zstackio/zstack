@@ -2,6 +2,7 @@ package org.zstack.storage.primary.iscsi;
 
 import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 
 import javax.persistence.Column;
@@ -16,6 +17,7 @@ import javax.persistence.Table;
 @Table
 @PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
 @EO(EOClazz = PrimaryStorageEO.class, needView = false)
+@AutoDeleteTag
 public class IscsiFileSystemBackendPrimaryStorageVO extends PrimaryStorageVO {
     @Column
     private String chapUsername;

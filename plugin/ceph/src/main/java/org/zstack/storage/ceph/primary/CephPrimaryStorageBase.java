@@ -126,15 +126,20 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    public static class InitCmd extends AgentCommand {
-        List<String> poolNames;
+    public static class Pool {
+        String name;
+        boolean predefined;
+    }
 
-        public List<String> getPoolNames() {
-            return poolNames;
+    public static class InitCmd extends AgentCommand {
+        List<Pool> pools;
+
+        public List<Pool> getPools() {
+            return pools;
         }
 
-        public void setPoolNames(List<String> poolNames) {
-            this.poolNames = poolNames;
+        public void setPools(List<Pool> pools) {
+            this.pools = pools;
         }
     }
 
@@ -1410,7 +1415,24 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         InitCmd cmd = new InitCmd();
-                        cmd.poolNames = list(getSelf().getRootVolumePoolName(), getSelf().getDataVolumePoolName(), getSelf().getImageCachePoolName());
+                        List<Pool> pools = new ArrayList<Pool>();
+
+                        Pool p = new Pool();
+                        p.name = getSelf().getImageCachePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_IMAGE_CACHE_POOL.hasTag(self.getUuid());
+                        pools.add(p);
+
+                        p = new Pool();
+                        p.name = getSelf().getRootVolumePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL.hasTag(self.getUuid());
+                        pools.add(p);
+
+                        p = new Pool();
+                        p.name = getSelf().getDataVolumePoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.hasTag(self.getUuid());
+                        pools.add(p);
+
+                        cmd.pools = pools;
 
                         httpCall(INIT_PATH, cmd, InitRsp.class, new ReturnValueCompletion<InitRsp>(trigger) {
                             @Override

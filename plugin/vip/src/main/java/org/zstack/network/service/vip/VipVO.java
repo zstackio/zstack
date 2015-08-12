@@ -2,6 +2,7 @@ package org.zstack.network.service.vip;
 
 import org.zstack.header.network.l3.IpRangeEO;
 import org.zstack.header.network.l3.L3NetworkEO;
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -11,6 +12,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
+@AutoDeleteTag
 public class VipVO {
     @Id
     @Column

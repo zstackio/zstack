@@ -2,6 +2,7 @@ package org.zstack.storage.backup.sftp;
 
 import org.zstack.header.storage.backup.BackupStorageEO;
 import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 
 import javax.persistence.Column;
@@ -13,6 +14,7 @@ import javax.persistence.Table;
 @Table
 @PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
 @EO(EOClazz = BackupStorageEO.class, needView = false)
+@AutoDeleteTag
 public class SftpBackupStorageVO extends BackupStorageVO {
     @Column
     private String hostname;

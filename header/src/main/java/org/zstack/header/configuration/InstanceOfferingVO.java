@@ -1,5 +1,6 @@
 package org.zstack.header.configuration;
 
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 
 import javax.persistence.Entity;
@@ -11,6 +12,7 @@ import javax.persistence.Table;
 @Table
 @Inheritance(strategy=InheritanceType.JOINED)
 @EO(EOClazz = InstanceOfferingEO.class)
+@AutoDeleteTag
 public class InstanceOfferingVO extends InstanceOfferingAO {
 }
 

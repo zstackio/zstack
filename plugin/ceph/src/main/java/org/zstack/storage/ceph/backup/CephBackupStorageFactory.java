@@ -42,6 +42,10 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
 
         dbf.getEntityManager().persist(cvo);
 
+        if (cmsg.getPoolName() != null) {
+            CephSystemTags.PREDEFINED_BACKUP_STORAGE_POOL.createInherentTag(cvo.getUuid());
+        }
+
         for (String url : cmsg.getMonUrls()) {
             CephBackupStorageMonVO monvo = new CephBackupStorageMonVO();
             MonUri uri = new MonUri(url);

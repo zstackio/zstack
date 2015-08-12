@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.backup;
 
 import org.zstack.header.storage.backup.BackupStorageEO;
 import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 
@@ -16,6 +17,7 @@ import java.util.Set;
 @Table
 @PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
 @EO(EOClazz = BackupStorageEO.class, needView = false)
+@AutoDeleteTag
 public class CephBackupStorageVO extends BackupStorageVO {
     @OneToMany(fetch= FetchType.EAGER)
     @JoinColumn(name="backupStorageUuid", insertable=false, updatable=false)

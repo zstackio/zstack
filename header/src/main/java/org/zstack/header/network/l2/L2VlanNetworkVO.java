@@ -1,5 +1,6 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 
 import javax.persistence.Column;
@@ -11,6 +12,7 @@ import javax.persistence.Table;
 @Table
 @PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
 @EO(EOClazz = L2NetworkEO.class, needView = false)
+@AutoDeleteTag
 public class L2VlanNetworkVO extends L2NetworkVO {
     @Column
     private int vlan;

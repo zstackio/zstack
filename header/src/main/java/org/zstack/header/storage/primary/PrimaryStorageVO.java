@@ -1,5 +1,6 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 
@@ -15,6 +16,7 @@ import java.util.Set;
 	        query = "select count(p) from PrimaryStorageVO p where p.uuid != :uuid and p.uuid in (select psc.primaryStorageUuid from PrimaryStorageClusterRefVO psc where psc.clusterUuid = :clusterUuid)"),
 })
 @EO(EOClazz = PrimaryStorageEO.class)
+@AutoDeleteTag
 public class PrimaryStorageVO extends PrimaryStorageAO {
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="primaryStorageUuid", insertable=false, updatable=false)

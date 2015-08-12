@@ -1,5 +1,6 @@
 package org.zstack.network.service.portforwarding;
 
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
@@ -11,6 +12,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
+@AutoDeleteTag
 public class PortForwardingRuleVO {
     @Id
     @Column

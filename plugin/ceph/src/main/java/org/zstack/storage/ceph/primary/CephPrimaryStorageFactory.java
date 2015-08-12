@@ -86,6 +86,16 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         dbf.getEntityManager().persist(cvo);
 
+        if (cmsg.getImageCachePoolName() != null) {
+            CephSystemTags.PREDEFINED_PRIMARY_STORAGE_IMAGE_CACHE_POOL.createInherentTag(cvo.getUuid());
+        }
+        if (cmsg.getRootVolumePoolName() != null) {
+            CephSystemTags.PREDEFINED_PRIMARY_STORAGE_ROOT_VOLUME_POOL.createInherentTag(cvo.getUuid());
+        }
+        if (cmsg.getDataVolumePoolName() != null) {
+            CephSystemTags.PREDEFINED_PRIMARY_STORAGE_DATA_VOLUME_POOL.createInherentTag(cvo.getUuid());
+        }
+
         for (String url : cmsg.getMonUrls()) {
             CephPrimaryStorageMonVO mvo = new CephPrimaryStorageMonVO();
             MonUri uri = new MonUri(url);

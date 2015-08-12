@@ -102,8 +102,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
+    public static class Pool {
+        String name;
+        boolean predefined;
+    }
+
     public static class InitCmd extends AgentCommand {
-        List<String> poolNames;
+        List<Pool> pools;
     }
 
     public static class InitRsp extends AgentResponse {
@@ -446,7 +451,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         InitCmd cmd = new InitCmd();
-                        cmd.poolNames = list(getSelf().getPoolName());
+                        Pool p = new Pool();
+                        p.name = getSelf().getPoolName();
+                        p.predefined = CephSystemTags.PREDEFINED_BACKUP_STORAGE_POOL.hasTag(self.getUuid());
+                        cmd.pools = list(p);
 
                         httpCall(INIT_PATH, cmd, InitRsp.class, new ReturnValueCompletion<InitRsp>(trigger) {
                             @Override
