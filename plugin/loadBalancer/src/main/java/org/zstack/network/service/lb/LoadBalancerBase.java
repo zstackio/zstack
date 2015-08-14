@@ -20,6 +20,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -84,7 +85,204 @@ public class LoadBalancerBase {
     }
 
     private void handleLocalMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof LoadBalancerActiveVmNicMsg) {
+            handle((LoadBalancerActiveVmNicMsg) msg);
+        } else if (msg instanceof LoadBalancerDeactiveVmNicMsg) {
+            handle((LoadBalancerDeactiveVmNicMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void checkIfNicIsAdded(List<String> nicUuids) {
+        for (String nicUuid : nicUuids) {
+            boolean s = false;
+            for (LoadBalancerVmNicRefVO ref : self.getVmNicRefs()) {
+                if (nicUuid.equals(ref.getVmNicUuid())) {
+                    s = true;
+                    break;
+                }
+            }
+
+            if (!s) {
+                throw new CloudRuntimeException(String.format("the load balancer[uuid: %s] doesn't have a vm nic[uuid: %s] added", self.getUuid(), nicUuid));
+            }
+        }
+    }
+
+    private void handle(final LoadBalancerDeactiveVmNicMsg msg) {
+        checkIfNicIsAdded(msg.getVmNicUuids());
+
+        final List<LoadBalancerVmNicRefVO> refs = CollectionUtils.transformToList(self.getVmNicRefs(), new Function<LoadBalancerVmNicRefVO, LoadBalancerVmNicRefVO>() {
+            @Override
+            public LoadBalancerVmNicRefVO call(LoadBalancerVmNicRefVO arg) {
+                return msg.getVmNicUuids().contains(arg.getVmNicUuid()) ?  arg : null;
+            }
+        });
+
+        final LoadBalancerDeactiveVmNicReply reply = new LoadBalancerDeactiveVmNicReply();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("deactive-vm-nics-on-lb-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "set-nics-to-inactive-in-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (LoadBalancerVmNicRefVO ref : refs) {
+                            ref.setStatus(LoadBalancerVmNicStatus.Inactive);
+                            dbf.update(ref);
+                        }
+
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowTrigger trigger, Map data) {
+                        for (LoadBalancerVmNicRefVO ref : refs) {
+                            ref.setStatus(LoadBalancerVmNicStatus.Active);
+                            dbf.update(ref);
+                        }
+
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "deactive-nics-on-backend";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
+                        q.add(VmNicVO_.uuid, Op.IN, CollectionUtils.transformToList(refs, new Function<String, LoadBalancerVmNicRefVO>() {
+                            @Override
+                            public String call(LoadBalancerVmNicRefVO arg) {
+                                return arg.getVmNicUuid();
+                            }
+                        }));
+                        List<VmNicVO> nicvos = q.list();
+
+                        LoadBalancerBackend bkd = getBackend();
+                        bkd.removeVmNics(makeStruct(), VmNicInventory.valueOf(nicvos), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void handle(final LoadBalancerActiveVmNicMsg msg) {
+        checkIfNicIsAdded(msg.getVmNicUuids());
+
+        final List<LoadBalancerVmNicRefVO> refs = CollectionUtils.transformToList(self.getVmNicRefs(), new Function<LoadBalancerVmNicRefVO, LoadBalancerVmNicRefVO>() {
+            @Override
+            public LoadBalancerVmNicRefVO call(LoadBalancerVmNicRefVO arg) {
+                return msg.getVmNicUuids().contains(arg.getVmNicUuid()) ?  arg : null;
+            }
+        });
+
+        final LoadBalancerActiveVmNicReply reply = new LoadBalancerActiveVmNicReply();
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("active-vm-nics-on-lb-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "set-nics-to-active-in-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (LoadBalancerVmNicRefVO ref : refs) {
+                            ref.setStatus(LoadBalancerVmNicStatus.Active);
+                            dbf.update(ref);
+                        }
+
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowTrigger trigger, Map data) {
+                        for (LoadBalancerVmNicRefVO ref : refs) {
+                            ref.setStatus(LoadBalancerVmNicStatus.Inactive);
+                            dbf.update(ref);
+                        }
+
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "active-nics-on-backend";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
+                        q.add(VmNicVO_.uuid, Op.IN, CollectionUtils.transformToList(refs, new Function<String, LoadBalancerVmNicRefVO>() {
+                            @Override
+                            public String call(LoadBalancerVmNicRefVO arg) {
+                                return arg.getVmNicUuid();
+                            }
+                        }));
+                        List<VmNicVO> nicvos = q.list();
+
+                        LoadBalancerBackend bkd = getBackend();
+                        bkd.addVmNics(makeStruct(), VmNicInventory.valueOf(nicvos), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void handleApiMessage(APIMessage msg) {

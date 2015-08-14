@@ -3,6 +3,7 @@ package org.zstack.network.service.lb;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -140,7 +141,54 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension {
     }
 
     @Override
-    public void releaseNetworkService(VmInstanceSpec servedVm, Map<String, Object> data, NoErrorCompletion completion) {
+    public void releaseNetworkService(VmInstanceSpec servedVm, Map<String, Object> data, final NoErrorCompletion completion) {
+        SimpleQuery<LoadBalancerVmNicRefVO> q = dbf.createQuery(LoadBalancerVmNicRefVO.class);
+        q.add(LoadBalancerVmNicRefVO_.vmNicUuid, Op.IN, CollectionUtils.transformToList(servedVm.getDestNics(), new Function<String, VmNicInventory>() {
+            @Override
+            public String call(VmNicInventory arg) {
+                return arg.getUuid();
+            }
+        }));
+        q.groupBy(LoadBalancerVmNicRefVO_.loadBalancerUuid);
+        List<LoadBalancerVmNicRefVO> lbs = q.list();
+        if (lbs.isEmpty()) {
+            completion.done();
+            return;
+        }
 
+        final Map<String, List<String>> m = new HashMap<String, List<String>>();
+        for (LoadBalancerVmNicRefVO l : lbs) {
+            List<String> nics = m.get(l.getLoadBalancerUuid());
+            if (nics == null) {
+                nics = new ArrayList<String>();
+                m.put(l.getLoadBalancerUuid(), nics);
+            }
+            nics.add(l.getVmNicUuid());
+        }
+
+        List<LoadBalancerDeactiveVmNicMsg> msgs = CollectionUtils.transformToList(m.entrySet(), new Function<LoadBalancerDeactiveVmNicMsg, Entry<String, List<String>>>() {
+            @Override
+            public LoadBalancerDeactiveVmNicMsg call(Entry<String, List<String>> arg) {
+                LoadBalancerDeactiveVmNicMsg msg = new LoadBalancerDeactiveVmNicMsg();
+                msg.setVmNicUuids(arg.getValue());
+                msg.setLoadBalancerUuid(arg.getKey());
+                bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, arg.getKey());
+                return msg;
+            }
+        });
+
+        bus.send(msgs, new CloudBusListCallBack(completion) {
+            @Override
+            public void run(List<MessageReply> replies) {
+                for (MessageReply r : replies) {
+                    if (!r.isSuccess()) {
+                        //TODO
+                        logger.warn(String.format("failed to deactive a vm nic on lb, need a cleanup, %s", r.getError()));
+                    }
+                }
+
+                completion.done();
+            }
+        });
     }
 }

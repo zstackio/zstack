@@ -6,4 +6,9 @@
     <TestCase class="org.zstack.test.lb.TestVirtualRouterLb3"/>
     <TestCase class="org.zstack.test.lb.TestVirtualRouterLb4"/>
     <TestCase class="org.zstack.test.lb.TestVirtualRouterLb5"/>
+    <TestCase class="org.zstack.test.lb.TestVirtualRouterLb6"/>
+    <TestCase class="org.zstack.test.lb.TestVirtualRouterLb7"/>
+    <TestCase class="org.zstack.test.lb.TestVirtualRouterLb8"/>
+    <TestCase class="org.zstack.test.lb.TestVirtualRouterLb9"/>
+    <TestCase class="org.zstack.test.lb.TestVirtualRouterLb10"/>
 </UnitTestSuiteConfig>

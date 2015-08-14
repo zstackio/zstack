@@ -19,9 +19,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.vm.DestroyVmInstanceMsg;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.*;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipManager;
@@ -62,13 +60,13 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
     private ErrorFacade errf;
 
     @Transactional(readOnly = true)
-    private VirtualRouterVmInventory findVirutalRouterVm(String lbUuid) {
+    private VirtualRouterVmInventory findVirtualRouterVm(String lbUuid) {
         String sql = "select vr from VirtualRouterVmVO vr, VirtualRouterLoadBalancerRefVO ref where ref.virtualRouterVmUuid =" +
                 " vr.uuid and ref.loadBalancerUuid = :lbUuid";
         TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
         q.setParameter("lbUuid", lbUuid);
         List<VirtualRouterVmVO> vrs = q.getResultList();
-        return  vrs.isEmpty() ? null : VirtualRouterVmInventory.valueOf(vrs.get(0));
+        return vrs.isEmpty() ? null : VirtualRouterVmInventory.valueOf(vrs.get(0));
     }
 
     public static class LbTO {
@@ -216,14 +214,83 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
         });
     }
 
-    @Override
-    public void addVmNic(final LoadBalancerStruct struct, VmNicInventory nic, final Completion completion) {
-        VirtualRouterVmInventory vr = findVirutalRouterVm(struct.getLb().getUuid());
-        if (vr != null) {
+    private void startVrIfNeededAndRefresh(final VirtualRouterVmInventory vr, final LoadBalancerStruct struct, final Completion completion) {
+        if (!VmInstanceState.Stopped.toString().equals(vr.getState())) {
             refresh(vr, struct, completion);
             return;
         }
 
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("start-vr-%s-and-refresh-lb-%s", vr.getUuid(), struct.getLb().getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "start-vr";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        StartVmInstanceMsg msg = new StartVmInstanceMsg();
+                        msg.setVmInstanceUuid(vr.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "refresh-lb";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        refresh(vr, struct, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    @Override
+    public void addVmNics(final LoadBalancerStruct struct, List<VmNicInventory> nics, final Completion completion) {
+        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
+        if (vr != null) {
+            startVrIfNeededAndRefresh(vr, struct, completion);
+            return;
+        }
+
+        VmNicInventory nic = nics.get(0);
         final L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
         final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(struct.getLb().getVipUuid(), VipVO.class));
 
@@ -416,10 +483,26 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
     }
 
     @Override
+    public void addVmNic(final LoadBalancerStruct struct, VmNicInventory nic, final Completion completion) {
+        addVmNics(struct, list(nic), completion);
+    }
+
+    @Override
     public void removeVmNic(LoadBalancerStruct struct, VmNicInventory nic, Completion completion) {
-        VirtualRouterVmInventory vr = findVirutalRouterVm(struct.getLb().getUuid());
+        removeVmNics(struct, list(nic), completion);
+    }
+
+    @Override
+    public void removeVmNics(LoadBalancerStruct struct, List<VmNicInventory> nic, Completion completion) {
+        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
         if (vr == null) {
             // the vr has been destroyed
+            completion.success();
+            return;
+        }
+
+        if (VmInstanceState.Stopped.toString().equals(vr.getState())) {
+            // no need to remove as the vr is stopped
             completion.success();
             return;
         }
@@ -429,21 +512,26 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
 
     @Override
     public void addListener(LoadBalancerStruct struct, LoadBalancerListenerInventory listener, Completion completion) {
-        VirtualRouterVmInventory vr = findVirutalRouterVm(struct.getLb().getUuid());
+        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
         if (vr == null) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("cannot find virtual router for load balancer [uuid:%s]", struct.getLb().getUuid())
             ));
         }
 
-        refresh(vr, struct, completion);
+        startVrIfNeededAndRefresh(vr, struct, completion);
     }
 
     @Override
     public void removeListener(LoadBalancerStruct struct, LoadBalancerListenerInventory listener, Completion completion) {
-        VirtualRouterVmInventory vr = findVirutalRouterVm(struct.getLb().getUuid());
+        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
         if (vr == null) {
             // the vr has been destroyed
+            completion.success();
+            return;
+        }
+
+        if (VmInstanceState.Stopped.toString().equals(vr.getState())) {
             completion.success();
             return;
         }
@@ -453,7 +541,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
 
     @Override
     public void destroyLoadBalancer(LoadBalancerStruct struct, final Completion completion) {
-        VirtualRouterVmInventory vr = findVirutalRouterVm(struct.getLb().getUuid());
+        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
         if (vr == null) {
             // the vr has been destroyed
             completion.success();
@@ -512,6 +600,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                     roles, VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat()));
         }
     }
+
 
     @Override
     public String getNetworkServiceProviderType() {

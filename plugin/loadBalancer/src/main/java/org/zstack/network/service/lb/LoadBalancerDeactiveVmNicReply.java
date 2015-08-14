@@ -5,5 +5,5 @@ import org.zstack.header.message.MessageReply;
 /**
  * Created by frank on 8/13/2015.
  */
-public class RefreshLoadBalancerReply extends MessageReply {
+public class LoadBalancerDeactiveVmNicReply extends MessageReply {
 }
