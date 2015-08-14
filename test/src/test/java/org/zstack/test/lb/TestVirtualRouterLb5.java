@@ -31,7 +31,6 @@ import org.zstack.utils.function.Function;
  * 
  * @author frank
  * 
- * @condition
  * 1. create a lb
  * 2. add a listener
  *

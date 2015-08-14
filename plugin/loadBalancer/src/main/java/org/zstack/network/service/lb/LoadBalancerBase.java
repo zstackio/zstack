@@ -111,14 +111,39 @@ public class LoadBalancerBase {
             }
 
             @Override
-            public void run(SyncTaskChain chain) {
-                bus.dealWithUnknownMessage(msg);
+            public void run(final SyncTaskChain chain) {
+                delete(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
                 chain.next();
             }
 
             @Override
             public String getName() {
                 return "delete-lb";
+            }
+        });
+    }
+
+    private void delete(APIDeleteLoadBalancerMsg msg, final NoErrorCompletion completion) {
+        final APIDeleteLoadBalancerEvent evt = new APIDeleteLoadBalancerEvent(msg.getId());
+        LoadBalancerBackend bkd = getBackend();
+        bkd.destroyLoadBalancer(makeStruct(), new Completion(msg, completion) {
+            @Override
+            public void success() {
+                dbf.remove(self);
+                dbf.removeCollection(self.getListeners(), LoadBalancerListenerVO.class);
+                bus.publish(evt);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setErrorCode(errorCode);
+                completion.done();
             }
         });
     }
@@ -445,15 +470,21 @@ public class LoadBalancerBase {
         struct.setLb(reloadAndGetInventory());
 
         if (!self.getVmNicRefs().isEmpty()) {
-            SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
-            nq.add(VmNicVO_.uuid, Op.IN, CollectionUtils.transformToList(self.getVmNicRefs(), new Function<String, LoadBalancerVmNicRefVO>() {
+            List<String> activeNics = CollectionUtils.transformToList(self.getVmNicRefs(), new Function<String, LoadBalancerVmNicRefVO>() {
                 @Override
                 public String call(LoadBalancerVmNicRefVO arg) {
-                    return arg.getVmNicUuid();
+                    return arg.getStatus() == LoadBalancerVmNicStatus.Active ? arg.getVmNicUuid() : null;
                 }
-            }));
-            List<VmNicVO> nics = nq.list();
-            struct.setVmNics(VmNicInventory.valueOf(nics));
+            });
+
+            if (!activeNics.isEmpty()) {
+                SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
+                nq.add(VmNicVO_.uuid, Op.IN, activeNics);
+                List<VmNicVO> nics = nq.list();
+                struct.setVmNics(VmNicInventory.valueOf(nics));
+            } else {
+                struct.setVmNics(new ArrayList<VmNicInventory>());
+            }
         } else {
             struct.setVmNics(new ArrayList<VmNicInventory>());
         }

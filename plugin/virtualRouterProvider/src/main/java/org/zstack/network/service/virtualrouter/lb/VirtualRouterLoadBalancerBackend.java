@@ -143,7 +143,23 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
     public static class RefreshLbRsp extends AgentResponse {
     }
 
+    public static class DeleteLbCmd extends AgentCommand {
+        String lbUuid;
+
+        public String getLbUuid() {
+            return lbUuid;
+        }
+
+        public void setLbUuid(String lbUuid) {
+            this.lbUuid = lbUuid;
+        }
+    }
+
+    public static class DeleteLbRsp extends AgentResponse {
+    }
+
     public static final String REFRESH_LB_PATH = "/lb/refresh";
+    public static final String DELETE_LB_PATH = "/lb/delete";
 
     private RefreshLbCmd makeCmd(final LoadBalancerStruct struct) {
         final List<String> nicIps = CollectionUtils.transformToList(struct.getVmNics(), new Function<String, VmNicInventory>() {
@@ -466,16 +482,29 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                 }
             });
         } else if (roles.size() > 1 && roles.contains(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat())) {
-            refresh(vr, struct, new Completion(completion) {
-                @Override
-                public void success() {
-                    dbf.remove(ref);
-                    completion.success();
-                }
+            DeleteLbCmd cmd = new DeleteLbCmd();
+            cmd.lbUuid = struct.getLb().getUuid();
 
+            VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+            msg.setVmInstanceUuid(vr.getUuid());
+            msg.setPath(DELETE_LB_PATH);
+            msg.setCommand(cmd);
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+            bus.send(msg, new CloudBusCallBack(completion) {
                 @Override
-                public void fail(ErrorCode errorCode) {
-                    completion.fail(errorCode);
+                public void run(MessageReply reply) {
+                    if (reply.isSuccess()) {
+                        DeleteLbRsp rsp = ((VirtualRouterAsyncHttpCallReply)reply).toResponse(DeleteLbRsp.class);
+                        if (rsp.isSuccess()) {
+                            dbf.remove(ref);
+                            completion.success();
+                        } else {
+                            completion.fail(errf.stringToOperationError(rsp.getError()));
+                        }
+                    } else {
+                        completion.fail(reply.getError());
+                    }
+                    dbf.remove(ref);
                 }
             });
         } else {

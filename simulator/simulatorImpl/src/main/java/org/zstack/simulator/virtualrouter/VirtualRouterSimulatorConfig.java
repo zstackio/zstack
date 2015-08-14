@@ -2,6 +2,7 @@ package org.zstack.simulator.virtualrouter;
 
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.DeleteLbCmd;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 
@@ -37,5 +38,6 @@ public class VirtualRouterSimulatorConfig {
 	public volatile String uuid;
 	public volatile List<RefreshLbCmd> refreshLbCmds = new ArrayList<RefreshLbCmd>();
     public volatile boolean refreshLbSuccess = true;
+	public volatile List<DeleteLbCmd> deleteLbCmds = new ArrayList<DeleteLbCmd>();
 
 }

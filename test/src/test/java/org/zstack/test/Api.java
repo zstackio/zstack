@@ -3495,4 +3495,13 @@ public class Api implements CloudBusEventListener {
         APIDeleteLoadBalancerListenerEvent evt = sender.send(msg, APIDeleteLoadBalancerListenerEvent.class);
         return evt.getInventory();
     }
+
+    public void deleteLoadBalancer(String lbUuid, SessionInventory session) throws ApiSenderException {
+        APIDeleteLoadBalancerMsg msg = new APIDeleteLoadBalancerMsg();
+        msg.setUuid(lbUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteLoadBalancerEvent.class);
+    }
 }
