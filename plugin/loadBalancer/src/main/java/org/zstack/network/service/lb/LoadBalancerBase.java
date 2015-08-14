@@ -39,6 +39,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by frank on 8/8/2015.
  */
@@ -89,9 +91,44 @@ public class LoadBalancerBase {
             handle((LoadBalancerActiveVmNicMsg) msg);
         } else if (msg instanceof LoadBalancerDeactiveVmNicMsg) {
             handle((LoadBalancerDeactiveVmNicMsg) msg);
+        } else if (msg instanceof LoadBalancerRemoveVmNicMsg) {
+            handle((LoadBalancerRemoveVmNicMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final LoadBalancerRemoveVmNicMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final LoadBalancerRemoveVmNicReply reply = new LoadBalancerRemoveVmNicReply();
+                removeNics(msg.getVmNicUuids(), new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "remove-nic-from-lb";
+            }
+        });
     }
 
     private void checkIfNicIsAdded(List<String> nicUuids) {
@@ -197,7 +234,7 @@ public class LoadBalancerBase {
         }).start();
     }
 
-    private void handle(final LoadBalancerActiveVmNicMsg msg) {
+    private void deactiveVmNic(final LoadBalancerActiveVmNicMsg msg, final NoErrorCompletion completion) {
         checkIfNicIsAdded(msg.getVmNicUuids());
 
         final List<LoadBalancerVmNicRefVO> refs = CollectionUtils.transformToList(self.getVmNicRefs(), new Function<LoadBalancerVmNicRefVO, LoadBalancerVmNicRefVO>() {
@@ -271,6 +308,7 @@ public class LoadBalancerBase {
                     @Override
                     public void handle(Map data) {
                         bus.reply(msg, reply);
+                        completion.done();
                     }
                 });
 
@@ -279,10 +317,35 @@ public class LoadBalancerBase {
                     public void handle(ErrorCode errCode, Map data) {
                         reply.setError(errCode);
                         bus.reply(msg, reply);
+                        completion.done();
                     }
                 });
             }
         }).start();
+    }
+
+    private void handle(final LoadBalancerActiveVmNicMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                deactiveVmNic(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "deactive-nic";
+            }
+        });
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -444,15 +507,39 @@ public class LoadBalancerBase {
         });
     }
 
-    private LoadBalancerStruct removeNicStruct(VmNicInventory nic) {
+    private LoadBalancerStruct removeNicStruct(List<String> nicUuids) {
         LoadBalancerStruct s = makeStruct();
         Iterator<VmNicInventory> it = s.getVmNics().iterator();
         while (it.hasNext()) {
-            if (it.next().getUuid().equals(nic.getUuid())) {
+            if (nicUuids.contains(it.next().getUuid())) {
                 it.remove();
             }
         }
         return s;
+    }
+
+    private void removeNics(final List<String> vmNicUuids, final Completion completion) {
+        SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
+        q.add(VmNicVO_.uuid, Op.IN, vmNicUuids);
+        List<VmNicVO> vos = q.list();
+        List<VmNicInventory> nics = VmNicInventory.valueOf(vos);
+
+        LoadBalancerBackend bkd = getBackend();
+        bkd.removeVmNics(removeNicStruct(vmNicUuids), nics, new Completion(completion) {
+            @Override
+            public void success() {
+                SimpleQuery<LoadBalancerVmNicRefVO> q = dbf.createQuery(LoadBalancerVmNicRefVO.class);
+                q.add(LoadBalancerVmNicRefVO_.vmNicUuid, Op.IN, vmNicUuids);
+                List<LoadBalancerVmNicRefVO> refs = q.list();
+                dbf.removeCollection(refs, LoadBalancerVmNicRefVO.class);
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     private void removeNic(APIRemoveNicFromLoadBalancerMsg msg, final NoErrorCompletion completion) {
@@ -460,20 +547,15 @@ public class LoadBalancerBase {
 
         SimpleQuery<LoadBalancerVmNicRefVO> q = dbf.createQuery(LoadBalancerVmNicRefVO.class);
         q.add(LoadBalancerVmNicRefVO_.vmNicUuid, Op.EQ, msg.getVmNicUuid());
-        final LoadBalancerVmNicRefVO ref = q.find();
-        if (ref == null) {
+        if (!q.isExists()) {
             evt.setInventory(reloadAndGetInventory());
             bus.publish(evt);
             return;
         }
 
-        VmNicInventory nic = VmNicInventory.valueOf(dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class));
-
-        LoadBalancerBackend bkd = getBackend();
-        bkd.removeVmNic(removeNicStruct(nic), nic, new Completion(msg, completion) {
+        removeNics(list(msg.getVmNicUuid()), new Completion(msg, completion) {
             @Override
             public void success() {
-                dbf.remove(ref);
                 evt.setInventory(reloadAndGetInventory());
                 bus.publish(evt);
                 completion.done();

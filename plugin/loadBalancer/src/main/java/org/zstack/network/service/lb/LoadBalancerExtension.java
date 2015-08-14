@@ -13,8 +13,11 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
@@ -166,16 +169,30 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension {
             nics.add(l.getVmNicUuid());
         }
 
-        List<LoadBalancerDeactiveVmNicMsg> msgs = CollectionUtils.transformToList(m.entrySet(), new Function<LoadBalancerDeactiveVmNicMsg, Entry<String, List<String>>>() {
-            @Override
-            public LoadBalancerDeactiveVmNicMsg call(Entry<String, List<String>> arg) {
-                LoadBalancerDeactiveVmNicMsg msg = new LoadBalancerDeactiveVmNicMsg();
-                msg.setVmNicUuids(arg.getValue());
-                msg.setLoadBalancerUuid(arg.getKey());
-                bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, arg.getKey());
-                return msg;
-            }
-        });
+        List<NeedReplyMessage> msgs = new ArrayList<NeedReplyMessage>();
+        if (servedVm.getCurrentVmOperation() == VmOperation.Destroy) {
+            msgs.addAll(CollectionUtils.transformToList(m.entrySet(), new Function<NeedReplyMessage, Entry<String, List<String>>>() {
+                @Override
+                public NeedReplyMessage call(Entry<String, List<String>> arg) {
+                    LoadBalancerRemoveVmNicMsg msg = new LoadBalancerRemoveVmNicMsg();
+                    msg.setVmNicUuids(arg.getValue());
+                    msg.setLoadBalancerUuid(arg.getKey());
+                    bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, arg.getKey());
+                    return msg;
+                }
+            }));
+        } else {
+            msgs.addAll(CollectionUtils.transformToList(m.entrySet(), new Function<LoadBalancerDeactiveVmNicMsg, Entry<String, List<String>>>() {
+                @Override
+                public LoadBalancerDeactiveVmNicMsg call(Entry<String, List<String>> arg) {
+                    LoadBalancerDeactiveVmNicMsg msg = new LoadBalancerDeactiveVmNicMsg();
+                    msg.setVmNicUuids(arg.getValue());
+                    msg.setLoadBalancerUuid(arg.getKey());
+                    bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, arg.getKey());
+                    return msg;
+                }
+            }));
+        }
 
         bus.send(msgs, new CloudBusListCallBack(completion) {
             @Override

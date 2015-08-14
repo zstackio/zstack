@@ -16,7 +16,7 @@ public interface LoadBalancerBackend {
 
     void removeVmNic(LoadBalancerStruct struct,  VmNicInventory nic, Completion completion);
 
-    void removeVmNics(LoadBalancerStruct struct,  List<VmNicInventory> nic, Completion completion);
+    void removeVmNics(LoadBalancerStruct struct,  List<VmNicInventory> nics, Completion completion);
 
     void addListener(LoadBalancerStruct struct,  LoadBalancerListenerInventory listener, Completion completion);
 
