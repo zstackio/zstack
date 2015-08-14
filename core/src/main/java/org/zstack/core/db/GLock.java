@@ -7,7 +7,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.threadlocal.ThreadLocalHelper;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -41,7 +40,7 @@ public class GLock {
         }
     };
 
-    private boolean memoryLock;
+    private boolean separateThreadEnabled;
 
     @Autowired
     private DatabaseFacade dbf;
@@ -52,12 +51,12 @@ public class GLock {
         dataSource = dbf.getDataSource();
     }
 
-    public boolean isMemoryLock() {
-        return memoryLock;
+    public boolean isSeparateThreadEnabled() {
+        return separateThreadEnabled;
     }
 
-    public void setMemoryLock(boolean memoryLock) {
-        this.memoryLock = memoryLock;
+    public void setSeparateThreadEnabled(boolean separateThreadEnabled) {
+        this.separateThreadEnabled = separateThreadEnabled;
     }
 
     private void checkInThread() {
@@ -75,12 +74,12 @@ public class GLock {
     }
 
     public void lock() {
-        if (memoryLock) {
+        if (separateThreadEnabled) {
             checkInThread();
         }
 
         ReentrantLock mlock = null;
-        if (memoryLock) {
+        if (separateThreadEnabled) {
             synchronized (memLocks) {
                 mlock = memLocks.get(name);
                 if (mlock == null) {
@@ -99,7 +98,7 @@ public class GLock {
                 logger.trace(String.format("[GLock]: thread[%s] is acquiring lock[%s]", Thread.currentThread().getName(), name));
             }
 
-            if (memoryLock) {
+            if (separateThreadEnabled) {
                 mlock.lock();
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("[GLock Memory Lock]: thread[%s] got memory lock[%s]", Thread.currentThread().getName(), name));
@@ -143,13 +142,13 @@ public class GLock {
                 }
             }
 
-            if (memoryLock) {
+            if (separateThreadEnabled) {
                 mlock.unlock();
             }
 
             success = false;
 
-            if (memoryLock) {
+            if (separateThreadEnabled) {
                 checkOutThread();
             }
 
@@ -172,14 +171,14 @@ public class GLock {
         }
 
         ReentrantLock lock = null;
-        if (memoryLock) {
+        if (separateThreadEnabled) {
             synchronized (memLocks) {
                 lock = memLocks.get(name);
             }
         }
 
         try {
-            if (memoryLock) {
+            if (separateThreadEnabled) {
                 DebugUtils.Assert(lock != null, String.format("cannot find LockWrapper for GLock[%s], is unlock mistakenly called twice???", name));
             }
 
@@ -219,13 +218,13 @@ public class GLock {
                 }
             }
         } finally {
-            if (memoryLock) {
+            if (separateThreadEnabled) {
                 if (lock != null) {
                     lock.unlock();
                 }
             }
 
-            if (memoryLock) {
+            if (separateThreadEnabled) {
                 checkOutThread();
             }
 
