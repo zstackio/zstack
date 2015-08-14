@@ -1814,4 +1814,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             }
         });
     }
+
+    @Override
+    public void deleteHook() {
+        dbf.removeCollection(getSelf().getMons(), CephPrimaryStorageMonVO.class);
+    }
 }

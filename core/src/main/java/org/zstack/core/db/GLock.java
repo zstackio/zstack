@@ -75,7 +75,9 @@ public class GLock {
     }
 
     public void lock() {
-        checkInThread();
+        if (memoryLock) {
+            checkInThread();
+        }
 
         ReentrantLock mlock = null;
         if (memoryLock) {
@@ -146,7 +148,10 @@ public class GLock {
             }
 
             success = false;
-            checkOutThread();
+
+            if (memoryLock) {
+                checkOutThread();
+            }
 
             if (!(t instanceof CloudRuntimeException)) {
                 throw new CloudRuntimeException(t);
@@ -220,7 +225,10 @@ public class GLock {
                 }
             }
 
-            checkOutThread();
+            if (memoryLock) {
+                checkOutThread();
+            }
+
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("[GLock Release Memory Lock]: thread[%s] released memory lock[%s]", Thread.currentThread().getName(), name));
             }

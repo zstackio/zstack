@@ -619,4 +619,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
             }
         }).start();
     }
+
+    @Override
+    public void deleteHook() {
+        dbf.removeCollection(getSelf().getMons(), CephBackupStorageMonVO.class);
+    }
 }
