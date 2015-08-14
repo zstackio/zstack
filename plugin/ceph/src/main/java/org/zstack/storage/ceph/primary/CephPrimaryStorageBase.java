@@ -1646,9 +1646,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
+            handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg) {
+        BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();
+        reply.setError(errf.stringToOperationError("backing up snapshots to backup storage is a depreciated feature, which will be removed in future version"));
+        bus.reply(msg, reply);
     }
 
     private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
