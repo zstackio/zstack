@@ -39,5 +39,5 @@ public class LoadBalancerSystemTags {
             LoadBalancerListenerVO.class);
 
     public static final String BALANCER_ALGORITHM_TOKEN = "balancerAlgorithm";
-    public static PatternedSystemTag BALANCER_ALGORITHM = new PatternedSystemTag(String.format("mode::{%s}", BALANCER_ALGORITHM_TOKEN), LoadBalancerListenerVO.class);
+    public static PatternedSystemTag BALANCER_ALGORITHM = new PatternedSystemTag(String.format("balancerAlgorithm::{%s}", BALANCER_ALGORITHM_TOKEN), LoadBalancerListenerVO.class);
 }

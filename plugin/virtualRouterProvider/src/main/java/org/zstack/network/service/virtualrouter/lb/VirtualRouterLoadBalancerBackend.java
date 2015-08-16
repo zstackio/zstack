@@ -77,12 +77,21 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
 
     public static class LbTO {
         String lbUuid;
+        String listenerUuid;
         String vip;
         List<String> nicIps;
         int instancePort;
         int loadBalancerPort;
         String mode;
         List<String> parameters;
+
+        public String getListenerUuid() {
+            return listenerUuid;
+        }
+
+        public void setListenerUuid(String listenerUuid) {
+            this.listenerUuid = listenerUuid;
+        }
 
         public List<String> getParameters() {
             return parameters;
@@ -158,6 +167,15 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
 
     public static class DeleteLbCmd extends AgentCommand {
         String lbUuid;
+        List<String> listenerUuids;
+
+        public List<String> getListenerUuids() {
+            return listenerUuids;
+        }
+
+        public void setListenerUuids(List<String> listenerUuids) {
+            this.listenerUuids = listenerUuids;
+        }
 
         public String getLbUuid() {
             return lbUuid;
@@ -193,7 +211,8 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                 LbTO to = new LbTO();
                 to.setInstancePort(l.getInstancePort());
                 to.setLoadBalancerPort(l.getLoadBalancerPort());
-                to.setLbUuid(l.getLoadBalancerUuid());
+                to.setListenerUuid(l.getLoadBalancerUuid());
+                to.setListenerUuid(l.getUuid());
                 to.setMode(l.getProtocol());
                 to.setVip(vip);
                 to.setNicIps(nicIps);
@@ -594,6 +613,12 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
         } else if (roles.size() > 1 && roles.contains(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat())) {
             DeleteLbCmd cmd = new DeleteLbCmd();
             cmd.lbUuid = struct.getLb().getUuid();
+            cmd.listenerUuids = CollectionUtils.transformToList(struct.getListeners(), new Function<String, LoadBalancerListenerInventory>() {
+                @Override
+                public String call(LoadBalancerListenerInventory arg) {
+                    return arg.getUuid();
+                }
+            });
 
             VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
             msg.setVmInstanceUuid(vr.getUuid());
