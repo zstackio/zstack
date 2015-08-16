@@ -29,6 +29,7 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.identity.AccountManager;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
@@ -58,6 +59,8 @@ public class LoadBalancerBase {
     private ErrorFacade errf;
     @Autowired
     private AccountManager acntMgr;
+    @Autowired
+    private TagManager tagMgr;
 
     private LoadBalancerVO self;
 
@@ -825,6 +828,7 @@ public class LoadBalancerBase {
 
                         s = true;
                         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerListenerVO.class);
+                        tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
                         trigger.next();
                     }
 

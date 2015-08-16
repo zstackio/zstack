@@ -12,4 +12,5 @@
     <TestCase class="org.zstack.test.lb.TestVirtualRouterLb10"/>
     <TestCase class="org.zstack.test.lb.TestVirtualRouterLb11"/>
     <TestCase class="org.zstack.test.lb.TestVirtualRouterLb12"/>
+    <TestCase class="org.zstack.test.lb.TestVirtualRouterLb13"/>
 </UnitTestSuiteConfig>

@@ -19,6 +19,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.VipInventory;
@@ -29,6 +31,8 @@ import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
+import org.zstack.tag.SystemTag;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -58,6 +62,8 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
     private VipManager vipMgr;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private TagManager tagMgr;
 
     @Transactional(readOnly = true)
     private VirtualRouterVmInventory findVirtualRouterVm(String lbUuid) {
@@ -76,6 +82,15 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
         int instancePort;
         int loadBalancerPort;
         String mode;
+        List<String> parameters;
+
+        public List<String> getParameters() {
+            return parameters;
+        }
+
+        public void setParameters(List<String> parameters) {
+            this.parameters = parameters;
+        }
 
         public String getLbUuid() {
             return lbUuid;
@@ -182,6 +197,13 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                 to.setMode(l.getProtocol());
                 to.setVip(vip);
                 to.setNicIps(nicIps);
+
+                SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
+                q.select(SystemTagVO_.tag);
+                q.add(SystemTagVO_.resourceUuid, Op.EQ, l.getUuid());
+                q.add(SystemTagVO_.resourceType, Op.EQ, LoadBalancerListenerVO.class.getSimpleName());
+                List<String> tags = q.listValue();
+                to.setParameters(tags);
                 return to;
             }
         });

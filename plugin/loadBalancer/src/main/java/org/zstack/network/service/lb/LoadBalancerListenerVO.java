@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
@@ -14,6 +15,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@AutoDeleteTag
 public class LoadBalancerListenerVO {
     @Id
     @Column

@@ -5,7 +5,7 @@ import java.util.List;
 /**
  */
 public interface SystemTagLifeCycleExtension {
-    List<String> getResourceTypeForVirtualRouterSystemTags();
+    List<String> getResourceTypeOfSystemTags();
 
     void tagCreated(SystemTagInventory tag);
 

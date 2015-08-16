@@ -1,5 +1,6 @@
 package org.zstack.header.message;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class APICreateMessage extends APIMessage {
@@ -13,6 +14,13 @@ public class APICreateMessage extends APIMessage {
     private String resourceUuid;
     private List<String> userTags;
     private List<String> systemTags;
+
+    public void addSystemTag(String tag) {
+        if (systemTags == null) {
+            systemTags = new ArrayList<String>();
+        }
+        systemTags.add(tag);
+    }
 
     public List<String> getUserTags() {
         return userTags;

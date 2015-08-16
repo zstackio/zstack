@@ -3446,7 +3446,12 @@ public class Api implements CloudBusEventListener {
     }
 
     public LoadBalancerInventory createLoadBalancerListener(LoadBalancerListenerInventory inv, SessionInventory session) throws ApiSenderException {
+        return createLoadBalancerListener(inv, null, session);
+    }
+
+    public LoadBalancerInventory createLoadBalancerListener(LoadBalancerListenerInventory inv, List<String> sysTags,  SessionInventory session) throws ApiSenderException {
         APICreateLoadBalancerListenerMsg msg = new APICreateLoadBalancerListenerMsg();
+        msg.setResourceUuid(inv.getUuid());
         msg.setLoadBalancerUuid(inv.getLoadBalancerUuid());
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
@@ -3454,6 +3459,7 @@ public class Api implements CloudBusEventListener {
         msg.setLoadBalancerPort(inv.getLoadBalancerPort());
         msg.setProtocol(inv.getProtocol());
         msg.setSession(session == null ? adminSession : session);
+        msg.setSystemTags(sysTags);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateLoadBalancerListenerEvent evt = sender.send(msg, APICreateLoadBalancerListenerEvent.class);

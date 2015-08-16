@@ -16,6 +16,7 @@
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint" />
+            <zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint" />
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
             <zstack:extension interface="org.zstack.header.tag.SystemTagLifeCycleExtension" />
         </zstack:plugin>

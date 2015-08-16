@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.HardDeleteEntityExtensionPoint;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.SoftDeleteEntityExtensionPoint;
@@ -14,27 +15,15 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
-import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.configuration.DiskOfferingVO;
-import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l3.IpRangeVO;
-import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.query.APIQueryReply;
-import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.*;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.zone.ZoneVO;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.*;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
@@ -47,7 +36,8 @@ import java.util.*;
 import static org.zstack.utils.CollectionUtils.removeDuplicateFromList;
 
 public class TagManagerImpl extends AbstractService implements TagManager,
-        SoftDeleteEntityExtensionPoint, GlobalApiMessageInterceptor, SystemTagLifeCycleExtension {
+        SoftDeleteEntityExtensionPoint, GlobalApiMessageInterceptor, SystemTagLifeCycleExtension,
+        HardDeleteEntityExtensionPoint {
     private static final CLogger logger = Utils.getLogger(TagManagerImpl.class);
 
     @Autowired
@@ -67,6 +57,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     private Map<Class, Class> resourceTypeCreateMessageMap = new HashMap<Class, Class>();
     private Map<String, List<SystemTagCreateMessageValidator>> createMessageValidators = new HashMap<String, List<SystemTagCreateMessageValidator>>();
     private Map<String, List<SystemTagLifeCycleExtension>> lifeCycleExtensions = new HashMap<String, List<SystemTagLifeCycleExtension>>();
+    private List<Class> autoDeleteTagClasses;
 
     private void initSystemTags() throws IllegalAccessException {
         List<Class> classes = BeanUtils.scanClass("org.zstack", TagDefinition.class);
@@ -137,11 +128,21 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             }
             resourceTypeCreateMessageMap.put(cmsgClz, resType);
         }
+
+        autoDeleteTagClasses = BeanUtils.scanClass("org.zstack", AutoDeleteTag.class);
+        List<String> clzNames = CollectionUtils.transformToList(autoDeleteTagClasses, new Function<String, Class>() {
+            @Override
+            public String call(Class arg) {
+                return arg.getSimpleName();
+            }
+        });
+
+        logger.debug(String.format("tags of following resources are auto-deleting enabled: %s", clzNames));
     }
 
     private void populateExtensions() {
         for (SystemTagLifeCycleExtension ext : pluginRgty.getExtensionList(SystemTagLifeCycleExtension.class)) {
-            for (String resType : ext.getResourceTypeForVirtualRouterSystemTags()) {
+            for (String resType : ext.getResourceTypeOfSystemTags()) {
                 if (!resourceTypeClassMap.containsKey(resType)) {
                     throw new CloudRuntimeException(String.format("%s returns a unknown resource type[%s] for system tag", ext.getClass(), resType));
                 }
@@ -545,7 +546,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public List<Class> getEntityClassForSoftDeleteEntityExtension() {
-        return BeanUtils.scanClass("org.zstack", AutoDeleteTag.class);
+        return autoDeleteTagClasses;
     }
 
     private List<String> getResourceTypes(Class entityClass) {
@@ -557,9 +558,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return types;
     }
 
-    @Override
     @Transactional
-    public void postSoftDelete(Collection entityIds, Class entityClass) {
+    private void postDelete(Collection entityIds, Class entityClass) {
         List<String> rtypes = getResourceTypes(entityClass);
         String sql = "delete from SystemTagVO s where s.resourceType in (:resourceTypes) and s.resourceUuid in (:resourceUuids)";
         Query q = dbf.getEntityManager().createQuery(sql);
@@ -572,6 +572,11 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         q.setParameter("resourceTypes", rtypes);
         q.setParameter("resourceUuids", entityIds);
         q.executeUpdate();
+    }
+
+    @Override
+    public void postSoftDelete(Collection entityIds, Class entityClass) {
+        postDelete(entityIds, entityClass);
     }
 
     @Override
@@ -626,7 +631,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     @Override
-    public List<String> getResourceTypeForVirtualRouterSystemTags() {
+    public List<String> getResourceTypeOfSystemTags() {
         List<String> lst = new ArrayList<String>();
         lst.addAll(resourceTypeClassMap.keySet());
         return lst;
@@ -646,5 +651,15 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         for (SystemTag stag : tags) {
             stag.fireLifeCycleListener(tag, true);
         }
+    }
+
+    @Override
+    public List<Class> getEntityClassForHardDeleteEntityExtension() {
+        return autoDeleteTagClasses;
+    }
+
+    @Override
+    public void postHardDelete(Collection entityIds, Class entityClass) {
+        postDelete(entityIds, entityClass);
     }
 }

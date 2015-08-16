@@ -27,6 +27,8 @@ import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     private static final CLogger logger = CLoggerImpl.getLogger(DatabaseFacadeImpl.class);
 
@@ -272,6 +274,13 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             return update(e, true);
         }
 
+        private void hardDelete(Object entity) {
+            entity = getEntityManager().merge(entity);
+            getEntityManager().remove(entity);
+            Object idval = getVOPrimaryKeyValue(entity);
+            fireHardDeleteExtension(list(idval));
+        }
+
         private void softDelete(Object entity) {
             try {
                 Object idval = getEOPrimaryKeyValue(entity);
@@ -330,8 +339,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         @Transactional(propagation = Propagation.REQUIRES_NEW)
         void remove(Object entity) {
             if (!hasEO()) {
-                entity = getEntityManager().merge(entity);
-                getEntityManager().remove(entity);
+                hardDelete(entity);
             } else {
                 softDelete(entity);
             }
@@ -340,9 +348,9 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         @Transactional(propagation = Propagation.REQUIRES_NEW)
         void removeByPrimaryKey(Object id) {
             if (hasEO()) {
-                softDelete(Arrays.asList(id));
+                softDelete(list(id));
             } else {
-                hardDelete(Arrays.asList(id));
+                hardDelete(list(id));
             }
         }
 
@@ -359,8 +367,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         void removeCollection(Collection entities) {
             for (Object entity : entities) {
                 if (!entity.getClass().isAnnotationPresent(EO.class)) {
-                    entity = getEntityManager().merge(entity);
-                    getEntityManager().remove(entity);
+                    hardDelete(entity);
                 } else {
                     softDelete(entity);
                 }
@@ -394,6 +401,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             String sql = String.format("select count(*) from %s ref where ref.%s = :id", voClass.getSimpleName(), voPrimaryKeyField.getName());
             TypedQuery<Long> q = getEntityManager().createQuery(sql, Long.class);
             q.setParameter("id", id);
+            q.setMaxResults(1);
             Long count = q.getSingleResult();
             return count > 0;
         }

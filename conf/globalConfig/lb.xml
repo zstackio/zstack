@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <category>loadBalancer</category>
+        <name>connectionIdleTimeout</name>
+        <description>The timeout that triggers the load balancer terminates both server/client side connection if no data is transferred, in seconds. [Default] 60s</description>
+        <defaultValue>60</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>healthyThreshold</name>
+        <description>The number of consecutive health checks successes required before moving the instance to the Healthy state. [Default] 2</description>
+        <defaultValue>2</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>healthCheckTarget</name>
+        <description>The instance being checked. The protocol is either TCP, HTTP, HTTPS, or SSL. The range of valid ports is one (1) through 65535. [Default] TCP:default</description>
+        <defaultValue>TCP:default</defaultValue>
+    </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>healthCheckTimeout</name>
+        <description>The amount of time, in seconds, during which no response means a failed health check.</description>
+        <defaultValue>2</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>healthCheckInterval</name>
+        <description>The approximate interval, in seconds, between health checks of an individual instance.</description>
+        <defaultValue>5</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>unhealthyThreshold</name>
+        <description>The number of consecutive health check failures required before moving the instance to the Unhealthy state.</description>
+        <defaultValue>2</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>maxConnection</name>
+        <description>The number of max concurrent connections.</description>
+        <defaultValue>5000</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>balancerAlgorithm</name>
+        <description>The number of max concurrent connections. Options are roundrobin, leastconn and source</description>
+        <defaultValue>roundrobin</defaultValue>
+    </config>
+</globalConfig>

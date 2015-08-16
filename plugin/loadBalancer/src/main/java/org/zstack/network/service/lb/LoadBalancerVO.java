@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.NoView;
 
 import javax.persistence.*;
@@ -12,6 +13,7 @@ import java.util.Set;
  */
 @Entity
 @Table
+@AutoDeleteTag
 public class LoadBalancerVO {
     @Id
     @Column
