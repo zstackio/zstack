@@ -302,7 +302,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         });
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     private List<PrimaryStorageInventory> getPrimaryStorageForHost(String clusterUuid) {
         String sql = "select p.uuid, p.url, p.mountPath from PrimaryStorageVO p where p.type = :ptype and p.uuid in (select r.primaryStorageUuid from PrimaryStorageClusterRefVO r where r.clusterUuid = :clusterUuid)";
         Query query = dbf.getEntityManager().createQuery(sql);

@@ -42,8 +42,12 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by frank on 7/28/2015.
@@ -110,6 +114,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             dbf.getEntityManager().persist(mvo);
         }
 
+        CephSystemTags.KVM_SECRET_UUID.recreateInherentTag(vo.getUuid(), PrimaryStorageVO.class,
+                map(e(CephSystemTags.KVM_SECRET_UUID_TOKEN, UUID.randomUUID().toString()))
+        );
+
         return PrimaryStorageInventory.valueOf(cvo);
     }
 
@@ -173,16 +181,14 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             }
         });
 
-        SimpleQuery<CephPrimaryStorageVO> cq = dbf.createQuery(CephPrimaryStorageVO.class);
-        cq.select(CephPrimaryStorageVO_.userKey);
-        cq.add(CephPrimaryStorageVO_.uuid, Op.EQ, vol.getPrimaryStorageUuid());
-        String userKey = cq.findValue();
-        if (userKey == null) {
-            throw new CloudRuntimeException(String.format("ceph primary storage[uuid:%s] doesn't have a user key", vol.getPrimaryStorageUuid()));
+
+        String secretUuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(vol.getPrimaryStorageUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN);
+        if (secretUuid == null) {
+            throw new CloudRuntimeException(String.format("cannot find KVM secret uuid for ceph primary storage[uuid:%s]", vol.getPrimaryStorageUuid()));
         }
 
         KVMCephVolumeTO cto = new KVMCephVolumeTO(to);
-        cto.setUserKey(userKey);
+        cto.setSecretUuid(secretUuid);
         cto.setMonInfo(monInfos);
         cto.setDeviceType(VolumeTO.CEPH);
         return cto;

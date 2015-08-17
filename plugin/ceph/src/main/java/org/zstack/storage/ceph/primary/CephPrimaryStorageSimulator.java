@@ -18,6 +18,7 @@ import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.*;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig.CephPrimaryStorageConfig;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -96,6 +97,15 @@ public class CephPrimaryStorageSimulator {
         setCapacity(cmd, rsp, -cmd.getSize());
         bitSizeMap.put(cmd.getInstallPath(), cmd.getSize());
         reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value= CephPrimaryStorageBase.KVM_CREATE_SECRET_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String createKvmSecret(HttpEntity<String> entity) {
+        CreateKvmSecretCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateKvmSecretCmd.class);
+        config.createKvmSecretCmds.add(cmd);
+        reply(entity, new KVMAgentCommands.AgentResponse());
         return null;
     }
 

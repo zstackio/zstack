@@ -3,6 +3,7 @@ package org.zstack.storage.ceph.primary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
@@ -10,6 +11,8 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -18,6 +21,10 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
@@ -35,6 +42,10 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
+import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
@@ -445,6 +456,31 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class RollbackSnapshotRsp extends AgentResponse {
     }
 
+    public static class CreateKvmSecretCmd extends KVMAgentCommands.AgentCommand {
+        String userKey;
+        String uuid;
+
+        public String getUserKey() {
+            return userKey;
+        }
+
+        public void setUserKey(String userKey) {
+            this.userKey = userKey;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+    }
+
+    public static class CreateKvmSecretRsp extends AgentResponse {
+
+    }
+
     public static final String INIT_PATH = "/ceph/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/ceph/primarystorage/delete";
@@ -458,6 +494,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String ROLLBACK_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/rollback";
     public static final String UNPROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/unprotect";
     public static final String CP_PATH = "/ceph/primarystorage/volume/cp";
+    public static final String KVM_CREATE_SECRET_PATH = "/vm/createcephsecret";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -1648,9 +1685,27 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
             handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
+        } else if (msg instanceof CreateKvmSecretMsg) {
+            handle((CreateKvmSecretMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final CreateKvmSecretMsg msg) {
+        final CreateKvmSecretReply reply = new CreateKvmSecretReply();
+        createSecretOnKvmHosts(msg.getHostUuids(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg) {
@@ -1821,6 +1876,74 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    @Override
+    public void attachHook(String clusterUuid, Completion completion) {
+        SimpleQuery<ClusterVO> q = dbf.createQuery(ClusterVO.class);
+        q.select(ClusterVO_.hypervisorType);
+        q.add(ClusterVO_.uuid, Op.EQ, clusterUuid);
+        String hvType = q.findValue();
+        if (KVMConstant.KVM_HYPERVISOR_TYPE.equals(hvType)) {
+            attachToKvmCluster(clusterUuid, completion);
+        } else {
+            completion.success();
+        }
+    }
+
+    private void createSecretOnKvmHosts(List<String> hostUuids, final Completion completion) {
+        final CreateKvmSecretCmd cmd = new CreateKvmSecretCmd();
+        cmd.setUserKey(getSelf().getUserKey());
+        String suuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(self.getUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN);
+        DebugUtils.Assert(suuid != null, String.format("cannot find system tag[%s] for ceph primary storage[uuid:%s]", CephSystemTags.KVM_SECRET_UUID.getTagFormat(), self.getUuid()));
+        cmd.setUuid(suuid);
+
+        List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids, new Function<KVMHostAsyncHttpCallMsg, String>() {
+            @Override
+            public KVMHostAsyncHttpCallMsg call(String huuid) {
+                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                msg.setCommand(cmd);
+                msg.setPath(KVM_CREATE_SECRET_PATH);
+                msg.setHostUuid(huuid);
+                msg.setNoStatusCheck(true);
+                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
+                return msg;
+            }
+        });
+
+        bus.send(msgs, new CloudBusListCallBack(completion) {
+            @Override
+            public void run(List<MessageReply> replies) {
+                for (MessageReply r : replies) {
+                    if (!r.isSuccess()) {
+                        completion.fail(r.getError());
+                        return;
+                    }
+
+                    KVMHostAsyncHttpCallReply kr = r.castReply();
+                    CreateKvmSecretRsp rsp = kr.toResponse(CreateKvmSecretRsp.class);
+                    if (!rsp.isSuccess()) {
+                        completion.fail(errf.stringToOperationError(rsp.getError()));
+                        return;
+                    }
+                }
+
+                completion.success();
+            }
+        });
+    }
+
+    private void attachToKvmCluster(String clusterUuid, Completion completion) {
+        SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
+        q.select(HostVO_.uuid);
+        q.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
+        q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
+        List<String> hostUuids = q.listValue();
+        if (hostUuids.isEmpty()) {
+            completion.success();
+        } else {
+            createSecretOnKvmHosts(hostUuids, completion);
+        }
     }
 
     @Override

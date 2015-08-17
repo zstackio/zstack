@@ -37,14 +37,14 @@ public class KVMCephVolumeTO extends VolumeTO {
     }
 
     private List<MonInfo> monInfo;
-    private String userKey;
+    private String secretUuid;
 
-    public String getUserKey() {
-        return userKey;
+    public String getSecretUuid() {
+        return secretUuid;
     }
 
-    public void setUserKey(String userKey) {
-        this.userKey = userKey;
+    public void setSecretUuid(String secretUuid) {
+        this.secretUuid = secretUuid;
     }
 
     public List<MonInfo> getMonInfo() {
