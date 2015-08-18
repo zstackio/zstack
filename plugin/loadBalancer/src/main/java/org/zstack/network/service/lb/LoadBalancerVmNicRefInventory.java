@@ -1,6 +1,9 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.vm.VmNicInventory;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -11,6 +14,12 @@ import java.util.List;
  * Created by frank on 8/8/2015.
  */
 @Inventory(mappingVOClass = LoadBalancerVmNicRefVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "vmNic", inventoryClass = VmNicInventory.class,
+                foreignKey = "vmNicUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "loadBalancer", inventoryClass = LoadBalancerInventory.class,
+                foreignKey = "loadBalancerUuid", expandedInventoryKey = "uuid"),
+})
 public class LoadBalancerVmNicRefInventory {
     private long id;
     private String loadBalancerUuid;

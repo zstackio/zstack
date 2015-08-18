@@ -1,6 +1,11 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
+import org.zstack.network.service.vip.VipInventory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,6 +15,17 @@ import java.util.List;
  * Created by frank on 8/8/2015.
  */
 @Inventory(mappingVOClass = LoadBalancerVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "listener", inventoryClass = LoadBalancerListenerInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "loadBalancerUuid"),
+        @ExpandedQuery(expandedField = "vip", inventoryClass = VipInventory.class,
+                foreignKey = "vipUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "vmNicRef", inventoryClass = LoadBalancerVmNicRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "loadBalancerUuid", hidden = true),
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(alias = "vmNic", expandedField = "vmNicRef.vmNic")
+})
 public class LoadBalancerInventory {
     private String name;
     private String uuid;

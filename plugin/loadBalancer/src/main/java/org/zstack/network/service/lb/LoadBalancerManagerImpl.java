@@ -1,6 +1,5 @@
 package org.zstack.network.service.lb;
 
-import org.apache.commons.lang.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -8,21 +7,20 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowChain;
-import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.tag.*;
+import org.zstack.header.query.AddExpandedQueryExtensionPoint;
+import org.zstack.header.query.ExpandedQueryAliasStruct;
+import org.zstack.header.query.ExpandedQueryStruct;
+import org.zstack.header.tag.AbstractSystemTagOperationJudger;
+import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipManager;
-import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.TagManager;
 
 import java.util.ArrayList;
@@ -33,7 +31,7 @@ import java.util.Map;
 /**
  * Created by frank on 8/8/2015.
  */
-public class LoadBalancerManagerImpl extends AbstractService implements LoadBalancerManager  {
+public class LoadBalancerManagerImpl extends AbstractService implements LoadBalancerManager, AddExpandedQueryExtensionPoint {
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -302,5 +300,40 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             throw new CloudRuntimeException(String.format("cannot find LoadBalancerBackend[provider type:%s]", providerType));
         }
         return bkd;
+    }
+
+    @Override
+    public List<ExpandedQueryStruct> getExpandedQueryStructs() {
+        List<ExpandedQueryStruct> structs = new ArrayList<ExpandedQueryStruct>();
+
+        ExpandedQueryStruct s = new ExpandedQueryStruct();
+        s.setExpandedField("loadBalancerRef");
+        s.setHidden(true);
+        s.setForeignKey("uuid");
+        s.setExpandedInventoryKey("vmNicUuid");
+        s.setInventoryClassToExpand(VmNicInventory.class);
+        s.setInventoryClass(LoadBalancerVmNicRefInventory.class);
+        structs.add(s);
+
+        s = new ExpandedQueryStruct();
+        s.setInventoryClassToExpand(VipInventory.class);
+        s.setExpandedField("loadBalancer");
+        s.setInventoryClass(LoadBalancerInventory.class);
+        s.setForeignKey("uuid");
+        s.setExpandedInventoryKey("vipUuid");
+        structs.add(s);
+        return structs;
+    }
+
+    @Override
+    public List<ExpandedQueryAliasStruct> getExpandedQueryAliasesStructs() {
+        List<ExpandedQueryAliasStruct> structs = new ArrayList<ExpandedQueryAliasStruct>();
+
+        ExpandedQueryAliasStruct s = new ExpandedQueryAliasStruct();
+        s.setInventoryClass(VmNicInventory.class);
+        s.setAlias("loadBalancer");
+        s.setExpandedField("loadBalancerRef.loadBalancer");
+        structs.add(s);
+        return structs;
     }
 }

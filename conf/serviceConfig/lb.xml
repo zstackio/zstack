@@ -30,4 +30,14 @@
     <message>
         <name>org.zstack.network.service.lb.APIRefreshLoadBalancerMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIQueryLoadBalancerListenerMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIQueryLoadBalancerMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

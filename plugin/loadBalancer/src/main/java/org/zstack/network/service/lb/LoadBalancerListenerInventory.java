@@ -1,5 +1,7 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -11,6 +13,10 @@ import java.util.List;
  * Created by frank on 8/8/2015.
  */
 @Inventory(mappingVOClass = LoadBalancerListenerVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "loadBalancer", inventoryClass = LoadBalancerInventory.class,
+                foreignKey = "loadBalancerUuid", expandedInventoryKey = "uuid")
+})
 public class LoadBalancerListenerInventory {
     private String uuid;
     private String name;
