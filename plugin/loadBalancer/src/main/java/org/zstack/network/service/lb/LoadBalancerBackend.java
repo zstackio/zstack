@@ -24,5 +24,7 @@ public interface LoadBalancerBackend {
 
     void destroyLoadBalancer(LoadBalancerStruct struct, Completion completion);
 
+    void refresh(LoadBalancerStruct struct, Completion completion);
+
     String getNetworkServiceProviderType();
 }

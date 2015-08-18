@@ -10,4 +10,6 @@ public interface SystemTagLifeCycleExtension {
     void tagCreated(SystemTagInventory tag);
 
     void tagDeleted(SystemTagInventory tag);
+
+    void tagUpdated(SystemTagInventory old, SystemTagInventory newTag);
 }

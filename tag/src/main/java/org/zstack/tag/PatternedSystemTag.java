@@ -1,7 +1,10 @@
 package org.zstack.tag;
 
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.utils.TagUtils;
 
 import java.util.ArrayList;
@@ -98,6 +101,15 @@ public class PatternedSystemTag extends SystemTag {
         } else {
             return tagMgr.createNonInherentSystemTag(resourceUuid, instantiateTag(tokens), resourceClass.getSimpleName());
         }
+    }
+
+    public SystemTagInventory getTagInventory(String resourceUuid) {
+        SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
+        q.add(SystemTagVO_.resourceUuid, Op.EQ, resourceUuid);
+        q.add(SystemTagVO_.resourceType, Op.EQ, getResourceClass().getSimpleName());
+        q.add(SystemTagVO_.tag, Op.LIKE, useTagFormat());
+        SystemTagVO vo = q.find();
+        return  vo == null ? null : SystemTagInventory.valueOf(vo);
     }
 
     public SystemTagInventory recreateTag(String resourceUuid, Class resourceClass, Map tokens) {

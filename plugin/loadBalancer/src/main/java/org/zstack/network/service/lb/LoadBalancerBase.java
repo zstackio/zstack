@@ -96,9 +96,50 @@ public class LoadBalancerBase {
             handle((LoadBalancerDeactiveVmNicMsg) msg);
         } else if (msg instanceof LoadBalancerRemoveVmNicMsg) {
             handle((LoadBalancerRemoveVmNicMsg) msg);
+        } else if (msg instanceof RefreshLoadBalancerMsg) {
+            handle((RefreshLoadBalancerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final RefreshLoadBalancerMsg msg) {
+        final RefreshLoadBalancerReply reply = new RefreshLoadBalancerReply();
+        thdf.chainSubmit(new ChainTask() {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                refresh(new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        reply.setInventory(getInventory());
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "refresh-lb";
+            }
+        });
+    }
+
+    private void refresh(final Completion completion) {
+        LoadBalancerBackend bkd = getBackend();
+        bkd.refresh(makeStruct(), completion);
     }
 
     private void handle(final LoadBalancerRemoveVmNicMsg msg) {
@@ -362,13 +403,49 @@ public class LoadBalancerBase {
             handle((APIDeleteLoadBalancerListenerMsg) msg);
         } else if (msg instanceof APIDeleteLoadBalancerMsg) {
             handle((APIDeleteLoadBalancerMsg) msg);
+        } else if (msg instanceof APIRefreshLoadBalancerMsg) {
+            handle((APIRefreshLoadBalancerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
+    private void handle(final APIRefreshLoadBalancerMsg msg) {
+        final APIRefreshLoadBalancerEvent evt = new APIRefreshLoadBalancerEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                refresh(new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        evt.setInventory(getInventory());
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setErrorCode(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "refresh-lb";
+            }
+        });
+    }
+
     private void handle(final APIDeleteLoadBalancerMsg msg) {
-        thdf.chainSubmit(new ChainTask() {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
                 return getSyncId();

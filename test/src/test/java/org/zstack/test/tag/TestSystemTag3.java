@@ -59,6 +59,10 @@ public class TestSystemTag3 {
                     deleteCalled = true;
                 }
             }
+
+            @Override
+            public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+            }
         });
 
         ZoneInventory zone1 = deployer.zones.get("Zone1");

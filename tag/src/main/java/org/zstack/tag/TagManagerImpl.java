@@ -12,6 +12,8 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.SoftDeleteEntityExtensionPoint;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.safeguard.Guard;
+import org.zstack.core.safeguard.SafeGuard;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -22,6 +24,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.tag.*;
 import org.zstack.query.QueryFacade;
+import org.zstack.tag.SystemTag.SystemTagOperation;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -33,6 +36,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
+import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.removeDuplicateFromList;
 
 public class TagManagerImpl extends AbstractService implements TagManager,
@@ -202,14 +206,19 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             vo.setInherent(true);
             vo.setTag(tag);
             vo.setType(type);
+
+            preTagCreated(SystemTagInventory.valueOf(vo));
+
             vo = dbf.persistAndRefresh(vo);
+
             SystemTagInventory stag = SystemTagInventory.valueOf(vo);
-            fireTagCreated(Arrays.asList(stag));
+            fireTagCreated(list(stag));
             return stag;
         }
     }
 
     @Override
+    @Guard
     public SystemTagInventory createNonInherentSystemTag(String resourceUuid, String tag, String resourceType) {
         if (isTagExisting(resourceUuid, tag, TagType.System, resourceType)) {
             return null;
@@ -224,7 +233,16 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         vo.setType(TagType.System);
         vo = dbf.persistAndRefresh(vo);
         SystemTagInventory inv = SystemTagInventory.valueOf(vo);
-        fireTagCreated(Arrays.asList(inv));
+
+        final SystemTagVO finalVo = vo;
+        SafeGuard.guard(new Runnable() {
+            @Override
+            public void run() {
+                dbf.remove(finalVo);
+            }
+        });
+
+        fireTagCreated(list(inv));
         return inv;
     }
 
@@ -241,9 +259,14 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         vo.setInherent(true);
         vo.setTag(tag);
         vo.setType(TagType.System);
+
+        preTagCreated(SystemTagInventory.valueOf(vo));
+
         vo = dbf.persistAndRefresh(vo);
+
         SystemTagInventory inv = SystemTagInventory.valueOf(vo);
-        fireTagCreated(Arrays.asList(inv));
+        fireTagCreated(list(inv));
+
         return inv;
     }
 
@@ -383,7 +406,15 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
 
         List<SystemTagVO> vos = q.list();
+
+        if (!vos.isEmpty()) {
+            for (SystemTagVO vo : vos) {
+                preTagDeleted(SystemTagInventory.valueOf(vo));
+            }
+        }
+
         dbf.removeCollection(vos, SystemTagVO.class);
+
         if (!vos.isEmpty()) {
             fireTagDeleted(SystemTagInventory.valueOf(vos));
         }
@@ -402,7 +433,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     try {
                         ext.tagDeleted(tag);
                     } catch (Exception e) {
-                        logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), e);
+                        logger.warn(String.format("unhandled exception when calling %s", ext.getClass()));
                     }
                 }
             }
@@ -417,8 +448,21 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     try {
                         ext.tagCreated(tag);
                     } catch (Exception e) {
-                        logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), e);
+                        logger.warn(String.format("unhandled exception when calling %s", ext.getClass()));
                     }
+                }
+            }
+        }
+    }
+
+    private void fireTagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+        List<SystemTagLifeCycleExtension> exts = lifeCycleExtensions.get(old.getResourceType());
+        if (exts != null) {
+            for (SystemTagLifeCycleExtension ext : exts) {
+                try {
+                    ext.tagUpdated(old, newTag);
+                } catch (Exception e) {
+                    logger.warn(String.format("unhandled exception when calling %s", ext.getClass()));
                 }
             }
         }
@@ -447,9 +491,34 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             handle((APICreateSystemTagMsg) msg);
         } else if (msg instanceof APIDeleteTagMsg) {
             handle((APIDeleteTagMsg) msg);
+        } else if (msg instanceof APIUpdateSystemTagMsg) {
+            handle((APIUpdateSystemTagMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    @Guard
+    private void handle(APIUpdateSystemTagMsg msg) {
+        APIUpdateSystemTagEvent evt = new APIUpdateSystemTagEvent(msg.getId());
+        SystemTagVO vo = dbf.findByUuid(msg.getUuid(), SystemTagVO.class);
+        SystemTagInventory old = SystemTagInventory.valueOf(vo);
+        if (!vo.getTag().equals(msg.getTag())) {
+            vo.setTag(msg.getTag());
+
+            SystemTagInventory n = ObjectUtils.copy(new SystemTagInventory(), old);
+            n.setTag(msg.getTag());
+            preTagUpdated(old, n);
+
+            vo = dbf.updateAndRefresh(vo);
+            SystemTagInventory newTag = SystemTagInventory.valueOf(vo);
+            fireTagUpdated(old, newTag);
+            evt.setInventory(SystemTagInventory.valueOf(vo));
+        } else {
+            evt.setInventory(old);
+        }
+
+        bus.publish(evt);
     }
 
     private void handle(APICreateSystemTagMsg msg) {
@@ -469,11 +538,18 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     private void handle(APIDeleteTagMsg msg) {
         APIDeleteTagEvent evt = new APIDeleteTagEvent(msg.getId());
         SystemTagVO stag = dbf.findByUuid(msg.getUuid(), SystemTagVO.class);
+
+        if (stag != null) {
+            preTagDeleted(SystemTagInventory.valueOf(stag));
+        }
+
         dbf.removeByPrimaryKey(msg.getUuid(), SystemTagVO.class);
         dbf.removeByPrimaryKey(msg.getUuid(), UserTagVO.class);
+
         if (stag != null) {
-            fireTagDeleted(Arrays.asList(SystemTagInventory.valueOf(stag)));
+            fireTagDeleted(list(SystemTagInventory.valueOf(stag)));
         }
+
         bus.publish(evt);
     }
 
@@ -581,7 +657,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public List<Class> getMessageClassToIntercept() {
-        return CollectionDSL.list((Class)APICreateMessage.class);
+        return list((Class) APICreateMessage.class);
     }
 
     @Override
@@ -637,11 +713,25 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return lst;
     }
 
+    private void preTagCreated(SystemTagInventory tag) {
+        List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
+        for (SystemTag stag : tags) {
+            stag.callCreatedJudger(tag);
+        }
+    }
+
     @Override
     public void tagCreated(SystemTagInventory tag) {
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
         for (SystemTag stag : tags) {
-            stag.fireLifeCycleListener(tag, false);
+            stag.callTagCreatedListener(tag);
+        }
+    }
+
+    private void preTagDeleted(SystemTagInventory tag) {
+        List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
+        for (SystemTag stag : tags) {
+            stag.callDeletedJudger(tag);
         }
     }
 
@@ -649,7 +739,22 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     public void tagDeleted(SystemTagInventory tag) {
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
         for (SystemTag stag : tags) {
-            stag.fireLifeCycleListener(tag, true);
+            stag.callTagDeletedListener(tag);
+        }
+    }
+
+    private void preTagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+        List<SystemTag> tags = resourceTypeSystemTagMap.get(old.getResourceType());
+        for (SystemTag stag : tags) {
+            stag.callUpdatedJudger(old, newTag);
+        }
+    }
+
+    @Override
+    public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+        List<SystemTag> tags = resourceTypeSystemTagMap.get(old.getResourceType());
+        for (SystemTag stag : tags) {
+            stag.callTagUpdatedListener(old, newTag);
         }
     }
 

@@ -32,9 +32,20 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteTagMsg) msg);
         } else if (msg instanceof APICreateTagMsg) {
             validate((APICreateTagMsg) msg);
+        } else if (msg instanceof APIUpdateSystemTagMsg) {
+            validate((APIUpdateSystemTagMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIUpdateSystemTagMsg msg) {
+        SystemTagVO vo = dbf.findByUuid(msg.getUuid(), SystemTagVO.class);
+        try {
+            tagMgr.validateSystemTag(vo.getResourceUuid(), vo.getResourceType(), msg.getTag());
+        } catch (OperationFailureException oe) {
+            throw new ApiMessageInterceptionException(oe.getErrorCode());
+        }
     }
 
 

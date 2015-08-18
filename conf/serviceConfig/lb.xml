@@ -26,4 +26,8 @@
     <message>
         <name>org.zstack.network.service.lb.APIDeleteLoadBalancerMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIRefreshLoadBalancerMsg</name>
+    </message>
 </service>

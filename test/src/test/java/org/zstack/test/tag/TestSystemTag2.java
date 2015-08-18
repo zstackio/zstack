@@ -65,6 +65,11 @@ public class TestSystemTag2 {
                     deleteCalled = true;
                 }
             }
+
+            @Override
+            public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+
+            }
         });
         ZoneInventory zone1 = deployer.zones.get("Zone1");
         TagInventory inv =  api.createSystemTag(zone1.getUuid(), "big", ZoneVO.class);

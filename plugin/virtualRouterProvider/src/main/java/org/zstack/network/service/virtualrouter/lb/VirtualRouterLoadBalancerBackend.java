@@ -635,6 +635,18 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
         }
     }
 
+    @Override
+    public void refresh(LoadBalancerStruct struct, Completion completion) {
+        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
+        if (vr == null) {
+            // the vr has been destroyed
+            completion.success();
+            return;
+        }
+
+        startVrIfNeededAndRefresh(vr, struct, completion);
+    }
+
     void syncOnStart(VirtualRouterVmInventory vr, List<LoadBalancerStruct> structs, final Completion completion) {
         List<LbTO> tos = new ArrayList<LbTO>();
         for (LoadBalancerStruct s : structs) {

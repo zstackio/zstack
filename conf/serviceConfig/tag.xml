@@ -24,4 +24,8 @@
     <message>
         <name>org.zstack.header.tag.APIDeleteTagMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.tag.APIUpdateSystemTagMsg</name>
+    </message>
 </service>

@@ -36,27 +36,60 @@ public class SystemTag {
     protected Class resourceClass;
     protected List<SystemTagValidator> validators = new ArrayList<SystemTagValidator>();
     protected List<SystemTagLifeCycleListener> lifeCycleListeners = new ArrayList<SystemTagLifeCycleListener>();
+    protected List<SystemTagOperationJudger> judgers = new ArrayList<SystemTagOperationJudger>();
 
     public SystemTag(String tagFormat, Class resourceClass) {
         this.tagFormat = tagFormat;
         this.resourceClass = resourceClass;
     }
 
+    public static enum SystemTagOperation {
+        CREATE,
+        UPDATE,
+        DELETE
+    }
+
     public void installLifeCycleListener(SystemTagLifeCycleListener listener) {
         lifeCycleListeners.add(listener);
     }
 
-    void fireLifeCycleListener(SystemTagInventory tag, boolean isDeleted) {
+    public void installJudger(SystemTagOperationJudger judger) {
+        judgers.add(judger);
+    }
+
+    void callCreatedJudger(SystemTagInventory tag) {
+        for (SystemTagOperationJudger j : judgers) {
+            j.tagPreCreated(tag);
+        }
+    }
+
+    void callTagCreatedListener(SystemTagInventory tag) {
         for (SystemTagLifeCycleListener ext : lifeCycleListeners) {
-            try {
-                if (isDeleted) {
-                    ext.tagDeleted(tag);
-                } else {
-                    ext.tagCreated(tag);
-                }
-            } catch (Exception e) {
-                logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), e);
-            }
+            ext.tagCreated(tag);
+        }
+    }
+
+    void callDeletedJudger(SystemTagInventory tag) {
+        for (SystemTagOperationJudger j : judgers) {
+            j.tagPreDeleted(tag);
+        }
+    }
+
+    void callTagDeletedListener(SystemTagInventory tag) {
+        for (SystemTagLifeCycleListener ext : lifeCycleListeners) {
+            ext.tagDeleted(tag);
+        }
+    }
+
+    void callUpdatedJudger(SystemTagInventory old, SystemTagInventory newTag) {
+        for (SystemTagOperationJudger j : judgers) {
+            j.tagPreUpdated(old, newTag);
+        }
+    }
+
+    void callTagUpdatedListener(SystemTagInventory old, SystemTagInventory newTag) {
+        for (SystemTagLifeCycleListener ext : lifeCycleListeners) {
+            ext.tagUpdated(old, newTag);
         }
     }
 

@@ -17,6 +17,10 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.tag.AbstractSystemTagOperationJudger;
+import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagLifeCycleListener;
+import org.zstack.header.tag.SystemTagOperationJudger;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipManager;
@@ -31,7 +35,7 @@ import java.util.Map;
 /**
  * Created by frank on 8/8/2015.
  */
-public class LoadBalancerManagerImpl extends AbstractService implements LoadBalancerManager {
+public class LoadBalancerManagerImpl extends AbstractService implements LoadBalancerManager  {
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -115,7 +119,28 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             backends.put(bkd.getNetworkServiceProviderType(), bkd);
         }
 
+        prepareSystemTags();
+
         return true;
+    }
+
+    private void prepareSystemTags() {
+        AbstractSystemTagOperationJudger judger = new AbstractSystemTagOperationJudger() {
+            @Override
+            public void tagPreDeleted(SystemTagInventory tag) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        String.format("cannot delete the system tag[%s]. The load balancer plugin relies on it, you can only update it", tag.getTag())
+                ));
+            }
+        };
+        LoadBalancerSystemTags.BALANCER_ALGORITHM.installJudger(judger);
+        LoadBalancerSystemTags.HEALTHY_THRESHOLD.installJudger(judger);
+        LoadBalancerSystemTags.MAX_CONNECTION.installJudger(judger);
+        LoadBalancerSystemTags.HEALTH_INTERVAL.installJudger(judger);
+        LoadBalancerSystemTags.HEALTH_TARGET.installJudger(judger);
+        LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.installJudger(judger);
+        LoadBalancerSystemTags.HEALTH_TIMEOUT.installJudger(judger);
+        LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.installJudger(judger);
     }
 
     @Override

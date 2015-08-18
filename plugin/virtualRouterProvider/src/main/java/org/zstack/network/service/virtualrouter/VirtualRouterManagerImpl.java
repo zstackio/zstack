@@ -414,6 +414,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     vrParallelismDegrees.remove(tag.getResourceUuid());
                 }
             }
+
+            @Override
+            public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+            }
         });
 		return true;
 	}

@@ -2916,6 +2916,17 @@ public class Api implements CloudBusEventListener {
         return createTag(resourceUuid, tag, entitiClass, TagType.System, session);
     }
 
+    public TagInventory updateSystemTag(String uuid, String tag, SessionInventory session) throws ApiSenderException {
+        APIUpdateSystemTagMsg msg = new APIUpdateSystemTagMsg();
+        msg.setUuid(uuid);
+        msg.setTag(tag);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateSystemTagEvent evt = sender.send(msg, APIUpdateSystemTagEvent.class);
+        return evt.getInventory();
+    }
+
     public void deleteTag(String tagUuid) throws ApiSenderException {
         deleteTag(tagUuid, null);
     }
@@ -3463,6 +3474,20 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateLoadBalancerListenerEvent evt = sender.send(msg, APICreateLoadBalancerListenerEvent.class);
+        return evt.getInventory();
+    }
+
+    public LoadBalancerInventory refreshLoadBalancer(String uuid) throws ApiSenderException {
+        return refreshLoadBalancer(uuid, null);
+    }
+
+    public LoadBalancerInventory refreshLoadBalancer(String uuid, SessionInventory session) throws ApiSenderException {
+        APIRefreshLoadBalancerMsg msg = new APIRefreshLoadBalancerMsg();
+        msg.setUuid(uuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIRefreshLoadBalancerEvent evt = sender.send(msg, APIRefreshLoadBalancerEvent.class);
         return evt.getInventory();
     }
 
