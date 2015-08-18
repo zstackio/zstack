@@ -20,7 +20,7 @@
         <category>loadBalancer</category>
         <name>healthCheckTarget</name>
         <description>The instance being checked. The protocol is either TCP, HTTP, HTTPS, or SSL. The range of valid ports is one (1) through 65535. [Default] TCP:default</description>
-        <defaultValue>TCP:default</defaultValue>
+        <defaultValue>tcp:default</defaultValue>
     </config>
 
     <config>

@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.apache.commons.lang.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -17,10 +18,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.tag.AbstractSystemTagOperationJudger;
-import org.zstack.header.tag.SystemTagInventory;
-import org.zstack.header.tag.SystemTagLifeCycleListener;
-import org.zstack.header.tag.SystemTagOperationJudger;
+import org.zstack.header.tag.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipManager;
@@ -141,6 +139,155 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.installJudger(judger);
         LoadBalancerSystemTags.HEALTH_TIMEOUT.installJudger(judger);
         LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.installJudger(judger);
+
+        LoadBalancerSystemTags.BALANCER_ALGORITHM.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String algorithm = LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByTag(systemTag,
+                        LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN);
+
+                if (!LoadBalancerConstants.BALANCE_ALGORITHMS.contains(algorithm)) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("invalid balance algorithm[%s], valid algorithms are %s", algorithm, LoadBalancerConstants.BALANCE_ALGORITHMS)
+                    ));
+                }
+            }
+        });
+
+        LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String s = LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.getTokenByTag(systemTag,
+                        LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN);
+
+                try {
+                    Long.valueOf(s);
+                } catch (NumberFormatException e) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("invalid unhealthy threshold[%s], %s is not a number", systemTag, s)
+                    ));
+                }
+            }
+        });
+
+        LoadBalancerSystemTags.HEALTHY_THRESHOLD.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String s = LoadBalancerSystemTags.HEALTHY_THRESHOLD.getTokenByTag(systemTag,
+                        LoadBalancerSystemTags.HEALTHY_THRESHOLD_TOKEN);
+
+                try {
+                    Long.valueOf(s);
+                } catch (NumberFormatException e) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("invalid healthy threshold[%s], %s is not a number", systemTag, s)
+                    ));
+                }
+            }
+        });
+
+        LoadBalancerSystemTags.HEALTH_TIMEOUT.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String s = LoadBalancerSystemTags.HEALTH_TIMEOUT.getTokenByTag(systemTag,
+                        LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN);
+
+                try {
+                    Long.valueOf(s);
+                } catch (NumberFormatException e) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("invalid healthy timeout[%s], %s is not a number", systemTag, s)
+                    ));
+                }
+            }
+        });
+
+        LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String s = LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.getTokenByTag(systemTag,
+                        LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN);
+
+                try {
+                    Long.valueOf(s);
+                } catch (NumberFormatException e) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("invalid connection idle timeout[%s], %s is not a number", systemTag, s)
+                    ));
+                }
+            }
+        });
+
+        LoadBalancerSystemTags.HEALTH_INTERVAL.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String s = LoadBalancerSystemTags.HEALTH_INTERVAL.getTokenByTag(systemTag,
+                        LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN);
+
+                try {
+                    Long.valueOf(s);
+                } catch (NumberFormatException e) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("invalid health check interval[%s], %s is not a number", systemTag, s)
+                    ));
+                }
+            }
+        });
+
+        LoadBalancerSystemTags.MAX_CONNECTION.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String s = LoadBalancerSystemTags.MAX_CONNECTION.getTokenByTag(systemTag,
+                        LoadBalancerSystemTags.MAX_CONNECTION_TOKEN);
+
+                try {
+                    Long.valueOf(s);
+                } catch (NumberFormatException e) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("invalid max connection[%s], %s is not a number", systemTag, s)
+                    ));
+                }
+            }
+        });
+
+        LoadBalancerSystemTags.HEALTH_TARGET.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String target = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByTag(systemTag,
+                        LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
+
+                String[] ts = target.split(":");
+                if (ts.length != 2) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", systemTag)
+                    ));
+                }
+
+                String protocol = ts[0];
+                if (!LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCOLS.contains(protocol)) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("invalid health target[%s], the target checking protocol[%s] is invalid, valid protocols are %s",
+                                    systemTag, protocol, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCOLS)
+                    ));
+                }
+
+                String port = ts[1];
+                if (!"default".equals(port)) {
+                    try {
+                        int p = Integer.valueOf(port);
+                        if (p < 1 || p > 65535) {
+                            throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                                    String.format("invalid invalid health target[%s], port[%s] is not in the range of [1, 65535]", systemTag, port)
+                            ));
+                        }
+                    } catch (NumberFormatException e) {
+                        throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                                String.format("invalid invalid health target[%s], port[%s] is not a number", systemTag, port)
+                        ));
+                    }
+                }
+            }
+        });
     }
 
     @Override

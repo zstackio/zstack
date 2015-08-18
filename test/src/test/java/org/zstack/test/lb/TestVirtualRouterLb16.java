@@ -44,6 +44,10 @@ import static org.zstack.utils.CollectionDSL.map;
  * 4. refresh the lb
  *
  * confirm lb refreshed successfully
+ *
+ * 5. update the sysetem tag to an invalid value
+ *
+ * confirm unable to update
  */
 public class TestVirtualRouterLb16 {
     Deployer deployer;
@@ -106,5 +110,13 @@ public class TestVirtualRouterLb16 {
 
         String val =  LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.getTokenByTag(unhealthThreshold, LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN);
         Assert.assertEquals(Integer.valueOf(newval), Integer.valueOf(val));
+
+        s = false;
+        try {
+            api.updateSystemTag(tag.getUuid(), LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.instantiateTag(map(e(LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN, "invalid"))), null);
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
     }
 }
