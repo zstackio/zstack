@@ -38,6 +38,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -634,6 +635,39 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
         }
     }
 
+    void syncOnStart(VirtualRouterVmInventory vr, List<LoadBalancerStruct> structs, final Completion completion) {
+        List<LbTO> tos = new ArrayList<LbTO>();
+        for (LoadBalancerStruct s : structs) {
+            tos.addAll(makeLbTOs(s));
+        }
+
+        RefreshLbCmd cmd = new RefreshLbCmd();
+        cmd.lbs = tos;
+
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setPath(REFRESH_LB_PATH);
+        msg.setVmInstanceUuid(vr.getUuid());
+        msg.setCheckStatus(false);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    VirtualRouterAsyncHttpCallReply kr = reply.castReply();
+                    RefreshLbRsp rsp = kr.toResponse(RefreshLbRsp.class);
+                    if (rsp.isSuccess()) {
+                        completion.success();
+                    } else {
+                        completion.fail(errf.stringToOperationError(rsp.getError()));
+                    }
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
+    }
 
     @Override
     public String getNetworkServiceProviderType() {
