@@ -66,7 +66,6 @@ public class TestVirtualRouterLb {
     
     @Test
     public void test() throws ApiSenderException {
-
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
         LoadBalancerVO lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
         Assert.assertNotNull(lbvo);

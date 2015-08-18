@@ -756,7 +756,7 @@ public class LoadBalancerBase {
             List<String> activeNics = CollectionUtils.transformToList(self.getVmNicRefs(), new Function<String, LoadBalancerVmNicRefVO>() {
                 @Override
                 public String call(LoadBalancerVmNicRefVO arg) {
-                    return arg.getStatus() == LoadBalancerVmNicStatus.Active ? arg.getVmNicUuid() : null;
+                    return arg.getStatus() == LoadBalancerVmNicStatus.Active || arg.getStatus() == LoadBalancerVmNicStatus.Pending ? arg.getVmNicUuid() : null;
                 }
             });
 

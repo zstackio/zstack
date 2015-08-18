@@ -31,7 +31,6 @@ import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
-import org.zstack.tag.SystemTag;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -166,23 +165,14 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
     }
 
     public static class DeleteLbCmd extends AgentCommand {
-        String lbUuid;
-        List<String> listenerUuids;
+        List<LbTO> lbs;
 
-        public List<String> getListenerUuids() {
-            return listenerUuids;
+        public List<LbTO> getLbs() {
+            return lbs;
         }
 
-        public void setListenerUuids(List<String> listenerUuids) {
-            this.listenerUuids = listenerUuids;
-        }
-
-        public String getLbUuid() {
-            return lbUuid;
-        }
-
-        public void setLbUuid(String lbUuid) {
-            this.lbUuid = lbUuid;
+        public void setLbs(List<LbTO> lbs) {
+            this.lbs = lbs;
         }
     }
 
@@ -192,7 +182,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
     public static final String REFRESH_LB_PATH = "/lb/refresh";
     public static final String DELETE_LB_PATH = "/lb/delete";
 
-    private RefreshLbCmd makeCmd(final LoadBalancerStruct struct) {
+    private List<LbTO> makeLbTOs(final LoadBalancerStruct struct) {
         final List<String> nicIps = CollectionUtils.transformToList(struct.getVmNics(), new Function<String, VmNicInventory>() {
             @Override
             public String call(VmNicInventory arg) {
@@ -205,13 +195,13 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
         q.add(VipVO_.uuid, Op.EQ, struct.getLb().getVipUuid());
         final String vip = q.findValue();
 
-        List<LbTO> lbs = CollectionUtils.transformToList(struct.getListeners(), new Function<LbTO, LoadBalancerListenerInventory>() {
+        return CollectionUtils.transformToList(struct.getListeners(), new Function<LbTO, LoadBalancerListenerInventory>() {
             @Override
             public LbTO call(LoadBalancerListenerInventory l) {
                 LbTO to = new LbTO();
                 to.setInstancePort(l.getInstancePort());
                 to.setLoadBalancerPort(l.getLoadBalancerPort());
-                to.setListenerUuid(l.getLoadBalancerUuid());
+                to.setLbUuid(l.getLoadBalancerUuid());
                 to.setListenerUuid(l.getUuid());
                 to.setMode(l.getProtocol());
                 to.setVip(vip);
@@ -226,17 +216,17 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                 return to;
             }
         });
-
-        RefreshLbCmd cmd = new RefreshLbCmd();
-        cmd.lbs = lbs;
-        return cmd;
     }
 
     private void refresh(VirtualRouterVmInventory vr, LoadBalancerStruct struct, final Completion completion) {
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setPath(REFRESH_LB_PATH);
-        msg.setCommand(makeCmd(struct));
+
+        RefreshLbCmd cmd = new RefreshLbCmd();
+        cmd.lbs = makeLbTOs(struct);
+
+        msg.setCommand(cmd);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -485,6 +475,8 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "refresh-lb-on-vr";
+
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         refresh(vr, struct, new Completion(trigger) {
@@ -612,13 +604,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
             });
         } else if (roles.size() > 1 && roles.contains(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat())) {
             DeleteLbCmd cmd = new DeleteLbCmd();
-            cmd.lbUuid = struct.getLb().getUuid();
-            cmd.listenerUuids = CollectionUtils.transformToList(struct.getListeners(), new Function<String, LoadBalancerListenerInventory>() {
-                @Override
-                public String call(LoadBalancerListenerInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            cmd.setLbs(makeLbTOs(struct));
 
             VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
             msg.setVmInstanceUuid(vr.getUuid());
