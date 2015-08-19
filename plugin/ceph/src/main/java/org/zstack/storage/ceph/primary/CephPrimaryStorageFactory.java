@@ -26,10 +26,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.*;
-import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
-import org.zstack.kvm.KVMAgentCommands.DetachDataVolumeCmd;
-import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
-import org.zstack.kvm.KVMAgentCommands.VolumeTO;
+import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
 import org.zstack.utils.CollectionUtils;
@@ -43,6 +40,7 @@ import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -151,6 +149,53 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }
     }
 
+    private IsoTO convertIsoToCephIfNeeded(final IsoTO to) {
+        if (to == null || !to.getPath().startsWith(VolumeTO.CEPH)) {
+            return to;
+        }
+
+        CephPrimaryStorageVO pri = new Callable<CephPrimaryStorageVO>() {
+            @Override
+            @Transactional(readOnly = true)
+            public CephPrimaryStorageVO call() {
+                String sql = "select pri from CephPrimaryStorageVO pri, ImageCacheVO c where pri.uuid = c.primaryStorageUuid" +
+                        " and c.imageUuid = :imgUuid";
+                TypedQuery<CephPrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, CephPrimaryStorageVO.class);
+                q.setParameter("imgUuid", to.getImageUuid());
+                return q.getSingleResult();
+            }
+        }.call();
+
+        KvmCephIsoTO cto = new KvmCephIsoTO(to);
+        cto.setMonInfo(CollectionUtils.transformToList(pri.getMons(), new Function<KvmCephIsoTO.MonInfo, CephPrimaryStorageMonVO>() {
+            @Override
+            public KvmCephIsoTO.MonInfo call(CephPrimaryStorageMonVO arg) {
+                if (MonStatus.Connected != arg.getStatus()) {
+                    return null;
+                }
+
+                KvmCephIsoTO.MonInfo info = new KvmCephIsoTO.MonInfo();
+                info.setHostname(arg.getHostname());
+                info.setPort(arg.getMonPort());
+                return info;
+            }
+        }));
+
+        if (cto.getMonInfo().isEmpty()) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("cannot find any Connected ceph mon for the primary storage[uuid:%s]", pri.getUuid())
+            ));
+        }
+
+        String secretUuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(pri.getUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN);
+        if (secretUuid == null) {
+            throw new CloudRuntimeException(String.format("cannot find KVM secret uuid for ceph primary storage[uuid:%s]", pri.getUuid()));
+        }
+        cto.setSecretUuid(secretUuid);
+
+        return cto;
+    }
+
     private VolumeTO convertVolumeToCephIfNeeded(VolumeInventory vol, VolumeTO to) {
         if (!vol.getInstallPath().startsWith(VolumeTO.CEPH)) {
             return to;
@@ -242,6 +287,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }
 
         cmd.setDataVolumes(dtos);
+        cmd.setBootIso(convertIsoToCephIfNeeded(cmd.getBootIso()));
     }
 
     @Override
