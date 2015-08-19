@@ -21,7 +21,7 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private int instancePort;
     @APIParam(numberRange = {1, 65536})
     private int loadBalancerPort;
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, validValues = {LoadBalancerConstants.LB_PROTOCOL_TCP, LoadBalancerConstants.LB_PROTOCOL_HTTP})
     private String protocol;
 
     @Override

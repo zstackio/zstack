@@ -1,16 +1,21 @@
 package org.zstack.network.service.lb;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
 
+import javax.persistence.TypedQuery;
 import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.e;
@@ -22,6 +27,8 @@ import static org.zstack.utils.CollectionDSL.map;
 public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ErrorFacade errf;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
@@ -29,9 +36,73 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteLoadBalancerListenerMsg)msg);
         } else if (msg instanceof APICreateLoadBalancerListenerMsg) {
             validate((APICreateLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIAddVmNicToLoadBalancerMsg) {
+            validate((APIAddVmNicToLoadBalancerMsg) msg);
+        } else if (msg instanceof APICreateLoadBalancerMsg) {
+            validate((APICreateLoadBalancerMsg) msg);
+        } else if (msg instanceof APIRemoveVmNicFromLoadBalancerMsg) {
+            validate((APIRemoveVmNicFromLoadBalancerMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIRemoveVmNicFromLoadBalancerMsg msg) {
+        SimpleQuery<LoadBalancerVmNicRefVO> q = dbf.createQuery(LoadBalancerVmNicRefVO.class);
+        q.add(LoadBalancerVmNicRefVO_.vmNicUuid, Op.EQ, msg.getVmNicUuid());
+        q.add(LoadBalancerVmNicRefVO_.loadBalancerUuid, Op.EQ, msg.getLoadBalancerUuid());
+        if (!q.isExists()) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the vm nic[uuid:%s] is not on the load balancer[uuid:%s]", msg.getVmNicUuid(), msg.getLoadBalancerUuid())
+            ));
+        }
+    }
+
+    private void validate(APICreateLoadBalancerMsg msg) {
+        SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
+        q.select(VipVO_.useFor);
+        q.add(VipVO_.uuid, Op.EQ, msg.getVipUuid());
+        String useFor = q.findValue();
+        if (LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING.equals(useFor)) {
+            SimpleQuery<LoadBalancerVO> lq = dbf.createQuery(LoadBalancerVO.class);
+            lq.select(LoadBalancerVO_.uuid);
+            lq.add(LoadBalancerVO_.vipUuid, Op.EQ, msg.getVipUuid());
+            String lbuuid = lq.findValue();
+
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the vip[uuid:%s] is occupied by another load balancer[uuid:%s]", msg.getVipUuid(), lbuuid)
+            ));
+        }
+
+        if (useFor != null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the vip[uuid:%s] is occupied by another service[%s]", msg.getVipUuid(), useFor)
+            ));
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private void validate(APIAddVmNicToLoadBalancerMsg msg) {
+        String sql = "select nic.uuid from NetworkServiceL3NetworkRefVO ref, VmNicVO nic where nic.l3NetworkUuid = ref.l3NetworkUuid" +
+                " and ref.networkServiceType = :ntype and nic.uuid = :nicUuid";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("nicUuid", msg.getVmNicUuid());
+        q.setParameter("ntype", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+        if (q.getResultList().isEmpty()) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the L3 network of the vm nic[uuid:%s] has no network service[%s] enabled", msg.getVmNicUuid(), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)
+            ));
+        }
+
+        sql = "select ref.vmNicUuid from LoadBalancerVmNicRefVO ref where ref.vmNicUuid = :nicUuid and ref.loadBalancerUuid = :lbuuid";
+        q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("nicUuid", msg.getVmNicUuid());
+        q.setParameter("lbuuid", msg.getLoadBalancerUuid());
+        if (!q.getResultList().isEmpty()) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the vm nic[uuid:%s] is already on the load balancer[uuid:%s]", msg.getVmNicUuid(), msg.getLoadBalancerUuid())
+            ));
+        }
     }
 
     private boolean hasTag(APICreateMessage msg, PatternedSystemTag tag) {
@@ -109,6 +180,28 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                         map(e(LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, LoadBalancerGlobalConfig.BALANCER_ALGORITHM.value()))
                 )
         );
+
+        SimpleQuery<LoadBalancerListenerVO> q = dbf.createQuery(LoadBalancerListenerVO.class);
+        q.select(LoadBalancerListenerVO_.uuid);
+        q.add(LoadBalancerListenerVO_.loadBalancerPort, Op.EQ, msg.getLoadBalancerPort());
+        q.add(LoadBalancerListenerVO_.loadBalancerUuid, Op.EQ, msg.getLoadBalancerUuid());
+        String luuid = q.findValue();
+        if (luuid != null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("conflict loadBalancerPort[%s], a listener[uuid:%s] has used that port", msg.getLoadBalancerPort(), luuid)
+            ));
+        }
+
+        q = dbf.createQuery(LoadBalancerListenerVO.class);
+        q.select(LoadBalancerListenerVO_.uuid);
+        q.add(LoadBalancerListenerVO_.instancePort, Op.EQ, msg.getInstancePort());
+        q.add(LoadBalancerListenerVO_.loadBalancerUuid, Op.EQ, msg.getLoadBalancerUuid());
+        luuid = q.findValue();
+        if (luuid != null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("conflict instancePort[%s], a listener[uuid:%s] has used that port", msg.getInstancePort(), luuid)
+            ));
+        }
     }
 
     private void validate(APIDeleteLoadBalancerListenerMsg msg) {

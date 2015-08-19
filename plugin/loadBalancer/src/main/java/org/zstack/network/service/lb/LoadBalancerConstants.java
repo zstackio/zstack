@@ -29,6 +29,9 @@ public class LoadBalancerConstants {
 
     public static final String QUOTA_LOAD_BALANCER_NUM = "loadBalancer.num";
 
+    public static final String LB_PROTOCOL_TCP = "tcp";
+    public static final String LB_PROTOCOL_HTTP = "http";
+
     static {
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_ROUND_ROBIN);
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_LEAST_CONN);
