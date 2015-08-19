@@ -17,4 +17,5 @@
     <TestCase class="org.zstack.test.lb.TestVirtualRouterLb15"/>
     <TestCase class="org.zstack.test.lb.TestVirtualRouterLb16"/>
     <TestCase class="org.zstack.test.lb.TestVirtualRouterLb17"/>
+    <TestCase class="org.zstack.test.lb.TestVirtualRouterLbPolicy"/>
 </UnitTestSuiteConfig>

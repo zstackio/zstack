@@ -3507,13 +3507,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public LoadBalancerInventory removeNicFromLoadBalancer(String lbUuid, String nicUuid, SessionInventory session) throws ApiSenderException {
-        APIRemoveNicFromLoadBalancerMsg msg = new APIRemoveNicFromLoadBalancerMsg();
+        APIRemoveVmNicFromLoadBalancerMsg msg = new APIRemoveVmNicFromLoadBalancerMsg();
         msg.setLoadBalancerUuid(lbUuid);
         msg.setVmNicUuid(nicUuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIRemoveNicFromLoadBalancerEvent evt = sender.send(msg, APIRemoveNicFromLoadBalancerEvent.class);
+        APIRemoveVmNicFromLoadBalancerEvent evt = sender.send(msg, APIRemoveVmNicFromLoadBalancerEvent.class);
         return evt.getInventory();
     }
 

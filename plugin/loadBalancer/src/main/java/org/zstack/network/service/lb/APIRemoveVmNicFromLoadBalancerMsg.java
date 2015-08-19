@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.vm.VmNicVO;
@@ -7,7 +8,8 @@ import org.zstack.header.vm.VmNicVO;
 /**
  * Created by frank on 8/8/2015.
  */
-public class APIRemoveNicFromLoadBalancerMsg extends APIMessage implements LoadBalancerMessage {
+@Action(category = LoadBalancerConstants.ACTION_CATEGORY)
+public class APIRemoveVmNicFromLoadBalancerMsg extends APIMessage implements LoadBalancerMessage {
     @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
     private String vmNicUuid;
     @APIParam(resourceType = LoadBalancerVO.class, checkAccount = true, operationTarget = true)

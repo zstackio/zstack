@@ -1,6 +1,7 @@
 package org.zstack.network.service.lb;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -8,8 +9,14 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
@@ -23,15 +30,19 @@ import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.tag.TagManager;
 
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by frank on 8/8/2015.
  */
-public class LoadBalancerManagerImpl extends AbstractService implements LoadBalancerManager, AddExpandedQueryExtensionPoint {
+public class LoadBalancerManagerImpl extends AbstractService implements LoadBalancerManager,
+        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -335,5 +346,49 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         s.setExpandedField("loadBalancerRef.loadBalancer");
         structs.add(s);
         return structs;
+    }
+
+    @Override
+    public List<Quota> reportQuota() {
+        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+            @Override
+            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
+                if (msg instanceof APICreateLoadBalancerMsg) {
+                    check((APICreateLoadBalancerMsg) msg, pairs);
+                }
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APICreateLoadBalancerMsg msg, Map<String, QuotaPair> pairs) {
+                long lbNum = pairs.get(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM).getValue();
+
+                String sql = "select count(lb) from LoadBalancerVO lb, AccountResourceRefVO ref where ref.resourceUuid = lb.uuid and " +
+                        "ref.accountUuid = :auuid and ref.resourceType = :rtype";
+
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("rtype", LoadBalancerVO.class.getSimpleName());
+                Long en = q.getSingleResult();
+                en = en == null ? 0 : en;
+
+                if (en + 1 > lbNum) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM, lbNum)
+                    ));
+                }
+            }
+        };
+
+        Quota quota = new Quota();
+        quota.setMessageNeedValidation(APICreateLoadBalancerMsg.class);
+        quota.setChecker(checker);
+
+        QuotaPair p = new QuotaPair();
+        p.setName(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM);
+        p.setValue(20);
+        quota.addPair(p);
+
+        return list(quota);
     }
 }

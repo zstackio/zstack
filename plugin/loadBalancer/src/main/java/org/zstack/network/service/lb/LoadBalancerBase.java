@@ -397,8 +397,8 @@ public class LoadBalancerBase {
             handle((APICreateLoadBalancerListenerMsg) msg);
         } else if (msg instanceof APIAddVmNicToLoadBalancerMsg) {
             handle((APIAddVmNicToLoadBalancerMsg) msg);
-        } else if (msg instanceof APIRemoveNicFromLoadBalancerMsg) {
-            handle((APIRemoveNicFromLoadBalancerMsg) msg);
+        } else if (msg instanceof APIRemoveVmNicFromLoadBalancerMsg) {
+            handle((APIRemoveVmNicFromLoadBalancerMsg) msg);
         } else if (msg instanceof APIDeleteLoadBalancerListenerMsg) {
             handle((APIDeleteLoadBalancerListenerMsg) msg);
         } else if (msg instanceof APIDeleteLoadBalancerMsg) {
@@ -471,6 +471,13 @@ public class LoadBalancerBase {
 
     private void delete(APIDeleteLoadBalancerMsg msg, final NoErrorCompletion completion) {
         final APIDeleteLoadBalancerEvent evt = new APIDeleteLoadBalancerEvent(msg.getId());
+        if (self.getProviderType() == null) {
+            // not initialized yet
+            bus.publish(evt);
+            completion.done();
+            return;
+        }
+
         LoadBalancerBackend bkd = getBackend();
         bkd.destroyLoadBalancer(makeStruct(), new Completion(msg, completion) {
             @Override
@@ -563,7 +570,7 @@ public class LoadBalancerBase {
         });
     }
 
-    private void handle(final APIRemoveNicFromLoadBalancerMsg msg) {
+    private void handle(final APIRemoveVmNicFromLoadBalancerMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -622,8 +629,8 @@ public class LoadBalancerBase {
         });
     }
 
-    private void removeNic(APIRemoveNicFromLoadBalancerMsg msg, final NoErrorCompletion completion) {
-        final APIRemoveNicFromLoadBalancerEvent evt = new APIRemoveNicFromLoadBalancerEvent(msg.getId());
+    private void removeNic(APIRemoveVmNicFromLoadBalancerMsg msg, final NoErrorCompletion completion) {
+        final APIRemoveVmNicFromLoadBalancerEvent evt = new APIRemoveVmNicFromLoadBalancerEvent(msg.getId());
 
         SimpleQuery<LoadBalancerVmNicRefVO> q = dbf.createQuery(LoadBalancerVmNicRefVO.class);
         q.add(LoadBalancerVmNicRefVO_.vmNicUuid, Op.EQ, msg.getVmNicUuid());

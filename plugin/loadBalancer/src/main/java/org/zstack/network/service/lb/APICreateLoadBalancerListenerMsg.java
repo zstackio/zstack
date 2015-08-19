@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.tag.TagResourceType;
@@ -8,6 +9,7 @@ import org.zstack.header.tag.TagResourceType;
  * Created by frank on 8/8/2015.
  */
 @TagResourceType(LoadBalancerListenerVO.class)
+@Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 public class APICreateLoadBalancerListenerMsg extends APICreateMessage implements LoadBalancerMessage {
     @APIParam(resourceType = LoadBalancerVO.class, checkAccount = true, operationTarget = true)
     private String loadBalancerUuid;

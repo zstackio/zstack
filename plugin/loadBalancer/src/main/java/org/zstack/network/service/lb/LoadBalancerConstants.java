@@ -21,16 +21,20 @@ public class LoadBalancerConstants {
 
     public static final List<String> BALANCE_ALGORITHMS = new ArrayList<String>();
 
-    public static final String HEALTH_CEHECK_TARGET_PROTOCL_TCP = "tcp";
+    public static final String HEALTH_CHECK_TARGET_PROTOCL_TCP = "tcp";
 
     public static final List<String> HEALTH_CHECK_TARGET_PROTOCOLS = new ArrayList<String>();
+
+    public static final String ACTION_CATEGORY = "loadBalancer";
+
+    public static final String QUOTA_LOAD_BALANCER_NUM = "loadBalancer.num";
 
     static {
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_ROUND_ROBIN);
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_LEAST_CONN);
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_LEAST_SOURCE);
 
-        HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CEHECK_TARGET_PROTOCL_TCP);
+        HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_TCP);
     }
 
 }

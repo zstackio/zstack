@@ -5,13 +5,13 @@ import org.zstack.header.message.APIEvent;
 /**
  * Created by frank on 8/8/2015.
  */
-public class APIRemoveNicFromLoadBalancerEvent extends APIEvent {
+public class APIRemoveVmNicFromLoadBalancerEvent extends APIEvent {
     private LoadBalancerInventory inventory;
 
-    public APIRemoveNicFromLoadBalancerEvent() {
+    public APIRemoveVmNicFromLoadBalancerEvent() {
     }
 
-    public APIRemoveNicFromLoadBalancerEvent(String apiId) {
+    public APIRemoveVmNicFromLoadBalancerEvent(String apiId) {
         super(apiId);
     }
 
