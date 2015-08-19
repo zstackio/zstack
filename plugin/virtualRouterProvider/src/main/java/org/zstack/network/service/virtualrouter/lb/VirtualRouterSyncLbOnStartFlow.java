@@ -7,16 +7,21 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.lb.*;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
+import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -37,6 +42,8 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
     private DatabaseFacade dbf;
     @Autowired
     private VirtualRouterLoadBalancerBackend bkd;
+    @Autowired
+    protected VirtualRouterVipBackend vipExt;
 
     private LoadBalancerStruct makeStruct(LoadBalancerVO vo) {
         LoadBalancerStruct struct = new LoadBalancerStruct();
@@ -68,16 +75,16 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
     }
 
     @Override
-    public void run(final FlowTrigger trigger, final Map data) {
+    public void run(final FlowTrigger outterTrigger, final Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         final VmNicInventory guestNic = vr.getGuestNic();
         if (!vrMgr.isL3NetworkNeedingNetworkServiceByVirtualRouter(guestNic.getL3NetworkUuid(), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)) {
-            trigger.next();
+            outterTrigger.next();
             return;
         }
 
         if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(vr.getUuid()) && !VirtualRouterSystemTags.VR_LB_ROLE.hasTag(vr.getUuid())) {
-            trigger.next();
+            outterTrigger.next();
             return;
         }
 
@@ -120,41 +127,97 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
         }.call();
 
         if (lbs.isEmpty()) {
-            trigger.next();
+            outterTrigger.next();
             return;
         }
 
-        List<LoadBalancerStruct> structs = new ArrayList<LoadBalancerStruct>();
-        for (LoadBalancerVO vo : lbs) {
-            structs.add(makeStruct(vo));
-        }
-
-        bkd.syncOnStart(vr, structs, new Completion(trigger) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("sync-lb-on-vr-%s", vr.getUuid()));
+        chain.then(new ShareFlow() {
             @Override
-            public void success() {
-                List<VirtualRouterLoadBalancerRefVO> refs = new ArrayList<VirtualRouterLoadBalancerRefVO>();
-                for (LoadBalancerVO vo : lbs) {
-                    SimpleQuery<VirtualRouterLoadBalancerRefVO> q = dbf.createQuery(VirtualRouterLoadBalancerRefVO.class);
-                    q.add(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, Op.EQ, vo.getUuid());
-                    q.add(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, Op.EQ, vr.getUuid());
-                    if (!q.isExists()) {
-                        VirtualRouterLoadBalancerRefVO ref = new VirtualRouterLoadBalancerRefVO();
-                        ref.setLoadBalancerUuid(vo.getUuid());
-                        ref.setVirtualRouterVmUuid(vr.getUuid());
-                        refs.add(ref);
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-vip-for-lbs";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
+                        q.add(VipVO_.uuid, Op.IN, CollectionUtils.transformToList(lbs, new Function<String, LoadBalancerVO>() {
+                            @Override
+                            public String call(LoadBalancerVO arg) {
+                                return arg.getVipUuid();
+                            }
+                        }));
+                        List<VipVO> vipvos = q.list();
+
+                        vipExt.createVipOnVirtualRouterVm(vr, VipInventory.valueOf(vipvos), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
-                }
+                });
 
-                dbf.persistCollection(refs);
-                data.put(VirtualRouterSyncLbOnStartFlow.class, refs);
-                trigger.next();
-            }
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-lbs";
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                trigger.fail(errorCode);
+                    @Override
+                    public void run(final FlowTrigger trigger, final Map data) {
+                        List<LoadBalancerStruct> structs = new ArrayList<LoadBalancerStruct>();
+                        for (LoadBalancerVO vo : lbs) {
+                            structs.add(makeStruct(vo));
+                        }
+
+                        bkd.syncOnStart(vr, structs, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                List<VirtualRouterLoadBalancerRefVO> refs = new ArrayList<VirtualRouterLoadBalancerRefVO>();
+                                for (LoadBalancerVO vo : lbs) {
+                                    SimpleQuery<VirtualRouterLoadBalancerRefVO> q = dbf.createQuery(VirtualRouterLoadBalancerRefVO.class);
+                                    q.add(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, Op.EQ, vo.getUuid());
+                                    q.add(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, Op.EQ, vr.getUuid());
+                                    if (!q.isExists()) {
+                                        VirtualRouterLoadBalancerRefVO ref = new VirtualRouterLoadBalancerRefVO();
+                                        ref.setLoadBalancerUuid(vo.getUuid());
+                                        ref.setVirtualRouterVmUuid(vr.getUuid());
+                                        refs.add(ref);
+                                    }
+                                }
+
+                                dbf.persistCollection(refs);
+                                data.put(VirtualRouterSyncLbOnStartFlow.class, refs);
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(outterTrigger) {
+                    @Override
+                    public void handle(Map data) {
+                        outterTrigger.next();
+                    }
+                });
+
+                error(new FlowErrorHandler(outterTrigger) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        outterTrigger.fail(errCode);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     @Override

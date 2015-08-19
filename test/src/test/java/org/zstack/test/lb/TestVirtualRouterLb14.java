@@ -13,7 +13,9 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerVO;
 import org.zstack.network.service.lb.LoadBalancerVO;
+import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands.VipTO;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
@@ -87,6 +89,8 @@ public class TestVirtualRouterLb14 {
         VipVO vip = dbf.findByUuid(lbvo.getVipUuid(), VipVO.class);
         Assert.assertNotNull(vip);
         Assert.assertFalse(vconfig.vips.isEmpty());
+        VipTO vipto = vconfig.vips.get(0);
+        Assert.assertEquals(vip.getIp(), vipto.getIp());
 
         Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());
         RefreshLbCmd cmd = vconfig.refreshLbCmds.get(0);
@@ -113,17 +117,20 @@ public class TestVirtualRouterLb14 {
 
         api.stopVmInstance(vm.getUuid());
         api.destroyVmInstance(vr.getUuid());
+        vconfig.vips.clear();
         vconfig.refreshLbCmds.clear();
         api.startVmInstance(vm.getUuid());
         validate();
 
         vr = dbf.listAll(VirtualRouterVmVO.class).get(0);
         api.stopVmInstance(vr.getUuid());
+        vconfig.vips.clear();
         vconfig.refreshLbCmds.clear();
         api.startVmInstance(vr.getUuid());
         validate();
 
         vconfig.refreshLbCmds.clear();
+        vconfig.vips.clear();
         api.rebootVmInstance(vr.getUuid());
         validate();
     }

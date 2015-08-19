@@ -10,6 +10,7 @@ import org.zstack.header.allocator.*;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.PrimaryStorageState;
 import org.zstack.header.storage.primary.PrimaryStorageStatus;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -22,13 +23,20 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
     private DatabaseFacade dbf;
 
 	@Transactional(readOnly = true)
-	private List<HostVO> allocate(long diskSize) {
-		String sql = String
-		        .format("select h from HostVO h where h.clusterUuid in (select pr.clusterUuid from PrimaryStorageClusterRefVO pr where pr.primaryStorageUuid in (select p.uuid from PrimaryStorageVO p where p.state = :state and p.status = :status and p.availableCapacity > :disk))");
-		TypedQuery<HostVO> query = dbf.getEntityManager().createQuery(sql, HostVO.class);
+	private List<HostVO> allocateFreshly() {
+        String sql;
+        TypedQuery<HostVO> query;
+        if (spec.getVmOperation().equals(VmOperation.NewCreate.toString())) {
+            sql = "select h from HostVO h where h.clusterUuid in (select pr.clusterUuid from PrimaryStorageClusterRefVO pr where pr.primaryStorageUuid in (select p.uuid from PrimaryStorageVO p where p.state = :state and p.status = :status and p.availableCapacity > :disk))";
+            query = dbf.getEntityManager().createQuery(sql, HostVO.class);
+            query.setParameter("disk", spec.getDiskSize());
+        } else {
+            sql = "select h from HostVO h where h.clusterUuid in (select pr.clusterUuid from PrimaryStorageClusterRefVO pr where pr.primaryStorageUuid in (select p.uuid from PrimaryStorageVO p where p.state = :state and p.status = :status))";
+            query = dbf.getEntityManager().createQuery(sql, HostVO.class);
+        }
+
 		query.setParameter("state", PrimaryStorageState.Enabled);
         query.setParameter("status", PrimaryStorageStatus.Connected);
-		query.setParameter("disk", diskSize);
 
         if (usePagination()) {
             query.setFirstResult(paginationInfo.getOffset());
@@ -38,38 +46,33 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
 		return query.getResultList();
 	}
 
-	@Transactional(readOnly = true)
-	private List<HostVO> allocateFromCandidates(long diskSize) {
-		List<String> huuids = getHostUuidsFromCandidates();
+    @Transactional(readOnly = true)
+    private List<HostVO> allocateFromCandidates() {
+        List<String> huuids = getHostUuidsFromCandidates();
 
-		if (!huuids.isEmpty()) {
-            String sql = String
-                    .format("select h from HostVO h where h.uuid in :uuids and h.clusterUuid in (select pr.clusterUuid from PrimaryStorageClusterRefVO pr, PrimaryStorageVO pri, PrimaryStorageCapacityVO cap where pr.primaryStorageUuid = pri.uuid and pri.uuid = cap.uuid and pri.state = :state and pri.status = :status and cap.availableCapacity > :disk)");
-            TypedQuery<HostVO> query = dbf.getEntityManager().createQuery(sql, HostVO.class);
-            query.setParameter("uuids", huuids);
-            query.setParameter("state", PrimaryStorageState.Enabled);
-            query.setParameter("status", PrimaryStorageStatus.Connected);
-            query.setParameter("disk", diskSize);
-            return query.getResultList();
-		} else {
-            String sql = String
-                    .format("select h from HostVO h where h.clusterUuid in (select pr.clusterUuid from PrimaryStorageClusterRefVO pr, PrimaryStorageVO pri, PrimaryStorageCapacityVO cap where pr.primaryStorageUuid = pri.uuid and pri.uuid = cap.uuid and pri.state = :state and pri.status = :status and cap.availableCapacity > :disk)");
-            TypedQuery<HostVO> query = dbf.getEntityManager().createQuery(sql, HostVO.class);
-            query.setParameter("state", PrimaryStorageState.Enabled);
-            query.setParameter("status", PrimaryStorageStatus.Connected);
-            query.setParameter("disk", diskSize);
-            return query.getResultList();
+        String sql;
+        TypedQuery<HostVO> query;
+        if (VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
+            sql = "select h from HostVO h where h.uuid in :uuids and h.clusterUuid in (select pr.clusterUuid from PrimaryStorageClusterRefVO pr, PrimaryStorageVO pri, PrimaryStorageCapacityVO cap where pr.primaryStorageUuid = pri.uuid and pri.uuid = cap.uuid and pri.state = :state and pri.status = :status and cap.availableCapacity > :disk)";
+            query = dbf.getEntityManager().createQuery(sql, HostVO.class);
+            query.setParameter("disk", spec.getDiskSize());
+        } else {
+            sql = "select h from HostVO h where h.uuid in :uuids and h.clusterUuid in (select pr.clusterUuid from PrimaryStorageClusterRefVO pr, PrimaryStorageVO pri, PrimaryStorageCapacityVO cap where pr.primaryStorageUuid = pri.uuid and pri.uuid = cap.uuid and pri.state = :state and pri.status = :status)";
+            query = dbf.getEntityManager().createQuery(sql, HostVO.class);
         }
 
-
-	}
+        query.setParameter("uuids", huuids);
+        query.setParameter("state", PrimaryStorageState.Enabled);
+        query.setParameter("status", PrimaryStorageStatus.Connected);
+        return query.getResultList();
+    }
 
     @Override
     public void allocate() {
         if (amITheFirstFlow()) {
-            candidates = allocate(spec.getDiskSize());
+            candidates = allocateFreshly();
         } else {
-            candidates = allocateFromCandidates(spec.getDiskSize());
+            candidates = allocateFromCandidates();
         }
 
         if (candidates.isEmpty()) {

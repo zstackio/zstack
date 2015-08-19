@@ -100,16 +100,22 @@ public class TestVirtualRouterLb15 {
 
         api.stopVmInstance(nonLbVr.getUuid());
         vconfig.refreshLbCmds.clear();
+        vconfig.vips.clear();
         api.startVmInstance(nonLbVr.getUuid());
         Assert.assertTrue(vconfig.refreshLbCmds.isEmpty());
+        Assert.assertTrue(vconfig.vips.isEmpty());
 
         vconfig.refreshLbCmds.clear();
+        vconfig.vips.clear();
         api.rebootVmInstance(vr.getUuid());
         Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());
+        Assert.assertFalse(vconfig.vips.isEmpty());
 
         api.stopVmInstance(vr.getUuid());
         vconfig.refreshLbCmds.clear();
+        vconfig.vips.clear();
         api.startVmInstance(vr.getUuid());
         Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());
+        Assert.assertFalse(vconfig.vips.isEmpty());
     }
 }
