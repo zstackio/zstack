@@ -11,6 +11,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
+import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerVO;
 import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.vip.VipInventory;
@@ -80,11 +81,12 @@ public class TestVirtualRouterLb14 {
     void validate() {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
+        LoadBalancerListenerInventory l = deployer.loadBalancerListeners.get("listener");
         LoadBalancerVO lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
         Assert.assertNotNull(lbvo);
         Assert.assertNotNull(lbvo.getProviderType());
         Assert.assertFalse(lbvo.getListeners().isEmpty());
-        Assert.assertFalse(lbvo.getVmNicRefs().isEmpty());
+        Assert.assertFalse(l.getVmNicRefs().isEmpty());
 
         VipVO vip = dbf.findByUuid(lbvo.getVipUuid(), VipVO.class);
         Assert.assertNotNull(vip);
@@ -96,10 +98,10 @@ public class TestVirtualRouterLb14 {
         RefreshLbCmd cmd = vconfig.refreshLbCmds.get(0);
         Assert.assertFalse(cmd.getLbs().isEmpty());
         LbTO to = cmd.getLbs().get(0);
-        LoadBalancerListenerVO l = lbvo.getListeners().iterator().next();
-        Assert.assertEquals(l.getProtocol(), to.getMode());
-        Assert.assertEquals(l.getInstancePort(), to.getInstancePort());
-        Assert.assertEquals(l.getLoadBalancerPort(), to.getLoadBalancerPort());
+        LoadBalancerListenerVO lvo = lbvo.getListeners().iterator().next();
+        Assert.assertEquals(lvo.getProtocol(), to.getMode());
+        Assert.assertEquals(lvo.getInstancePort(), to.getInstancePort());
+        Assert.assertEquals(lvo.getLoadBalancerPort(), to.getLoadBalancerPort());
 
         Assert.assertEquals(vip.getIp(), to.getVip());
 

@@ -2,6 +2,8 @@ package org.zstack.network.service.lb;
 
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -15,7 +17,12 @@ import java.util.List;
 @Inventory(mappingVOClass = LoadBalancerListenerVO.class)
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "loadBalancer", inventoryClass = LoadBalancerInventory.class,
-                foreignKey = "loadBalancerUuid", expandedInventoryKey = "uuid")
+                foreignKey = "loadBalancerUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "vmNicRef", inventoryClass = LoadBalancerListenerVmNicRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "listenerUuid", hidden = true)
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(alias = "vmNic", expandedField = "vmNicRef.vmNic")
 })
 public class LoadBalancerListenerInventory {
     private String uuid;
@@ -27,6 +34,7 @@ public class LoadBalancerListenerInventory {
     private String protocol;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+    private List<LoadBalancerListenerVmNicRefInventory> vmNicRefs;
 
     public static LoadBalancerListenerInventory valueOf(LoadBalancerListenerVO vo) {
         LoadBalancerListenerInventory inv = new LoadBalancerListenerInventory();
@@ -39,6 +47,7 @@ public class LoadBalancerListenerInventory {
         inv.setProtocol(vo.getProtocol());
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
+        inv.setVmNicRefs(LoadBalancerListenerVmNicRefInventory.valueOf(vo.getVmNicRefs()));
         return inv;
     }
 
@@ -48,6 +57,14 @@ public class LoadBalancerListenerInventory {
             invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public List<LoadBalancerListenerVmNicRefInventory> getVmNicRefs() {
+        return vmNicRefs;
+    }
+
+    public void setVmNicRefs(List<LoadBalancerListenerVmNicRefInventory> vmNicRefs) {
+        this.vmNicRefs = vmNicRefs;
     }
 
     public String getName() {

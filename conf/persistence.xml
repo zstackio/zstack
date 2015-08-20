@@ -112,7 +112,7 @@
         <class>org.zstack.header.storage.primary.ImageCacheVolumeRefVO</class>
         <class>org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerVO</class>
-        <class>org.zstack.network.service.lb.LoadBalancerVmNicRefVO</class>
+        <class>org.zstack.network.service.lb.LoadBalancerListenerVmNicRefVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerVO</class>
     </persistence-unit>
 </persistence>

@@ -11,10 +11,9 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
+import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerVO;
 import org.zstack.network.service.lb.LoadBalancerVO;
-import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
-import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -24,8 +23,6 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-
-import java.util.List;
 
 /**
  * 
@@ -72,9 +69,10 @@ public class TestVirtualRouterLb7 {
         L3NetworkInventory gnw = deployer.l3Networks.get("GuestNetwork");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory nic = vm.findNic(gnw.getUuid());
-        LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
-        api.addVmNicToLoadBalancer(lb.getUuid(), nic.getUuid());
+        LoadBalancerListenerInventory l = deployer.loadBalancerListeners.get("listener");
+        api.addVmNicToLoadBalancerListener(l.getUuid(), nic.getUuid());
 
+        LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
         api.deleteLoadBalancer(lb.getUuid(), null);
 
         Assert.assertEquals(1, dbf.count(VirtualRouterVmVO.class));

@@ -8,12 +8,14 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.utils.DebugUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
@@ -48,14 +50,20 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIRemoveVmNicFromLoadBalancerMsg msg) {
-        SimpleQuery<LoadBalancerVmNicRefVO> q = dbf.createQuery(LoadBalancerVmNicRefVO.class);
-        q.add(LoadBalancerVmNicRefVO_.vmNicUuid, Op.EQ, msg.getVmNicUuid());
-        q.add(LoadBalancerVmNicRefVO_.loadBalancerUuid, Op.EQ, msg.getLoadBalancerUuid());
-        if (!q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the vm nic[uuid:%s] is not on the load balancer[uuid:%s]", msg.getVmNicUuid(), msg.getLoadBalancerUuid())
-            ));
+        SimpleQuery<LoadBalancerListenerVmNicRefVO> q = dbf.createQuery(LoadBalancerListenerVmNicRefVO.class);
+        q.select(LoadBalancerListenerVmNicRefVO_.vmNicUuid);
+        q.add(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.IN, msg.getVmNicUuids());
+        q.add(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.EQ, msg.getListenerUuid());
+        List<String> vmNicUuids = q.listValue();
+        if (vmNicUuids.isEmpty()) {
+            throw new StopRoutingException();
         }
+
+        SimpleQuery<LoadBalancerListenerVO> lq = dbf.createQuery(LoadBalancerListenerVO.class);
+        lq.select(LoadBalancerListenerVO_.loadBalancerUuid);
+        lq.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getListenerUuid());
+        String lbuuid = lq.findValue();
+        msg.setLoadBalancerUuid(lbuuid);
     }
 
     private void validate(APICreateLoadBalancerMsg msg) {
@@ -83,26 +91,43 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
 
     @Transactional(readOnly = true)
     private void validate(APIAddVmNicToLoadBalancerMsg msg) {
-        String sql = "select nic.uuid from NetworkServiceL3NetworkRefVO ref, VmNicVO nic where nic.l3NetworkUuid = ref.l3NetworkUuid" +
-                " and ref.networkServiceType = :ntype and nic.uuid = :nicUuid";
+        String sql = "select nic.l3NetworkUuid from VmNicVO nic where nic.uuid in (:uuids) group by nic.l3NetworkUuid";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("nicUuid", msg.getVmNicUuid());
-        q.setParameter("ntype", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
-        if (q.getResultList().isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("the L3 network of the vm nic[uuid:%s] has no network service[%s] enabled", msg.getVmNicUuid(), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)
+        q.setParameter("uuids", msg.getVmNicUuids());
+        List<String> l3Uuids = q.getResultList();
+        DebugUtils.Assert(!l3Uuids.isEmpty(), "cannot find the l3Network");
+        if (l3Uuids.size() > 1) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("vm nics[uuids:%s] are not on the same L3 network. they are on L3 networks[uuids:%s]", msg.getVmNicUuids(), l3Uuids)
             ));
         }
 
-        sql = "select ref.vmNicUuid from LoadBalancerVmNicRefVO ref where ref.vmNicUuid = :nicUuid and ref.loadBalancerUuid = :lbuuid";
+        String l3Uuid = l3Uuids.get(0);
+        sql = "select ref.l3NetworkUuid from NetworkServiceL3NetworkRefVO ref where ref.l3NetworkUuid = :uuid and ref.networkServiceType = :ntype";
         q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("nicUuid", msg.getVmNicUuid());
-        q.setParameter("lbuuid", msg.getLoadBalancerUuid());
-        if (!q.getResultList().isEmpty()) {
+        q.setParameter("uuid", l3Uuid);
+        q.setParameter("ntype", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+        if (q.getResultList().isEmpty()) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("the vm nic[uuid:%s] is already on the load balancer[uuid:%s]", msg.getVmNicUuid(), msg.getLoadBalancerUuid())
+                    String.format("the L3 network[uuid:%s] of the vm nics has no network service[%s] enabled", l3Uuid, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)
             ));
         }
+
+        sql = "select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref where ref.vmNicUuid in (:nicUuids) and ref.listenerUuid = :uuid";
+        q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("nicUuids", msg.getVmNicUuids());
+        q.setParameter("uuid", msg.getListenerUuid());
+        List<String> existingNics = q.getResultList();
+        if (!existingNics.isEmpty()) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the vm nics[uuid:%s] are already on the load balancer listener[uuid:%s]", existingNics, msg.getListenerUuid())
+            ));
+        }
+
+        sql = "select l.loadBalancerUuid from LoadBalancerListenerVO l where l.uuid = :uuid";
+        q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("uuid", msg.getListenerUuid());
+        msg.setLoadBalancerUuid(q.getSingleResult());
     }
 
     private boolean hasTag(APICreateMessage msg, PatternedSystemTag tag) {

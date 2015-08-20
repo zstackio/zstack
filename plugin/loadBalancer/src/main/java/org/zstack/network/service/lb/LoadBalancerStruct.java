@@ -4,15 +4,20 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.vip.VipInventory;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by frank on 8/8/2015.
  */
 public class LoadBalancerStruct {
     private LoadBalancerInventory lb;
-    private List<VmNicInventory> vmNics;
+    private Map<String, VmNicInventory> vmNics;
     private List<LoadBalancerListenerInventory> listeners;
     private boolean init;
+
+    public Map<String, VmNicInventory> getVmNics() {
+        return vmNics;
+    }
 
     public boolean isInit() {
         return init;
@@ -38,11 +43,7 @@ public class LoadBalancerStruct {
         this.lb = lb;
     }
 
-    public List<VmNicInventory> getVmNics() {
-        return vmNics;
-    }
-
-    public void setVmNics(List<VmNicInventory> vmNics) {
+    public void setVmNics(Map<String, VmNicInventory> vmNics) {
         this.vmNics = vmNics;
     }
 }

@@ -24,6 +24,7 @@ import org.zstack.header.zone.ZoneInventory;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
+import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -69,6 +70,7 @@ public class Deployer {
     public Map<String, EipInventory> eips = new HashMap<String, EipInventory>();
     public Map<String, IpRangeInventory> ipRanges = new HashMap<String, IpRangeInventory>();
     public Map<String, LoadBalancerInventory> loadBalancers = new HashMap<String, LoadBalancerInventory>();
+    public Map<String, LoadBalancerListenerInventory> loadBalancerListeners = new HashMap<String, LoadBalancerListenerInventory>();
 
     private Map<String, List<ClusterInventory>> primaryStoragesToAttach = new HashMap<String, List<ClusterInventory>>();
     private Map<String, List<ClusterInventory>> l2NetworksToAttach = new HashMap<String, List<ClusterInventory>>();

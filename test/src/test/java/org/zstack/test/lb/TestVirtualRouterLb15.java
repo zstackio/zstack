@@ -11,6 +11,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
+import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
@@ -78,8 +79,8 @@ public class TestVirtualRouterLb15 {
         L3NetworkInventory gnw = deployer.l3Networks.get("GuestNetwork");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory nic = vm.findNic(gnw.getUuid());
-        LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
-        api.addVmNicToLoadBalancer(lb.getUuid(), nic.getUuid());
+        LoadBalancerListenerInventory l = deployer.loadBalancerListeners.get("listener");
+        api.addVmNicToLoadBalancerListener(l.getUuid(), nic.getUuid());
 
         Assert.assertEquals(2, dbf.count(VirtualRouterVmVO.class));
         Assert.assertEquals(1, dbf.count(VirtualRouterLoadBalancerRefVO.class));

@@ -89,15 +89,15 @@ public class TestVirtualRouterLb17 {
         LoadBalancerInventory lbr = reply.getInventories().get(0);
         Assert.assertEquals(lb.getUuid(), lbr.getUuid());
 
-        msg = new APIQueryLoadBalancerMsg();
-        msg.addQueryCondition("vmNic.uuid", QueryOp.EQ, nic.getUuid());
-        reply = api.query(msg, APIQueryLoadBalancerReply.class);
-        Assert.assertEquals(1, reply.getInventories().size());
-        lbr = reply.getInventories().get(0);
-        Assert.assertEquals(lb.getUuid(), lbr.getUuid());
+        APIQueryLoadBalancerListenerMsg lmsg = new APIQueryLoadBalancerListenerMsg();
+        lmsg.addQueryCondition("vmNic.uuid", QueryOp.EQ, nic.getUuid());
+        APIQueryLoadBalancerListenerReply lreply = api.query(lmsg, APIQueryLoadBalancerListenerReply.class);
+        Assert.assertEquals(1, lreply.getInventories().size());
+        LoadBalancerListenerInventory lr = lreply.getInventories().get(0);
+        Assert.assertEquals(l.getUuid(), lr.getUuid());
 
         APIQueryVmNicMsg nmsg = new APIQueryVmNicMsg();
-        nmsg.addQueryCondition("loadBalancer.vip.ip", QueryOp.EQ, vip.getIp());
+        nmsg.addQueryCondition("loadBalancerListener.loadBalancer.vip.ip", QueryOp.EQ, vip.getIp());
         APIQueryVmNicReply nreply = api.query(nmsg, APIQueryVmNicReply.class);
         Assert.assertEquals(1, nreply.getInventories().size());
         VmNicInventory rnic = nreply.getInventories().get(0);

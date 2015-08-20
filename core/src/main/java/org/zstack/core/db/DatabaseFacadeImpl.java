@@ -566,6 +566,14 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 	}
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateCollection(Collection entities) {
+        for (Object e : entities) {
+            getEntityManager().merge(e);
+        }
+    }
+
+    @Override
     public long generateSequenceNumber(Class<?> seqTable) {
         try {
             Field id = seqTable.getDeclaredField("id");

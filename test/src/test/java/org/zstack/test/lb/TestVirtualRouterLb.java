@@ -71,7 +71,7 @@ public class TestVirtualRouterLb {
         Assert.assertNotNull(lbvo);
         Assert.assertNotNull(lbvo.getProviderType());
         Assert.assertFalse(lbvo.getListeners().isEmpty());
-        Assert.assertFalse(lbvo.getVmNicRefs().isEmpty());
+        Assert.assertFalse(lbvo.getListeners().iterator().next().getVmNicRefs().isEmpty());
 
         VipVO vip = dbf.findByUuid(lbvo.getVipUuid(), VipVO.class);
         Assert.assertNotNull(vip);

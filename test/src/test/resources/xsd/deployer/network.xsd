@@ -107,6 +107,7 @@
             <xsd:element name="protocol" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="instancePort" type="xsd:unsignedInt" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="loadBalancerPort" type="xsd:unsignedInt" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="vmNicRef" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
@@ -117,7 +118,6 @@
             <xsd:element name="description" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="publicL3NetworkRef" type="xsd:string" maxOccurs="1" minOccurs="0"/>
             <xsd:element name="listener" type="LbListenerConfig" maxOccurs="unbounded" minOccurs="0"/>
-            <xsd:element name="vmNicRef" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
             <xsd:element name="tag" type="xsd:string" maxOccurs="unbounded" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>

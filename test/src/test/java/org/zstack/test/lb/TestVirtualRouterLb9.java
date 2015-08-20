@@ -13,7 +13,6 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.*;
-import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -89,9 +88,9 @@ public class TestVirtualRouterLb9 {
         });
         Assert.assertNull(ip);
 
-        SimpleQuery<LoadBalancerVmNicRefVO> q = dbf.createQuery(LoadBalancerVmNicRefVO.class);
-        q.add(LoadBalancerVmNicRefVO_.vmNicUuid, Op.EQ, nic.getUuid());
-        LoadBalancerVmNicRefVO ref = q.find();
+        SimpleQuery<LoadBalancerListenerVmNicRefVO> q = dbf.createQuery(LoadBalancerListenerVmNicRefVO.class);
+        q.add(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.EQ, nic.getUuid());
+        LoadBalancerListenerVmNicRefVO ref = q.find();
         Assert.assertNotNull(ref);
         Assert.assertEquals(LoadBalancerVmNicStatus.Inactive, ref.getStatus());
 

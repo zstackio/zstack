@@ -28,6 +28,8 @@ public interface DatabaseFacade {
     
     <T> T reload(T entity);
 
+    void updateCollection(Collection entities);
+
     void remove(Object entity);
 
     void removeCollection(Collection entities, Class entityClazz);

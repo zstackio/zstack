@@ -318,12 +318,12 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         List<ExpandedQueryStruct> structs = new ArrayList<ExpandedQueryStruct>();
 
         ExpandedQueryStruct s = new ExpandedQueryStruct();
-        s.setExpandedField("loadBalancerRef");
+        s.setExpandedField("loadBalancerListenerRef");
         s.setHidden(true);
         s.setForeignKey("uuid");
         s.setExpandedInventoryKey("vmNicUuid");
         s.setInventoryClassToExpand(VmNicInventory.class);
-        s.setInventoryClass(LoadBalancerVmNicRefInventory.class);
+        s.setInventoryClass(LoadBalancerListenerVmNicRefInventory.class);
         structs.add(s);
 
         s = new ExpandedQueryStruct();
@@ -342,8 +342,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
         ExpandedQueryAliasStruct s = new ExpandedQueryAliasStruct();
         s.setInventoryClass(VmNicInventory.class);
-        s.setAlias("loadBalancer");
-        s.setExpandedField("loadBalancerRef.loadBalancer");
+        s.setAlias("loadBalancerListener");
+        s.setExpandedField("loadBalancerListenerRef.listener");
         structs.add(s);
         return structs;
     }

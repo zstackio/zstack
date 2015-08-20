@@ -3,12 +3,12 @@ package org.zstack.network.service.lb;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.NoView;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by frank on 8/8/2015.
@@ -40,11 +40,24 @@ public class LoadBalancerListenerVO {
     @Column
     private String protocol;
 
+    @OneToMany(fetch=FetchType.EAGER)
+    @JoinColumn(name="listenerUuid", insertable=false, updatable=false)
+    @NoView
+    private Set<LoadBalancerListenerVmNicRefVO> vmNicRefs = new HashSet<LoadBalancerListenerVmNicRefVO>();
+
     @Column
     private Timestamp createDate;
 
     @Column
     private Timestamp lastOpDate;
+
+    public Set<LoadBalancerListenerVmNicRefVO> getVmNicRefs() {
+        return vmNicRefs;
+    }
+
+    public void setVmNicRefs(Set<LoadBalancerListenerVmNicRefVO> vmNicRefs) {
+        this.vmNicRefs = vmNicRefs;
+    }
 
     public String getName() {
         return name;

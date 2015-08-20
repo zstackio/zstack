@@ -11,13 +11,9 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
-import org.zstack.network.service.lb.LoadBalancerListenerVO;
-import org.zstack.network.service.lb.LoadBalancerVO;
-import org.zstack.network.service.lb.LoadBalancerVmNicRefVO;
-import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.lb.LoadBalancerListenerInventory;
+import org.zstack.network.service.lb.LoadBalancerListenerVmNicRefVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
@@ -74,11 +70,11 @@ public class TestVirtualRouterLb1 {
         L3NetworkInventory gnw = deployer.l3Networks.get("GuestNetwork");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory nic = vm.findNic(gnw.getUuid());
-        LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
+        LoadBalancerListenerInventory l = deployer.loadBalancerListeners.get("listener");
         vconfig.refreshLbSuccess = false;
         boolean s = false;
         try {
-            api.addVmNicToLoadBalancer(lb.getUuid(), nic.getUuid());
+            api.addVmNicToLoadBalancerListener(l.getUuid(), nic.getUuid());
         } catch (ApiSenderException e) {
             s = true;
         }
@@ -86,6 +82,6 @@ public class TestVirtualRouterLb1 {
 
         Assert.assertEquals(1, dbf.count(VirtualRouterVmVO.class));
         Assert.assertEquals(0, dbf.count(VirtualRouterLoadBalancerRefVO.class));
-        Assert.assertEquals(0, dbf.count(LoadBalancerVmNicRefVO.class));
+        Assert.assertEquals(0, dbf.count(LoadBalancerListenerVmNicRefVO.class));
     }
 }

@@ -40,11 +40,6 @@ public class LoadBalancerVO {
     @NoView
     private Set<LoadBalancerListenerVO> listeners = new HashSet<LoadBalancerListenerVO>();
 
-    @OneToMany(fetch=FetchType.EAGER)
-    @JoinColumn(name="loadBalancerUuid", insertable=false, updatable=false)
-    @NoView
-    private Set<LoadBalancerVmNicRefVO> vmNicRefs = new HashSet<LoadBalancerVmNicRefVO>();
-
     @Column
     private Timestamp createDate;
 
@@ -123,11 +118,13 @@ public class LoadBalancerVO {
         this.lastOpDate = lastOpDate;
     }
 
-    public Set<LoadBalancerVmNicRefVO> getVmNicRefs() {
+    /*
+    public Set<LoadBalancerListenerVmNicRefVO> getVmNicRefs() {
         return vmNicRefs;
     }
 
-    public void setVmNicRefs(Set<LoadBalancerVmNicRefVO> vmNicRefs) {
+    public void setVmNicRefs(Set<LoadBalancerListenerVmNicRefVO> vmNicRefs) {
         this.vmNicRefs = vmNicRefs;
     }
+    */
 }

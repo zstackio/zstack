@@ -6,9 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.*;
@@ -77,22 +75,22 @@ public class TestVirtualRouterLb4 {
     @Test
     public void test() throws ApiSenderException {
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
+        LoadBalancerListenerInventory l = deployer.loadBalancerListeners.get("listener");
         LoadBalancerVO lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
         Assert.assertNotNull(lbvo);
         Assert.assertNotNull(lbvo.getProviderType());
         Assert.assertFalse(lbvo.getListeners().isEmpty());
-        Assert.assertFalse(lbvo.getVmNicRefs().isEmpty());
+        Assert.assertFalse(lbvo.getListeners().iterator().next().getVmNicRefs().isEmpty());
 
         vconfig.refreshLbCmds.clear();
         VmInstanceInventory vm1 = deployer.vms.get("TestVm1");
         final VmNicInventory nic1 = vm1.getVmNics().get(0);
-        api.addVmNicToLoadBalancer(lb.getUuid(), nic1.getUuid());
+        api.addVmNicToLoadBalancerListener(l.getUuid(), nic1.getUuid());
         Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());
         RefreshLbCmd cmd = vconfig.refreshLbCmds.get(0);
 
         Assert.assertFalse(cmd.getLbs().isEmpty());
         LbTO to = cmd.getLbs().get(0);
-        LoadBalancerListenerVO l = lbvo.getListeners().iterator().next();
         Assert.assertEquals(l.getProtocol(), to.getMode());
         Assert.assertEquals(l.getInstancePort(), to.getInstancePort());
         Assert.assertEquals(l.getLoadBalancerPort(), to.getLoadBalancerPort());
@@ -109,17 +107,17 @@ public class TestVirtualRouterLb4 {
             }
         });
         Assert.assertNotNull(nicIp);
-        lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
-        LoadBalancerVmNicRefVO ref = CollectionUtils.find(lbvo.getVmNicRefs(), new Function<LoadBalancerVmNicRefVO, LoadBalancerVmNicRefVO>() {
+        LoadBalancerListenerVO lbl = dbf.findByUuid(l.getUuid(), LoadBalancerListenerVO.class);
+        LoadBalancerListenerVmNicRefVO ref = CollectionUtils.find(lbl.getVmNicRefs(), new Function<LoadBalancerListenerVmNicRefVO, LoadBalancerListenerVmNicRefVO>() {
             @Override
-            public LoadBalancerVmNicRefVO call(LoadBalancerVmNicRefVO arg) {
+            public LoadBalancerListenerVmNicRefVO call(LoadBalancerListenerVmNicRefVO arg) {
                 return arg.getVmNicUuid().equals(nic1.getUuid()) ? arg : null;
             }
         });
         Assert.assertNotNull(ref);
 
         vconfig.refreshLbCmds.clear();
-        api.removeNicFromLoadBalancer(lb.getUuid(), nic1.getUuid(), null);
+        api.removeNicFromLoadBalancerListener(l.getUuid(), nic1.getUuid(), null);
         Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());
         cmd = vconfig.refreshLbCmds.get(0);
         Assert.assertFalse(cmd.getLbs().isEmpty());
@@ -131,10 +129,10 @@ public class TestVirtualRouterLb4 {
             }
         });
         Assert.assertNull(nicIp);
-        lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
-        ref = CollectionUtils.find(lbvo.getVmNicRefs(), new Function<LoadBalancerVmNicRefVO, LoadBalancerVmNicRefVO>() {
+        lbl = dbf.findByUuid(l.getUuid(), LoadBalancerListenerVO.class);
+        ref = CollectionUtils.find(lbl.getVmNicRefs(), new Function<LoadBalancerListenerVmNicRefVO, LoadBalancerListenerVmNicRefVO>() {
             @Override
-            public LoadBalancerVmNicRefVO call(LoadBalancerVmNicRefVO arg) {
+            public LoadBalancerListenerVmNicRefVO call(LoadBalancerListenerVmNicRefVO arg) {
                 return arg.getVmNicUuid().equals(nic1.getUuid()) ? arg : null;
             }
         });
@@ -143,15 +141,15 @@ public class TestVirtualRouterLb4 {
         vconfig.refreshLbSuccess = false;
         boolean s = false;
         try {
-            api.addVmNicToLoadBalancer(lb.getUuid(), nic1.getUuid());
+            api.addVmNicToLoadBalancerListener(l.getUuid(), nic1.getUuid());
         } catch (ApiSenderException e) {
             s = true;
         }
         Assert.assertTrue(s);
-        lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
-        ref = CollectionUtils.find(lbvo.getVmNicRefs(), new Function<LoadBalancerVmNicRefVO, LoadBalancerVmNicRefVO>() {
+        lbl = dbf.findByUuid(l.getUuid(), LoadBalancerListenerVO.class);
+        ref = CollectionUtils.find(lbl.getVmNicRefs(), new Function<LoadBalancerListenerVmNicRefVO, LoadBalancerListenerVmNicRefVO>() {
             @Override
-            public LoadBalancerVmNicRefVO call(LoadBalancerVmNicRefVO arg) {
+            public LoadBalancerListenerVmNicRefVO call(LoadBalancerListenerVmNicRefVO arg) {
                 return arg.getVmNicUuid().equals(nic1.getUuid()) ? arg : null;
             }
         });

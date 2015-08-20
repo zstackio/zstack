@@ -6,7 +6,7 @@ import org.zstack.header.message.APIEvent;
  * Created by frank on 8/8/2015.
  */
 public class APIAddVmNicToLoadBalancerEvent extends APIEvent {
-    private LoadBalancerInventory inventory;
+    private LoadBalancerListenerInventory inventory;
 
     public APIAddVmNicToLoadBalancerEvent() {
     }
@@ -15,11 +15,11 @@ public class APIAddVmNicToLoadBalancerEvent extends APIEvent {
         super(apiId);
     }
 
-    public LoadBalancerInventory getInventory() {
+    public LoadBalancerListenerInventory getInventory() {
         return inventory;
     }
 
-    public void setInventory(LoadBalancerInventory inventory) {
+    public void setInventory(LoadBalancerListenerInventory inventory) {
         this.inventory = inventory;
     }
 }

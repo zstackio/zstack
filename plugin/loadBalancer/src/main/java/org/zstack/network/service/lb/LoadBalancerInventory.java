@@ -20,11 +20,6 @@ import java.util.List;
                 foreignKey = "uuid", expandedInventoryKey = "loadBalancerUuid"),
         @ExpandedQuery(expandedField = "vip", inventoryClass = VipInventory.class,
                 foreignKey = "vipUuid", expandedInventoryKey = "uuid"),
-        @ExpandedQuery(expandedField = "vmNicRef", inventoryClass = LoadBalancerVmNicRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "loadBalancerUuid", hidden = true),
-})
-@ExpandedQueryAliases({
-        @ExpandedQueryAlias(alias = "vmNic", expandedField = "vmNicRef.vmNic")
 })
 public class LoadBalancerInventory {
     private String name;
@@ -32,7 +27,6 @@ public class LoadBalancerInventory {
     private String description;
     private String state;
     private String vipUuid;
-    private List<LoadBalancerVmNicRefInventory> vmNicRefs;
     private List<LoadBalancerListenerInventory> listeners;
 
     public static LoadBalancerInventory valueOf(LoadBalancerVO vo) {
@@ -42,7 +36,6 @@ public class LoadBalancerInventory {
         inv.setDescription(vo.getDescription());
         inv.setState(vo.getState().toString());
         inv.setVipUuid(vo.getVipUuid());
-        inv.setVmNicRefs(LoadBalancerVmNicRefInventory.valueOf(vo.getVmNicRefs()));
         inv.setListeners(LoadBalancerListenerInventory.valueOf(vo.getListeners()));
         return inv;
     }
@@ -61,14 +54,6 @@ public class LoadBalancerInventory {
 
     public void setVipUuid(String vipUuid) {
         this.vipUuid = vipUuid;
-    }
-
-    public List<LoadBalancerVmNicRefInventory> getVmNicRefs() {
-        return vmNicRefs;
-    }
-
-    public void setVmNicRefs(List<LoadBalancerVmNicRefInventory> vmNicRefs) {
-        this.vmNicRefs = vmNicRefs;
     }
 
     public List<LoadBalancerListenerInventory> getListeners() {

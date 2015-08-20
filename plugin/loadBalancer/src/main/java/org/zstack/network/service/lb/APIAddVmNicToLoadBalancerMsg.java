@@ -3,24 +3,37 @@ package org.zstack.network.service.lb;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.vm.VmNicVO;
+
+import java.util.List;
 
 /**
  * Created by frank on 8/8/2015.
  */
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 public class APIAddVmNicToLoadBalancerMsg extends APIMessage implements LoadBalancerMessage {
-    @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
-    private String vmNicUuid;
-    @APIParam(resourceType = LoadBalancerVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true, nonempty = true)
+    private List<String> vmNicUuids;
+    @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
+    private String listenerUuid;
+    @APINoSee
     private String loadBalancerUuid;
 
-    public String getVmNicUuid() {
-        return vmNicUuid;
+    public List<String> getVmNicUuids() {
+        return vmNicUuids;
     }
 
-    public void setVmNicUuid(String vmNicUuid) {
-        this.vmNicUuid = vmNicUuid;
+    public void setVmNicUuids(List<String> vmNicUuids) {
+        this.vmNicUuids = vmNicUuids;
+    }
+
+    public String getListenerUuid() {
+        return listenerUuid;
+    }
+
+    public void setListenerUuid(String listenerUuid) {
+        this.listenerUuid = listenerUuid;
     }
 
     @Override

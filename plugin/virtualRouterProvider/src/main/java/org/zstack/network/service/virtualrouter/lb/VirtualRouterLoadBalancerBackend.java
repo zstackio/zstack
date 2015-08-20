@@ -33,6 +33,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentRespo
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -184,13 +185,6 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
     public static final String DELETE_LB_PATH = "/lb/delete";
 
     private List<LbTO> makeLbTOs(final LoadBalancerStruct struct) {
-        final List<String> nicIps = CollectionUtils.transformToList(struct.getVmNics(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                return arg.getIp();
-            }
-        });
-
         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
         q.select(VipVO_.ip);
         q.add(VipVO_.uuid, Op.EQ, struct.getLb().getVipUuid());
@@ -206,7 +200,19 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                 to.setListenerUuid(l.getUuid());
                 to.setMode(l.getProtocol());
                 to.setVip(vip);
-                to.setNicIps(nicIps);
+                to.setNicIps(CollectionUtils.transformToList(l.getVmNicRefs(), new Function<String, LoadBalancerListenerVmNicRefInventory>() {
+                    @Override
+                    public String call(LoadBalancerListenerVmNicRefInventory arg) {
+                        if (LoadBalancerVmNicStatus.Active.toString().equals(arg.getStatus()) || LoadBalancerVmNicStatus.Pending.toString().equals(arg.getStatus())) {
+                            VmNicInventory nic = struct.getVmNics().get(arg.getVmNicUuid());
+                            if (nic == null) {
+                                throw new CloudRuntimeException(String.format("cannot find nic[uuid:%s]", arg.getVmNicUuid()));
+                            }
+                            return nic.getIp();
+                        }
+                        return null;
+                    }
+                }));
 
                 SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
                 q.select(SystemTagVO_.tag);
@@ -574,65 +580,112 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
     }
 
     @Override
-    public void destroyLoadBalancer(LoadBalancerStruct struct, final Completion completion) {
-        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
-        if (vr == null) {
-            // the vr has been destroyed
-            completion.success();
-            return;
-        }
+    public void destroyLoadBalancer(final LoadBalancerStruct struct, final Completion completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("delete-lb-%s-from-vr", struct.getLb().getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-from-vr";
 
-        SimpleQuery<VirtualRouterLoadBalancerRefVO> q = dbf.createQuery(VirtualRouterLoadBalancerRefVO.class);
-        q.add(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, Op.EQ, struct.getLb().getUuid());
-        q.add(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, Op.EQ, vr.getUuid());
-        final VirtualRouterLoadBalancerRefVO ref = q.find();
-
-        List<String> roles = new VirtualRouterRoleManager().getAllRoles(vr.getUuid());
-        if (roles.size() == 1 && roles.contains(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat())) {
-            DestroyVmInstanceMsg msg = new DestroyVmInstanceMsg();
-            msg.setVmInstanceUuid(vr.getUuid());
-            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
-            bus.send(msg, new CloudBusCallBack(completion) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (reply.isSuccess()) {
-                        dbf.remove(ref);
-                        completion.success();
-                    } else {
-                        completion.fail(reply.getError());
-                    }
-                }
-            });
-        } else if (roles.size() > 1 && roles.contains(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat())) {
-            DeleteLbCmd cmd = new DeleteLbCmd();
-            cmd.setLbs(makeLbTOs(struct));
-
-            VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
-            msg.setVmInstanceUuid(vr.getUuid());
-            msg.setPath(DELETE_LB_PATH);
-            msg.setCommand(cmd);
-            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
-            bus.send(msg, new CloudBusCallBack(completion) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (reply.isSuccess()) {
-                        DeleteLbRsp rsp = ((VirtualRouterAsyncHttpCallReply)reply).toResponse(DeleteLbRsp.class);
-                        if (rsp.isSuccess()) {
-                            dbf.remove(ref);
-                            completion.success();
-                        } else {
-                            completion.fail(errf.stringToOperationError(rsp.getError()));
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
+                        if (vr == null) {
+                            // the vr has been destroyed
+                            trigger.next();
+                            return;
                         }
-                    } else {
-                        completion.fail(reply.getError());
+
+                        SimpleQuery<VirtualRouterLoadBalancerRefVO> q = dbf.createQuery(VirtualRouterLoadBalancerRefVO.class);
+                        q.add(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, Op.EQ, struct.getLb().getUuid());
+                        q.add(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, Op.EQ, vr.getUuid());
+                        final VirtualRouterLoadBalancerRefVO ref = q.find();
+
+                        List<String> roles = new VirtualRouterRoleManager().getAllRoles(vr.getUuid());
+                        if (roles.size() == 1 && roles.contains(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat())) {
+                            DestroyVmInstanceMsg msg = new DestroyVmInstanceMsg();
+                            msg.setVmInstanceUuid(vr.getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+                            bus.send(msg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (reply.isSuccess()) {
+                                        dbf.remove(ref);
+                                        trigger.next();
+                                    } else {
+                                        trigger.fail(reply.getError());
+                                    }
+                                }
+                            });
+                        } else if (roles.size() > 1 && roles.contains(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat())) {
+                            DeleteLbCmd cmd = new DeleteLbCmd();
+                            cmd.setLbs(makeLbTOs(struct));
+
+                            VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+                            msg.setVmInstanceUuid(vr.getUuid());
+                            msg.setPath(DELETE_LB_PATH);
+                            msg.setCommand(cmd);
+                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+                            bus.send(msg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (reply.isSuccess()) {
+                                        DeleteLbRsp rsp = ((VirtualRouterAsyncHttpCallReply)reply).toResponse(DeleteLbRsp.class);
+                                        if (rsp.isSuccess()) {
+                                            dbf.remove(ref);
+                                            trigger.next();
+                                        } else {
+                                            trigger.fail(errf.stringToOperationError(rsp.getError()));
+                                        }
+                                    } else {
+                                        trigger.fail(reply.getError());
+                                    }
+                                }
+                            });
+                        } else {
+                            throw new CloudRuntimeException(String.format("wrong virtual router roles%s. it doesn't have the role[%s]",
+                                    roles, VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat()));
+                        }
                     }
-                    dbf.remove(ref);
-                }
-            });
-        } else {
-            throw new CloudRuntimeException(String.format("wrong virtual router roles%s. it doesn't have the role[%s]",
-                    roles, VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat()));
-        }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "unlock-vip";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        VipInventory vip = VipInventory.valueOf(dbf.findByUuid(struct.getLb().getVipUuid(), VipVO.class));
+                        vipMgr.releaseAndUnlockVip(vip, true, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override

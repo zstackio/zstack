@@ -27,6 +27,7 @@ import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -49,24 +50,27 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
         LoadBalancerStruct struct = new LoadBalancerStruct();
         struct.setLb(LoadBalancerInventory.valueOf(vo));
 
-        if (!vo.getVmNicRefs().isEmpty()) {
-            List<String> activeNics = CollectionUtils.transformToList(vo.getVmNicRefs(), new Function<String, LoadBalancerVmNicRefVO>() {
+        List<String> activeNicUuids = new ArrayList<String>();
+        for (LoadBalancerListenerVO l : vo.getListeners()) {
+            activeNicUuids.addAll(CollectionUtils.transformToList(l.getVmNicRefs(), new Function<String, LoadBalancerListenerVmNicRefVO>() {
                 @Override
-                public String call(LoadBalancerVmNicRefVO arg) {
+                public String call(LoadBalancerListenerVmNicRefVO arg) {
                     return arg.getStatus() == LoadBalancerVmNicStatus.Active || arg.getStatus() == LoadBalancerVmNicStatus.Pending ? arg.getVmNicUuid() : null;
                 }
-            });
+            }));
+        }
 
-            if (!activeNics.isEmpty()) {
-                SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
-                nq.add(VmNicVO_.uuid, Op.IN, activeNics);
-                List<VmNicVO> nics = nq.list();
-                struct.setVmNics(VmNicInventory.valueOf(nics));
-            } else {
-                struct.setVmNics(new ArrayList<VmNicInventory>());
-            }
+        if (activeNicUuids.isEmpty()) {
+            struct.setVmNics(new HashMap<String, VmNicInventory>());
         } else {
-            struct.setVmNics(new ArrayList<VmNicInventory>());
+            SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
+            nq.add(VmNicVO_.uuid, Op.IN, activeNicUuids);
+            List<VmNicVO> nicvos = nq.list();
+            Map<String, VmNicInventory> m = new HashMap<String, VmNicInventory>();
+            for (VmNicVO n : nicvos) {
+                m.put(n.getUuid(), VmNicInventory.valueOf(n));
+            }
+            struct.setVmNics(m);
         }
 
         struct.setListeners(LoadBalancerListenerInventory.valueOf(vo.getListeners()));
@@ -94,8 +98,8 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
             @Override
             @Transactional(readOnly = true)
             public List<LoadBalancerVO> call() {
-                String sql = "select lb from LoadBalancerVO lb, LoadBalancerVmNicRefVO lbref, VmNicVO nic, L3NetworkVO l3" +
-                        " where lb.uuid = lbref.loadBalancerUuid and lbref.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
+                String sql = "select lb from LoadBalancerVO lb, LoadBalancerListenerVO l, LoadBalancerListenerVmNicRefVO lref, VmNicVO nic, L3NetworkVO l3" +
+                        " where lb.uuid = l.loadBalancerUuid and l.uuid = lref.listenerUuid and lref.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
                         " and l3.uuid = :l3uuid and lb.state = :state and lb.uuid not in (select t.resourceUuid from SystemTagVO t" +
                         " where t.tag = :tag and t.resourceType = :rtype)";
 
@@ -109,8 +113,8 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                     List<String> lbuuids = q.getResultList();
 
                     if (!lbuuids.isEmpty()) {
-                        sql = "select lb from LoadBalancerVO lb, LoadBalancerVmNicRefVO lbref, VmNicVO nic, L3NetworkVO l3" +
-                                " where lb.uuid = lbref.loadBalancerUuid and lbref.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
+                        sql = "select lb from LoadBalancerVO lb, LoadBalancerListenerVO l, LoadBalancerListenerVmNicRefVO lref, VmNicVO nic, L3NetworkVO l3" +
+                                " where lb.uuid = l.loadBalancerUuid and l.uuid = lref.listenerUuid and lref.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
                                 " and l3.uuid = :l3uuid and lb.state = :state and lb.uuid not in (select t.resourceUuid from SystemTagVO t" +
                                 " where t.tag = :tag and t.resourceType = :rtype and t.resourceUuid not in (:mylbs))";
                         vq = dbf.getEntityManager().createQuery(sql, LoadBalancerVO.class);

@@ -35,12 +35,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import static org.zstack.utils.CollectionDSL.list;
+import java.util.*;
 
 /**
  * Created by frank on 8/8/2015.
@@ -176,16 +171,18 @@ public class LoadBalancerBase {
     }
 
     private void checkIfNicIsAdded(List<String> nicUuids) {
-        for (String nicUuid : nicUuids) {
-            boolean s = false;
-            for (LoadBalancerVmNicRefVO ref : self.getVmNicRefs()) {
-                if (nicUuid.equals(ref.getVmNicUuid())) {
-                    s = true;
-                    break;
+        List<String> allNicUuids = new ArrayList<String>();
+        for (LoadBalancerListenerVO l : self.getListeners()) {
+            allNicUuids.addAll(CollectionUtils.transformToList(l.getVmNicRefs(), new Function<String, LoadBalancerListenerVmNicRefVO>() {
+                @Override
+                public String call(LoadBalancerListenerVmNicRefVO arg) {
+                    return arg.getVmNicUuid();
                 }
-            }
+            }));
+        }
 
-            if (!s) {
+        for (String nicUuid : nicUuids) {
+            if (!allNicUuids.contains(nicUuid)) {
                 throw new CloudRuntimeException(String.format("the load balancer[uuid: %s] doesn't have a vm nic[uuid: %s] added", self.getUuid(), nicUuid));
             }
         }
@@ -194,10 +191,17 @@ public class LoadBalancerBase {
     private void handle(final LoadBalancerDeactiveVmNicMsg msg) {
         checkIfNicIsAdded(msg.getVmNicUuids());
 
-        final List<LoadBalancerVmNicRefVO> refs = CollectionUtils.transformToList(self.getVmNicRefs(), new Function<LoadBalancerVmNicRefVO, LoadBalancerVmNicRefVO>() {
+        LoadBalancerListenerVO l = CollectionUtils.find(self.getListeners(), new Function<LoadBalancerListenerVO, LoadBalancerListenerVO>() {
             @Override
-            public LoadBalancerVmNicRefVO call(LoadBalancerVmNicRefVO arg) {
-                return msg.getVmNicUuids().contains(arg.getVmNicUuid()) ?  arg : null;
+            public LoadBalancerListenerVO call(LoadBalancerListenerVO arg) {
+                return arg.getUuid().equals(msg.getListenerUuid()) ? arg : null;
+            }
+        });
+
+        final List<LoadBalancerListenerVmNicRefVO> refs = CollectionUtils.transformToList(l.getVmNicRefs(), new Function<LoadBalancerListenerVmNicRefVO, LoadBalancerListenerVmNicRefVO>() {
+            @Override
+            public LoadBalancerListenerVmNicRefVO call(LoadBalancerListenerVmNicRefVO arg) {
+                return msg.getVmNicUuids().contains(arg.getVmNicUuid()) ? arg : null;
             }
         });
 
@@ -212,7 +216,7 @@ public class LoadBalancerBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        for (LoadBalancerVmNicRefVO ref : refs) {
+                        for (LoadBalancerListenerVmNicRefVO ref : refs) {
                             ref.setStatus(LoadBalancerVmNicStatus.Inactive);
                             dbf.update(ref);
                         }
@@ -222,7 +226,7 @@ public class LoadBalancerBase {
 
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
-                        for (LoadBalancerVmNicRefVO ref : refs) {
+                        for (LoadBalancerListenerVmNicRefVO ref : refs) {
                             ref.setStatus(LoadBalancerVmNicStatus.Active);
                             dbf.update(ref);
                         }
@@ -237,9 +241,9 @@ public class LoadBalancerBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
-                        q.add(VmNicVO_.uuid, Op.IN, CollectionUtils.transformToList(refs, new Function<String, LoadBalancerVmNicRefVO>() {
+                        q.add(VmNicVO_.uuid, Op.IN, CollectionUtils.transformToList(refs, new Function<String, LoadBalancerListenerVmNicRefVO>() {
                             @Override
-                            public String call(LoadBalancerVmNicRefVO arg) {
+                            public String call(LoadBalancerListenerVmNicRefVO arg) {
                                 return arg.getVmNicUuid();
                             }
                         }));
@@ -281,10 +285,17 @@ public class LoadBalancerBase {
     private void deactiveVmNic(final LoadBalancerActiveVmNicMsg msg, final NoErrorCompletion completion) {
         checkIfNicIsAdded(msg.getVmNicUuids());
 
-        final List<LoadBalancerVmNicRefVO> refs = CollectionUtils.transformToList(self.getVmNicRefs(), new Function<LoadBalancerVmNicRefVO, LoadBalancerVmNicRefVO>() {
+        LoadBalancerListenerVO l = CollectionUtils.find(self.getListeners(), new Function<LoadBalancerListenerVO, LoadBalancerListenerVO>() {
             @Override
-            public LoadBalancerVmNicRefVO call(LoadBalancerVmNicRefVO arg) {
-                return msg.getVmNicUuids().contains(arg.getVmNicUuid()) ?  arg : null;
+            public LoadBalancerListenerVO call(LoadBalancerListenerVO arg) {
+                return arg.getUuid().equals(msg.getLoadBalancerListenerUuid()) ? arg : null;
+            }
+        });
+
+        final List<LoadBalancerListenerVmNicRefVO> refs = CollectionUtils.transformToList(l.getVmNicRefs(), new Function<LoadBalancerListenerVmNicRefVO, LoadBalancerListenerVmNicRefVO>() {
+            @Override
+            public LoadBalancerListenerVmNicRefVO call(LoadBalancerListenerVmNicRefVO arg) {
+                return msg.getVmNicUuids().contains(arg.getVmNicUuid()) ? arg : null;
             }
         });
 
@@ -300,7 +311,7 @@ public class LoadBalancerBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        for (LoadBalancerVmNicRefVO ref : refs) {
+                        for (LoadBalancerListenerVmNicRefVO ref : refs) {
                             ref.setStatus(LoadBalancerVmNicStatus.Active);
                             dbf.update(ref);
                         }
@@ -310,7 +321,7 @@ public class LoadBalancerBase {
 
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
-                        for (LoadBalancerVmNicRefVO ref : refs) {
+                        for (LoadBalancerListenerVmNicRefVO ref : refs) {
                             ref.setStatus(LoadBalancerVmNicStatus.Inactive);
                             dbf.update(ref);
                         }
@@ -325,9 +336,9 @@ public class LoadBalancerBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
-                        q.add(VmNicVO_.uuid, Op.IN, CollectionUtils.transformToList(refs, new Function<String, LoadBalancerVmNicRefVO>() {
+                        q.add(VmNicVO_.uuid, Op.IN, CollectionUtils.transformToList(refs, new Function<String, LoadBalancerListenerVmNicRefVO>() {
                             @Override
-                            public String call(LoadBalancerVmNicRefVO arg) {
+                            public String call(LoadBalancerListenerVmNicRefVO arg) {
                                 return arg.getVmNicUuid();
                             }
                         }));
@@ -556,6 +567,7 @@ public class LoadBalancerBase {
             @Override
             public void success() {
                 dbf.remove(vo);
+                dbf.removeCollection(vo.getVmNicRefs(), LoadBalancerListenerVmNicRefVO.class);
                 evt.setInventory(reloadAndGetInventory());
                 bus.publish(evt);
                 completion.done();
@@ -596,12 +608,15 @@ public class LoadBalancerBase {
 
     private LoadBalancerStruct removeNicStruct(List<String> nicUuids) {
         LoadBalancerStruct s = makeStruct();
-        Iterator<VmNicInventory> it = s.getVmNics().iterator();
-        while (it.hasNext()) {
-            if (nicUuids.contains(it.next().getUuid())) {
-                it.remove();
+        for (LoadBalancerListenerInventory l : s.getListeners()) {
+            Iterator<LoadBalancerListenerVmNicRefInventory> it = l.getVmNicRefs().iterator();
+            while (it.hasNext()) {
+                if (nicUuids.contains(it.next().getVmNicUuid())) {
+                    it.remove();
+                }
             }
         }
+
         return s;
     }
 
@@ -615,10 +630,10 @@ public class LoadBalancerBase {
         bkd.removeVmNics(removeNicStruct(vmNicUuids), nics, new Completion(completion) {
             @Override
             public void success() {
-                SimpleQuery<LoadBalancerVmNicRefVO> q = dbf.createQuery(LoadBalancerVmNicRefVO.class);
-                q.add(LoadBalancerVmNicRefVO_.vmNicUuid, Op.IN, vmNicUuids);
-                List<LoadBalancerVmNicRefVO> refs = q.list();
-                dbf.removeCollection(refs, LoadBalancerVmNicRefVO.class);
+                SimpleQuery<LoadBalancerListenerVmNicRefVO> q = dbf.createQuery(LoadBalancerListenerVmNicRefVO.class);
+                q.add(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.IN, vmNicUuids);
+                List<LoadBalancerListenerVmNicRefVO> refs = q.list();
+                dbf.removeCollection(refs, LoadBalancerListenerVmNicRefVO.class);
                 completion.success();
             }
 
@@ -632,15 +647,7 @@ public class LoadBalancerBase {
     private void removeNic(APIRemoveVmNicFromLoadBalancerMsg msg, final NoErrorCompletion completion) {
         final APIRemoveVmNicFromLoadBalancerEvent evt = new APIRemoveVmNicFromLoadBalancerEvent(msg.getId());
 
-        SimpleQuery<LoadBalancerVmNicRefVO> q = dbf.createQuery(LoadBalancerVmNicRefVO.class);
-        q.add(LoadBalancerVmNicRefVO_.vmNicUuid, Op.EQ, msg.getVmNicUuid());
-        if (!q.isExists()) {
-            evt.setInventory(reloadAndGetInventory());
-            bus.publish(evt);
-            return;
-        }
-
-        removeNics(list(msg.getVmNicUuid()), new Completion(msg, completion) {
+        removeNics(msg.getVmNicUuids(), new Completion(msg, completion) {
             @Override
             public void success() {
                 evt.setInventory(reloadAndGetInventory());
@@ -684,7 +691,7 @@ public class LoadBalancerBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                addVmNicToLoadBalancer(msg, new NoErrorCompletion(chain) {
+                addVmNicToListener(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
@@ -699,21 +706,25 @@ public class LoadBalancerBase {
         });
     }
 
-    private void addVmNicToLoadBalancer(final APIAddVmNicToLoadBalancerMsg msg, final NoErrorCompletion completion) {
+    private void addVmNicToListener(final APIAddVmNicToLoadBalancerMsg msg, final NoErrorCompletion completion) {
         final APIAddVmNicToLoadBalancerEvent evt = new APIAddVmNicToLoadBalancerEvent(msg.getId());
 
-        final String providerType = findProviderTypeByVmNicUuid(msg.getVmNicUuid());
+        final String providerType = findProviderTypeByVmNicUuid(msg.getVmNicUuids().get(0));
         if (providerType == null) {
             throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("the L3 network of vm nic[uuid:%s] doesn't have load balancer service enabled", msg.getVmNicUuid())
+                    String.format("the L3 network of vm nic[uuid:%s] doesn't have load balancer service enabled", msg.getVmNicUuids().get(0))
             ));
         }
 
-        final VmNicInventory nic = VmNicInventory.valueOf(dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class));
+        SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
+        q.add(VmNicVO_.uuid, Op.IN, msg.getVmNicUuids());
+        List<VmNicVO> nicVOs = q.list();
+        final List<VmNicInventory> nics = VmNicInventory.valueOf(nicVOs);
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("add-vm-nic-%s-to-lb-%s", msg.getVmNicUuid(), self.getUuid()));
+        chain.setName(String.format("add-vm-nic-to-lb-listener-%s", msg.getListenerUuid()));
         chain.then(new ShareFlow() {
-            LoadBalancerVmNicRefVO ref;
+            List<LoadBalancerListenerVmNicRefVO> refs = new ArrayList<LoadBalancerListenerVmNicRefVO>();
             boolean init = false;
 
             @Override
@@ -732,7 +743,7 @@ public class LoadBalancerBase {
                                 throw new OperationFailureException(errf.stringToOperationError(
                                         String.format("service provider type mismatching. The load balancer[uuid:%s] is provided by the service provider[type:%s]," +
                                                         " but the L3 network of vm nic[uuid:%s] is enabled with the service provider[type: %s]", self.getUuid(), self.getProviderType(),
-                                                msg.getVmNicUuid(), providerType)
+                                                msg.getVmNicUuids().get(0), providerType)
                                 ));
                             }
                         }
@@ -759,11 +770,15 @@ public class LoadBalancerBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ref = new LoadBalancerVmNicRefVO();
-                        ref.setLoadBalancerUuid(self.getUuid());
-                        ref.setVmNicUuid(nic.getUuid());
-                        ref.setStatus(LoadBalancerVmNicStatus.Pending);
-                        ref = dbf.persistAndRefresh(ref);
+                        for (String nicUuid : msg.getVmNicUuids()) {
+                            LoadBalancerListenerVmNicRefVO ref = new LoadBalancerListenerVmNicRefVO();
+                            ref.setListenerUuid(msg.getListenerUuid());
+                            ref.setVmNicUuid(nicUuid);
+                            ref.setStatus(LoadBalancerVmNicStatus.Pending);
+                            refs.add(ref);
+                        }
+
+                        dbf.persistCollection(refs);
                         s = true;
                         trigger.next();
                     }
@@ -771,7 +786,7 @@ public class LoadBalancerBase {
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
                         if (s) {
-                            dbf.remove(ref);
+                            dbf.removeCollection(refs, LoadBalancerListenerVmNicRefVO.class);
                         }
                         trigger.rollback();
                     }
@@ -785,7 +800,7 @@ public class LoadBalancerBase {
                         LoadBalancerBackend bkd = getBackend();
                         LoadBalancerStruct s = makeStruct();
                         s.setInit(init);
-                        bkd.addVmNic(s, nic, new Completion(trigger) {
+                        bkd.addVmNics(s, nics, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -802,10 +817,12 @@ public class LoadBalancerBase {
                 done(new FlowDoneHandler(msg, completion) {
                     @Override
                     public void handle(Map data) {
-                        ref.setStatus(LoadBalancerVmNicStatus.Active);
-                        dbf.update(ref);
+                        for (LoadBalancerListenerVmNicRefVO ref : refs) {
+                            ref.setStatus(LoadBalancerVmNicStatus.Active);
+                        }
 
-                        evt.setInventory(reloadAndGetInventory());
+                        dbf.updateCollection(refs);
+                        evt.setInventory(LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class)));
                         bus.publish(evt);
                         completion.done();
                     }
@@ -824,7 +841,27 @@ public class LoadBalancerBase {
     }
 
     private boolean needAction() {
-        return self.getProviderType() != null && !self.getVmNicRefs().isEmpty();
+        if (self.getProviderType() == null) {
+            return false;
+        }
+
+        LoadBalancerListenerVmNicRefVO activeNic = CollectionUtils.find(self.getListeners(), new Function<LoadBalancerListenerVmNicRefVO, LoadBalancerListenerVO>() {
+            @Override
+            public LoadBalancerListenerVmNicRefVO call(LoadBalancerListenerVO arg) {
+                for (LoadBalancerListenerVmNicRefVO ref : arg.getVmNicRefs()) {
+                    if (ref.getStatus() == LoadBalancerVmNicStatus.Active || ref.getStatus() == LoadBalancerVmNicStatus.Pending) {
+                        return ref;
+                    }
+                }
+                return null;
+            }
+        });
+
+        if (activeNic == null) {
+            return false;
+        }
+
+        return true;
     }
 
     private LoadBalancerBackend getBackend() {
@@ -836,24 +873,27 @@ public class LoadBalancerBase {
         LoadBalancerStruct struct = new LoadBalancerStruct();
         struct.setLb(reloadAndGetInventory());
 
-        if (!self.getVmNicRefs().isEmpty()) {
-            List<String> activeNics = CollectionUtils.transformToList(self.getVmNicRefs(), new Function<String, LoadBalancerVmNicRefVO>() {
+        List<String> activeNicUuids = new ArrayList<String>();
+        for (LoadBalancerListenerVO l : self.getListeners()) {
+            activeNicUuids.addAll(CollectionUtils.transformToList(l.getVmNicRefs(), new Function<String, LoadBalancerListenerVmNicRefVO>() {
                 @Override
-                public String call(LoadBalancerVmNicRefVO arg) {
+                public String call(LoadBalancerListenerVmNicRefVO arg) {
                     return arg.getStatus() == LoadBalancerVmNicStatus.Active || arg.getStatus() == LoadBalancerVmNicStatus.Pending ? arg.getVmNicUuid() : null;
                 }
-            });
+            }));
+        }
 
-            if (!activeNics.isEmpty()) {
-                SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
-                nq.add(VmNicVO_.uuid, Op.IN, activeNics);
-                List<VmNicVO> nics = nq.list();
-                struct.setVmNics(VmNicInventory.valueOf(nics));
-            } else {
-                struct.setVmNics(new ArrayList<VmNicInventory>());
-            }
+        if (activeNicUuids.isEmpty()) {
+            struct.setVmNics(new HashMap<String, VmNicInventory>());
         } else {
-            struct.setVmNics(new ArrayList<VmNicInventory>());
+            SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
+            nq.add(VmNicVO_.uuid, Op.IN, activeNicUuids);
+            List<VmNicVO> nicvos = nq.list();
+            Map<String, VmNicInventory> m = new HashMap<String, VmNicInventory>();
+            for (VmNicVO n : nicvos) {
+                m.put(n.getUuid(), VmNicInventory.valueOf(n));
+            }
+            struct.setVmNics(m);
         }
 
         struct.setListeners(LoadBalancerListenerInventory.valueOf(self.getListeners()));
@@ -887,82 +927,19 @@ public class LoadBalancerBase {
 
     private void createListener(final APICreateLoadBalancerListenerMsg msg, final NoErrorCompletion completion) {
         final APICreateLoadBalancerListenerEvent evt = new APICreateLoadBalancerListenerEvent(msg.getId());
-
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("create-listener-lb-%s", self.getUuid()));
-        chain.then(new ShareFlow() {
-            LoadBalancerListenerVO vo;
-
-            @Override
-            public void setup() {
-                flow(new Flow() {
-                    boolean s = false;
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        vo = new LoadBalancerListenerVO();
-                        vo.setLoadBalancerUuid(self.getUuid());
-                        vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
-                        vo.setDescription(vo.getDescription());
-                        vo.setName(msg.getName());
-                        vo.setInstancePort(msg.getInstancePort());
-                        vo.setLoadBalancerPort(msg.getLoadBalancerPort());
-                        vo.setProtocol(msg.getProtocol());
-                        dbf.persist(vo);
-
-                        s = true;
-                        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerListenerVO.class);
-                        tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
-                        if (s) {
-                            dbf.remove(vo);
-                        }
-                        trigger.rollback();
-                    }
-                });
-
-                if (needAction()) {
-                    flow(new NoRollbackFlow() {
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            LoadBalancerBackend bkd = getBackend();
-                            bkd.addListener(makeStruct(), LoadBalancerListenerInventory.valueOf(vo), new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-                }
-
-                done(new FlowDoneHandler(msg, completion) {
-                    @Override
-                    public void handle(Map data) {
-                        evt.setInventory(reloadAndGetInventory());
-                        bus.publish(evt);
-                        completion.done();
-                    }
-                });
-
-                error(new FlowErrorHandler(msg, completion) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
-                        bus.publish(evt);
-                        completion.done();
-                    }
-                });
-            }
-        }).start();
+        LoadBalancerListenerVO vo = new LoadBalancerListenerVO();
+        vo.setLoadBalancerUuid(self.getUuid());
+        vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
+        vo.setDescription(vo.getDescription());
+        vo.setName(msg.getName());
+        vo.setInstancePort(msg.getInstancePort());
+        vo.setLoadBalancerPort(msg.getLoadBalancerPort());
+        vo.setProtocol(msg.getProtocol());
+        vo = dbf.persistAndRefresh(vo);
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerListenerVO.class);
+        tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
+        evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));
+        bus.publish(evt);
+        completion.done();
     }
 }

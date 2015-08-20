@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
@@ -33,6 +34,7 @@ import org.zstack.utils.function.Function;
  * 
  * 1. create a lb
  * 2. add a listener
+ * 3. add a nic to the listener
  *
  * confirm the listener added successfully
  *
@@ -41,9 +43,10 @@ import org.zstack.utils.function.Function;
  * confirm the listener removed successfully
  *
  * 4. add the listener again
- * 5. make the listener fail
+ * 5. make adding nic fail
+ * 6. add a nic to the listener
  *
- * confirm the listener failed to add
+ * confirm the nic failed to add
  *
  */
 public class TestVirtualRouterLb5 {
@@ -79,60 +82,37 @@ public class TestVirtualRouterLb5 {
     @Test
     public void test() throws ApiSenderException {
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
-        LoadBalancerVO lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
-        Assert.assertNotNull(lbvo);
-        Assert.assertNotNull(lbvo.getProviderType());
-        Assert.assertFalse(lbvo.getListeners().isEmpty());
-        Assert.assertFalse(lbvo.getVmNicRefs().isEmpty());
-
-        VipVO vip = dbf.findByUuid(lbvo.getVipUuid(), VipVO.class);
-        Assert.assertNotNull(vip);
-        Assert.assertFalse(vconfig.vips.isEmpty());
-
-        Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());
-        RefreshLbCmd cmd = vconfig.refreshLbCmds.get(0);
-        Assert.assertFalse(cmd.getLbs().isEmpty());
-        LbTO to = cmd.getLbs().get(0);
-        LoadBalancerListenerVO l = lbvo.getListeners().iterator().next();
-        Assert.assertEquals(l.getProtocol(), to.getMode());
-        Assert.assertEquals(l.getInstancePort(), to.getInstancePort());
-        Assert.assertEquals(l.getLoadBalancerPort(), to.getLoadBalancerPort());
-
-        Assert.assertEquals(vip.getIp(), to.getVip());
-
-        L3NetworkInventory gnw = deployer.l3Networks.get("GuestNetwork");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
-        VmNicInventory nic = vm.findNic(gnw.getUuid());
-        Assert.assertFalse(to.getNicIps().isEmpty());
-        String nicIp = to.getNicIps().get(0);
-        Assert.assertEquals(nic.getIp(), nicIp);
+        VmNicInventory nic = vm.getVmNics().get(0);
 
         vconfig.refreshLbCmds.clear();
-        final LoadBalancerListenerInventory listener1 = new LoadBalancerListenerInventory();
+        LoadBalancerListenerInventory listener1 = new LoadBalancerListenerInventory();
         listener1.setName("test");
         listener1.setLoadBalancerPort(100);
         listener1.setInstancePort(100);
         listener1.setLoadBalancerUuid(lb.getUuid());
         listener1.setProtocol("http");
-        api.createLoadBalancerListener(listener1, null);
-        lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
+        listener1 = api.createLoadBalancerListener(listener1, null);
+        LoadBalancerVO lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
         Assert.assertEquals(2, lbvo.getListeners().size());
+        final LoadBalancerListenerInventory finalListener = listener1;
         LoadBalancerListenerVO listenerVO = CollectionUtils.find(lbvo.getListeners(), new Function<LoadBalancerListenerVO, LoadBalancerListenerVO>() {
             @Override
             public LoadBalancerListenerVO call(LoadBalancerListenerVO arg) {
-                return arg.getInstancePort() == listener1.getInstancePort() ? arg : null;
+                return arg.getInstancePort() == finalListener.getInstancePort() ? arg : null;
             }
         });
         Assert.assertNotNull(listenerVO);
-        listener1.setUuid(listenerVO.getUuid());
+        Assert.assertTrue(vconfig.refreshLbCmds.isEmpty());
 
+        api.addVmNicToLoadBalancerListener(listener1.getUuid(), nic.getUuid());
         Assert.assertEquals(100, listenerVO.getLoadBalancerPort());
         Assert.assertEquals(100, listenerVO.getInstancePort());
         Assert.assertEquals("http", listenerVO.getProtocol());
         Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());
-        cmd = vconfig.refreshLbCmds.get(0);
+        RefreshLbCmd cmd = vconfig.refreshLbCmds.get(0);
         Assert.assertEquals(2, cmd.getLbs().size());
-        to = CollectionUtils.find(cmd.getLbs(), new Function<LbTO, LbTO>() {
+        LbTO to = CollectionUtils.find(cmd.getLbs(), new Function<LbTO, LbTO>() {
             @Override
             public LbTO call(LbTO arg) {
                 return arg.getInstancePort() == 100 ? arg : null;
@@ -143,17 +123,18 @@ public class TestVirtualRouterLb5 {
         Assert.assertEquals(listener1.getInstancePort(), to.getInstancePort());
         Assert.assertEquals(listener1.getLoadBalancerPort(), to.getLoadBalancerPort());
         Assert.assertFalse(to.getNicIps().isEmpty());
-        nicIp = to.getNicIps().get(0);
+        String nicIp = to.getNicIps().get(0);
         Assert.assertEquals(nic.getIp(), nicIp);
 
         vconfig.refreshLbCmds.clear();
         api.deleteLoadBalancerListener(listener1.getUuid(), null);
         lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
         Assert.assertEquals(1, lbvo.getListeners().size());
+        final LoadBalancerListenerInventory finalListener1 = listener1;
         listenerVO = CollectionUtils.find(lbvo.getListeners(), new Function<LoadBalancerListenerVO, LoadBalancerListenerVO>() {
             @Override
             public LoadBalancerListenerVO call(LoadBalancerListenerVO arg) {
-                return arg.getInstancePort() == listener1.getInstancePort() ? arg : null;
+                return arg.getInstancePort() == finalListener1.getInstancePort() ? arg : null;
             }
         });
         Assert.assertNull(listenerVO);
@@ -168,22 +149,16 @@ public class TestVirtualRouterLb5 {
         });
         Assert.assertNull(to);
 
+        listener1 = api.createLoadBalancerListener(listener1, null);
         vconfig.refreshLbSuccess = false;
         boolean s = false;
         try {
-            api.createLoadBalancerListener(listener1, null);
+            api.addVmNicToLoadBalancerListener(listener1.getUuid(), nic.getUuid());
         } catch (ApiSenderException e) {
             s = true;
         }
         Assert.assertTrue(s);
-        lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
-        Assert.assertEquals(1, lbvo.getListeners().size());
-        listenerVO = CollectionUtils.find(lbvo.getListeners(), new Function<LoadBalancerListenerVO, LoadBalancerListenerVO>() {
-            @Override
-            public LoadBalancerListenerVO call(LoadBalancerListenerVO arg) {
-                return arg.getInstancePort() == listener1.getInstancePort() ? arg : null;
-            }
-        });
-        Assert.assertNull(listenerVO);
+        LoadBalancerListenerVO lvo = dbf.findByUuid(listener1.getUuid(),LoadBalancerListenerVO.class);
+        Assert.assertTrue(lvo.getVmNicRefs().isEmpty());
     }
 }

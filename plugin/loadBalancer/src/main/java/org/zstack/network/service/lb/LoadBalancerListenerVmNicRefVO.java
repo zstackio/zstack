@@ -8,14 +8,14 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
-public class LoadBalancerVmNicRefVO {
+public class LoadBalancerListenerVmNicRefVO {
     @Id
     @Column
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private long id;
 
     @Column
-    private String loadBalancerUuid;
+    private String listenerUuid;
 
     @Column
     private String vmNicUuid;
@@ -46,12 +46,12 @@ public class LoadBalancerVmNicRefVO {
         this.id = id;
     }
 
-    public String getLoadBalancerUuid() {
-        return loadBalancerUuid;
+    public String getListenerUuid() {
+        return listenerUuid;
     }
 
-    public void setLoadBalancerUuid(String loadBalancerUuid) {
-        this.loadBalancerUuid = loadBalancerUuid;
+    public void setListenerUuid(String listenerUuid) {
+        this.listenerUuid = listenerUuid;
     }
 
     public String getVmNicUuid() {

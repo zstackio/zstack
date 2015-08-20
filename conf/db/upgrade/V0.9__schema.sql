@@ -98,9 +98,9 @@ CREATE TABLE  `zstack`.`LoadBalancerListenerVO` (
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `zstack`.`LoadBalancerVmNicRefVO` (
+CREATE TABLE  `zstack`.`LoadBalancerListenerVmNicRefVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `loadBalancerUuid` varchar(32) NOT NULL,
+    `listenerUuid` varchar(32) NOT NULL,
     `vmNicUuid` varchar(32) NOT NULL,
     `status` varchar(64) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,

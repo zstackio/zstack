@@ -36,12 +36,12 @@
         <lb>
             <name>lb</name>
             <publicL3NetworkRef>PublicNetwork</publicL3NetworkRef>
-            <vmNicRef>TestVm:GuestNetwork</vmNicRef>
             <listener>
                 <name>listener</name>
                 <protocol>http</protocol>
                 <instancePort>80</instancePort>
                 <loadBalancerPort>80</loadBalancerPort>
+                <vmNicRef>TestVm:GuestNetwork</vmNicRef>
             </listener>
         </lb>
     </lbs>

@@ -13,25 +13,25 @@ import java.util.List;
 /**
  * Created by frank on 8/8/2015.
  */
-@Inventory(mappingVOClass = LoadBalancerVmNicRefVO.class)
+@Inventory(mappingVOClass = LoadBalancerListenerVmNicRefVO.class)
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "vmNic", inventoryClass = VmNicInventory.class,
                 foreignKey = "vmNicUuid", expandedInventoryKey = "uuid"),
-        @ExpandedQuery(expandedField = "loadBalancer", inventoryClass = LoadBalancerInventory.class,
-                foreignKey = "loadBalancerUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "listener", inventoryClass = LoadBalancerListenerInventory.class,
+                foreignKey = "listenerUuid", expandedInventoryKey = "uuid")
 })
-public class LoadBalancerVmNicRefInventory {
+public class LoadBalancerListenerVmNicRefInventory {
     private long id;
-    private String loadBalancerUuid;
+    private String listenerUuid;
     private String vmNicUuid;
     private String status;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    public static LoadBalancerVmNicRefInventory valueOf(LoadBalancerVmNicRefVO vo) {
-        LoadBalancerVmNicRefInventory inv = new LoadBalancerVmNicRefInventory();
+    public static LoadBalancerListenerVmNicRefInventory valueOf(LoadBalancerListenerVmNicRefVO vo) {
+        LoadBalancerListenerVmNicRefInventory inv = new LoadBalancerListenerVmNicRefInventory();
         inv.setId(vo.getId());
-        inv.setLoadBalancerUuid(vo.getLoadBalancerUuid());
+        inv.setListenerUuid(vo.getListenerUuid());
         inv.setVmNicUuid(vo.getVmNicUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
@@ -39,9 +39,9 @@ public class LoadBalancerVmNicRefInventory {
         return inv;
     }
 
-    public static List<LoadBalancerVmNicRefInventory> valueOf(Collection<LoadBalancerVmNicRefVO> vos) {
-        List<LoadBalancerVmNicRefInventory> invs = new ArrayList<LoadBalancerVmNicRefInventory>();
-        for (LoadBalancerVmNicRefVO vo : vos) {
+    public static List<LoadBalancerListenerVmNicRefInventory> valueOf(Collection<LoadBalancerListenerVmNicRefVO> vos) {
+        List<LoadBalancerListenerVmNicRefInventory> invs = new ArrayList<LoadBalancerListenerVmNicRefInventory>();
+        for (LoadBalancerListenerVmNicRefVO vo : vos) {
             invs.add(valueOf(vo));
         }
         return invs;
@@ -63,12 +63,12 @@ public class LoadBalancerVmNicRefInventory {
         this.id = id;
     }
 
-    public String getLoadBalancerUuid() {
-        return loadBalancerUuid;
+    public String getListenerUuid() {
+        return listenerUuid;
     }
 
-    public void setLoadBalancerUuid(String loadBalancerUuid) {
-        this.loadBalancerUuid = loadBalancerUuid;
+    public void setListenerUuid(String listenerUuid) {
+        this.listenerUuid = listenerUuid;
     }
 
     public String getVmNicUuid() {

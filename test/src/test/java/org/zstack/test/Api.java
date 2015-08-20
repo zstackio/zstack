@@ -87,6 +87,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class Api implements CloudBusEventListener {
     private static final CLogger logger = Utils.getLogger(Api.class);
@@ -3456,11 +3458,11 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public LoadBalancerInventory createLoadBalancerListener(LoadBalancerListenerInventory inv, SessionInventory session) throws ApiSenderException {
+    public LoadBalancerListenerInventory createLoadBalancerListener(LoadBalancerListenerInventory inv, SessionInventory session) throws ApiSenderException {
         return createLoadBalancerListener(inv, null, session);
     }
 
-    public LoadBalancerInventory createLoadBalancerListener(LoadBalancerListenerInventory inv, List<String> sysTags,  SessionInventory session) throws ApiSenderException {
+    public LoadBalancerListenerInventory createLoadBalancerListener(LoadBalancerListenerInventory inv, List<String> sysTags,  SessionInventory session) throws ApiSenderException {
         APICreateLoadBalancerListenerMsg msg = new APICreateLoadBalancerListenerMsg();
         msg.setResourceUuid(inv.getUuid());
         msg.setLoadBalancerUuid(inv.getLoadBalancerUuid());
@@ -3491,14 +3493,14 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public LoadBalancerInventory addVmNicToLoadBalancer(String lbUuid, String nicUuid) throws ApiSenderException {
-        return addVmNicToLoadBalancer(lbUuid, nicUuid, null);
+    public LoadBalancerListenerInventory addVmNicToLoadBalancerListener(String listenerUuid, String nicUuid) throws ApiSenderException {
+        return addVmNicToLoadBalancerListener(listenerUuid, nicUuid, null);
     }
 
-    public LoadBalancerInventory addVmNicToLoadBalancer(String lbUuid, String nicUuid, SessionInventory session) throws ApiSenderException {
+    public LoadBalancerListenerInventory addVmNicToLoadBalancerListener(String listenerUuid, String nicUuid, SessionInventory session) throws ApiSenderException {
         APIAddVmNicToLoadBalancerMsg msg = new APIAddVmNicToLoadBalancerMsg();
-        msg.setVmNicUuid(nicUuid);
-        msg.setLoadBalancerUuid(lbUuid);
+        msg.setVmNicUuids(list(nicUuid));
+        msg.setListenerUuid(listenerUuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -3506,10 +3508,10 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public LoadBalancerInventory removeNicFromLoadBalancer(String lbUuid, String nicUuid, SessionInventory session) throws ApiSenderException {
+    public LoadBalancerInventory removeNicFromLoadBalancerListener(String listenerUuid, String nicUuid, SessionInventory session) throws ApiSenderException {
         APIRemoveVmNicFromLoadBalancerMsg msg = new APIRemoveVmNicFromLoadBalancerMsg();
-        msg.setLoadBalancerUuid(lbUuid);
-        msg.setVmNicUuid(nicUuid);
+        msg.setListenerUuid(listenerUuid);
+        msg.setVmNicUuids(list(nicUuid));
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);

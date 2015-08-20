@@ -10,6 +10,15 @@ import java.util.List;
 public class LoadBalancerDeactiveVmNicMsg extends NeedReplyMessage implements LoadBalancerMessage {
     private String loadBalancerUuid;
     private List<String> vmNicUuids;
+    private String listenerUuid;
+
+    public String getListenerUuid() {
+        return listenerUuid;
+    }
+
+    public void setListenerUuid(String listenerUuid) {
+        this.listenerUuid = listenerUuid;
+    }
 
     @Override
     public String getLoadBalancerUuid() {

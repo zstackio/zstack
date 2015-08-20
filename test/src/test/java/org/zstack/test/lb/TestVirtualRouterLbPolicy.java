@@ -18,9 +18,6 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -107,15 +104,17 @@ public class TestVirtualRouterLbPolicy {
         listener.setLoadBalancerUuid(lb.getUuid());
         listener.setProtocol("http");
 
-        lb = api.createLoadBalancerListener(listener, userSession);
-        api.addVmNicToLoadBalancer(lb.getUuid(), nic.getUuid(), userSession);
+        listener = api.createLoadBalancerListener(listener, userSession);
+        api.addVmNicToLoadBalancerListener(listener.getUuid(), nic.getUuid(), userSession);
         api.refreshLoadBalancer(lb.getUuid(), userSession);
-        api.removeNicFromLoadBalancer(lb.getUuid(), nic.getUuid(), userSession);
+        api.removeNicFromLoadBalancerListener(listener.getUuid(), nic.getUuid(), userSession);
         api.deleteLoadBalancerListener(listener.getUuid(), userSession);
         api.deleteLoadBalancer(lb.getUuid(), session);
 
         // test deny
         lb = api.createLoadBalancer("lb", vip.getUuid(), null, userSession);
+        listener.setLoadBalancerUuid(lb.getUuid());
+        listener = api.createLoadBalancerListener(listener, userSession);
         s.setName("deny");
         s.setEffect(StatementEffect.Deny);
         s.addAction(String.format("%s:%s", LoadBalancerConstants.ACTION_CATEGORY, APICreateLoadBalancerMsg.class.getSimpleName()));
@@ -129,11 +128,9 @@ public class TestVirtualRouterLbPolicy {
         identityCreator.detachPolicyFromUser("user1", "allow");
         identityCreator.attachPolicyToUser("user1", "deny");
 
-        listener.setLoadBalancerUuid(lb.getUuid());
-
         boolean ss = false;
         try {
-            api.addVmNicToLoadBalancer(lb.getUuid(), nic.getUuid(), userSession);
+            api.addVmNicToLoadBalancerListener(listener.getUuid(), nic.getUuid(), userSession);
         } catch (ApiSenderException e) {
             if (e.getError().getCode().equals(IdentityErrors.PERMISSION_DENIED.toString())) {
                 ss = true;
@@ -143,7 +140,7 @@ public class TestVirtualRouterLbPolicy {
 
         ss = false;
         try {
-            api.removeNicFromLoadBalancer(lb.getUuid(), nic.getUuid(), userSession);
+            api.removeNicFromLoadBalancerListener(listener.getUuid(), nic.getUuid(), userSession);
         } catch (ApiSenderException e) {
             if (e.getError().getCode().equals(IdentityErrors.PERMISSION_DENIED.toString())) {
                 ss = true;
@@ -161,7 +158,6 @@ public class TestVirtualRouterLbPolicy {
         }
         Assert.assertTrue(ss);
 
-        api.createLoadBalancerListener(listener, session);
         ss = false;
         try {
             api.deleteLoadBalancerListener(listener.getUuid(), userSession);

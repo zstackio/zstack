@@ -11,6 +11,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.LoadBalancerInventory;
+import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerVO;
 import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.vip.VipVO;
@@ -74,9 +75,9 @@ public class TestVirtualRouterLb11 {
         vconfig.refreshLbCmds.clear();
         api.destroyVmInstance(vm.getUuid());
 
-        LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
-        LoadBalancerVO lbvo = dbf.findByUuid(lb.getUuid(), LoadBalancerVO.class);
-        Assert.assertTrue(lbvo.getVmNicRefs().isEmpty());
+        LoadBalancerListenerInventory l = deployer.loadBalancerListeners.get("listener");
+        LoadBalancerListenerVO lvo = dbf.findByUuid(l.getUuid(), LoadBalancerListenerVO.class);
+        Assert.assertTrue(lvo.getVmNicRefs().isEmpty());
         Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());
         RefreshLbCmd cmd = vconfig.refreshLbCmds.get(0);
         String nicIp = CollectionUtils.find(cmd.getLbs(), new Function<String, LbTO>() {
