@@ -3521,7 +3521,7 @@ public class Api implements CloudBusEventListener {
 
     public LoadBalancerInventory deleteLoadBalancerListener(String uuid, SessionInventory session) throws ApiSenderException {
         APIDeleteLoadBalancerListenerMsg msg = new APIDeleteLoadBalancerListenerMsg();
-        msg.setListenerUuid(uuid);
+        msg.setUuid(uuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);

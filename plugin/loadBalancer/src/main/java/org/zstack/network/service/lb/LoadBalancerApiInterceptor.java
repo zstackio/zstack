@@ -241,10 +241,10 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIDeleteLoadBalancerListenerMsg msg) {
         SimpleQuery<LoadBalancerListenerVO> q = dbf.createQuery(LoadBalancerListenerVO.class);
         q.select(LoadBalancerListenerVO_.loadBalancerUuid);
-        q.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getListenerUuid());
+        q.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getUuid());
         String lbUuid = q.findValue();
         if (lbUuid == null) {
-            throw new CloudRuntimeException(String.format("cannot find load balancer uuid of LoadBalancerListenerVO[uuid:%s]", msg.getListenerUuid()));
+            throw new CloudRuntimeException(String.format("cannot find load balancer uuid of LoadBalancerListenerVO[uuid:%s]", msg.getUuid()));
         }
 
         msg.setLoadBalancerUuid(lbUuid);

@@ -13,7 +13,7 @@ public class APIDeleteLoadBalancerListenerMsg extends APIMessage implements Load
     @APINoSee
     private String loadBalancerUuid;
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
-    private String listenerUuid;
+    private String uuid;
 
     @Override
     public String getLoadBalancerUuid() {
@@ -24,11 +24,11 @@ public class APIDeleteLoadBalancerListenerMsg extends APIMessage implements Load
         this.loadBalancerUuid = loadBalancerUuid;
     }
 
-    public String getListenerUuid() {
-        return listenerUuid;
+    public String getUuid() {
+        return uuid;
     }
 
-    public void setListenerUuid(String listenerUuid) {
-        this.listenerUuid = listenerUuid;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

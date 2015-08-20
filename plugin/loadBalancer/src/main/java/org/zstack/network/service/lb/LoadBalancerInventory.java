@@ -16,7 +16,7 @@ import java.util.List;
  */
 @Inventory(mappingVOClass = LoadBalancerVO.class)
 @ExpandedQueries({
-        @ExpandedQuery(expandedField = "listener", inventoryClass = LoadBalancerListenerInventory.class,
+        @ExpandedQuery(expandedField = "listeners", inventoryClass = LoadBalancerListenerInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "loadBalancerUuid"),
         @ExpandedQuery(expandedField = "vip", inventoryClass = VipInventory.class,
                 foreignKey = "vipUuid", expandedInventoryKey = "uuid"),

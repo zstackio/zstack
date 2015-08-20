@@ -545,7 +545,7 @@ public class LoadBalancerBase {
     private void deleteListener(APIDeleteLoadBalancerListenerMsg msg, final NoErrorCompletion completion) {
         final APIDeleteLoadBalancerListenerEvent evt = new APIDeleteLoadBalancerListenerEvent(msg.getId());
 
-        final LoadBalancerListenerVO vo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        final LoadBalancerListenerVO vo = dbf.findByUuid(msg.getUuid(), LoadBalancerListenerVO.class);
         if (vo == null) {
             evt.setInventory(getInventory());
             bus.publish(evt);

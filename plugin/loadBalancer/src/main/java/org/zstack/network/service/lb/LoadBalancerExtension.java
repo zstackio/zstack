@@ -132,19 +132,19 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension {
                     trigger.rollback();
                 }
             });
-
-            chain.done(new FlowDoneHandler(completion) {
-                @Override
-                public void handle(Map data) {
-                    completion.success();
-                }
-            }).error(new FlowErrorHandler(completion) {
-                @Override
-                public void handle(ErrorCode errCode, Map data) {
-                    completion.fail(errCode);
-                }
-            }).start();
         }
+
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     @Override
