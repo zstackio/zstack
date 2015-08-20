@@ -31,6 +31,8 @@ import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
+import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
+import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -258,7 +260,9 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
             return;
         }
 
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(struct.getLb().getVipUuid(), VipVO.class));
+
+        final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("start-vr-%s-and-refresh-lb-%s", vr.getUuid(), struct.getLb().getUuid()));
         chain.then(new ShareFlow() {
             @Override
@@ -281,6 +285,55 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                                 }
                             }
                         });
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "create-vip-on-vr";
+                    boolean success = false;
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        SimpleQuery<VirtualRouterVipVO> q = dbf.createQuery(VirtualRouterVipVO.class);
+                        q.add(VirtualRouterVipVO_.uuid, Op.EQ, vip.getUuid());
+                        q.add(VirtualRouterVipVO_.virtualRouterVmUuid, Op.EQ, vr.getUuid());
+                        if (q.isExists()) {
+                            trigger.next();
+                        } else {
+                            vipVrBkd.createVipOnVirtualRouterVm(vr, list(vip), new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    success = true;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void rollback(final FlowTrigger trigger, Map data) {
+                        if (success) {
+                            vipVrBkd.releaseVipOnVirtualRouterVm(vr, vip, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.rollback();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.warn(String.format("failed to release vip[uuid:%s, ip:%s] on vr[uuid:%s], continue to rollback",
+                                            vip.getUuid(), vip.getIp(), vr.getUuid()));
+                                    trigger.rollback();
+                                }
+                            });
+                        } else {
+                            trigger.rollback();
+                        }
                     }
                 });
 
