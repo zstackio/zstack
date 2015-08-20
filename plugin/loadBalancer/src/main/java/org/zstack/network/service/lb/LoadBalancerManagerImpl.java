@@ -8,8 +8,12 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
@@ -28,6 +32,8 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipManager;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.TagManager;
 
 import javax.persistence.TypedQuery;
@@ -55,6 +61,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     private PluginRegistry pluginRgty;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private VipManager vipMgr;
 
     private Map<String, LoadBalancerBackend> backends = new HashMap<String, LoadBalancerBackend>();
 
@@ -92,22 +100,69 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         }
     }
 
-    private void handle(APICreateLoadBalancerMsg msg) {
-        APICreateLoadBalancerEvent evt = new APICreateLoadBalancerEvent(msg.getId());
+    private void handle(final APICreateLoadBalancerMsg msg) {
+        final APICreateLoadBalancerEvent evt = new APICreateLoadBalancerEvent(msg.getId());
 
-        LoadBalancerVO vo = new LoadBalancerVO();
-        vo.setName(msg.getName());
-        vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
-        vo.setDescription(msg.getDescription());
-        vo.setVipUuid(msg.getVipUuid());
-        vo.setState(LoadBalancerState.Enabled);
-        vo = dbf.persistAndRefresh(vo);
+        final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(msg.getVipUuid(), VipVO.class));
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("create-lb-%s", msg.getName()));
+        chain.then(new ShareFlow() {
+            LoadBalancerVO vo;
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerVO.class);
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), LoadBalancerVO.class.getSimpleName());
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "lock-vip";
 
-        evt.setInventory(LoadBalancerInventory.valueOf(dbf.reload(vo)));
-        bus.publish(evt);
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        vipMgr.lockVip(vip, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowTrigger trigger, Map data) {
+                        vipMgr.unlockVip(vip);
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "write-to-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        vo = new LoadBalancerVO();
+                        vo.setName(msg.getName());
+                        vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
+                        vo.setDescription(msg.getDescription());
+                        vo.setVipUuid(msg.getVipUuid());
+                        vo.setState(LoadBalancerState.Enabled);
+                        vo = dbf.persistAndRefresh(vo);
+
+                        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerVO.class);
+                        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), LoadBalancerVO.class.getSimpleName());
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        evt.setInventory(LoadBalancerInventory.valueOf(dbf.reload(vo)));
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setErrorCode(errCode);
+                        bus.publish(evt);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override

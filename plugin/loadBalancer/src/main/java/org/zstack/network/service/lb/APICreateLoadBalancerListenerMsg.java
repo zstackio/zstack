@@ -17,11 +17,11 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
-    @APIParam(numberRange = {1, 65536})
-    private int instancePort;
+    @APIParam(numberRange = {1, 65536}, required = false)
+    private Integer instancePort;
     @APIParam(numberRange = {1, 65536})
     private int loadBalancerPort;
-    @APIParam(maxLength = 255, validValues = {LoadBalancerConstants.LB_PROTOCOL_TCP, LoadBalancerConstants.LB_PROTOCOL_HTTP})
+    @APIParam(maxLength = 255, validValues = {LoadBalancerConstants.LB_PROTOCOL_TCP, LoadBalancerConstants.LB_PROTOCOL_HTTP}, required = false)
     private String protocol;
 
     @Override
@@ -49,7 +49,7 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
         this.description = description;
     }
 
-    public int getInstancePort() {
+    public Integer getInstancePort() {
         return instancePort;
     }
 

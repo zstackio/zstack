@@ -10,9 +10,11 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.lb.LoadBalancerConstants;
 import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerVO;
 import org.zstack.network.service.lb.LoadBalancerVO;
+import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
@@ -28,11 +30,13 @@ import org.zstack.test.deployer.Deployer;
  * 
  * @author frank
  * 
- * @condition
  * 1. create a lb
  *
- * @test
  * confirm lb are created successfully
+ *
+ * 2. create a new lb
+ *
+ * confirm the vip is locked
  */
 public class TestVirtualRouterLb {
     Deployer deployer;
@@ -94,5 +98,11 @@ public class TestVirtualRouterLb {
         Assert.assertFalse(to.getNicIps().isEmpty());
         String nicIp = to.getNicIps().get(0);
         Assert.assertEquals(nic.getIp(), nicIp);
+
+        L3NetworkInventory pubNw = deployer.l3Networks.get("PublicNetwork");
+        VipInventory vip1 = api.acquireIp(pubNw.getUuid());
+        api.createLoadBalancer("lb2", vip1.getUuid(), null, null);
+        VipVO vip1vo = dbf.findByUuid(vip1.getUuid(), VipVO.class);
+        Assert.assertEquals(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING, vip1vo.getUseFor());
     }
 }

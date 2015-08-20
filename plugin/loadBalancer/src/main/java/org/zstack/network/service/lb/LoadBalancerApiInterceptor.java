@@ -50,20 +50,22 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIRemoveVmNicFromLoadBalancerMsg msg) {
+        SimpleQuery<LoadBalancerListenerVO> lq = dbf.createQuery(LoadBalancerListenerVO.class);
+        lq.select(LoadBalancerListenerVO_.loadBalancerUuid);
+        lq.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getListenerUuid());
+        String lbuuid = lq.findValue();
+        msg.setLoadBalancerUuid(lbuuid);
+
         SimpleQuery<LoadBalancerListenerVmNicRefVO> q = dbf.createQuery(LoadBalancerListenerVmNicRefVO.class);
         q.select(LoadBalancerListenerVmNicRefVO_.vmNicUuid);
         q.add(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.IN, msg.getVmNicUuids());
         q.add(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.EQ, msg.getListenerUuid());
         List<String> vmNicUuids = q.listValue();
         if (vmNicUuids.isEmpty()) {
+            APIRemoveVmNicFromLoadBalancerEvent evt = new APIRemoveVmNicFromLoadBalancerEvent(msg.getId());
+            evt.setInventory(LoadBalancerInventory.valueOf(dbf.findByUuid(lbuuid, LoadBalancerVO.class)));
             throw new StopRoutingException();
         }
-
-        SimpleQuery<LoadBalancerListenerVO> lq = dbf.createQuery(LoadBalancerListenerVO.class);
-        lq.select(LoadBalancerListenerVO_.loadBalancerUuid);
-        lq.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getListenerUuid());
-        String lbuuid = lq.findValue();
-        msg.setLoadBalancerUuid(lbuuid);
     }
 
     private void validate(APICreateLoadBalancerMsg msg) {
@@ -150,6 +152,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateLoadBalancerListenerMsg msg) {
+        if (msg.getInstancePort() == null) {
+            msg.setInstancePort(msg.getLoadBalancerPort());
+        }
+        if (msg.getProtocol() == null) {
+            msg.setProtocol(LoadBalancerConstants.LB_PROTOCOL_TCP);
+        }
+
         insertTagIfNotExisting(
                 msg, LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT,
                 LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.instantiateTag(
