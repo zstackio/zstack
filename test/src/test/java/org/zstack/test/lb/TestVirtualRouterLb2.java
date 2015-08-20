@@ -10,6 +10,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
@@ -23,6 +24,8 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.function.Function;
 
 import java.util.List;
 
@@ -36,6 +39,7 @@ import java.util.List;
  *
  * @test
  * confirm there are two vrs created
+ * confirm the ip of guest nic of the second vr is not the gateway of the guest L3
  */
 public class TestVirtualRouterLb2 {
     Deployer deployer;
@@ -69,7 +73,7 @@ public class TestVirtualRouterLb2 {
     
     @Test
     public void test() throws ApiSenderException {
-        L3NetworkInventory gnw = deployer.l3Networks.get("GuestNetwork");
+        final L3NetworkInventory gnw = deployer.l3Networks.get("GuestNetwork");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory nic = vm.findNic(gnw.getUuid());
         LoadBalancerListenerInventory l = deployer.loadBalancerListeners.get("listener");
@@ -82,5 +86,15 @@ public class TestVirtualRouterLb2 {
         List<String> roles = new VirtualRouterRoleManager().getAllRoles(vr.getUuid());
         Assert.assertEquals(1, roles.size());
         Assert.assertTrue(roles.contains(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat()));
+
+        VmNicInventory gnicOnvr = CollectionUtils.find(vr.getVmNics(), new Function<VmNicInventory, VmNicVO>() {
+            @Override
+            public VmNicInventory call(VmNicVO arg) {
+                return arg.getL3NetworkUuid().equals(gnw.getUuid()) ? VmNicInventory.valueOf(arg) : null;
+            }
+        });
+
+        String gateway = gnw.getIpRanges().get(0).getGateway();
+        Assert.assertFalse(gateway.equals(gnicOnvr.getIp()));
     }
 }

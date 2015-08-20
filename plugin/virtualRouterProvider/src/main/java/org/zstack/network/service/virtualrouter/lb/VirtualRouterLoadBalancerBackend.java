@@ -430,6 +430,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                                 }
                             });
                             s.setL3Network(l3);
+                            s.setNotGatewayForGuestL3Network(true);
 
                             vrMgr.acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger) {
                                 @Override

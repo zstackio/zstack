@@ -76,7 +76,10 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         if (candidates.isEmpty()) {
-            fail(String.format("no host in clusters that have attached to primary storage which can provide disk capacity[%s bytes] found", spec.getDiskSize()));
+            String err = spec.getVmOperation().equals(VmOperation.NewCreate.toString()) ?
+                    String.format("cannot find available primary storage[state: %s, status: %s, available capacity %s bytes]. Check the state/status of primary storage and make sure they have been attached to clusters", PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getDiskSize()) :
+                    String.format("cannot find available primary storage[state: %s, status: %s]. Check the state/status of primary storage and make sure they have been attached to clusters", PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected);
+            fail(err);
         } else {
             next(candidates);
         }

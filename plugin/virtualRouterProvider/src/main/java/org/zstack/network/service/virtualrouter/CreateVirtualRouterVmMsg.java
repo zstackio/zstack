@@ -13,6 +13,15 @@ public class CreateVirtualRouterVmMsg extends NeedReplyMessage {
     private VirtualRouterOfferingInventory offering;
     private List<String> inherentSystemTags;
     private List<String> nonInherentSystemTags;
+    private boolean notGatewayForGuestL3Network;
+
+    public boolean isNotGatewayForGuestL3Network() {
+        return notGatewayForGuestL3Network;
+    }
+
+    public void setNotGatewayForGuestL3Network(boolean notGatewayForGuestL3Network) {
+        this.notGatewayForGuestL3Network = notGatewayForGuestL3Network;
+    }
 
     public List<String> getNonInherentSystemTags() {
         return nonInherentSystemTags;
