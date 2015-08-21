@@ -31,4 +31,5 @@ public class CephPrimaryStorageSimulatorConfig {
     public List<SftpUpLoadCmd> sftpUpLoadCmds = new ArrayList<SftpUpLoadCmd>();
     public List<RollbackSnapshotCmd> rollbackSnapshotCmds = new ArrayList<RollbackSnapshotCmd>();
     public List<CreateKvmSecretCmd> createKvmSecretCmds = new ArrayList<CreateKvmSecretCmd>();
+    public List<DeletePoolCmd> deletePoolCmds = new ArrayList<DeletePoolCmd>();
 }

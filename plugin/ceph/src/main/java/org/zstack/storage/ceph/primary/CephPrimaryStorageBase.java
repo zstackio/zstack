@@ -13,10 +13,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.core.AsyncLatch;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -481,6 +478,21 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     }
 
+    public static class DeletePoolCmd extends AgentCommand {
+        List<String> poolNames;
+
+        public List<String> getPoolNames() {
+            return poolNames;
+        }
+
+        public void setPoolNames(List<String> poolNames) {
+            this.poolNames = poolNames;
+        }
+    }
+
+    public static class DeletePoolRsp extends AgentResponse {
+    }
+
     public static final String INIT_PATH = "/ceph/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/ceph/primarystorage/delete";
@@ -495,6 +507,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String UNPROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/unprotect";
     public static final String CP_PATH = "/ceph/primarystorage/volume/cp";
     public static final String KVM_CREATE_SECRET_PATH = "/vm/createcephsecret";
+    public static final String DELETE_POOL_PATH = "/ceph/primarystorage/deletepool";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -1948,6 +1961,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     public void deleteHook() {
+        if (CephGlobalConfig.PRIMARY_STORAGE_DELETE_POOL.value(Boolean.class)) {
+            DeletePoolCmd cmd = new DeletePoolCmd();
+            cmd.poolNames = list(getSelf().getImageCachePoolName(), getSelf().getDataVolumePoolName(), getSelf().getRootVolumePoolName());
+            FutureReturnValueCompletion completion = new FutureReturnValueCompletion();
+            httpCall(DELETE_POOL_PATH, cmd, DeletePoolRsp.class, completion);
+            completion.await(TimeUnit.MINUTES.toSeconds(30));
+            if (!completion.isSuccess()) {
+                throw new OperationFailureException(completion.getErrorCode());
+            }
+        }
         dbf.removeCollection(getSelf().getMons(), CephPrimaryStorageMonVO.class);
     }
 }

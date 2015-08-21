@@ -29,6 +29,10 @@ import org.zstack.utils.logging.CLogger;
  * 2. create a vm
  *
  * confirm the vm created successfully
+ *
+ * 3. delete the ps
+ *
+ * confirm pools are deleted.
  */
 public class TestCeph1 {
     Deployer deployer;
@@ -68,5 +72,10 @@ public class TestCeph1 {
         api.destroyVmInstance(vm.getUuid());
 
         Assert.assertFalse(config.deleteCmds.isEmpty());
+
+        PrimaryStorageInventory ps = deployer.primaryStorages.get("ceph-pri");
+        api.deletePrimaryStorage(ps.getUuid());
+
+        Assert.assertFalse(config.deletePoolCmds.isEmpty());
     }
 }

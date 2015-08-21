@@ -15,4 +15,6 @@ public class CephGlobalConfig {
     public static GlobalConfig IMAGE_CACHE_CLEANUP_INTERVAL = new GlobalConfig(CATEGORY, "imageCache.cleanup.interval");
     @GlobalConfigValidation
     public static GlobalConfig BACKUP_STORAGE_DOWNLOAD_IMAGE_TIMEOUT = new GlobalConfig(CATEGORY, "backupStorage.image.download.timeout");
+    @GlobalConfigValidation
+    public static GlobalConfig PRIMARY_STORAGE_DELETE_POOL = new GlobalConfig(CATEGORY, "primaryStorage.deletePool");
 }

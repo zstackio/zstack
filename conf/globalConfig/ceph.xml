@@ -15,4 +15,12 @@
         <defaultValue>43200</defaultValue>
         <type>java.lang.Long</type>
     </config>
+
+    <config>
+        <name>primaryStorage.deletePool</name>
+        <description>delete all primary storage related pools when deleting the ceph primary storage</description>
+        <category>ceph</category>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>

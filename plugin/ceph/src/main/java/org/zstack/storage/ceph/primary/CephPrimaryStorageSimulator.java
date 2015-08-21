@@ -66,6 +66,15 @@ public class CephPrimaryStorageSimulator {
         return c;
     }
 
+    @RequestMapping(value= CephPrimaryStorageBase.DELETE_POOL_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String deletePool(HttpEntity<String> entity) {
+        DeletePoolCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeletePoolCmd.class);
+        config.deletePoolCmds.add(cmd);
+        reply(entity, new DeletePoolRsp());
+        return null;
+    }
+
     @RequestMapping(value= CephPrimaryStorageBase.INIT_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String initialize(HttpEntity<String> entity) {
