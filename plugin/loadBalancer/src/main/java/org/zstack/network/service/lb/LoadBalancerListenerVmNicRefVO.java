@@ -1,5 +1,9 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ForeignKey.ReferenceOption;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 
@@ -15,9 +19,11 @@ public class LoadBalancerListenerVmNicRefVO {
     private long id;
 
     @Column
+    @ForeignKey(parentEntityClass = LoadBalancerListenerVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String listenerUuid;
 
     @Column
+    @ForeignKey(parentEntityClass = VmNicVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String vmNicUuid;
 
     @Column

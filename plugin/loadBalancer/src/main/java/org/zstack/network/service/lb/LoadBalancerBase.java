@@ -29,6 +29,9 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipManager;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -56,6 +59,8 @@ public class LoadBalancerBase {
     private AccountManager acntMgr;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private VipManager vipMgr;
 
     private LoadBalancerVO self;
 
@@ -480,31 +485,70 @@ public class LoadBalancerBase {
         });
     }
 
-    private void delete(APIDeleteLoadBalancerMsg msg, final NoErrorCompletion completion) {
+    private void delete(final APIDeleteLoadBalancerMsg msg, final NoErrorCompletion completion) {
         final APIDeleteLoadBalancerEvent evt = new APIDeleteLoadBalancerEvent(msg.getId());
-        if (self.getProviderType() == null) {
-            // not initialized yet
-            bus.publish(evt);
-            completion.done();
-            return;
-        }
 
-        LoadBalancerBackend bkd = getBackend();
-        bkd.destroyLoadBalancer(makeStruct(), new Completion(msg, completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("delete-lb-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
             @Override
-            public void success() {
-                dbf.remove(self);
-                dbf.removeCollection(self.getListeners(), LoadBalancerListenerVO.class);
-                bus.publish(evt);
-                completion.done();
-            }
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-lb";
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
-                completion.done();
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        if (self.getProviderType() == null) {
+                            trigger.next();
+                            // not initialized yet
+                            return;
+                        }
+
+                        LoadBalancerBackend bkd = getBackend();
+                        bkd.destroyLoadBalancer(makeStruct(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "unlock-vip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VipInventory vip = VipInventory.valueOf(dbf.findByUuid(self.getVipUuid(), VipVO.class));
+                        vipMgr.unlockVip(vip);
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg, completion) {
+                    @Override
+                    public void handle(Map data) {
+                        dbf.remove(self);
+                        bus.publish(evt);
+                        completion.done();
+                    }
+                });
+
+                error(new FlowErrorHandler(msg, completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setErrorCode(errCode);
+                        bus.publish(evt);
+                        completion.done();
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     private void handle(final APIDeleteLoadBalancerListenerMsg msg) {
@@ -567,7 +611,6 @@ public class LoadBalancerBase {
             @Override
             public void success() {
                 dbf.remove(vo);
-                dbf.removeCollection(vo.getVmNicRefs(), LoadBalancerListenerVmNicRefVO.class);
                 evt.setInventory(reloadAndGetInventory());
                 bus.publish(evt);
                 completion.done();

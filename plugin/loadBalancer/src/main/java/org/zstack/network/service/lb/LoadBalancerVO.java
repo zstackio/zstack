@@ -1,7 +1,9 @@
 package org.zstack.network.service.lb;
 
 import org.zstack.header.tag.AutoDeleteTag;
+import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.NoView;
+import org.zstack.network.service.vip.VipVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -33,6 +35,7 @@ public class LoadBalancerVO {
     private LoadBalancerState state;
 
     @Column
+    @ForeignKey(parentEntityClass = VipVO.class, parentKey = "uuid")
     private String vipUuid;
 
     @OneToMany(fetch=FetchType.EAGER)

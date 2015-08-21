@@ -139,3 +139,16 @@ ALTER TABLE CephPrimaryStorageMonVO ADD CONSTRAINT fkCephPrimaryStorageMonVOPrim
 
 ALTER TABLE CephPrimaryStorageVO ADD CONSTRAINT fkCephPrimaryStorageVOPrimaryStorageEO FOREIGN KEY (uuid) REFERENCES PrimaryStorageEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
 
+# Foreign keys for table LoadBalancerListenerVO
+
+ALTER TABLE LoadBalancerListenerVO ADD CONSTRAINT fkLoadBalancerListenerVOLoadBalancerVO FOREIGN KEY (loadBalancerUuid) REFERENCES LoadBalancerVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table LoadBalancerListenerVmNicRefVO
+
+ALTER TABLE LoadBalancerListenerVmNicRefVO ADD CONSTRAINT fkLoadBalancerListenerVmNicRefVOLoadBalancerListenerVO FOREIGN KEY (listenerUuid) REFERENCES LoadBalancerListenerVO (uuid) ON DELETE CASCADE;
+ALTER TABLE LoadBalancerListenerVmNicRefVO ADD CONSTRAINT fkLoadBalancerListenerVmNicRefVOVmNicVO FOREIGN KEY (vmNicUuid) REFERENCES VmNicVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table LoadBalancerVO
+
+ALTER TABLE LoadBalancerVO ADD CONSTRAINT fkLoadBalancerVOVipVO FOREIGN KEY (vipUuid) REFERENCES VipVO (uuid) ;
+

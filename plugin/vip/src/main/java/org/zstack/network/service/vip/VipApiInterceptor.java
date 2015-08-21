@@ -36,10 +36,17 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIDeleteVipMsg msg) {
-        if (!dbf.isExist(msg.getUuid(), VipVO.class)) {
+        VipVO vip = dbf.findByUuid(msg.getUuid(), VipVO.class);
+        if (vip == null) {
             APIDeleteVipEvent evt = new APIDeleteVipEvent(msg.getId());
             bus.publish(evt);
             throw new StopRoutingException();
+        }
+
+        if (vip.getUseFor() != null) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("vip[uuid:%s] is still used by the service[%s]", msg.getUuid(), vip.getUseFor())
+            ));
         }
     }
 

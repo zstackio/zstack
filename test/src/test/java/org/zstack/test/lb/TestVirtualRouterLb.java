@@ -10,10 +10,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.lb.LoadBalancerConstants;
-import org.zstack.network.service.lb.LoadBalancerInventory;
-import org.zstack.network.service.lb.LoadBalancerListenerVO;
-import org.zstack.network.service.lb.LoadBalancerVO;
+import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
@@ -34,9 +31,17 @@ import org.zstack.test.deployer.Deployer;
  *
  * confirm lb are created successfully
  *
- * 2. create a new lb
+ * 2. delete the lb
+ *
+ * confirm all related resources deleted
+ *
+ * 3. create a new lb
  *
  * confirm the vip is locked
+ *
+ * 4. delete the new lb
+ *
+ * confirm the vip is unlocked
  */
 public class TestVirtualRouterLb {
     Deployer deployer;
@@ -99,10 +104,22 @@ public class TestVirtualRouterLb {
         String nicIp = to.getNicIps().get(0);
         Assert.assertEquals(nic.getIp(), nicIp);
 
+        api.deleteLoadBalancer(lb.getUuid(), null);
+        Assert.assertEquals(0, dbf.count(LoadBalancerVO.class));
+        Assert.assertEquals(0, dbf.count(LoadBalancerListenerVO.class));
+        Assert.assertEquals(0, dbf.count(LoadBalancerListenerVmNicRefVO.class));
+        vip = dbf.findByUuid(lbvo.getVipUuid(), VipVO.class);
+        Assert.assertNull(vip.getUseFor());
+
         L3NetworkInventory pubNw = deployer.l3Networks.get("PublicNetwork");
         VipInventory vip1 = api.acquireIp(pubNw.getUuid());
-        api.createLoadBalancer("lb2", vip1.getUuid(), null, null);
+        LoadBalancerInventory lb2 = api.createLoadBalancer("lb2", vip1.getUuid(), null, null);
         VipVO vip1vo = dbf.findByUuid(vip1.getUuid(), VipVO.class);
         Assert.assertEquals(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING, vip1vo.getUseFor());
+
+        api.deleteLoadBalancer(lb2.getUuid(), null);
+        vip1vo = dbf.findByUuid(vip1.getUuid(), VipVO.class);
+        Assert.assertNull(vip1vo.getUseFor());
+        Assert.assertFalse(dbf.isExist(lb2.getUuid(), LoadBalancerVO.class));
     }
 }
