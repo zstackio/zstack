@@ -38,9 +38,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.search.SearchOp;
-import org.zstack.header.tag.SystemTagCreateMessageValidator;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
 import org.zstack.header.volume.VolumeConstant;
@@ -48,6 +46,7 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
+import org.zstack.tag.SystemTag;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.TagUtils;
@@ -388,6 +387,37 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         HostNameValidator hostnameValidator = new HostNameValidator();
         tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), hostnameValidator);
         VmSystemTags.HOSTNAME.installValidator(hostnameValidator);
+
+        VmSystemTags.STATIC_IP.installLifeCycleListener(new AbstractSystemTagLifeCycleListener() {
+            private void markNicToReleaseAndAcquireNewIp(SystemTagInventory tag) {
+                String l3NetworkUuid = VmSystemTags.STATIC_IP.getTokenByTag(tag.getTag(), VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
+                SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
+                q.add(VmNicVO_.vmInstanceUuid, Op.EQ, tag.getResourceUuid());
+                q.add(VmNicVO_.l3NetworkUuid, Op.EQ, l3NetworkUuid);
+                VmNicVO nic = q.find();
+                if (nic == null) {
+                    logger.warn(String.format("cannot find nic[vm uuid:%s, l3 uuid:%s] for updating static ip system tag[uuid:%s]",
+                            tag.getResourceUuid(), l3NetworkUuid, tag.getUuid()));
+                } else {
+                    nic.setMetaData(VmInstanceConstant.NIC_META_RELEASE_IP_AND_ACQUIRE_NEW);
+                    dbf.update(nic);
+                }
+            }
+
+            @Override
+            public void tagCreated(SystemTagInventory tag) {
+                markNicToReleaseAndAcquireNewIp(tag);
+            }
+
+            @Override
+            public void tagDeleted(SystemTagInventory tag) {
+            }
+
+            @Override
+            public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+                markNicToReleaseAndAcquireNewIp(newTag);
+            }
+        });
     }
 
     @Override

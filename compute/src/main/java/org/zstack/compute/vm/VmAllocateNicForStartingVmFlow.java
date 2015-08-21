@@ -10,6 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
@@ -45,6 +46,24 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
         for (VmNicInventory nic : vm.getVmNics()) {
             if (nic.getUsedIpUuid() == null) {
                 nicsNeedNewIp.add(nic);
+            } else if (VmInstanceConstant.NIC_META_RELEASE_IP_AND_ACQUIRE_NEW.equals(nic.getMetaData())) {
+                nicsNeedNewIp.add(nic);
+                ReturnIpMsg rmsg = new ReturnIpMsg();
+                rmsg.setL3NetworkUuid(nic.getL3NetworkUuid());
+                rmsg.setUsedIpUuid(nic.getUsedIpUuid());
+                bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+                MessageReply reply = bus.call(rmsg);
+                if (!reply.isSuccess()) {
+                    throw new OperationFailureException(errf.stringToOperationError(
+                            String.format("cannot release old ip[%s] of nic[uuid:%s, vm uuid:%s, l3 uuid:%s], %s",
+                                    nic.getIp(), nic.getUuid(), nic.getVmInstanceUuid(), nic.getL3NetworkUuid(), reply.getError())
+                    ));
+                } else {
+                    // clear the NIC_META_RELEASE_IP_AND_ACQUIRE_NEW flag
+                    VmNicVO nvo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+                    nvo.setMetaData(null);
+                    dbf.update(nvo);
+                }
             } else {
                 usedIpUuids.add(nic.getUsedIpUuid());
             }
