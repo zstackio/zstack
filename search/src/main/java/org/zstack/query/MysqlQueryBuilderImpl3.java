@@ -329,6 +329,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
         Class inventoryClass;
         String attrValueName;
         boolean skipInventoryCheck;
+        int index;
 
         private Field entityField;
 
@@ -406,7 +407,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
 
         String toJpql() {
             String entityName = inventoryClass.getSimpleName().toLowerCase();
-            attrValueName = entityName + "_" + attr + "_" + "value";
+            attrValueName = entityName + "_" + attr + "_" + "value" + index;
             Field inventoryField = FieldUtils.getField(attr, inventoryClass);
 
             if (!skipInventoryCheck) {
@@ -553,7 +554,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 throw new CloudRuntimeException(String.format("invalid comparison operator[%s]; %s", cond.getOp(), JSONObjectUtil.toJsonString(cond)));
             }
 
-            private List<String> getAllResoruceTypesForTag() {
+            private List<String> getAllResourceTypesForTag() {
                 List<String>  types = new ArrayList<String>();
                 Class c = info.entityClass;
                 while (c != Object.class) {
@@ -565,7 +566,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
 
             String toJpql() {
                 List<String> resultQuery = new ArrayList<String>();
-                List<String> rtypes = getAllResoruceTypesForTag();
+                List<String> rtypes = getAllResourceTypesForTag();
                 String primaryKey = info.primaryKey;
                 String invname = info.inventoryClass.getSimpleName().toLowerCase();
 
@@ -606,15 +607,16 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
 
             boolean hasTag = false;
 
-            List<MetaCondition> tmpConditions = new ArrayList<MetaCondition>(conditions.size());
+            int index = 0;
             for (MetaCondition it : conditions) {
                 if (USER_TAG.equals(it.attr) || SYSTEM_TAG.equals(it.attr)) {
                     hasTag = true;
                     continue;
                 }
 
+                // use an index to differentiate multiple conditions with the same name
+                it.index = index ++;
                 where.add(it.toJpql());
-                tmpConditions.add(it);
             }
 
             //conditions = tmpConditions;
