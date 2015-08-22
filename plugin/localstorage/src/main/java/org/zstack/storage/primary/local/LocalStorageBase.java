@@ -673,6 +673,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void setup() {
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-bits-on-host";
+
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
@@ -774,8 +775,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        createResourceRefVO(msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName(),
-                                msg.getIsoSpec().getInventory().getSize(), msg.getDestHostUuid());
+                        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
+                        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getIsoSpec().getInventory().getUuid());
+                        q.add(LocalStorageResourceRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+                        q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, ImageVO.class.getSimpleName());
+                        if (!q.isExists()) {
+                            createResourceRefVO(msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName(),
+                                    msg.getIsoSpec().getInventory().getSize(), msg.getDestHostUuid());
+                        }
+
                         bus.reply(msg, reply);
                     }
                 });
