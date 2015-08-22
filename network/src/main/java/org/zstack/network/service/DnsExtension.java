@@ -1,23 +1,28 @@
 package org.zstack.network.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.Component;
+import org.zstack.header.Service;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkDnsVO;
 import org.zstack.header.network.l3.L3NetworkDnsVO_;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.DnsStruct;
-import org.zstack.header.network.service.NetworkServiceDnsBackend;
-import org.zstack.header.network.service.NetworkServiceProviderType;
-import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,11 +32,14 @@ import java.util.*;
  */
 
 //TODO: implement remove dns when dns is removed from database
-public class DnsExtension extends AbstractNetworkServiceExtension implements Component {
+public class DnsExtension extends AbstractNetworkServiceExtension implements Component, Service {
     private static final CLogger logger = Utils.getLogger(DnsExtension.class);
     private Map<NetworkServiceProviderType, NetworkServiceDnsBackend> dnsBackends = new HashMap<NetworkServiceProviderType, NetworkServiceDnsBackend>();
 
     private final String RESULT = String.format("result.%s", DnsExtension.class.getName());
+
+    @Autowired
+    private CloudBus bus;
 
     public NetworkServiceType getNetworkServiceType() {
         return NetworkServiceType.DNS;
@@ -133,5 +141,68 @@ public class DnsExtension extends AbstractNetworkServiceExtension implements Com
     @Override
     public boolean stop() {
         return true;
+    }
+
+    @Override
+    @MessageSafe
+    public void handleMessage(Message msg) {
+        if (msg instanceof AddDnsMsg) {
+            handle((AddDnsMsg) msg);
+        } else if (msg instanceof RemoveDnsMsg) {
+            handle((RemoveDnsMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(final RemoveDnsMsg msg) {
+        final RemoveDnsReply reply = new RemoveDnsReply();
+        L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class));
+        NetworkServiceDnsBackend bkd = dnsBackends.get(getNetworkServiceProviderType(NetworkServiceType.DNS, l3));
+        bkd.removeDns(l3, list(msg.getDns()), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final AddDnsMsg msg) {
+        final AddDnsReply reply = new AddDnsReply();
+        L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class));
+        NetworkServiceDnsBackend bkd = dnsBackends.get(getNetworkServiceProviderType(NetworkServiceType.DNS, l3));
+        bkd.addDns(l3, list(msg.getDns()), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    public String getId() {
+        return bus.makeLocalServiceId(NetworkServiceConstants.DNS_SERVICE_ID);
+    }
+
+    @Override
+    public int getSyncLevel() {
+        return 0;
+    }
+
+    @Override
+    public List<String> getAliasIds() {
+        return null;
     }
 }

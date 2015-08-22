@@ -244,7 +244,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 
 	@Override
 	public String getId() {
-		return bus.makeLocalServiceId(NetworkServiceConstant.SERVICE_ID);
+		return bus.makeLocalServiceId(NetworkServiceConstants.SERVICE_ID);
 	}
 
 	@Override

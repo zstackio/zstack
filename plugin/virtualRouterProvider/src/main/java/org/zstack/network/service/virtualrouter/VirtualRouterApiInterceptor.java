@@ -22,7 +22,6 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
-import org.zstack.network.service.NetworkServiceConstant;
 
 import java.util.List;
 

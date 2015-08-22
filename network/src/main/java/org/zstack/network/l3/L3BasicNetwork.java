@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -17,14 +18,9 @@ import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
+import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkEvent;
-import org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkMsg;
-import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.network.service.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -323,31 +319,150 @@ public class L3BasicNetwork implements L3Network {
 
 
 
-    private void handle(APIRemoveDnsFromL3NetworkMsg msg) {
-        SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
-        q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
-        q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-        L3NetworkDnsVO dns = q.find();
-        APIRemoveDnsFromL3NetworkEvent evt = new APIRemoveDnsFromL3NetworkEvent(msg.getId());
-        if (dns != null) {
-            //TODO: create extension points
-            dbf.remove(dns);
-        }
-        evt.setInventory(L3NetworkInventory.valueOf(dbf.reload(self)));
-        bus.publish(evt);
+    private void handle(final APIRemoveDnsFromL3NetworkMsg msg) {
+        final APIRemoveDnsFromL3NetworkEvent evt = new APIRemoveDnsFromL3NetworkEvent(msg.getId());
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("remove-dns-%s-from-l3-%s", msg.getDns(), msg.getL3NetworkUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                if (!self.getNetworkServices().isEmpty()) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "remove-dns-from-backend";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            RemoveDnsMsg rmsg = new RemoveDnsMsg();
+                            rmsg.setDns(msg.getDns());
+                            rmsg.setL3NetworkUuid(self.getUuid());
+                            bus.makeLocalServiceId(rmsg, NetworkServiceConstants.DNS_SERVICE_ID);
+                            bus.send(rmsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        trigger.fail(reply.getError());
+                                    } else {
+                                        trigger.next();
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "remove-dns-from-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
+                        q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
+                        q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                        L3NetworkDnsVO dns = q.find();
+                        if (dns != null) {
+                            //TODO: create extension points
+                            dbf.remove(dns);
+                        }
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        evt.setInventory(L3NetworkInventory.valueOf(dbf.reload(self)));
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setErrorCode(errCode);
+                        bus.publish(evt);
+                    }
+                });
+            }
+        }).start();
     }
 
-    private void handle(APIAddDnsToL3NetworkMsg msg) {
-    	L3NetworkDnsVO dnsvo = new L3NetworkDnsVO();
-    	dnsvo.setDns(msg.getDns());
-    	dnsvo.setL3NetworkUuid(self.getUuid());
-    	dbf.persist(dnsvo);
+    private void handle(final APIAddDnsToL3NetworkMsg msg) {
+        final APIAddDnsToL3NetworkEvent evt = new APIAddDnsToL3NetworkEvent(msg.getId());
 
-    	APIAddDnsToL3NetworkEvent evt = new APIAddDnsToL3NetworkEvent(msg.getId());
-    	self = dbf.reload(self);
-    	evt.setInventory(L3NetworkInventory.valueOf(self));
-    	logger.debug(String.format("successfully added dns[%s] to L3Network[uuid:%s, name:%s]", msg.getDns(), self.getUuid(), self.getName()));
-    	bus.publish(evt);
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("add-dns-%s-to-l3-%s", msg.getDns(), msg.getL3NetworkUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "write-dns-to-db";
+
+                    L3NetworkDnsVO dnsvo;
+                    boolean s = false;
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        dnsvo = new L3NetworkDnsVO();
+                        dnsvo.setDns(msg.getDns());
+                        dnsvo.setL3NetworkUuid(self.getUuid());
+                        dnsvo = dbf.persist(dnsvo);
+                        s = true;
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowTrigger trigger, Map data) {
+                        if (s) {
+                            dbf.remove(dnsvo);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                if (!self.getNetworkServices().isEmpty()) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "apply-to-backend";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            AddDnsMsg amsg = new AddDnsMsg();
+                            amsg.setL3NetworkUuid(self.getUuid());
+                            amsg.setDns(msg.getDns());
+                            bus.makeLocalServiceId(amsg, NetworkServiceConstants.DNS_SERVICE_ID);
+                            bus.send(amsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (reply.isSuccess()) {
+                                        trigger.next();
+                                    } else {
+                                        trigger.fail(reply.getError());
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        self = dbf.reload(self);
+                        evt.setInventory(L3NetworkInventory.valueOf(self));
+                        logger.debug(String.format("successfully added dns[%s] to L3Network[uuid:%s, name:%s]", msg.getDns(), self.getUuid(), self.getName()));
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setErrorCode(errCode);
+                        bus.publish(evt);
+                    }
+                });
+            }
+        }).start();
 	}
 
 	private void handle(APIAttachNetworkServiceToL3NetworkMsg msg) {

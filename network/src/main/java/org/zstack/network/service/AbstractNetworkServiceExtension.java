@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -22,13 +24,33 @@ import java.util.Map;
 public abstract class AbstractNetworkServiceExtension implements NetworkServiceExtensionPoint {
     @Autowired
     protected DatabaseFacade dbf;
-
     @Autowired
     protected PluginRegistry pluginRgty;
+    @Autowired
+    protected ErrorFacade errf;
+
 
     public NetworkServiceExtensionPosition getNetworkServiceExtensionPosition() {
         return NetworkServiceExtensionPosition.BEFORE_VM_CREATED;
     }
+
+    protected NetworkServiceProviderType getNetworkServiceProviderType(NetworkServiceType type, L3NetworkInventory l3) {
+        for (NetworkServiceL3NetworkRefInventory ref : l3.getNetworkServices()) {
+            if (!type.toString().equals(ref.getNetworkServiceType())) {
+                continue;
+            }
+
+            SimpleQuery<NetworkServiceProviderVO> q = dbf.createQuery(NetworkServiceProviderVO.class);
+            q.select(NetworkServiceProviderVO_.type);
+            q.add(NetworkServiceProviderVO_.uuid, SimpleQuery.Op.EQ, ref.getNetworkServiceProviderUuid());
+            String providerType = q.findValue();
+
+            return NetworkServiceProviderType.valueOf(providerType);
+        }
+
+        throw new OperationFailureException(errf.stringToOperationError(String.format("cannot find any network service provider providing %s for L3 network[uuid:%s]", type, l3.getUuid())));
+    }
+
 
     protected Map<NetworkServiceProviderType, List<L3NetworkInventory>> getNetworkServiceProviderMap(NetworkServiceType type, VmInstanceSpec spec) {
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> ret = new HashMap<NetworkServiceProviderType, List<L3NetworkInventory>>();

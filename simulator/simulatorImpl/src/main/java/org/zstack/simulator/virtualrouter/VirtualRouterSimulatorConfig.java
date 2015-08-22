@@ -39,5 +39,6 @@ public class VirtualRouterSimulatorConfig {
 	public volatile List<RefreshLbCmd> refreshLbCmds = new ArrayList<RefreshLbCmd>();
     public volatile boolean refreshLbSuccess = true;
 	public volatile List<DeleteLbCmd> deleteLbCmds = new ArrayList<DeleteLbCmd>();
+	public volatile List<RemoveDnsCmd> removeDnsCmds = new ArrayList<RemoveDnsCmd>();
 
 }

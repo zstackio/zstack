@@ -23,6 +23,7 @@ import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBack
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbRsp;
 import org.zstack.simulator.AsyncRESTReplyer;
 import org.zstack.simulator.SimulatorGlobalProperty;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -366,6 +367,16 @@ public class VirtualRouterSimulator {
         }
         logger.debug(String.format("successfully set snat: %s", JSONObjectUtil.toJsonString(cmd.getSnat())));
         replyer.reply(entity, rsp);
+    }
+
+    @RequestMapping(value = VirtualRouterConstant.VR_REMOVE_DNS_PATH, method = RequestMethod.POST)
+    private @ResponseBody
+    String removeDNS(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        RemoveDnsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RemoveDnsCmd.class);
+        config.removeDnsCmds.add(cmd);
+        replyer.reply(entity, new RemoveDnsRsp());
+        return null;
     }
 
     @RequestMapping(value = VirtualRouterConstant.VR_SET_DNS_PATH, method = RequestMethod.POST)

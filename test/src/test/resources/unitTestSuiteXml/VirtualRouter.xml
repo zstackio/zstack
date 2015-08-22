@@ -15,6 +15,7 @@
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterApplyExistingDhcp"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDns"/>
     <TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDns1"/>
+	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDns2"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterDnsOnStart"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterSNAT"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterSNATOnStart"/>
