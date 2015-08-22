@@ -339,10 +339,14 @@ public class NetworkUtils {
         long s = ipv4StringToLong(startIp);
         long e = ipv4StringToLong(endIp);
         List<String> res = new ArrayList<String>();
-        for (long i=s; i<=e && i-s<limit; i++) {
+        for (long i=s; i<=e; i++) {
             String ip = longToIpv4String(i);
             if (!usedIps.contains(ip)) {
                 res.add(ip);
+            }
+
+            if (res.size() >= limit) {
+                break;
             }
         }
 

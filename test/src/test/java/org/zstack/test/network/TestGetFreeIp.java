@@ -68,6 +68,15 @@ public class TestGetFreeIp {
 
         ips = api.getFreeIp(l3inv.getUuid(), null, 5);
         Assert.assertEquals(5, ips.size());
+
+        // allocate 9 IPs, make one left
+        for (int i=0; i<9; i++) {
+            bus.call(amsg);
+        }
+
+        // only one free IP left
+        ips = api.getFreeIp(l3inv.getUuid(), null, 1);
+        Assert.assertEquals(1, ips.size());
     }
 
 }
