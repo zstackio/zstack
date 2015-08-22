@@ -6,13 +6,17 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.query.QueryOp;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmMsg;
+import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmReply;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -42,6 +46,10 @@ import org.zstack.test.deployer.Deployer;
  * 4. delete the new lb
  *
  * confirm the vip is unlocked
+ *
+ * 5. query the vr
+ *
+ * confirm the result is right
  */
 public class TestVirtualRouterLb {
     Deployer deployer;
@@ -121,5 +129,10 @@ public class TestVirtualRouterLb {
         vip1vo = dbf.findByUuid(vip1.getUuid(), VipVO.class);
         Assert.assertNull(vip1vo.getUseFor());
         Assert.assertFalse(dbf.isExist(lb2.getUuid(), LoadBalancerVO.class));
+
+        APIQueryVirtualRouterVmMsg msg = new APIQueryVirtualRouterVmMsg();
+        msg.addQueryCondition("__systemTag__", QueryOp.EQ, "role::LoadBalancer");
+        APIQueryVirtualRouterVmReply r = api.query(msg, APIQueryVirtualRouterVmReply.class);
+        Assert.assertEquals(1, r.getInventories().size());
     }
 }

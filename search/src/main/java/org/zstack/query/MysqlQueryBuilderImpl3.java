@@ -553,11 +553,20 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 throw new CloudRuntimeException(String.format("invalid comparison operator[%s]; %s", cond.getOp(), JSONObjectUtil.toJsonString(cond)));
             }
 
+            private List<String> getAllResoruceTypesForTag() {
+                List<String>  types = new ArrayList<String>();
+                Class c = info.entityClass;
+                while (c != Object.class) {
+                    types.add(String.format("'%s'", c.getSimpleName()));
+                    c = info.entityClass.getSuperclass();
+                }
+                return types;
+            }
+
             String toJpql() {
                 List<String> resultQuery = new ArrayList<String>();
-                Class entityClass = info.entityClass;
+                List<String> rtypes = getAllResoruceTypesForTag();
                 String primaryKey = info.primaryKey;
-                String resourceType = entityClass.getSimpleName();
                 String invname = info.inventoryClass.getSimpleName().toLowerCase();
 
                 List<QueryCondition> conds = CollectionUtils.transformToList(conditions, new Function<QueryCondition, MetaCondition>() {
@@ -567,17 +576,18 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                     }
                 });
 
+                String typeString = StringUtils.join(rtypes, ",");
                 for (QueryCondition cond : conds) {
                     if (cond.getName().equals(USER_TAG)) {
                         List<String> condStrs = new ArrayList<String>();
                         condStrs.add(buildCondition("user.tag", cond));
-                        condStrs.add(String.format("user.resourceType = '%s'", resourceType));
+                        condStrs.add(String.format("user.resourceType in (%s)", typeString));
                         resultQuery.add(String.format("%s.%s %s (select user.resourceUuid from UserTagVO user where %s)",
                                 invname, primaryKey, chooseOp(cond), StringUtils.join(condStrs, " and ")));
                     } else if (cond.getName().equals(SYSTEM_TAG)) {
                         List<String> condStrs = new ArrayList<String>();
                         condStrs.add(buildCondition("sys.tag", cond));
-                        condStrs.add(String.format("sys.resourceType = '%s'", resourceType));
+                        condStrs.add(String.format("sys.resourceType in (%s)", typeString));
                         resultQuery.add(String.format("%s.%s %s (select sys.resourceUuid from SystemTagVO sys where %s)",
                                 invname, primaryKey, chooseOp(cond), StringUtils.join(condStrs, " and ")));
                     }

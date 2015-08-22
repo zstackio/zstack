@@ -85,25 +85,35 @@ public class TagSubQueryExtension extends AbstractMysqlQuerySubQueryExtension {
         throw new CloudRuntimeException(String.format("invalid comparison operator[%s]; %s", cond.getOp(), JSONObjectUtil.toJsonString(cond)));
     }
 
+    private String getResourceTypeString(Class entityClass) {
+        List<String> rtypes = new ArrayList<String>();
+        while (entityClass != Object.class) {
+            rtypes.add(String.format("'%s'", entityClass.getSimpleName()));
+            entityClass = entityClass.getSuperclass();
+        }
+
+        return StringUtils.join(rtypes, ",");
+    }
+
     @Override
     public String makeSubquery(APIQueryMessage msg, Class inventoryClass) {
         List<String> resultQuery = new ArrayList<String>();
         Class entityClass = QueryUtils.getEntityClassFromInventoryClass(inventoryClass);
         String primaryKey = QueryUtils.getPrimaryKeyNameFromEntityClass(entityClass);
-        String resourceType = entityClass.getSimpleName();
+        String typeString = getResourceTypeString(entityClass);
         String invname = inventoryClass.getSimpleName().toLowerCase();
 
         for (QueryCondition cond : msg.getConditions()) {
             if (cond.getName().equals(USER_TAG_NAME)) {
                 List<String> condStrs = new ArrayList<String>();
                 condStrs.add(buildCondition("user.tag", cond));
-                condStrs.add(String.format("user.resourceType = '%s'", resourceType));
+                condStrs.add(String.format("user.resourceType in (%s)", typeString));
                 resultQuery.add(String.format("%s.%s %s (select user.resourceUuid from UserTagVO user where %s)",
                         invname, primaryKey, chooseOp(cond), StringUtils.join(condStrs, " and ")));
             } else if (cond.getName().equals(SYS_TAG_NAME)) {
                 List<String> condStrs = new ArrayList<String>();
                 condStrs.add(buildCondition("sys.tag", cond));
-                condStrs.add(String.format("sys.resourceType = '%s'", resourceType));
+                condStrs.add(String.format("sys.resourceType in (%s)", typeString));
                 resultQuery.add(String.format("%s.%s %s (select sys.resourceUuid from SystemTagVO sys where %s)",
                         invname, primaryKey, chooseOp(cond), StringUtils.join(condStrs, " and ")));
             }
