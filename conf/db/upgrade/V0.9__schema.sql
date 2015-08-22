@@ -152,3 +152,4 @@ ALTER TABLE LoadBalancerListenerVmNicRefVO ADD CONSTRAINT fkLoadBalancerListener
 
 ALTER TABLE LoadBalancerVO ADD CONSTRAINT fkLoadBalancerVOVipVO FOREIGN KEY (vipUuid) REFERENCES VipVO (uuid) ;
 
+ALTER TABLE `zstack`.`ImageEO` MODIFY platform VARCHAR(255);

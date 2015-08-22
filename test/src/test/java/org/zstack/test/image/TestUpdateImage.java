@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.simulator.storage.backup.SimulatorBackupStorageDetails;
 import org.zstack.header.storage.backup.BackupStorageInventory;
@@ -63,12 +64,14 @@ public class TestUpdateImage {
         iinv.setFormat("raw");
         iinv.setMediaType(ImageMediaType.DataVolumeTemplate.toString());
         iinv.setSystem(true);
+        iinv.setPlatform(ImagePlatform.Paravirtualization.toString());
 
         iinv = api.updateImage(iinv);
         Assert.assertEquals("1", iinv.getName());
         Assert.assertEquals("xxx", iinv.getDescription());
         Assert.assertEquals("yyy", iinv.getGuestOsType());
         Assert.assertTrue(iinv.isSystem());
+        Assert.assertEquals(ImagePlatform.Paravirtualization.toString(), iinv.getPlatform());
         Assert.assertEquals("raw", iinv.getFormat());
         Assert.assertEquals(ImageMediaType.DataVolumeTemplate.toString(), iinv.getMediaType());
     }
