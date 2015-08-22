@@ -1966,7 +1966,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             cmd.poolNames = list(getSelf().getImageCachePoolName(), getSelf().getDataVolumePoolName(), getSelf().getRootVolumePoolName());
             FutureReturnValueCompletion completion = new FutureReturnValueCompletion();
             httpCall(DELETE_POOL_PATH, cmd, DeletePoolRsp.class, completion);
-            completion.await(TimeUnit.MINUTES.toSeconds(30));
+            completion.await(TimeUnit.MINUTES.toMillis(30));
             if (!completion.isSuccess()) {
                 throw new OperationFailureException(completion.getErrorCode());
             }
