@@ -30,6 +30,7 @@
 	<bean id="LoadBalancerExtension" class="org.zstack.network.service.lb.LoadBalancerExtension">
 		<zstack:plugin>
 			<zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" />
+			<zstack:extension interface="org.zstack.network.service.vip.VipReleaseExtensionPoint" />
 		</zstack:plugin>
     </bean>
 

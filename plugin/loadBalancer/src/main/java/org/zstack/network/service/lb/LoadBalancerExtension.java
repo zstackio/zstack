@@ -21,6 +21,8 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipReleaseExtensionPoint;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -38,7 +40,7 @@ import java.util.concurrent.Callable;
 /**
  * Created by frank on 8/13/2015.
  */
-public class LoadBalancerExtension extends AbstractNetworkServiceExtension {
+public class LoadBalancerExtension extends AbstractNetworkServiceExtension implements VipReleaseExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LoadBalancerExtension.class);
 
     @Autowired
@@ -213,6 +215,37 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension {
                 }
 
                 completion.done();
+            }
+        });
+    }
+
+    @Override
+    public String getVipUse() {
+        return LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING;
+    }
+
+    @Override
+    public void releaseServicesOnVip(VipInventory vip, final Completion completion) {
+        SimpleQuery<LoadBalancerVO> q = dbf.createQuery(LoadBalancerVO.class);
+        q.select(LoadBalancerVO_.uuid);
+        q.add(LoadBalancerVO_.vipUuid, Op.EQ, vip.getUuid());
+        String lbUuid = q.findValue();
+        if (lbUuid == null) {
+            completion.success();
+            return;
+        }
+
+        DeleteLoadBalancerMsg msg = new DeleteLoadBalancerMsg();
+        msg.setUuid(lbUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, lbUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    completion.success();
+                } else {
+                    completion.fail(reply.getError());
+                }
             }
         });
     }

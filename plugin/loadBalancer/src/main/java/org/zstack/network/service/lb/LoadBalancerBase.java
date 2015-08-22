@@ -98,9 +98,44 @@ public class LoadBalancerBase {
             handle((LoadBalancerRemoveVmNicMsg) msg);
         } else if (msg instanceof RefreshLoadBalancerMsg) {
             handle((RefreshLoadBalancerMsg) msg);
+        } else if (msg instanceof DeleteLoadBalancerMsg) {
+            handle((DeleteLoadBalancerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final DeleteLoadBalancerMsg msg) {
+        final DeleteLoadBalancerReply reply = new DeleteLoadBalancerReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                delete(new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg ,reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg ,reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "delete-lb";
+            }
+        });
     }
 
     private void handle(final RefreshLoadBalancerMsg msg) {
@@ -461,6 +496,8 @@ public class LoadBalancerBase {
     }
 
     private void handle(final APIDeleteLoadBalancerMsg msg) {
+        final APIDeleteLoadBalancerEvent evt = new APIDeleteLoadBalancerEvent(msg.getId());
+
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -469,13 +506,20 @@ public class LoadBalancerBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                delete(msg, new NoErrorCompletion(msg, chain) {
+                delete(new Completion(msg, chain) {
                     @Override
-                    public void done() {
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setErrorCode(errorCode);
+                        bus.publish(evt);
                         chain.next();
                     }
                 });
-                chain.next();
             }
 
             @Override
@@ -485,9 +529,7 @@ public class LoadBalancerBase {
         });
     }
 
-    private void delete(final APIDeleteLoadBalancerMsg msg, final NoErrorCompletion completion) {
-        final APIDeleteLoadBalancerEvent evt = new APIDeleteLoadBalancerEvent(msg.getId());
-
+    private void delete(final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-lb-%s", self.getUuid()));
         chain.then(new ShareFlow() {
@@ -530,21 +572,18 @@ public class LoadBalancerBase {
                     }
                 });
 
-                done(new FlowDoneHandler(msg, completion) {
+                done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
                         dbf.remove(self);
-                        bus.publish(evt);
-                        completion.done();
+                        completion.success();
                     }
                 });
 
-                error(new FlowErrorHandler(msg, completion) {
+                error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
-                        bus.publish(evt);
-                        completion.done();
+                        completion.fail(errCode);
                     }
                 });
             }
