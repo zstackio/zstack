@@ -337,7 +337,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CreateSnapshotCmd extends AgentCommand {
+        boolean skipOnExisting;
         String snapshotPath;
+
+        public boolean isSkipOnExisting() {
+            return skipOnExisting;
+        }
+
+        public void setSkipOnExisting(boolean skipOnExisting) {
+            this.skipOnExisting = skipOnExisting;
+        }
 
         public String getSnapshotPath() {
             return snapshotPath;
@@ -377,6 +386,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     public static class ProtectSnapshotCmd extends AgentCommand {
         String snapshotPath;
+        boolean ignoreError;
+
+        public boolean isIgnoreError() {
+            return ignoreError;
+        }
+
+        public void setIgnoreError(boolean ignoreError) {
+            this.ignoreError = ignoreError;
+        }
 
         public String getSnapshotPath() {
             return snapshotPath;
@@ -542,6 +560,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         abstract void download(ReturnValueCompletion<String> completion);
 
         abstract void upload(ReturnValueCompletion<String> completion);
+
+        abstract boolean deleteWhenRollabackDownload();
     }
 
     class SftpBackupStorageMediator extends BackupStorageMediator {
@@ -738,6 +758,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 }
             }).start();
         }
+
+        @Override
+        boolean deleteWhenRollabackDownload() {
+            return true;
+        }
     }
 
     class CephBackupStorageMediator extends BackupStorageMediator {
@@ -840,6 +865,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 }
             }).start();
         }
+
+        @Override
+        boolean deleteWhenRollabackDownload() {
+            return false;
+        }
     }
 
     private BackupStorageMediator getBackupStorageMediator(String bsUuid) {
@@ -935,6 +965,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     flow(new Flow() {
                         String __name__ = "download-from-backup-storage";
 
+                        boolean deleteOnRollback;
+
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             DownloadParam param = new DownloadParam();
@@ -943,6 +975,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             BackupStorageMediator mediator = getBackupStorageMediator(image.getSelectedBackupStorage().getBackupStorageUuid());
                             mediator.param = param;
 
+                            deleteOnRollback = mediator.deleteWhenRollabackDownload();
                             mediator.download(new ReturnValueCompletion<String>(trigger) {
                                 @Override
                                 public void success(String path) {
@@ -959,7 +992,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void rollback(FlowTrigger trigger, Map data) {
-                            if (cachePath != null) {
+                            if (deleteOnRollback && cachePath != null) {
                                 DeleteCmd cmd = new DeleteCmd();
                                 cmd.installPath = cachePath;
                                 httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>() {
@@ -989,6 +1022,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         public void run(final FlowTrigger trigger, Map data) {
                             snapshotPath =  String.format("%s@%s", cachePath, image.getInventory().getUuid());
                             CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+                            cmd.skipOnExisting = true;
                             cmd.snapshotPath = snapshotPath;
                             httpCall(CREATE_SNAPSHOT_PATH, cmd, CreateSnapshotRsp.class, new ReturnValueCompletion<CreateSnapshotRsp>(trigger) {
                                 @Override
@@ -1034,6 +1068,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         public void run(final FlowTrigger trigger, Map data) {
                             ProtectSnapshotCmd cmd = new ProtectSnapshotCmd();
                             cmd.snapshotPath = snapshotPath;
+                            cmd.ignoreError = true;
                             httpCall(PROTECT_SNAPSHOT_PATH, cmd, ProtectSnapshotRsp.class, new ReturnValueCompletion<ProtectSnapshotRsp>(trigger) {
                                 @Override
                                 public void success(ProtectSnapshotRsp returnValue) {
