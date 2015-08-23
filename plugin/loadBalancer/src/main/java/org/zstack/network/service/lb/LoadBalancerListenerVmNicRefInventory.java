@@ -21,7 +21,7 @@ import java.util.List;
                 foreignKey = "listenerUuid", expandedInventoryKey = "uuid")
 })
 public class LoadBalancerListenerVmNicRefInventory {
-    private long id;
+    private Long id;
     private String listenerUuid;
     private String vmNicUuid;
     private String status;

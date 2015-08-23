@@ -559,7 +559,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 Class c = info.entityClass;
                 while (c != Object.class) {
                     types.add(String.format("'%s'", c.getSimpleName()));
-                    c = info.entityClass.getSuperclass();
+                    c = c.getSuperclass();
                 }
                 return types;
             }

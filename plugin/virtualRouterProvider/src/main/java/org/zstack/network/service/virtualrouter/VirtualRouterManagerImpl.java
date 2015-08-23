@@ -711,8 +711,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
         q.setParameter("l3Uuid", l3Nw.getUuid());
         q.setParameter("guestMeta", VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST);
-        VirtualRouterVmVO vo = q.getSingleResult();
-        return VirtualRouterVmInventory.valueOf(vo);
+        List<VirtualRouterVmVO> vos = q.getResultList();
+        if (vos.isEmpty()) {
+            return null;
+        }
+        return VirtualRouterVmInventory.valueOf(vos.get(0));
     }
 
     @Override

@@ -22,7 +22,7 @@ import java.util.List;
                 foreignKey = "loadBalancerUuid", expandedInventoryKey = "uuid"),
 })
 public class VirtualRouterLoadBalancerRefInventory {
-    private long id;
+    private Long id;
     private String virtualRouterVmUuid;
     private String loadBalancerUuid;
     private Timestamp createDate;

@@ -29,8 +29,8 @@ public class LoadBalancerListenerInventory {
     private String name;
     private String description;
     private String loadBalancerUuid;
-    private int instancePort;
-    private int loadBalancerPort;
+    private Integer instancePort;
+    private Integer loadBalancerPort;
     private String protocol;
     private Timestamp createDate;
     private Timestamp lastOpDate;
