@@ -6,10 +6,12 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.ComponentLoaderImpl;
 import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.tag.SystemTagVO;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Linux;
 import org.zstack.utils.StringDSL;
@@ -199,6 +201,74 @@ public class Platform {
         FileUtils.writeStringToFile(pidFile, pid);
     }
 
+    private static void prepareDefaultDbProperties() {
+        if (DatabaseGlobalProperty.DbUrl != null) {
+            String dbUrl = DatabaseGlobalProperty.DbUrl;
+            if (dbUrl.endsWith("/")) {
+                dbUrl = dbUrl.substring(0, dbUrl.length()-1);
+            }
+
+            if (getGlobalProperty("DbFacadeDataSource.jdbcUrl") == null) {
+                String url = String.format("%s/zstack", dbUrl);
+                System.setProperty("DbFacadeDataSource.jdbcUrl", url);
+                logger.debug(String.format("default DbFacadeDataSource.jdbcUrl to DB.url [%s]", url));
+            }
+            if (getGlobalProperty("RESTApiDataSource.jdbcUrl") == null) {
+                String url = String.format("%s/zstack_rest", dbUrl);
+                System.setProperty("RESTApiDataSource.jdbcUrl", url);
+                logger.debug(String.format("default RESTApiDataSource.jdbcUrl to DB.url [%s]", url));
+            }
+        }
+        if (DatabaseGlobalProperty.DbUser != null) {
+            if (getGlobalProperty("DbFacadeDataSource.user") == null) {
+                System.setProperty("DbFacadeDataSource.user", DatabaseGlobalProperty.DbUser);
+                logger.debug(String.format("default RESTApiDataSource.user to DB.user [%s]", DatabaseGlobalProperty.DbUser));
+            }
+            if (getGlobalProperty("RESTApiDataSource.user") == null) {
+                System.setProperty("RESTApiDataSource.user", DatabaseGlobalProperty.DbUser);
+                logger.debug(String.format("default RESTApiDataSource.user to DB.user [%s]", DatabaseGlobalProperty.DbUser));
+            }
+        }
+        if (DatabaseGlobalProperty.DbPassword != null) {
+            if (getGlobalProperty("DbFacadeDataSource.password") == null) {
+                System.setProperty("DbFacadeDataSource.password", DatabaseGlobalProperty.DbPassword);
+                logger.debug(String.format("default DbFacadeDataSource.password to DB.password [%s]", DatabaseGlobalProperty.DbPassword));
+            }
+            if (getGlobalProperty("RESTApiDataSource.password") == null) {
+                System.setProperty("RESTApiDataSource.password", DatabaseGlobalProperty.DbPassword);
+                logger.debug(String.format("default RESTApiDataSource.password to DB.password [%s]", DatabaseGlobalProperty.DbPassword));
+            }
+        }
+        if (DatabaseGlobalProperty.DbMaxIdleTime != null) {
+            if (getGlobalProperty("DbFacadeDataSource.maxIdleTime") == null) {
+                System.setProperty("DbFacadeDataSource.maxIdleTime", DatabaseGlobalProperty.DbMaxIdleTime);
+                logger.debug(String.format("default DbFacadeDataSource.maxIdleTime to DB.maxIdleTime [%s]", DatabaseGlobalProperty.DbMaxIdleTime));
+            }
+            if (getGlobalProperty("ExtraDataSource.maxIdleTime") == null) {
+                System.setProperty("ExtraDataSource.maxIdleTime", DatabaseGlobalProperty.DbMaxIdleTime);
+                logger.debug(String.format("default ExtraDataSource.maxIdleTime to DB.maxIdleTime [%s]", DatabaseGlobalProperty.DbMaxIdleTime));
+            }
+            if (getGlobalProperty("RESTApiDataSource.maxIdleTime") == null) {
+                System.setProperty("RESTApiDataSource.maxIdleTime", DatabaseGlobalProperty.DbMaxIdleTime);
+                logger.debug(String.format("default RESTApiDataSource.maxIdleTime to DB.maxIdleTime [%s]", DatabaseGlobalProperty.DbMaxIdleTime));
+            }
+        }
+        if (DatabaseGlobalProperty.DbIdleConnectionTestPeriod != null) {
+            if (getGlobalProperty("DbFacadeDataSource.idleConnectionTestPeriod") == null) {
+                System.setProperty("DbFacadeDataSource.idleConnectionTestPeriod", DatabaseGlobalProperty.DbIdleConnectionTestPeriod);
+                logger.debug(String.format("default DbFacadeDataSource.idleConnectionTestPeriod to DB.idleConnectionTestPeriod [%s]", DatabaseGlobalProperty.DbIdleConnectionTestPeriod));
+            }
+            if (getGlobalProperty("ExtraDataSource.idleConnectionTestPeriod") == null) {
+                System.setProperty("ExtraDataSource.idleConnectionTestPeriod", DatabaseGlobalProperty.DbIdleConnectionTestPeriod);
+                logger.debug(String.format("default ExtraDataSource.idleConnectionTestPeriod to DB.idleConnectionTestPeriod [%s]", DatabaseGlobalProperty.DbIdleConnectionTestPeriod));
+            }
+            if (getGlobalProperty("RESTApiDataSource.idleConnectionTestPeriod") == null) {
+                System.setProperty("RESTApiDataSource.idleConnectionTestPeriod", DatabaseGlobalProperty.DbIdleConnectionTestPeriod);
+                logger.debug(String.format("default RESTApiDataSource.idleConnectionTestPeriod to DB.idleConnectionTestPeriod [%s]", DatabaseGlobalProperty.DbIdleConnectionTestPeriod));
+            }
+        }
+    }
+
     static {
         msId = getUuid();
 
@@ -211,6 +281,7 @@ public class Platform {
             System.getProperties().load(in);
 
             linkGlobalProperty();
+            prepareDefaultDbProperties();
             writePidFile();
         } catch (Exception e) {
             throw new RuntimeException(e);
