@@ -328,7 +328,7 @@ public class LoadBalancerBase {
         LoadBalancerListenerVO l = CollectionUtils.find(self.getListeners(), new Function<LoadBalancerListenerVO, LoadBalancerListenerVO>() {
             @Override
             public LoadBalancerListenerVO call(LoadBalancerListenerVO arg) {
-                return arg.getUuid().equals(msg.getLoadBalancerListenerUuid()) ? arg : null;
+                return arg.getUuid().equals(msg.getListenerUuid()) ? arg : null;
             }
         });
 

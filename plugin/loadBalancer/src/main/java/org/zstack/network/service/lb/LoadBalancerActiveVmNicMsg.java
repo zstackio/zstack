@@ -9,15 +9,15 @@ import java.util.List;
  */
 public class LoadBalancerActiveVmNicMsg extends NeedReplyMessage implements LoadBalancerMessage {
     private List<String> vmNicUuids;
-    private String loadBalancerListenerUuid;
+    private String listenerUuid;
     private String loadBalancerUuid;
 
-    public String getLoadBalancerListenerUuid() {
-        return loadBalancerListenerUuid;
+    public String getListenerUuid() {
+        return listenerUuid;
     }
 
-    public void setLoadBalancerListenerUuid(String loadBalancerListenerUuid) {
-        this.loadBalancerListenerUuid = loadBalancerListenerUuid;
+    public void setListenerUuid(String listenerUuid) {
+        this.listenerUuid = listenerUuid;
     }
 
     public List<String> getVmNicUuids() {

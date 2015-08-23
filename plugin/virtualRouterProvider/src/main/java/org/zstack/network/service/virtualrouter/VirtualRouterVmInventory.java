@@ -10,6 +10,7 @@ import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
 import org.zstack.utils.CollectionUtils;
@@ -31,11 +32,14 @@ import java.util.List;
                 inventoryClass = VirtualRouterPortForwardingRuleRefInventory.class, foreignKey = "uuid", hidden = true),
         @ExpandedQuery(expandedField = "virtualRouterOffering", expandedInventoryKey = "uuid",
                 inventoryClass = VirtualRouterOfferingInventory.class, foreignKey = "instanceOfferingUuid"),
+        @ExpandedQuery(expandedField = "virtualRouterLoadBalancerListenerRef", expandedInventoryKey = "virtualRouterVmUuid",
+                inventoryClass = VirtualRouterLoadBalancerRefInventory.class, foreignKey = "uuid", hidden = true),
 })
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "eip", expandedField = "virtualRouterEipRef.eip"),
         @ExpandedQueryAlias(alias = "vip", expandedField = "virtualRouterVipRef.vip"),
         @ExpandedQueryAlias(alias = "portForwarding", expandedField = "virtualRouterPortforwardingRef.portForwarding"),
+        @ExpandedQueryAlias(alias = "loadBalancer", expandedField = "virtualRouterLoadBalancerListenerRef.loadBalancer"),
 })
 public class VirtualRouterVmInventory extends ApplianceVmInventory {
     private String publicNetworkUuid;

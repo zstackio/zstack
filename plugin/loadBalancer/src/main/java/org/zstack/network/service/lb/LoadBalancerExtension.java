@@ -16,7 +16,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
@@ -35,7 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
 
 /**
  * Created by frank on 8/13/2015.
@@ -84,7 +82,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
             if (msg == null) {
                 msg = new LoadBalancerActiveVmNicMsg();
                 msg.setLoadBalancerUuid(lbUuid);
-                msg.setLoadBalancerListenerUuid(listenerUuid);
+                msg.setListenerUuid(listenerUuid);
                 msg.setVmNicUuids(new ArrayList<String>());
                 bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, lbUuid);
                 m.put(listenerUuid, msg);
@@ -118,6 +116,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                     if (!s) {
                         LoadBalancerDeactiveVmNicMsg dmsg = new LoadBalancerDeactiveVmNicMsg();
                         dmsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());
+                        dmsg.setListenerUuid(msg.getListenerUuid());
                         dmsg.setVmNicUuids(msg.getVmNicUuids());
                         bus.makeTargetServiceIdByResourceUuid(dmsg, LoadBalancerConstants.SERVICE_ID, msg.getLoadBalancerUuid());
                         bus.send(dmsg, new CloudBusCallBack(trigger) {

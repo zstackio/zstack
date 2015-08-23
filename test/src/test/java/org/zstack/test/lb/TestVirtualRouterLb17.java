@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryOp;
@@ -16,6 +17,8 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmMsg;
+import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmReply;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -26,6 +29,8 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.search.QueryTestValidator;
+
+import javax.management.QueryEval;
 
 /**
  * 
@@ -102,5 +107,10 @@ public class TestVirtualRouterLb17 {
         Assert.assertEquals(1, nreply.getInventories().size());
         VmNicInventory rnic = nreply.getInventories().get(0);
         Assert.assertEquals(nic.getUuid(), rnic.getUuid());
+
+        APIQueryVirtualRouterVmMsg vmsg = new APIQueryVirtualRouterVmMsg();
+        vmsg.addQueryCondition("loadBalancer.uuid", QueryOp.EQ, lb.getUuid());
+        APIQueryVirtualRouterVmReply vreply = api.query(vmsg, APIQueryVirtualRouterVmReply.class);
+        Assert.assertEquals(1, vreply.getInventories().size());
     }
 }
