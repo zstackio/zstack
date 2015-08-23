@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.storage.primary.PrimaryStorageEO;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
@@ -16,7 +17,7 @@ import javax.persistence.*;
 @Table
 @Inheritance(strategy= InheritanceType.JOINED)
 @SoftDeletionCascades({
-        @SoftDeletionCascade(parent = PrimaryStorageEO.class, joinColumn = "primaryStorageUuid")
+        @SoftDeletionCascade(parent = PrimaryStorageVO.class, joinColumn = "primaryStorageUuid")
 })
 public class CephPrimaryStorageMonVO extends CephMonAO {
     @Column
