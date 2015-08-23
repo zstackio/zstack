@@ -354,6 +354,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             ovo.setDescription(msg.getDescription());
             updated = true;
         }
+        if (msg.getImageUuid() != null) {
+            ovo.setImageUuid(msg.getImageUuid());
+            updated = true;
+        }
 
         if (updated) {
             ovo = dbf.updateAndRefresh(ovo);
