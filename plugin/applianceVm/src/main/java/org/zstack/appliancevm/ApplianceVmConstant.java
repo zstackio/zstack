@@ -33,4 +33,5 @@ public class ApplianceVmConstant {
 
     public static final String REFRESH_FIREWALL_PATH = "/appliancevm/refreshfirewall";
     public static final String ECHO_PATH = "/appliancevm/echo";
+    public static final String INIT_PATH = "/appliancevm/init";
 }

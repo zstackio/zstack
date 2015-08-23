@@ -6,6 +6,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.zstack.appliancevm.ApplianceVmCommands.InitCmd;
+import org.zstack.appliancevm.ApplianceVmCommands.InitRsp;
 import org.zstack.appliancevm.ApplianceVmCommands.RefreshFirewallCmd;
 import org.zstack.appliancevm.ApplianceVmCommands.RefreshFirewallRsp;
 import org.zstack.appliancevm.ApplianceVmConstant;
@@ -33,6 +35,14 @@ public class ApplianceVmSimulator {
 
     AsyncRESTReplyer replyer = new AsyncRESTReplyer();
 
+    @RequestMapping(value = ApplianceVmConstant.INIT_PATH, method= RequestMethod.POST)
+    private @ResponseBody String init(HttpServletRequest req) throws InterruptedException {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        InitCmd cmd = JSONObjectUtil.toObject(entity.getBody(), InitCmd.class);
+        config.initCmds.add(cmd);
+        replyer.reply(entity, new InitRsp());
+        return null;
+    }
 
     @RequestMapping(value = ApplianceVmConstant.REFRESH_FIREWALL_PATH, method= RequestMethod.POST)
     private @ResponseBody String refreshFirewall(HttpServletRequest req) throws InterruptedException {

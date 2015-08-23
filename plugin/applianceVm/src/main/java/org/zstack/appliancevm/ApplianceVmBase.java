@@ -31,14 +31,12 @@ import org.zstack.utils.RangeSet;
 import org.zstack.utils.RangeSet.Range;
 import org.zstack.utils.function.Function;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public abstract class ApplianceVmBase extends VmInstanceBase implements ApplianceVm {
     @Autowired
-    private RESTFacade resf;
+    private RESTFacade restf;
 
     static {
         allowedOperations.addState(VmInstanceState.Created, StartNewCreatedApplianceVmMsg.class.getName());
@@ -88,9 +86,63 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     protected void handleLocalMessage(Message msg) {
         if (msg instanceof ApplianceVmRefreshFirewallMsg) {
             handle((ApplianceVmRefreshFirewallMsg) msg);
+        } else if (msg instanceof ApplianceVmAsyncHttpCallMsg) {
+            handle((ApplianceVmAsyncHttpCallMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final ApplianceVmAsyncHttpCallMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public int getSyncLevel() {
+                return 10;
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return String.format("appliancevm-async-httpcall-%s", self.getUuid());
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final ApplianceVmAsyncHttpCallReply reply = new ApplianceVmAsyncHttpCallReply();
+                if (msg.isCheckStatus() && getSelf().getStatus() != ApplianceVmStatus.Connected) {
+                    reply.setError(errf.stringToOperationError(String.format("appliance vm[uuid:%s] is in status of %s that cannot make http call to %s",
+                            self.getUuid(), getSelf().getStatus(), msg.getPath())));
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                restf.asyncJsonPost(buildUrl(msg.getPath()), msg.getCommand(), new JsonAsyncRESTCallback<LinkedHashMap>(msg, chain) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        reply.setError(err);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void success(LinkedHashMap ret) {
+                        reply.setResponse(ret);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public Class<LinkedHashMap> getReturnClass() {
+                        return LinkedHashMap.class;
+                    }
+                }, TimeUnit.SECONDS, msg.getCommandTimeout());
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
     }
 
     private void handle(final ApplianceVmRefreshFirewallMsg msg) {
@@ -270,7 +322,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         List<ApplianceVmFirewallRuleTO> tos = new RuleCombiner().merge();
         cmd.setRules(tos);
 
-        resf.asyncJsonPost(buildUrl(ApplianceVmConstant.REFRESH_FIREWALL_PATH), cmd, new JsonAsyncRESTCallback<RefreshFirewallRsp>(msg, completion) {
+        restf.asyncJsonPost(buildUrl(ApplianceVmConstant.REFRESH_FIREWALL_PATH), cmd, new JsonAsyncRESTCallback<RefreshFirewallRsp>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);

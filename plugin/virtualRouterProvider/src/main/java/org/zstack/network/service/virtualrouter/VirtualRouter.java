@@ -332,7 +332,6 @@ public class VirtualRouter extends ApplianceVmBase {
 
         chain.insert(new Flow() {
             String __name__ = "change-appliancevm-status-to-connecting";
-            ApplianceVmStatus originStatus = getSelf().getStatus();
 
             @Override
             public void run(FlowTrigger trigger, Map data) {

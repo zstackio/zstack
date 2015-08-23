@@ -22,4 +22,10 @@ public class ApplianceVmCommands {
 
     public static class RefreshFirewallRsp extends AgentResponse {
     }
+
+    public static class InitCmd extends AgentCommand {
+    }
+
+    public static class InitRsp extends AgentResponse {
+    }
 }

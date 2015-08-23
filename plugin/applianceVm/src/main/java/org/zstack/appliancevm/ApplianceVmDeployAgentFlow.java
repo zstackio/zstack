@@ -3,18 +3,25 @@ package org.zstack.appliancevm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.appliancevm.ApplianceVmCommands.InitCmd;
+import org.zstack.appliancevm.ApplianceVmCommands.InitRsp;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.configuration.ConfigurationConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
@@ -36,29 +43,96 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
     private GlobalConfigFacade gcf;
     @Autowired
     private RESTFacade restf;
+    @Autowired
+    private CloudBus bus;
+    @Autowired
+    private ErrorFacade errf;
 
-    private void continueConnect(String echoUrl, final FlowTrigger trigger) {
-        restf.echo(echoUrl, new Completion(trigger) {
+    private void continueConnect(final String echoUrl, final String apvmUuid, final FlowTrigger outerTrigger) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName("continue-connect-appliance-vm");
+        chain.then(new ShareFlow() {
             @Override
-            public void success() {
-                trigger.next();
-            }
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "echo";
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                trigger.fail(errorCode);
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        restf.echo(echoUrl, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "init";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        InitCmd cmd = new InitCmd();
+
+                        ApplianceVmAsyncHttpCallMsg msg = new ApplianceVmAsyncHttpCallMsg();
+                        msg.setVmInstanceUuid(apvmUuid);
+                        msg.setCommand(cmd);
+                        msg.setCheckStatus(false);
+                        msg.setPath(ApplianceVmConstant.INIT_PATH);
+                        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, apvmUuid);
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                ApplianceVmAsyncHttpCallReply ar = reply.castReply();
+                                InitRsp rsp = ar.toResponse(InitRsp.class);
+                                if (!rsp.isSuccess()) {
+                                    trigger.fail(errf.stringToOperationError(rsp.getError()));
+                                    return;
+                                }
+
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(outerTrigger) {
+                    @Override
+                    public void handle(Map data) {
+                        outerTrigger.next();
+                    }
+                });
+
+                error(new FlowErrorHandler(outerTrigger) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        outerTrigger.fail(errCode);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         boolean isReconnect = Boolean.valueOf((String) data.get(Params.isReconnect.toString()));
+        final String apvmUuid;
 
         String mgmtNicIp;
         if (!isReconnect) {
-            final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
             VmNicInventory mgmtNic;
+            final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
             if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
                 final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
                 mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
@@ -67,24 +141,27 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
                         return arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()) ? arg : null;
                     }
                 });
+                apvmUuid = spec.getVmInventory().getUuid();
             } else {
                 ApplianceVmVO avo = dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
                 ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(avo);
                 mgmtNic = ainv.getManagementNic();
+                apvmUuid = avo.getUuid();
             }
             mgmtNicIp = mgmtNic.getIp();
         } else {
             mgmtNicIp = (String) data.get(Params.managementNicIp.toString());
+            apvmUuid = (String) data.get(Params.applianceVmUuid.toString());
         }
 
         final String mgmtIp = mgmtNicIp;
         final String url = ApplianceVmBase.buildAgentUrl(mgmtIp, ApplianceVmConstant.ECHO_PATH);
 
         if (CoreGlobalProperty.UNIT_TEST_ON) {
-            continueConnect(url, trigger);
+            continueConnect(url, apvmUuid, trigger);
             return;
         } else if (!isReconnect && !ApplianceVmGlobalConfig.DEPLOY_AGENT_ON_START.value(Boolean.class)) {
-            continueConnect(url, trigger);
+            continueConnect(url, apvmUuid, trigger);
             return;
         }
 
@@ -111,7 +188,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         runner.run(new Completion(trigger) {
             @Override
             public void success() {
-                continueConnect(url, trigger);
+                continueConnect(url, apvmUuid, trigger);
             }
 
             @Override
