@@ -11,7 +11,7 @@ import org.zstack.header.message.APIParam;
 @Action(category = VirtualRouterConstant.ACTION_CATEGORY)
 public class APIUpdateVirtualRouterOfferingMsg extends APIUpdateInstanceOfferingMsg {
     private Boolean isDefault;
-    @APIParam(resourceType = ImageVO.class, checkAccount = true)
+    @APIParam(resourceType = ImageVO.class, checkAccount = true, required = false)
     private String imageUuid;
 
     public String getImageUuid() {
