@@ -16,6 +16,7 @@ import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmMsg;
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmReply;
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands.VipTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -67,6 +68,7 @@ public class TestVirtualRouterLb18 {
     
     @Test
     public void test() throws ApiSenderException {
+        vconfig.removedVips.clear();
         LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
         VipVO vip = dbf.findByUuid(lb.getVipUuid(), VipVO.class);
         api.releaseIp(vip.getUuid());
@@ -74,5 +76,8 @@ public class TestVirtualRouterLb18 {
         Assert.assertFalse(dbf.isExist(lb.getUuid(), LoadBalancerVO.class));
         Assert.assertEquals(0, dbf.count(LoadBalancerListenerVO.class));
         Assert.assertEquals(0, dbf.count(LoadBalancerListenerVmNicRefVO.class));
+        Assert.assertEquals(1, vconfig.removedVips.size());
+        VipTO to = vconfig.removedVips.get(0);
+        Assert.assertEquals(vip.getIp(), to.getIp());
     }
 }

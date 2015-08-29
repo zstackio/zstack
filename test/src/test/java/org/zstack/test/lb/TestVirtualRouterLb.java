@@ -17,6 +17,7 @@ import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmMsg;
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmReply;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.LbTO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -92,6 +93,8 @@ public class TestVirtualRouterLb {
 
         VipVO vip = dbf.findByUuid(lbvo.getVipUuid(), VipVO.class);
         Assert.assertNotNull(vip);
+        Assert.assertEquals(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING, vip.getUseFor());
+        Assert.assertEquals(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, vip.getServiceProvider());
         Assert.assertFalse(vconfig.vips.isEmpty());
 
         Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());

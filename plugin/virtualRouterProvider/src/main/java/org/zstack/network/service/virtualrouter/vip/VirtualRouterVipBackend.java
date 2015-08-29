@@ -138,6 +138,26 @@ public class VirtualRouterVipBackend implements VipBackend {
         });
     }
 
+    public void acquireVipOnVirtualRouterVm(final VirtualRouterVmInventory vr, final VipInventory vip, final Completion completion) {
+        createVipOnVirtualRouterVm(vr, list(vip), new Completion(completion) {
+            @Override
+            public void success() {
+                if (!dbf.isExist(vip.getUuid(), VirtualRouterVipVO.class)) {
+                    VirtualRouterVipVO vrvip = new VirtualRouterVipVO();
+                    vrvip.setUuid(vip.getUuid());
+                    vrvip.setVirtualRouterVmUuid(vr.getUuid());
+                    dbf.persist(vrvip);
+                }
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
     @Override
     public void acquireVip(final VipInventory vip, final L3NetworkInventory guestNw, final Completion completion) {
         VirtualRouterVipVO vipvo = dbf.findByUuid(vip.getUuid(), VirtualRouterVipVO.class);

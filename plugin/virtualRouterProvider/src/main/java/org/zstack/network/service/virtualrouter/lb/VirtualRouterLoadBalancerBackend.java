@@ -300,9 +300,10 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                         if (q.isExists()) {
                             trigger.next();
                         } else {
-                            vipVrBkd.createVipOnVirtualRouterVm(vr, list(vip), new Completion(trigger) {
+                            vipVrBkd.acquireVipOnVirtualRouterVm(vr, vip, new Completion(trigger) {
                                 @Override
                                 public void success() {
+                                    vipMgr.saveVipInfo(struct.getLb().getVipUuid(), VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, vr.getGuestNic().getL3NetworkUuid());
                                     success = true;
                                     trigger.next();
                                 }
@@ -499,9 +500,10 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        vipVrBkd.createVipOnVirtualRouterVm(vr, list(vip), new Completion(trigger) {
+                        vipVrBkd.acquireVipOnVirtualRouterVm(vr, vip, new Completion(trigger) {
                             @Override
                             public void success() {
+                                vipMgr.saveVipInfo(struct.getLb().getVipUuid(), VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, vr.getGuestNic().getL3NetworkUuid());
                                 success = true;
                                 trigger.next();
                             }

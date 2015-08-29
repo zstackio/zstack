@@ -9,6 +9,8 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 public interface VipManager extends Service {
     VipBackend getVipBackend(String providerType);
 
+    void saveVipInfo(String vipUuid, String networkServiceType, String peerL3NetworkUuid);
+
     void lockAndAcquireVip(VipInventory vip, L3NetworkInventory peerL3Network,
                            String networkServiceType, String networkServiceProviderType, Completion completion);
 

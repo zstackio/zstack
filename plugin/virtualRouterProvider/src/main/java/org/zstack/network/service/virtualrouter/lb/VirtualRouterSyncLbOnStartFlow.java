@@ -26,10 +26,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 /**
@@ -143,6 +140,25 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                 flow(new NoRollbackFlow() {
                     String __name__ = "create-vip-for-lbs";
 
+                    private void createVip(final Iterator<VipInventory> it, final FlowTrigger trigger) {
+                        if (!it.hasNext()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        vipExt.acquireVipOnVirtualRouterVm(vr, it.next(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                createVip(it, trigger);
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
@@ -154,17 +170,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                         }));
                         List<VipVO> vipvos = q.list();
 
-                        vipExt.createVipOnVirtualRouterVm(vr, VipInventory.valueOf(vipvos), new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
+                        createVip(VipInventory.valueOf(vipvos).iterator(), trigger);
                     }
                 });
 

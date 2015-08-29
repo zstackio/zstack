@@ -438,6 +438,16 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     }
 
     @Override
+    public void saveVipInfo(String vipUuid, String networkServiceType, String peerL3NetworkUuid) {
+        VipVO vo = dbf.findByUuid(vipUuid, VipVO.class);
+        vo.setServiceProvider(networkServiceType);
+        if (vo.getPeerL3NetworkUuid() == null) {
+            vo.setPeerL3NetworkUuid(peerL3NetworkUuid);
+        }
+        dbf.update(vo);
+    }
+
+    @Override
     public void lockAndAcquireVip(VipInventory vip, L3NetworkInventory peerL3Network, String networkServiceType, String networkServiceProviderType, Completion completion) {
         lockVip(vip, networkServiceType);
         acquireVip(vip, peerL3Network, networkServiceProviderType, completion);
@@ -478,12 +488,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         bkd.acquireVip(vip, peerL3Network, new Completion(completion) {
             @Override
             public void success() {
-                VipVO vo = dbf.findByUuid(vip.getUuid(), VipVO.class);
-                vo.setServiceProvider(networkServiceProviderType);
-                if (vo.getPeerL3NetworkUuid() == null) {
-                    vo.setPeerL3NetworkUuid(peerL3Network.getUuid());
-                }
-                dbf.update(vo);
+                saveVipInfo(vip.getUuid(), networkServiceProviderType, peerL3Network.getUuid());
 
                 logger.debug(String.format("successfully acquired vip[uuid:%s, name:%s, ip:%s] on service[%s]",
                         vip.getUuid(), vip.getName(), vip.getIp(), networkServiceProviderType));
