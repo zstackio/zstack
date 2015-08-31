@@ -39,4 +39,5 @@
 	<TestCase class="org.zstack.test.virtualrouter.TestPolicyForVirtualRouterOffering"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestUpdateVirtualRouterOffering"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestAddVirtualRouterOffering1"/>
+	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterAttachNetworkService"/>
 </UnitTestSuiteConfig>

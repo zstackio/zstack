@@ -858,6 +858,15 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         boolean portForwarding = false;
         boolean eip = false;
 
+        SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
+        q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+        List<NetworkServiceL3NetworkRefVO> refs = q.list();
+        for (NetworkServiceL3NetworkRefVO ref : refs) {
+            if (ref.getNetworkServiceType().equals(NetworkServiceType.SNAT.toString())) {
+                snat = true;
+            }
+        }
+
         for (String s : services) {
             if (NetworkServiceType.PortForwarding.toString().equals(s)) {
                 portForwarding = true;
