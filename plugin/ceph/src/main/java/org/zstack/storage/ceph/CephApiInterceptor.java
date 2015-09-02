@@ -18,7 +18,9 @@ import org.zstack.storage.ceph.primary.APIAddMonToCephPrimaryStorageMsg;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO_;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -28,6 +30,8 @@ import java.util.List;
  * Created by frank on 7/29/2015.
  */
 public class CephApiInterceptor implements ApiMessageInterceptor {
+    private static final CLogger logger = Utils.getLogger(CephApiInterceptor.class);
+
     @Autowired
     private ErrorFacade errf;
     @Autowired
@@ -84,7 +88,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
             String url = String.format("ssh://%s", monUrl);
             try {
                 URI uri = new URI(url);
-                String userInfo = uri.getUserInfo();
+                String userInfo = uri.getAuthority();
                 if (userInfo == null || !userInfo.contains(":")) {
                     throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                             String.format("invalid monUrl[%s], the sshUsername:sshPassword part is invalid. A valid monUrl is" +
@@ -116,7 +120,10 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
                 }
 
                 urls.add(url);
+            } catch (ApiMessageInterceptionException ae) {
+                throw ae;
             } catch (Exception e) {
+                logger.warn(e.getMessage(), e);
                 throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                         String.format("invalid monUrl[%s]. A valid url is in format of %s", monUrl, MON_URL_FORMAT)
                 ));
