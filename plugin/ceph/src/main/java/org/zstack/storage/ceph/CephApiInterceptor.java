@@ -7,6 +7,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.storage.ceph.backup.APIAddCephBackupStorageMsg;
@@ -75,53 +76,21 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddMonToCephPrimaryStorageMsg msg) {
-        msg.setMonUrls(normalizeMonUrls(msg.getMonUrls()));
+        checkMonUrls(msg.getMonUrls());
     }
 
     private void validate(APIAddMonToCephBackupStorageMsg msg) {
-        msg.setMonUrls(normalizeMonUrls(msg.getMonUrls()));
+        checkMonUrls(msg.getMonUrls());
     }
 
-    private List<String> normalizeMonUrls(List<String> monUrls) {
+    private void checkMonUrls(List<String> monUrls) {
         List<String> urls = new ArrayList<String>();
         for (String monUrl : monUrls) {
             String url = String.format("ssh://%s", monUrl);
             try {
-                URI uri = new URI(url);
-                String userInfo = uri.getAuthority();
-                if (userInfo == null || !userInfo.contains(":")) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("invalid monUrl[%s], the sshUsername:sshPassword part is invalid. A valid monUrl is" +
-                                    " in format of %s", monUrl, MON_URL_FORMAT)
-                    ));
-                }
-                if (uri.getHost() == null) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("invalid monUrl[%s], hostname cannot be null. A valid monUrl is" +
-                                    " in format of %s", monUrl, MON_URL_FORMAT)
-                    ));
-                }
-
-                try {
-                    MonUri.checkQuery(uri);
-                } catch (CloudRuntimeException e) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("invalid monUrl[%s], %s. A valid monUrl is" +
-                                    " in format of %s", monUrl, e.getMessage(), MON_URL_FORMAT)
-                    ));
-                }
-
-                int sshPort = uri.getPort();
-                if (sshPort > 0 && sshPort > 65536) {
-                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("invalid monUrl[%s], the ssh port is greater than 65536. A valid monUrl is" +
-                                    " in format of %s", monUrl, MON_URL_FORMAT)
-                    ));
-                }
-
-                urls.add(url);
-            } catch (ApiMessageInterceptionException ae) {
-                throw ae;
+                new MonUri(url);
+            } catch (OperationFailureException ae) {
+                throw new ApiMessageInterceptionException(ae.getErrorCode());
             } catch (Exception e) {
                 logger.warn(e.getMessage(), e);
                 throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
@@ -129,7 +98,6 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
                 ));
             }
         }
-        return urls;
     }
 
     private void validate(APIAddCephPrimaryStorageMsg msg) {
@@ -149,8 +117,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
-        msg.setMonUrls(normalizeMonUrls(msg.getMonUrls()));
-
+        checkMonUrls(msg.getMonUrls());
         checkExistingPrimaryStorage(msg.getMonUrls());
     }
 
@@ -180,8 +147,8 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
                     "poolName can be null but cannot be an empty string"
             ));
         }
-        msg.setMonUrls(normalizeMonUrls(msg.getMonUrls()));
 
+        checkMonUrls(msg.getMonUrls());
         checkExistingBackupStorage(msg.getMonUrls());
     }
 }

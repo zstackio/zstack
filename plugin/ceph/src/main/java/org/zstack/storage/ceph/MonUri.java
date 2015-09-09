@@ -2,8 +2,12 @@ package org.zstack.storage.ceph;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.zstack.core.Platform;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.keyvalue.Op;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 
@@ -41,6 +45,10 @@ public class MonUri {
     public static String getQueryValue(URI uri, String name) {
         List<NameValuePair> params = URLEncodedUtils.parse(uri, "UTF-8");
         for (NameValuePair p : params) {
+            if (!allowedQueryParameter.contains(p.getName())) {
+                throw new CloudRuntimeException(String.format("unknown parameter[%s]", p.getName()));
+            }
+
             if (p.getName().equals(name)) {
                 return p.getValue();
             }
@@ -49,15 +57,48 @@ public class MonUri {
         return null;
     }
 
+    private static final String MON_URL_FORMAT = "sshUsername:sshPassword@hostname:[sshPort]/?[monPort=]";
+
+    private ErrorCode errorCode(String err) {
+        ErrorFacade errf = Platform.getComponentLoader().getComponent(ErrorFacade.class);
+        return errf.stringToInvalidArgumentError(err);
+    }
+
     public MonUri(String url) {
         try {
-            URI uri = new URI(url);
-            hostname = uri.getHost();
-            String[] ssh = uri.getUserInfo().split(":");
+            int at = url.lastIndexOf("@");
+            if (at == -1) {
+                throw new OperationFailureException(errorCode(String.format("invalid monUrl[%s], the sshUsername:sshPassword part is invalid. A valid monUrl is" +
+                        " in format of %s", url, MON_URL_FORMAT)));
+            }
+
+            String userInfo = url.substring(0, at);
+            if (!userInfo.contains(":")) {
+                throw new OperationFailureException(errorCode(String.format("invalid monUrl[%s], the sshUsername:sshPassword part is invalid. A valid monUrl is" +
+                        " in format of %s", url, MON_URL_FORMAT)));
+            }
+
+            String rest = url.substring(at+1, url.length());
+            String[] ssh = userInfo.split(":");
             sshUsername = ssh[0];
             sshPassword = ssh[1];
-            sshPort = uri.getPort() == -1 ? sshPort : uri.getPort();
 
+            URI uri = new URI(String.format("ssh://%s", rest));
+            hostname = uri.getHost();
+            if (hostname == null) {
+                throw new OperationFailureException(errorCode(
+                        String.format("invalid monUrl[%s], hostname cannot be null. A valid monUrl is" +
+                                " in format of %s", url, MON_URL_FORMAT)
+                ));
+            }
+
+            sshPort = uri.getPort() == -1 ? sshPort : uri.getPort();
+            if (sshPort < 1 || sshPort > 65536) {
+                throw new OperationFailureException(errorCode(
+                        String.format("invalid monUrl[%s], the ssh port is greater than 65536 or lesser than 0. A valid monUrl is" +
+                                " in format of %s", url, MON_URL_FORMAT)
+                ));
+            }
             String v = getQueryValue(uri, CephConstants.MON_PARAM_MON_PORT);
             monPort = v == null ? monPort : Integer.valueOf(v);
         } catch (URISyntaxException e) {

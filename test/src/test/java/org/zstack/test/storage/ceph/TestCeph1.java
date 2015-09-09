@@ -6,11 +6,16 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.backup.BackupStorage;
+import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
+import org.zstack.storage.ceph.backup.CephBackupStorageMonVO;
+import org.zstack.storage.ceph.backup.CephBackupStorageMonVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig.CephPrimaryStorageConfig;
@@ -64,6 +69,14 @@ public class TestCeph1 {
     
 	@Test
 	public void test() throws ApiSenderException {
+        BackupStorageInventory bs = deployer.backupStorages.get("ceph-bk");
+        SimpleQuery<CephBackupStorageMonVO> q = dbf.createQuery(CephBackupStorageMonVO.class);
+        q.add(CephBackupStorageMonVO_.hostname, SimpleQuery.Op.EQ, "127.0.0.1");
+        CephBackupStorageMonVO bsmon = q.find();
+
+        Assert.assertEquals("root", bsmon.getSshUsername());
+        Assert.assertEquals("pass@#$word", bsmon.getSshPassword());
+
         Assert.assertFalse(config.createSnapshotCmds.isEmpty());
         Assert.assertFalse(config.protectSnapshotCmds.isEmpty());
         Assert.assertFalse(config.cloneCmds.isEmpty());
