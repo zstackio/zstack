@@ -238,6 +238,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
         GetCapacityCmd cmd = new GetCapacityCmd();
         cmd.setMountPath(inv.getMountPath());
+        cmd.setUuid(inv.getUuid());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(host.getUuid());
