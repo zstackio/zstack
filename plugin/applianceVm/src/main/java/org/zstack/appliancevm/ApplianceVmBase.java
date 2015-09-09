@@ -8,6 +8,7 @@ import org.zstack.compute.vm.VmInstanceBase;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.ChainTask;
@@ -80,6 +81,42 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         flows.add(new ApplianceVmSetFirewallFlow());
 
         return flows;
+    }
+
+    private void superDestroy(Completion completion) {
+        super.destroy(completion);
+    }
+
+    @Override
+    public void destroy(final Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                superDestroy(new Completion(completion, chain) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "destroy-appliancevm";
+            }
+        });
     }
 
     @Override
