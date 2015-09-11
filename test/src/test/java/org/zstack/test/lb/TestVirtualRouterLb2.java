@@ -13,6 +13,7 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.lb.LoadBalancerInventory;
 import org.zstack.network.service.lb.LoadBalancerListenerInventory;
+import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterRoleManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
@@ -40,6 +41,10 @@ import java.util.List;
  * @test
  * confirm there are two vrs created
  * confirm the ip of guest nic of the second vr is not the gateway of the guest L3
+ *
+ * 3. delete the Vip
+ *
+ * confirm the lb is deleted
  */
 public class TestVirtualRouterLb2 {
     Deployer deployer;
@@ -96,5 +101,10 @@ public class TestVirtualRouterLb2 {
 
         String gateway = gnw.getIpRanges().get(0).getGateway();
         Assert.assertFalse(gateway.equals(gnicOnvr.getIp()));
+
+        LoadBalancerInventory lb = deployer.loadBalancers.get("lb");
+        api.releaseIp(lb.getVipUuid());
+        Assert.assertFalse(dbf.isExist(lb.getUuid(), LoadBalancerVO.class));
+        Assert.assertFalse(dbf.isExist(vr.getUuid(), VirtualRouterVmVO.class));
     }
 }

@@ -83,42 +83,6 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         return flows;
     }
 
-    private void superDestroy(Completion completion) {
-        super.destroy(completion);
-    }
-
-    @Override
-    public void destroy(final Completion completion) {
-        thdf.chainSubmit(new ChainTask(completion) {
-            @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                superDestroy(new Completion(completion, chain) {
-                    @Override
-                    public void success() {
-                        completion.success();
-                        chain.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        completion.fail(errorCode);
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return "destroy-appliancevm";
-            }
-        });
-    }
-
     @Override
     protected void handleLocalMessage(Message msg) {
         if (msg instanceof ApplianceVmRefreshFirewallMsg) {
