@@ -783,11 +783,28 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         @Override
-        void download(ReturnValueCompletion<String> completion) {
+        void download(final ReturnValueCompletion<String> completion) {
             checkParam();
 
-            DownloadParam dparam = (DownloadParam) param;
-            completion.success(dparam.image.getSelectedBackupStorage().getInstallPath());
+            final DownloadParam dparam = (DownloadParam) param;
+            if (ImageMediaType.DataVolumeTemplate.toString().equals(dparam.image.getInventory().getMediaType())) {
+                CpCmd cmd = new CpCmd();
+                cmd.srcPath = dparam.image.getSelectedBackupStorage().getInstallPath();
+                cmd.dstPath = dparam.installPath;
+                httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(completion) {
+                    @Override
+                    public void success(CpRsp returnValue) {
+                        completion.success(dparam.installPath);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
+            } else {
+                completion.success(dparam.image.getSelectedBackupStorage().getInstallPath());
+            }
         }
 
         @Override
