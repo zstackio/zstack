@@ -20,7 +20,7 @@
         <name>primaryStorage.deletePool</name>
         <description>delete all primary storage related pools when deleting the ceph primary storage</description>
         <category>ceph</category>
-        <defaultValue>true</defaultValue>
+        <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
 </globalConfig>
