@@ -19,3 +19,4 @@ test/unitTestSuiteReport/*
 *.swo
 .setting
 *.log
+premium/
