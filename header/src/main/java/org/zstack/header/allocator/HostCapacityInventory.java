@@ -15,6 +15,8 @@ public class HostCapacityInventory {
     private Long totalCpu;
     private Long availableMemory;
     private Long availableCpu;
+    private Long totalPhysicalMemory;
+    private Long availablePhysicalMemory;
 
     public HostCapacityInventory valueOf(HostCapacityVO vo) {
         HostCapacityInventory inv = new HostCapacityInventory();
@@ -23,6 +25,8 @@ public class HostCapacityInventory {
         inv.setAvailableMemory(vo.getAvailableMemory());
         inv.setTotalCpu(vo.getTotalCpu());
         inv.setAvailableCpu(vo.getAvailableCpu());
+        inv.setAvailablePhysicalMemory(vo.getAvailablePhysicalMemory());
+        inv.setTotalPhysicalMemory(vo.getTotalPhysicalMemory());
         return inv;
     }
 
@@ -32,6 +36,22 @@ public class HostCapacityInventory {
             invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public Long getTotalPhysicalMemory() {
+        return totalPhysicalMemory;
+    }
+
+    public void setTotalPhysicalMemory(Long totalPhysicalMemory) {
+        this.totalPhysicalMemory = totalPhysicalMemory;
+    }
+
+    public Long getAvailablePhysicalMemory() {
+        return availablePhysicalMemory;
+    }
+
+    public void setAvailablePhysicalMemory(Long availablePhysicalMemory) {
+        this.availablePhysicalMemory = availablePhysicalMemory;
     }
 
     public String getUuid() {

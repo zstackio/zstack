@@ -20,6 +20,10 @@ public abstract class AbstractHostAllocatorStrategyFactory implements HostAlloca
         this.allocatorFlowNames = allocatorFlowNames;
     }
 
+    public List<String> getAllocatorFlowNames() {
+        return allocatorFlowNames;
+    }
+
     @Override
     public boolean start() {
         builder = HostAllocatorChainBuilder.newBuilder().setFlowClassNames(allocatorFlowNames).construct();

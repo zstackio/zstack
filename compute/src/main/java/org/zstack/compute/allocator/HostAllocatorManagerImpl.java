@@ -70,24 +70,47 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
     private void handle(ReportHostCapacityMessage msg) {
         HostCapacityVO vo = dbf.findByUuid(msg.getHostUuid(), HostCapacityVO.class);
-        boolean persist = false;
+        long availCpu = msg.getTotalCpu() - msg.getUsedCpu();
+        availCpu = availCpu > 0 ? availCpu : 0;
+        long availMem = msg.getTotalMemory() - msg.getUsedMemory();
+        availMem = availMem > 0 ? availMem : 0;
         if (vo == null) {
             vo = new HostCapacityVO();
             vo.setUuid(msg.getHostUuid());
-            persist = true;
-        }
+            vo.setTotalCpu(msg.getTotalCpu());
+            vo.setAvailableCpu(availCpu);
+            vo.setTotalMemory(msg.getTotalMemory());
+            vo.setAvailableMemory(availMem);
+            vo.setTotalPhysicalMemory(msg.getTotalMemory());
+            vo.setAvailablePhysicalMemory(availMem);
 
-	    vo.setTotalCpu(msg.getTotalCpu());
-        long availCpu = msg.getTotalCpu() - msg.getUsedCpu();
-        availCpu = availCpu > 0 ? availCpu : 0;
-        vo.setAvailableCpu(availCpu);
-        vo.setTotalMemory(msg.getTotalMemory());
-        long availMem = msg.getTotalMemory() - msg.getUsedMemory();
-        availMem = availMem > 0 ? availMem : 0;
-        vo.setAvailableMemory(availMem);
-        if (persist) {
+            HostCapacityStruct s = new HostCapacityStruct();
+            s.setCapacityVO(vo);
+            s.setTotalCpu(msg.getTotalCpu());
+            s.setTotalMemory(msg.getTotalMemory());
+            s.setUsedCpu(msg.getUsedCpu());
+            s.setUsedMemory(msg.getUsedMemory());
+            s.setInit(true);
+            for (ReportHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(ReportHostCapacityExtensionPoint.class)) {
+                vo = ext.reportHostCapacity(s);
+            }
             dbf.persist(vo);
         } else {
+            vo.setTotalCpu(msg.getTotalCpu());
+            vo.setAvailableCpu(availCpu);
+            vo.setTotalPhysicalMemory(msg.getTotalMemory());
+            vo.setAvailablePhysicalMemory(availMem);
+
+            HostCapacityStruct s = new HostCapacityStruct();
+            s.setCapacityVO(vo);
+            s.setTotalCpu(msg.getTotalCpu());
+            s.setTotalMemory(msg.getTotalMemory());
+            s.setUsedCpu(msg.getUsedCpu());
+            s.setUsedMemory(msg.getUsedMemory());
+            s.setInit(false);
+            for (ReportHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(ReportHostCapacityExtensionPoint.class)) {
+                vo = ext.reportHostCapacity(s);
+            }
             dbf.update(vo);
         }
     }

@@ -31,8 +31,32 @@ public class HostCapacityVO {
     @Index
     private long availableCpu;
 
+    @Column
+    @Index
+    private long totalPhysicalMemory;
+
+    @Column
+    @Index
+    private long availablePhysicalMemory;
+
 	public HostCapacityVO() {
 	}
+
+    public long getTotalPhysicalMemory() {
+        return totalPhysicalMemory;
+    }
+
+    public void setTotalPhysicalMemory(long totalPhysicalMemory) {
+        this.totalPhysicalMemory = totalPhysicalMemory;
+    }
+
+    public long getAvailablePhysicalMemory() {
+        return availablePhysicalMemory;
+    }
+
+    public void setAvailablePhysicalMemory(long availablePhysicalMemory) {
+        this.availablePhysicalMemory = availablePhysicalMemory;
+    }
 
     public long getAvailableMemory() {
         return availableMemory;
