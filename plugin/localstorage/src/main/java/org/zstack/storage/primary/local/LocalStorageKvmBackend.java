@@ -18,6 +18,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
@@ -604,7 +605,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             thdf.chainSubmit(new ChainTask(completion) {
                 @Override
                 public String getSyncSignature() {
-                    return String.format("download-image-%s-to-localstorage-%s-cache", image.getUuid(), self.getUuid());
+                    return String.format("download-image-%s-to-localstorage-%s-cache-host-%s", image.getUuid(), self.getUuid(), hostUuid);
                 }
 
                 @Override
@@ -1515,6 +1516,31 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 }
             });
         }
+    }
+
+    @Override
+    void downloadImageToCache(ImageInventory img, String hostUuid, final Completion completion) {
+        //TODO: select backup storage
+        ImageBackupStorageRefInventory ref = img.getBackupStorageRefs().get(0);
+        BackupStorageInventory bs = BackupStorageInventory.valueOf(dbf.findByUuid(ref.getBackupStorageUuid(), BackupStorageVO.class));
+
+        ImageCache cache = new ImageCache();
+        cache.image = img;
+        cache.hostUuid = hostUuid;
+        cache.primaryStorageInstallPath = makeCachedImageInstallUrl(img);
+        cache.backupStorage = bs;
+        cache.backupStorageInstallPath = ref.getInstallPath();
+        cache.download(new ReturnValueCompletion<String>(completion) {
+            @Override
+            public void success(String returnValue) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override

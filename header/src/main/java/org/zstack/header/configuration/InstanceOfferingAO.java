@@ -49,8 +49,27 @@ public class InstanceOfferingAO {
     @Column
     @Enumerated(EnumType.STRING)
     private InstanceOfferingDuration duration;
-    
-	public String getUuid() {
+
+    public InstanceOfferingAO(InstanceOfferingAO other) {
+        this.uuid = other.uuid;
+        this.name = other.name;
+        this.description = other.description;
+        this.cpuNum = other.cpuNum;
+        this.cpuSpeed = other.cpuSpeed;
+        this.memorySize = other.memorySize;
+        this.allocatorStrategy = other.allocatorStrategy;
+        this.sortKey = other.sortKey;
+        this.state = other.state;
+        this.createDate = other.createDate;
+        this.lastOpDate = other.lastOpDate;
+        this.type = other.type;
+        this.duration = other.duration;
+    }
+
+    public InstanceOfferingAO() {
+    }
+
+    public String getUuid() {
     	return uuid;
     }
 

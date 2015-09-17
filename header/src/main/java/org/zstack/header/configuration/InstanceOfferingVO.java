@@ -14,5 +14,11 @@ import javax.persistence.Table;
 @EO(EOClazz = InstanceOfferingEO.class)
 @AutoDeleteTag
 public class InstanceOfferingVO extends InstanceOfferingAO {
+    public InstanceOfferingVO() {
+    }
+
+    public InstanceOfferingVO(InstanceOfferingVO other) {
+        super(other);
+    }
 }
 

@@ -9,6 +9,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.safeguard.Guard;
+import org.zstack.core.safeguard.SafeGuard;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.workflow.*;
@@ -34,6 +36,7 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -724,6 +727,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
         bus.reply(msg, reply);
     }
 
+    @Guard
     private void handle(final APIAddImageMsg msg) {
         String imageType = msg.getType();
         imageType = imageType == null ? DefaultImageFactory.type.toString() : imageType;
@@ -754,7 +758,18 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), ImageVO.class);
         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
 
+        SafeGuard.guard(new Runnable() {
+            @Override
+            public void run() {
+                dbf.remove(ivo);
+            }
+        });
+
         final ImageInventory inv = ImageInventory.valueOf(ivo);
+        for (AddImageExtensionPoint ext : pluginRgty.getExtensionList(AddImageExtensionPoint.class)) {
+            ext.preAddImage(inv);
+        }
+
         final List<DownloadImageMsg> dmsgs = CollectionUtils.transformToList(msg.getBackupStorageUuids(), new Function<DownloadImageMsg, String>() {
             @Override
             public DownloadImageMsg call(String arg) {
@@ -762,6 +777,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
                 dmsg.setBackupStorageUuid(arg);
                 bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, arg);
                 return dmsg;
+            }
+        });
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {
+            @Override
+            public void run(AddImageExtensionPoint ext) {
+                ext.beforeAddImage(inv);
             }
         });
 
@@ -800,12 +822,29 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
 
                 if (success) {
                     ImageVO vo = dbf.reload(ivo);
-                    ImageInventory einv = ImageInventory.valueOf(vo);
+                    final ImageInventory einv = ImageInventory.valueOf(vo);
+
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {
+                        @Override
+                        public void run(AddImageExtensionPoint ext) {
+                            ext.afterAddImage(einv);
+                        }
+                    });
+
                     evt.setInventory(einv);
                 } else {
+                    final ErrorCode err = errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, String.format("Failed to download image[name:%s] on all backup storage%s. %s",
+                            inv.getName(), msg.getBackupStorageUuids(), sb.toString()));
+
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {
+                        @Override
+                        public void run(AddImageExtensionPoint ext) {
+                            ext.failedToAddImage(inv, err);
+                        }
+                    });
+
                     dbf.remove(ivo);
-                    evt.setErrorCode(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, String.format("Failed to download image[name:%s] on all backup storage%s. %s",
-                            inv.getName(), msg.getBackupStorageUuids(), sb.toString())));
+                    evt.setErrorCode(err);
                 }
 
                 bus.publish(evt);

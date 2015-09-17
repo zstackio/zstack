@@ -9,12 +9,15 @@ import org.zstack.core.workflow.*;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
+import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageVO;
@@ -33,6 +36,7 @@ import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -41,6 +45,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import javax.rmi.CORBA.Util;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 /**
  * Created by frank on 6/30/2015.
@@ -80,8 +85,128 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
             handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DownloadImageToPrimaryStorageCacheMsg) {
+            handle((DownloadImageToPrimaryStorageCacheMsg) msg);
         } else {
             super.handleLocalMessage(msg);
+        }
+    }
+
+    private void handle(final DownloadImageToPrimaryStorageCacheMsg msg) {
+        final DownloadImageToPrimaryStorageCacheReply reply = new DownloadImageToPrimaryStorageCacheReply();
+        final List<String> hostUuids = new Callable<List<String>>() {
+            @Override
+            @Transactional(readOnly = true)
+            public List<String> call() {
+                String sql = "select h.hostUuid from LocalStorageHostRefVO h, HostVO host where h.primaryStorageUuid = :puuid" +
+                        " and h.hostUuid = host.uuid and host.status = :hstatus";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                q.setParameter("puuid", self.getUuid());
+                q.setParameter("hstatus", HostStatus.Connected);
+                return q.getResultList();
+            }
+        }.call();
+
+        if (hostUuids.isEmpty()) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        class HostError {
+            ErrorCode errorCode;
+            String hostUuid;
+        }
+
+        class Ret {
+            List<HostError> errorCodes = new ArrayList<HostError>();
+
+            synchronized void addError(HostError err) {
+                errorCodes.add(err);
+            }
+        }
+
+        final Ret ret = new Ret();
+        final AsyncLatch latch = new AsyncLatch(hostUuids.size(), new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                if (ret.errorCodes.size() == hostUuids.size()) {
+                    reply.setError(errf.stringToOperationError(
+                            String.format("failed to download image[uuid:%s] to all hosts in the local storage[uuid:%s]" +
+                                    ". %s", msg.getImage().getUuid(), self.getUuid(), JSONObjectUtil.toJsonString(ret.errorCodes))
+                    ));
+                } else if (!ret.errorCodes.isEmpty()) {
+                    for (HostError err : ret.errorCodes) {
+                        logger.warn(String.format("failed to download image [uuid:%s] to the host[uuid:%s] in the local" +
+                                " storage[uuid:%s]. %s", msg.getImage().getUuid(), err.hostUuid, self.getUuid(), err.errorCode));
+                    }
+                }
+
+                bus.reply(msg, reply);
+            }
+        });
+
+        for (final String hostUuid : hostUuids) {
+            FlowChain chain = FlowChainBuilder.newShareFlowChain();
+            chain.setName(String.format("download-image-%s-to-local-storage-%s-host-%s", msg.getImage().getUuid(), self.getUuid(), hostUuid));
+            chain.then(new ShareFlow() {
+                @Override
+                public void setup() {
+                    flow(new Flow() {
+                        String __name__ = "reserve-capacity-in-db";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            reserveCapacityOnHost(hostUuid, msg.getImage().getSize());
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void rollback(FlowTrigger trigger, Map data) {
+                            returnCapacityToHost(hostUuid, msg.getImage().getSize());
+                            trigger.rollback();
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "download-to-host";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
+                            LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+                            bkd.downloadImageToCache(msg.getImage(), hostUuid, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+
+                    done(new FlowDoneHandler(latch) {
+                        @Override
+                        public void handle(Map data) {
+                            latch.ack();
+                        }
+                    });
+
+                    error(new FlowErrorHandler(latch) {
+                        @Override
+                        public void handle(ErrorCode errCode, Map data) {
+                            HostError herr = new HostError();
+                            herr.errorCode = errCode;
+                            herr.hostUuid = hostUuid;
+                            ret.addError(herr);
+                            latch.ack();
+                        }
+                    });
+                }
+            }).start();
         }
     }
 

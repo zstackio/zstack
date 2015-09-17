@@ -1,7 +1,9 @@
 package org.zstack.storage.primary.local;
 
 import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.*;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 
@@ -44,4 +46,6 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion);
 
     abstract void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply> completion);
+
+    abstract void downloadImageToCache(ImageInventory img, String hostUuid, Completion completion);
 }
