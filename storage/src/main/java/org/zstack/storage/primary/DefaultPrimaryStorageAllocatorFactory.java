@@ -2,20 +2,23 @@ package org.zstack.storage.primary;
 
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
-import org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategy;
-import org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory;
-import org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyType;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.*;
 
 import java.util.List;
 
-public class DefaultPrimaryStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component {
+public class DefaultPrimaryStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component,
+		PrimaryStorageAllocatorFlowNameSetter {
 	private static final PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
 	private DefaultPrimaryStorageAllocatorStrategy strategy;
     private List<String> allocatorFlowNames;
     private FlowChainBuilder builder = new FlowChainBuilder();
 
-    public void setAllocatorFlowNames(List<String> allocatorFlowNames) {
+	@Override
+	public List<String> getAllocatorFlowNames() {
+		return allocatorFlowNames;
+	}
+
+	public void setAllocatorFlowNames(List<String> allocatorFlowNames) {
         this.allocatorFlowNames = allocatorFlowNames;
     }
 

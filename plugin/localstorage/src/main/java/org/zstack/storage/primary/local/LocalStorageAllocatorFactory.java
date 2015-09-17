@@ -26,7 +26,7 @@ import java.util.concurrent.Callable;
  * Created by frank on 7/1/2015.
  */
 public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component,
-        HostAllocatorFilterExtensionPoint, PrimaryStorageAllocatorStrategyExtensionPoint {
+        HostAllocatorFilterExtensionPoint, PrimaryStorageAllocatorStrategyExtensionPoint, PrimaryStorageAllocatorFlowNameSetter {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
