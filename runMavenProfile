@@ -1,11 +1,15 @@
 #!/bin/sh
 
 usage() {
-    echo "usage:$0 [deploydb|deploy|xml-java-schema]"
+    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium]"
 }
 
 run_profile() {
-    mvn -pl build -P $1 exec:exec -D$1
+    if [ $1 == 'premium' ]; then
+        mvn -Dmaven.test.skip=true -P premium clean install
+    else
+    	mvn -pl build -P $1 exec:exec -D$1
+    fi
 }
 
 if [ "$#" -eq 0 ]; then

@@ -56,6 +56,10 @@ public abstract class AbstractHostAllocatorFlow {
         trigger.next(candidates);
     }
 
+    protected void moveOn() {
+        trigger.moveOn();
+    }
+
     protected void fail(String reason) {
         if (paginationInfo != null && trigger.indexOfFlow(this) != 0) {
             // in pagination, and a middle flow fails, we can continue

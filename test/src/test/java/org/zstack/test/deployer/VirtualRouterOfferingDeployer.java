@@ -24,8 +24,8 @@ public class VirtualRouterOfferingDeployer implements InstanceOfferingDeployer<V
 
 	@Override
 	public void deploy(List<VirtualRouterOfferingConfig> offerings, DeployerConfig config, Deployer deployer) throws ApiSenderException {
-		APICreateVirtualRouterOfferingMsg msg = new APICreateVirtualRouterOfferingMsg();
 		for (VirtualRouterOfferingConfig ic : offerings) {
+			APICreateVirtualRouterOfferingMsg msg = new APICreateVirtualRouterOfferingMsg();
 			L3NetworkInventory mgmtNw = deployer.l3Networks.get(ic.getManagementL3NetworkRef());
 			if (mgmtNw == null) {
 				throw new CloudRuntimeException(String.format("unable to find l3network[%s]", ic.getManagementL3NetworkRef()));

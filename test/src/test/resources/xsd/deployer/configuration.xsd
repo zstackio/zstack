@@ -13,6 +13,7 @@
         <xsd:sequence>
             <xsd:element name="instanceOffering" type="InstanceOfferingConfig" maxOccurs="unbounded" minOccurs="0"/>
             <xsd:element name="virtualRouterOffering" type="VirtualRouterOfferingConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="convergedOffering" type="ConvergedOfferingConfig" maxOccurs="unbounded" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
@@ -26,6 +27,18 @@
                     <xsd:element name="zoneRef" type="xsd:string" minOccurs="1"/>
                 </xsd:sequence>
                 <xsd:attribute name="isDefault" type="xsd:boolean" default="false"></xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="ConvergedOfferingConfig">
+        <xsd:complexContent>
+            <xsd:extension base="InstanceOfferingConfig">
+                <xsd:sequence>
+                    <xsd:element name="networkBandwidth" type="xsd:unsignedInt" minOccurs="0" maxOccurs="1"/>
+                    <xsd:element name="volumeBandwidth" type="xsd:unsignedInt" minOccurs="0" maxOccurs="1"/>
+                    <xsd:element name="diskOfferingUuid" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+                </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

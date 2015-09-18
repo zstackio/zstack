@@ -26,7 +26,7 @@ public class HostAllocatorSpec {
     private VmInstanceInventory vmInstance;
     private ImageInventory image;
     private String vmOperation;
-    private List<DiskOfferingInventory> diskOfferings;
+    private List<DiskOfferingInventory> diskOfferings = new ArrayList<DiskOfferingInventory>();
     private Map<Object, Object> extraData = new HashMap<Object, Object>();
 
     public List<DiskOfferingInventory> getDiskOfferings() {

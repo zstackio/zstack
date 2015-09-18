@@ -264,8 +264,6 @@
                 <version>4.0.3</version>
             </dependency>
 
-
-
             <!-- build plugins -->
             <dependency>
                 <groupId>org.codehaus.mojo</groupId>
@@ -362,6 +360,31 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>premium</id>
+            <modules>
+                <module>core</module>
+                <module>compute</module>
+                <module>utils</module>
+                <module>header</module>
+                <module>portal</module>
+                <module>test</module>
+                <module>simulator</module>
+                <module>build</module>
+                <module>storage</module>
+                <module>plugin</module>
+                <module>image</module>
+                <module>network</module>
+                <module>configuration</module>
+                <module>identity</module>
+                <module>search</module>
+                <module>console</module>
+                <module>tag</module>
+                <module>tool</module>
+                <module>premium</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>deploydb</id>
             <activation>

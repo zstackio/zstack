@@ -208,6 +208,18 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     }
 
     @Override
+    public void moveOn() {
+        logger.debug(String.format("[Host Allocation]: flow[%s] calls moveOn()", lastFlow.getClass().getName()));
+
+        if (it.hasNext()) {
+            runFlow(it.next());
+            return;
+        }
+
+        done();
+    }
+
+    @Override
     public void next(List<HostVO> candidates) {
         DebugUtils.Assert(candidates != null, "cannot pass null to next() method");
         DebugUtils.Assert(!candidates.isEmpty(), "cannot pass empty candidates to next() method");

@@ -21,11 +21,11 @@
         <class>org.zstack.header.host.HostVO</class>
         <class>org.zstack.header.host.HostEO</class>
         <class>org.zstack.header.storage.primary.PrimaryStorageVO</class>
-		<class>org.zstack.header.storage.primary.PrimaryStorageEO</class>
+	<class>org.zstack.header.storage.primary.PrimaryStorageEO</class>
         <class>org.zstack.header.storage.primary.PrimaryStorageClusterRefVO</class>
         <class>org.zstack.header.storage.primary.PrimaryStorageCapacityVO</class>
         <class>org.zstack.header.storage.backup.BackupStorageVO</class>
-		<class>org.zstack.header.storage.backup.BackupStorageEO</class>
+	<class>org.zstack.header.storage.backup.BackupStorageEO</class>
         <class>org.zstack.header.storage.backup.BackupStorageZoneRefVO</class>
         <class>org.zstack.header.image.ImageVO</class>
         <class>org.zstack.header.image.ImageEO</class>
@@ -56,7 +56,7 @@
         <class>org.zstack.header.network.service.NetworkServiceProviderL2NetworkRefVO</class>
         <class>org.zstack.header.network.service.NetworkServiceTypeVO</class>
         <class>org.zstack.header.vm.VmInstanceVO</class>
-		<class>org.zstack.header.vm.VmInstanceEO</class>
+	<class>org.zstack.header.vm.VmInstanceEO</class>
         <class>org.zstack.header.vm.VmInstanceSequenceNumberVO</class>
         <class>org.zstack.appliancevm.ApplianceVmVO</class>
         <class>org.zstack.appliancevm.ApplianceVmFirewallRuleVO</class>
@@ -114,5 +114,6 @@
         <class>org.zstack.network.service.lb.LoadBalancerVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerVmNicRefVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerVO</class>
+        <class>org.zstack.mevoco.ConvergedOfferingVO</class>
     </persistence-unit>
 </persistence>
