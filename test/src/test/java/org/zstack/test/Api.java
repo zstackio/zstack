@@ -3534,7 +3534,5 @@ public class Api implements CloudBusEventListener {
         msg.setUuid(lbUuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        sender.send(msg, APIDeleteLoadBalancerEvent.class);
     }
 }

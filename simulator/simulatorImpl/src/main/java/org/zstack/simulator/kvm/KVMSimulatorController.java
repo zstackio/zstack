@@ -3,10 +3,8 @@ package org.zstack.simulator.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.RESTFacade;
@@ -557,5 +555,13 @@ public class KVMSimulatorController {
         config.loginIscsiTargetCmds.add(cmd);
         logger.debug(String.format("login iscsi  target: %s", cmd.getTarget()));
         replyer.reply(entity, rsp);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ModelAndView handleAllException(Exception ex) {
+        logger.warn(ex.getMessage(), ex);
+        ModelAndView model = new ModelAndView("error/generic_error");
+        model.addObject("errMsg", ex.getMessage());
+        return model;
     }
 }

@@ -18,6 +18,7 @@
             <zstack:extension interface="org.zstack.header.Component" />
 	    <zstack:extension interface="org.zstack.header.image.AddImageExtensionPoint" />
             <zstack:extension interface="org.zstack.header.allocator.ReportHostCapacityExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.allocator.HostAllocatorPreStartExtensionPoint" />
         </zstack:plugin>
     </bean>
 
@@ -33,16 +34,11 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="FlatDnsBackend" class="org.zstack.network.service.flat.FlatDnsBackend">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDnsBackend" />
-        </zstack:plugin>
-    </bean>
-
     <bean id="FlatProviderFactory" class="org.zstack.network.service.flat.FlatProviderFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceProviderFactory" />
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkCreateExtensionPoint" />
         </zstack:plugin>
     </bean>
 </beans>

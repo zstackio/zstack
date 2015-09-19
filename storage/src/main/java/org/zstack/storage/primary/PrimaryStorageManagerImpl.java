@@ -322,7 +322,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageInventory target = null;
         while (it.hasNext()) {
             PrimaryStorageInventory inv = it.next();
-            if (reserve(inv, msg.getSize())) {
+            if (reserve(inv, spec.getSize())) {
                 target = inv;
                 break;
             } else {
@@ -343,21 +343,23 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private boolean reserve(PrimaryStorageInventory inv, long size) {
         PrimaryStorageCapacityVO cvo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, inv.getUuid(), LockModeType.PESSIMISTIC_WRITE);
         if (cvo == null) {
-            logger.warn(String.format("reserved capacity on primary storage[uuid:%s] failed, the primary storage has been deleted", inv.getUuid()));
+            logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed, the primary storage has been deleted", inv.getUuid()));
             return false;
         }
 
+        long origin = cvo.getAvailableCapacity();
+
         long avail = cvo.getAvailableCapacity() - size;
         if (avail <= 0) {
-            logger.warn(String.format("reserved capacity on primary storage[uuid:%s] failed, no available capacity on it", inv.getUuid()));
+            logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed, no available capacity on it", inv.getUuid()));
             return false;
         }
 
         cvo.setAvailableCapacity(avail);
         dbf.getEntityManager().merge(cvo);
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("reserved %s bytes on primary storage[uuid:%s, total:%s, available:%s]",
-                    size, inv.getUuid(), cvo.getTotalCapacity(), avail));
+            logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s, available before:%s, available now:%s]",
+                    size, inv.getUuid(), origin, avail));
         }
         return true;
     }

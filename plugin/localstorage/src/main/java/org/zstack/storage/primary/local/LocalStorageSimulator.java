@@ -1,5 +1,7 @@
 package org.zstack.storage.primary.local;
 
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.ModelAndView;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsRsp;
@@ -22,13 +24,17 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 /**
  * Created by frank on 7/1/2015.
  */
 @Controller
 public class LocalStorageSimulator {
+    private CLogger logger = Utils.getLogger(LocalStorageSimulator.class);
+
     @Autowired
     private RESTFacade restf;
     @Autowired
@@ -62,6 +68,7 @@ public class LocalStorageSimulator {
         String hname = q.findValue();
 
         Capacity c = config.capacityMap.get(hname);
+        assert c!=null : String.format("cannot find host[name:%s] for configuring the local storage capacity", hname);
         rsp.setTotalCapacity(c.total);
         rsp.setAvailableCapacity(c.avail);
         reply(entity, rsp);
@@ -188,5 +195,13 @@ public class LocalStorageSimulator {
         OfflineMergeSnapshotRsp rsp = new OfflineMergeSnapshotRsp();
         reply(entity, rsp);
         return null;
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ModelAndView handleAllException(Exception ex) {
+        logger.warn(ex.getMessage(), ex);
+        ModelAndView model = new ModelAndView("error/generic_error");
+        model.addObject("errMsg", ex.getMessage());
+        return model;
     }
 }

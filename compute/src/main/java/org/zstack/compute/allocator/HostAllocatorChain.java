@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.*;
@@ -48,6 +49,8 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public HostAllocatorSpec getAllocationSpec() {
         return allocationSpec;
@@ -79,6 +82,10 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         if (vo == null) {
             return false;
         }
+
+        long originCpu = vo.getAvailableCpu();
+        long originMem = vo.getAvailableMemory();
+
         long availCpu = vo.getAvailableCpu() - cpu;
         if (availCpu <= 0) {
             return false;
@@ -90,7 +97,13 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             return false;
         }
         vo.setAvailableMemory(availMemory);
-        dbf.getEntityManager().merge(vo);
+        vo = dbf.getEntityManager().merge(vo);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("[Host Capacity Reservation][host uuid: %s]:\n (before) CPU: %s MHZ, memory: %s bytes\n (after) CPU: %s MHZ, memory: %s bytes",
+                    hostUuid, originCpu, originMem, vo.getAvailableCpu(), vo.getAvailableMemory()));
+        }
+
         return true;
     }
 
@@ -144,7 +157,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             }
 
             if (paginationInfo != null) {
-                logger.debug(String.format("[Host Allocation]: unable to reserve cpu/memory on all candidate hosts; because of pagination is enabled, allocation will start over"));
+                logger.debug("[Host Allocation]: unable to reserve cpu/memory on all candidate hosts; because of pagination is enabled, allocation will start over");
                 seriesErrorWhenPagination.add(String.format("{unable to reserve cpu[%s HZ], memory[%s bytes] on all candidate hosts}", allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity()));
                 startOver();
             } else {
@@ -186,6 +199,10 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     }
 
     private void start() {
+        for (HostAllocatorPreStartExtensionPoint processor : pluginRgty.getExtensionList(HostAllocatorPreStartExtensionPoint.class)) {
+            processor.beforeHostAllocatorStart(allocationSpec, flows);
+        }
+
         if (HostAllocatorGlobalConfig.USE_PAGINATION.value(Boolean.class)) {
             paginationInfo = new HostAllocationPaginationInfo();
             paginationInfo.setLimit(HostAllocatorGlobalConfig.PAGINATION_LIMIT.value(Integer.class));
@@ -205,18 +222,6 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         isDryRun = true;
         this.dryRunCompletion = completion;
         start();
-    }
-
-    @Override
-    public void moveOn() {
-        logger.debug(String.format("[Host Allocation]: flow[%s] calls moveOn()", lastFlow.getClass().getName()));
-
-        if (it.hasNext()) {
-            runFlow(it.next());
-            return;
-        }
-
-        done();
     }
 
     @Override

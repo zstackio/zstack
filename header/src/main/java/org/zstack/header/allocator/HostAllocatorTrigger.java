@@ -7,8 +7,6 @@ import java.util.List;
 /**
  */
 public interface HostAllocatorTrigger {
-    void moveOn();
-
     void next(List<HostVO> candidates);
 
     int indexOfFlow(AbstractHostAllocatorFlow flow);

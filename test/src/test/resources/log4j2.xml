@@ -30,6 +30,10 @@
 
         <Logger name="org.zstack.query" level="TRACE" />
 
+        <Logger name="org.zstack.compute.allocator" level="TRACE" />
+
+        <Logger name="org.zstack.storage.primary" level="TRACE" />
+
         <Logger name="org.zstack.core.rest" level="TRACE" />
 
         <Logger name="org.zstack.identity" level="TRACE" />

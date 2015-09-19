@@ -2,7 +2,6 @@ CREATE TABLE  `zstack`.`ConvergedOfferingVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `networkBandwidth` bigint unsigned DEFAULT NULL,
     `volumeBandwidth` bigint unsigned DEFAULT NULL,
-    `diskOfferingUuid` varchar(32) NOT NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
