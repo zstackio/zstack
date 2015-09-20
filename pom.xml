@@ -36,6 +36,7 @@
         <module>console</module>
         <module>tag</module>
         <module>tool</module>
+        <module>premium</module>
     </modules>
 
     <dependencyManagement>

@@ -148,6 +148,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 	    L2VlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), L2VlanNetworkVO.class);
 		NicTO to = new NicTO();
 		to.setMac(nic.getMac());
+        to.setUuid(nic.getUuid());
 		to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface(), vo.getVlan()));
 		to.setDeviceId(nic.getDeviceId());
 		to.setNicInternalName(nic.getInternalName());

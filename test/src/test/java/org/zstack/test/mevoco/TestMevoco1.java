@@ -149,13 +149,5 @@ public class TestMevoco1 {
         Assert.assertFalse(config.downloadBitsCmds.isEmpty());
         cacheVO = findImageOnHost(local.getUuid(), img.getUuid(), host2.getUuid());
         Assert.assertNotNull(cacheVO);
-
-        InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
-        long networkBandwidth = Long.valueOf(MevocoSystemTags.NETWORK_OUTBOUND_BANDWIDTH.getTokenByResourceUuid(ioinv.getUuid(), MevocoSystemTags.NETWORK_OUTBOUND_BANDWIDTH_TOKEN));
-        Assert.assertEquals(1000, networkBandwidth);
-        long ioBandwidth = Long.valueOf(MevocoSystemTags.VOLUME_TOTAL_BANDWIDTH.getTokenByResourceUuid(ioinv.getUuid(), MevocoSystemTags.VOLUME_TOTAL_BANDWIDTH_TOKEN));
-        Assert.assertEquals(2000, ioBandwidth);
-        long iops = Long.valueOf(MevocoSystemTags.VOLUME_TOTAL_IOPS.getTokenByResourceUuid(ioinv.getUuid(), MevocoSystemTags.VOLUME_TOTAL_IOPS_TOKEN));
-        Assert.assertEquals(10000, iops);
     }
 }

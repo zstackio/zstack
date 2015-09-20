@@ -14,7 +14,7 @@
     <instanceOfferings>
         <convergedOffering name="TestInstanceOffering"
             description="Test" memoryCapacity="4G" cpuNum="1" cpuSpeed="3000">
-            <networkOutBoundBandwidth>1000</networkOutBoundBandwidth>
+            <networkOutboundBandwidth>1000</networkOutboundBandwidth>
             <volumeTotalBandwidth>2000</volumeTotalBandwidth>
             <volumeTotalIops>10000</volumeTotalIops>
         </convergedOffering>

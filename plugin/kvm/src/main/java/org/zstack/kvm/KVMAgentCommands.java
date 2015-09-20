@@ -306,10 +306,19 @@ public class KVMAgentCommands {
     public static class NicTO {
     	private String mac;
     	private String bridgeName;
+        private String uuid;
     	private String nicInternalName;
     	private int deviceId;
     	private String metaData;
         private Boolean useVirtio;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
 
         public Boolean getUseVirtio() {
             return useVirtio;

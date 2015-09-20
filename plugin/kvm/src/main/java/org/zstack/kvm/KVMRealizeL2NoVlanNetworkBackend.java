@@ -143,6 +143,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     public NicTO completeNicInformation(L2NetworkInventory l2Network, VmNicInventory nic) {
         NicTO to = new NicTO();
         to.setMac(nic.getMac());
+        to.setUuid(nic.getUuid());
         to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface()));
         to.setDeviceId(nic.getDeviceId());
         to.setNicInternalName(nic.getInternalName());
