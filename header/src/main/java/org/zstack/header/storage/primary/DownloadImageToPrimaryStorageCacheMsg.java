@@ -9,6 +9,15 @@ import org.zstack.header.message.NeedReplyMessage;
 public class DownloadImageToPrimaryStorageCacheMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private ImageInventory image;
+    private String hostUuid;
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
 
     @Override
     public String getPrimaryStorageUuid() {

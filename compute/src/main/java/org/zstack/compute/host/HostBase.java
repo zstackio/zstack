@@ -8,6 +8,7 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
@@ -33,6 +34,7 @@ import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -65,6 +67,8 @@ public abstract class HostBase extends AbstractHost {
     protected ErrorFacade errf;
     @Autowired
     protected HostTracker tracker;
+    @Autowired
+    protected PluginRegistry pluginRgty;
 
 	protected final String id;
 
@@ -755,6 +759,14 @@ public abstract class HostBase extends AbstractHost {
                     public void handle(Map data) {
                         changeConnectionState(HostStatusEvent.connected);
                         tracker.trackHost(self.getUuid());
+
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class), new ForEachFunction<HostAfterConnectedExtensionPoint>() {
+                            @Override
+                            public void run(HostAfterConnectedExtensionPoint ext) {
+                                ext.afterHostConnected(getSelfInventory());
+                            }
+                        });
+
                         bus.reply(msg, reply);
                         completion.done();
                     }

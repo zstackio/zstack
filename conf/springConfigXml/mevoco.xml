@@ -19,12 +19,7 @@
 	    <zstack:extension interface="org.zstack.header.image.AddImageExtensionPoint" />
             <zstack:extension interface="org.zstack.header.allocator.ReportHostCapacityExtensionPoint" />
             <zstack:extension interface="org.zstack.header.allocator.HostAllocatorPreStartExtensionPoint" />
-        </zstack:plugin>
-    </bean>
-
-    <bean id="ConvergedOfferingFactory" class="org.zstack.mevoco.ConvergedOfferingFactory">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.configuration.InstanceOfferingFactory" />
+            <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
         </zstack:plugin>
     </bean>
 

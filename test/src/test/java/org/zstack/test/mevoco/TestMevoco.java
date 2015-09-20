@@ -32,8 +32,14 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
+/**
+ * 1. create a vm with mevoco setting
+ *
+ * confirm the vm created successfully
+ * confirm the flat dhcp works
+ * confirm the over-provisioning works
+ */
 public class TestMevoco {
-    CLogger logger = Utils.getLogger(TestMevoco.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;

@@ -47,6 +47,8 @@ import javax.rmi.CORBA.Util;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by frank on 6/30/2015.
  */
@@ -94,18 +96,23 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     private void handle(final DownloadImageToPrimaryStorageCacheMsg msg) {
         final DownloadImageToPrimaryStorageCacheReply reply = new DownloadImageToPrimaryStorageCacheReply();
-        final List<String> hostUuids = new Callable<List<String>>() {
-            @Override
-            @Transactional(readOnly = true)
-            public List<String> call() {
-                String sql = "select h.hostUuid from LocalStorageHostRefVO h, HostVO host where h.primaryStorageUuid = :puuid" +
-                        " and h.hostUuid = host.uuid and host.status = :hstatus";
-                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                q.setParameter("puuid", self.getUuid());
-                q.setParameter("hstatus", HostStatus.Connected);
-                return q.getResultList();
-            }
-        }.call();
+        final List<String> hostUuids;
+        if (msg.getHostUuid() == null) {
+            hostUuids = new Callable<List<String>>() {
+                @Override
+                @Transactional(readOnly = true)
+                public List<String> call() {
+                    String sql = "select h.hostUuid from LocalStorageHostRefVO h, HostVO host where h.primaryStorageUuid = :puuid" +
+                            " and h.hostUuid = host.uuid and host.status = :hstatus";
+                    TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                    q.setParameter("puuid", self.getUuid());
+                    q.setParameter("hstatus", HostStatus.Connected);
+                    return q.getResultList();
+                }
+            }.call();
+        } else {
+            hostUuids = list(msg.getHostUuid());
+        }
 
         if (hostUuids.isEmpty()) {
             bus.reply(msg, reply);
