@@ -91,6 +91,11 @@ public class ComponentLoaderImpl implements ComponentLoader {
     }
 
     @Override
+    public BeanFactory getSpringIoc() {
+        return ioc;
+    }
+
+    @Override
     public <T> T getComponentByBeanName(String beanName) {
         return (T) ioc.getBean(beanName);
     }

@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.InstanceOffering;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -26,20 +25,20 @@ import org.zstack.network.service.flat.FlatDhcpBackend.ApplyDhcpCmd;
 import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Map;
+
+import static org.zstack.core.Platform._;
 
 /**
  * 1. create a vm with mevoco setting
@@ -49,6 +48,7 @@ import java.util.Map;
  * confirm the over-provisioning works
  */
 public class TestMevoco {
+    CLogger logger = Utils.getLogger(TestMevoco.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -139,5 +139,7 @@ public class TestMevoco {
         long usedDisk = localVO.getCapacity().getTotalCapacity() - localVO.getCapacity().getAvailableCapacity();
         VolumeInventory vol = vm.getRootVolume();
         Assert.assertEquals(usedDisk, (long)(vol.getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Float.class)));
+
+        logger.debug(_("hello.world"));
     }
 }
