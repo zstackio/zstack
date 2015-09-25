@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <category>monitor</category>
+        <name>vm.interval</name>
+        <description>the interval to collect VMs' monitoring data, in seconds</description>
+        <defaultValue>1</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>monitor</category>
+        <name>host.interval</name>
+        <description>the interval to collect hosts' monitoring data, in seconds</description>
+        <defaultValue>1</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+</globalConfig>
