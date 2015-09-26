@@ -22,6 +22,7 @@ import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
@@ -37,6 +38,10 @@ import java.util.concurrent.TimeUnit;
  * 1. create a vm with mevoco setting
  *
  * confirm vm monitors setup
+ * confirm host monitors setup
+ *
+ * 2. reconnect host
+ *
  * confirm host monitors setup
  */
 public class TestMonitor {
@@ -85,9 +90,63 @@ public class TestMonitor {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
+
+    private void checkHost(HostInventory host, boolean refresh) {
+        MonitorTO hto = null;
+        for (SetupTimeSeriesMonitorCmd cmd : mconfig.setupTimeSeriesMonitorCmdList) {
+            for (MonitorTO mto : cmd.monitors) {
+                if (mto.getResourceUuid().equals(host.getUuid())) {
+                    hto = mto;
+                    Assert.assertEquals(refresh, cmd.refresh);
+                    break;
+                }
+            }
+        }
+
+        Assert.assertNotNull(hto);
+        Assert.assertEquals(HostVO.class.getSimpleName(), hto.getResourceName());
+        Assert.assertEquals(MonitorGlobalConfig.HOST_MONITOR_INTERVAL.value(Long.class), Long.valueOf(hto.getInterval()));
+        Assert.assertEquals(MonitorGlobalProperty.DB_PUSH_URL, hto.getDbUrl());
+
+        Metric m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
+            @Override
+            public Metric call(Metric arg) {
+                return arg.getName().equals(MonitorConstants.HOST_CPU_METRIC) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(m);
+        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
+
+        m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
+            @Override
+            public Metric call(Metric arg) {
+                return arg.getName().equals(MonitorConstants.HOST_DISK_IO_METRIC) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(m);
+        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
+
+        m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
+            @Override
+            public Metric call(Metric arg) {
+                return arg.getName().equals(MonitorConstants.HOST_MEMORY_METRIC) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(m);
+        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
+
+        m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
+            @Override
+            public Metric call(Metric arg) {
+                return arg.getName().equals(MonitorConstants.HOST_NETWORK_IO_METRIC) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(m);
+        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
+    }
     
 	@Test
-	public void test() throws InterruptedException {
+	public void test() throws InterruptedException, ApiSenderException {
         TimeUnit.SECONDS.sleep(3);
 
         final VmInstanceInventory vm = deployer.vms.get("TestVm");
@@ -149,55 +208,11 @@ public class TestMonitor {
         Assert.assertTrue(m.getTags().contains(String.format("nicUuid=%s", nic.getUuid())));
 
         HostInventory host = deployer.hosts.get("host1");
-        MonitorTO hto = null;
-        for (SetupTimeSeriesMonitorCmd cmd : mconfig.setupTimeSeriesMonitorCmdList) {
-            for (MonitorTO mto : cmd.monitors) {
-                if (mto.getResourceUuid().equals(host.getUuid())) {
-                    hto = mto;
-                    break;
-                }
-            }
-        }
+        checkHost(host, true);
 
-        Assert.assertNotNull(hto);
-        Assert.assertEquals(HostVO.class.getSimpleName(), hto.getResourceName());
-        Assert.assertEquals(MonitorGlobalConfig.HOST_MONITOR_INTERVAL.value(Long.class), Long.valueOf(hto.getInterval()));
-        Assert.assertEquals(MonitorGlobalProperty.DB_PUSH_URL, hto.getDbUrl());
-
-        m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
-            @Override
-            public Metric call(Metric arg) {
-                return arg.getName().equals(MonitorConstants.HOST_CPU_METRIC) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(m);
-        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
-
-        m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
-            @Override
-            public Metric call(Metric arg) {
-                return arg.getName().equals(MonitorConstants.HOST_DISK_IO_METRIC) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(m);
-        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
-
-        m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
-            @Override
-            public Metric call(Metric arg) {
-                return arg.getName().equals(MonitorConstants.HOST_MEMORY_METRIC) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(m);
-        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
-
-        m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
-            @Override
-            public Metric call(Metric arg) {
-                return arg.getName().equals(MonitorConstants.HOST_NETWORK_IO_METRIC) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(m);
-        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
+        mconfig.setupTimeSeriesMonitorCmdList.clear();
+        api.reconnectHost(host.getUuid());
+        TimeUnit.SECONDS.sleep(3);
+        checkHost(host, true);
     }
 }
