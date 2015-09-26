@@ -37,4 +37,11 @@
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkCreateExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="MevocoHostAllocatorFactory" class="org.zstack.mevoco.MevocoHostAllocatorFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.allocator.HostAllocatorStrategyFactory" />
+        </zstack:plugin>
+    </bean>
 </beans>

@@ -15,4 +15,11 @@
         <defaultValue>1.2</defaultValue>
         <type>java.lang.Float</type>
     </config>
+
+    <config>
+        <category>mevoco</category>
+        <name>hostAllocatorStrategy</name>
+        <description>global host allocator strategy</description>
+        <defaultValue>DefaultHostAllocatorStrategy</defaultValue>
+    </config>
 </globalConfig>
