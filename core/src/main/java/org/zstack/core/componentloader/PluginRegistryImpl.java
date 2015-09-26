@@ -58,7 +58,7 @@ public class PluginRegistryImpl implements PluginRegistryIN {
                     exts.add(ext);
                     extensionsByInterfaceName.put(ext.getReferenceInterface(), exts);
                 } catch (Exception e) {
-                    logger.warn(String.format("%s, mark extension referred to interface [%s] in bean[name=%s, class=%s] as invalid. Checking the bean XML file to fix it", e.getMessage(), ext.getReferenceInterface(), ext.getBeanName(), ext.getBeanClassName()), e);
+                    throw new CloudRuntimeException(String.format("%s, mark extension referred to interface [%s] in bean[name=%s, class=%s] as invalid. Checking the bean XML file to fix it", e.getMessage(), ext.getReferenceInterface(), ext.getBeanName(), ext.getBeanClassName()), e);
                 }
             }
         }

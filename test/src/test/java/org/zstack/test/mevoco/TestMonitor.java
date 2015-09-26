@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -29,12 +31,13 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * 1. create a vm with mevoco setting
  *
- * confirm the vm created successfully
- * confirm the flat dhcp works
- * confirm the over-provisioning works
+ * confirm vm monitors setup
+ * confirm host monitors setup
  */
 public class TestMonitor {
     CLogger logger = Utils.getLogger(TestMonitor.class);
@@ -84,19 +87,23 @@ public class TestMonitor {
     }
     
 	@Test
-	public void test() {
+	public void test() throws InterruptedException {
+        TimeUnit.SECONDS.sleep(3);
+
         final VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory nic = vm.getVmNics().get(0);
         VolumeInventory root = vm.getRootVolume();
 
         Assert.assertFalse(mconfig.setupTimeSeriesMonitorCmdList.isEmpty());
-        SetupTimeSeriesMonitorCmd cmd = mconfig.setupTimeSeriesMonitorCmdList.get(0);
-        MonitorTO vmto = CollectionUtils.find(cmd.monitors, new Function<MonitorTO, MonitorTO>() {
-            @Override
-            public MonitorTO call(MonitorTO arg) {
-                return arg.getResourceUuid().equals(vm.getUuid()) ? arg : null;
+        MonitorTO vmto = null;
+        for (SetupTimeSeriesMonitorCmd cmd : mconfig.setupTimeSeriesMonitorCmdList) {
+            for (MonitorTO to : cmd.monitors) {
+                if (to.getResourceUuid().equals(vm.getUuid())) {
+                    vmto = to;
+                    break;
+                }
             }
-        });
+        }
 
         Assert.assertNotNull(vmto);
         Assert.assertEquals(VmInstanceVO.class.getSimpleName(), vmto.getResourceName());
@@ -140,5 +147,57 @@ public class TestMonitor {
         Assert.assertNotNull(m);
         Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", vm.getUuid())));
         Assert.assertTrue(m.getTags().contains(String.format("nicUuid=%s", nic.getUuid())));
+
+        HostInventory host = deployer.hosts.get("host1");
+        MonitorTO hto = null;
+        for (SetupTimeSeriesMonitorCmd cmd : mconfig.setupTimeSeriesMonitorCmdList) {
+            for (MonitorTO mto : cmd.monitors) {
+                if (mto.getResourceUuid().equals(host.getUuid())) {
+                    hto = mto;
+                    break;
+                }
+            }
+        }
+
+        Assert.assertNotNull(hto);
+        Assert.assertEquals(HostVO.class.getSimpleName(), hto.getResourceName());
+        Assert.assertEquals(MonitorGlobalConfig.HOST_MONITOR_INTERVAL.value(Long.class), Long.valueOf(hto.getInterval()));
+        Assert.assertEquals(MonitorGlobalProperty.DB_PUSH_URL, hto.getDbUrl());
+
+        m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
+            @Override
+            public Metric call(Metric arg) {
+                return arg.getName().equals(MonitorConstants.HOST_CPU_METRIC) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(m);
+        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
+
+        m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
+            @Override
+            public Metric call(Metric arg) {
+                return arg.getName().equals(MonitorConstants.HOST_DISK_IO_METRIC) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(m);
+        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
+
+        m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
+            @Override
+            public Metric call(Metric arg) {
+                return arg.getName().equals(MonitorConstants.HOST_MEMORY_METRIC) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(m);
+        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
+
+        m = CollectionUtils.find(hto.getMetrics(), new Function<Metric, Metric>() {
+            @Override
+            public Metric call(Metric arg) {
+                return arg.getName().equals(MonitorConstants.HOST_NETWORK_IO_METRIC) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(m);
+        Assert.assertTrue(m.getTags().contains(String.format("uuid=%s", host.getUuid())));
     }
 }
