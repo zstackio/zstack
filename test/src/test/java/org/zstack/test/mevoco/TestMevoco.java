@@ -10,12 +10,14 @@ import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
+import org.zstack.kvm.KVMSystemTags;
 import org.zstack.mevoco.KVMAddOns.NicQos;
 import org.zstack.mevoco.KVMAddOns.VolumeQos;
 import org.zstack.mevoco.MevocoConstants;
@@ -92,6 +94,9 @@ public class TestMevoco {
     
 	@Test
 	public void test() {
+        L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
+        Assert.assertTrue(KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2.getUuid()));
+
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory nic = vm.getVmNics().get(0);
         VolumeInventory root = vm.getRootVolume();

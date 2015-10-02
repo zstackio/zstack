@@ -437,7 +437,10 @@ public class KVMSimulatorController {
     	StartVmResponse rsp = new StartVmResponse();
     	if (config.startVmSuccess) {
     		logger.debug(String.format("successfully start vm on kvm host, %s", entity.getBody()));
-    		config.vms.put(cmd.getVmInstanceUuid(), KvmVmState.Running);
+            synchronized (config) {
+                config.vms.put(cmd.getVmInstanceUuid(), KvmVmState.Running);
+                logger.debug(String.format("current running vm[%s]", config.vms.size()));
+            }
             config.startVmCmd = cmd;
     	} else {
     		String err = "fail start vm on purpose";
@@ -459,7 +462,9 @@ public class KVMSimulatorController {
         StopVmResponse rsp = new StopVmResponse();
         if (config.stopVmSuccess) {
     		logger.debug(String.format("successfully stop vm on kvm host, %s", entity.getBody()));
-    		config.vms.put(cmd.getUuid(), KvmVmState.Shutdown);
+            synchronized (config) {
+                config.vms.put(cmd.getUuid(), KvmVmState.Shutdown);
+            }
             config.stopVmCmds.add(cmd);
         } else {
     		String err = "fail stop vm on purpose";
@@ -481,7 +486,9 @@ public class KVMSimulatorController {
         RebootVmResponse rsp = new RebootVmResponse();
         if (config.rebootVmSuccess) {
     		logger.debug(String.format("successfully reboot vm on kvm host, %s", entity.getBody()));
-    		config.vms.put(cmd.getUuid(), KvmVmState.Running);
+            synchronized (config) {
+                config.vms.put(cmd.getUuid(), KvmVmState.Running);
+            }
         } else {
     		String err = "fail reboot vm on purpose";
     		rsp.setError(err);
@@ -503,7 +510,9 @@ public class KVMSimulatorController {
         if (config.destroyVmSuccess) {
             config.destroyedVmUuid = cmd.getUuid();
     		logger.debug(String.format("successfully destroy vm on kvm host, %s", entity.getBody()));
-    		config.vms.remove(cmd.getUuid());
+            synchronized (config) {
+                config.vms.remove(cmd.getUuid());
+            }
         } else {
     		String err = "fail destroy vm on purpose";
     		rsp.setError(err);
