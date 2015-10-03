@@ -290,6 +290,7 @@ public class Platform {
 
             locale = new Locale(CoreGlobalProperty.LOCALE);
         } catch (Exception e) {
+            logger.warn(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
