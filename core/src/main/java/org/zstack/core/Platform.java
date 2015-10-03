@@ -274,12 +274,12 @@ public class Platform {
     }
 
     static {
-        msId = getUuid();
-
-        // TODO: get code version from MANIFEST file
-        codeVersion = "0.1.0";
-
         try {
+            msId = getUuid();
+
+            // TODO: get code version from MANIFEST file
+            codeVersion = "0.1.0";
+
             File globalPropertiesFile = PathUtil.findFileOnClassPath("zstack.properties", true);
             FileInputStream in = new FileInputStream(globalPropertiesFile);
             System.getProperties().load(in);
@@ -289,8 +289,8 @@ public class Platform {
             writePidFile();
 
             locale = new Locale(CoreGlobalProperty.LOCALE);
-        } catch (Exception e) {
-            logger.warn(e.getMessage(), e);
+        } catch (Throwable e) {
+            logger.warn(String.format("unhandled exception when in Platform's static block, %s", e.getMessage()), e);
             throw new RuntimeException(e);
         }
     }
