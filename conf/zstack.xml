@@ -78,4 +78,5 @@
     <import resource="springConfigXml/localStorage.xml" />
     <import resource="springConfigXml/ceph.xml" />
     <import resource="springConfigXml/lb.xml" />
+    <import resource="springConfigXml/mevoco.xml" />
 </beans>
