@@ -16,7 +16,7 @@
     <bean id="MevocoManager" class="org.zstack.mevoco.MevocoManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
-	    <zstack:extension interface="org.zstack.header.image.AddImageExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.image.AddImageExtensionPoint" />
             <zstack:extension interface="org.zstack.header.allocator.ReportHostCapacityExtensionPoint" />
             <zstack:extension interface="org.zstack.header.allocator.HostAllocatorPreStartExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
@@ -28,6 +28,8 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDhcpBackend" />
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" order="-1"/>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Service" />
         </zstack:plugin>
     </bean>
 
