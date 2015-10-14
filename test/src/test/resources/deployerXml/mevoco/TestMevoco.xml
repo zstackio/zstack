@@ -56,6 +56,7 @@
                             <dns>1.1.1.1</dns>
                             <networkService provider="Flat">
                                 <serviceType>DHCP</serviceType>
+                                <serviceType>Userdata</serviceType>
                             </networkService>
                         </l3BasicNetwork>
                     </l3Networks>

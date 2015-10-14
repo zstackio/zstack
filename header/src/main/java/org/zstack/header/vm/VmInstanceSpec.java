@@ -144,6 +144,15 @@ public class VmInstanceSpec implements Serializable {
     private Map<String, JsonWrapper> extensionData = new HashMap<String, JsonWrapper>();
     private String dataIsoPath;
     private IsoSpec destIso;
+    private String userdata;
+
+    public String getUserdata() {
+        return userdata;
+    }
+
+    public void setUserdata(String userdata) {
+        this.userdata = userdata;
+    }
 
     public IsoSpec getDestIso() {
         return destIso;

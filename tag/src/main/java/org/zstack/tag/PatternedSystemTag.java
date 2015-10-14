@@ -35,6 +35,11 @@ public class PatternedSystemTag extends SystemTag {
         return TagUtils.isMatch(tagFormat, tag);
     }
 
+    @Override
+    public void delete(String resourceUuid) {
+        tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), false);
+    }
+
     public Map<String, String> getTokensByTag(String tag) {
         return TagUtils.parseIfMatch(tagFormat, tag);
     }

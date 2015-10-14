@@ -912,6 +912,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     // change state request from vm tracer.
                     // in this case, ignore change state request
                     logger.debug(String.format(String.format("vm[uuid:%s] has been deleted, ignore change vm state request from vm tracer", msg.getVmInstanceUuid())));
+                    chain.next();
                     return;
                 }
 
@@ -1002,6 +1003,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 spec.setHostAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
             }
             buildHostname(spec);
+
+            String userdata = VmSystemTags.USERDATA.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USERDATA_TOKEN);
+            spec.setUserdata(userdata);
 
             changeVmStateInDb(VmInstanceStateEvent.starting);
 
@@ -1876,6 +1880,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     protected VmInstanceSpec buildSpecFromInventory(VmInstanceInventory inv) {
         VmInstanceSpec spec = new VmInstanceSpec();
+
+        String userdata = VmSystemTags.USERDATA.getTokenByResourceUuid(inv.getUuid(), VmSystemTags.USERDATA_TOKEN);
+        spec.setUserdata(userdata);
 
         // for L3Network that has been deleted
         List<String> nicUuidToDel = CollectionUtils.transformToList(inv.getVmNics(), new Function<String, VmNicInventory>() {

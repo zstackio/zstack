@@ -27,6 +27,7 @@
     <bean id="FlatDhcpBackend" class="org.zstack.network.service.flat.FlatDhcpBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDhcpBackend" />
+            <zstack:extension interface="org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" order="-1"/>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
@@ -45,6 +46,19 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.allocator.HostAllocatorStrategyFactory" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="FlatUserdataBackend" class="org.zstack.network.service.flat.FlatUserdataBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.network.service.userdata.UserdataBackend" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="UserdataExtension" class="org.zstack.network.service.userdata.UserdataExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" />
         </zstack:plugin>
     </bean>
 </beans>

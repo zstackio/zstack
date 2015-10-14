@@ -486,6 +486,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                originStatus = getSelf().getStatus();
                 getSelf().setStatus(ApplianceVmStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);
                 trigger.next();
