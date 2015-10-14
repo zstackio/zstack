@@ -14,6 +14,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkDnsVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -22,6 +23,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.kvm.KVMSystemTags;
 import org.zstack.network.service.flat.FlatDhcpBackend.ApplyDhcpCmd;
 import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
@@ -126,6 +128,9 @@ public class TestMevoco4 {
         creator.addL3Network(l3.getUuid());
         VmInstanceInventory vm = creator.create();
 
+        L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
+        String bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByResourceUuid(l2.getUuid(), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+
         VmNicInventory nic = vm.getVmNics().get(0);
         Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByResourceUuid(l3.getUuid());
         String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
@@ -135,11 +140,12 @@ public class TestMevoco4 {
         Assert.assertEquals(dhcpServerIp, cmd.dhcpServerIp);
         Assert.assertEquals(nic.getIp(), cmd.vmIp);
         Assert.assertEquals(userdata, cmd.userdata);
+        Assert.assertEquals(bridgeName, cmd.bridgeName);
 
         vm = api.stopVmInstance(vm.getUuid());
         Assert.assertFalse(fconfig.releaseUserdataCmds.isEmpty());
         ReleaseUserdataCmd rcmd = fconfig.releaseUserdataCmds.get(0);
-        Assert.assertEquals(dhcpServerIp, rcmd.dhcpServerIp);
+        Assert.assertEquals(bridgeName, rcmd.bridgeName);
         Assert.assertEquals(nic.getIp(), rcmd.vmIp);
 
         fconfig.applyUserdataCmds.clear();
@@ -150,6 +156,7 @@ public class TestMevoco4 {
         Assert.assertEquals(dhcpServerIp, cmd.dhcpServerIp);
         Assert.assertEquals(nic.getIp(), cmd.vmIp);
         Assert.assertEquals(userdata, cmd.userdata);
+        Assert.assertEquals(bridgeName, cmd.bridgeName);
 
         vm = api.stopVmInstance(vm.getUuid());
 
@@ -164,7 +171,7 @@ public class TestMevoco4 {
         api.destroyVmInstance(vm.getUuid());
         Assert.assertFalse(fconfig.releaseUserdataCmds.isEmpty());
         rcmd = fconfig.releaseUserdataCmds.get(0);
-        Assert.assertEquals(dhcpServerIp, rcmd.dhcpServerIp);
+        Assert.assertEquals(bridgeName, rcmd.bridgeName);
         Assert.assertEquals(nic.getIp(), rcmd.vmIp);
     }
 }
