@@ -248,6 +248,34 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
     }
 
+    private String buildUserdata() {
+        String userdata = VmSystemTags.USERDATA.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USERDATA_TOKEN);
+        if (userdata != null) {
+            return userdata;
+        }
+
+        String sshKey = VmSystemTags.SSHKEY.getTokenByResourceUuid(self.getUuid(), VmSystemTags.SSHKEY_TOKEN);
+        String rootPassword = VmSystemTags.ROOT_PASSWORD.getTokenByResourceUuid(self.getUuid(), VmSystemTags.ROOT_PASSWORD_TOKEN);
+        if (sshKey == null && rootPassword == null) {
+            return null;
+        }
+
+        StringBuilder sb = new StringBuilder("#cloud-config");
+        if (sshKey != null) {
+            sb.append("\nssh_authorized_keys:");
+            sb.append(String.format("\n  - %s", sshKey));
+            sb.append("\ndisable_root: false");
+        }
+        if (rootPassword != null) {
+            sb.append("\nchpasswd:");
+            sb.append("\n  list: |");
+            sb.append(String.format("\n    root:%s", rootPassword));
+            sb.append("\n  expire: False");
+        }
+
+        return sb.toString();
+    }
+
     private void handle(final DetachNicFromVmMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -1004,8 +1032,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
             buildHostname(spec);
 
-            String userdata = VmSystemTags.USERDATA.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USERDATA_TOKEN);
-            spec.setUserdata(userdata);
+            spec.setUserdata(buildUserdata());
 
             changeVmStateInDb(VmInstanceStateEvent.starting);
 
@@ -1881,8 +1908,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected VmInstanceSpec buildSpecFromInventory(VmInstanceInventory inv) {
         VmInstanceSpec spec = new VmInstanceSpec();
 
-        String userdata = VmSystemTags.USERDATA.getTokenByResourceUuid(inv.getUuid(), VmSystemTags.USERDATA_TOKEN);
-        spec.setUserdata(userdata);
+        spec.setUserdata(buildUserdata());
 
         // for L3Network that has been deleted
         List<String> nicUuidToDel = CollectionUtils.transformToList(inv.getVmNics(), new Function<String, VmNicInventory>() {

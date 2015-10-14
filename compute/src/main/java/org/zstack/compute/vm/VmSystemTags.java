@@ -19,4 +19,10 @@ public class VmSystemTags {
 
     public static String USERDATA_TOKEN = "userdata";
     public static PatternedSystemTag USERDATA = new PatternedSystemTag(String.format("userdata::{%s}", USERDATA_TOKEN), VmInstanceVO.class);
+
+    public static String SSHKEY_TOKEN = "sshkey";
+    public static PatternedSystemTag SSHKEY = new PatternedSystemTag(String.format("sshkey::{%s}", SSHKEY_TOKEN), VmInstanceVO.class);
+
+    public static String ROOT_PASSWORD_TOKEN = "rootPassword";
+    public static PatternedSystemTag ROOT_PASSWORD = new PatternedSystemTag(String.format("rootPassword::{%s}", ROOT_PASSWORD_TOKEN), VmInstanceVO.class);
 }

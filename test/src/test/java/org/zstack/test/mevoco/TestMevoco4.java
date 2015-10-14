@@ -45,6 +45,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionDSL.map;
 
 /**
@@ -173,5 +174,28 @@ public class TestMevoco4 {
         rcmd = fconfig.releaseUserdataCmds.get(0);
         Assert.assertEquals(bridgeName, rcmd.bridgeName);
         Assert.assertEquals(nic.getIp(), rcmd.vmIp);
+
+        String sshkey = "ssh-rsa xxx";
+        String rootPassword = "rootPassword";
+        creator.systemTags = list(
+                VmSystemTags.SSHKEY.instantiateTag(map(e(VmSystemTags.SSHKEY_TOKEN, sshkey))),
+                VmSystemTags.ROOT_PASSWORD.instantiateTag(map(e(VmSystemTags.ROOT_PASSWORD_TOKEN, rootPassword)))
+        );
+        fconfig.applyUserdataCmds.clear();
+        vm = creator.create();
+        cmd = fconfig.applyUserdataCmds.get(0);
+        Assert.assertTrue(cmd.userdata.contains(sshkey));
+        Assert.assertTrue(cmd.userdata.contains(rootPassword));
+
+        creator.systemTags = list(
+                VmSystemTags.USERDATA.instantiateTag(map(e(VmSystemTags.USERDATA_TOKEN, "xxx"))),
+                VmSystemTags.SSHKEY.instantiateTag(map(e(VmSystemTags.SSHKEY_TOKEN, sshkey))),
+                VmSystemTags.ROOT_PASSWORD.instantiateTag(map(e(VmSystemTags.ROOT_PASSWORD_TOKEN, rootPassword)))
+        );
+        fconfig.applyUserdataCmds.clear();
+        vm = creator.create();
+        cmd = fconfig.applyUserdataCmds.get(0);
+        Assert.assertFalse(cmd.userdata.contains(sshkey));
+        Assert.assertFalse(cmd.userdata.contains(rootPassword));
     }
 }
