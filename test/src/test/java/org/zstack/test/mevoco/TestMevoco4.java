@@ -118,7 +118,6 @@ public class TestMevoco4 {
 	public void test() throws ApiSenderException, InterruptedException {
         ImageInventory img = deployer.images.get("TestImage");
 
-        fconfig.applyUserdataCmds.clear();
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("small");
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         VmCreator creator = new VmCreator(api);
@@ -165,7 +164,7 @@ public class TestMevoco4 {
         fconfig.applyUserdataCmds.clear();
         VmSystemTags.USERDATA.delete(vm.getUuid());
         api.startVmInstance(vm.getUuid());
-        Assert.assertFalse(fconfig.applyUserdataCmds.isEmpty());
+        Assert.assertTrue(fconfig.applyUserdataCmds.isEmpty());
 
         vm = creator.create();
         nic = vm.getVmNics().get(0);
@@ -198,12 +197,5 @@ public class TestMevoco4 {
         cmd = fconfig.applyUserdataCmds.get(0);
         Assert.assertFalse(cmd.userdata.contains(sshkey));
         Assert.assertFalse(cmd.userdata.contains(rootPassword));
-
-        creator.systemTags = new ArrayList<String>();
-        fconfig.applyUserdataCmds.clear();
-        vm = creator.create();
-        cmd = fconfig.applyUserdataCmds.get(0);
-        Assert.assertNull(cmd.userdata);
-        Assert.assertNotNull(cmd.metadata);
     }
 }
