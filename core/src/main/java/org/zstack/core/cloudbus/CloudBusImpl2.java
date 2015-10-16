@@ -78,6 +78,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private Map<Class, Map<String, Serializable>> mvelExpressions = Collections.synchronizedMap(new HashMap<Class, Map<String,Serializable>>());
     private Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
     private Map<Class, Long> messageTimeout = new ConcurrentHashMap<Class, Long>();
+    private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
 
     private final String NO_NEED_REPLY_MSG = "noReply";
     private final String CORRELATION_ID = "correlationId";
@@ -1815,6 +1816,22 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
                                 @Override
                                 public Void call() throws Exception {
+                                    try {
+                                        List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(msg.getClass());
+                                        if (is != null) {
+                                            for (BeforeDeliveryMessageInterceptor i : is) {
+                                                i.intercept(msg);
+
+                                                if (logger.isTraceEnabled()) {
+                                                    logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
+                                                }
+                                            }
+                                        }
+                                    } catch (Throwable t) {
+                                        logExceptionWithMessageDump(msg, t);
+                                        replyErrorByMessageType(msg, errf.stringToInternalError(t.getMessage()));
+                                    }
+
                                     serv.handleMessage(msg);
                                     return null;
                                 }
@@ -2060,6 +2077,32 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     public void makeTargetServiceIdByResourceUuid(Message msg, String serviceId, String resourceUuid) {
         String targetService = makeTargetServiceIdByResourceUuid(serviceId, resourceUuid);
         msg.setServiceId(targetService);
+    }
+
+    @Override
+    public void installBeforeDeliveryMessageInterceptor(BeforeDeliveryMessageInterceptor interceptor, Class<? extends Message>... classes) {
+        for (Class clz : classes) {
+            while (clz != Object.class) {
+                List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(clz);
+                if (is == null) {
+                    is = new ArrayList<BeforeDeliveryMessageInterceptor>();
+                    beforeDeliveryMessageInterceptors.put(clz, is);
+                }
+
+                synchronized (is) {
+                    int order = 0;
+                    for (BeforeDeliveryMessageInterceptor i : is) {
+                        if (i.order() <= interceptor.order()) {
+                            order = is.indexOf(i);
+                            break;
+                        }
+                    }
+                    is.add(order, interceptor);
+                }
+
+                clz = clz.getSuperclass();
+            }
+        }
     }
 
     private void populateExtension() {

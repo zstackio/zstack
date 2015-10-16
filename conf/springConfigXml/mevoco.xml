@@ -21,6 +21,7 @@
             <zstack:extension interface="org.zstack.header.allocator.HostAllocatorPreStartExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.Service" />
         </zstack:plugin>
     </bean>
 

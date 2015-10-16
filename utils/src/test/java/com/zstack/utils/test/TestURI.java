@@ -4,6 +4,9 @@ import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.*;
+import java.util.List;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 public class TestURI {
 
@@ -17,6 +20,10 @@ public class TestURI {
         String rest = url.substring(at+1, url.length());
         System.out.println(rest);
         System.out.println(userinfo.split(":")[0]);
+
+        List<Integer> nums  = list(1, 2, 3);
+        nums.add(1, 5);
+        System.out.println(nums);
     }
 
 }
