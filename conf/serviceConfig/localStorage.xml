@@ -6,4 +6,8 @@
         <name>org.zstack.storage.primary.local.APIAddLocalPrimaryStorageMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityMsg</name>
+    </message>
+
 </service>

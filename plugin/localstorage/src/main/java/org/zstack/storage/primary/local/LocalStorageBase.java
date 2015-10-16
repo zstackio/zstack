@@ -16,11 +16,13 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
@@ -68,6 +70,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handleApiMessage(APIMessage msg) {
+        if (msg instanceof APIGetLocalStorageHostDiskCapacityMsg) {
+            handle((APIGetLocalStorageHostDiskCapacityMsg) msg);
+        } else {
+            super.handleApiMessage(msg);
+        }
+    }
+
+    @Override
     protected void handleLocalMessage(Message msg) {
         if (msg instanceof InitPrimaryStorageOnHostConnectedMsg) {
             handle((InitPrimaryStorageOnHostConnectedMsg) msg);
@@ -92,6 +103,26 @@ public class LocalStorageBase extends PrimaryStorageBase {
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(APIGetLocalStorageHostDiskCapacityMsg msg) {
+        APIGetLocalStorageHostDiskCapacityReply reply = new APIGetLocalStorageHostDiskCapacityReply();
+
+        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+        q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
+        q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getHostUuid());
+        LocalStorageHostRefVO ref = q.find();
+        if (ref == null) {
+            reply.setError(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND, String.format("local primary storage[uuid:%s] doesn't have the host[uuid:%s]", self.getUuid(), msg.getHostUuid())));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        reply.setTotalCapacity(ref.getTotalCapacity());
+        reply.setAvailableCapacity(ref.getAvailableCapacity());
+        reply.setAvailablePhysicalCapacity(ref.getAvailablePhysicalCapacity());
+        reply.setTotalPhysicalCapacity(ref.getTotalPhysicalCapacity());
+        bus.reply(msg, reply);
     }
 
     private void handle(final DownloadImageToPrimaryStorageCacheMsg msg) {
@@ -516,7 +547,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
 
         LocalStorageHostRefVO ref = refs.get(0);
-        long avail = ref.getAvailableCapacity() - size;
+
+        LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
+        s.setLocalStorage(getSelfInventory());
+        s.setHostUuid(ref.getHostUuid());
+        s.setSize(size);
+
+        for (LocalStorageReserveHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReserveHostCapacityExtensionPoint.class)) {
+            ext.beforeReserveLocalStorageCapacityOnHost(s);
+        }
+
+        long avail = ref.getAvailableCapacity() - s.getSize();
         if (avail < 0) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity[current: %s bytes, needed: %s]",
@@ -541,7 +582,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
 
         LocalStorageHostRefVO ref = refs.get(0);
-        ref.setAvailableCapacity(ref.getAvailableCapacity() + size);
+
+        LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
+        s.setSize(size);
+        s.setHostUuid(hostUuid);
+        s.setLocalStorage(getSelfInventory());
+        for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReturnHostCapacityExtensionPoint.class)) {
+            ext.beforeReturnLocalStorageCapacityOnHost(s);
+        }
+
+        ref.setAvailableCapacity(ref.getAvailableCapacity() + s.getSize());
         dbf.getEntityManager().merge(ref);
     }
 
@@ -557,7 +607,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
         LocalStorageHostRefVO href = ref.get(0, LocalStorageHostRefVO.class);
         LocalStorageResourceRefVO rref = ref.get(1, LocalStorageResourceRefVO.class);
 
-        href.setAvailableCapacity(href.getAvailableCapacity() + rref.getSize());
+        LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
+        s.setSize(rref.getSize());
+        s.setHostUuid(href.getHostUuid());
+        s.setLocalStorage(getSelfInventory());
+        for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReturnHostCapacityExtensionPoint.class)) {
+            ext.beforeReturnLocalStorageCapacityOnHost(s);
+        }
+
+        href.setAvailableCapacity(href.getAvailableCapacity() + s.getSize());
         dbf.getEntityManager().merge(href);
     }
 

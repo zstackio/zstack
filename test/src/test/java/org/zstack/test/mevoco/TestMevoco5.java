@@ -33,6 +33,8 @@ import org.zstack.network.service.flat.FlatDhcpBackend.PrepareDhcpCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.network.service.flat.FlatNetworkSystemTags;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
+import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply;
+import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -116,7 +118,6 @@ public class TestMevoco5 {
 
         api.destroyVmInstance(vm.getUuid());
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-
         long availSize = totalSize - (long)(vm1.getRootVolume().getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Float.class));
         Assert.assertEquals(availSize, pscap.getAvailableCapacity());
 
@@ -132,10 +133,30 @@ public class TestMevoco5 {
         availSize = totalSize - (long)(vm1.getRootVolume().getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Float.class));
         Assert.assertEquals(availSize, pscap.getAvailableCapacity());
 
+        LocalStorageHostRefVO lref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        availSize = totalSize - (long)(vm1.getRootVolume().getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Float.class));
+        Assert.assertEquals(availSize, lref.getAvailableCapacity());
+
         MevocoGlobalConfig.MEMORY_OVER_PROVISIONING_RATIO.updateValue(2);
         TimeUnit.SECONDS.sleep(2);
         hcap = dbf.findByUuid(host.getUuid(), HostCapacityVO.class);
         availMem = totalMemorySize - (long)(vm1.getMemorySize() / MevocoGlobalConfig.MEMORY_OVER_PROVISIONING_RATIO.value(Float.class));
         Assert.assertEquals(availMem, hcap.getAvailableMemory());
+
+        api.destroyVmInstance(vm1.getUuid());
+        pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        Assert.assertEquals(pscap.getTotalCapacity(), pscap.getAvailableCapacity());
+
+        lref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        Assert.assertEquals(lref.getTotalCapacity(), lref.getAvailableCapacity());
+
+        hcap = dbf.findByUuid(host.getUuid(), HostCapacityVO.class);
+        Assert.assertEquals(hcap.getTotalMemory(), hcap.getAvailableMemory());
+
+        APIGetLocalStorageHostDiskCapacityReply reply = api.getLocalStorageHostCapacity(ps.getUuid(), host.getUuid());
+        Assert.assertEquals(lref.getTotalCapacity(), reply.getTotalCapacity());
+        Assert.assertEquals(lref.getAvailableCapacity(), reply.getAvailableCapacity());
+        Assert.assertEquals(lref.getTotalPhysicalCapacity(), reply.getTotalPhysicalCapacity());
+        Assert.assertEquals(lref.getAvailablePhysicalCapacity(), reply.getAvailablePhysicalCapacity());
     }
 }
