@@ -34,6 +34,7 @@ import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.network.service.flat.FlatNetworkSystemTags;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply;
+import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -154,9 +155,19 @@ public class TestMevoco5 {
         Assert.assertEquals(hcap.getTotalMemory(), hcap.getAvailableMemory());
 
         APIGetLocalStorageHostDiskCapacityReply reply = api.getLocalStorageHostCapacity(ps.getUuid(), host.getUuid());
-        Assert.assertEquals(lref.getTotalCapacity(), reply.getTotalCapacity());
-        Assert.assertEquals(lref.getAvailableCapacity(), reply.getAvailableCapacity());
-        Assert.assertEquals(lref.getTotalPhysicalCapacity(), reply.getTotalPhysicalCapacity());
-        Assert.assertEquals(lref.getAvailablePhysicalCapacity(), reply.getAvailablePhysicalCapacity());
+        HostDiskCapacity c = reply.getInventories().get(0);
+
+        Assert.assertEquals(lref.getTotalCapacity(), c.getTotalCapacity());
+        Assert.assertEquals(lref.getAvailableCapacity(), c.getAvailableCapacity());
+        Assert.assertEquals(lref.getTotalPhysicalCapacity(), c.getTotalPhysicalCapacity());
+        Assert.assertEquals(lref.getAvailablePhysicalCapacity(), c.getAvailablePhysicalCapacity());
+
+        reply = api.getLocalStorageHostCapacity(ps.getUuid(), null);
+        c = reply.getInventories().get(0);
+
+        Assert.assertEquals(lref.getTotalCapacity(), c.getTotalCapacity());
+        Assert.assertEquals(lref.getAvailableCapacity(), c.getAvailableCapacity());
+        Assert.assertEquals(lref.getTotalPhysicalCapacity(), c.getTotalPhysicalCapacity());
+        Assert.assertEquals(lref.getAvailablePhysicalCapacity(), c.getAvailablePhysicalCapacity());
     }
 }

@@ -36,8 +36,11 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -107,21 +110,45 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     private void handle(APIGetLocalStorageHostDiskCapacityMsg msg) {
         APIGetLocalStorageHostDiskCapacityReply reply = new APIGetLocalStorageHostDiskCapacityReply();
+        if (msg.getHostUuid() != null) {
+            SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+            q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
+            q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getHostUuid());
+            LocalStorageHostRefVO ref = q.find();
+            if (ref == null) {
+                reply.setError(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND, String.format("local primary storage[uuid:%s] doesn't have the host[uuid:%s]", self.getUuid(), msg.getHostUuid())));
+                bus.reply(msg, reply);
+                return;
+            }
 
-        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
-        q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
-        q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getHostUuid());
-        LocalStorageHostRefVO ref = q.find();
-        if (ref == null) {
-            reply.setError(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND, String.format("local primary storage[uuid:%s] doesn't have the host[uuid:%s]", self.getUuid(), msg.getHostUuid())));
-            bus.reply(msg, reply);
-            return;
+            HostDiskCapacity c = new HostDiskCapacity();
+            c.setHostUuid(msg.getHostUuid());
+            c.setTotalCapacity(ref.getTotalCapacity());
+            c.setAvailableCapacity(ref.getAvailableCapacity());
+            c.setAvailablePhysicalCapacity(ref.getAvailablePhysicalCapacity());
+            c.setTotalPhysicalCapacity(ref.getTotalPhysicalCapacity());
+            reply.setInventories(list(c));
+        } else {
+            SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+            q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
+            List<LocalStorageHostRefVO> refs = q.list();
+
+            List<HostDiskCapacity> cs = CollectionUtils.transformToList(refs, new Function<HostDiskCapacity, LocalStorageHostRefVO>() {
+                @Override
+                public HostDiskCapacity call(LocalStorageHostRefVO ref) {
+                    HostDiskCapacity c = new HostDiskCapacity();
+                    c.setHostUuid(ref.getHostUuid());
+                    c.setTotalCapacity(ref.getTotalCapacity());
+                    c.setAvailableCapacity(ref.getAvailableCapacity());
+                    c.setAvailablePhysicalCapacity(ref.getAvailablePhysicalCapacity());
+                    c.setTotalPhysicalCapacity(ref.getTotalPhysicalCapacity());
+                    return c;
+                }
+            });
+
+            reply.setInventories(cs);
         }
 
-        reply.setTotalCapacity(ref.getTotalCapacity());
-        reply.setAvailableCapacity(ref.getAvailableCapacity());
-        reply.setAvailablePhysicalCapacity(ref.getAvailablePhysicalCapacity());
-        reply.setTotalPhysicalCapacity(ref.getTotalPhysicalCapacity());
         bus.reply(msg, reply);
     }
 
