@@ -312,9 +312,14 @@ public class KVMHost extends HostBase implements Host {
 
     private void attachIso(final AttachIsoOnHypervisorMsg msg, final NoErrorCompletion completion) {
         final AttachIsoOnHypervisorReply reply = new AttachIsoOnHypervisorReply();
+
+        IsoTO iso = new IsoTO();
+        iso.setImageUuid(msg.getIsoSpec().getImageUuid());
+        iso.setPath(msg.getIsoSpec().getInstallPath());
+
         AttachIsoCmd cmd = new AttachIsoCmd();
         cmd.vmUuid = msg.getVmInstanceUuid();
-        cmd.isoInstallPath = msg.getIsoSpec().getInstallPath();
+        cmd.iso = iso;
         restf.asyncJsonPost(attachIsoPath, cmd, new JsonAsyncRESTCallback<AttachIsoRsp>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {

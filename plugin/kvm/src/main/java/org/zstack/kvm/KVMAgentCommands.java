@@ -985,8 +985,8 @@ public class KVMAgentCommands {
     }
 
     public static class AttachIsoCmd extends AgentCommand {
+        public IsoTO iso;
         public String vmUuid;
-        public String isoInstallPath;
     }
 
     public static class AttachIsoRsp extends AgentResponse {

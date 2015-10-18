@@ -100,7 +100,7 @@ public class TestAttachIsoOnKvm {
         SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
         q.add(ImageCacheVO_.imageUuid, Op.EQ, iso.getUuid());
         ImageCacheVO cvo = q.find();
-        Assert.assertEquals(cvo.getInstallUrl(), cmd.isoInstallPath);
+        Assert.assertEquals(cvo.getInstallUrl(), cmd.iso.getPath());
         Assert.assertEquals(vm.getUuid(), cmd.vmUuid);
         String isoUuid = VmSystemTags.ISO.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.ISO_TOKEN);
         Assert.assertEquals(iso.getUuid(), isoUuid);
