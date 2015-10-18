@@ -1342,9 +1342,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void attachIso(final String isoUuid, final Completion completion) {
-        VmSystemTags.ISO.createInherentTag(self.getUuid(), map(e(VmSystemTags.ISO_TOKEN, isoUuid)));
-
         if (self.getState() == VmInstanceState.Stopped) {
+            VmSystemTags.ISO.createInherentTag(self.getUuid(), map(e(VmSystemTags.ISO_TOKEN, isoUuid)));
             completion.success();
             return;
         }
