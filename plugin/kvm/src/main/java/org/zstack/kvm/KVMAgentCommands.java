@@ -983,4 +983,21 @@ public class KVMAgentCommands {
 
     public static class LoginIscsiTargetRsp extends AgentResponse {
     }
+
+    public static class AttachIsoCmd extends AgentCommand {
+        public String vmUuid;
+        public String isoInstallPath;
+    }
+
+    public static class AttachIsoRsp extends AgentResponse {
+    }
+
+    public static class DetachIsoCmd extends AgentCommand {
+        public String vmUuid;
+        public String isoUuid;
+    }
+
+    public static class DetachIsoRsp extends AgentResponse {
+
+    }
 }

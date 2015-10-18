@@ -207,6 +207,7 @@ public class NfsPrimaryStorageSimulator {
         } else {
             logger.debug(entity.getBody());
             config.downloadFromSftpCmds.add(cmd);
+            config.imageCache.add(cmd.getPrimaryStorageInstallPath());
         }
 
         reply(entity, rsp);

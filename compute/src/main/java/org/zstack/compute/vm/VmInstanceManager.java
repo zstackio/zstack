@@ -20,5 +20,9 @@ public interface VmInstanceManager {
     
     FlowChain getAttachUninstantiatedVolumeWorkFlowChain(VmInstanceInventory inv);
 
+    FlowChain getAttachIsoWorkFlowChain(VmInstanceInventory inv);
+
+    FlowChain getDetachIsoWorkFlowChain(VmInstanceInventory inv);
+
     VmInstanceFactory getVmInstanceFactory(VmInstanceType vmType);
 }

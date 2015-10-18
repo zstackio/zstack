@@ -66,6 +66,24 @@ public class KVMSimulatorController {
         replyer.reply(entity, rsp);
     }
 
+    @RequestMapping(value=KVMConstant.KVM_ATTACH_ISO_PATH, method=RequestMethod.POST)
+    public @ResponseBody String attachIso(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        AttachIsoCmd cmd = JSONObjectUtil.toObject(entity.getBody(), AttachIsoCmd.class);
+        config.attachIsoCmds.add(cmd);
+        reply(entity, new AttachIsoRsp());
+        return null;
+    }
+
+    @RequestMapping(value=KVMConstant.KVM_DETACH_ISO_PATH, method=RequestMethod.POST)
+    public @ResponseBody String detachIso(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        DetachIsoCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DetachIsoCmd.class);
+        config.detachIsoCmds.add(cmd);
+        reply(entity, new DetachIsoRsp());
+        return null;
+    }
+
     @RequestMapping(value=KVMConstant.KVM_DETACH_NIC_PATH, method=RequestMethod.POST)
     public @ResponseBody String detachNic(HttpServletRequest req) {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
@@ -489,6 +507,7 @@ public class KVMSimulatorController {
             synchronized (config) {
                 config.vms.put(cmd.getUuid(), KvmVmState.Running);
             }
+            config.rebootVmCmds.add(cmd);
         } else {
     		String err = "fail reboot vm on purpose";
     		rsp.setError(err);

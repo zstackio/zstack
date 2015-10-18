@@ -5,7 +5,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostBase;
-import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
@@ -21,6 +20,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -92,6 +92,8 @@ public class KVMHost extends HostBase implements Host {
     private String snapshotPath;
     private String mergeSnapshotPath;
     private String hostFactPath;
+    private String attachIsoPath;
+    private String detachIsoPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -164,6 +166,14 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_FACT_PATH);
         hostFactPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_ATTACH_ISO_PATH);
+        attachIsoPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_DETACH_ISO_PATH);
+        detachIsoPath = ub.build().toString();
     }
 
     @Override
@@ -203,9 +213,131 @@ public class KVMHost extends HostBase implements Host {
             handle((KVMHostSyncHttpCallMsg) msg);
         } else if (msg instanceof DetachNicFromVmOnHypervisorMsg) {
             handle((DetachNicFromVmOnHypervisorMsg) msg);
+        } else if (msg instanceof AttachIsoOnHypervisorMsg) {
+            handle((AttachIsoOnHypervisorMsg) msg);
+        } else if (msg instanceof DetachIsoOnHypervisorMsg) {
+            handle((DetachIsoOnHypervisorMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final DetachIsoOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return id;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                detachIso(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("detach-iso-%s-on-host-%s", msg.getIsoUuid(), self.getUuid());
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return getHostSyncLevel();
+            }
+        });
+    }
+
+    private void detachIso(final DetachIsoOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        final DetachIsoOnHypervisorReply reply = new DetachIsoOnHypervisorReply();
+        DetachIsoCmd cmd = new DetachIsoCmd();
+        cmd.isoUuid = msg.getIsoUuid();
+        cmd.vmUuid = msg.getVmInstanceUuid();
+        restf.asyncJsonPost(detachIsoPath, cmd, new JsonAsyncRESTCallback<DetachIsoRsp>(msg, completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void success(DetachIsoRsp ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public Class<DetachIsoRsp> getReturnClass() {
+                return DetachIsoRsp.class;
+            }
+        });
+    }
+
+    private void handle(final AttachIsoOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return id;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                attachIso(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("attach-iso-%s-on-host-%s", msg.getIsoSpec().getImageUuid(), self.getUuid());
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return getHostSyncLevel();
+            }
+        });
+    }
+
+    private void attachIso(final AttachIsoOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        final AttachIsoOnHypervisorReply reply = new AttachIsoOnHypervisorReply();
+        AttachIsoCmd cmd = new AttachIsoCmd();
+        cmd.vmUuid = msg.getVmInstanceUuid();
+        cmd.isoInstallPath = msg.getIsoSpec().getInstallPath();
+        restf.asyncJsonPost(attachIsoPath, cmd, new JsonAsyncRESTCallback<AttachIsoRsp>(msg, completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void success(AttachIsoRsp ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public Class<AttachIsoRsp> getReturnClass() {
+                return AttachIsoRsp.class;
+            }
+        });
     }
 
     private void handle(final DetachNicFromVmOnHypervisorMsg msg) {
@@ -1230,27 +1362,16 @@ public class KVMHost extends HostBase implements Host {
         }
         cmd.setNics(nics);
 
-        ImageInventory image = spec.getImageSpec().getInventory();
-        if (spec.getCurrentVmOperation() == VmOperation.NewCreate && ImageMediaType.ISO.toString().equals(image.getMediaType())) {
-            IsoSpec iso = spec.getDestIso();
-
-            if (iso.getInstallPath().startsWith("http")) {
-                String libvirtVersion = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN);
-                if ("1.2.1".compareTo(libvirtVersion) > 0) {
-                    throw new OperationFailureException(errf.stringToOperationError(String.format("the ISO[%s] is exposed by HTTP protocol that needs minimal libvirt version 1.2.1, but current libvirt version is %s",
-                            iso.getInstallPath(), libvirtVersion)));
-                }
-            }
-
+        if (spec.getDestIso() != null) {
             IsoTO bootIso = new IsoTO();
-            bootIso.setPath(iso.getInstallPath());
-            bootIso.setImageUuid(iso.getImageUuid());
+            bootIso.setPath(spec.getDestIso().getInstallPath());
+            bootIso.setImageUuid(spec.getDestIso().getImageUuid());
             cmd.setBootIso(bootIso);
             cmd.setBootDev(BootDev.cdrom.toString());
         } else {
             cmd.setBootDev(BootDev.hd.toString());
         }
-        
+
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
         try {
             extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);

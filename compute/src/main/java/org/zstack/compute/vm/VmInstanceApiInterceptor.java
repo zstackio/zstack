@@ -36,6 +36,9 @@ import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -69,10 +72,21 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIDetachL3NetworkFromVmMsg) msg);
         } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
             validate((APIAttachL3NetworkToVmMsg) msg);
+        } else if (msg instanceof APIAttachIsoToVmInstanceMsg) {
+            validate((APIAttachIsoToVmInstanceMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIAttachIsoToVmInstanceMsg msg) {
+        String isoUuid = VmSystemTags.ISO.getTokenByResourceUuid(msg.getVmInstanceUuid(), VmSystemTags.ISO_TOKEN);
+        if (isoUuid != null) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), isoUuid)
+            ));
+        }
     }
 
     private void validate(APIAttachL3NetworkToVmMsg msg) {

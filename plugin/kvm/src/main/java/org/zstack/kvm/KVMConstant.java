@@ -16,6 +16,8 @@ public interface KVMConstant {
     public static final String KVM_CHECK_PHYSICAL_NETWORK_INTERFACE_PATH = "/network/checkphysicalnetworkinterface";
     public static final String KVM_HOST_CAPACITY_PATH = "/host/capacity";
     public static final String KVM_HOST_FACT_PATH = "/host/fact";
+    public static final String KVM_ATTACH_ISO_PATH = "/iso/attach";
+    public static final String KVM_DETACH_ISO_PATH = "/iso/detach";
     public static final String KVM_REALIZE_L2NOVLAN_NETWORK_PATH = "/network/l2novlan/createbridge";
     public static final String KVM_CHECK_L2NOVLAN_NETWORK_PATH = "/network/l2novlan/checkbridge";
     public static final String KVM_REALIZE_L2VLAN_NETWORK_PATH = "/network/l2vlan/createbridge";

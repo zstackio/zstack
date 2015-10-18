@@ -3547,4 +3547,23 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         return sender.call(msg, APIGetLocalStorageHostDiskCapacityReply.class);
     }
+
+    public void attachIso(String vmUuid, String isoUuid, SessionInventory session) throws ApiSenderException {
+        APIAttachIsoToVmInstanceMsg msg = new APIAttachIsoToVmInstanceMsg();
+        msg.setVmInstanceUuid(vmUuid);
+        msg.setIsoUuid(isoUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIAttachIsoToVmInstanceEvent.class);
+    }
+
+    public void detachIso(String vmUuid, SessionInventory session) throws ApiSenderException {
+        APIDetachIsoFromVmInstanceMsg msg = new APIDetachIsoFromVmInstanceMsg();
+        msg.setVmInstanceUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDetachIsoFromVmInstanceEvent.class);
+    }
 }

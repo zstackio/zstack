@@ -71,6 +71,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private List<String> startVmWorkFlowElements;
     private List<String> destroyVmWorkFlowElements;
     private List<String> migrateVmWorkFlowElements;
+    private List<String> attachIsoWorkFlowElements;
+    private List<String> detachIsoWorkFlowElements;
     private List<String> attachVolumeWorkFlowElements;
     private FlowChainBuilder createVmFlowBuilder;
     private FlowChainBuilder stopVmFlowBuilder;
@@ -79,6 +81,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private FlowChainBuilder destroyVmFlowBuilder;
     private FlowChainBuilder migrateVmFlowBuilder;
     private FlowChainBuilder attachVolumeFlowBuilder;
+    private FlowChainBuilder attachIsoFlowBuilder;
+    private FlowChainBuilder detachIsoFlowBuilder;
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
 
     static {
@@ -272,6 +276,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         destroyVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(destroyVmWorkFlowElements).construct();
         migrateVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(migrateVmWorkFlowElements).construct();
         attachVolumeFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(attachVolumeWorkFlowElements).construct();
+        attachIsoFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(attachIsoWorkFlowElements).construct();
+        detachIsoFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(detachIsoWorkFlowElements).construct();
     }
 
     private void populateExtensions() {
@@ -434,8 +440,6 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         return factory;
     }
 
-
-
     @Transactional
     protected void putVmToUnknownState(String hostUuid) {
         SimpleQuery<VmInstanceVO> query = dbf.createQuery(VmInstanceVO.class);
@@ -496,6 +500,16 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         return attachVolumeFlowBuilder.build();
     }
 
+    @Override
+    public FlowChain getAttachIsoWorkFlowChain(VmInstanceInventory inv) {
+        return attachIsoFlowBuilder.build();
+    }
+
+    @Override
+    public FlowChain getDetachIsoWorkFlowChain(VmInstanceInventory inv) {
+        return detachIsoFlowBuilder.build();
+    }
+
     public void setCreateVmWorkFlowElements(List<String> createVmWorkFlowElements) {
         this.createVmWorkFlowElements = createVmWorkFlowElements;
     }
@@ -524,6 +538,13 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         this.attachVolumeWorkFlowElements = attachVolumeWorkFlowElements;
     }
 
+    public void setAttachIsoWorkFlowElements(List<String> attachIsoWorkFlowElements) {
+        this.attachIsoWorkFlowElements = attachIsoWorkFlowElements;
+    }
+
+    public void setDetachIsoWorkFlowElements(List<String> detachIsoWorkFlowElements) {
+        this.detachIsoWorkFlowElements = detachIsoWorkFlowElements;
+    }
 
     @Override
     public List<Quota> reportQuota() {

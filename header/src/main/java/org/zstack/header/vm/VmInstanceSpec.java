@@ -84,6 +84,24 @@ public class VmInstanceSpec implements Serializable {
     public static class IsoSpec implements Serializable {
         private String installPath;
         private String imageUuid;
+        private String primaryStorageUuid;
+        private String backupStorageUuid;
+
+        public String getBackupStorageUuid() {
+            return backupStorageUuid;
+        }
+
+        public void setBackupStorageUuid(String backupStorageUuid) {
+            this.backupStorageUuid = backupStorageUuid;
+        }
+
+        public String getPrimaryStorageUuid() {
+            return primaryStorageUuid;
+        }
+
+        public void setPrimaryStorageUuid(String primaryStorageUuid) {
+            this.primaryStorageUuid = primaryStorageUuid;
+        }
 
         public String getImageUuid() {
             return imageUuid;

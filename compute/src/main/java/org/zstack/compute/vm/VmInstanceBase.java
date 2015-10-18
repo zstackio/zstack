@@ -31,6 +31,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageEO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
@@ -47,6 +48,7 @@ import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
+import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
@@ -61,7 +63,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 
 
 public class VmInstanceBase extends AbstractVmInstance {
@@ -179,6 +183,14 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     protected FlowChain getAttachUninstantiatedVolumeWorkFlowChain(VmInstanceInventory inv) {
         return vmMgr.getAttachUninstantiatedVolumeWorkFlowChain(inv);
+    }
+
+    protected FlowChain getAttachIsoWorkFlowChain(VmInstanceInventory inv) {
+        return vmMgr.getAttachIsoWorkFlowChain(inv);
+    }
+
+    protected FlowChain getDetachIsoWorkFlowChain(VmInstanceInventory inv) {
+        return vmMgr.getDetachIsoWorkFlowChain(inv);
     }
 
     protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent) {
@@ -1025,6 +1037,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                 spec.setRootDiskOffering(DiskOfferingInventory.valueOf(rootDisk));
             }
             ImageVO imvo = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
+            if (imvo.getMediaType() == ImageMediaType.ISO) {
+                VmSystemTags.ISO.createInherentTag(self.getUuid(), map(e(VmSystemTags.ISO_TOKEN, imvo.getUuid())));
+                IsoSpec isoSpec  = new IsoSpec();
+                isoSpec.setImageUuid(imvo.getUuid());
+                spec.setDestIso(isoSpec);
+            }
+
             spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
             spec.setCurrentVmOperation(VmOperation.NewCreate);
             if (self.getZoneUuid() != null || self.getClusterUuid() != null || self.getHostUuid() != null) {
@@ -1127,9 +1146,101 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIDetachL3NetworkFromVmMsg) msg);
         } else if (msg instanceof APIGetVmAttachableL3NetworkMsg) {
             handle((APIGetVmAttachableL3NetworkMsg) msg);
+        } else if (msg instanceof APIAttachIsoToVmInstanceMsg) {
+            handle((APIAttachIsoToVmInstanceMsg) msg);
+        } else if (msg instanceof APIDetachIsoFromVmInstanceMsg) {
+            handle((APIDetachIsoFromVmInstanceMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APIDetachIsoFromVmInstanceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final APIDetachIsoFromVmInstanceEvent evt = new APIDetachIsoFromVmInstanceEvent(msg.getId());
+                refreshVO();
+                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    evt.setErrorCode(allowed);
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+
+                detachIso(new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        self = dbf.reload(self);
+                        evt.setInventory(getSelfInventory());
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setErrorCode(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("detach-iso-from-vm-%s", self.getUuid());
+            }
+        });
+    }
+
+    private void detachIso(final Completion completion) {
+        if (self.getState() == VmInstanceState.Stopped) {
+            VmSystemTags.ISO.deleteInherentTag(self.getUuid());
+            completion.success();
+            return;
+        }
+
+        if (!VmSystemTags.ISO.hasTag(self.getUuid())) {
+            completion.success();
+            return;
+        }
+
+        VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory());
+        if (spec.getDestIso() == null) {
+            // the image ISO has been deleted from backup storage
+            // try to detach it from the VM anyway
+            String isoUuid = VmSystemTags.ISO.getTokenByResourceUuid(self.getUuid(), VmSystemTags.ISO_TOKEN);
+            IsoSpec isoSpec = new IsoSpec();
+            isoSpec.setImageUuid(isoUuid);
+            spec.setDestIso(isoSpec);
+            logger.debug(String.format("the iso[uuid:%s] has been deleted, try to detach it from the VM[uuid:%s] anyway",
+                    isoUuid, self.getUuid()));
+        }
+
+        FlowChain chain = getDetachIsoWorkFlowChain(spec.getVmInventory());
+        chain.setName(String.format("detach-iso-%s-from-vm-%s", spec.getDestIso().getImageUuid(), self.getUuid()));
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+
+        setFlowMarshaller(chain);
+
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                VmSystemTags.ISO.deleteInherentTag(self.getUuid());
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     @Transactional(readOnly = true)
@@ -1183,6 +1294,85 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIGetVmAttachableL3NetworkReply reply = new APIGetVmAttachableL3NetworkReply();
         reply.setInventories(getAttachableL3Network(msg.getSession().getAccountUuid()));
         bus.reply(msg, reply);
+    }
+
+    private void handle(final APIAttachIsoToVmInstanceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final APIAttachIsoToVmInstanceEvent evt = new APIAttachIsoToVmInstanceEvent(msg.getId());
+
+                refreshVO();
+                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    evt.setErrorCode(allowed);
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+
+                attachIso(msg.getIsoUuid(), new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        self = dbf.reload(self);
+                        evt.setInventory(getSelfInventory());
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setErrorCode(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("attach-iso-%s-to-vm-%s", msg.getIsoUuid(), self.getUuid());
+            }
+        });
+    }
+
+    private void attachIso(final String isoUuid, final Completion completion) {
+        VmSystemTags.ISO.createInherentTag(self.getUuid(), map(e(VmSystemTags.ISO_TOKEN, isoUuid)));
+
+        if (self.getState() == VmInstanceState.Stopped) {
+            completion.success();
+            return;
+        }
+
+        VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory());
+        spec.setCurrentVmOperation(VmOperation.AttachIso);
+        IsoSpec isoSpec = new IsoSpec();
+        isoSpec.setImageUuid(isoUuid);
+        spec.setDestIso(isoSpec);
+
+        FlowChain chain = getAttachIsoWorkFlowChain(spec.getVmInventory());
+        chain.setName(String.format("attach-iso-%s-to-vm-%s", isoUuid, self.getUuid()));
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+
+        setFlowMarshaller(chain);
+
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                VmSystemTags.ISO.createInherentTag(self.getUuid(), map(e(VmSystemTags.ISO_TOKEN, isoUuid)));
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     private void handle(final APIDetachL3NetworkFromVmMsg msg) {
@@ -1259,8 +1449,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setL3Networks(list(L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class))));
 
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
-        setFlowMarshaller(flowChain);
         flowChain.setName(String.format("detachNic-vm-%s-nic-%s", self.getUuid(), nicUuid));
+        setFlowMarshaller(flowChain);
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         if (self.getState() == VmInstanceState.Running) {
             flowChain.then(new VmDetachNicOnHypervisorFlow());
@@ -1955,7 +2145,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         ImageVO imgvo = dbf.findByUuid(inv.getImageUuid(), ImageVO.class);
         ImageInventory imginv = null;
         if (imgvo == null) {
-            // image has been deleted, use EO instead
+            // the image has been deleted, use EO instead
             ImageEO imgeo = dbf.findByUuid(inv.getImageUuid(), ImageEO.class);
             imginv = ImageInventory.valueOf(imgeo);
         } else {
@@ -1964,6 +2154,18 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.getImageSpec().setInventory(imginv);
         spec.setVmInventory(inv);
         buildHostname(spec);
+
+        String isoUuid = VmSystemTags.ISO.getTokenByResourceUuid(inv.getUuid(), VmSystemTags.ISO_TOKEN);
+        if (isoUuid != null) {
+            if (dbf.isExist(isoUuid, ImageVO.class)) {
+                IsoSpec isoSpec = new IsoSpec();
+                isoSpec.setImageUuid(isoUuid);
+                spec.setDestIso(isoSpec);
+            } else {
+                //TODO
+                logger.warn(String.format("iso[uuid:%s] is deleted, however, the VM[uuid:%s] still has it attached", isoUuid, self.getUuid()));
+            }
+        }
 
         return spec;
     }
