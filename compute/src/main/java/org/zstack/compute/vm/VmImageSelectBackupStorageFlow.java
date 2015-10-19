@@ -81,17 +81,20 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
     @Override
     public void run(FlowTrigger trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        final String bsUuid = findBackupStorage(spec, spec.getImageSpec().getInventory().getUuid());
-        spec.getImageSpec().setSelectedBackupStorage(CollectionUtils.find(spec.getImageSpec().getInventory().getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
-            @Override
-            public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
-            }
-        }));
 
-        if (VmOperation.NewCreate == spec.getCurrentVmOperation() && ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
-            spec.getDestIso().setBackupStorageUuid(bsUuid);
-        } else if (VmOperation.NewCreate != spec.getCurrentVmOperation() && spec.getDestIso() != null) {
+        if (VmOperation.NewCreate == spec.getCurrentVmOperation()) {
+            final String bsUuid = findBackupStorage(spec, spec.getImageSpec().getInventory().getUuid());
+            spec.getImageSpec().setSelectedBackupStorage(CollectionUtils.find(spec.getImageSpec().getInventory().getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
+                @Override
+                public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
+                    return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
+                }
+            }));
+
+            if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
+                spec.getDestIso().setBackupStorageUuid(bsUuid);
+            }
+        } else if (VmOperation.Start == spec.getCurrentVmOperation() && spec.getDestIso() != null) {
             String isoBsUuid = findBackupStorage(spec, spec.getDestIso().getImageUuid());
             spec.getDestIso().setBackupStorageUuid(isoBsUuid);
         }

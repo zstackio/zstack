@@ -3536,6 +3536,7 @@ public class Api implements CloudBusEventListener {
         msg.setUuid(lbUuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
+        sender.send(msg, APIDeleteLoadBalancerEvent.class);
     }
 
     public APIGetLocalStorageHostDiskCapacityReply getLocalStorageHostCapacity(String psUuid, String huuid) throws ApiSenderException {

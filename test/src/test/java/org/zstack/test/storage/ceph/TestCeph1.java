@@ -89,6 +89,6 @@ public class TestCeph1 {
         PrimaryStorageInventory ps = deployer.primaryStorages.get("ceph-pri");
         api.deletePrimaryStorage(ps.getUuid());
 
-        Assert.assertFalse(config.deletePoolCmds.isEmpty());
+        Assert.assertTrue(config.deletePoolCmds.isEmpty());
     }
 }

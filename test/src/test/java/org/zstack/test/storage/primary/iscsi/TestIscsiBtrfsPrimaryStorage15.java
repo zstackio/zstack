@@ -22,6 +22,9 @@ import java.util.List;
 /**
  * 1. create VM with IscsiBtrfsPrimaryStorage
  * 2. stop vm
+ *
+ * confirm all iscsi targets removed
+ *
  * 3. start vm
  *
  * confirm iscsi targets for all volumes are created

@@ -229,7 +229,9 @@ public class IscsiBtrfsPrimaryStorageSimulator {
 
     private void deleteTarget(HttpEntity<String> entity) {
         DeleteIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteIscsiTargetCmd.class);
-        config.deleteIscsiTargetCmds.add(cmd);
+        synchronized (config.deleteIscsiTargetCmds) {
+            config.deleteIscsiTargetCmds.add(cmd);
+        }
         logger.debug(String.format("delete iscsi target[name:%s, uuid:%s]", cmd.getTarget(), cmd.getUuid()));
         DeleteIscsiTargetRsp rsp = new DeleteIscsiTargetRsp();
         reply(entity, rsp);

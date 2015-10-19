@@ -61,7 +61,7 @@ public class TestCreateDataVolumeTemplate4 {
         session = api.loginAsAdmin();
     }
     
-	@Test(expected = ApiSenderException.class)
+	@Test
 	public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
@@ -78,12 +78,14 @@ public class TestCreateDataVolumeTemplate4 {
         Assert.assertEquals(ImageStatus.Ready.toString(), template.getStatus());
         PrimaryStorageVO psvo = dbf.findByUuid(nfs.getUuid(), PrimaryStorageVO.class);
         config.downloadFromSftpSuccess = false;
+        boolean s = false;
         try {
             api.createDataVolumeFromTemplate(template.getUuid(), nfs.getUuid());
         } catch (ApiSenderException e) {
             PrimaryStorageVO psvo1 = dbf.findByUuid(nfs.getUuid(), PrimaryStorageVO.class);
             Assert.assertEquals(psvo.getCapacity().getAvailableCapacity(), psvo1.getCapacity().getAvailableCapacity());
-            throw e;
+            s = true;
         }
+        Assert.assertTrue(s);
 	}
 }
