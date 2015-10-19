@@ -1134,7 +1134,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
         if (avail != null) {
             long a = cvo.getAvailableCapacity() - avail;
-            cvo.setAvailableCapacity(a < 0 ? 0 : a);
+            cvo.setAvailableCapacity(a);
         }
         if (totalPhysical != null) {
             long tp = cvo.getTotalPhysicalCapacity() - totalPhysical;

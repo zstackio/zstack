@@ -119,7 +119,7 @@ public class TestMevoco5 {
 
         api.destroyVmInstance(vm.getUuid());
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        long availSize = totalSize - (long)(vm1.getRootVolume().getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Float.class));
+        long availSize = totalSize - Math.round(vm1.getRootVolume().getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Double.class));
         Assert.assertEquals(availSize, pscap.getAvailableCapacity());
 
         MevocoGlobalConfig.MEMORY_OVER_PROVISIONING_RATIO.updateValue(1);
@@ -131,11 +131,11 @@ public class TestMevoco5 {
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(1);
         TimeUnit.SECONDS.sleep(2);
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        availSize = totalSize - (long)(vm1.getRootVolume().getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Float.class));
+        availSize = totalSize - Math.round(vm1.getRootVolume().getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Double.class));
         Assert.assertEquals(availSize, pscap.getAvailableCapacity());
 
         LocalStorageHostRefVO lref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
-        availSize = totalSize - (long)(vm1.getRootVolume().getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Float.class));
+        availSize = totalSize - Math.round(vm1.getRootVolume().getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Double.class));
         Assert.assertEquals(availSize, lref.getAvailableCapacity());
 
         MevocoGlobalConfig.MEMORY_OVER_PROVISIONING_RATIO.updateValue(2);

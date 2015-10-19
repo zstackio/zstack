@@ -162,7 +162,7 @@ public class TestMevoco {
         PrimaryStorageVO localVO = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
         long usedDisk = localVO.getCapacity().getTotalCapacity() - localVO.getCapacity().getAvailableCapacity();
         VolumeInventory vol = vm.getRootVolume();
-        Assert.assertEquals(usedDisk, (long)(vol.getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Float.class)));
+        Assert.assertEquals(usedDisk, Math.round(vol.getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Double.class)));
 
         logger.debug(_("hello.world"));
     }

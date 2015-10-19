@@ -79,6 +79,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
     private Map<Class, Long> messageTimeout = new ConcurrentHashMap<Class, Long>();
     private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
+    private Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new HashMap<Class, List<BeforeSendMessageInterceptor>>();
 
     private final String NO_NEED_REPLY_MSG = "noReply";
     private final String CORRELATION_ID = "correlationId";
@@ -381,6 +382,17 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         public void send(Message msg) {
+            List<BeforeSendMessageInterceptor> interceptors = beforeSendMessageInterceptors.get(msg.getClass());
+            if (interceptors != null) {
+                for (BeforeSendMessageInterceptor interceptor : interceptors) {
+                    interceptor.intercept(msg);
+
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("called %s for message[%s]", interceptor.getClass(), msg.getClass()));
+                    }
+                }
+            }
+
             send(msg, true);
         }
 
@@ -2092,6 +2104,32 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 synchronized (is) {
                     int order = 0;
                     for (BeforeDeliveryMessageInterceptor i : is) {
+                        if (i.order() <= interceptor.order()) {
+                            order = is.indexOf(i);
+                            break;
+                        }
+                    }
+                    is.add(order, interceptor);
+                }
+
+                clz = clz.getSuperclass();
+            }
+        }
+    }
+
+    @Override
+    public void installBeforeSendMessageInterceptor(BeforeSendMessageInterceptor interceptor, Class<? extends Message>... classes) {
+        for (Class clz : classes) {
+            while (clz != Object.class) {
+                List<BeforeSendMessageInterceptor> is = beforeSendMessageInterceptors.get(clz);
+                if (is == null) {
+                    is = new ArrayList<BeforeSendMessageInterceptor>();
+                    beforeSendMessageInterceptors.put(clz, is);
+                }
+
+                synchronized (is) {
+                    int order = 0;
+                    for (BeforeSendMessageInterceptor i : is) {
                         if (i.order() <= interceptor.order()) {
                             order = is.indexOf(i);
                             break;

@@ -180,9 +180,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     private void handle(TakePrimaryStorageCapacityMsg msg) {
         PrimaryStorageCapacityVO vo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
         vo.setAvailableCapacity(vo.getAvailableCapacity() - msg.getSize());
-        if (vo.getAvailableCapacity() < 0) {
-            vo.setAvailableCapacity(0);
-        }
         dbf.getEntityManager().merge(vo);
         TakePrimaryStorageCapacityReply reply = new TakePrimaryStorageCapacityReply();
         bus.reply(msg, reply);
@@ -448,7 +445,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         PrimaryStorageCapacityVO vo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
 
                         long avail = vo.getTotalCapacity() - volumeUsage - snapshotUsage;
-                        avail = avail < 0 ? 0 : avail;
                         vo.setAvailableCapacity(avail);
                         vo.setAvailablePhysicalCapacity(availablePhysicalSize);
                         vo.setTotalPhysicalCapacity(totalPhysicalSize);

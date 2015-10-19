@@ -64,4 +64,6 @@ public interface CloudBus extends Component {
     void makeTargetServiceIdByResourceUuid(Message msg, String serviceId, String resourceUuid);
 
     void installBeforeDeliveryMessageInterceptor(BeforeDeliveryMessageInterceptor interceptor, Class<? extends Message>...classes);
+
+    void installBeforeSendMessageInterceptor(BeforeSendMessageInterceptor interceptor, Class<? extends Message>...classes);
 }
