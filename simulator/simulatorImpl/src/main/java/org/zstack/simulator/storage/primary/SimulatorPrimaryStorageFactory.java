@@ -6,6 +6,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.simulator.storage.primary.APIAddSimulatorPrimaryStorageMsg;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageConstant;
 import org.zstack.header.storage.primary.*;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.path.PathUtil;
 
 public class SimulatorPrimaryStorageFactory implements PrimaryStorageFactory {

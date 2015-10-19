@@ -36,6 +36,7 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -1089,62 +1090,57 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
-    @Transactional
     protected void setCapacity(Long total, Long avail, Long totalPhysical, Long availPhysical) {
-        PrimaryStorageCapacityVO cvo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-        if (total != null) {
-            cvo.setTotalCapacity(total);
-        }
-        if (avail != null) {
-            cvo.setAvailableCapacity(avail);
-        }
-        if (totalPhysical != null) {
-            cvo.setTotalPhysicalCapacity(totalPhysical);
-        }
-        if (availPhysical != null) {
-            cvo.setAvailablePhysicalCapacity(availPhysical);
-        }
-        dbf.getEntityManager().merge(cvo);
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+        updater.update(total, avail, totalPhysical, availPhysical);
     }
 
-    @Transactional
-    protected void increaseCapacity(Long total, Long avail, Long totalPhysical, Long availPhysical) {
-        PrimaryStorageCapacityVO cvo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-        if (total != null) {
-            cvo.setTotalCapacity(cvo.getTotalCapacity() + total);
-        }
-        if (avail != null) {
-            cvo.setAvailableCapacity(cvo.getAvailableCapacity() + avail);
-        }
-        if (totalPhysical != null) {
-            cvo.setTotalPhysicalCapacity(cvo.getTotalPhysicalCapacity() + totalPhysical);
-        }
-        if (availPhysical != null) {
-            cvo.setAvailablePhysicalCapacity(cvo.getAvailablePhysicalCapacity() + availPhysical);
-        }
-        dbf.getEntityManager().merge(cvo);
+    protected void increaseCapacity(final Long total, final Long avail, final Long totalPhysical, final Long availPhysical) {
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                if (total != null) {
+                    cap.setTotalCapacity(cap.getTotalCapacity() + total);
+                }
+                if (avail != null) {
+                    cap.setAvailableCapacity(cap.getAvailableCapacity() + avail);
+                }
+                if (totalPhysical != null) {
+                    cap.setTotalPhysicalCapacity(cap.getTotalPhysicalCapacity() + totalPhysical);
+                }
+                if (availPhysical != null) {
+                    cap.setAvailablePhysicalCapacity(cap.getAvailablePhysicalCapacity() + availPhysical);
+                }
+                return cap;
+            }
+        });
     }
 
-    @Transactional
-    protected void decreaseCapacity(Long total, Long avail, Long totalPhysical, Long availPhysical) {
-        PrimaryStorageCapacityVO cvo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-        if (total != null) {
-            long t = cvo.getTotalCapacity() - total;
-            cvo.setTotalCapacity(t < 0 ? 0 : t);
-        }
-        if (avail != null) {
-            long a = cvo.getAvailableCapacity() - avail;
-            cvo.setAvailableCapacity(a);
-        }
-        if (totalPhysical != null) {
-            long tp = cvo.getTotalPhysicalCapacity() - totalPhysical;
-            cvo.setTotalPhysicalCapacity(tp < 0 ? 0 : tp);
-        }
-        if (availPhysical != null) {
-            long ap = cvo.getAvailablePhysicalCapacity() - availPhysical;
-            cvo.setAvailablePhysicalCapacity(ap < 0 ? 0 : ap);
-        }
-        dbf.getEntityManager().merge(cvo);
+    protected void decreaseCapacity(final Long total, final Long avail, final Long totalPhysical, final Long availPhysical) {
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                if (total != null) {
+                    long t = cap.getTotalCapacity() - total;
+                    cap.setTotalCapacity(t < 0 ? 0 : t);
+                }
+                if (avail != null) {
+                    long a = cap.getAvailableCapacity() - avail;
+                    cap.setAvailableCapacity(a);
+                }
+                if (totalPhysical != null) {
+                    long tp = cap.getTotalPhysicalCapacity() - totalPhysical;
+                    cap.setTotalPhysicalCapacity(tp < 0 ? 0 : tp);
+                }
+                if (availPhysical != null) {
+                    long ap = cap.getAvailablePhysicalCapacity() - availPhysical;
+                    cap.setAvailablePhysicalCapacity(ap < 0 ? 0 : ap);
+                }
+                return cap;
+            }
+        });
     }
 
 

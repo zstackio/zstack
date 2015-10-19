@@ -29,6 +29,7 @@ import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -131,21 +132,15 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
-    @Transactional
     public void update(String fsid, long total, long avail) {
         String sql = "select cap from PrimaryStorageCapacityVO cap, CephPrimaryStorageVO pri where pri.uuid = cap.uuid and pri.fsid = :fsid";
         TypedQuery<PrimaryStorageCapacityVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageCapacityVO.class);
         q.setParameter("fsid", fsid);
-        q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         try {
-            PrimaryStorageCapacityVO cap = q.getSingleResult();
-            cap.setTotalCapacity(total);
-            cap.setAvailableCapacity(avail);
-            cap.setTotalPhysicalCapacity(total);
-            cap.setAvailablePhysicalCapacity(avail);
-            dbf.getEntityManager().merge(cap);
+            PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(q);
+            updater.update(total, avail, total, avail);
         } catch (EmptyResultDataAccessException e) {
-            return;
+            // ignore
         }
     }
 

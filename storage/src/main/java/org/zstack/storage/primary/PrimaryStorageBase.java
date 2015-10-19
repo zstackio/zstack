@@ -176,23 +176,26 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 	    }
 	}
 
-    @Transactional
     private void handle(TakePrimaryStorageCapacityMsg msg) {
-        PrimaryStorageCapacityVO vo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-        vo.setAvailableCapacity(vo.getAvailableCapacity() - msg.getSize());
-        dbf.getEntityManager().merge(vo);
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+        updater.decreaseAvailableCapacity(msg.getSize());
         TakePrimaryStorageCapacityReply reply = new TakePrimaryStorageCapacityReply();
         bus.reply(msg, reply);
     }
 
-    @Transactional
-    private void handle(PrimaryStorageReportCapacityMsg msg) {
-        PrimaryStorageCapacityVO vo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-        if (vo.getTotalCapacity() == 0) {
-            vo.setTotalCapacity(msg.getTotalCapacity());
-            vo.setAvailableCapacity(msg.getAvailableCapacity());
-            dbf.getEntityManager().merge(vo);
-        }
+    private void handle(final PrimaryStorageReportCapacityMsg msg) {
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                if (cap.getTotalCapacity() == 0) {
+                    cap.setTotalCapacity(msg.getTotalCapacity());
+                    cap.setAvailableCapacity(msg.getAvailableCapacity());
+                    return cap;
+                }
+                return null;
+            }
+        });
 
         PrimaryStorageReportCapacityReply reply = new PrimaryStorageReportCapacityReply();
         bus.reply(msg, reply);
@@ -440,15 +443,18 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         bus.publish(evt);
                     }
 
-                    @Transactional
                     private void writeToDb() {
-                        PrimaryStorageCapacityVO vo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-
-                        long avail = vo.getTotalCapacity() - volumeUsage - snapshotUsage;
-                        vo.setAvailableCapacity(avail);
-                        vo.setAvailablePhysicalCapacity(availablePhysicalSize);
-                        vo.setTotalPhysicalCapacity(totalPhysicalSize);
-                        dbf.getEntityManager().merge(vo);
+                        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+                        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+                            @Override
+                            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                                long avail = cap.getTotalCapacity() - volumeUsage - snapshotUsage;
+                                cap.setAvailableCapacity(avail);
+                                cap.setAvailablePhysicalCapacity(availablePhysicalSize);
+                                cap.setTotalPhysicalCapacity(totalPhysicalSize);
+                                return cap;
+                            }
+                        });
                     }
                 });
 

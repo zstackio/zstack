@@ -339,29 +339,28 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         bus.reply(msg, reply);
     }
 
-    @Transactional
-    private boolean reserve(PrimaryStorageInventory inv, long size) {
-        PrimaryStorageCapacityVO cvo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, inv.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-        if (cvo == null) {
-            logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed, the primary storage has been deleted", inv.getUuid()));
-            return false;
-        }
+    private boolean reserve(final PrimaryStorageInventory inv, final long size) {
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(inv.getUuid());
+        return updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                long avail = cap.getAvailableCapacity() - size;
+                if (avail <= 0) {
+                    logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed, no available capacity on it", inv.getUuid()));
+                    return null;
+                }
 
-        long origin = cvo.getAvailableCapacity();
+                long origin = cap.getAvailableCapacity();
+                cap.setAvailableCapacity(avail);
 
-        long avail = cvo.getAvailableCapacity() - size;
-        if (avail <= 0) {
-            logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed, no available capacity on it", inv.getUuid()));
-            return false;
-        }
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s, available before:%s, available now:%s]",
+                            size, inv.getUuid(), origin, avail));
+                }
 
-        cvo.setAvailableCapacity(avail);
-        dbf.getEntityManager().merge(cvo);
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s, available before:%s, available now:%s]",
-                    size, inv.getUuid(), origin, avail));
-        }
-        return true;
+                return cap;
+            }
+        });
     }
 
     @Override
@@ -431,17 +430,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         return factory;
     }
 
-    @Transactional
     private void returnPrimaryStorageCapacity(String primaryStorageUuid, long diskSize) {
-        PrimaryStorageCapacityVO cvo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, primaryStorageUuid, LockModeType.PESSIMISTIC_WRITE);
-        if (cvo != null) {
-            long avail = cvo.getAvailableCapacity() + diskSize;
-            if (avail > cvo.getTotalCapacity()) {
-                avail = cvo.getTotalCapacity();
-            }
-
-            cvo.setAvailableCapacity(avail);
-            dbf.getEntityManager().merge(cvo);
+        PrimaryStorageCapacityUpdater updater  = new PrimaryStorageCapacityUpdater(primaryStorageUuid);
+        if (updater.increaseAvailableCapacity(diskSize)) {
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("Successfully return %s bytes to primary storage[uuid:%s]", diskSize, primaryStorageUuid));
             }
