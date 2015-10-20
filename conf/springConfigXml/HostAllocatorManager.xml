@@ -12,6 +12,8 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
+    <bean id="HostCapacityOverProvisioningManager" class="org.zstack.compute.allocator.HostCapacityOverProvisioningManagerImpl" />
+
     <bean id="HostAllocatorManager" class="org.zstack.compute.allocator.HostAllocatorManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />

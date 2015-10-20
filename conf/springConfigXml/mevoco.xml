@@ -15,8 +15,6 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.image.AddImageExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.allocator.ReportHostCapacityExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.allocator.HostAllocatorPreStartExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
             <zstack:extension interface="org.zstack.header.Service" />

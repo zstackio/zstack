@@ -13,7 +13,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -53,7 +52,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
-    private PrimaryStorageOverProvisioningManager psRatioMgr;
+    private HostCapacityOverProvisioningManager ratioMgr;
 
     public HostAllocatorSpec getAllocationSpec() {
         return allocationSpec;
@@ -95,6 +94,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         }
         vo.setAvailableCpu(availCpu);
 
+        memory = ratioMgr.calculateMemoryByRatio(hostUuid, memory);
         long availMemory = vo.getAvailableMemory() - memory;
         if (availMemory <=0) {
             return false;

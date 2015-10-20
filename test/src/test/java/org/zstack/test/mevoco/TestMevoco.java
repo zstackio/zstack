@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -13,6 +14,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
@@ -24,7 +26,6 @@ import org.zstack.kvm.KVMSystemTags;
 import org.zstack.mevoco.KVMAddOns.NicQos;
 import org.zstack.mevoco.KVMAddOns.VolumeQos;
 import org.zstack.mevoco.MevocoConstants;
-import org.zstack.mevoco.MevocoGlobalConfig;
 import org.zstack.mevoco.MevocoSystemTags;
 import org.zstack.network.service.flat.FlatDhcpBackend.ApplyDhcpCmd;
 import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo;
@@ -43,6 +44,7 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform._;
@@ -66,6 +68,7 @@ public class TestMevoco {
     FlatNetworkServiceSimulatorConfig fconfig;
     KVMSimulatorConfig kconfig;
     PrimaryStorageOverProvisioningManager psRatioMgr;
+    HostCapacityOverProvisioningManager hostRatioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
 
     @Before
@@ -87,6 +90,7 @@ public class TestMevoco {
         fconfig = loader.getComponent(FlatNetworkServiceSimulatorConfig.class);
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         psRatioMgr = loader.getComponent(PrimaryStorageOverProvisioningManager.class);
+        hostRatioMgr = loader.getComponent(HostCapacityOverProvisioningManager.class);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -159,11 +163,17 @@ public class TestMevoco {
         HostVO hostVO = dbf.findByUuid(host.getUuid(), HostVO.class);
 
         long usedMem = hostVO.getCapacity().getTotalMemory() - hostVO.getCapacity().getAvailableMemory();
-        Assert.assertEquals(usedMem, (long) (ioinv.getMemorySize() / MevocoGlobalConfig.MEMORY_OVER_PROVISIONING_RATIO.value(Float.class)));
+        Assert.assertEquals(usedMem, hostRatioMgr.calculateMemoryByRatio(hostVO.getUuid(), ioinv.getMemorySize()));
+
+        long isize = 0;
+        List<ImageCacheVO> is = dbf.listAll(ImageCacheVO.class);
+        for (ImageCacheVO i : is) {
+            isize += i.getSize();
+        }
 
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         PrimaryStorageVO localVO = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
-        long usedDisk = localVO.getCapacity().getTotalCapacity() - localVO.getCapacity().getAvailableCapacity();
+        long usedDisk = localVO.getCapacity().getTotalCapacity() - localVO.getCapacity().getAvailableCapacity() - isize;
         VolumeInventory vol = vm.getRootVolume();
         Assert.assertEquals(usedDisk, psRatioMgr.calculateByRatio(vol.getPrimaryStorageUuid(), vol.getSize()));
 

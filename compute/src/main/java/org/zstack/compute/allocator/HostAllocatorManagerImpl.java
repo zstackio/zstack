@@ -41,6 +41,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 	private PluginRegistry pluginRgty;
     @Autowired
     private HostCapacityReserveManager reserveMgr;
+    @Autowired
+    private HostCapacityOverProvisioningManager ratioMgr;
 
 	@Override
     @MessageSafe
@@ -277,8 +279,12 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         availCpu = availCpu > vo.getTotalCpu() ? vo.getTotalCpu() : availCpu;
         vo.setAvailableCpu(availCpu);
 
+        memory = ratioMgr.calculateMemoryByRatio(hostUuid, memory);
         long availMemory = vo.getAvailableMemory() + memory;
-        availMemory = availMemory > vo.getTotalMemory() ? vo.getTotalMemory() : availMemory;
+        if (availMemory > vo.getTotalMemory()) {
+            throw new CloudRuntimeException(String.format("invalid memory capacity of host[uuid:%s], available memory[%s] is greater than total memory[%s]",
+                    hostUuid, availMemory, vo.getTotalMemory()));
+        }
         vo.setAvailableMemory(availMemory);
 
 		dbf.getEntityManager().merge(vo);
