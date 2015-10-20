@@ -3,6 +3,7 @@ package org.zstack.storage.primary.nfs;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.job.Job;
@@ -14,10 +15,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.storage.primary.ImageCacheInventory;
-import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.ImageCacheVO_;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -39,6 +37,8 @@ public class NfsDownloadImageToCacheJob implements Job {
     private DatabaseFacade dbf;
     @Autowired
     private NfsPrimaryStorageManager nfsMgr;
+    @Autowired
+    private CloudBus bus;
 
     @Override
     public void run(final ReturnValueCompletion<Object> completion) {
@@ -76,6 +76,13 @@ public class NfsDownloadImageToCacheJob implements Job {
                 cvo = dbf.persistAndRefresh(cvo);
                 logger.debug(String.format("successfully downloaded image[uuid:%s] in image cache[id:%s, path:%s]",
                         image.getInventory().getUuid(), cvo.getId(), cvo.getInstallUrl()));
+
+                TakePrimaryStorageCapacityMsg msg = new TakePrimaryStorageCapacityMsg();
+                msg.setPrimaryStorageUuid(primaryStorage.getUuid());
+                msg.setSize(image.getInventory().getSize());
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorage.getUuid());
+                bus.send(msg);
+
                 completion.success(ImageCacheInventory.valueOf(cvo));
             }
 

@@ -13,6 +13,7 @@ import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.storage.primary.PrimaryStorageState;
 import org.zstack.header.storage.primary.PrimaryStorageStatus;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -54,11 +55,30 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             return new ArrayList<HostVO>();
         }
 
+        List<String> psUuids = new ArrayList<String>();
+        for (Tuple t : ts) {
+            psUuids.add(t.get(0, String.class));
+        }
+
+        sql = "select i.primaryStorageUuid from ImageCacheVO i where i.primaryStorageUuid in (:psUuids) and i.imageUuid = :iuuid";
+        TypedQuery<String> iq = dbf.getEntityManager().createQuery(sql, String.class);
+        iq.setParameter("psUuids", psUuids);
+        iq.setParameter("iuuid", spec.getImage().getUuid());
+        List<String> hasImagePrimaryStorage = iq.getResultList();
+
         List<String> psCandidates = new ArrayList<String>();
         for (Tuple t : ts) {
             String psUuid = t.get(0, String.class);
             long cap = t.get(1, Long.class);
-            cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, cap);
+
+            if (hasImagePrimaryStorage.contains(psUuid)) {
+                cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, cap);
+            } else {
+                // the primary storage doesn't have the image in cache
+                // so we need to add the image size
+                cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, cap) + spec.getImage().getSize();
+            }
+
             if (cap > spec.getDiskSize()) {
                 psCandidates.add(psUuid);
             }

@@ -11,6 +11,10 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -21,6 +25,8 @@ import java.util.Map;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
+    private static CLogger logger = Utils.getLogger(PrimaryStorageMainAllocatorFlow.class);
+
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -84,9 +90,40 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
 
         List<PrimaryStorageVO> vos = query.getResultList();
         List<PrimaryStorageVO> res = new ArrayList<PrimaryStorageVO>();
-        for (PrimaryStorageVO vo : vos) {
-            if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(vo.getUuid(), vo.getCapacity().getAvailableCapacity()) > spec.getSize()) {
-                res.add(vo);
+
+        List<String> psUuids = CollectionUtils.transformToList(vos, new Function<String, PrimaryStorageVO>() {
+            @Override
+            public String call(PrimaryStorageVO arg) {
+                return arg.getUuid();
+            }
+        });
+
+        // allocate from creating vm
+        // so we have to check if the image is in the primary storage cache
+        if (spec.getImageUuid() != null) {
+            String sql = "select i.primaryStorageUuid from ImageCacheVO i where i.primaryStorageUuid in (:psUuids) and i.imageUuid = :iuuid";
+            TypedQuery<String> iq = dbf.getEntityManager().createQuery(sql, String.class);
+            iq.setParameter("psUuids", psUuids);
+            iq.setParameter("iuuid", spec.getImageUuid());
+            List<String> hasImagePrimaryStorage = iq.getResultList();
+
+            sql = "select i.size from ImageVO i where i.uuid = :uuid";
+            TypedQuery<Long> sq = dbf.getEntityManager().createQuery(sql, Long.class);
+            sq.setParameter("uuid", spec.getImageUuid());
+            long imageSize = sq.getSingleResult();
+
+            for (PrimaryStorageVO vo : vos) {
+                long requiredSize = hasImagePrimaryStorage.contains(vo.getUuid()) ? spec.getSize() : spec.getSize() + imageSize;
+                if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(vo.getUuid(), vo.getCapacity().getAvailableCapacity()) > requiredSize) {
+                    res.add(vo);
+                }
+            }
+
+        } else {
+            for (PrimaryStorageVO vo : vos) {
+                if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(vo.getUuid(), vo.getCapacity().getAvailableCapacity()) > spec.getSize()) {
+                    res.add(vo);
+                }
             }
         }
 

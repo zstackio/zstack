@@ -647,6 +647,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     vo.setInstallUrl(path.makeFullPath());
                                     dbf.persist(vo);
 
+                                    TakePrimaryStorageCapacityMsg msg = new TakePrimaryStorageCapacityMsg();
+                                    msg.setPrimaryStorageUuid(self.getUuid());
+                                    msg.setSize(image.getSize());
+                                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                                    bus.send(msg);
+
                                     logger.debug(String.format("downloaded image[uuid:%s, name:%s] to the image cache of local primary storage[uuid: %s, installPath: %s] on host[uuid: %s]",
                                             image.getUuid(), image.getName(), self.getUuid(), primaryStorageInstallPath, hostUuid));
                                     completion.success(primaryStorageInstallPath);

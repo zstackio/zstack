@@ -44,6 +44,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         final ImageInventory iminv = spec.getImageSpec().getInventory();
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
+        rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
         if (ImageMediaType.ISO.toString().equals(iminv.getMediaType())) {
             rmsg.setSize(spec.getRootDiskOffering().getDiskSize());
             rmsg.setAllocationStrategy(spec.getRootDiskOffering().getAllocatorStrategy());

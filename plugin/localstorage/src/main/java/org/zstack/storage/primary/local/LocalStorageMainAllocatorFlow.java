@@ -96,9 +96,41 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
         }
 
         List<LocalStorageHostRefVO> refs = query.getResultList();
-        Set<String> candidates = new HashSet<String>();
+        List<LocalStorageHostRefVO> candidateHosts = new ArrayList<LocalStorageHostRefVO>();
         for (LocalStorageHostRefVO ref : refs) {
             if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getAvailableCapacity()) > spec.getSize()) {
+                candidateHosts.add(ref);
+            }
+        }
+
+        // this is for new created vm
+        Set<String> candidates = new HashSet<String>();
+        if (spec.getImageUuid() != null) {
+            String sql = "select i.size from ImageVO i where i.uuid = :uuid";
+            TypedQuery<Long> sq = dbf.getEntityManager().createQuery(sql, Long.class);
+            sq.setParameter("uuid", spec.getImageUuid());
+            long imageSize = sq.getSingleResult();
+
+            for (LocalStorageHostRefVO ref : candidateHosts) {
+                sql = "select count(i) from ImageCacheVO i where i.installUrl like :mark and i.primaryStorageUuid in (:psUuids)";
+                TypedQuery<Long> iq = dbf.getEntityManager().createQuery(sql, Long.class);
+                iq.setParameter("psUuids", ref.getPrimaryStorageUuid());
+                iq.setParameter("mark", String.format("%%hostUuid://%s%%", ref.getHostUuid()));
+                iq.setMaxResults(1);
+                long count = iq.getSingleResult();
+                if (count > 0) {
+                    // the host has the image in cache
+                    candidates.add(ref.getPrimaryStorageUuid());
+                } else {
+                    // the host doesn't has the image in cache
+                    // we need to add the image size;
+                    if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getAvailableCapacity()) > spec.getSize() + imageSize) {
+                        candidates.add(ref.getPrimaryStorageUuid());
+                    }
+                }
+            }
+        } else {
+            for (LocalStorageHostRefVO ref : candidateHosts) {
                 candidates.add(ref.getPrimaryStorageUuid());
             }
         }

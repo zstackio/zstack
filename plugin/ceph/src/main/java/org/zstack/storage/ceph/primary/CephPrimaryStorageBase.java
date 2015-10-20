@@ -1113,6 +1113,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             cvo.setState(ImageCacheState.ready);
                             cvo = dbf.persistAndRefresh(cvo);
 
+                            TakePrimaryStorageCapacityMsg msg = new TakePrimaryStorageCapacityMsg();
+                            msg.setPrimaryStorageUuid(self.getUuid());
+                            msg.setSize(image.getInventory().getSize());
+                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                            bus.send(msg);
+
                             completion.success(cvo);
                         }
                     });

@@ -292,6 +292,12 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                                 vo.setMd5sum("not calculated");
                                 dbf.persist(vo);
                                 result = vo;
+
+                                TakePrimaryStorageCapacityMsg msg = new TakePrimaryStorageCapacityMsg();
+                                msg.setPrimaryStorageUuid(self.getUuid());
+                                msg.setSize(imageSpec.getInventory().getSize());
+                                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                                bus.send(msg);
                             } else {
                                 cvo.setInstallUrl(imagePathInCache);
                                 dbf.update(cvo);

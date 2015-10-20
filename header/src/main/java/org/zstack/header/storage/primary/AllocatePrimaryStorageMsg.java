@@ -18,6 +18,15 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private String diskOfferingUuid;
     private List<String> excludePrimaryStorageUuids;
     private List<String> excludeAllocatorStrategies;
+    private String imageUuid;
+
+    public String getImageUuid() {
+        return imageUuid;
+    }
+
+    public void setImageUuid(String imageUuid) {
+        this.imageUuid = imageUuid;
+    }
 
     public List<String> getExcludeAllocatorStrategies() {
         return excludeAllocatorStrategies;
