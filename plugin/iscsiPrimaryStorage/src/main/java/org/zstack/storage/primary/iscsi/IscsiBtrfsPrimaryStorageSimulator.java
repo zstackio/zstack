@@ -208,7 +208,9 @@ public class IscsiBtrfsPrimaryStorageSimulator {
         CreateIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateIscsiTargetCmd.class);
         CreateIscsiTargetRsp rsp = new CreateIscsiTargetRsp();
         if (config.createTargetSuccess) {
-            config.createIscsiTargetCmds.add(cmd);
+            synchronized (config.createIscsiTargetCmds) {
+                config.createIscsiTargetCmds.add(cmd);
+            }
             rsp.setTarget("iqn.1994-05.com.redhat:3b93b069cc1");
             rsp.setLun(1);
         } else {

@@ -10,6 +10,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -21,6 +22,8 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
+
+import java.util.List;
 
 /**
  * 1. use local storage
@@ -76,8 +79,15 @@ public class TestLocalStorage16 {
         LocalStorageHostRefVO ref = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
         Assert.assertEquals(totalSize, ref.getAvailableCapacity());
 
+
+        long isize = 0;
+        List<ImageCacheVO> is = dbf.listAll(ImageCacheVO.class);
+        for (ImageCacheVO ic : is) {
+            isize += ic.getSize();
+        }
+
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         PrimaryStorageVO pvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
-        Assert.assertEquals(totalSize, pvo.getCapacity().getAvailableCapacity());
+        Assert.assertEquals(totalSize-isize, pvo.getCapacity().getAvailableCapacity());
     }
 }
