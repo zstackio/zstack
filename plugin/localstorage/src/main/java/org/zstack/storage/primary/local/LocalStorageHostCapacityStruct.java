@@ -8,7 +8,16 @@ import org.zstack.header.storage.primary.PrimaryStorageInventory;
 public class LocalStorageHostCapacityStruct {
     private PrimaryStorageInventory localStorage;
     private long size;
+    private long sizeBeforeOverProvisioning;
     private String hostUuid;
+
+    public long getSizeBeforeOverProvisioning() {
+        return sizeBeforeOverProvisioning;
+    }
+
+    public void setSizeBeforeOverProvisioning(long sizeBeforeOverProvisioning) {
+        this.sizeBeforeOverProvisioning = sizeBeforeOverProvisioning;
+    }
 
     public PrimaryStorageInventory getLocalStorage() {
         return localStorage;

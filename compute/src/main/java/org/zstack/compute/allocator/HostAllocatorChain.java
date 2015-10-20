@@ -13,6 +13,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -51,6 +52,8 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     private DatabaseFacade dbf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private PrimaryStorageOverProvisioningManager psRatioMgr;
 
     public HostAllocatorSpec getAllocationSpec() {
         return allocationSpec;

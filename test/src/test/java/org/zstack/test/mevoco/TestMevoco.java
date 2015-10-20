@@ -14,6 +14,7 @@ import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
@@ -64,6 +65,7 @@ public class TestMevoco {
     LocalStorageSimulatorConfig config;
     FlatNetworkServiceSimulatorConfig fconfig;
     KVMSimulatorConfig kconfig;
+    PrimaryStorageOverProvisioningManager psRatioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
 
     @Before
@@ -84,6 +86,7 @@ public class TestMevoco {
         config = loader.getComponent(LocalStorageSimulatorConfig.class);
         fconfig = loader.getComponent(FlatNetworkServiceSimulatorConfig.class);
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
+        psRatioMgr = loader.getComponent(PrimaryStorageOverProvisioningManager.class);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -162,7 +165,7 @@ public class TestMevoco {
         PrimaryStorageVO localVO = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
         long usedDisk = localVO.getCapacity().getTotalCapacity() - localVO.getCapacity().getAvailableCapacity();
         VolumeInventory vol = vm.getRootVolume();
-        Assert.assertEquals(usedDisk, Math.round(vol.getSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Double.class)));
+        Assert.assertEquals(usedDisk, psRatioMgr.calculateByRatio(vol.getPrimaryStorageUuid(), vol.getSize()));
 
         logger.debug(_("hello.world"));
     }

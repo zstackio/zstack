@@ -63,6 +63,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private PrimaryStorageOverProvisioningManager ratioMgr;
 
     static class FactoryCluster {
         LocalStorageHypervisorFactory factory;
@@ -579,7 +581,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
         LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
         s.setLocalStorage(getSelfInventory());
         s.setHostUuid(ref.getHostUuid());
-        s.setSize(size);
+        s.setSizeBeforeOverProvisioning(size);
+        s.setSize(ratioMgr.calculateByRatio(self.getUuid(), size));
 
         for (LocalStorageReserveHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReserveHostCapacityExtensionPoint.class)) {
             ext.beforeReserveLocalStorageCapacityOnHost(s);
@@ -612,9 +615,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
         LocalStorageHostRefVO ref = refs.get(0);
 
         LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
-        s.setSize(size);
+        s.setSizeBeforeOverProvisioning(size);
         s.setHostUuid(hostUuid);
         s.setLocalStorage(getSelfInventory());
+        s.setSize(ratioMgr.calculateByRatio(self.getUuid(), size));
+
         for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReturnHostCapacityExtensionPoint.class)) {
             ext.beforeReturnLocalStorageCapacityOnHost(s);
         }
@@ -636,9 +641,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
         LocalStorageResourceRefVO rref = ref.get(1, LocalStorageResourceRefVO.class);
 
         LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
-        s.setSize(rref.getSize());
+        s.setSizeBeforeOverProvisioning(rref.getSize());
         s.setHostUuid(href.getHostUuid());
         s.setLocalStorage(getSelfInventory());
+        s.setSize(ratioMgr.calculateByRatio(self.getUuid(), rref.getSize()));
         for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReturnHostCapacityExtensionPoint.class)) {
             ext.beforeReturnLocalStorageCapacityOnHost(s);
         }

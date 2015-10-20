@@ -71,6 +71,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected ErrorFacade errf;
     @Autowired
     protected ThreadFacade thdf;
+    @Autowired
+    protected PrimaryStorageOverProvisioningManager ratioMgr;
 
     public static class PhysicalCapacityUsage {
         public long totalPhysicalSize;
@@ -382,6 +384,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
                                 VolumeReportPrimaryStorageCapacityUsageReply r = reply.castReply();
                                 volumeUsage = r.getUsedCapacity();
+                                volumeUsage = ratioMgr.calculateByRatio(self.getUuid(), volumeUsage);
                                 trigger.next();
                             }
                         });
@@ -404,6 +407,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                                     return;
                                 }
 
+                                // note: snapshot size is physical size,
+                                // don't calculate over-provisioning here
                                 VolumeSnapshotReportPrimaryStorageCapacityUsageReply r = reply.castReply();
                                 snapshotUsage = r.getUsedSize();
                                 trigger.next();

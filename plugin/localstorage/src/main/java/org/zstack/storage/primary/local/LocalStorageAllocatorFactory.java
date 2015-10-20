@@ -18,7 +18,9 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -31,6 +33,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private PrimaryStorageOverProvisioningManager ratioMgr;
 
     public static PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
 
@@ -78,12 +82,21 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 }
             });
 
-
             SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
-            q.select(LocalStorageHostRefVO_.hostUuid);
+            q.select(LocalStorageHostRefVO_.hostUuid, LocalStorageHostRefVO_.availableCapacity, LocalStorageResourceRefVO_.primaryStorageUuid);
             q.add(LocalStorageHostRefVO_.hostUuid, Op.IN, huuids);
-            q.add(LocalStorageHostRefVO_.availableCapacity, Op.LT, spec.getDiskSize());
-            final List<String> toRemoveHuuids = q.listValue();
+            List<Tuple> ts = q.listTuple();
+
+            final List<String> toRemoveHuuids = new ArrayList<String>();
+            for (Tuple t : ts) {
+                String huuid = t.get(0, String.class);
+                long cap = t.get(1, Long.class);
+                String psUuid = t.get(2, String.class);
+                if (cap < ratioMgr.calculateByRatio(psUuid, spec.getDiskSize())) {
+                    toRemoveHuuids.add(huuid);
+                }
+            }
+
             if (!toRemoveHuuids.isEmpty()) {
                 candidates =  CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
                     @Override

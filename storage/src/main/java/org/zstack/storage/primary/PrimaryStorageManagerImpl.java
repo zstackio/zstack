@@ -34,7 +34,6 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -57,6 +56,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private TagManager tagMgr;
     @Autowired
     private ResourceDestinationMaker destMaker;
+    @Autowired
+    private PrimaryStorageOverProvisioningManager raitoMgr;
 
     private Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<String, PrimaryStorageFactory>());
     private Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections
@@ -340,11 +341,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private boolean reserve(final PrimaryStorageInventory inv, final long size) {
+        final long requiredSize = raitoMgr.calculateByRatio(inv.getUuid(), size);
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(inv.getUuid());
         return updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                long avail = cap.getAvailableCapacity() - size;
+                long avail = cap.getAvailableCapacity() - requiredSize;
                 if (avail <= 0) {
                     logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed, no available capacity on it", inv.getUuid()));
                     return null;
@@ -355,7 +357,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s, available before:%s, available now:%s]",
-                            size, inv.getUuid(), origin, avail));
+                            requiredSize, inv.getUuid(), origin, avail));
                 }
 
                 return cap;
@@ -431,6 +433,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void returnPrimaryStorageCapacity(String primaryStorageUuid, long diskSize) {
+        diskSize = raitoMgr.calculateByRatio(primaryStorageUuid, diskSize);
         PrimaryStorageCapacityUpdater updater  = new PrimaryStorageCapacityUpdater(primaryStorageUuid);
         if (updater.increaseAvailableCapacity(diskSize)) {
             if (logger.isTraceEnabled()) {

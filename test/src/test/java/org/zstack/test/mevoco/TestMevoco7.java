@@ -12,9 +12,7 @@ import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.primary.PrimaryStorage;
-import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
@@ -37,12 +35,27 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 1. destroy all vms
- * 2. change PRIMARY_STORAGE_OVER_PROVISIONING_RATIO
+ * 1. create 2 vms
+ * 2. update PRIMARY_STORAGE_OVER_PROVISIONING_RATIO to 2.5
  *
  * confirm the primary storage capacity is correct
  *
- * confirm the memory capacity and disk capacity returned correctly
+ * 3. calculate a volume size that 12 volumes will occupy all available capacity after over provisioning
+ * 4. create and attach 12 volumes
+ *
+ * confirm the primary storage capacity is correct
+ *
+ * 5. create and attach 13rd volume
+ *
+ * confirm the volume failed to be created and attached
+ *
+ * 6. update PRIMARY_STORAGE_OVER_PROVISIONING_RATIO to 1
+ *
+ * confirm the primary storage capacity is correct
+ *
+ * 7. delete all previous created data volumes
+ *
+ * confirm the primary storage capacity is correct
  *
  */
 public class TestMevoco7 {
@@ -56,6 +69,7 @@ public class TestMevoco7 {
     LocalStorageSimulatorConfig config;
     FlatNetworkServiceSimulatorConfig fconfig;
     KVMSimulatorConfig kconfig;
+    PrimaryStorageOverProvisioningManager psRatioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
 
     @Before
@@ -76,6 +90,7 @@ public class TestMevoco7 {
         config = loader.getComponent(LocalStorageSimulatorConfig.class);
         fconfig = loader.getComponent(FlatNetworkServiceSimulatorConfig.class);
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
+        psRatioMgr = loader.getComponent(PrimaryStorageOverProvisioningManager.class);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -94,8 +109,17 @@ public class TestMevoco7 {
         q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Ready);
         List<VolumeVO> vols = q.list();
         for (VolumeVO v : vols) {
-            used += v.getSize();
+            used += psRatioMgr.calculateByRatio(v.getPrimaryStorageUuid(), v.getSize());
         }
+
+        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
+        SimpleQuery<ImageCacheVO> iq = dbf.createQuery(ImageCacheVO.class);
+        iq.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, ps.getUuid());
+        List<ImageCacheVO> is = iq.list();
+        for (ImageCacheVO i : is) {
+            used += i.getSize();
+        }
+
         return used;
     }
 
@@ -110,7 +134,7 @@ public class TestMevoco7 {
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(2.5);
         TimeUnit.SECONDS.sleep(2);
 
-        long used = Math.round(usedVolumeSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Double.class));
+        long used = usedVolumeSize();
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(pscap.getTotalCapacity() - used, pscap.getAvailableCapacity());
 
@@ -119,26 +143,25 @@ public class TestMevoco7 {
 
         int num = 12;
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        long volumeSize = Math.round((pscap.getAvailableCapacity() * MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Double.class)) / num);
+        long ncap = psRatioMgr.calculatePrimaryStorageAvailableCapacityByRatio(pscap.getUuid(), pscap.getAvailableCapacity());
+        long volumeSize = Math.round((double)(ncap/ num));
 
         DiskOfferingInventory dio = new DiskOfferingInventory();
         dio.setDiskSize(volumeSize);
         dio.setName("data");
         dio = api.addDiskOfferingByFullConfig(dio);
 
-        for (int i=0; i<num-1; i++) {
+        for (int i=0; i<num; i++) {
             VolumeInventory vol = api.createDataVolume("data", dio.getUuid());
             api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
         }
 
-        used = Math.round(usedVolumeSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Double.class));
+        used = usedVolumeSize();
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        long errorMargin = pscap.getTotalCapacity() - used - pscap.getAvailableCapacity();
-        Assert.assertTrue(errorMargin >= -10 && errorMargin <= 10);
+        Assert.assertEquals(pscap.getTotalCapacity() - used, pscap.getAvailableCapacity());
 
         ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
-        errorMargin = ref.getTotalCapacity() - used - ref.getAvailableCapacity();
-        Assert.assertTrue(errorMargin >= -10 && errorMargin <= 10);
+        Assert.assertEquals(ref.getTotalCapacity() - used, ref.getAvailableCapacity());
 
         boolean s = false;
         VolumeInventory vol = api.createDataVolume("data", dio.getUuid());
@@ -152,14 +175,12 @@ public class TestMevoco7 {
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(1);
         TimeUnit.SECONDS.sleep(2);
 
-        used = Math.round(usedVolumeSize() / MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Double.class));
+        used = usedVolumeSize();
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        errorMargin = pscap.getTotalCapacity() - used - pscap.getAvailableCapacity();
-        Assert.assertTrue(errorMargin >= -10 && errorMargin <= 10);
+        Assert.assertEquals(pscap.getTotalCapacity() - used, pscap.getAvailableCapacity());
 
         ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
-        errorMargin = ref.getTotalCapacity() - used - ref.getAvailableCapacity();
-        Assert.assertTrue(errorMargin >= -10 && errorMargin <= 10);
+        Assert.assertEquals(ref.getTotalCapacity() - used, ref.getAvailableCapacity());
 
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         for (VolumeVO v : vmvo.getAllVolumes()) {
@@ -171,11 +192,9 @@ public class TestMevoco7 {
         used = usedVolumeSize();
 
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        errorMargin = pscap.getTotalCapacity() - used - pscap.getAvailableCapacity();
-        Assert.assertTrue(errorMargin >= -10 && errorMargin <= 10);
+        Assert.assertEquals(pscap.getTotalCapacity() - used, pscap.getAvailableCapacity());
 
         ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
-        errorMargin = ref.getTotalCapacity() - used - ref.getAvailableCapacity();
-        Assert.assertTrue(errorMargin >= -10 && errorMargin <= 10);
+        Assert.assertEquals(ref.getTotalCapacity() - used, ref.getAvailableCapacity());
     }
 }

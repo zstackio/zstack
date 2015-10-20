@@ -9,6 +9,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -29,6 +30,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -90,27 +92,33 @@ public class TestMevoco6 {
         HostInventory host = deployer.hosts.get("host1");
         PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
 
+        long iused = 0;
+        List<ImageCacheVO> ics = dbf.listAll(ImageCacheVO.class);
+        for (ImageCacheVO ic : ics) {
+            iused += ic.getSize();
+        }
+
         api.destroyVmInstance(vm.getUuid());
         api.destroyVmInstance(vm1.getUuid());
 
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        Assert.assertEquals(pscap.getAvailableCapacity(), pscap.getTotalCapacity());
+        Assert.assertEquals(pscap.getAvailableCapacity(), pscap.getTotalCapacity() - iused);
         LocalStorageHostRefVO ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(ref.getTotalCapacity(), ref.getAvailableCapacity());
+        Assert.assertEquals(ref.getTotalCapacity() - iused, ref.getAvailableCapacity());
 
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(1);
         TimeUnit.SECONDS.sleep(2);
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        Assert.assertEquals(pscap.getAvailableCapacity(), pscap.getTotalCapacity());
+        Assert.assertEquals(pscap.getAvailableCapacity(), pscap.getTotalCapacity() - iused);
         ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(ref.getTotalCapacity(), ref.getAvailableCapacity());
+        Assert.assertEquals(ref.getTotalCapacity() - iused, ref.getAvailableCapacity());
 
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(2);
         TimeUnit.SECONDS.sleep(2);
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        Assert.assertEquals(pscap.getAvailableCapacity(), pscap.getTotalCapacity());
+        Assert.assertEquals(pscap.getAvailableCapacity(), pscap.getTotalCapacity() - iused);
         ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(ref.getTotalCapacity(), ref.getAvailableCapacity());
+        Assert.assertEquals(ref.getTotalCapacity() - iused, ref.getAvailableCapacity());
 
         MevocoGlobalConfig.MEMORY_OVER_PROVISIONING_RATIO.updateValue(1);
         TimeUnit.SECONDS.sleep(2);

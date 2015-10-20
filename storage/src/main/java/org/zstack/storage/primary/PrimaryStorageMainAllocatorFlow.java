@@ -13,6 +13,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
 
 import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,8 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
     protected DatabaseFacade dbf;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    protected PrimaryStorageOverProvisioningManager ratioMgr;
 
     private class Result {
         List<PrimaryStorageVO> result;
@@ -36,59 +39,60 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         TypedQuery<PrimaryStorageVO> query;
         String errorInfo = null;
         if (spec.getRequiredPrimaryStorageUuid() != null) {
-            String sql = "select pri from PrimaryStorageVO pri, PrimaryStorageCapacityVO cap where pri.uuid = cap.uuid and pri.state = :priState and pri.status = :status and pri.uuid = :priUuid and cap.availableCapacity > :size";
+            String sql = "select pri from PrimaryStorageVO pri where pri.state = :priState and pri.status = :status and pri.uuid = :priUuid";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("priState", PrimaryStorageState.Enabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
-            query.setParameter("size", spec.getSize());
             query.setParameter("priUuid", spec.getRequiredPrimaryStorageUuid());
             errorInfo = String.format("required primary storage[uuid:%s] cannot satisfy conditions[state:%s, status:%s, size:%s]",
                     spec.getRequiredPrimaryStorageUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredHostUuid() != null) {
-            String sql = "select pri from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host, PrimaryStorageCapacityVO cap where pri.uuid = cap.uuid and host.uuid = :huuid" +
-                    " and host.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = pri.uuid and pri.status = :status and pri.state = :priState" +
-                    " and cap.availableCapacity > :size";
+            String sql = "select pri from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host where host.uuid = :huuid" +
+                    " and host.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = pri.uuid and pri.status = :status and pri.state = :priState";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("huuid", spec.getRequiredHostUuid());
             query.setParameter("priState", PrimaryStorageState.Enabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
-            query.setParameter("size", spec.getSize());
             errorInfo = String.format("cannot find primary storage satisfying conditions[attached to cluster having host:%s, state:%s, status: %s, available capacity > %s",
                     spec.getRequiredHostUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredClusterUuids() != null && !spec.getRequiredClusterUuids().isEmpty()) {
-            String sql = "select pri from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, ClusterVO cluster, PrimaryStorageCapacityVO cap where" +
-                    " pri.uuid = cap.uuid and cluster.uuid = ref.clusterUuid and ref.primaryStorageUuid = pri.uuid and pri.status = :status and pri.state = :priState" +
-                    " and cap.availableCapacity > :size and cluster.uuid in (:clusterUuids)";
+            String sql = "select pri from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, ClusterVO cluster where" +
+                    " cluster.uuid = ref.clusterUuid and ref.primaryStorageUuid = pri.uuid and pri.status = :status and pri.state = :priState" +
+                    " and cluster.uuid in (:clusterUuids)";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("clusterUuids", spec.getRequiredClusterUuids());
             query.setParameter("status", PrimaryStorageStatus.Connected);
             query.setParameter("priState", PrimaryStorageState.Enabled);
-            query.setParameter("size", spec.getSize());
             errorInfo = String.format("cannot find primary storage satisfying conditions[attached to clusters:%s, state:%s, status:%s, available capacity > %s",
                     spec.getRequiredClusterUuids(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredZoneUuid() != null) {
-            String sql = "select pri from PrimaryStorageVO pri, PrimaryStorageCapacityVO cap where pri.uuid = cap.uuid and pri.zoneUuid = :zoneUuid and cap.availableCapacity > :size and pri.status = :status and pri.state = :priState";
+            String sql = "select pri from PrimaryStorageVO pri where pri.zoneUuid = :zoneUuid and pri.status = :status and pri.state = :priState";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("priState", PrimaryStorageState.Enabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
-            query.setParameter("size", spec.getSize());
             query.setParameter("zoneUuid", spec.getRequiredZoneUuid());
             errorInfo = String.format("cannot find primary storage satisfying conditions[in zone:%s, state:%s, status:%s, available capacity > %s",
                     spec.getRequiredZoneUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else {
-            String sql = "select pri from PrimaryStorageVO pri, PrimaryStorageCapacityVO cap where pri.uuid = cap.uuid and cap.availableCapacity > :size and pri.status = :status and pri.state = :priState";
+            String sql = "select pri from PrimaryStorageVO pri where pri.status = :status and pri.state = :priState";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("priState", PrimaryStorageState.Enabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
-            query.setParameter("size", spec.getSize());
             errorInfo = String.format("cannot find primary storage satisfying conditions[state:%s, status:%s, available capacity > %s",
                     PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         }
 
         List<PrimaryStorageVO> vos = query.getResultList();
+        List<PrimaryStorageVO> res = new ArrayList<PrimaryStorageVO>();
+        for (PrimaryStorageVO vo : vos) {
+            if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(vo.getUuid(), vo.getCapacity().getAvailableCapacity()) > spec.getSize()) {
+                res.add(vo);
+            }
+        }
+
         Result ret = new Result();
         ret.error = errorInfo;
-        ret.result = vos;
+        ret.result = res;
         return ret;
     }
 
