@@ -22,4 +22,12 @@
         <description>global host allocator strategy</description>
         <defaultValue>DefaultHostAllocatorStrategy</defaultValue>
     </config>
+
+    <config>
+        <category>mevoco</category>
+        <name>distributeImage</name>
+        <description>whether to destribute images to primary storage cache after they are added</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>true</defaultValue>
+    </config>
 </globalConfig>

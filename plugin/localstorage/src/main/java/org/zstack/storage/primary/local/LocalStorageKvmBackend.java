@@ -627,12 +627,76 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         return;
                     }
 
-                    LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(KVMConstant.KVM_HYPERVISOR_TYPE, backupStorage.getType());
-                    m.downloadBits(getSelfInventory(), backupStorage,
-                            backupStorageInstallPath, primaryStorageInstallPath,
-                            hostUuid, new Completion(completion, chain) {
+                    FlowChain fchain = FlowChainBuilder.newShareFlowChain();
+                    fchain.setName(String.format("download-image-%s-to-local-storage-%s-cache-host-%s",
+                            image.getUuid(), self.getUuid(), hostUuid));
+                    fchain.then(new ShareFlow() {
+                        @Override
+                        public void setup() {
+                            flow(new Flow() {
+                                String __name__ = "allocate-primary-storage";
+
+                                boolean s = false;
+
                                 @Override
-                                public void success() {
+                                public void run(final FlowTrigger trigger, Map data) {
+                                    AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                                    amsg.setPrimaryStorageUuid(self.getUuid());
+                                    amsg.setHostUuid(hostUuid);
+                                    amsg.setSize(image.getSize());
+                                    bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
+                                    bus.send(amsg, new CloudBusCallBack(trigger) {
+                                        @Override
+                                        public void run(MessageReply reply) {
+                                            if (reply.isSuccess()) {
+                                                s = true;
+                                                trigger.next();
+                                            } else {
+                                                trigger.fail(reply.getError());
+                                            }
+                                        }
+                                    });
+                                }
+
+                                @Override
+                                public void rollback(FlowTrigger trigger, Map data) {
+                                    if (s) {
+                                        ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+                                        rmsg.setDiskSize(image.getSize());
+                                        rmsg.setPrimaryStorageUuid(self.getUuid());
+                                        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+                                        bus.send(rmsg);
+                                    }
+
+                                    trigger.rollback();
+                                }
+                            });
+
+                            flow(new NoRollbackFlow() {
+                                String __name__ = "download";
+
+                                @Override
+                                public void run(final FlowTrigger trigger, Map data) {
+                                    LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(KVMConstant.KVM_HYPERVISOR_TYPE, backupStorage.getType());
+                                    m.downloadBits(getSelfInventory(), backupStorage,
+                                            backupStorageInstallPath, primaryStorageInstallPath,
+                                            hostUuid, new Completion(completion, chain) {
+                                                @Override
+                                                public void success() {
+                                                    trigger.next();
+                                                }
+
+                                                @Override
+                                                public void fail(ErrorCode errorCode) {
+                                                    trigger.fail(errorCode);
+                                                }
+                                            });
+                                }
+                            });
+
+                            done(new FlowDoneHandler(completion, chain) {
+                                @Override
+                                public void handle(Map data) {
                                     ImageCacheVO vo = new ImageCacheVO();
                                     vo.setState(ImageCacheState.ready);
                                     vo.setMediaType(ImageMediaType.valueOf(image.getMediaType()));
@@ -647,24 +711,23 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     vo.setInstallUrl(path.makeFullPath());
                                     dbf.persist(vo);
 
-                                    TakePrimaryStorageCapacityMsg msg = new TakePrimaryStorageCapacityMsg();
-                                    msg.setPrimaryStorageUuid(self.getUuid());
-                                    msg.setSize(image.getSize());
-                                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-                                    bus.send(msg);
-
                                     logger.debug(String.format("downloaded image[uuid:%s, name:%s] to the image cache of local primary storage[uuid: %s, installPath: %s] on host[uuid: %s]",
                                             image.getUuid(), image.getName(), self.getUuid(), primaryStorageInstallPath, hostUuid));
+
                                     completion.success(primaryStorageInstallPath);
                                     chain.next();
                                 }
+                            });
 
+                            error(new FlowErrorHandler(completion, chain) {
                                 @Override
-                                public void fail(ErrorCode errorCode) {
-                                    completion.fail(errorCode);
+                                public void handle(ErrorCode errCode, Map data) {
+                                    completion.fail(errCode);
                                     chain.next();
                                 }
                             });
+                        }
+                    }).start();
                 }
 
                 @Override
