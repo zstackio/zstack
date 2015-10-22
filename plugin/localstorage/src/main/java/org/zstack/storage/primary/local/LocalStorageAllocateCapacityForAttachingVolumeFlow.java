@@ -64,12 +64,13 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
             msg.addExcludePrimaryStoratgeUuid(priUuid);
         } else {
             msg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-            msg.setPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
+            msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
         }
 
-        msg.setHostUuid(hostUuid);
+        msg.setRequiredHostUuid(hostUuid);
         msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         msg.setSize(volume.getSize());
+        msg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
         bus.makeLocalServiceId(msg, PrimaryStorageConstant.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(trigger) {
             @Override

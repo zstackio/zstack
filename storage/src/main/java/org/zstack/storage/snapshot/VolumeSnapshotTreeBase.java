@@ -474,8 +474,10 @@ public class VolumeSnapshotTreeBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
-                            amsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
+                            amsg.setRequiredPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                             amsg.setSize(info.neededSizeOnWorkspacePrimaryStorage);
+                            amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadSnapshot.toString());
+                            amsg.setNoOverProvisioning(true);
                             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                             bus.send(amsg, new CloudBusCallBack(trigger) {
                                 @Override
@@ -913,8 +915,10 @@ public class VolumeSnapshotTreeBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
-                            amsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
+                            amsg.setRequiredPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                             amsg.setSize(info.neededSizeOnWorkspacePrimaryStorage);
+                            amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadSnapshot.toString());
+                            amsg.setNoOverProvisioning(true);
                             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                             bus.send(amsg, new CloudBusCallBack(trigger) {
                                 @Override

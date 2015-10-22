@@ -16,6 +16,24 @@ public class PrimaryStorageAllocationSpec {
     private String diskOfferingUuid;
     private List<String> avoidPrimaryStorageUuids;
     private String imageUuid;
+    private boolean noOverProvisioning;
+    private String purpose;
+
+    public String getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(String purpose) {
+        this.purpose = purpose;
+    }
+
+    public boolean isNoOverProvisioning() {
+        return noOverProvisioning;
+    }
+
+    public void setNoOverProvisioning(boolean noOverProvisioning) {
+        this.noOverProvisioning = noOverProvisioning;
+    }
 
     public String getImageUuid() {
         return imageUuid;

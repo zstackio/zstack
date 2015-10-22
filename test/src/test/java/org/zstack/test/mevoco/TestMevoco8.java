@@ -119,32 +119,47 @@ public class TestMevoco8 {
     
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
-        TimeUnit.SECONDS.sleep(3);
+        api.setTimeout(10000);
         PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
+        HostInventory host = deployer.hosts.get("host1");
 
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        LocalStorageHostRefVO href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
         Assert.assertEquals(pscap.getTotalCapacity() - usedVolumeSize(), pscap.getAvailableCapacity());
+        Assert.assertEquals(href.getTotalCapacity() - usedVolumeSize(), href.getAvailableCapacity());
         long psa = pscap.getAvailableCapacity();
+        long hcap = href.getAvailableCapacity();
 
         double origin = MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.value(Double.class);
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(2);
         TimeUnit.SECONDS.sleep(2);
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
         Assert.assertEquals(pscap.getTotalCapacity() - usedVolumeSize(), pscap.getAvailableCapacity());
+        Assert.assertEquals(href.getTotalCapacity() - usedVolumeSize(), href.getAvailableCapacity());
+
         long psa1 = pscap.getAvailableCapacity();
+        long hcap1 = href.getAvailableCapacity();
 
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(origin);
         TimeUnit.SECONDS.sleep(2);
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
         Assert.assertEquals(pscap.getTotalCapacity() - usedVolumeSize(), pscap.getAvailableCapacity());
+        Assert.assertEquals(href.getTotalCapacity() - usedVolumeSize(), href.getAvailableCapacity());
 
         Assert.assertEquals(psa, pscap.getAvailableCapacity());
+        Assert.assertEquals(hcap, href.getAvailableCapacity());
 
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(2);
         TimeUnit.SECONDS.sleep(2);
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
         Assert.assertEquals(pscap.getTotalCapacity() - usedVolumeSize(), pscap.getAvailableCapacity());
+        Assert.assertEquals(href.getTotalCapacity() - usedVolumeSize(), href.getAvailableCapacity());
+
         Assert.assertEquals(psa1, pscap.getAvailableCapacity());
+        Assert.assertEquals(hcap1, href.getAvailableCapacity());
 
     }
 }

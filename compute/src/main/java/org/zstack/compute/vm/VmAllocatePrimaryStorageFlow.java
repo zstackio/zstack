@@ -48,20 +48,23 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         if (ImageMediaType.ISO.toString().equals(iminv.getMediaType())) {
             rmsg.setSize(spec.getRootDiskOffering().getDiskSize());
             rmsg.setAllocationStrategy(spec.getRootDiskOffering().getAllocatorStrategy());
-            rmsg.setHostUuid(destHost.getUuid());
+            rmsg.setRequiredHostUuid(destHost.getUuid());
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
         } else {
             //TODO: find a way to allow specifying strategy for root disk
             rmsg.setSize(iminv.getSize());
-            rmsg.setHostUuid(destHost.getUuid());
+            rmsg.setRequiredHostUuid(destHost.getUuid());
         }
+
+        rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
+
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
 
         for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
             amsg.setSize(dinv.getDiskSize());
-            amsg.setHostUuid(destHost.getUuid());
+            amsg.setRequiredHostUuid(destHost.getUuid());
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setDiskOfferingUuid(dinv.getUuid());
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);

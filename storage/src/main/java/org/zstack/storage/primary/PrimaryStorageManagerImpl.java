@@ -408,16 +408,19 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAlloactorStrategyFactory(
                 PrimaryStorageAllocatorStrategyType.valueOf(allocatorStrategyType)
         );
+
         PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
         PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
         spec.setImageUuid(msg.getImageUuid());
         spec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
         spec.setVmInstanceUuid(msg.getVmInstanceUuid());
+        spec.setPurpose(msg.getPurpose());
         spec.setSize(msg.getSize());
-        spec.setRequiredClusterUuids(msg.getClusterUuids());
-        spec.setRequiredHostUuid(msg.getHostUuid());
-        spec.setRequiredZoneUuid(msg.getZoneUuid());
-        spec.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        spec.setNoOverProvisioning(msg.isNoOverProvisioning());
+        spec.setRequiredClusterUuids(msg.getRequiredClusterUuids());
+        spec.setRequiredHostUuid(msg.getRequiredHostUuid());
+        spec.setRequiredZoneUuid(msg.getRequiredZoneUuid());
+        spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
         spec.setTags(msg.getTags());
         spec.setAllocationMessage(msg);
         spec.setAvoidPrimaryStorageUuids(msg.getExcludePrimaryStorageUuids());
@@ -427,7 +430,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageInventory target = null;
         while (it.hasNext()) {
             PrimaryStorageInventory inv = it.next();
-            if (reserve(inv, spec.getSize())) {
+
+            long requiredSize = spec.getSize();
+            if (!msg.isNoOverProvisioning())  {
+                requiredSize = ratioMgr.calculateByRatio(inv.getUuid(), requiredSize);
+            }
+
+            if (reserve(inv, requiredSize)) {
                 target = inv;
                 break;
             } else {
@@ -445,12 +454,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private boolean reserve(final PrimaryStorageInventory inv, final long size) {
-        final long requiredSize = ratioMgr.calculateByRatio(inv.getUuid(), size);
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(inv.getUuid());
         return updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                long avail = cap.getAvailableCapacity() - requiredSize;
+                long avail = cap.getAvailableCapacity() - size;
                 if (avail <= 0) {
                     logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed, no available capacity on it", inv.getUuid()));
                     return null;
@@ -461,7 +469,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s, available before:%s, available now:%s]",
-                            requiredSize, inv.getUuid(), origin, avail));
+                            size, inv.getUuid(), origin, avail));
                 }
 
                 return cap;

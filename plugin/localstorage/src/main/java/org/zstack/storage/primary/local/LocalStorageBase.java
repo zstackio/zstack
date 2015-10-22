@@ -219,21 +219,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
             chain.then(new ShareFlow() {
                 @Override
                 public void setup() {
-                    flow(new Flow() {
-                        String __name__ = "reserve-capacity-in-db";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            reserveCapacityOnHost(hostUuid, msg.getImage().getSize());
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
-                            returnCapacityToHost(hostUuid, msg.getImage().getSize());
-                            trigger.rollback();
-                        }
-                    });
 
                     flow(new NoRollbackFlow() {
                         String __name__ = "download-to-host";
@@ -583,7 +568,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         s.setLocalStorage(getSelfInventory());
         s.setHostUuid(ref.getHostUuid());
         s.setSizeBeforeOverProvisioning(size);
-        s.setSize(ratioMgr.calculateByRatio(self.getUuid(), size));
+        s.setSize(size);
 
         for (LocalStorageReserveHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReserveHostCapacityExtensionPoint.class)) {
             ext.beforeReserveLocalStorageCapacityOnHost(s);
@@ -641,11 +626,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
         LocalStorageHostRefVO href = ref.get(0, LocalStorageHostRefVO.class);
         LocalStorageResourceRefVO rref = ref.get(1, LocalStorageResourceRefVO.class);
 
+        long requiredSize = rref.getSize();
+        if (VolumeVO.class.getSimpleName().equals(rref.getResourceType())) {
+            requiredSize = ratioMgr.calculateByRatio(self.getUuid(), requiredSize);
+        }
+
         LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
         s.setSizeBeforeOverProvisioning(rref.getSize());
         s.setHostUuid(href.getHostUuid());
         s.setLocalStorage(getSelfInventory());
-        s.setSize(ratioMgr.calculateByRatio(self.getUuid(), rref.getSize()));
+        s.setSize(requiredSize);
         for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReturnHostCapacityExtensionPoint.class)) {
             ext.beforeReturnLocalStorageCapacityOnHost(s);
         }
@@ -671,15 +661,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 flow(new Flow() {
                     String __name__ = "allocate-capacity-on-host";
 
+                    long requiredSize = ratioMgr.calculateByRatio(self.getUuid(), msg.getVolume().getSize());
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(finalHostUuid, msg.getVolume().getSize());
+                        reserveCapacityOnHost(finalHostUuid, requiredSize);
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
-                        returnCapacityToHost(finalHostUuid, msg.getVolume().getSize());
+                        returnCapacityToHost(finalHostUuid, requiredSize);
                         trigger.rollback();
                     }
                 });
@@ -827,6 +819,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
         chain.then(new ShareFlow() {
             DownloadDataVolumeToPrimaryStorageReply reply;
 
+            long requiredSize = ratioMgr.calculateByRatio(self.getUuid(), msg.getImage().getSize());
+
             @Override
             public void setup() {
                 flow(new Flow() {
@@ -834,13 +828,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(msg.getHostUuid(), msg.getImage().getSize());
+                        reserveCapacityOnHost(msg.getHostUuid(), requiredSize);
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
-                        returnCapacityToHost(msg.getHostUuid(), msg.getImage().getSize());
+                        returnCapacityToHost(msg.getHostUuid(), requiredSize);
                         trigger.rollback();
                     }
                 });

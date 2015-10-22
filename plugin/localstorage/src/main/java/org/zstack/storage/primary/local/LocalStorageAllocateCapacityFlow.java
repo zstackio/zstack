@@ -16,6 +16,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.utils.CollectionUtils;
@@ -64,8 +65,8 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
         rmsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
-        rmsg.setPrimaryStorageUuid(localStorageUuid);
-        rmsg.setHostUuid(spec.getDestHost().getUuid());
+        rmsg.setRequiredPrimaryStorageUuid(localStorageUuid);
+        rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
         if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
             rmsg.setSize(spec.getRootDiskOffering().getDiskSize());
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
@@ -73,6 +74,13 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
             //TODO: find a way to allow specifying strategy for root disk
             rmsg.setSize(spec.getImageSpec().getInventory().getSize());
         }
+
+        if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
+            rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
+        } else if (spec.getCurrentVmOperation() == VmOperation.AttachVolume) {
+            rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
+        }
+
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
 
         msgs.add(rmsg);
@@ -83,7 +91,7 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
             for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
                 AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                 amsg.setSize(dinv.getDiskSize());
-                amsg.setHostUuid(spec.getDestHost().getUuid());
+                amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
                 if (hasOtherPrimaryStorage) {
                     amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
                     amsg.addExcludePrimaryStoratgeUuid(localStorageUuid);
@@ -91,7 +99,7 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
                     logger.debug("there are non-local primary storage in the cluster, use it for data volumes");
                 } else {
                     amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-                    amsg.setPrimaryStorageUuid(localStorageUuid);
+                    amsg.setRequiredPrimaryStorageUuid(localStorageUuid);
                 }
                 amsg.setDiskOfferingUuid(dinv.getUuid());
                 bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);

@@ -13,6 +13,8 @@ import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
+import org.zstack.utils.SizeUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -98,37 +100,20 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
         List<LocalStorageHostRefVO> refs = query.getResultList();
         List<LocalStorageHostRefVO> candidateHosts = new ArrayList<LocalStorageHostRefVO>();
         for (LocalStorageHostRefVO ref : refs) {
-            if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getAvailableCapacity()) > spec.getSize()) {
-                candidateHosts.add(ref);
+            if (spec.isNoOverProvisioning()) {
+                if (ref.getAvailableCapacity() > spec.getSize()) {
+                    candidateHosts.add(ref);
+                }
+            } else {
+                if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getAvailableCapacity()) > spec.getSize()) {
+                    candidateHosts.add(ref);
+                }
             }
         }
 
-        // this is for new created vm
         Set<String> candidates = new HashSet<String>();
-        if (spec.getImageUuid() != null) {
-            String sql = "select i.size from ImageVO i where i.uuid = :uuid";
-            TypedQuery<Long> sq = dbf.getEntityManager().createQuery(sql, Long.class);
-            sq.setParameter("uuid", spec.getImageUuid());
-            long imageSize = sq.getSingleResult();
-
-            for (LocalStorageHostRefVO ref : candidateHosts) {
-                sql = "select count(i) from ImageCacheVO i where i.installUrl like :mark and i.primaryStorageUuid in (:psUuids)";
-                TypedQuery<Long> iq = dbf.getEntityManager().createQuery(sql, Long.class);
-                iq.setParameter("psUuids", ref.getPrimaryStorageUuid());
-                iq.setParameter("mark", String.format("%%hostUuid://%s%%", ref.getHostUuid()));
-                iq.setMaxResults(1);
-                long count = iq.getSingleResult();
-                if (count > 0) {
-                    // the host has the image in cache
-                    candidates.add(ref.getPrimaryStorageUuid());
-                } else {
-                    // the host doesn't has the image in cache
-                    // we need to add the image size;
-                    if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getAvailableCapacity()) > spec.getSize() + imageSize) {
-                        candidates.add(ref.getPrimaryStorageUuid());
-                    }
-                }
-            }
+        if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose())) {
+            candidates.addAll(considerImageCache(spec, candidateHosts));
         } else {
             for (LocalStorageHostRefVO ref : candidateHosts) {
                 candidates.add(ref.getPrimaryStorageUuid());
@@ -148,6 +133,43 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
         Result ret = new Result();
         ret.error = errorInfo;
         ret.result = res;
+        return ret;
+    }
+
+    private Collection<? extends String> considerImageCache(PrimaryStorageAllocationSpec spec, List<LocalStorageHostRefVO> candidateHosts) {
+        List<String> ret = new ArrayList<String>();
+
+        String sql = "select i.size from ImageVO i where i.uuid = :uuid";
+        TypedQuery<Long> sq = dbf.getEntityManager().createQuery(sql, Long.class);
+        sq.setParameter("uuid", spec.getImageUuid());
+        long imageSize = sq.getSingleResult();
+
+        for (LocalStorageHostRefVO ref : candidateHosts) {
+            sql = "select count(i) from ImageCacheVO i where i.installUrl like :mark and i.primaryStorageUuid in (:psUuids)";
+            TypedQuery<Long> iq = dbf.getEntityManager().createQuery(sql, Long.class);
+            iq.setParameter("psUuids", ref.getPrimaryStorageUuid());
+            iq.setParameter("mark", String.format("%%hostUuid://%s%%", ref.getHostUuid()));
+            iq.setMaxResults(1);
+            long count = iq.getSingleResult();
+
+            if (count > 0) {
+                // the host has the image in cache
+                ret.add(ref.getPrimaryStorageUuid());
+            } else {
+                // the host doesn't has the image in cache
+                // we need to add the image size;
+                if (spec.isNoOverProvisioning()) {
+                    if (ref.getAvailableCapacity() > spec.getSize() + imageSize) {
+                        ret.add(ref.getPrimaryStorageUuid());
+                    }
+                } else {
+                    if (ref.getAvailableCapacity() > ratioMgr.calculateByRatio(ref.getPrimaryStorageUuid(), spec.getSize()) + imageSize) {
+                        ret.add(ref.getPrimaryStorageUuid());
+                    }
+                }
+            }
+        }
+
         return ret;
     }
 

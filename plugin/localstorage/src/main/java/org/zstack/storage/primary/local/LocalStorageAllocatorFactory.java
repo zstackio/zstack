@@ -149,22 +149,22 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             allocatorType = null;
         } else if (LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY.equals(msg.getAllocationStrategy())) {
             allocatorType = LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
-        } else if (msg.getPrimaryStorageUuid() != null) {
+        } else if (msg.getRequiredPrimaryStorageUuid() != null) {
             SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
             q.select(PrimaryStorageVO_.type);
-            q.add(PrimaryStorageVO_.uuid, Op.EQ, msg.getPrimaryStorageUuid());
+            q.add(PrimaryStorageVO_.uuid, Op.EQ, msg.getRequiredPrimaryStorageUuid());
             String type = q.findValue();
             if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(type)) {
                 allocatorType = LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
             }
-        } else if (msg.getHostUuid() != null) {
+        } else if (msg.getRequiredHostUuid() != null) {
             allocatorType = new Callable<String>() {
                 @Override
                 @Transactional(readOnly = true)
                 public String call() {
                     String sql = "select ps.type from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref, HostVO host where ps.uuid = ref.primaryStorageUuid and ref.clusterUuid = host.clusterUuid and host.uuid = :huuid";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                    q.setParameter("huuid", msg.getHostUuid());
+                    q.setParameter("huuid", msg.getRequiredHostUuid());
                     List<String> types = q.getResultList();
                     for (String type : types) {
                         if (type.equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)) {

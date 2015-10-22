@@ -43,6 +43,7 @@ import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.MergeVolumeSnapshotOnKvmMsg;
+import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -64,6 +65,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     private AccountManager acntMgr;
     @Autowired
     private LocalStorageFactory localStorageFactory;
+    @Autowired
+    private PrimaryStorageOverProvisioningManager ratioMgr;
 
     public static class AgentCommand {
     }
@@ -643,9 +646,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 @Override
                                 public void run(final FlowTrigger trigger, Map data) {
                                     AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
-                                    amsg.setPrimaryStorageUuid(self.getUuid());
-                                    amsg.setHostUuid(hostUuid);
+                                    amsg.setRequiredPrimaryStorageUuid(self.getUuid());
+                                    amsg.setRequiredHostUuid(hostUuid);
                                     amsg.setSize(image.getSize());
+                                    amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
+                                    amsg.setNoOverProvisioning(true);
                                     bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                                     bus.send(amsg, new CloudBusCallBack(trigger) {
                                         @Override
@@ -673,6 +678,23 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     trigger.rollback();
                                 }
                             });
+
+                            flow(new Flow() {
+                                String __name__ = "allocate-capacity-on-host";
+
+                                @Override
+                                public void run(FlowTrigger trigger, Map data) {
+                                    reserveCapacityOnHost(hostUuid, image.getSize());
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void rollback(FlowTrigger trigger, Map data) {
+                                    returnCapacityToHost(hostUuid, image.getSize());
+                                    trigger.rollback();
+                                }
+                            });
+
 
                             flow(new NoRollbackFlow() {
                                 String __name__ = "download";
@@ -1763,15 +1785,17 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 flow(new Flow() {
                     String __name__ = "reserve-capacity-on-the-host-for-template";
 
+                    long requiredSize = ratioMgr.calculateByRatio(self.getUuid(), msg.getVolumeInventory().getSize());
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(ref.getHostUuid(), msg.getVolumeInventory().getSize());
+                        reserveCapacityOnHost(ref.getHostUuid(), requiredSize);
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
-                        returnCapacityToHost(ref.getHostUuid(), msg.getVolumeInventory().getSize());
+                        returnCapacityToHost(ref.getHostUuid(), requiredSize);
                         trigger.rollback();
                     }
                 });

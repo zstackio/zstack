@@ -306,8 +306,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
                     public void run(final FlowTrigger trigger, Map data) {
                         AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                         amsg.setSize(template.getSize());
-                        amsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-                        amsg.setHostUuid(msg.getHostUuid());
+                        amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
+                        amsg.setNoOverProvisioning(true);
+                        amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                        amsg.setRequiredHostUuid(msg.getHostUuid());
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                         bus.send(amsg, new CloudBusCallBack(trigger) {
                             @Override

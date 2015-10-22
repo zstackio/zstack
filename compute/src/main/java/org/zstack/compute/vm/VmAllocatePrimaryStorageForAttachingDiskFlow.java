@@ -40,7 +40,8 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
 
         AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
         msg.setSize(volume.getSize());
-        msg.setHostUuid(hinv.getUuid());
+        msg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
+        msg.setRequiredHostUuid(hinv.getUuid());
         msg.setDiskOfferingUuid(volume.getDiskOfferingUuid());
         msg.setServiceId(bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID));
         bus.send(msg, new CloudBusCallBack(chain) {

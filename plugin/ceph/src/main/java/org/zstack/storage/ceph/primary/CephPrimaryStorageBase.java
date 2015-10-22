@@ -987,8 +987,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
-                            amsg.setPrimaryStorageUuid(self.getUuid());
+                            amsg.setRequiredPrimaryStorageUuid(self.getUuid());
                             amsg.setSize(image.getInventory().getSize());
+                            amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
+                            amsg.setNoOverProvisioning(true);
                             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                             bus.send(amsg, new CloudBusCallBack(trigger) {
                                 @Override
