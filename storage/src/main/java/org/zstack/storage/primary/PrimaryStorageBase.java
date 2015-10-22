@@ -12,20 +12,21 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.inventory.InventoryFacade;
+import org.zstack.core.job.JobQueueFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.core.inventory.InventoryFacade;
-import org.zstack.core.job.JobQueueFacade;
-import org.zstack.core.workflow.*;
-import org.zstack.header.core.Completion;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -39,7 +40,6 @@ import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -169,8 +169,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((DeleteIsoFromPrimaryStorageMsg) msg);
         } else if (msg instanceof AskVolumeSnapshotCapabilityMsg) {
             handle((AskVolumeSnapshotCapabilityMsg) msg);
-        } else if (msg instanceof PrimaryStorageReportCapacityMsg) {
-            handle((PrimaryStorageReportCapacityMsg) msg);
         } else if (msg instanceof TakePrimaryStorageCapacityMsg) {
             handle((TakePrimaryStorageCapacityMsg) msg);
 	    } else {
@@ -182,24 +180,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
         updater.decreaseAvailableCapacity(msg.getSize());
         TakePrimaryStorageCapacityReply reply = new TakePrimaryStorageCapacityReply();
-        bus.reply(msg, reply);
-    }
-
-    private void handle(final PrimaryStorageReportCapacityMsg msg) {
-        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
-        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-            @Override
-            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                if (cap.getTotalCapacity() == 0) {
-                    cap.setTotalCapacity(msg.getTotalCapacity());
-                    cap.setAvailableCapacity(msg.getAvailableCapacity());
-                    return cap;
-                }
-                return null;
-            }
-        });
-
-        PrimaryStorageReportCapacityReply reply = new PrimaryStorageReportCapacityReply();
         bus.reply(msg, reply);
     }
 

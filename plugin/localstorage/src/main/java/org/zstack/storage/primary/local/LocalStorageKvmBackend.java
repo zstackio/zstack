@@ -475,6 +475,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     String hostUuid = hostUuids.get(replies.indexOf(reply));
 
                     if (!reply.isSuccess()) {
+                        //TODO
                         logger.warn(String.format("cannot get the physical capacity of local storage on the host[uuid:%s], %s", hostUuid, reply.getError()));
                         continue;
                     }
@@ -483,6 +484,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     AgentResponse rsp = r.toResponse(AgentResponse.class);
 
                     if (!rsp.isSuccess()) {
+                        //TODO
                         logger.warn(String.format("cannot get the physical capacity of local storage on the host[uuid:%s], %s", hostUuid, rsp.getError()));
                         continue;
                     }
@@ -1632,13 +1634,21 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             dbf.removeCollection(refs, LocalStorageHostRefVO.class);
 
             long total = 0;
+            long avail = 0;
+            long pt = 0;
+            long pa = 0;
+            long su = 0;
             for (LocalStorageHostRefVO ref : refs) {
                 total += ref.getTotalCapacity();
+                avail += ref.getAvailableCapacity();
+                pt += ref.getTotalPhysicalCapacity();
+                pa += ref.getAvailablePhysicalCapacity();
+                su += ref.getSystemUsedCapacity();
             }
 
             // after detaching, total capacity on those hosts should be deducted
             // from both total and available capacity of the primary storage
-            decreaseCapacity(total, total, null, null);
+            decreaseCapacity(total, avail, pt, pa, su);
         }
 
         syncPhysicalCapacity(new ReturnValueCompletion<PhysicalCapacityUsage>(completion) {
@@ -1690,6 +1700,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public void run(List<MessageReply> replies) {
                 long total = 0;
                 long avail = 0;
+                long systemUsed = 0;
                 List<LocalStorageHostRefVO> refs = new ArrayList<LocalStorageHostRefVO>();
 
                 for (MessageReply reply : replies) {
@@ -1713,6 +1724,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     total += rsp.getTotalCapacity();
                     avail += rsp.getAvailableCapacity();
+                    systemUsed += (rsp.getTotalCapacity() - rsp.getAvailableCapacity());
 
                     LocalStorageHostRefVO ref = new LocalStorageHostRefVO();
                     ref.setPrimaryStorageUuid(self.getUuid());
@@ -1721,13 +1733,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     ref.setAvailableCapacity(rsp.getAvailableCapacity());
                     ref.setTotalCapacity(rsp.getTotalCapacity());
                     ref.setTotalPhysicalCapacity(rsp.getTotalCapacity());
+                    ref.setSystemUsedCapacity(rsp.getTotalCapacity() - rsp.getAvailableCapacity());
                     refs.add(ref);
 
                 }
 
                 dbf.persistCollection(refs);
 
-                increaseCapacity(total, avail, total, avail);
+                increaseCapacity(total, avail, total, avail, systemUsed);
 
                 completion.success();
             }

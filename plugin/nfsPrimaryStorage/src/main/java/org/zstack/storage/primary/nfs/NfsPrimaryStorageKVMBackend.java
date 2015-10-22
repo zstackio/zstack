@@ -34,6 +34,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.kvm.*;
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
 import org.zstack.utils.Bucket;
 import org.zstack.utils.CollectionUtils;
@@ -109,14 +110,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
         }
 
-        nfsMgr.reportCapacityIfNeeded(inv.getUuid(), rsp);
-
-        PrimaryStorageReportCapacityMsg rmsg = new PrimaryStorageReportCapacityMsg();
-        rmsg.setPrimaryStorageUuid(inv.getUuid());
-        rmsg.setAvailableCapacity(rsp.getAvailableCapacity());
-        rmsg.setTotalCapacity(rsp.getTotalCapacity());
-        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
-        bus.send(rmsg);
+        new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
+                rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
+        );
 
         logger.debug(String.format(
                 "Successfully mounted nfs primary storage[uuid:%s] on kvm host[uuid:%s]",
@@ -338,14 +334,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
             }
 
-            nfsMgr.reportCapacityIfNeeded(inv.getUuid(), rsp);
-
-            PrimaryStorageReportCapacityMsg rmsg = new PrimaryStorageReportCapacityMsg();
-            rmsg.setPrimaryStorageUuid(inv.getUuid());
-            rmsg.setAvailableCapacity(rsp.getAvailableCapacity());
-            rmsg.setTotalCapacity(rsp.getTotalCapacity());
-            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
-            bus.send(rmsg);
+            new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
+                    rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
+            );
         }
     }
 

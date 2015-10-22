@@ -37,10 +37,21 @@ public class PrimaryStorageCapacityVO {
     private long availablePhysicalCapacity;
 
     @Column
+    private Long systemUsedCapacity;
+
+    @Column
     private Timestamp createDate;
 
     @Column
     private Timestamp lastOpDate;
+
+    public Long getSystemUsedCapacity() {
+        return systemUsedCapacity;
+    }
+
+    public void setSystemUsedCapacity(Long systemUsedCapacity) {
+        this.systemUsedCapacity = systemUsedCapacity;
+    }
 
     public long getTotalPhysicalCapacity() {
         return totalPhysicalCapacity;

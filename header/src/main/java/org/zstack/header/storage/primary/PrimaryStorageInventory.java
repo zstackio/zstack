@@ -112,6 +112,10 @@ public class PrimaryStorageInventory implements Serializable{
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "availablePhysicalCapacity"))
     private Long availablePhysicalCapacity;
 
+    @Queryable(mappingClass = PrimaryStorageCapacityInventory.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "systemUsedCapacity"))
+    private Long systemUsedCapacity;
+
     /**
      * @desc
      * primary storage type
@@ -188,10 +192,19 @@ public class PrimaryStorageInventory implements Serializable{
             setAvailableCapacity(vo.getCapacity().getAvailableCapacity());
             setTotalPhysicalCapacity(vo.getCapacity().getTotalPhysicalCapacity());
             setAvailablePhysicalCapacity(vo.getCapacity().getAvailablePhysicalCapacity());
+            setSystemUsedCapacity(vo.getCapacity().getSystemUsedCapacity());
         }
     }
 
-	public static PrimaryStorageInventory valueOf(PrimaryStorageVO vo) {
+    public Long getSystemUsedCapacity() {
+        return systemUsedCapacity;
+    }
+
+    public void setSystemUsedCapacity(Long systemUsedCapacity) {
+        this.systemUsedCapacity = systemUsedCapacity;
+    }
+
+    public static PrimaryStorageInventory valueOf(PrimaryStorageVO vo) {
         return new PrimaryStorageInventory(vo);
 	}
 	

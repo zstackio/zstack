@@ -44,10 +44,21 @@ public class LocalStorageHostRefVO {
     private long availablePhysicalCapacity;
 
     @Column
+    private long systemUsedCapacity;
+
+    @Column
     private Timestamp createDate;
 
     @Column
     private Timestamp lastOpDate;
+
+    public long getSystemUsedCapacity() {
+        return systemUsedCapacity;
+    }
+
+    public void setSystemUsedCapacity(long systemUsedCapacity) {
+        this.systemUsedCapacity = systemUsedCapacity;
+    }
 
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;

@@ -16,6 +16,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTag;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.kvm.KVMConstant;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse;
 import org.zstack.tag.TagManager;
@@ -167,7 +168,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     @Override
     public void reportCapacityIfNeeded(String psUuid, NfsPrimaryStorageAgentResponse rsp) {
         if (rsp.getAvailableCapacity() != null && rsp.getTotalCapacity() != null) {
-            psMgr.sendCapacityReportMessage(rsp.getTotalCapacity(), rsp.getAvailableCapacity(), psUuid);
+            new PrimaryStorageCapacityUpdater(psUuid).updateAvailablePhysicalCapacity(rsp.getAvailableCapacity());
         }
     }
 

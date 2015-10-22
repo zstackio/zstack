@@ -80,7 +80,7 @@ public class TestMevoco5 {
 
         Capacity c = new Capacity();
         c.total = totalSize;
-        c.avail = totalSize;
+        c.avail = totalSize - SizeUnit.GIGABYTE.toByte(11);
 
         config.capacityMap.put("host1", c);
 
@@ -111,7 +111,7 @@ public class TestMevoco5 {
 
         api.destroyVmInstance(vm.getUuid());
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        long availSize = totalSize - isize - psRatioMgr.calculateByRatio(vm.getRootVolume().getPrimaryStorageUuid(), vm.getRootVolume().getSize());
+        long availSize = totalSize - isize - pscap.getSystemUsedCapacity() - psRatioMgr.calculateByRatio(vm.getRootVolume().getPrimaryStorageUuid(), vm.getRootVolume().getSize());
         Assert.assertEquals(availSize, pscap.getAvailableCapacity());
 
         MevocoGlobalConfig.MEMORY_OVER_PROVISIONING_RATIO.updateValue(1);
@@ -123,11 +123,11 @@ public class TestMevoco5 {
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(1);
         TimeUnit.SECONDS.sleep(2);
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        availSize = totalSize - isize - psRatioMgr.calculateByRatio(vm1.getRootVolume().getPrimaryStorageUuid(), vm1.getRootVolume().getSize());
+        availSize = totalSize - pscap.getSystemUsedCapacity() - isize - psRatioMgr.calculateByRatio(vm1.getRootVolume().getPrimaryStorageUuid(), vm1.getRootVolume().getSize());
         Assert.assertEquals(availSize, pscap.getAvailableCapacity());
 
         LocalStorageHostRefVO lref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
-        availSize = totalSize - isize - psRatioMgr.calculateByRatio(vm1.getRootVolume().getPrimaryStorageUuid(), vm1.getRootVolume().getSize());
+        availSize = totalSize - lref.getSystemUsedCapacity() - isize - psRatioMgr.calculateByRatio(vm1.getRootVolume().getPrimaryStorageUuid(), vm1.getRootVolume().getSize());
         Assert.assertEquals(availSize, lref.getAvailableCapacity());
 
         MevocoGlobalConfig.MEMORY_OVER_PROVISIONING_RATIO.updateValue(2);
@@ -138,10 +138,10 @@ public class TestMevoco5 {
 
         api.destroyVmInstance(vm1.getUuid());
         pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        Assert.assertEquals(pscap.getTotalCapacity() - isize, pscap.getAvailableCapacity());
+        Assert.assertEquals(pscap.getTotalCapacity() - pscap.getSystemUsedCapacity() - isize, pscap.getAvailableCapacity());
 
         lref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(lref.getTotalCapacity() - isize, lref.getAvailableCapacity());
+        Assert.assertEquals(lref.getTotalCapacity() - lref.getSystemUsedCapacity() - isize, lref.getAvailableCapacity());
 
         hcap = dbf.findByUuid(host.getUuid(), HostCapacityVO.class);
         Assert.assertEquals(hcap.getTotalMemory(), hcap.getAvailableMemory());

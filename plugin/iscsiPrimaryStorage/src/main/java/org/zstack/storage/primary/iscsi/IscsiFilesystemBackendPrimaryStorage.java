@@ -22,7 +22,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -42,6 +41,7 @@ import org.zstack.storage.backup.BackupStoragePathMaker;
 import org.zstack.storage.backup.sftp.SftpBackupStorageVO;
 import org.zstack.storage.backup.sftp.SftpBackupStorageVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
 import org.zstack.storage.primary.iscsi.IscsiIsoStoreManager.IscsiIsoSpec;
@@ -523,7 +523,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
 
     private void reportCapacity(AgentCapacityResponse ret) {
         if (ret.getTotalCapacity() != null && ret.getAvailableCapacity() != null) {
-            psMgr.sendCapacityReportMessage(ret.getTotalCapacity(), ret.getAvailableCapacity(), self.getUuid());
+            new PrimaryStorageCapacityUpdater(self.getUuid()).updateAvailablePhysicalCapacity(ret.getAvailableCapacity());
         }
     }
 
@@ -1108,15 +1108,10 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                             @Override
                             public void success(InitRsp ret) {
                                 if (ret.isSuccess()) {
-                                    reportCapacity(ret);
+                                    new PrimaryStorageCapacityUpdater(self.getUuid()).update(
+                                            ret.getTotalCapacity(), ret.getAvailableCapacity(), ret.getTotalCapacity(), ret.getAvailableCapacity()
+                                    );
 
-                                    PrimaryStorageReportCapacityMsg rmsg = new PrimaryStorageReportCapacityMsg();
-                                    rmsg.setPrimaryStorageUuid(self.getUuid());
-                                    rmsg.setAvailableCapacity(ret.getAvailableCapacity());
-                                    rmsg.setTotalCapacity(ret.getTotalCapacity());
-                                    bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-
-                                    bus.send(rmsg);
                                     trigger.next();
                                 } else {
                                     trigger.fail(errf.stringToOperationError(ret.getError()));

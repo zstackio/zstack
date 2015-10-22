@@ -4,10 +4,13 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.RecalculatePrimaryStorageMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -25,10 +28,13 @@ public class PrimaryStorageCapacityUpdater {
 
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private CloudBus bus;
 
     private String primaryStorageUuid;
     private TypedQuery<PrimaryStorageCapacityVO> query;
     private PrimaryStorageCapacityVO capacityVO;
+    private PrimaryStorageCapacityVO originalCopy;
 
     private long totalForLog;
     private long availForLog;
@@ -85,24 +91,44 @@ public class PrimaryStorageCapacityUpdater {
             availForLog = capacityVO.getAvailableCapacity();
             totalPhysicalForLog = capacityVO.getTotalPhysicalCapacity();
             availPhysicalForLog = capacityVO.getAvailablePhysicalCapacity();
+
+            originalCopy = new PrimaryStorageCapacityVO();
+            originalCopy.setAvailableCapacity(capacityVO.getAvailableCapacity());
+            originalCopy.setTotalCapacity(capacityVO.getTotalCapacity());
+            originalCopy.setAvailablePhysicalCapacity(capacityVO.getAvailablePhysicalCapacity());
+            originalCopy.setTotalPhysicalCapacity(capacityVO.getTotalPhysicalCapacity());
+            originalCopy.setSystemUsedCapacity(capacityVO.getSystemUsedCapacity());
         }
 
         return capacityVO != null;
     }
 
+    private void checkResize() {
+        if (originalCopy.getTotalPhysicalCapacity() == 0 && originalCopy.getTotalPhysicalCapacity() != capacityVO.getTotalPhysicalCapacity()) {
+            logger.debug(String.format("the physical capacity of primary storage[uuid:%s] changed from %s to %s, this indicates the primary storage is re-sized." +
+                    " We need to recalculate its capacity", capacityVO.getUuid(), originalCopy.getTotalPhysicalCapacity(), capacityVO.getTotalPhysicalCapacity()));
+            // primary storage re-sized
+            RecalculatePrimaryStorageMsg msg = new RecalculatePrimaryStorageMsg();
+            msg.setPrimaryStorageUuid(capacityVO.getUuid());
+            bus.makeLocalServiceId(msg, PrimaryStorageConstant.SERVICE_ID);
+            bus.send(msg);
+        }
+    }
+
     private void merge() {
         capacityVO = dbf.getEntityManager().merge(capacityVO);
         logCapacityChange();
+        checkResize();
     }
 
     @Transactional
-    public boolean updateAvailableCapacity(long avail) {
+    public boolean updateAvailablePhysicalCapacity(long avail) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
             return false;
         }
 
-        capacityVO.setAvailableCapacity(avail);
+        capacityVO.setAvailablePhysicalCapacity(avail);
         merge();
         return true;
     }
@@ -144,6 +170,10 @@ public class PrimaryStorageCapacityUpdater {
             return false;
         }
 
+        if (capacityVO.getSystemUsedCapacity() == null && physicalTotal != null && physicalAvail != null) {
+            capacityVO.setSystemUsedCapacity(physicalTotal - physicalAvail);
+        }
+
         if (total != null) {
             capacityVO.setTotalCapacity(total);
         }
@@ -156,9 +186,11 @@ public class PrimaryStorageCapacityUpdater {
         if (physicalAvail != null) {
             capacityVO.setAvailablePhysicalCapacity(physicalAvail);
         }
+
         merge();
         return true;
     }
+
 
     @Transactional
     public boolean run(PrimaryStorageCapacityUpdaterRunnable runnable) {

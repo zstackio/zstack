@@ -136,12 +136,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         String sql = "select cap from PrimaryStorageCapacityVO cap, CephPrimaryStorageVO pri where pri.uuid = cap.uuid and pri.fsid = :fsid";
         TypedQuery<PrimaryStorageCapacityVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageCapacityVO.class);
         q.setParameter("fsid", fsid);
-        try {
-            PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(q);
-            updater.update(total, avail, total, avail);
-        } catch (EmptyResultDataAccessException e) {
-            // ignore
-        }
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(q);
+        updater.update(total, avail, total, avail);
     }
 
     private IsoTO convertIsoToCephIfNeeded(final IsoTO to) {

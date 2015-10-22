@@ -521,7 +521,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private void handle(RemoveHostFromLocalStorageMsg msg) {
         LocalStorageHostRefVO ref = dbf.findByUuid(msg.getHostUuid(), LocalStorageHostRefVO.class);
         // on remove, substract the total capacity from every capacity
-        decreaseCapacity(ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity());
+        decreaseCapacity(ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getSystemUsedCapacity());
         dbf.remove(ref);
         bus.reply(msg, new RemoveHostFromLocalStorageReply());
     }
@@ -545,9 +545,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
                     ref.setHostUuid(msg.getHostUuid());
                     ref.setPrimaryStorageUuid(self.getUuid());
+                    ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize);
                     dbf.persist(ref);
 
-                    increaseCapacity(c.totalPhysicalSize, c.availablePhysicalSize, c.totalPhysicalSize, c.availablePhysicalSize);
+                    increaseCapacity(c.totalPhysicalSize, c.availablePhysicalSize, c.totalPhysicalSize, c.availablePhysicalSize, ref.getSystemUsedCapacity());
                 } else {
                     ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
                     dbf.update(ref);
@@ -1101,7 +1102,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         updater.update(total, avail, totalPhysical, availPhysical);
     }
 
-    protected void increaseCapacity(final Long total, final Long avail, final Long totalPhysical, final Long availPhysical) {
+    protected void increaseCapacity(final Long total, final Long avail, final Long totalPhysical, final Long availPhysical, final Long sysmtemUsed) {
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
@@ -1118,12 +1119,19 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 if (availPhysical != null) {
                     cap.setAvailablePhysicalCapacity(cap.getAvailablePhysicalCapacity() + availPhysical);
                 }
+                if (sysmtemUsed != null) {
+                    if (cap.getSystemUsedCapacity() == null) {
+                        cap.setSystemUsedCapacity(0L);
+                    }
+
+                    cap.setSystemUsedCapacity(cap.getSystemUsedCapacity() + sysmtemUsed);
+                }
                 return cap;
             }
         });
     }
 
-    protected void decreaseCapacity(final Long total, final Long avail, final Long totalPhysical, final Long availPhysical) {
+    protected void decreaseCapacity(final Long total, final Long avail, final Long totalPhysical, final Long availPhysical, final Long systemUsed) {
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
@@ -1143,6 +1151,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 if (availPhysical != null) {
                     long ap = cap.getAvailablePhysicalCapacity() - availPhysical;
                     cap.setAvailablePhysicalCapacity(ap < 0 ? 0 : ap);
+                }
+                if (systemUsed != null) {
+                    long su = cap.getSystemUsedCapacity() - systemUsed;
+                    cap.setSystemUsedCapacity(su < 0 ? 0 : su);
                 }
                 return cap;
             }
