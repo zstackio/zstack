@@ -75,16 +75,15 @@ public class TestLocalStorage16 {
 
         Assert.assertFalse(dbf.isExist(vm.getRootVolumeUuid(), LocalStorageResourceRefVO.class));
 
-        HostInventory host1 = deployer.hosts.get("host1");
-        LocalStorageHostRefVO ref = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(totalSize, ref.getAvailableCapacity());
-
-
         long isize = 0;
         List<ImageCacheVO> is = dbf.listAll(ImageCacheVO.class);
         for (ImageCacheVO ic : is) {
             isize += ic.getSize();
         }
+
+        HostInventory host1 = deployer.hosts.get("host1");
+        LocalStorageHostRefVO ref = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
+        Assert.assertEquals(totalSize-isize, ref.getAvailableCapacity());
 
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         PrimaryStorageVO pvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);

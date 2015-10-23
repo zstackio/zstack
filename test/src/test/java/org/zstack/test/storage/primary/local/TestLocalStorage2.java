@@ -74,18 +74,20 @@ public class TestLocalStorage2 {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.destroyVmInstance(vm.getUuid());
 
-        HostInventory host = deployer.hosts.get("host1");
-        SimpleQuery<LocalStorageHostRefVO> hq = dbf.createQuery(LocalStorageHostRefVO.class);
-        hq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, host.getUuid());
-        LocalStorageHostRefVO href = hq.find();
-        Assert.assertEquals(totalSize, href.getTotalCapacity());
-        Assert.assertEquals(totalSize, href.getAvailableCapacity());
-
         long isize = 0;
         List<ImageCacheVO> is = dbf.listAll(ImageCacheVO.class);
         for (ImageCacheVO ic : is) {
             isize += ic.getSize();
         }
+
+        HostInventory host = deployer.hosts.get("host1");
+        SimpleQuery<LocalStorageHostRefVO> hq = dbf.createQuery(LocalStorageHostRefVO.class);
+        hq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, host.getUuid());
+        LocalStorageHostRefVO href = hq.find();
+        Assert.assertEquals(totalSize, href.getTotalCapacity());
+        Assert.assertEquals(totalSize-1, href.getAvailableCapacity());
+
+
 
         PrimaryStorageInventory pri = deployer.primaryStorages.get("local");
         PrimaryStorageVO privo = dbf.findByUuid(pri.getUuid(), PrimaryStorageVO.class);
