@@ -573,7 +573,9 @@ public class KVMSimulatorController {
     private void logoutIscsiTarget(HttpEntity<String> entity) {
         LogoutIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), KVMAgentCommands.LogoutIscsiTargetCmd.class);
         LogoutIscsiTargetRsp rsp = new LogoutIscsiTargetRsp();
-        config.logoutIscsiTargetCmds.add(cmd);
+        synchronized (config.logoutIscsiTargetCmds) {
+            config.logoutIscsiTargetCmds.add(cmd);
+        }
         logger.debug(String.format("logout iscsi target: %s", cmd.getTarget()));
         replyer.reply(entity, rsp);
     }
@@ -588,7 +590,9 @@ public class KVMSimulatorController {
     private void loginIscsiTarget(HttpEntity<String> entity) {
         LoginIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), KVMAgentCommands.LoginIscsiTargetCmd.class);
         LoginIscsiTargetRsp rsp = new LoginIscsiTargetRsp();
-        config.loginIscsiTargetCmds.add(cmd);
+        synchronized (config.loginIscsiTargetCmds) {
+            config.loginIscsiTargetCmds.add(cmd);
+        }
         logger.debug(String.format("login iscsi  target: %s", cmd.getTarget()));
         replyer.reply(entity, rsp);
     }

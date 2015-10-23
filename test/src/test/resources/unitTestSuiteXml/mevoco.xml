@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="180">
+    <TestCase class="org.zstack.test.mevoco.TestMevoco"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco1"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco2"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco3"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco4"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco5"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco6"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco7"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco8"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco9"/>
+    <TestCase class="org.zstack.test.mevoco.TestMonitor"/>
+</UnitTestSuiteConfig>

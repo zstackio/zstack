@@ -24,13 +24,11 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * 1. concurrently add image and create vm
+ * 1. set creating vm failure chance to 0.5
+ * 2. set api retry times to 10
+ * 3. create the vm
  *
- * confirm 50 vms created successfully
- *
- * 2. reconnect the host
- *
- * confirm all DHCP setup for vms
+ * confirm the vm created successfully
  */
 public class TestMevoco9 {
     Deployer deployer;

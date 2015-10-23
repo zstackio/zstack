@@ -29,6 +29,7 @@
 	<Import resource="unitTestSuiteXml/AccountManager.xml"/>
 	<Import resource="unitTestSuiteXml/ceph.xml"/>
 	<Import resource="unitTestSuiteXml/lb.xml"/>
+	<Import resource="unitTestSuiteXml/mevoco.xml"/>
 
 	<!--
     <Import resource="unitTestSuiteXml/MultiNodes.xml"/>

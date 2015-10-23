@@ -76,6 +76,7 @@ public class IscsiBtrfsPrimaryStorageSimulator {
 
     @AsyncThread
     private void checkBits(HttpEntity<String> entity) {
+
         CheckBitsExistenceCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CheckBitsExistenceCmd.class);
         CheckBitsExistenceRsp rsp = new CheckBitsExistenceRsp();
 
