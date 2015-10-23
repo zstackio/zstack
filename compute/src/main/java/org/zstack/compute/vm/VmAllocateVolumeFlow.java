@@ -86,6 +86,8 @@ public class VmAllocateVolumeFlow implements Flow {
             public void run(List<MessageReply> replies) {
                 ErrorCode err = null;
                 for (MessageReply r : replies) {
+                    VolumeSpec vspec = spec.getVolumeSpecs().get(replies.indexOf(r));
+
                     if (r.isSuccess()) {
                         CreateVolumeReply cr = r.castReply();
                         VolumeInventory inv = cr.getInventory();
@@ -94,8 +96,11 @@ public class VmAllocateVolumeFlow implements Flow {
                         } else {
                             spec.getDestDataVolumes().add(inv);
                         }
+
+                        vspec.setIsVolumeCreated(true);
                     } else {
                         err = r.getError();
+                        vspec.setIsVolumeCreated(false);
                     }
                 }
 

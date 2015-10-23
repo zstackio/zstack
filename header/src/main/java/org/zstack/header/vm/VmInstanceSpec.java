@@ -26,6 +26,19 @@ public class VmInstanceSpec implements Serializable {
         private boolean isRoot;
         private long size;
         private String diskOfferingUuid;
+        private boolean isVolumeCreated;
+
+        public boolean isVolumeCreated() {
+            return isVolumeCreated;
+        }
+
+        public void setIsVolumeCreated(boolean isVolumeCreated) {
+            this.isVolumeCreated = isVolumeCreated;
+        }
+
+        public void setIsRoot(boolean isRoot) {
+            this.isRoot = isRoot;
+        }
 
         public PrimaryStorageInventory getPrimaryStorageInventory() {
             return primaryStorageInventory;

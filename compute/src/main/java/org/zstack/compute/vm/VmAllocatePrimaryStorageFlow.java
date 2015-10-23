@@ -122,9 +122,17 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
     @Override
     public void rollback(FlowTrigger chain, Map data) {
+        final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+
         List<Bucket> buckets = (List<Bucket>) data.get(SUCCESS);
         if (buckets != null) {
             for (Bucket b : buckets) {
+                VolumeSpec vspec = spec.getVolumeSpecs().get(buckets.indexOf(b));
+                if (vspec.isVolumeCreated()) {
+                    // don't return capacity as it has been returned when the volume is deleted
+                    continue;
+                }
+
                 ReturnPrimaryStorageCapacityMsg msg = new ReturnPrimaryStorageCapacityMsg();
                 PrimaryStorageInventory pri = b.get(0);
                 Long size = b.get(1);

@@ -10,6 +10,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
 import org.zstack.header.apimediator.APIIsReadyToGoReply;
+import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.jmx.JmxFacade;
@@ -80,6 +81,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private Map<Class, Long> messageTimeout = new ConcurrentHashMap<Class, Long>();
     private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
     private Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new HashMap<Class, List<BeforeSendMessageInterceptor>>();
+    private Map<Class, List<BeforePublishEventInterceptor>> beforeEventPublishInterceptors = new HashMap<Class, List<BeforePublishEventInterceptor>>();
 
     private final String NO_NEED_REPLY_MSG = "noReply";
     private final String CORRELATION_ID = "correlationId";
@@ -1606,6 +1608,22 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         eventProperty(event);
         buildResponseMessageMetaData(event);
         callReplyPreSendingExtensions(event);
+
+        List<BeforePublishEventInterceptor> is = beforeEventPublishInterceptors.get(event.getClass());
+        if (is != null) {
+            for (BeforePublishEventInterceptor i : is) {
+                try {
+                    i.beforePublishEvent(event);
+                } catch (StopRoutingException e) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("BeforePublishEventInterceptor[%s] stop publishing event: %s", i.getClass(), JSONObjectUtil.toJsonString(event)));
+                    }
+
+                    return;
+                }
+            }
+        }
+
         wire.publish(event);
     }
 
@@ -2104,7 +2122,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 synchronized (is) {
                     int order = 0;
                     for (BeforeDeliveryMessageInterceptor i : is) {
-                        if (i.order() <= interceptor.order()) {
+                        if (i.orderOfBeforeDeliveryMessageInterceptor() <= interceptor.orderOfBeforeDeliveryMessageInterceptor()) {
                             order = is.indexOf(i);
                             break;
                         }
@@ -2131,6 +2149,32 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                     int order = 0;
                     for (BeforeSendMessageInterceptor i : is) {
                         if (i.order() <= interceptor.order()) {
+                            order = is.indexOf(i);
+                            break;
+                        }
+                    }
+                    is.add(order, interceptor);
+                }
+
+                clz = clz.getSuperclass();
+            }
+        }
+    }
+
+    @Override
+    public void installBeforePublishEventInterceptor(BeforePublishEventInterceptor interceptor, Class<? extends Event>... classes) {
+        for (Class clz : classes) {
+            while (clz != Object.class) {
+                List<BeforePublishEventInterceptor> is = beforeEventPublishInterceptors.get(clz);
+                if (is == null) {
+                    is = new ArrayList<BeforePublishEventInterceptor>();
+                    beforeEventPublishInterceptors.put(clz, is);
+                }
+
+                synchronized (is) {
+                    int order = 0;
+                    for (BeforePublishEventInterceptor i : is) {
+                        if (i.orderOfBeforePublishEventInterceptor() <= interceptor.orderOfBeforePublishEventInterceptor()) {
                             order = is.indexOf(i);
                             break;
                         }

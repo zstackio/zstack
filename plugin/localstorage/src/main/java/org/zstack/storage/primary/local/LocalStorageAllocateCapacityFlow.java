@@ -151,6 +151,11 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
         List<ReturnPrimaryStorageCapacityMsg> msgs = CollectionUtils.transformToList(spec.getVolumeSpecs(), new Function<ReturnPrimaryStorageCapacityMsg, VolumeSpec>() {
             @Override
             public ReturnPrimaryStorageCapacityMsg call(VolumeSpec arg) {
+                if (arg.isVolumeCreated()) {
+                    // don't return capacity as it has been returned when the volume is deleted
+                    return null;
+                }
+
                 ReturnPrimaryStorageCapacityMsg msg = new ReturnPrimaryStorageCapacityMsg();
                 msg.setDiskSize(arg.getSize());
                 msg.setPrimaryStorageUuid(arg.getPrimaryStorageInventory().getUuid());
