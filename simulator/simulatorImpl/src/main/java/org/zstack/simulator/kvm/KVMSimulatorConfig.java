@@ -70,4 +70,5 @@ public class KVMSimulatorConfig {
     public volatile List<DetachNicCommand> detachNicCommands = new ArrayList<DetachNicCommand>();
     public volatile List<AttachIsoCmd> attachIsoCmds = new ArrayList<AttachIsoCmd>();
     public volatile List<DetachIsoCmd> detachIsoCmds = new ArrayList<DetachIsoCmd>();
+    public volatile double startVmFailureChance = 0;
 }

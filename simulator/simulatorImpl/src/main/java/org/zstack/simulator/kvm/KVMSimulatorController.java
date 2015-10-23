@@ -453,13 +453,21 @@ public class KVMSimulatorController {
 	private void createVm(HttpEntity<String> entity) {
     	StartVmCmd cmd = JSONObjectUtil.toObject(entity.getBody(), StartVmCmd.class);
     	StartVmResponse rsp = new StartVmResponse();
+
     	if (config.startVmSuccess) {
-    		logger.debug(String.format("successfully start vm on kvm host, %s", entity.getBody()));
-            synchronized (config) {
-                config.vms.put(cmd.getVmInstanceUuid(), KvmVmState.Running);
-                logger.debug(String.format("current running vm[%s]", config.vms.size()));
+            if (config.startVmFailureChance != 0) {
+                if (Math.random() <= config.startVmFailureChance) {
+                    rsp.setError("on purpose");
+                    rsp.setSuccess(false);
+                }
+            } else {
+                logger.debug(String.format("successfully start vm on kvm host, %s", entity.getBody()));
+                synchronized (config) {
+                    config.vms.put(cmd.getVmInstanceUuid(), KvmVmState.Running);
+                    logger.debug(String.format("current running vm[%s]", config.vms.size()));
+                }
+                config.startVmCmd = cmd;
             }
-            config.startVmCmd = cmd;
     	} else {
     		String err = "fail start vm on purpose";
     		rsp.setError(err);
