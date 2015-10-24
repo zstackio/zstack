@@ -384,7 +384,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void handle(ReturnPrimaryStorageCapacityMsg msg) {
-        returnPrimaryStorageCapacity(msg.getPrimaryStorageUuid(), msg.getDiskSize());
+        long diskSize = msg.isNoOverProvisioning() ? msg.getDiskSize() : ratioMgr.calculateByRatio(msg.getPrimaryStorageUuid(), msg.getDiskSize());
+        PrimaryStorageCapacityUpdater updater  = new PrimaryStorageCapacityUpdater(msg.getPrimaryStorageUuid());
+        if (updater.increaseAvailableCapacity(diskSize)) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("Successfully return %s bytes to primary storage[uuid:%s]", diskSize, msg.getPrimaryStorageUuid()));
+            }
+        }
     }
 
     private void handle(AllocatePrimaryStorageMsg msg) {
@@ -551,16 +557,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             throw new CloudRuntimeException(String.format("No PrimaryStorageFactory for type: %s found", type));
         }
         return factory;
-    }
-
-    private void returnPrimaryStorageCapacity(String primaryStorageUuid, long diskSize) {
-        diskSize = ratioMgr.calculateByRatio(primaryStorageUuid, diskSize);
-        PrimaryStorageCapacityUpdater updater  = new PrimaryStorageCapacityUpdater(primaryStorageUuid);
-        if (updater.increaseAvailableCapacity(diskSize)) {
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("Successfully return %s bytes to primary storage[uuid:%s]", diskSize, primaryStorageUuid));
-            }
-        }
     }
 
     @Override

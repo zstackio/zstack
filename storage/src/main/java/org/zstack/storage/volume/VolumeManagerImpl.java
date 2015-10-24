@@ -307,7 +307,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
                         AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                         amsg.setSize(template.getSize());
                         amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
-                        amsg.setNoOverProvisioning(true);
                         amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                         amsg.setRequiredHostUuid(msg.getHostUuid());
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);

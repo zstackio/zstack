@@ -318,6 +318,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                                     ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                     rmsg.setPrimaryStorageUuid(self.getUuid());
                                     rmsg.setDiskSize(imageSpec.getInventory().getSize());
+                                    rmsg.setNoOverProvisioning(true);
                                     bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
                                     bus.send(rmsg);
                                 }

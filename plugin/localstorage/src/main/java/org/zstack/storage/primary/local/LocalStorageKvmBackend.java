@@ -39,10 +39,8 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
-import org.zstack.kvm.KVMConstant;
-import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
-import org.zstack.kvm.KVMHostAsyncHttpCallReply;
-import org.zstack.kvm.MergeVolumeSnapshotOnKvmMsg;
+import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.utils.CollectionUtils;
@@ -385,11 +383,20 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static class OfflineMergeSnapshotRsp extends AgentResponse {
     }
 
+    public static class CheckBitsCmd extends AgentCommand {
+        public String path;
+    }
+
+    public static class CheckBitsRsp extends AgentResponse {
+        public boolean existing;
+    }
+
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/localstorage/volume/createvolumefromcache";
     public static final String DELETE_BITS_PATH = "/localstorage/delete";
+    public static final String CHECK_BITS_PATH = "/localstorage/checkbits";
     public static final String CREATE_TEMPLATE_FROM_VOLUME = "/localstorage/volume/createtemplate";
     public static final String REVERT_SNAPSHOT_PATH = "/localstorage/snapshot/revert";
     public static final String MERGE_SNAPSHOT_PATH = "/localstorage/snapshot/merge";
@@ -613,25 +620,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     return String.format("download-image-%s-to-localstorage-%s-cache-host-%s", image.getUuid(), self.getUuid(), hostUuid);
                 }
 
-                @Override
-                public void run(final SyncTaskChain chain) {
-                    SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
-                    q.select(ImageCacheVO_.installUrl);
-                    q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-                    q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());
-                    q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", hostUuid));
-                    String fullPath = q.findValue();
-                    if (fullPath != null) {
-                        CacheInstallPath path = new CacheInstallPath();
-                        path.fullPath = fullPath;
-                        String installPath = path.disassemble().installPath;
-                        logger.debug(String.format("found image[uuid: %s, name: %s] in the image cache of local primary storage[uuid:%s, installPath: %s]",
-                                image.getUuid(), image.getName(), self.getUuid(), installPath));
-                        completion.success(installPath);
-                        chain.next();
-                        return;
-                    }
-
+                private void doDownload(final SyncTaskChain chain) {
                     FlowChain fchain = FlowChainBuilder.newShareFlowChain();
                     fchain.setName(String.format("download-image-%s-to-local-storage-%s-cache-host-%s",
                             image.getUuid(), self.getUuid(), hostUuid));
@@ -670,6 +659,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     if (s) {
                                         ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                         rmsg.setDiskSize(image.getSize());
+                                        rmsg.setNoOverProvisioning(true);
                                         rmsg.setPrimaryStorageUuid(self.getUuid());
                                         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
                                         bus.send(rmsg);
@@ -752,6 +742,75 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             });
                         }
                     }).start();
+                }
+
+                @Override
+                public void run(final SyncTaskChain chain) {
+                    SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+                    q.select(ImageCacheVO_.installUrl);
+                    q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+                    q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());
+                    q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", hostUuid));
+                    String fullPath = q.findValue();
+                    if (fullPath == null) {
+                        doDownload(chain);
+                        return;
+                    }
+
+                    CacheInstallPath path = new CacheInstallPath();
+                    path.fullPath = fullPath;
+                    final String installPath = path.disassemble().installPath;
+                    CheckBitsCmd cmd = new CheckBitsCmd();
+                    cmd.path = installPath;
+
+                    KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                    msg.setCommand(cmd);
+                    msg.setPath(CHECK_BITS_PATH);
+                    msg.setHostUuid(hostUuid);
+                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+                    bus.send(msg, new CloudBusCallBack(completion, chain) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                completion.fail(reply.getError());
+                                chain.next();
+                                return;
+                            }
+
+                            KVMHostAsyncHttpCallReply r = reply.castReply();
+                            CheckBitsRsp rsp = r.toResponse(CheckBitsRsp.class);
+                            if (!rsp.isSuccess()) {
+                                completion.fail(errf.stringToOperationError(rsp.getError()));
+                                chain.next();
+                                return;
+                            }
+
+                            if (rsp.existing) {
+                                logger.debug(String.format("found image[uuid: %s, name: %s] in the image cache of local primary storage[uuid:%s, installPath: %s]",
+                                        image.getUuid(), image.getName(), self.getUuid(), installPath));
+                                completion.success(installPath);
+                                chain.next();
+                                return;
+                            }
+
+                            // the image is removed on the host
+                            // delete the cache object and re-download it
+                            SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+                            q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());
+                            ImageCacheVO cvo = q.find();
+
+                            ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+                            rmsg.setDiskSize(cvo.getSize());
+                            rmsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
+                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
+                            bus.send(rmsg);
+
+                            returnCapacityToHost(hostUuid, image.getSize());
+                            dbf.remove(cvo);
+
+                            doDownload(chain);
+                        }
+                    });
                 }
 
                 @Override

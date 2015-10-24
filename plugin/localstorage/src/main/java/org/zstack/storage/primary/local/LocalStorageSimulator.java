@@ -76,6 +76,17 @@ public class LocalStorageSimulator {
         return null;
     }
 
+    @RequestMapping(value=LocalStorageKvmBackend.CHECK_BITS_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String checkBits(HttpEntity<String> entity) {
+        CheckBitsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CheckBitsCmd.class);
+        config.checkBitsCmds.add(cmd);
+        CheckBitsRsp rsp = new CheckBitsRsp();
+        rsp.existing = config.checkBitsSuccess;
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=LocalStorageKvmBackend.GET_PHYSICAL_CAPACITY_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String getPhysicalCapacity(HttpEntity<String> entity) {

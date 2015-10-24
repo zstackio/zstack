@@ -497,6 +497,7 @@ public class VolumeSnapshotTreeBase {
                             if (success) {
                                 ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                 rmsg.setDiskSize(info.neededSizeOnWorkspacePrimaryStorage);
+                                rmsg.setNoOverProvisioning(true);
                                 rmsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                                 bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
                                 bus.send(rmsg);
@@ -558,6 +559,7 @@ public class VolumeSnapshotTreeBase {
                             ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                             rmsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                             rmsg.setDiskSize(info.totalSnapshotSize);
+                            rmsg.setNoOverProvisioning(true);
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
                             bus.send(rmsg);
                             trigger.next();
@@ -938,6 +940,7 @@ public class VolumeSnapshotTreeBase {
                             if (success) {
                                 ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                 rmsg.setDiskSize(info.neededSizeOnWorkspacePrimaryStorage);
+                                rmsg.setNoOverProvisioning(true);
                                 rmsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                                 bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
                                 bus.send(rmsg);
@@ -1152,6 +1155,7 @@ public class VolumeSnapshotTreeBase {
                         public void run(FlowTrigger trigger, Map data) {
                             ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                             rmsg.setDiskSize(info.totalSnapshotSize);
+                            rmsg.setNoOverProvisioning(true);
                             rmsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
                             bus.send(rmsg);

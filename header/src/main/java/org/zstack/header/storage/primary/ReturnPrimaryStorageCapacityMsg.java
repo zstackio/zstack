@@ -5,6 +5,15 @@ import org.zstack.header.message.Message;
 public class ReturnPrimaryStorageCapacityMsg extends Message {
     private String primaryStorageUuid;
     private long diskSize;
+    private boolean noOverProvisioning;
+
+    public boolean isNoOverProvisioning() {
+        return noOverProvisioning;
+    }
+
+    public void setNoOverProvisioning(boolean noOverProvisioning) {
+        this.noOverProvisioning = noOverProvisioning;
+    }
 
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;

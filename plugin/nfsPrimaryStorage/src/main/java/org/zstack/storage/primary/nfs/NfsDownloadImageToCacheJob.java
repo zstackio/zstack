@@ -107,6 +107,7 @@ public class NfsDownloadImageToCacheJob implements Job {
                         if (s) {
                             ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                             rmsg.setDiskSize(image.getInventory().getSize());
+                            rmsg.setNoOverProvisioning(true);
                             rmsg.setPrimaryStorageUuid(primaryStorage.getUuid());
                             bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
                             bus.send(rmsg);

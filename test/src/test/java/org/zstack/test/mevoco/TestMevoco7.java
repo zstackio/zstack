@@ -97,6 +97,7 @@ public class TestMevoco7 {
         c.avail = totalSize;
 
         config.capacityMap.put("host1", c);
+        MevocoGlobalConfig.DISTRIBUTE_IMAGE.updateValue(false);
 
         deployer.build();
         api = deployer.getApi();

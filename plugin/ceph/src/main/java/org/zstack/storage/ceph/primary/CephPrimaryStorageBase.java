@@ -1009,6 +1009,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         public void rollback(FlowTrigger trigger, Map data) {
                             if (s) {
                                 ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+                                rmsg.setNoOverProvisioning(true);
                                 rmsg.setPrimaryStorageUuid(self.getUuid());
                                 rmsg.setDiskSize(image.getInventory().getSize());
                                 bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);

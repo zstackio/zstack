@@ -80,6 +80,8 @@ public class TestMevoco6 {
 
         config.capacityMap.put("host1", c);
 
+        MevocoGlobalConfig.DISTRIBUTE_IMAGE.updateValue(false);
+
         deployer.build();
         api = deployer.getApi();
         session = api.loginAsAdmin();
