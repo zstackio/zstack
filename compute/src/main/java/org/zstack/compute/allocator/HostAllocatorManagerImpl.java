@@ -119,7 +119,20 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
 	private void handle(final AllocateHostMsg msg) {
         HostAllocatorSpec spec = HostAllocatorSpec.fromAllocationMsg(msg);
-        HostAllocatorStrategyFactory factory = getHostAllocatorStrategyFactory(HostAllocatorStrategyType.valueOf(msg.getAllocatorStrategy()));
+        String allocatorStrategyType = null;
+        for (HostAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(HostAllocatorStrategyExtensionPoint.class)) {
+            allocatorStrategyType = ext.getHostAllocatorStrategyName(spec);
+            if (allocatorStrategyType != null) {
+                logger.debug(String.format("%s returns allocator strategy type[%s]", ext.getClass(), allocatorStrategyType));
+                break;
+            }
+        }
+
+        if (allocatorStrategyType == null) {
+            allocatorStrategyType = msg.getAllocatorStrategy();
+        }
+
+        HostAllocatorStrategyFactory factory = getHostAllocatorStrategyFactory(HostAllocatorStrategyType.valueOf(allocatorStrategyType));
         HostAllocatorStrategy strategy = factory.getHostAllocatorStrategy();
         factory.marshalSpec(spec, msg);
 
