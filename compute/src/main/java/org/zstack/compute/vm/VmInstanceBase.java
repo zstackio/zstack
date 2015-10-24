@@ -1086,6 +1086,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 public void handle(final ErrorCode errCode, Map data) {
                     extEmitter.failedToStartNewCreatedVm(VmInstanceInventory.valueOf(self), errCode);
                     dbf.remove(self);
+                    // clean up EO, otherwise API-retry may cause conflict if
+                    // the resource uuid is set
+                    dbf.eoCleanup(VmInstanceVO.class);
                     StartNewCreatedVmInstanceReply reply = new StartNewCreatedVmInstanceReply();
                     reply.setError(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, errCode));
                     bus.reply(msg, reply);
