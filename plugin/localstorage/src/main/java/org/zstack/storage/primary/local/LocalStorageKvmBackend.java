@@ -516,11 +516,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         httpCall(path, hostUuid, cmd, false, rspType, completion);
     }
 
-    private <T extends AgentResponse> void httpCall(String path, final String hostUuid, AgentCommand cmd, boolean checkStatus, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
+    private <T extends AgentResponse> void httpCall(String path, final String hostUuid, AgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
         msg.setPath(path);
-        msg.setNoStatusCheck(checkStatus);
+        msg.setNoStatusCheck(noCheckStatus);
         msg.setCommand(cmd);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -548,6 +548,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Transactional
             private void updateCapacity(String hostUuid, T rsp) {
                 LocalStorageHostRefVO ref = dbf.getEntityManager().find(LocalStorageHostRefVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
+                if (ref == null) {
+                    return;
+                }
+
                 if (ref.getAvailablePhysicalCapacity() == rsp.getAvailableCapacity() && ref.getTotalPhysicalCapacity() == rsp.getTotalCapacity()) {
                     return;
                 }
@@ -1089,7 +1093,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.setHostUuid(msg.getHostUuid());
         cmd.setPath(self.getUrl());
 
-        httpCall(INIT_PATH, msg.getHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(completion) {
+        httpCall(INIT_PATH, msg.getHostUuid(), cmd, true, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(completion) {
             @Override
             public void success(AgentResponse rsp) {
                 PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
