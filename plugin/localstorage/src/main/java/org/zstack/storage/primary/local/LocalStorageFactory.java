@@ -18,10 +18,7 @@ import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostDeleteExtensionPoint;
-import org.zstack.header.host.HostException;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HypervisorType;
+import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
@@ -48,7 +45,7 @@ import static org.zstack.utils.CollectionDSL.list;
  */
 public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         MarshalVmOperationFlowExtensionPoint, HostDeleteExtensionPoint, VmAttachVolumeExtensionPoint,
-        GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint {
+        GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
@@ -338,5 +335,18 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         }
 
         return candidates;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public HostMaintenancePolicy getHostMaintenancePolicy(HostInventory host) {
+        String sql = "select count(ps) from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref where ps.uuid = ref.primaryStorageUuid" +
+                " and ps.type = :type and ref.clusterUuid = :cuuid";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("type", LocalStorageConstants.LOCAL_STORAGE_TYPE);
+        q.setParameter("cuuid", host.getClusterUuid());
+        q.setMaxResults(1);
+        Long count = q.getSingleResult();
+        return count > 0 ? HostMaintenancePolicy.StopVm : null;
     }
 }

@@ -8,16 +8,17 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
+import org.zstack.storage.primary.local.LocalStorageDirectlyDeleteVolumeMsg;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
@@ -29,38 +30,18 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
-import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
- * 1. migrate a vm with storage
- *
- * confirm all related commands sent
- * confirm the volumes are referenced on the dst host
- * confirm the capacity of the src host and dst host are correct
- *
- * 2. get migration target host
- *
- * confirm only host1 is the target
- *
- * 3. migrate the vm to a simulator host
- *
- * confirm the migration failed
- *
- * 4. put the host2 to the maintenance mode
- *
- * confirm the vm stopped
- */
-public class TestLocalStorage28 {
-    CLogger logger = Utils.getLogger(TestLocalStorage28.class);
+public class TestLocalStorage30 {
+    CLogger logger = Utils.getLogger(TestLocalStorage30.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -76,7 +57,7 @@ public class TestLocalStorage28 {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/localStorage/TestLocalStorage28.xml", con);
+        deployer = new Deployer("deployerXml/localStorage/TestLocalStorage30.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
         deployer.addSpringConfig("localStorageSimulator.xml");
         deployer.addSpringConfig("localStorage.xml");
@@ -106,12 +87,19 @@ public class TestLocalStorage28 {
         HostInventory host2 = deployer.hosts.get("host2");
         HostInventory host1 = deployer.hosts.get("host1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+
+        List<VolumeVO> vols = dbf.listAll(VolumeVO.class);
+        List<VolumeVO> volumesOnLocal = new ArrayList<VolumeVO>();
 
         ImageCacheVO cacheVO = dbf.listAll(ImageCacheVO.class).get(0);
         long imageSize = cacheVO.getSize();
         long usedVolumeSize = 0;
-        for (VolumeVO vol : dbf.listAll(VolumeVO.class)) {
-            usedVolumeSize += ratioMgr.calculateByRatio(vol.getPrimaryStorageUuid(), vol.getSize());
+        for (VolumeVO vol : vols) {
+            if (vol.getPrimaryStorageUuid().equals(local.getUuid())) {
+                volumesOnLocal.add(vol);
+                usedVolumeSize += ratioMgr.calculateByRatio(vol.getPrimaryStorageUuid(), vol.getSize());
+            }
         }
 
         config.createEmptyVolumeCmds.clear();
@@ -123,8 +111,8 @@ public class TestLocalStorage28 {
         LocalStorageHostRefVO ref2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
         Assert.assertEquals(ref2.getTotalCapacity() - usedVolumeSize, ref2.getAvailableCapacity());
 
-        Assert.assertEquals(vm.getAllVolumes().size(), config.createEmptyVolumeCmds.size());
-        for (final VolumeInventory vol : vm.getAllVolumes()) {
+        Assert.assertEquals(volumesOnLocal.size(), config.createEmptyVolumeCmds.size());
+        for (final VolumeVO vol : volumesOnLocal) {
             // volumes are created on dst host
             CreateEmptyVolumeCmd cmd = CollectionUtils.find(config.createEmptyVolumeCmds, new Function<CreateEmptyVolumeCmd, CreateEmptyVolumeCmd>() {
                 @Override
@@ -153,23 +141,5 @@ public class TestLocalStorage28 {
         Assert.assertEquals(host2.getManagementIp(), mcmd.getDestHostIp());
         Assert.assertEquals(vm.getUuid(), mcmd.getVmUuid());
         Assert.assertTrue(mcmd.isWithStorage());
-
-        List<HostInventory> hosts = api.getMigrationTargetHost(vm.getUuid());
-        Assert.assertFalse(hosts.isEmpty());
-        HostInventory thost = hosts.get(0);
-        Assert.assertEquals(host1.getUuid(), thost.getUuid());
-
-        HostInventory simHost = deployer.hosts.get("TestHost1");
-        boolean s = false;
-        try {
-            api.migrateVmInstance(vm.getUuid(), simHost.getUuid());
-        } catch (ApiSenderException e) {
-            s = true;
-        }
-        Assert.assertTrue(s);
-
-        api.maintainHost(host2.getUuid());
-        VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-        Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
 	}
 }

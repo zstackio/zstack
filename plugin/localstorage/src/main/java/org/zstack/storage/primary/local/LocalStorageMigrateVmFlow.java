@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
@@ -20,11 +21,13 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,13 +54,15 @@ public class LocalStorageMigrateVmFlow extends NoRollbackFlow {
         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, spec.getVmInventory().getRootVolumeUuid());
         final LocalStorageResourceRefVO ref = q.find();
 
+        final List<VolumeInventory> volumesOnLocalStorage = getVolumeOnLocalStorage(spec);
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-vm-%s-on-localstorage-%s", spec.getVmInventory().getUuid(), ref.getPrimaryStorageUuid()));
         chain.then(new ShareFlow() {
             long volumeSize = 0;
 
             {
-                for (VolumeInventory vol : spec.getVmInventory().getAllVolumes()) {
+                for (VolumeInventory vol : volumesOnLocalStorage) {
                     volumeSize += vol.getSize();
                 }
             }
@@ -112,7 +117,7 @@ public class LocalStorageMigrateVmFlow extends NoRollbackFlow {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        List<LocalStorageCreateEmptyVolumeMsg> msgs = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<LocalStorageCreateEmptyVolumeMsg, VolumeInventory>() {
+                        List<LocalStorageCreateEmptyVolumeMsg> msgs = CollectionUtils.transformToList(volumesOnLocalStorage, new Function<LocalStorageCreateEmptyVolumeMsg, VolumeInventory>() {
                             @Override
                             public LocalStorageCreateEmptyVolumeMsg call(VolumeInventory arg) {
                                 LocalStorageCreateEmptyVolumeMsg msg = new LocalStorageCreateEmptyVolumeMsg();
@@ -133,7 +138,7 @@ public class LocalStorageMigrateVmFlow extends NoRollbackFlow {
                                         return;
                                     }
 
-                                    successVolumes.add(spec.getVmInventory().getAllVolumes().get(replies.indexOf(r)));
+                                    successVolumes.add(volumesOnLocalStorage.get(replies.indexOf(r)));
                                 }
 
                                 trigger.next();
@@ -192,7 +197,7 @@ public class LocalStorageMigrateVmFlow extends NoRollbackFlow {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        List<String> volUuids = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<String, VolumeInventory>() {
+                        List<String> volUuids = CollectionUtils.transformToList(volumesOnLocalStorage, new Function<String, VolumeInventory>() {
                             @Override
                             public String call(VolumeInventory arg) {
                                 return arg.getUuid();
@@ -216,7 +221,7 @@ public class LocalStorageMigrateVmFlow extends NoRollbackFlow {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        List<LocalStorageDirectlyDeleteVolumeMsg> msgs = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<LocalStorageDirectlyDeleteVolumeMsg, VolumeInventory>() {
+                        List<LocalStorageDirectlyDeleteVolumeMsg> msgs = CollectionUtils.transformToList(volumesOnLocalStorage, new Function<LocalStorageDirectlyDeleteVolumeMsg, VolumeInventory>() {
                             @Override
                             public LocalStorageDirectlyDeleteVolumeMsg call(VolumeInventory arg) {
                                 LocalStorageDirectlyDeleteVolumeMsg msg = new LocalStorageDirectlyDeleteVolumeMsg();
@@ -234,7 +239,7 @@ public class LocalStorageMigrateVmFlow extends NoRollbackFlow {
                                 for (MessageReply r : replies) {
                                     if (!r.isSuccess()) {
                                         //TODO:
-                                        VolumeInventory vol = spec.getVmInventory().getAllVolumes().get(replies.indexOf(r));
+                                        VolumeInventory vol = volumesOnLocalStorage.get(replies.indexOf(r));
                                         logger.warn(String.format("failed to delete the volume[%s] in the host[uuid:%s] for the local" +
                                                         " primary storage[uuid:%s] during after the vm[uuid:%s] migrated to the host[uuid:%s, ip:%s], %s",
                                                 vol.getUuid(), srcHostUuid, ref.getPrimaryStorageUuid(), spec.getVmInventory().getUuid(), dstHostUuid,
@@ -288,5 +293,15 @@ public class LocalStorageMigrateVmFlow extends NoRollbackFlow {
                 });
             }
         }).start();
+    }
+
+    @Transactional(readOnly = true)
+    private List<VolumeInventory> getVolumeOnLocalStorage(VmInstanceSpec spec) {
+        String sql = "select v from VolumeVO v, PrimaryStorageVO ps where v.primaryStorageUuid = ps.uuid" +
+                " and ps.type = :type and v.vmInstanceUuid = :vmUuid";
+        TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
+        q.setParameter("type", LocalStorageConstants.LOCAL_STORAGE_TYPE);
+        q.setParameter("vmUuid", spec.getVmInventory().getUuid());
+        return VolumeInventory.valueOf(q.getResultList());
     }
 }

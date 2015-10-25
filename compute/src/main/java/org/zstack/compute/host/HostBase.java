@@ -26,6 +26,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
+import org.zstack.header.host.HostMaintenancePolicyExtensionPoint.HostMaintenancePolicy;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -146,54 +147,76 @@ public abstract class HostBase extends AbstractHost {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("maintenance-mode-host-%s-ip-%s", self.getUuid(), self.getManagementIp()));
 
+        HostMaintenancePolicy policy = HostMaintenancePolicy.MigrateVm;
+        for (HostMaintenancePolicyExtensionPoint ext : pluginRgty.getExtensionList(HostMaintenancePolicyExtensionPoint.class)) {
+            HostMaintenancePolicy p = ext.getHostMaintenancePolicy(getSelfInventory());
+            if (p != null) {
+                policy = p;
+                logger.debug(String.format("HostMaintenancePolicyExtensionPoint[%s] set maintenance policy for host[uuid:%s] to %s",
+                        ext.getClass(), self.getUuid(), policy));
+            }
+        }
+
         final int quantity = getVmMigrateQuantity();
-        DebugUtils.Assert(quantity!=0, String.format("getVmMigrateQuantity() cannot return 0"));
+        DebugUtils.Assert(quantity!=0, "getVmMigrateQuantity() cannot return 0");
+        final HostMaintenancePolicy finalPolicy = policy;
         chain.then(new ShareFlow() {
             List<String> vmFailedToMigrate = new ArrayList<String>();
 
             @Override
             public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "try-migrate-vm";
+                if (finalPolicy == HostMaintenancePolicy.MigrateVm) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "try-migrate-vm";
 
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-                        q.select(VmInstanceVO_.uuid);
-                        q.add(VmInstanceVO_.hostUuid, SimpleQuery.Op.EQ, self.getUuid());
-                        q.add(VmInstanceVO_.state, Op.NOT_EQ, VmInstanceState.Unknown);
-                        List<String> vmUuids = q.listValue();
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+                            q.select(VmInstanceVO_.uuid);
+                            q.add(VmInstanceVO_.hostUuid, SimpleQuery.Op.EQ, self.getUuid());
+                            q.add(VmInstanceVO_.state, Op.NOT_EQ, VmInstanceState.Unknown);
+                            List<String> vmUuids = q.listValue();
 
-                        if (vmUuids.isEmpty()) {
-                            trigger.next();
-                            return;
-                        }
-
-                        final List<MigrateVmMsg> msgs = new ArrayList<MigrateVmMsg>();
-                        for (String uuid : vmUuids) {
-                            MigrateVmMsg msg = new MigrateVmMsg();
-                            msg.setVmInstanceUuid(uuid);
-                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
-                            msgs.add(msg);
-                        }
-
-                        bus.send(msgs, quantity, new CloudBusListCallBack(trigger) {
-                            @Override
-                            public void run(List<MessageReply> replies) {
-                                for (MessageReply reply : replies) {
-                                    if (!reply.isSuccess()) {
-                                        MigrateVmMsg msg = msgs.get(replies.indexOf(reply));
-                                        logger.warn(String.format("failed to migrate vm[uuid:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it. %s",
-                                                msg.getVmInstanceUuid(), self.getUuid(), self.getName(), self.getManagementIp(), reply.getError()));
-                                        vmFailedToMigrate.add(msg.getVmInstanceUuid());
-                                    }
-                                }
-
+                            if (vmUuids.isEmpty()) {
                                 trigger.next();
+                                return;
                             }
-                        });
-                    }
-                });
+
+                            final List<MigrateVmMsg> msgs = new ArrayList<MigrateVmMsg>();
+                            for (String uuid : vmUuids) {
+                                MigrateVmMsg msg = new MigrateVmMsg();
+                                msg.setVmInstanceUuid(uuid);
+                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
+                                msgs.add(msg);
+                            }
+
+                            bus.send(msgs, quantity, new CloudBusListCallBack(trigger) {
+                                @Override
+                                public void run(List<MessageReply> replies) {
+                                    for (MessageReply reply : replies) {
+                                        if (!reply.isSuccess()) {
+                                            MigrateVmMsg msg = msgs.get(replies.indexOf(reply));
+                                            logger.warn(String.format("failed to migrate vm[uuid:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it. %s",
+                                                    msg.getVmInstanceUuid(), self.getUuid(), self.getName(), self.getManagementIp(), reply.getError()));
+                                            vmFailedToMigrate.add(msg.getVmInstanceUuid());
+                                        }
+                                    }
+
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    // the policy is not to migrate vm
+                    // put all vms in vmFailedToMigrate so the next flow will stop all of them
+                    SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+                    q.select(VmInstanceVO_.uuid);
+                    q.add(VmInstanceVO_.hostUuid, SimpleQuery.Op.EQ, self.getUuid());
+                    q.add(VmInstanceVO_.state, Op.NOT_EQ, VmInstanceState.Unknown);
+                    List<String> vmUuids = q.listValue();
+                    vmFailedToMigrate.addAll(vmUuids);
+                }
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "stop-vm-not-migrated";
