@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.SimpleQuery;
@@ -16,6 +17,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
@@ -42,6 +44,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -50,6 +53,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import javax.persistence.LockModeType;
 import java.io.File;
 import java.util.*;
 
@@ -508,58 +512,111 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         });
     }
 
-    @Override
-    void handle(InstantiateVolumeMsg msg, ReturnValueCompletion<InstantiateVolumeReply> completion) {
-        if (msg instanceof  InstantiateRootVolumeFromTemplateMsg) {
-            createRootVolume((InstantiateRootVolumeFromTemplateMsg) msg, completion);
-        } else {
-            createEmptyVolume(msg, completion);
-        }
+    private <T extends AgentResponse> void httpCall(String path, final String hostUuid, AgentCommand cmd, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
+        httpCall(path, hostUuid, cmd, false, rspType, completion);
     }
 
-    private void createEmptyVolume(final InstantiateVolumeMsg msg, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
-        String hostUuid = msg.getDestHost().getUuid();
-        final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
-        cmd.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(msg.getVolume().getUuid()));
-        if (VolumeType.Root.toString().equals(msg.getVolume().getType())) {
-            cmd.setInstallUrl(makeRootVolumeInstallUrl(msg.getVolume()));
-        } else {
-            cmd.setInstallUrl(makeDataVolumeInstallUrl(msg.getVolume().getUuid()));
-        }
-        cmd.setName(msg.getVolume().getName());
-        cmd.setSize(msg.getVolume().getSize());
-        cmd.setVolumeUuid(msg.getVolume().getUuid());
-
-        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-        kmsg.setHostUuid(hostUuid);
-        kmsg.setPath(CREATE_EMPTY_VOLUME_PATH);
-        kmsg.setCommand(cmd);
-        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
-        final String finalHostUuid = hostUuid;
-        bus.send(kmsg, new CloudBusCallBack(msg) {
+    private <T extends AgentResponse> void httpCall(String path, final String hostUuid, AgentCommand cmd, boolean checkStatus, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setPath(path);
+        msg.setNoStatusCheck(checkStatus);
+        msg.setCommand(cmd);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
-                InstantiateVolumeReply r = new InstantiateVolumeReply();
                 if (!reply.isSuccess()) {
                     completion.fail(reply.getError());
                     return;
                 }
 
-                KVMHostAsyncHttpCallReply kr = reply.castReply();
-                CreateEmptyVolumeRsp rsp = kr.toResponse(CreateEmptyVolumeRsp.class);
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                T rsp = r.toResponse(rspType);
                 if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(
-                            String.format("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s], %s",
-                                    msg.getVolume().getUuid(), msg.getVolume().getName(), finalHostUuid, rsp.getError())
-                    ));
+                    completion.fail(errf.stringToOperationError(rsp.getError()));
                     return;
                 }
 
-                VolumeInventory vol = msg.getVolume();
-                vol.setInstallPath(cmd.getInstallUrl());
-                r.setVolume(vol);
+                if (rsp.getTotalCapacity() != null && rsp.getAvailableCapacity() != null) {
+                    updateCapacity(hostUuid, rsp);
+                }
 
-                completion.success(r);
+                completion.success(rsp);
+            }
+
+            @Transactional
+            private void updateCapacity(String hostUuid, T rsp) {
+                LocalStorageHostRefVO ref = dbf.getEntityManager().find(LocalStorageHostRefVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
+                if (ref.getAvailablePhysicalCapacity() == rsp.getAvailableCapacity() && ref.getTotalPhysicalCapacity() == rsp.getTotalCapacity()) {
+                    return;
+                }
+
+                ref.setTotalPhysicalCapacity(rsp.getTotalCapacity());
+                ref.setAvailablePhysicalCapacity(rsp.getAvailableCapacity());
+                dbf.getEntityManager().merge(ref);
+
+                final long totalChange = rsp.getTotalCapacity() - ref.getTotalPhysicalCapacity();
+                final long availChange = rsp.getAvailableCapacity() - ref.getAvailablePhysicalCapacity();
+
+                new PrimaryStorageCapacityUpdater(self.getUuid()).run(new PrimaryStorageCapacityUpdaterRunnable() {
+                    @Override
+                    public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                        cap.setTotalPhysicalCapacity(cap.getTotalPhysicalCapacity() + totalChange);
+                        cap.setAvailablePhysicalCapacity(cap.getAvailablePhysicalCapacity() + availChange);
+                        return cap;
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    void handle(final InstantiateVolumeMsg msg, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
+        if (msg instanceof  InstantiateRootVolumeFromTemplateMsg) {
+            createRootVolume((InstantiateRootVolumeFromTemplateMsg) msg, completion);
+        } else {
+            createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<String>(completion) {
+                @Override
+                public void success(String returnValue) {
+                    InstantiateVolumeReply r = new InstantiateVolumeReply();
+                    VolumeInventory vol = msg.getVolume();
+                    vol.setInstallPath(returnValue);
+                    r.setVolume(vol);
+                    completion.success(r);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
+                }
+            });
+        }
+    }
+
+    private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final ReturnValueCompletion<String> completion) {
+        final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
+        cmd.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(volume.getUuid()));
+        if (VolumeType.Root.toString().equals(volume.getType())) {
+            cmd.setInstallUrl(makeRootVolumeInstallUrl(volume));
+        } else {
+            cmd.setInstallUrl(makeDataVolumeInstallUrl(volume.getUuid()));
+        }
+        cmd.setName(volume.getName());
+        cmd.setSize(volume.getSize());
+        cmd.setVolumeUuid(volume.getUuid());
+
+        httpCall(CREATE_EMPTY_VOLUME_PATH, hostUuid, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(completion) {
+            @Override
+            public void success(CreateEmptyVolumeRsp returnValue) {
+                completion.success(cmd.getInstallUrl());
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                        String.format("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
+                                volume.getUuid(), volume.getName(), hostUuid), errorCode));
             }
         });
     }
@@ -763,28 +820,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     CheckBitsCmd cmd = new CheckBitsCmd();
                     cmd.path = installPath;
 
-                    KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                    msg.setCommand(cmd);
-                    msg.setPath(CHECK_BITS_PATH);
-                    msg.setHostUuid(hostUuid);
-                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-                    bus.send(msg, new CloudBusCallBack(completion, chain) {
+                    httpCall(CHECK_BITS_PATH, hostUuid, cmd, CheckBitsRsp.class, new ReturnValueCompletion<CheckBitsRsp>(completion, chain) {
                         @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                completion.fail(reply.getError());
-                                chain.next();
-                                return;
-                            }
-
-                            KVMHostAsyncHttpCallReply r = reply.castReply();
-                            CheckBitsRsp rsp = r.toResponse(CheckBitsRsp.class);
-                            if (!rsp.isSuccess()) {
-                                completion.fail(errf.stringToOperationError(rsp.getError()));
-                                chain.next();
-                                return;
-                            }
-
+                        public void success(CheckBitsRsp rsp) {
                             if (rsp.existing) {
                                 logger.debug(String.format("found image[uuid: %s, name: %s] in the image cache of local primary storage[uuid:%s, installPath: %s]",
                                         image.getUuid(), image.getName(), self.getUuid(), installPath));
@@ -810,6 +848,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                             doDownload(chain);
                         }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                            chain.next();
+                        }
                     });
                 }
 
@@ -821,12 +865,27 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    private void createRootVolume(InstantiateRootVolumeFromTemplateMsg msg, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
+    private void createRootVolume(final InstantiateRootVolumeFromTemplateMsg msg, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
         final ImageSpec ispec = msg.getTemplateSpec();
         final ImageInventory image = ispec.getInventory();
 
         if (!ImageMediaType.RootVolumeTemplate.toString().equals(image.getMediaType())) {
-            createEmptyVolume(msg, completion);
+            createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<String>(completion) {
+                @Override
+                public void success(String returnValue) {
+                    InstantiateVolumeReply r = new InstantiateVolumeReply();
+                    VolumeInventory vol = msg.getVolume();
+                    vol.setInstallPath(returnValue);
+                    r.setVolume(vol);
+                    completion.success(r);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
+                }
+            });
+
             return;
         }
 
@@ -882,27 +941,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         cmd.setTemplatePathInCache(pathInCache);
                         cmd.setVolumeUuid(volume.getUuid());
 
-                        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-                        kmsg.setCommand(cmd);
-                        kmsg.setHostUuid(hostUuid);
-                        kmsg.setPath(CREATE_VOLUME_FROM_CACHE_PATH);
-                        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
-                        bus.send(kmsg, new CloudBusCallBack(trigger) {
+                        httpCall(CREATE_VOLUME_FROM_CACHE_PATH, hostUuid, cmd, CreateVolumeFromCacheRsp.class, new ReturnValueCompletion<CreateVolumeFromCacheRsp>(trigger) {
                             @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-
-                                KVMHostAsyncHttpCallReply kr = reply.castReply();
-                                CreateVolumeFromCacheRsp rsp = kr.toResponse(CreateVolumeFromCacheRsp.class);
-                                if (!rsp.isSuccess()) {
-                                    trigger.fail(errf.stringToOperationError(rsp.getError()));
-                                    return;
-                                }
-
+                            public void success(CreateVolumeFromCacheRsp returnValue) {
                                 trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
                             }
                         });
                     }
@@ -932,27 +979,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         DeleteBitsCmd cmd = new DeleteBitsCmd();
         cmd.setPath(path);
 
-        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-        kmsg.setHostUuid(hostUuid);
-        kmsg.setCommand(cmd);
-        kmsg.setPath(DELETE_BITS_PATH);
-        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
-        bus.send(kmsg, new CloudBusCallBack(completion) {
+        httpCall(DELETE_BITS_PATH, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
-                    return;
-                }
-
-                KVMHostAsyncHttpCallReply kr = reply.castReply();
-                DeleteBitsRsp rsp = kr.toResponse(DeleteBitsRsp.class);
-                if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(rsp.getError()));
-                    return;
-                }
-
+            public void success(DeleteBitsRsp returnValue) {
                 completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
             }
         });
     }
@@ -1054,32 +1089,18 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.setHostUuid(msg.getHostUuid());
         cmd.setPath(self.getUrl());
 
-        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-        kmsg.setCommand(cmd);
-        kmsg.setHostUuid(msg.getHostUuid());
-        kmsg.setPath(INIT_PATH);
-        kmsg.setCommand(cmd);
-        kmsg.setNoStatusCheck(true);
-        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
-        bus.send(kmsg, new CloudBusCallBack(completion) {
+        httpCall(INIT_PATH, msg.getHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(completion) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
-                    return;
-                }
-
-                KVMHostAsyncHttpCallReply kr = reply.castReply();
-                AgentResponse rsp = kr.toResponse(AgentResponse.class);
-                if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(rsp.getError()));
-                    return;
-                }
-
+            public void success(AgentResponse rsp) {
                 PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
                 usage.totalPhysicalSize = rsp.getTotalCapacity();
                 usage.availablePhysicalSize = rsp.getAvailableCapacity();
                 completion.success(usage);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
             }
         });
     }
@@ -1142,29 +1163,17 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
         cmd.setSnapshotInstallPath(sp.getPrimaryStorageInstallPath());
 
-        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-        kmsg.setHostUuid(hostUuid);
-        kmsg.setPath(REVERT_SNAPSHOT_PATH);
-        kmsg.setCommand(cmd);
-        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
-        bus.send(kmsg, new CloudBusCallBack(completion) {
+        httpCall(REVERT_SNAPSHOT_PATH, hostUuid, cmd, RevertVolumeFromSnapshotRsp.class, new ReturnValueCompletion<RevertVolumeFromSnapshotRsp>(completion) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
-                    return;
-                }
-
-                KVMHostAsyncHttpCallReply kr = reply.castReply();
-                RevertVolumeFromSnapshotRsp rsp = kr.toResponse(RevertVolumeFromSnapshotRsp.class);
-                if (!rsp.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(rsp.getError()));
-                    return;
-                }
-
+            public void success(RevertVolumeFromSnapshotRsp rsp) {
                 RevertVolumeFromSnapshotOnPrimaryStorageReply ret = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
                 ret.setNewVolumeInstallPath(rsp.getNewVolumeInstallPath());
                 completion.success(ret);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
             }
         });
     }
@@ -1301,28 +1310,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             cmd.setSnapshotInstallPaths(snapshotInstallPaths);
                             cmd.setWorkspaceInstallPath(primaryStorageInstallPath);
 
-                            KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-                            kmsg.setCommand(cmd);
-                            kmsg.setPath(MERGE_AND_REBASE_SNAPSHOT_PATH);
-                            kmsg.setHostUuid(hostUuid);
-                            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
-                            bus.send(kmsg, new CloudBusCallBack(trigger) {
+                            httpCall(MERGE_AND_REBASE_SNAPSHOT_PATH, hostUuid, cmd, RebaseAndMergeSnapshotsRsp.class, new ReturnValueCompletion<RebaseAndMergeSnapshotsRsp>(trigger) {
                                 @Override
-                                public void run(MessageReply reply) {
-                                    if (!reply.isSuccess()) {
-                                        trigger.fail(reply.getError());
-                                        return;
-                                    }
-
-                                    KVMHostAsyncHttpCallReply kr = reply.castReply();
-                                    RebaseAndMergeSnapshotsRsp rsp = kr.toResponse(RebaseAndMergeSnapshotsRsp.class);
-                                    if (!rsp.isSuccess()) {
-                                        trigger.fail(errf.stringToOperationError(rsp.getError()));
-                                        return;
-                                    }
-
+                                public void success(RebaseAndMergeSnapshotsRsp rsp) {
                                     templateSize = rsp.getSize();
                                     trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
                                 }
                             });
                         }
@@ -1365,26 +1362,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             cmd.setSnapshotInstallPath(latest.getPrimaryStorageInstallPath());
             cmd.setWorkspaceInstallPath(primaryStorageInstallPath);
 
-            KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-            kmsg.setCommand(cmd);
-            kmsg.setPath(MERGE_SNAPSHOT_PATH);
-            kmsg.setHostUuid(hostUuid);
-            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
-            bus.send(kmsg, new CloudBusCallBack(completion) {
+            httpCall(MERGE_SNAPSHOT_PATH, hostUuid, cmd, MergeSnapshotRsp.class, new ReturnValueCompletion<MergeSnapshotRsp>(completion) {
                 @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        completion.fail(reply.getError());
-                        return;
-                    }
-
-                    MergeSnapshotRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(MergeSnapshotRsp.class);
-                    if (!rsp.isSuccess()) {
-                        completion.fail(errf.stringToOperationError(rsp.getError()));
-                        return;
-                    }
-
+                public void success(MergeSnapshotRsp rsp) {
                     completion.success(rsp.getSize());
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
                 }
             });
         }
@@ -1628,26 +1614,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             cmd.setSrcPath(sp.getPrimaryStorageInstallPath());
             cmd.setDestPath(volume.getInstallPath());
 
-            KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-            kmsg.setCommand(cmd);
-            kmsg.setPath(OFFLINE_MERGE_PATH);
-            kmsg.setHostUuid(hostUuid);
-            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
-            bus.send(kmsg, new CloudBusCallBack(completion) {
+            httpCall(OFFLINE_MERGE_PATH, hostUuid, cmd, OfflineMergeSnapshotRsp.class, new ReturnValueCompletion<OfflineMergeSnapshotRsp>(completion) {
                 @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        completion.fail(reply.getError());
-                        return;
-                    }
-
-                    OfflineMergeSnapshotRsp rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(OfflineMergeSnapshotRsp.class);
-                    if (!rsp.isSuccess()) {
-                        completion.fail(errf.stringToOperationError(rsp.getError()));
-                        return;
-                    }
-
+                public void success(OfflineMergeSnapshotRsp returnValue) {
                     completion.success(ret);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
                 }
             });
         } else {
@@ -1668,6 +1643,40 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 }
             });
         }
+    }
+
+    @Override
+    void handle(LocalStorageCreateEmptyVolumeMsg msg, final ReturnValueCompletion<LocalStorageCreateEmptyVolumeReply> completion) {
+        createEmptyVolume(msg.getVolume(), msg.getHostUuid(), new ReturnValueCompletion<String>(completion) {
+            @Override
+            public void success(String returnValue) {
+                LocalStorageCreateEmptyVolumeReply reply = new LocalStorageCreateEmptyVolumeReply();
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(LocalStorageDirectlyDeleteVolumeMsg msg, String hostUuid, final ReturnValueCompletion<LocalStorageDirectlyDeleteVolumeReply> completion) {
+        DeleteBitsCmd cmd = new DeleteBitsCmd();
+        cmd.setPath(msg.getVolume().getInstallPath());
+
+        httpCall(DELETE_BITS_PATH, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
+            @Override
+            public void success(DeleteBitsRsp returnValue) {
+                completion.success(new LocalStorageDirectlyDeleteVolumeReply());
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override
@@ -1868,27 +1877,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         cmd.setInstallPath(temporaryTemplatePath);
                         cmd.setVolumePath(msg.getVolumeInventory().getInstallPath());
 
-                        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-                        kmsg.setHostUuid(ref.getHostUuid());
-                        kmsg.setPath(CREATE_TEMPLATE_FROM_VOLUME);
-                        kmsg.setCommand(cmd);
-                        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, ref.getHostUuid());
-                        bus.send(kmsg, new CloudBusCallBack(trigger) {
+                        httpCall(CREATE_TEMPLATE_FROM_VOLUME, ref.getHostUuid(), cmd, CreateTemplateFromVolumeRsp.class, new ReturnValueCompletion<CreateTemplateFromVolumeRsp>(trigger) {
                             @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-
-                                KVMHostAsyncHttpCallReply kr = reply.castReply();
-                                CreateTemplateFromVolumeRsp rsp = kr.toResponse(CreateTemplateFromVolumeRsp.class);
-                                if (!rsp.isSuccess()) {
-                                    trigger.fail(errf.stringToOperationError(rsp.getError()));
-                                    return;
-                                }
-
+                            public void success(CreateTemplateFromVolumeRsp rsp) {
                                 trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
                             }
                         });
                     }

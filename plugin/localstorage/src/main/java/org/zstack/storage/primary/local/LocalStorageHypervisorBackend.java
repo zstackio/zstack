@@ -47,5 +47,9 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply> completion);
 
+    abstract void handle(LocalStorageCreateEmptyVolumeMsg msg, ReturnValueCompletion<LocalStorageCreateEmptyVolumeReply> completion);
+
+    abstract void handle(LocalStorageDirectlyDeleteVolumeMsg msg, String hostUuid, ReturnValueCompletion<LocalStorageDirectlyDeleteVolumeReply> completion);
+
     abstract void downloadImageToCache(ImageInventory img, String hostUuid, Completion completion);
 }

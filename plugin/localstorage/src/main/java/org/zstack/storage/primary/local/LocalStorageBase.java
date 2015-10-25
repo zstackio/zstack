@@ -106,9 +106,67 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DownloadImageToPrimaryStorageCacheMsg) {
             handle((DownloadImageToPrimaryStorageCacheMsg) msg);
+        } else if (msg instanceof LocalStorageCreateEmptyVolumeMsg) {
+            handle((LocalStorageCreateEmptyVolumeMsg) msg);
+        } else if (msg instanceof LocalStorageDirectlyDeleteVolumeMsg) {
+            handle((LocalStorageDirectlyDeleteVolumeMsg) msg);
+        } else if (msg instanceof LocalStorageReserveHostCapacityMsg) {
+            handle((LocalStorageReserveHostCapacityMsg) msg);
+        } else if (msg instanceof LocalStorageReturnHostCapacityMsg) {
+            handle((LocalStorageReturnHostCapacityMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(LocalStorageReturnHostCapacityMsg msg) {
+        LocalStorageReturnHostCapacityReply reply = new LocalStorageReturnHostCapacityReply();
+        long size = msg.isNoOverProvisioning() ? msg.getSize() : ratioMgr.calculateByRatio(self.getUuid(), msg.getSize());
+        returnCapacityToHost(msg.getHostUuid(), size);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(LocalStorageReserveHostCapacityMsg msg) {
+        LocalStorageReserveHostCapacityReply reply = new LocalStorageReserveHostCapacityReply();
+        long size = msg.isNoOverProvisioning() ? msg.getSize() : ratioMgr.calculateByRatio(self.getUuid(), msg.getSize());
+        reserveCapacityOnHost(msg.getHostUuid(), size);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final LocalStorageDirectlyDeleteVolumeMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, msg.getHostUuid(), new ReturnValueCompletion<LocalStorageDirectlyDeleteVolumeReply>(msg) {
+            @Override
+            public void success(LocalStorageDirectlyDeleteVolumeReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                LocalStorageDirectlyDeleteVolumeReply reply = new LocalStorageDirectlyDeleteVolumeReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final LocalStorageCreateEmptyVolumeMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<LocalStorageCreateEmptyVolumeReply>() {
+            @Override
+            public void success(LocalStorageCreateEmptyVolumeReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                LocalStorageCreateEmptyVolumeReply reply = new LocalStorageCreateEmptyVolumeReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(APIGetLocalStorageHostDiskCapacityMsg msg) {
@@ -604,7 +662,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         s.setSizeBeforeOverProvisioning(size);
         s.setHostUuid(hostUuid);
         s.setLocalStorage(getSelfInventory());
-        s.setSize(ratioMgr.calculateByRatio(self.getUuid(), size));
+        s.setSize(size);
 
         for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReturnHostCapacityExtensionPoint.class)) {
             ext.beforeReturnLocalStorageCapacityOnHost(s);

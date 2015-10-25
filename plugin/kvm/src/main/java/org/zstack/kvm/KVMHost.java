@@ -699,22 +699,25 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void migrateVm(final Iterator<String[]> it, final Completion completion) {
-        String hostIp = null;
-        String vmUuid = null;
+    private void migrateVm(final Iterator<MigrateStruct> it, final Completion completion) {
+        String hostIp;
+        String vmUuid;
+        boolean withStorage;
         synchronized (it) {
             if (!it.hasNext()) {
                 completion.success();
                 return;
             }
 
-            String[] arr = it.next();
-            vmUuid =  arr[0];
-            hostIp = arr[1];
+            MigrateStruct s = it.next();
+            vmUuid =  s.vmUuid;
+            hostIp = s.dstHostIp;
+            withStorage = s.withStorage;
         }
 
         MigrateVmCmd cmd = new MigrateVmCmd();
         cmd.setDestHostIp(hostIp);
+        cmd.setWithStorage(withStorage);
         cmd.setVmUuid(vmUuid);
         final String fvmuuid = vmUuid;
         final String destIp = hostIp;
@@ -776,11 +779,21 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
+    class MigrateStruct {
+        String vmUuid;
+        String dstHostIp;
+        boolean withStorage;
+    }
+
     private void migrateVm(final MigrateVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
 
-        List<String[]> lst = new ArrayList<String[]>();
-        lst.add(new String[] {msg.getVmInventory().getUuid(), msg.getDestHostInventory().getManagementIp()});
+        List<MigrateStruct> lst = new ArrayList<MigrateStruct>();
+        MigrateStruct s = new MigrateStruct();
+        s.vmUuid = msg.getVmInventory().getUuid();
+        s.dstHostIp = msg.getDestHostInventory().getManagementIp();
+        s.withStorage = msg.isWithStorage();
+        lst.add(s);
         final MigrateVmOnHypervisorReply reply = new MigrateVmOnHypervisorReply();
         migrateVm(lst.iterator(), new Completion(msg, completion) {
             @Override

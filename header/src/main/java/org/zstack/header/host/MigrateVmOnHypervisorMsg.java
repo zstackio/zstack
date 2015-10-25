@@ -1,7 +1,5 @@
 package org.zstack.header.host;
 
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceInventory;
 
@@ -9,6 +7,16 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
     private VmInstanceInventory vmInventory;
     private HostInventory destHostInventory;
     private String srcHostUuid;
+    private boolean withStorage;
+
+    public boolean isWithStorage() {
+        return withStorage;
+    }
+
+    public void setWithStorage(boolean withStorage) {
+        this.withStorage = withStorage;
+    }
+
     public VmInstanceInventory getVmInventory() {
         return vmInventory;
     }

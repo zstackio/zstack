@@ -1785,6 +1785,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setMessage(msg);
         spec.setCurrentVmOperation(VmOperation.Migrate);
         FlowChain chain = getMigrateVmWorkFlowChain(inv);
+
+        setFlowMarshaller(chain);
+
         chain.setName(String.format("migrate-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(completion) {

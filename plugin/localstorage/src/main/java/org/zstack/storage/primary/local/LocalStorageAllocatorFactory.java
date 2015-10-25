@@ -11,6 +11,7 @@ import org.zstack.header.Component;
 import org.zstack.header.allocator.HostAllocatorError;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
+import org.zstack.header.allocator.HostAllocatorStrategyExtensionPoint;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
@@ -28,7 +29,8 @@ import java.util.concurrent.Callable;
  * Created by frank on 7/1/2015.
  */
 public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component,
-        HostAllocatorFilterExtensionPoint, PrimaryStorageAllocatorStrategyExtensionPoint, PrimaryStorageAllocatorFlowNameSetter {
+        HostAllocatorFilterExtensionPoint, PrimaryStorageAllocatorStrategyExtensionPoint, PrimaryStorageAllocatorFlowNameSetter,
+        HostAllocatorStrategyExtensionPoint {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -129,7 +131,10 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                     ));
                 }
             }
-        } else if (VmOperation.Migrate.toString().equals(spec.getVmOperation())) {
+        }
+
+        /*
+        else if (VmOperation.Migrate.toString().equals(spec.getVmOperation())) {
             final LocalStorageResourceRefVO ref = dbf.findByUuid(spec.getVmInstance().getRootVolumeUuid(), LocalStorageResourceRefVO.class);
             if (ref != null) {
                 throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
@@ -138,6 +143,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 ));
             }
         }
+        */
 
         return candidates;
     }
@@ -177,5 +183,22 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         }
 
         return allocatorType;
+    }
+
+    @Override
+    public String getHostAllocatorStrategyName(HostAllocatorSpec spec) {
+        if (!VmOperation.Migrate.toString().equals(spec.getVmOperation())) {
+            return null;
+        }
+
+        SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
+        q.select(PrimaryStorageVO_.type);
+        q.add(PrimaryStorageVO_.uuid, Op.EQ, spec.getVmInstance().getRootVolume().getPrimaryStorageUuid());
+        String type = q.findValue();
+        if (!LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(type)) {
+            return null;
+        }
+
+        return LocalStorageConstants.LOCAL_STORAGE_MIGRATE_VM_ALLOCATOR_TYPE;
     }
 }

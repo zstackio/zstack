@@ -1,5 +1,6 @@
 package org.zstack.core.workflow;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -346,6 +347,17 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
         }
 
         logger.debug(String.format("[FlowChain: %s] starts", name));
+
+        if (logger.isTraceEnabled()) {
+            List<String> names = CollectionUtils.transformToList(flows, new Function<String, Flow>() {
+                @Override
+                public String call(Flow arg) {
+                    return String.format("%s[%s]", arg.getClass(), getFlowName(arg));
+                }
+            });
+            logger.trace(String.format("execution path:\n%s", StringUtils.join(names, " -->\n")));
+        }
+
         it = flows.iterator();
         Flow flow = it.next();
         runFlow(flow);

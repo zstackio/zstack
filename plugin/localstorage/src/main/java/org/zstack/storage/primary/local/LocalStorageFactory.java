@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageForAttachingDiskFlow;
+import org.zstack.compute.vm.VmMigrateOnHypervisorFlow;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -200,6 +201,12 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         return ret.get(0);
     }
 
+    private boolean isRootVolumeOnLocalStorage(String rootVolumeUuid) {
+        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
+        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, rootVolumeUuid);
+        return q.isExists();
+    }
+
     @Override
     public Flow marshalVmOperationFlow(String previousFlowName, String nextFlowName, FlowChain chain, VmInstanceSpec spec) {
         if (VmAllocatePrimaryStorageFlow.class.getName().equals(nextFlowName)) {
@@ -211,12 +218,13 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         } else if (spec.getCurrentVmOperation() == VmOperation.AttachVolume) {
             VolumeInventory volume = spec.getDestDataVolumes().get(0);
             if (VolumeStatus.NotInstantiated.toString().equals(volume.getStatus()) && VmAllocatePrimaryStorageForAttachingDiskFlow.class.getName().equals(nextFlowName)) {
-                SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-                q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, spec.getVmInventory().getRootVolumeUuid());
-                if (q.isExists()) {
+                if (isRootVolumeOnLocalStorage(spec.getVmInventory().getRootVolumeUuid())) {
                     return new LocalStorageAllocateCapacityForAttachingVolumeFlow();
                 }
             }
+        } else if (spec.getCurrentVmOperation() == VmOperation.Migrate && isRootVolumeOnLocalStorage(spec.getVmInventory().getRootVolumeUuid())
+                && VmMigrateOnHypervisorFlow.class.getName().equals(nextFlowName)) {
+            return new LocalStorageMigrateVmFlow();
         }
 
         return null;

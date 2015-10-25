@@ -29,6 +29,7 @@
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory" />
             <zstack:extension interface="org.zstack.header.allocator.HostAllocatorFilterExtensionPoint" />
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint" />
+            <zstack:extension interface=" org.zstack.header.allocator.HostAllocatorStrategyExtensionPoint" />
         </zstack:plugin>
 
         <property name="allocatorFlowNames">
@@ -68,6 +69,7 @@
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.AvoidHostAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.DesignatedHostAllocatorFlow</value>
+                <value>org.zstack.storage.primary.local.AllocatePrimaryStorageForVmMigrationFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostCapacityAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.AttachedVolumePrimaryStorageAllocatorFlow</value>

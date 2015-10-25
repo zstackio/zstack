@@ -29,6 +29,7 @@
             <l3NetworkRef>TestL3Network3</l3NetworkRef>
             <defaultL3NetworkRef>TestL3Network1</defaultL3NetworkRef>
             <diskOfferingRef>TestDiskOffering1</diskOfferingRef>
+            <hostRef>host1</hostRef>
         </userVm>
     </vm>
 

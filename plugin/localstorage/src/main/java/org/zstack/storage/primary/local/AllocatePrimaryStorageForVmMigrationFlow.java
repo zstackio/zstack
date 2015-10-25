@@ -4,9 +4,19 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.function.Function;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by frank on 10/24/2015.
@@ -20,8 +30,46 @@ public class AllocatePrimaryStorageForVmMigrationFlow  extends AbstractHostAlloc
 
     @Override
     public void allocate() {
-        if (amITheFirstFlow()) {
-            throw new CloudRuntimeException("AllocatePrimaryStorageForVmMigrationFlow cannot be the first flow in the chain");
+        throwExceptionIfIAmTheFirstFlow();
+
+        if (!VmOperation.Migrate.toString().equals(spec.getVmOperation())) {
+            throw new CloudRuntimeException("AllocatePrimaryStorageForVmMigrationFlow is only used for migrating vm");
+        }
+
+        String psUuid = spec.getVmInstance().getRootVolume().getPrimaryStorageUuid();
+        List<String> huuids = CollectionUtils.transformToList(candidates, new Function<String, HostVO>() {
+            @Override
+            public String call(HostVO arg) {
+                return arg.getUuid();
+            }
+        });
+
+        long requiredSize = 0;
+        for (VolumeInventory vol : spec.getVmInstance().getAllVolumes()) {
+            requiredSize += vol.getSize();
+        }
+        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+        q.add(LocalStorageHostRefVO_.hostUuid, Op.IN, huuids);
+        q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, psUuid);
+        List<LocalStorageHostRefVO> refs = q.list();
+        final List<String> hostUuids = new ArrayList<String>();
+        for (LocalStorageHostRefVO ref : refs) {
+            if (ref.getAvailableCapacity() > ratioMgr.calculateByRatio(psUuid, requiredSize)) {
+                hostUuids.add(ref.getHostUuid());
+            }
+        }
+
+        candidates = CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
+            @Override
+            public HostVO call(HostVO arg) {
+                return hostUuids.contains(arg.getUuid()) ? arg : null;
+            }
+        });
+
+        if (candidates.isEmpty()) {
+            fail(String.format("no hosts can provide %s bytes for all volumes of the vm[uuid:%s]", requiredSize, spec.getVmInstance().getUuid()));
+        } else {
+            next(candidates);
         }
     }
 }
