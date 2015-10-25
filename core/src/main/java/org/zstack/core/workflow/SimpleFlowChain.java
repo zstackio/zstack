@@ -1,5 +1,9 @@
 package org.zstack.core.workflow;
 
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtMethod;
+import javassist.NotFoundException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,8 +11,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.*;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -224,14 +228,34 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
 
     private String getFlowName(Flow flow) {
         String name = FieldUtils.getFieldValue("__name__", flow);
-        if (name != null) {
-            return name;
+        if (name == null) {
+            name = flow.getClass().getSimpleName();
+            if (name.equals("")) {
+                name = flow.getClass().getName();
+            }
         }
 
-        name = flow.getClass().getSimpleName();
-        if (name == null || name.equals("")) {
-            name = flow.getClass().getName();
+        if (logger.isTraceEnabled()) {
+            try {
+                ClassPool pool = ClassPool.getDefault();
+                CtClass cc = pool.get(flow.getClass().getName());
+                CtMethod m = cc.getDeclaredMethod("run");
+                int line = m.getMethodInfo().getLineNumber(0);
+
+                String className = flow.getClass().getName();
+                String[] ff = className.split("\\.");
+                String filename = ff[ff.length-1];
+                if (filename.contains("$")) {
+                    int index = filename.indexOf("$");
+                    filename = filename.substring(0, index);
+                }
+
+                name = String.format("%s.java:%s:%s", filename, line, name);
+            } catch (NotFoundException e) {
+                logger.warn(String.format("cannot find the flow[%s] line number, %s", name, e.getMessage()));
+            }
         }
+
         return name;
     }
 

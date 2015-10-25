@@ -8,13 +8,15 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
+import org.zstack.storage.primary.local.LocalStorageDirectlyDeleteVolumeMsg;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
@@ -26,8 +28,6 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
-import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
@@ -36,15 +36,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * 1. migrate a vm with storage
- *
- * confirm all related commands sent
- * confirm the volumes are referenced on the dst host
- * confirm the capacity of the src host and dst host are correct
- */
-public class TestLocalStorage28 {
-    CLogger logger = Utils.getLogger(TestLocalStorage28.class);
+public class TestLocalStorage29 {
+    CLogger logger = Utils.getLogger(TestLocalStorage29.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -55,6 +48,8 @@ public class TestLocalStorage28 {
     LocalStorageSimulatorConfig config;
     PrimaryStorageOverProvisioningManager ratioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
+    boolean directDeleteOnDst = false;
+    boolean directDeleteOnSrc = false;
 
     @Before
     public void setUp() throws Exception {
@@ -87,8 +82,8 @@ public class TestLocalStorage28 {
     
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
-        HostInventory host2 = deployer.hosts.get("host2");
-        HostInventory host1 = deployer.hosts.get("host1");
+        final HostInventory host2 = deployer.hosts.get("host2");
+        final HostInventory host1 = deployer.hosts.get("host1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
         ImageCacheVO cacheVO = dbf.listAll(ImageCacheVO.class).get(0);
@@ -98,14 +93,40 @@ public class TestLocalStorage28 {
             usedVolumeSize += ratioMgr.calculateByRatio(vol.getPrimaryStorageUuid(), vol.getSize());
         }
 
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            public void intercept(Message msg) {
+                // when rollback, the volumes are deleted on the dst host
+                LocalStorageDirectlyDeleteVolumeMsg lmsg = (LocalStorageDirectlyDeleteVolumeMsg) msg;
+                if (lmsg.getHostUuid().equals(host2.getUuid())) {
+                    directDeleteOnDst = true;
+                }
+
+                // if the deleting happens on the src host, something goes wrong
+                if (lmsg.getHostUuid().equals(host1.getUuid())) {
+                    directDeleteOnSrc = true;
+                }
+            }
+        }, LocalStorageDirectlyDeleteVolumeMsg.class);
+
         config.createEmptyVolumeCmds.clear();
         config.deleteBitsCmds.clear();
-        vm = api.migrateVmInstance(vm.getUuid(), host2.getUuid());
+        kconfig.migrateVmSuccess = false;
+        boolean s = false;
+        try {
+            vm = api.migrateVmInstance(vm.getUuid(), host2.getUuid());
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
         TimeUnit.SECONDS.sleep(3);
+
+        Assert.assertTrue(directDeleteOnDst);
+        Assert.assertFalse(directDeleteOnSrc);
         LocalStorageHostRefVO ref1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(ref1.getTotalCapacity() - imageSize, ref1.getAvailableCapacity());
+        Assert.assertEquals(ref1.getTotalCapacity() - imageSize - usedVolumeSize, ref1.getAvailableCapacity());
         LocalStorageHostRefVO ref2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(ref2.getTotalCapacity() - usedVolumeSize, ref2.getAvailableCapacity());
+        Assert.assertEquals(ref2.getTotalCapacity(), ref2.getAvailableCapacity());
 
         Assert.assertEquals(vm.getAllVolumes().size(), config.createEmptyVolumeCmds.size());
         for (final VolumeInventory vol : vm.getAllVolumes()) {
@@ -119,10 +140,7 @@ public class TestLocalStorage28 {
             Assert.assertNotNull(cmd);
             Assert.assertEquals(vol.getInstallPath(), cmd.getInstallUrl());
 
-            LocalStorageResourceRefVO r = dbf.findByUuid(vol.getUuid(), LocalStorageResourceRefVO.class);
-            Assert.assertEquals(host2.getUuid(), r.getHostUuid());
-
-            // volumes are deleted on src host
+            // volumes are deleted on dst host because of rollback
             DeleteBitsCmd dcmd = CollectionUtils.find(config.deleteBitsCmds, new Function<DeleteBitsCmd, DeleteBitsCmd>() {
                 @Override
                 public DeleteBitsCmd call(DeleteBitsCmd arg) {
@@ -130,12 +148,10 @@ public class TestLocalStorage28 {
                 }
             });
             Assert.assertNotNull(dcmd);
-        }
 
-        Assert.assertFalse(kconfig.migrateVmCmds.isEmpty());
-        MigrateVmCmd mcmd = kconfig.migrateVmCmds.get(0);
-        Assert.assertEquals(host2.getManagementIp(), mcmd.getDestHostIp());
-        Assert.assertEquals(vm.getUuid(), mcmd.getVmUuid());
-        Assert.assertTrue(mcmd.isWithStorage());
+            // volumes are still on the src host
+            LocalStorageResourceRefVO r = dbf.findByUuid(vol.getUuid(), LocalStorageResourceRefVO.class);
+            Assert.assertEquals(host1.getUuid(), r.getHostUuid());
+        }
 	}
 }
