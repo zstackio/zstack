@@ -991,7 +991,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     @Override
-    public void afterMigrateVm(final VmInstanceInventory inv, final String destHostUuid) {
+    public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid) {
         RuleCalculator cal = new RuleCalculator();
         cal.vmNicUuids = CollectionUtils.transformToList(inv.getVmNics(), new Function<String, VmNicInventory>() {
             @Override
@@ -1008,13 +1008,13 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             @Override
             public void success() {
                 logger.debug(String.format("vm[uuid:%s, name:%s] migrated to host[uuid:%s], cleanup its old rules on host[uuid:%s] if needed",
-                        inv.getUuid(), inv.getName(), destHostUuid, inv.getLastHostUuid()));
+                        inv.getUuid(), inv.getName(), inv.getHostUuid(), srcHostUuid));
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.debug(String.format("vm[uuid:%s, name:%s] migrated to host[uuid:%s], failed to cleanup its old rules on host[uuid:%s] if needed",
-                        inv.getUuid(), inv.getName(), destHostUuid, inv.getLastHostUuid()));
+                        inv.getUuid(), inv.getName(), inv.getHostUuid(), srcHostUuid));
                 createFailureHostTask(inv.getLastHostUuid());
             }
         });

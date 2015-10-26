@@ -7,7 +7,7 @@ public interface VmInstanceMigrateExtensionPoint {
     
     void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid);
     
-    void afterMigrateVm(VmInstanceInventory inv, String destHostUuid);
+    void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid);
     
     void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason);
 }

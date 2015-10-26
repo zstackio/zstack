@@ -280,20 +280,20 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
     
-    public void afterMigrateVm(final VmInstanceInventory inv, final String destHostUuid) {
+    public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid) {
         CollectionUtils.safeForEach(migrateVmExtensions, new ForEachFunction<VmInstanceMigrateExtensionPoint>() {
             @Override
             public void run(VmInstanceMigrateExtensionPoint arg) {
-                arg.afterMigrateVm(inv, destHostUuid);
+                arg.afterMigrateVm(inv, srcHostUuid);
             }
         });
     }
     
-    public void failedToMigrateVm(final VmInstanceInventory inv, final String destHostUuid, final ErrorCode reason) {
+    public void failedToMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, final ErrorCode reason) {
         CollectionUtils.safeForEach(migrateVmExtensions, new ForEachFunction<VmInstanceMigrateExtensionPoint>() {
             @Override
             public void run(final VmInstanceMigrateExtensionPoint arg) {
-                arg.failedToMigrateVm(inv, destHostUuid, reason);
+                arg.failedToMigrateVm(inv, dstHostUuid, reason);
             }
         });
     }

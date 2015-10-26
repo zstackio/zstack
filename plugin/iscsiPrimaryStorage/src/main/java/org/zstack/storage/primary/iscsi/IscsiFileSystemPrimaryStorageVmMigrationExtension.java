@@ -171,10 +171,10 @@ public class IscsiFileSystemPrimaryStorageVmMigrationExtension implements VmInst
     }
 
     @Override
-    public void afterMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
         List<VolumeInventory> volumes = vmVolumes.get(inv.getUuid());
         if (volumes != null) {
-            logoutIscsiTarget(volumes, inv.getLastHostUuid());
+            logoutIscsiTarget(volumes, srcHostUuid);
         }
     }
 

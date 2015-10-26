@@ -163,7 +163,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     }
 
     @Override
-    public void afterMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
         ConsoleBackend bkd = getBackend();
         FutureCompletion completion = new FutureCompletion();
         bkd.deleteConsoleSession(inv, completion);

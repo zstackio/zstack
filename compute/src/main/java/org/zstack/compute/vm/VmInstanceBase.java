@@ -1801,7 +1801,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 self.setHostUuid(host.getUuid());
                 self = changeVmStateInDb(VmInstanceStateEvent.running);
                 VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
-                extEmitter.afterMigrateVm(vm, vm.getHostUuid());
+                extEmitter.afterMigrateVm(vm, vm.getLastHostUuid());
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
