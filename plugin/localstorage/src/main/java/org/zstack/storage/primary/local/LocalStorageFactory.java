@@ -26,6 +26,7 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -221,7 +222,13 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         } else if (spec.getCurrentVmOperation() == VmOperation.Migrate && isRootVolumeOnLocalStorage(spec.getVmInventory().getRootVolumeUuid())
                 && VmMigrateOnHypervisorFlow.class.getName().equals(nextFlowName)) {
-            return new LocalStorageMigrateVmFlow();
+            if (KVMConstant.KVM_HYPERVISOR_TYPE.equals(spec.getVmInventory().getHypervisorType())) {
+                return new LocalStorageKvmMigrateVmFlow();
+            } else {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        String.format("local storage doesn't support live migration for hypervisor[%s]", spec.getVmInventory().getHypervisorType())
+                ));
+            }
         }
 
         return null;

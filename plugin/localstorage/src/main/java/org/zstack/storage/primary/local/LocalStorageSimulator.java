@@ -54,6 +54,15 @@ public class LocalStorageSimulator {
         restf.getRESTTemplate().exchange(callbackUrl, HttpMethod.POST, rreq, String.class);
     }
 
+    @RequestMapping(value=LocalStorageKvmBackend.REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String rebaseRootVolumeToBackingFile(HttpEntity<String> entity) {
+        RebaseRootVolumeToBackingFileCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RebaseRootVolumeToBackingFileCmd.class);
+        config.rebaseRootVolumeToBackingFileCmds.add(cmd);
+        reply(entity, new RebaseRootVolumeToBackingFileRsp());
+        return null;
+    }
+
     @RequestMapping(value=LocalStorageKvmBackend.INIT_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String init(HttpEntity<String> entity) {

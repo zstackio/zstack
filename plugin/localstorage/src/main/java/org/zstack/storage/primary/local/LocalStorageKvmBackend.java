@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
@@ -17,6 +18,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -25,6 +27,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
+import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
@@ -68,7 +71,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @Autowired
     private LocalStorageFactory localStorageFactory;
     @Autowired
-    private PrimaryStorageOverProvisioningManager ratioMgr;
+    private PrimaryStorageOverProvisioningManager ratioMgrhostUuid;
 
     public static class AgentCommand {
     }
@@ -395,6 +398,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public boolean existing;
     }
 
+    public static class RebaseRootVolumeToBackingFileCmd extends AgentCommand {
+        public String backingFilePath;
+        public String rootVolumePath;
+    }
+
+    public static class RebaseRootVolumeToBackingFileRsp extends AgentResponse {
+
+    }
+
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
@@ -406,6 +418,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String MERGE_SNAPSHOT_PATH = "/localstorage/snapshot/merge";
     public static final String MERGE_AND_REBASE_SNAPSHOT_PATH = "/localstorage/snapshot/mergeandrebase";
     public static final String OFFLINE_MERGE_PATH = "/localstorage/snapshot/offlinemerge";
+    public static final String REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH = "/localstorage/volume/rebaserootvolumetobackingfile";
 
     public LocalStorageKvmBackend(PrimaryStorageVO self) {
         super(self);
@@ -640,12 +653,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         return hostUuid;
     }
 
-    class CacheInstallPath {
-        String fullPath;
-        String hostUuid;
-        String installPath;
+    public static class CacheInstallPath {
+        public String fullPath;
+        public String hostUuid;
+        public String installPath;
 
-        CacheInstallPath disassemble() {
+        public CacheInstallPath disassemble() {
             DebugUtils.Assert(fullPath != null, "fullPath cannot be null");
             String[] pair = fullPath.split(";");
             installPath = pair[0].replaceFirst("file://", "");
@@ -653,7 +666,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             return this;
         }
 
-        String makeFullPath() {
+        public String makeFullPath() {
             DebugUtils.Assert(installPath != null, "installPath cannot be null");
             DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
             fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
@@ -1679,6 +1692,51 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    @MessageSafe
+    void handleHypervisorSpecificMessage(Message msg) {
+        if (msg instanceof LocalStorageKvmRebaseRootVolumeToBackingFileMsg) {
+            handle((LocalStorageKvmRebaseRootVolumeToBackingFileMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(final LocalStorageKvmRebaseRootVolumeToBackingFileMsg msg) {
+        SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+        q.select(ImageCacheVO_.installUrl);
+        q.add(ImageCacheVO_.imageUuid, Op.EQ, msg.getImageUuid());
+        q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+        q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", msg.getHostUuid()));
+        String backingFilePath = q.findValue();
+        if (backingFilePath == null) {
+            throw new CloudRuntimeException( String.format("cannot find ImageCacheVO[uuid:%s] of the local primary storage[uuid:%s]", msg.getImageUuid(), self.getUuid()));
+        }
+
+        CacheInstallPath cp = new CacheInstallPath();
+        cp.fullPath = backingFilePath;
+        cp.disassemble();
+        backingFilePath = cp.installPath;
+
+        RebaseRootVolumeToBackingFileCmd cmd = new RebaseRootVolumeToBackingFileCmd();
+        cmd.backingFilePath = backingFilePath;
+        cmd.rootVolumePath = msg.getRootVolume().getInstallPath();
+
+        final LocalStorageKvmRebaseRootVolumeToBackingFileReply reply = new LocalStorageKvmRebaseRootVolumeToBackingFileReply();
+        httpCall(REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, msg.getHostUuid(), cmd, RebaseAndMergeSnapshotsRsp.class, new ReturnValueCompletion<RebaseAndMergeSnapshotsRsp>(msg) {
+            @Override
+            public void success(RebaseAndMergeSnapshotsRsp rsp) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }

@@ -26,6 +26,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.*;
+import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
@@ -702,7 +703,7 @@ public class KVMHost extends HostBase implements Host {
     private void migrateVm(final Iterator<MigrateStruct> it, final Completion completion) {
         String hostIp;
         String vmUuid;
-        boolean withStorage;
+        StorageMigrationPolicy storageMigrationPolicy;
         synchronized (it) {
             if (!it.hasNext()) {
                 completion.success();
@@ -712,12 +713,12 @@ public class KVMHost extends HostBase implements Host {
             MigrateStruct s = it.next();
             vmUuid =  s.vmUuid;
             hostIp = s.dstHostIp;
-            withStorage = s.withStorage;
+            storageMigrationPolicy = s.storageMigrationPolicy;
         }
 
         MigrateVmCmd cmd = new MigrateVmCmd();
         cmd.setDestHostIp(hostIp);
-        cmd.setWithStorage(withStorage);
+        cmd.setStorageMigrationPolicy(storageMigrationPolicy.toString());
         cmd.setVmUuid(vmUuid);
         final String fvmuuid = vmUuid;
         final String destIp = hostIp;
@@ -783,6 +784,7 @@ public class KVMHost extends HostBase implements Host {
         String vmUuid;
         String dstHostIp;
         boolean withStorage;
+        StorageMigrationPolicy storageMigrationPolicy;
     }
 
     private void migrateVm(final MigrateVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
@@ -792,7 +794,7 @@ public class KVMHost extends HostBase implements Host {
         MigrateStruct s = new MigrateStruct();
         s.vmUuid = msg.getVmInventory().getUuid();
         s.dstHostIp = msg.getDestHostInventory().getManagementIp();
-        s.withStorage = msg.isWithStorage();
+        s.storageMigrationPolicy = msg.getStorageMigrationPolicy();
         lst.add(s);
         final MigrateVmOnHypervisorReply reply = new MigrateVmOnHypervisorReply();
         migrateVm(lst.iterator(), new Completion(msg, completion) {

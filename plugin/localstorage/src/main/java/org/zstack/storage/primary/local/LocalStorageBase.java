@@ -64,7 +64,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
-    private PrimaryStorageOverProvisioningManager ratioMgr;
+    protected PrimaryStorageOverProvisioningManager ratioMgr;
 
     static class FactoryCluster {
         LocalStorageHypervisorFactory factory;
@@ -114,9 +114,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((LocalStorageReserveHostCapacityMsg) msg);
         } else if (msg instanceof LocalStorageReturnHostCapacityMsg) {
             handle((LocalStorageReturnHostCapacityMsg) msg);
+        } else if (msg instanceof LocalStorageKvmRebaseRootVolumeToBackingFileMsg) {
+            handle((LocalStorageKvmRebaseRootVolumeToBackingFileMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(LocalStorageKvmRebaseRootVolumeToBackingFileMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handleHypervisorSpecificMessage(msg);
     }
 
     private void handle(LocalStorageReturnHostCapacityMsg msg) {

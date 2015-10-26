@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
@@ -140,6 +141,6 @@ public class TestLocalStorage30 {
         MigrateVmCmd mcmd = kconfig.migrateVmCmds.get(0);
         Assert.assertEquals(host2.getManagementIp(), mcmd.getDestHostIp());
         Assert.assertEquals(vm.getUuid(), mcmd.getVmUuid());
-        Assert.assertTrue(mcmd.isWithStorage());
+        Assert.assertEquals(StorageMigrationPolicy.IncCopy.toString(), mcmd.getStorageMigrationPolicy());
 	}
 }

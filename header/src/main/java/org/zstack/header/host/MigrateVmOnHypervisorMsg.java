@@ -4,17 +4,22 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceInventory;
 
 public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
+    public static enum StorageMigrationPolicy {
+        FullCopy,
+        IncCopy
+    }
+
     private VmInstanceInventory vmInventory;
     private HostInventory destHostInventory;
     private String srcHostUuid;
-    private boolean withStorage;
+    private StorageMigrationPolicy storageMigrationPolicy;
 
-    public boolean isWithStorage() {
-        return withStorage;
+    public StorageMigrationPolicy getStorageMigrationPolicy() {
+        return storageMigrationPolicy;
     }
 
-    public void setWithStorage(boolean withStorage) {
-        this.withStorage = withStorage;
+    public void setStorageMigrationPolicy(StorageMigrationPolicy storageMigrationPolicy) {
+        this.storageMigrationPolicy = storageMigrationPolicy;
     }
 
     public VmInstanceInventory getVmInventory() {

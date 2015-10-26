@@ -747,14 +747,14 @@ public class KVMAgentCommands {
     public static class MigrateVmCmd extends AgentCommand {
         private String vmUuid;
         private String destHostIp;
-        private boolean withStorage;
+        private String storageMigrationPolicy;
 
-        public boolean isWithStorage() {
-            return withStorage;
+        public String getStorageMigrationPolicy() {
+            return storageMigrationPolicy;
         }
 
-        public void setWithStorage(boolean withStorage) {
-            this.withStorage = withStorage;
+        public void setStorageMigrationPolicy(String storageMigrationPolicy) {
+            this.storageMigrationPolicy = storageMigrationPolicy;
         }
 
         public String getVmUuid() {

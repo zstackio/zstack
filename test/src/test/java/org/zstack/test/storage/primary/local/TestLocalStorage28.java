@@ -7,7 +7,11 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.Message;
+import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheMsg;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstance;
@@ -19,8 +23,10 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmBackend.RebaseRootVolumeToBackingFileCmd;
 import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -71,6 +77,7 @@ public class TestLocalStorage28 {
     LocalStorageSimulatorConfig config;
     PrimaryStorageOverProvisioningManager ratioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
+    boolean downloadImageCalled = false;
 
     @Before
     public void setUp() throws Exception {
@@ -114,14 +121,34 @@ public class TestLocalStorage28 {
             usedVolumeSize += ratioMgr.calculateByRatio(vol.getPrimaryStorageUuid(), vol.getSize());
         }
 
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            public void intercept(Message msg) {
+                if (msg instanceof DownloadImageToPrimaryStorageCacheMsg) {
+                    downloadImageCalled = true;
+                }
+            }
+        }, DownloadImageToPrimaryStorageCacheMsg.class);
+
         config.createEmptyVolumeCmds.clear();
         config.deleteBitsCmds.clear();
         vm = api.migrateVmInstance(vm.getUuid(), host2.getUuid());
         TimeUnit.SECONDS.sleep(5);
+
+        Assert.assertTrue(downloadImageCalled);
+        Assert.assertEquals(1, config.rebaseRootVolumeToBackingFileCmds.size());
+        RebaseRootVolumeToBackingFileCmd recmd = config.rebaseRootVolumeToBackingFileCmds.get(0);
+        CacheInstallPath cp = new CacheInstallPath();
+        cp.fullPath = cacheVO.getInstallUrl();
+        cp.disassemble();
+
+        Assert.assertEquals(cp.installPath, recmd.backingFilePath);
+        Assert.assertEquals(vm.getRootVolume().getInstallPath(), recmd.rootVolumePath);
+
         LocalStorageHostRefVO ref1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
         Assert.assertEquals(ref1.getTotalCapacity() - imageSize, ref1.getAvailableCapacity());
         LocalStorageHostRefVO ref2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(ref2.getTotalCapacity() - usedVolumeSize, ref2.getAvailableCapacity());
+        Assert.assertEquals(ref2.getTotalCapacity() - imageSize - usedVolumeSize, ref2.getAvailableCapacity());
 
         Assert.assertEquals(vm.getAllVolumes().size(), config.createEmptyVolumeCmds.size());
         for (final VolumeInventory vol : vm.getAllVolumes()) {
@@ -152,7 +179,7 @@ public class TestLocalStorage28 {
         MigrateVmCmd mcmd = kconfig.migrateVmCmds.get(0);
         Assert.assertEquals(host2.getManagementIp(), mcmd.getDestHostIp());
         Assert.assertEquals(vm.getUuid(), mcmd.getVmUuid());
-        Assert.assertTrue(mcmd.isWithStorage());
+        Assert.assertEquals(StorageMigrationPolicy.IncCopy.toString(), mcmd.getStorageMigrationPolicy());
 
         List<HostInventory> hosts = api.getMigrationTargetHost(vm.getUuid());
         Assert.assertFalse(hosts.isEmpty());

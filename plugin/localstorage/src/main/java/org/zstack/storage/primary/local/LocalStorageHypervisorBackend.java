@@ -4,6 +4,7 @@ import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 
@@ -50,6 +51,8 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract void handle(LocalStorageCreateEmptyVolumeMsg msg, ReturnValueCompletion<LocalStorageCreateEmptyVolumeReply> completion);
 
     abstract void handle(LocalStorageDirectlyDeleteVolumeMsg msg, String hostUuid, ReturnValueCompletion<LocalStorageDirectlyDeleteVolumeReply> completion);
+
+    abstract void handleHypervisorSpecificMessage(Message msg);
 
     abstract void downloadImageToCache(ImageInventory img, String hostUuid, Completion completion);
 }
