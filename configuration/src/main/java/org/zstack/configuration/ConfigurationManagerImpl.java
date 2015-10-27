@@ -918,7 +918,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             vo.setUuid(Platform.getUuid());
         }
         HostAllocatorStrategyType allocType = msg.getAllocatorStrategy() == null ? HostAllocatorStrategyType
-                .valueOf(HostAllocatorConstant.DEFAULT_HOST_ALLOCATOR_STRATEGY_TYPE) : HostAllocatorStrategyType.valueOf(msg.getAllocatorStrategy());
+                .valueOf(HostAllocatorConstant.LEAST_VM_PREFERRED_HOST_ALLOCATOR_STRATEGY_TYPE) : HostAllocatorStrategyType.valueOf(msg.getAllocatorStrategy());
         vo.setAllocatorStrategy(allocType.toString());
         vo.setName(msg.getName());
         vo.setCpuNum(msg.getCpuNum());
