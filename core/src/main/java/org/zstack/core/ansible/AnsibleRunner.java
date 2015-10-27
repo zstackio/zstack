@@ -249,6 +249,7 @@ public class AnsibleRunner {
 
             putArgument("pip_url", String.format("http://%s:8080/zstack/static/pypi/simple", Platform.getManagementServerIp()));
             putArgument("trusted_host", Platform.getManagementServerIp());
+            putArgument("yum_server", String.format("%s:8080", Platform.getManagementServerIp()));
 
             logger.debug(String.format("starts to run ansbile[%s]", playBookName));
             new PrepareAnsible().setTargetIp(targetIp).prepare();
