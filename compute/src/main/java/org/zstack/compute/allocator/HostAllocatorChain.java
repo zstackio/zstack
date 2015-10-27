@@ -89,14 +89,14 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         long originMem = vo.getAvailableMemory();
 
         long availCpu = vo.getAvailableCpu() - cpu;
-        if (availCpu <= 0) {
+        if (availCpu < 0) {
             return false;
         }
         vo.setAvailableCpu(availCpu);
 
         memory = ratioMgr.calculateMemoryByRatio(hostUuid, memory);
         long availMemory = vo.getAvailableMemory() - memory;
-        if (availMemory <=0) {
+        if (availMemory < 0) {
             return false;
         }
         vo.setAvailableMemory(availMemory);
