@@ -41,6 +41,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 1. migrate the vm with local storage
+ *
+ * confirm the volumes of the vm are inc-copied
+ */
 public class TestLocalStorage30 {
     CLogger logger = Utils.getLogger(TestLocalStorage30.class);
     Deployer deployer;
@@ -110,7 +115,7 @@ public class TestLocalStorage30 {
         LocalStorageHostRefVO ref1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
         Assert.assertEquals(ref1.getTotalCapacity() - imageSize, ref1.getAvailableCapacity());
         LocalStorageHostRefVO ref2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(ref2.getTotalCapacity() - usedVolumeSize, ref2.getAvailableCapacity());
+        Assert.assertEquals(ref2.getTotalCapacity() - imageSize - usedVolumeSize, ref2.getAvailableCapacity());
 
         Assert.assertEquals(volumesOnLocal.size(), config.createEmptyVolumeCmds.size());
         for (final VolumeVO vol : volumesOnLocal) {

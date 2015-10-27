@@ -718,7 +718,7 @@ public class KVMHost extends HostBase implements Host {
 
         MigrateVmCmd cmd = new MigrateVmCmd();
         cmd.setDestHostIp(hostIp);
-        cmd.setStorageMigrationPolicy(storageMigrationPolicy.toString());
+        cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
         cmd.setVmUuid(vmUuid);
         final String fvmuuid = vmUuid;
         final String destIp = hostIp;

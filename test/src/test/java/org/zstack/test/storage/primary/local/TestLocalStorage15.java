@@ -25,7 +25,7 @@ import org.zstack.utils.function.Function;
  * 2. create a vm1
  * 3. migrate the vm1
  *
- * confirm the vm1 cannot migrate
+ * confirm the vm1 migrated successfully
  */
 public class TestLocalStorage15 {
     Deployer deployer;
@@ -74,13 +74,6 @@ public class TestLocalStorage15 {
             }
         });
 
-        boolean success = false;
-        try {
-            api.migrateVmInstance(vm1.getUuid(), hostToMigarate);
-        } catch (ApiSenderException e) {
-            success = true;
-        }
-
-        Assert.assertTrue(success);
+        api.migrateVmInstance(vm1.getUuid(), hostToMigarate);
     }
 }

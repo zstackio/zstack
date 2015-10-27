@@ -36,6 +36,14 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 1. create a vm with local storage
+ * 2. set migration to fail
+ * 3. migrate the vm
+ *
+ * confirm the migration failed
+ * confirm all resources are returned
+ */
 public class TestLocalStorage29 {
     CLogger logger = Utils.getLogger(TestLocalStorage29.class);
     Deployer deployer;
@@ -125,8 +133,9 @@ public class TestLocalStorage29 {
         Assert.assertFalse(directDeleteOnSrc);
         LocalStorageHostRefVO ref1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
         Assert.assertEquals(ref1.getTotalCapacity() - imageSize - usedVolumeSize, ref1.getAvailableCapacity());
+        // even migration failed, the image is always downloaded to the image cache, which will not be rolled back
         LocalStorageHostRefVO ref2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(ref2.getTotalCapacity(), ref2.getAvailableCapacity());
+        Assert.assertEquals(ref2.getTotalCapacity() - imageSize, ref2.getAvailableCapacity());
 
         Assert.assertEquals(vm.getAllVolumes().size(), config.createEmptyVolumeCmds.size());
         for (final VolumeInventory vol : vm.getAllVolumes()) {
