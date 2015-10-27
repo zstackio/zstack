@@ -1,9 +1,9 @@
 package org.zstack.core.componentloader;
 
 import org.zstack.core.Platform;
+import org.zstack.core.componentloader.PluginDSL.ExtensionDefinition;
+import org.zstack.core.componentloader.PluginDSL.PluginDefinition;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
@@ -48,7 +48,7 @@ public class PluginRegistryImpl implements PluginRegistryIN {
                     ext.setInstance(instance);
                     
                     if (!interfaceClass.isInstance(ext.getInstance())) {
-                    	throw new IllegalArgumentException(String.format("%s is not instance of interface %s", ext.getInstance().getClass().getCanonicalName(), interfaceClass.getCanonicalName()));
+                    	throw new IllegalArgumentException(String.format("%s is not an instance of the interface %s", ext.getInstance().getClass().getCanonicalName(), interfaceClass.getName()));
                     }
                     
                     List<PluginExtension> exts = extensionsByInterfaceName.get(ext.getReferenceInterface());
@@ -67,9 +67,42 @@ public class PluginRegistryImpl implements PluginRegistryIN {
     @Override
     public void initialize() {
         buildPluginTree();
+        continueBuildTreeFromDSL();
         sortPlugins();
         createClassPluginInstanceMap();
         logger.info("Plugin system has been initialized successfully");
+    }
+
+    private void continueBuildTreeFromDSL() {
+        for (Map.Entry<Class, PluginDefinition> e : PluginDSL.getPluginDefinition().entrySet()) {
+            Class beanClass = e.getKey();
+            PluginDefinition definition = e.getValue();
+            ComponentLoader loader = Platform.getComponentLoader();
+            Object instance = loader.getComponent(beanClass);
+
+            for (ExtensionDefinition extd : definition.extensions) {
+                String ifaceName = extd.interfaceClass.getName();
+                PluginExtension ext = new PluginExtension();
+                ext.setInstance(instance);
+                ext.setBeanClassName(instance.getClass().getName());
+                ext.setOrder(extd.order);
+                ext.setReferenceInterface(extd.interfaceClass.getName());
+                ext.setAttributes(extd.attributes);
+
+                if (!extd.interfaceClass.isInstance(ext.getInstance())) {
+                    throw new IllegalArgumentException(String.format("%s is not an instance of the interface %s", ext.getInstance().getClass().getCanonicalName(), extd.interfaceClass.getName()));
+                }
+
+                List<PluginExtension> exts = extensionsByInterfaceName.get(ifaceName);
+                if (exts == null) {
+                    exts = new ArrayList<PluginExtension>();
+                    extensionsByInterfaceName.put(ifaceName, exts);
+                }
+
+                logger.debug(String.format("Plugin[%s] declares an extension[%s] from static DSL", beanClass.getName(), extd.interfaceClass.getName()));
+                exts.add(ext);
+            }
+        }
     }
 
     private void createClassPluginInstanceMap() {

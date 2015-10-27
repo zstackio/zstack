@@ -15,6 +15,14 @@ public class PluginExtension {
     PluginExtension() {
     }
 
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
     public String getInstanceId() {
         return instanceId;
     }

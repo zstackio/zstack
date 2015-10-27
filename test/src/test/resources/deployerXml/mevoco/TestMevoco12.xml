@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <zones>
+        <zone name="Zone1" description="Test">
+            <clusters>
+                <cluster name="Cluster1" description="Test">
+                    <hosts>
+                        <simulatorHost name="TestHost1" description="Test"
+                                       managementIp="10.0.0.11" memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                        <simulatorHost name="TestHost2" description="Test"
+                                       managementIp="10.0.0.12" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
+                        <simulatorHost name="TestHost3" description="Test"
+                                       managementIp="10.0.0.13" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
+                        <simulatorHost name="TestHost4" description="Test"
+                                       managementIp="10.0.0.14" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
+                        <simulatorHost name="TestHost5" description="Test"
+                                       managementIp="10.0.0.15" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
+                        <simulatorHost name="TestHost6" description="Test"
+                                       managementIp="10.0.0.16" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
+                        <simulatorHost name="TestHost7" description="Test"
+                                       managementIp="10.0.0.17" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
+                        <simulatorHost name="TestHost8" description="Test"
+                                       managementIp="10.0.0.18" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
+                        <simulatorHost name="TestHost9" description="Test"
+                                       managementIp="10.0.0.19" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
+                        <simulatorHost name="TestHost10" description="Test"
+                                       managementIp="10.0.0.20" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
+                        <simulatorHost name="TestHost11" description="Test"
+                                       managementIp="10.0.0.21" memoryCapacity="4G" cpuNum="4" cpuSpeed="2600" />
+                    </hosts>
+                </cluster>
+            </clusters>
+        </zone>
+    </zones>
+</deployerConfig>

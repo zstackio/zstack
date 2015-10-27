@@ -127,12 +127,11 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
             }
         }
 
-        Set<GlobalApiMessageInterceptor> gis = null;
+        Set<GlobalApiMessageInterceptor> gis = new HashSet<GlobalApiMessageInterceptor>();
         for (Map.Entry<Class, Set<GlobalApiMessageInterceptor>> e : globalInterceptors.entrySet()) {
             Class baseMsgClz = e.getKey();
             if (baseMsgClz.isAssignableFrom(desc.getClazz())) {
-                gis = e.getValue();
-                break;
+                gis.addAll(e.getValue());
             }
         }
 
@@ -140,18 +139,17 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         List<GlobalApiMessageInterceptor> front = new ArrayList<GlobalApiMessageInterceptor>();
         List<GlobalApiMessageInterceptor> end = new ArrayList<GlobalApiMessageInterceptor>();
 
-        if (gis != null) {
-            for (GlobalApiMessageInterceptor gi : gis) {
-                logger.debug(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
-                if (gi.getPosition() == GlobalApiMessageInterceptor.InterceptorPosition.FRONT) {
-                    front.add(gi);
-                } else if (gi.getPosition() == InterceptorPosition.END){
-                    end.add(gi);
-                } else if (gi.getPosition() == InterceptorPosition.SYSTEM) {
-                    system.add(gi);
-                }
+        for (GlobalApiMessageInterceptor gi : gis) {
+            logger.debug(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
+            if (gi.getPosition() == InterceptorPosition.FRONT) {
+                front.add(gi);
+            } else if (gi.getPosition() == InterceptorPosition.END){
+                end.add(gi);
+            } else if (gi.getPosition() == InterceptorPosition.SYSTEM) {
+                system.add(gi);
             }
         }
+
         for (GlobalApiMessageInterceptor gi : globalInterceptorsForAllMsg) {
             logger.debug(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
             if (gi.getPosition() == GlobalApiMessageInterceptor.InterceptorPosition.FRONT) {

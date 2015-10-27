@@ -95,6 +95,15 @@ public class TypeUtils {
         }
     }
 
+    public static List<Class> getAllClassOfClass(Class c) {
+        List<Class> clzs = new ArrayList<Class>();
+        while (c != Object.class) {
+            clzs.add(c);
+            c = c.getSuperclass();
+        }
+        return clzs;
+    }
+
     public static List<Class> getAllClassOfObject(Object obj) {
         List<Class> ret = new ArrayList<Class>();
         Class clazz = obj.getClass();
