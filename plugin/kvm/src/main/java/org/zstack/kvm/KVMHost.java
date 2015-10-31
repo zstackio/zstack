@@ -1188,6 +1188,7 @@ public class KVMHost extends HostBase implements Host {
         final StartVmCmd cmd = new StartVmCmd();
 
         boolean virtio;
+        int cacheMode;
         String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
                 spec.getVmInventory().getPlatform();
 
@@ -1204,11 +1205,13 @@ public class KVMHost extends HostBase implements Host {
         cmd.setMemory(spec.getVmInventory().getMemorySize());
         cmd.setUseVirtio(virtio);
         VolumeTO rootVolume = new VolumeTO();
+        cacheMode = KVMGlobalConfig.LIBVIRT_CACHE_MODE.value(Integer.class);
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
         rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
         rootVolume.setUseVirtio(virtio);
+        rootVolume.setCacheMode(cacheMode);
         cmd.setRootVolume(rootVolume);
         cmd.setTimeout(TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout()));
         List<VolumeTO> dataVolumes = new ArrayList<VolumeTO>(spec.getDestDataVolumes().size());
@@ -1219,6 +1222,7 @@ public class KVMHost extends HostBase implements Host {
             v.setDeviceType(getVolumeTOType(data));
             v.setVolumeUuid(data.getUuid());
             v.setUseVirtio(virtio);
+            v.setCacheMode(cacheMode);
             dataVolumes.add(v);
         }
         cmd.setDataVolumes(dataVolumes);
