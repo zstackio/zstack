@@ -51,5 +51,13 @@
         <description>when set to true, enable the live volume snapshot on RedHat series OS if the libvirt and QEMU versions match the requirement</description>
         <type>java.lang.Boolean</type>
         <defaultValue>false</defaultValue>
-    </config>
+     </config>
+
+     <config>
+        <category>kvm</category>
+        <name>vm.CacheMode</name>
+        <description>libvirt cache optoin. 0=none, 1=writethrough, 2=writeback</description>
+        <type>java.lang.Integer</type>
+        <defaultValue>0</defaultValue>
+     </config>
 </globalConfig>

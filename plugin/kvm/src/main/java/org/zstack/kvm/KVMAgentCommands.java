@@ -362,6 +362,7 @@ public class KVMAgentCommands {
         private String deviceType = FILE;
         private String volumeUuid;
         private boolean useVirtio;
+        private int cacheMode;
 
         public VolumeTO() {
         }
@@ -372,6 +373,7 @@ public class KVMAgentCommands {
             this.deviceType = other.deviceType;
             this.volumeUuid = other.volumeUuid;
             this.useVirtio = other.useVirtio;
+            this.cacheMode = other.cacheMode;
         }
 
         public boolean isUseVirtio() {
@@ -409,6 +411,12 @@ public class KVMAgentCommands {
         }
         public void setDeviceId(int deviceId) {
             this.deviceId = deviceId;
+        }
+        public int getCacheMode() {
+            return cacheMode;
+        }
+        public void setCacheMode(int cacheMode) {
+            this.cacheMode = cacheMode;
         }
     }
     
