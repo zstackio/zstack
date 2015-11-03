@@ -1,13 +1,12 @@
 package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -22,6 +21,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
+import javax.persistence.TypedQuery;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,18 +45,14 @@ public abstract class VmTracer {
         Map<String, VmInstanceState> hostSideStates;
         Map<String, VmInstanceState> mgmtSideStates;
 
+        @Transactional(readOnly = true)
         private void buildManagementServerSideVmStates() {
             mgmtSideStates = new HashMap<String, VmInstanceState>();
-            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.uuid, VmInstanceVO_.state);
-            q.add(VmInstanceVO_.hostUuid, Op.EQ, hostUuid);
-            List<Tuple> ts = q.listTuple();
 
-            q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.uuid, VmInstanceVO_.state);
-            q.add(VmInstanceVO_.hostUuid, Op.NULL);
-            q.add(VmInstanceVO_.lastHostUuid, Op.EQ, hostUuid);
-            ts.addAll(q.listTuple());
+            String sql = "select vm.uuid, vm.state from VmInstanceVO vm where vm.hostUuid = :huuid or (vm.hostUuid is null and vm.lastHostUuid = :huuid)";
+            TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+            q.setParameter("huuid", hostUuid);
+            List<Tuple> ts = q.getResultList();
 
             for (Tuple t : ts) {
                 mgmtSideStates.put(t.get(0, String.class), t.get(1, VmInstanceState.class));
@@ -74,33 +70,18 @@ public abstract class VmTracer {
                     handleAnonymousVm(vmUuid, actualState);
                 } else if (actualState != expectedState) {
                     // vm state changed on host side
-                    handleStateChangeOnHostSide(vmUuid, actualState, expectedState);
+                    handleStateChangeOnHostSide(vmUuid, actualState);
                 }
             }
         }
 
-        private void handleStateChangeOnHostSide(final String vmUuid, final VmInstanceState actualState, final VmInstanceState expectedState) {
-            ChangeVmMetaDataMsg msg = new ChangeVmMetaDataMsg();
-            AtomicVmState s = new AtomicVmState();
-            s.setExpected(expectedState);
-            s.setValue(actualState);
-            msg.setState(s);
+        private void handleStateChangeOnHostSide(final String vmUuid, final VmInstanceState actualState) {
+            VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
             msg.setVmInstanceUuid(vmUuid);
+            msg.setStateOnHost(actualState);
+            msg.setHostUuid(hostUuid);
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
-            bus.send(msg, new CloudBusCallBack() {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(String.format("[Vm Tracer] failed to change vm[uuid:%s] from state[%s] to state[%s]", vmUuid, expectedState, actualState));
-                    } else {
-                        ChangeVmMetaDataReply cr = reply.castReply();
-                        if (cr.isChangeStateDone()) {
-                            fireStateChangeEvent(vmUuid, expectedState, actualState);
-                            logger.debug(String.format("[Vm Tracer] changed vm[uuid:%s] from state[%s] to state[%s]", vmUuid, expectedState, actualState));
-                        }
-                    }
-                }
-            });
+            bus.send(msg);
         }
 
         private void fireStateChangeEvent(String vmUuid, VmInstanceState from, VmInstanceState to) {
@@ -131,38 +112,7 @@ public abstract class VmTracer {
                 return;
             }
 
-            ChangeVmMetaDataMsg msg = new ChangeVmMetaDataMsg();
-            if (vm.getState() != actualState) {
-                AtomicVmState s = new AtomicVmState();
-                s.setExpected(vm.getState());
-                s.setValue(actualState);
-                msg.setState(s);
-            }
-
-            AtomicHostUuid h = new AtomicHostUuid();
-            h.setExpected(vm.getHostUuid());
-            h.setValue(hostUuid);
-            msg.setHostUuid(h);
-            msg.setVmInstanceUuid(vmUuid);
-            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getUuid());
-            bus.send(msg, new CloudBusCallBack() {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.debug(String.format("[Vm Tracer] failed to change vm[uuid:%s] meta data, %s", vmUuid, reply.getError()));
-                    } else {
-                        ChangeVmMetaDataReply cr = reply.castReply();
-                        if (cr.isChangeStateDone()) {
-                            fireStateChangeEvent(vmUuid, vm.getState(), actualState);
-                            logger.debug(String.format("[Vm Tracer] changed vm[uuid:%s] state from %s to %s", vmUuid, vm.getState(), actualState));
-                        }
-                        if (cr.isChangeHostUuidDone()) {
-                            fireHostChangeEvent(vmUuid, null, hostUuid);
-                            logger.debug(String.format("[Vm Tracer] vm[uuid:%s] show up on host[uuid:%s], from origin host[uuid:%s]", vmUuid, hostUuid, vm.getHostUuid()));
-                        }
-                    }
-                }
-            });
+            handleStateChangeOnHostSide(vmUuid, actualState);
         }
 
         private void checkFromManagementServerSide() {
@@ -177,57 +127,12 @@ public abstract class VmTracer {
         }
 
         private void handleMissingVm(final String vmUuid, final VmInstanceState expectedState) {
-            ChangeVmMetaDataMsg msg = new ChangeVmMetaDataMsg();
-
-            AtomicHostUuid h = new AtomicHostUuid();
-            AtomicVmState s = new AtomicVmState();
-            s.setExpected(expectedState);
-            s.setValue(VmInstanceState.Stopped);
-
-            if (expectedState == VmInstanceState.Unknown) {
-                SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-                q.select(VmInstanceVO_.hostUuid);
-                q.add(VmInstanceVO_.uuid, Op.EQ, vmUuid);
-                String huuid = q.findValue();
-
-                h.setExpected(huuid);
-                h.setValue(null);
-            } else {
-                if (expectedState == VmInstanceState.Created || expectedState == VmInstanceState.Starting) {
-                    h.setExpected(null);
-                    h.setValue(null);
-                } else if (expectedState == VmInstanceState.Running || expectedState == VmInstanceState.Stopping
-                        || expectedState == VmInstanceState.Migrating || expectedState == VmInstanceState.Rebooting) {
-                    h.setExpected(hostUuid);
-                    h.setValue(null);
-                }
-
-            }
-
-            msg.setNeedHostAndStateBothMatch(true);
-            msg.setState(s);
-            msg.setHostUuid(h);
+            VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
+            msg.setHostUuid(hostUuid);
             msg.setVmInstanceUuid(vmUuid);
-
+            msg.setStateOnHost(VmInstanceState.Stopped);
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
-            bus.send(msg, new CloudBusCallBack() {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.debug(String.format("[Vm Tracer] failed to change vm[uuid:%s] meta data, %s", vmUuid, reply.getError()));
-                    } else {
-                        ChangeVmMetaDataReply cr = reply.castReply();
-                        if (cr.isChangeStateDone()) {
-                            fireStateChangeEvent(vmUuid, expectedState, VmInstanceState.Stopped);
-                            logger.debug(String.format("[Vm Tracer] changed vm[uuid:%s] state from %s to %s", vmUuid, expectedState, VmInstanceState.Stopped));
-                        }
-                        if (cr.isChangeHostUuidDone()) {
-                            fireHostChangeEvent(vmUuid, null, hostUuid);
-                            logger.debug(String.format("[Vm Tracer] vm[uuid:%s] missing on host[uuid:%s]", vmUuid, hostUuid));
-                        }
-                    }
-                }
-            });
+            bus.send(msg);
         }
 
         void trace() {
@@ -239,8 +144,8 @@ public abstract class VmTracer {
 
     protected void reportVmState(final String hostUuid, final Map<String, VmInstanceState> vmStates) {
         for (VmInstanceState state : vmStates.values()) {
-            if (state != VmInstanceState.Running && state != VmInstanceState.Unknown) {
-                throw new CloudRuntimeException(String.format("host can only report vm state as Running and Unknown, got %s", state));
+            if (state != VmInstanceState.Running ) {
+                throw new CloudRuntimeException(String.format("host can only report vm state as Running, got %s", state));
             }
         }
 

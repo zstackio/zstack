@@ -1009,4 +1009,10 @@ public class KVMAgentCommands {
     public static class DetachIsoRsp extends AgentResponse {
 
     }
+
+    public static class ReportVmStateCmd {
+        public String hostUuid;
+        public String vmUuid;
+        public String vmState;
+    }
 }

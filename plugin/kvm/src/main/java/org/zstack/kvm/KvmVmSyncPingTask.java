@@ -3,6 +3,7 @@ package org.zstack.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.VmTracer;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NopeCompletion;
@@ -11,7 +12,9 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.kvm.KVMAgentCommands.ReportVmStateCmd;
 import org.zstack.kvm.KVMAgentCommands.VmSyncCmd;
 import org.zstack.kvm.KVMAgentCommands.VmSyncResponse;
 import org.zstack.kvm.KVMConstant.KvmVmState;
@@ -22,7 +25,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtensionPoint, KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+
+public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtensionPoint, KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(KvmVmSyncPingTask.class);
     
     @Autowired
@@ -98,5 +104,23 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
     @Override
     public HypervisorType getHypervisorTypeForReestablishExtensionPoint() {
         return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
+    }
+
+    @Override
+    public boolean start() {
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REBOOT_VM_PATH, ReportVmStateCmd.class, new SyncHttpCallHandler<ReportVmStateCmd>() {
+            @Override
+            public String handleSyncHttpCall(ReportVmStateCmd cmd) {
+                VmInstanceState state = KvmVmState.valueOf(cmd.vmState).toVmInstanceState();
+                reportVmState(cmd.hostUuid, map(e(cmd.vmUuid, state)));
+                return null;
+            }
+        });
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
     }
 }

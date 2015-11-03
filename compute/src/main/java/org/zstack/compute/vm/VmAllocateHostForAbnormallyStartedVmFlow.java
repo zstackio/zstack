@@ -7,12 +7,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.allocator.*;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.allocator.AllocateHostReply;
-import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.allocator.LastHostPreferredAllocateHostMsg;
-import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -22,8 +19,9 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.Map;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VmAllocateHostForStoppedVmFlow implements Flow {
+public class VmAllocateHostForAbnormallyStartedVmFlow implements Flow {
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -35,14 +33,13 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
     public void run(final FlowTrigger chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        LastHostPreferredAllocateHostMsg msg = new LastHostPreferredAllocateHostMsg();
+        DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
         msg.setVmInstance(spec.getVmInventory());
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum() * spec.getVmInventory().getCpuSpeed());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
-        msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
+        msg.setHostUuid(spec.getDestHost().getUuid());
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
-        msg.setLastHostUuid(spec.getVmInventory().getLastHostUuid());
-        msg.setAllocatorStrategy(HostAllocatorConstant.LAST_HOST_PREFERRED_ALLOCATOR_STRATEGY_TYPE);
+        msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
         msg.setL3NetworkUuids(CollectionUtils.transformToList(spec.getL3Networks(), new Function<String, L3NetworkInventory>() {
             @Override
             public String call(L3NetworkInventory arg) {

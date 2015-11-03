@@ -14,6 +14,7 @@ public interface VmInstanceConstant {
         AttachingVolumeInventory,
         DestPrimaryStorageInventoryForAttachingVolume,
         AttachNicInventory,
+        AbnormalLifeCycleStruct,
     }
     
     public static enum VmOperation {

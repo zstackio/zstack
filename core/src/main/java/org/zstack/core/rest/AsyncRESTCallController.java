@@ -19,4 +19,9 @@ public class AsyncRESTCallController {
     public void callback(HttpServletRequest req, HttpServletResponse rsp) {
         restf.notifyCallback(req, rsp);
     }
+
+    @RequestMapping(value=RESTConstant.COMMAND_CHANNEL,  method={RequestMethod.POST, RequestMethod.PUT})
+    public void sendCommand(HttpServletRequest req, HttpServletResponse rsp) {
+        restf.sendCommand(req, rsp);
+    }
 }

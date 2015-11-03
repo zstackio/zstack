@@ -27,10 +27,8 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -52,11 +50,18 @@ public class RESTFacadeImpl implements RESTFacade {
     private RestTemplate template;
 
     private Map<String, HttpCallStatistic> statistics = new ConcurrentHashMap<String, HttpCallStatistic>();
+    private Map<String, HttpCallHandlerWrapper> httpCallhandlers = new ConcurrentHashMap<String, HttpCallHandlerWrapper>();
 
     private interface AsyncHttpWrapper {
         void fail(ErrorCode err);
 
         void success(HttpEntity<String> responseEntity);
+    }
+
+    private interface HttpCallHandlerWrapper {
+        String handle(HttpEntity<String> entity);
+
+        HttpCallHandler getHandler();
     }
 
     private Map<String, AsyncHttpWrapper> wrappers = new ConcurrentHashMap<String, AsyncHttpWrapper>();
@@ -90,7 +95,7 @@ public class RESTFacadeImpl implements RESTFacade {
         try {
             HttpEntity<String> entity = this.httpServletRequestToHttpEntity(req);
             if (taskUuid == null) {
-                rsp.sendError(HttpStatus.SC_NOT_FOUND, "No 'taskUuid' found in header");
+                rsp.sendError(HttpStatus.SC_BAD_REQUEST, "No 'taskUuid' found in the header");
                 logger.warn(String.format("Received a callback request, but no 'taskUuid' found in headers. request body: %s", entity.getBody()));
                 return;
             }
@@ -104,10 +109,51 @@ public class RESTFacadeImpl implements RESTFacade {
 
             rsp.setStatus(HttpStatus.SC_OK);
             wrapper.success(entity);
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.warn(e.getMessage(), e);
+        } catch (Throwable t) {
+            try {
+                rsp.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, t.getMessage());
+            } catch (IOException e) {
+                logger.warn(e.getMessage(), e);
+            }
         }
     }
+
+    void sendCommand(HttpServletRequest req, HttpServletResponse rsp) {
+        String commandPath = req.getHeader(RESTConstant.COMMAND_PATH);
+        try {
+            HttpEntity<String> entity = this.httpServletRequestToHttpEntity(req);
+            if (commandPath == null) {
+                rsp.sendError(HttpStatus.SC_BAD_REQUEST, "No 'commandPath' found in the header");
+                logger.warn(String.format("Received a command, but no 'taskUuid' found in headers. request body: %s", entity.getBody()));
+                return;
+            }
+
+            HttpCallHandlerWrapper handler = httpCallhandlers.get(commandPath);
+            if (handler == null) {
+                rsp.sendError(HttpStatus.SC_NOT_FOUND, String.format("no handler found for the command path[%s]", commandPath));
+                logger.warn(String.format("Received a command, but no handler found for the path[%s]. request body: %s", commandPath, entity.getBody()));
+                return;
+            }
+
+            String ret = handler.handle(entity);
+            if (ret == null) {
+                rsp.setStatus(HttpStatus.SC_OK);
+            } else {
+                rsp.setStatus(HttpStatus.SC_OK, ret);
+            }
+        } catch (IOException e) {
+            logger.warn(e.getMessage(), e);
+        } catch (Throwable t) {
+            try {
+                rsp.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, t.getMessage());
+            } catch (IOException e) {
+                logger.warn(e.getMessage(), e);
+            }
+        }
+    }
+
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
@@ -360,5 +406,29 @@ public class RESTFacadeImpl implements RESTFacade {
     @Override
     public Map<String, HttpCallStatistic> getStatistics() {
         return statistics;
+    }
+
+    @Override
+    public <T> void registerSyncHttpCallHandler(String path, final Class<T> objectType, final SyncHttpCallHandler<T> handler) {
+        HttpCallHandlerWrapper wrapper = httpCallhandlers.get(path);
+        if (wrapper != null) {
+            throw new CloudRuntimeException(String.format("duplicate SyncHttpCallHandler[%s, %s] for the command path[%s]", wrapper.getHandler().getClass(),
+                    handler.getClass(), path));
+        }
+
+        wrapper = new HttpCallHandlerWrapper() {
+            @Override
+            public String handle(HttpEntity<String> entity) {
+                T cmd = JSONObjectUtil.toObject(entity.getBody(), objectType);
+                return handler.handleSyncHttpCall(cmd);
+            }
+
+            @Override
+            public HttpCallHandler getHandler() {
+                return handler;
+            }
+        };
+
+        httpCallhandlers.put(path, wrapper);
     }
 }

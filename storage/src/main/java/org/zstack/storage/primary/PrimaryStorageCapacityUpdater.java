@@ -65,7 +65,7 @@ public class PrimaryStorageCapacityUpdater {
                 }
             }
             StackTraceElement caller = stackTraceElements[index+1];
-            logger.trace(String.format("[Primary Storage Capacity] %s:%s:%s changed capacity of the primary storage[uuid:%s] as:\n" +
+            logger.trace(String.format("[Primary Storage Capacity] %s:%s:%s changed the capacity of the primary storage[uuid:%s] as:\n" +
                     "total: %s --> %s\n" +
                     "available: %s --> %s\n" +
                     "physical total: %s --> %s\n" +

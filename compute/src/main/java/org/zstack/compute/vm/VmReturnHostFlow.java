@@ -34,11 +34,9 @@ public class VmReturnHostFlow extends NoRollbackFlow {
             return;
         }
 
-        HostVO hvo = dbf.findByUuid(spec.getVmInventory().getHostUuid(), HostVO.class);
-        HostInventory hinv = HostInventory.valueOf(hvo);
 
         ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
-        msg.setHost(hinv);
+        msg.setHostUuid(spec.getVmInventory().getHostUuid());
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum()*spec.getVmInventory().getCpuSpeed());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));

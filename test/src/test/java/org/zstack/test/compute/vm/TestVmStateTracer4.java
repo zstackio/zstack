@@ -10,6 +10,7 @@ import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -52,12 +53,22 @@ public class TestVmStateTracer4 {
     @Test
     public void test() throws InterruptedException {
         HostInventory host2 = deployer.hosts.get("TestHost2");
+        HostInventory host1 = deployer.hosts.get("TestHost1");
         VmInstanceInventory vm = deployer.vms.get("TestVm1");
+        HostCapacityVO cap1 = dbf.findByUuid(host1.getUuid(), HostCapacityVO.class);
+        HostCapacityVO cap2 = dbf.findByUuid(host2.getUuid(), HostCapacityVO.class);
         sctrl.setVmStateOnSimulatorHost(host2.getUuid(), vm.getUuid(), VmInstanceState.Running);
-        sctrl.setVmStateOnSimulatorHost(vm.getHostUuid(), vm.getUuid(), VmInstanceState.Stopped);
+        sctrl.removeVmOnSimulatorHost(vm.getHostUuid(), vm.getUuid());
         TimeUnit.SECONDS.sleep(3);
         VmInstanceVO vo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Running, vo.getState());
         Assert.assertEquals(host2.getUuid(), vo.getHostUuid());
+
+        HostCapacityVO cap11 = dbf.findByUuid(host1.getUuid(), HostCapacityVO.class);
+        HostCapacityVO cap22 = dbf.findByUuid(host2.getUuid(), HostCapacityVO.class);
+        Assert.assertEquals(cap11.getAvailableCpu(), cap1.getAvailableCpu() + vm.getCpuNum() * vm.getCpuSpeed());
+        Assert.assertEquals(cap11.getAvailableMemory(), cap1.getAvailableMemory() + vm.getMemorySize());
+        Assert.assertEquals(cap22.getAvailableCpu(), cap2.getAvailableCpu() - vm.getCpuNum() * vm.getCpuSpeed());
+        Assert.assertEquals(cap22.getAvailableMemory(), cap2.getAvailableMemory() - vm.getMemorySize());
     }
 }

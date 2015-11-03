@@ -48,8 +48,6 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     @Autowired
     private ErrorFacade errf;
     @Autowired
-    private DatabaseFacade dbf;
-    @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
     private HostCapacityOverProvisioningManager ratioMgr;
@@ -78,36 +76,28 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         this.flows = flows;
     }
 
-    @Transactional
-    private boolean reserveCapacity(String hostUuid, long cpu, long memory) {
-        HostCapacityVO vo = dbf.getEntityManager().find(HostCapacityVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
-        if (vo == null) {
-            return false;
-        }
+    void reserveCapacity(final String hostUuid, final long cpu, final long memory) {
+        HostCapacityUpdater updater = new HostCapacityUpdater(hostUuid);
+        updater.run(new HostCapacityUpdaterRunnable() {
+            @Override
+            public HostCapacityVO call(HostCapacityVO cap) {
+                long availCpu = cap.getAvailableCpu() - cpu;
+                if (availCpu < 0) {
+                    throw new UnableToReserveHostCapacityException(String.format("no enough CPU[%s] on the host[uuid:%s]", cpu, hostUuid));
+                }
 
-        long originCpu = vo.getAvailableCpu();
-        long originMem = vo.getAvailableMemory();
+                cap.setAvailableCpu(availCpu);
 
-        long availCpu = vo.getAvailableCpu() - cpu;
-        if (availCpu < 0) {
-            return false;
-        }
-        vo.setAvailableCpu(availCpu);
+                long availMemory = cap.getAvailableMemory() - ratioMgr.calculateMemoryByRatio(hostUuid, memory);
+                if (availMemory < 0) {
+                    throw new UnableToReserveHostCapacityException(String.format("no enough memory[%s] on the host[uuid:%s]", memory, hostUuid));
+                }
 
-        memory = ratioMgr.calculateMemoryByRatio(hostUuid, memory);
-        long availMemory = vo.getAvailableMemory() - memory;
-        if (availMemory < 0) {
-            return false;
-        }
-        vo.setAvailableMemory(availMemory);
-        vo = dbf.getEntityManager().merge(vo);
+                cap.setAvailableMemory(availMemory);
 
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("[Host Capacity Reservation][host uuid: %s]:\n (before) CPU: %s MHZ, memory: %s bytes\n (after) CPU: %s MHZ, memory: %s bytes",
-                    hostUuid, originCpu, originMem, vo.getAvailableCpu(), vo.getAvailableMemory()));
-        }
-
-        return true;
+                return cap;
+            }
+        });
     }
 
     protected void marshalResult() {
@@ -148,14 +138,15 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
 
         try {
             for (HostVO h : result) {
-                if (reserveCapacity(h.getUuid(), allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity())) {
+                try {
+                    reserveCapacity(h.getUuid(), allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity());
                     logger.debug(String.format("[Host Allocation]: successfully reserved cpu[%s HZ], memory[%s bytes] on host[uuid:%s] for vm[uuid:%s]",
                             allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity(), h.getUuid(), allocationSpec.getVmInstance().getUuid()));
                     completion.success(HostInventory.valueOf(h));
                     return;
-                } else {
-                    logger.debug(String.format("[Host Allocation]: unable to reserve cpu[%s HZ], memory[%s bytes] on host[uuid:%s]. try next one",
-                            allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity(), h.getUuid()));
+                } catch (UnableToReserveHostCapacityException e) {
+                    logger.debug(String.format("[Host Allocation]: %s on host[uuid:%s]. try next one",
+                            e.getMessage(), h.getUuid()));
                 }
             }
 

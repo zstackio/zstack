@@ -1,25 +1,29 @@
 package org.zstack.compute.allocator;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.*;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
+import org.zstack.header.vm.VmAbnormalLifeCycleStruct;
+import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.Collections;
@@ -28,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager {
+public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager, VmAbnormalLifeCycleExtensionPoint {
 	private static final CLogger logger = Utils.getLogger(HostAllocatorManagerImpl.class);
 
 	private Map<String, HostAllocatorStrategyFactory> factories = Collections.synchronizedMap(new HashMap<String, HostAllocatorStrategyFactory>());
@@ -43,6 +47,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     private HostCapacityReserveManager reserveMgr;
     @Autowired
     private HostCapacityOverProvisioningManager ratioMgr;
+    @Autowired
+    private ErrorFacade errf;
 
 	@Override
     @MessageSafe
@@ -67,7 +73,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 	}
 
 	private void handle(ReturnHostCapacityMsg msg) {
-	    returnCapacity(msg.getHost().getUuid(), msg.getCpuCapacity(), msg.getMemoryCapacity());
+	    returnCapacity(msg.getHostUuid(), msg.getCpuCapacity(), msg.getMemoryCapacity());
     }
 
     private void handle(ReportHostCapacityMessage msg) {
@@ -280,27 +286,143 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 	}
 	
 	@Override
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void returnCapacity(String hostUuid, long cpu, long memory) {
-		HostCapacityVO vo = dbf.getEntityManager().find(HostCapacityVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
-		if (vo == null) {
-			logger.warn(String.format("Unable to return cpu[%s], memory[%s] to host[uuid:%s], it may have been deleted", cpu, memory, hostUuid));
-			return;
-		}
+    public void returnCapacity(final String hostUuid, final long cpu, final long memory) {
+        new HostCapacityUpdater(hostUuid).run(new HostCapacityUpdaterRunnable() {
+            @Override
+            public HostCapacityVO call(HostCapacityVO cap) {
+                long availCpu = cap.getAvailableCpu() + cpu;
+                if (availCpu > cap.getTotalCpu()) {
+                    throw new CloudRuntimeException(String.format("invalid cpu capcity of the host[uuid:%s], available cpu[%s]" +
+                            " is larger than the total cpu[%s]", hostUuid, availCpu, cap.getTotalCpu()));
+                }
 
-        long availCpu = vo.getAvailableCpu() + cpu;
-        availCpu = availCpu > vo.getTotalCpu() ? vo.getTotalCpu() : availCpu;
-        vo.setAvailableCpu(availCpu);
+                cap.setAvailableCpu(availCpu);
 
-        memory = ratioMgr.calculateMemoryByRatio(hostUuid, memory);
-        long availMemory = vo.getAvailableMemory() + memory;
-        if (availMemory > vo.getTotalMemory()) {
-            throw new CloudRuntimeException(String.format("invalid memory capacity of host[uuid:%s], available memory[%s] is greater than total memory[%s]",
-                    hostUuid, availMemory, vo.getTotalMemory()));
-        }
-        vo.setAvailableMemory(availMemory);
+                long availMemory = cap.getAvailableMemory() + ratioMgr.calculateMemoryByRatio(hostUuid, memory);
+                if (availMemory > cap.getTotalMemory()) {
+                    throw new CloudRuntimeException(String.format("invalid memory capacity of host[uuid:%s], available memory[%s] is greater than total memory[%s]",
+                            hostUuid, availMemory, cap.getTotalMemory()));
+                }
 
-		dbf.getEntityManager().merge(vo);
-		logger.debug(String.format("Successfully returned cpu[%s HZ], memory[%s bytes] to host[uuid:%s]", cpu, memory, hostUuid));
+                cap.setAvailableMemory(availMemory);
+
+                return cap;
+            }
+        });
+    }
+
+    @Override
+    public Flow createVmAbnormalLifeCycleHandlingFlow(final VmAbnormalLifeCycleStruct struct) {
+        return new Flow() {
+            String __name__ = "allocate-host-capacity";
+
+            VmAbnormalLifeCycleOperation operation = struct.getOperation();
+            Runnable rollback;
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (operation == VmAbnormalLifeCycleOperation.VmRunningOnTheHost) {
+                    vmRunningOnHost(trigger);
+                } else if (operation == VmAbnormalLifeCycleOperation.VmMigrateToAnotherHost) {
+                    vmMigrateToAnotherHost(trigger);
+                } else if (operation == VmAbnormalLifeCycleOperation.VmRunningFromIntermediateState) {
+                    vmRunningFromIntermediateState(trigger);
+                } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedOnTheSameHost) {
+                    vmStoppedOnTheSameHost(trigger);
+                } else if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostChanged) {
+                    vmRunningFromUnknownStateHostChanged(trigger);
+                } else {
+                    trigger.next();
+                }
+            }
+
+            private void vmRunningFromUnknownStateHostChanged(FlowTrigger trigger) {
+                // resync the capacity on the current host
+                resyncHostCapacity();
+                trigger.next();
+            }
+
+            private void resyncHostCapacity() {
+                //TODO
+            }
+
+            private void vmStoppedOnTheSameHost(FlowTrigger trigger) {
+                // return the capacity to the current host
+                returnCapacity(struct.getCurrentHostUuid());
+                rollback = new Runnable() {
+                    @Override
+                    public void run() {
+                        long cpu = struct.getVmInstance().getCpuNum() * struct.getVmInstance().getCpuSpeed();
+                        new HostAllocatorChain().reserveCapacity(struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                    }
+                };
+                trigger.next();
+            }
+
+            private void returnCapacity(String hostUuid) {
+                ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
+                msg.setCpuCapacity(struct.getVmInstance().getCpuNum() * struct.getVmInstance().getCpuSpeed());
+                msg.setMemoryCapacity(struct.getVmInstance().getMemorySize());
+                msg.setHostUuid(hostUuid);
+                bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
+                bus.send(msg);
+            }
+
+            private void vmRunningFromIntermediateState(FlowTrigger trigger) {
+                // resync the capacity on the current host
+                resyncHostCapacity();
+                trigger.next();
+            }
+
+            private void vmMigrateToAnotherHost(FlowTrigger trigger) {
+                // allocate the capacity on the current host
+                // return the capacity to the original host
+                try {
+                    final long cpu = struct.getVmInstance().getCpuNum() * struct.getVmInstance().getCpuSpeed();
+                    new HostAllocatorChain().reserveCapacity(struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                    returnCapacity(struct.getOriginalHostUuid());
+
+                    rollback = new Runnable() {
+                        @Override
+                        public void run() {
+                            returnCapacity(struct.getCurrentHostUuid());
+                            new HostAllocatorChain().reserveCapacity(struct.getOriginalHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                        }
+                    };
+
+                    trigger.next();
+                } catch (UnableToReserveHostCapacityException e) {
+                    trigger.fail(errf.stringToOperationError(e.getMessage()));
+                }
+            }
+
+            private void vmRunningOnHost(FlowTrigger trigger) {
+                // allocate capacity on the current host
+                try {
+                    long cpu = struct.getVmInstance().getCpuNum() * struct.getVmInstance().getCpuSpeed();
+                    new HostAllocatorChain().reserveCapacity(struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+
+                    rollback = new Runnable() {
+                        @Override
+                        public void run() {
+                            returnCapacity(struct.getCurrentHostUuid());
+                        }
+                    };
+
+                    trigger.next();
+                } catch (UnableToReserveHostCapacityException e) {
+                    trigger.fail(errf.stringToOperationError(e.getMessage()));
+                }
+            }
+
+            @Override
+            public void rollback(FlowTrigger trigger, Map data) {
+                if (rollback != null) {
+                    rollback.run();
+                }
+
+                trigger.rollback();
+            }
+        };
     }
 }

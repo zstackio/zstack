@@ -46,6 +46,8 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
+import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
+import org.zstack.header.vm.VmInstanceConstant.Params;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
@@ -58,10 +60,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
@@ -255,9 +254,145 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((LockVmInstanceMsg) msg);
         } else if (msg instanceof DetachNicFromVmMsg) {
             handle((DetachNicFromVmMsg) msg);
+        } else if (msg instanceof VmStateChangedOnHostMsg) {
+            handle((VmStateChangedOnHostMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final VmStateChangedOnHostMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                vmStateChangeOnHost(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("vm-%s-state-change-on-the-host-%s", self.getUuid(), msg.getHostUuid());
+            }
+        });
+    }
+
+    private VmAbnormalLifeCycleOperation getVmAbnormalLifeCycleOperation(String originalHostUuid, String currentHostUuid,
+                                                                         VmInstanceState originalState, VmInstanceState currentState) {
+        if (originalState == VmInstanceState.Stopped && currentState == VmInstanceState.Running) {
+            return VmAbnormalLifeCycleOperation.VmRunningOnTheHost;
+        }
+
+        if (originalState == VmInstanceState.Running && currentState == VmInstanceState.Stopped && currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmStoppedOnTheSameHost;
+        }
+
+        if (VmInstanceState.intermediateStates.contains(originalState) && currentState == VmInstanceState.Running) {
+            return VmAbnormalLifeCycleOperation.VmRunningFromIntermediateState;
+        }
+
+        if (VmInstanceState.intermediateStates.contains(originalState) && currentState == VmInstanceState.Stopped) {
+            return VmAbnormalLifeCycleOperation.VmStoppedFromIntermediateState;
+        }
+
+        if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Running && currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged;
+        }
+
+        if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Running && !currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostChanged;
+        }
+
+        if (originalState == VmInstanceState.Running && originalState == currentState && !currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmMigrateToAnotherHost;
+        }
+
+        throw new CloudRuntimeException(String.format("unknown VM[uuid:%s] abnormal state combination[original state: %s, current state: %s, original host:%s, current host:%s]",
+                self.getUuid(), originalState, currentState, originalHostUuid, currentHostUuid));
+    }
+
+    private void vmStateChangeOnHost(final VmStateChangedOnHostMsg msg, final NoErrorCompletion completion) {
+        refreshVO();
+
+        final String originalHostUuid = self.getHostUuid();
+        final String currentHostUuid = msg.getHostUuid();
+        final VmInstanceState originalState = self.getState();
+        final VmInstanceState currentState = VmInstanceState.valueOf(msg.getStateOnHost());
+
+        if (originalState == currentState && originalHostUuid != null && currentHostUuid.equals(originalHostUuid)) {
+            logger.debug(String.format("vm[uuid:%s]'s state[%s] is inline with its state on the host[uuid:%s], ignore VmStateChangeOnHostMsg",
+                    self.getUuid(), originalState, originalHostUuid));
+            completion.done();
+            return;
+        }
+
+        VmAbnormalLifeCycleOperation operation = getVmAbnormalLifeCycleOperation(originalHostUuid, currentHostUuid, originalState, currentState);
+        if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged) {
+            // vm is detected on the host again. It's largely because the host disconnected before
+            // and now reconnected
+            self.setHostUuid(msg.getHostUuid());
+            changeVmStateInDb(VmInstanceStateEvent.running);
+            completion.done();
+            return;
+        }
+
+        List<VmAbnormalLifeCycleExtensionPoint> exts = pluginRgty.getExtensionList(VmAbnormalLifeCycleExtensionPoint.class);
+        if (exts.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        VmAbnormalLifeCycleStruct struct = new VmAbnormalLifeCycleStruct();
+        struct.setCurrentHostUuid(currentHostUuid);
+        struct.setCurrentState(currentState);
+        struct.setOriginalHostUuid(originalHostUuid);
+        struct.setOriginalState(originalState);
+        struct.setVmInstance(getSelfInventory());
+        struct.setOperation(operation);
+
+        logger.debug(String.format("the vm[uuid:%s]'s state changed abnormally on the host[uuid:%s], ZStack is going to take the operation[%s]\n" +
+                        "[original state: %s, current state: %s, original host: %s, current host:%s]",
+                self.getUuid(), currentHostUuid, operation, originalState, currentState, originalHostUuid, currentHostUuid));
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("handle-abnormal-lifecycle-of-vm-%s", self.getUuid()));
+        chain.getData().put(Params.AbnormalLifeCycleStruct, struct);
+        for (VmAbnormalLifeCycleExtensionPoint ext : exts) {
+            Flow flow = ext.createVmAbnormalLifeCycleHandlingFlow(struct);
+            chain.then(flow);
+        }
+
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                if (currentState == VmInstanceState.Running) {
+                    self.setHostUuid(currentHostUuid);
+                    changeVmStateInDb(VmInstanceStateEvent.running);
+                } else if (currentState == VmInstanceState.Stopped) {
+                    self.setHostUuid(null);
+                    changeVmStateInDb(VmInstanceStateEvent.stopped);
+                } else if (currentState == VmInstanceState.Unknown) {
+                    changeVmStateInDb(VmInstanceStateEvent.unknown);
+                }
+                completion.done();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                //TODO
+                logger.warn(String.format("failed to handle abnormal lifecycle of the vm[uuid:%s, original state: %s, current state:%s," +
+                        "original host: %s, current host: %s], %s", self.getUuid(), originalState, currentState,
+                        originalHostUuid, currentHostUuid, errCode));
+                completion.done();
+            }
+        }).start();
     }
 
     private String buildUserdata() {

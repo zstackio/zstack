@@ -46,6 +46,8 @@ public interface KVMConstant {
     public static final String MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION = "1.2.7";
     public static final String MIN_LIBVIRT_VIRTIO_SCSI_VERSION = "1.0.4";
 
+    public static final String KVM_REPORT_VM_STATE = "/kvm/reportvmstate";
+
     public static enum KvmVmState {
     	NoState,
     	Running,

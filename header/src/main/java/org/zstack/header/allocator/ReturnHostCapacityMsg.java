@@ -1,12 +1,19 @@
 package org.zstack.header.allocator;
 
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.Message;
 
 public class ReturnHostCapacityMsg extends Message {
     private long cpuCapacity;
     private long memoryCapacity;
-    private HostInventory host;
+    private String hostUuid;
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
 
     public long getCpuCapacity() {
         return cpuCapacity;
@@ -22,13 +29,5 @@ public class ReturnHostCapacityMsg extends Message {
 
     public void setMemoryCapacity(long memoryCapacity) {
         this.memoryCapacity = memoryCapacity;
-    }
-
-    public HostInventory getHost() {
-        return host;
-    }
-
-    public void setHost(HostInventory host) {
-        this.host = host;
     }
 }

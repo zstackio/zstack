@@ -30,4 +30,6 @@ public interface RESTFacade {
     void echo(String url, Completion callback, long inverval, long timeout);
 
     Map<String, HttpCallStatistic> getStatistics();
+
+    <T> void registerSyncHttpCallHandler(String path, Class<T> objectType,  SyncHttpCallHandler<T> handler);
 }

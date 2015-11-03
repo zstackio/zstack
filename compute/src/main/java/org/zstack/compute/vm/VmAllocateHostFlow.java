@@ -119,7 +119,7 @@ public class VmAllocateHostFlow implements Flow {
             ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
             msg.setCpuCapacity(spec.getVmInventory().getCpuNum()*spec.getVmInventory().getCpuSpeed());
             msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
-            msg.setHost(host);
+            msg.setHostUuid(host.getUuid());
             msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
             bus.send(msg);
         }
