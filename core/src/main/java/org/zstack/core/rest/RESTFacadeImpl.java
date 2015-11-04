@@ -48,6 +48,7 @@ public class RESTFacadeImpl implements RESTFacade {
     private String path;
     private String callbackUrl;
     private RestTemplate template;
+    private String baseUrl;
 
     private Map<String, HttpCallStatistic> statistics = new ConcurrentHashMap<String, HttpCallStatistic>();
     private Map<String, HttpCallHandlerWrapper> httpCallhandlers = new ConcurrentHashMap<String, HttpCallHandlerWrapper>();
@@ -83,9 +84,12 @@ public class RESTFacadeImpl implements RESTFacade {
             url = String.format("http://%s:%s/%s", hname, port, path);
         }
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(url);
-        ub.path(RESTConstant.BASE_PATH);
         ub.path(RESTConstant.CALLBACK_PATH);
         callbackUrl = ub.build().toUriString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(url);
+        baseUrl = ub.build().toUriString();
+
         logger.debug(String.format("RESTFacade built callback url: %s", callbackUrl));
         template = new RestTemplate();
     }
@@ -146,6 +150,7 @@ public class RESTFacadeImpl implements RESTFacade {
         } catch (IOException e) {
             logger.warn(e.getMessage(), e);
         } catch (Throwable t) {
+            logger.warn(t.getMessage(), t);
             try {
                 rsp.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, t.getMessage());
             } catch (IOException e) {
@@ -330,7 +335,15 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public <T> T syncJsonPost(String url, String body, Class<T> returnClass) {
+        return syncJsonPost(url, body, null, returnClass);
+    }
+
+    @Override
+    public <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass) {
         HttpHeaders requestHeaders = new HttpHeaders();
+        if (headers != null) {
+            requestHeaders.setAll(headers);
+        }
         requestHeaders.setContentType(MediaType.APPLICATION_JSON);
         requestHeaders.setContentLength(body.length());
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
@@ -430,5 +443,10 @@ public class RESTFacadeImpl implements RESTFacade {
         };
 
         httpCallhandlers.put(path, wrapper);
+    }
+
+    @Override
+    public String getBaseUrl() {
+        return baseUrl;
     }
 }

@@ -31,6 +31,7 @@
 	<TestCase class="org.zstack.test.compute.vm.TestStartVmWithAttachedVolume"/>
 	<TestCase class="org.zstack.test.compute.vm.TestAttachedVolumeToStoppedVm"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer"/>
+	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer1"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer2"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer3"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer4"/>

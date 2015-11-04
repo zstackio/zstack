@@ -195,17 +195,12 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent) {
         VmInstanceState bs = self.getState();
         final VmInstanceState state = self.getState().nextState(stateEvent);
-        if (bs == state) {
-            // vm tracer may detect vm state change before start/stop/reboot/destroy flow change
-            // vm state in db. so vm state may have been changed by vm tracer, we return
-            // quickly for this case
-            return self;
-        }
-
         self.setState(state);
         self = dbf.updateAndRefresh(self);
-        logger.debug(String.format("vm[uuid:%s] changed state from %s to %s", self.getUuid(), bs, self.getState()));
-        notfiyEmitter.notifyVmStateChange(VmInstanceInventory.valueOf(self), bs, state);
+        if (bs != state) {
+            logger.debug(String.format("vm[uuid:%s] changed state from %s to %s", self.getUuid(), bs, self.getState()));
+            notfiyEmitter.notifyVmStateChange(VmInstanceInventory.valueOf(self), bs, state);
+        }
         return self;
     }
 
@@ -334,6 +329,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        if (currentState == VmInstanceState.Unknown) {
+            changeVmStateInDb(VmInstanceStateEvent.unknown);
+            completion.done();
+            return;
+        }
+
         VmAbnormalLifeCycleOperation operation = getVmAbnormalLifeCycleOperation(originalHostUuid, currentHostUuid, originalState, currentState);
         if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged) {
             // vm is detected on the host again. It's largely because the host disconnected before
@@ -358,7 +359,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         struct.setVmInstance(getSelfInventory());
         struct.setOperation(operation);
 
-        logger.debug(String.format("the vm[uuid:%s]'s state changed abnormally on the host[uuid:%s], ZStack is going to take the operation[%s]\n" +
+        logger.debug(String.format("the vm[uuid:%s]'s state changed abnormally on the host[uuid:%s], ZStack is going to take the operation[%s]," +
                         "[original state: %s, current state: %s, original host: %s, current host:%s]",
                 self.getUuid(), currentHostUuid, operation, originalState, currentState, originalHostUuid, currentHostUuid));
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -378,8 +379,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 } else if (currentState == VmInstanceState.Stopped) {
                     self.setHostUuid(null);
                     changeVmStateInDb(VmInstanceStateEvent.stopped);
-                } else if (currentState == VmInstanceState.Unknown) {
-                    changeVmStateInDb(VmInstanceStateEvent.unknown);
                 }
                 completion.done();
             }

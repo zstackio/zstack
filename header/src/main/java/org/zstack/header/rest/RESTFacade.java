@@ -20,6 +20,8 @@ public interface RESTFacade {
     <T> T syncJsonPost(String url, Object body, Class<T> returnClass);
     
     <T> T syncJsonPost(String url, String body, Class<T> returnClass);
+
+    <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass);
     
     HttpEntity<String> httpServletRequestToHttpEntity(HttpServletRequest req);
     
@@ -32,4 +34,6 @@ public interface RESTFacade {
     Map<String, HttpCallStatistic> getStatistics();
 
     <T> void registerSyncHttpCallHandler(String path, Class<T> objectType,  SyncHttpCallHandler<T> handler);
+
+    String getBaseUrl();
 }

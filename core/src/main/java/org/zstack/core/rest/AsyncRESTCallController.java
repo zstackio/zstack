@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 @Controller
-@RequestMapping(value=RESTConstant.BASE_PATH)
 public class AsyncRESTCallController {
     @Autowired
     private RESTFacadeImpl restf;
@@ -20,7 +19,7 @@ public class AsyncRESTCallController {
         restf.notifyCallback(req, rsp);
     }
 
-    @RequestMapping(value=RESTConstant.COMMAND_CHANNEL,  method={RequestMethod.POST, RequestMethod.PUT})
+    @RequestMapping(value=RESTConstant.COMMAND_CHANNEL_PATH,  method={RequestMethod.POST, RequestMethod.PUT})
     public void sendCommand(HttpServletRequest req, HttpServletResponse rsp) {
         restf.sendCommand(req, rsp);
     }

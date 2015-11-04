@@ -108,7 +108,7 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
 
     @Override
     public boolean start() {
-        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REBOOT_VM_PATH, ReportVmStateCmd.class, new SyncHttpCallHandler<ReportVmStateCmd>() {
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_STATE, ReportVmStateCmd.class, new SyncHttpCallHandler<ReportVmStateCmd>() {
             @Override
             public String handleSyncHttpCall(ReportVmStateCmd cmd) {
                 VmInstanceState state = KvmVmState.valueOf(cmd.vmState).toVmInstanceState();

@@ -102,4 +102,5 @@
     <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm8"/>
     <TestCase class="org.zstack.test.kvm.TestAttachIsoOnKvm"/>
     <TestCase class="org.zstack.test.kvm.TestKvmHostCapacityOnFailure"/>
+    <TestCase class="org.zstack.test.kvm.TestKvmVmTracer"/>
 </UnitTestSuiteConfig>

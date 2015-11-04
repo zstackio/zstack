@@ -144,8 +144,8 @@ public abstract class VmTracer {
 
     protected void reportVmState(final String hostUuid, final Map<String, VmInstanceState> vmStates) {
         for (VmInstanceState state : vmStates.values()) {
-            if (state != VmInstanceState.Running ) {
-                throw new CloudRuntimeException(String.format("host can only report vm state as Running, got %s", state));
+            if (state != VmInstanceState.Running && state != VmInstanceState.Stopped) {
+                throw new CloudRuntimeException(String.format("host can only report vm state as Running or Stopped, got %s", state));
             }
         }
 

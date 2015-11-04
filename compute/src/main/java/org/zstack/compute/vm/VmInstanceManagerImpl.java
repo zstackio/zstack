@@ -48,10 +48,12 @@ import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -441,21 +443,23 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     }
 
     @Transactional
-    protected void putVmToUnknownState(String hostUuid) {
+    protected void putVmToUnknownState(final String hostUuid) {
         SimpleQuery<VmInstanceVO> query = dbf.createQuery(VmInstanceVO.class);
-        query.select(VmInstanceVO_.uuid, VmInstanceVO_.state);
+        query.select(VmInstanceVO_.uuid);
         query.add(VmInstanceVO_.hostUuid, Op.EQ, hostUuid);
-        List<Tuple> tss = query.listTuple();
-        for (Tuple ts : tss) {
-            ChangeVmMetaDataMsg msg = new ChangeVmMetaDataMsg();
-            msg.setVmInstanceUuid(ts.get(0, String.class));
-            AtomicVmState s = new AtomicVmState();
-            s.setExpected(ts.get(1, VmInstanceState.class));
-            s.setValue(VmInstanceState.Unknown);
-            msg.setState(s);
-            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, ts.get(0, String.class));
-            bus.send(msg);
-        }
+        List<String> tss = query.listValue();
+        List<VmStateChangedOnHostMsg> msgs = CollectionUtils.transformToList(tss, new Function<VmStateChangedOnHostMsg, String>() {
+            @Override
+            public VmStateChangedOnHostMsg call(String vmUuid) {
+                VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
+                msg.setVmInstanceUuid(vmUuid);
+                msg.setHostUuid(hostUuid);
+                msg.setStateOnHost(VmInstanceState.Unknown);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
+                return msg;
+            }
+        });
+        bus.send(msgs);
     }
 
     @Override

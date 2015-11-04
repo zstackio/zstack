@@ -783,7 +783,6 @@ public class KVMHost extends HostBase implements Host {
     class MigrateStruct {
         String vmUuid;
         String dstHostIp;
-        boolean withStorage;
         StorageMigrationPolicy storageMigrationPolicy;
     }
 
