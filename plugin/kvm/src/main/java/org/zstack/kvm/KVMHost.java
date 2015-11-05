@@ -1583,6 +1583,7 @@ public class KVMHost extends HostBase implements Host {
         try {
             ConnectCmd cmd = new ConnectCmd();
             cmd.setHostUuid(self.getUuid());
+            cmd.setSendCommandUrl(restf.getSendCommandUrl());
             ConnectResponse rsp = restf.syncJsonPost(connectPath, cmd, ConnectResponse.class);
             if (!rsp.isSuccess()) {
                 String err = String.format("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s", self.getUuid(), self.getManagementIp(), connectPath,

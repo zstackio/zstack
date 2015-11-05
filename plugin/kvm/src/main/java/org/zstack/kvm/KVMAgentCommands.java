@@ -89,6 +89,16 @@ public class KVMAgentCommands {
 
     public static class ConnectCmd extends AgentCommand {
         private String hostUuid;
+        private String sendCommandUrl;
+
+        public String getSendCommandUrl() {
+            return sendCommandUrl;
+        }
+
+        public void setSendCommandUrl(String sendCommandUrl) {
+            this.sendCommandUrl = sendCommandUrl;
+        }
+
         public String getHostUuid() {
             return hostUuid;
         }

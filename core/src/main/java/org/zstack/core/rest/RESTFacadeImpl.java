@@ -49,6 +49,7 @@ public class RESTFacadeImpl implements RESTFacade {
     private String callbackUrl;
     private RestTemplate template;
     private String baseUrl;
+    private String sendCommandUrl;
 
     private Map<String, HttpCallStatistic> statistics = new ConcurrentHashMap<String, HttpCallStatistic>();
     private Map<String, HttpCallHandlerWrapper> httpCallhandlers = new ConcurrentHashMap<String, HttpCallHandlerWrapper>();
@@ -89,6 +90,10 @@ public class RESTFacadeImpl implements RESTFacade {
 
         ub = UriComponentsBuilder.fromHttpUrl(url);
         baseUrl = ub.build().toUriString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(url);
+        ub.path(RESTConstant.COMMAND_CHANNEL_PATH);
+        sendCommandUrl = ub.build().toUriString();
 
         logger.debug(String.format("RESTFacade built callback url: %s", callbackUrl));
         template = new RestTemplate();
@@ -448,5 +453,10 @@ public class RESTFacadeImpl implements RESTFacade {
     @Override
     public String getBaseUrl() {
         return baseUrl;
+    }
+
+    @Override
+    public String getSendCommandUrl() {
+        return sendCommandUrl;
     }
 }
