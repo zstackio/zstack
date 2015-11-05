@@ -5,6 +5,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
@@ -12,18 +14,26 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
 import org.zstack.simulator.SimulatorController;
 import org.zstack.simulator.SimulatorVmSyncPingTask;
 import org.zstack.test.Api;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 1. create a vm
+ * 2. remove the vm from its current host
+ * 3. put the vm to a new host
+ *
+ * confirm the vm changed to the new host
+ * confirm the capacity of the old host returned and of hte new host allocated
+ * confirm the VmStateChangedData issued
+ */
 public class TestVmStateTracer4 {
     Deployer deployer;
     Api api;
@@ -33,6 +43,8 @@ public class TestVmStateTracer4 {
     GlobalConfigFacade gcf;
     SimulatorController sctrl;
     SimulatorVmSyncPingTask tracer;
+    EventFacade evtf;
+    boolean success1 = false;
 
     @Before
     public void setUp() throws Exception {
@@ -45,6 +57,7 @@ public class TestVmStateTracer4 {
         HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1);
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
+        evtf = loader.getComponent(EventFacade.class);
         
         deployer.build();
         api = deployer.getApi();
@@ -52,9 +65,22 @@ public class TestVmStateTracer4 {
     
     @Test
     public void test() throws InterruptedException {
-        HostInventory host2 = deployer.hosts.get("TestHost2");
-        HostInventory host1 = deployer.hosts.get("TestHost1");
+        final HostInventory host2 = deployer.hosts.get("TestHost2");
+        final HostInventory host1 = deployer.hosts.get("TestHost1");
         VmInstanceInventory vm = deployer.vms.get("TestVm1");
+        final String vmUuid = vm.getUuid();
+
+        evtf.on(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, new EventCallback() {
+            @Override
+            public void run(Map tokens, Object data) {
+                VmStateChangedData d = (VmStateChangedData) data;
+                if (d.getVmUuid().equals(vmUuid) && d.getTo() == VmInstanceState.Running
+                        && d.getCurrentHostUuid().equals(host2.getUuid())) {
+                    success1 = true;
+                }
+            }
+        });
+
         HostCapacityVO cap1 = dbf.findByUuid(host1.getUuid(), HostCapacityVO.class);
         HostCapacityVO cap2 = dbf.findByUuid(host2.getUuid(), HostCapacityVO.class);
         sctrl.setVmStateOnSimulatorHost(host2.getUuid(), vm.getUuid(), VmInstanceState.Running);
@@ -70,5 +96,6 @@ public class TestVmStateTracer4 {
         Assert.assertEquals(cap11.getAvailableMemory(), cap1.getAvailableMemory() + vm.getMemorySize());
         Assert.assertEquals(cap22.getAvailableCpu(), cap2.getAvailableCpu() - vm.getCpuNum() * vm.getCpuSpeed());
         Assert.assertEquals(cap22.getAvailableMemory(), cap2.getAvailableMemory() - vm.getMemorySize());
+        Assert.assertTrue(success1);
     }
 }

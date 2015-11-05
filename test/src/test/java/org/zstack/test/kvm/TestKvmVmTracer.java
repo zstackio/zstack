@@ -82,7 +82,6 @@ public class TestKvmVmTracer {
     
 	@Test
 	public void test() throws InterruptedException {
-        api.setTimeout(100000);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String hostUuid = vm.getHostUuid();
 

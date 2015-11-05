@@ -51,6 +51,7 @@ import org.zstack.header.vm.VmInstanceConstant.Params;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
+import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
@@ -329,8 +330,22 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        final Runnable fireEvent = new Runnable() {
+            @Override
+            public void run() {
+                VmStateChangedData data = new VmStateChangedData();
+                data.setVmUuid(self.getUuid());
+                data.setFrom(originalState);
+                data.setTo(currentState);
+                data.setOriginalHostUuid(originalHostUuid);
+                data.setCurrentHostUuid(currentHostUuid);
+                evtf.fire(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, data);
+            }
+        };
+
         if (currentState == VmInstanceState.Unknown) {
             changeVmStateInDb(VmInstanceStateEvent.unknown);
+            fireEvent.run();
             completion.done();
             return;
         }
@@ -341,15 +356,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             // and now reconnected
             self.setHostUuid(msg.getHostUuid());
             changeVmStateInDb(VmInstanceStateEvent.running);
+            fireEvent.run();
             completion.done();
             return;
         }
 
         List<VmAbnormalLifeCycleExtensionPoint> exts = pluginRgty.getExtensionList(VmAbnormalLifeCycleExtensionPoint.class);
-        if (exts.isEmpty()) {
-            completion.done();
-            return;
-        }
 
         VmAbnormalLifeCycleStruct struct = new VmAbnormalLifeCycleStruct();
         struct.setCurrentHostUuid(currentHostUuid);
@@ -365,6 +377,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("handle-abnormal-lifecycle-of-vm-%s", self.getUuid()));
         chain.getData().put(Params.AbnormalLifeCycleStruct, struct);
+        chain.allowEmptyFlow();
         for (VmAbnormalLifeCycleExtensionPoint ext : exts) {
             Flow flow = ext.createVmAbnormalLifeCycleHandlingFlow(struct);
             chain.then(flow);
@@ -380,6 +393,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                     self.setHostUuid(null);
                     changeVmStateInDb(VmInstanceStateEvent.stopped);
                 }
+
+                fireEvent.run();
                 completion.done();
             }
         }).error(new FlowErrorHandler(completion) {
