@@ -77,6 +77,10 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
 
     @Override
     public void executeTaskAlongWithPingTask(final HostInventory inv) {
+        if (!KVMGlobalConfig.VM_SYNC_ON_HOST_PING.value(Boolean.class)) {
+            return;
+        }
+
         KVMHostContext host = factory.getHostContext(inv.getUuid());
         syncVm(host, new NopeCompletion());
     }
