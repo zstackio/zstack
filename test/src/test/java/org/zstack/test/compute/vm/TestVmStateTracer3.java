@@ -76,7 +76,7 @@ public class TestVmStateTracer3 {
             public void run(Map tokens, Object data) {
                 VmStateChangedData d = (VmStateChangedData) data;
                 if (d.getVmUuid().equals(vmUuid) && d.getTo() == VmInstanceState.Stopped
-                        && d.getOriginalHostUuid().equals(hostUuid) && d.getCurrentHostUuid().equals(hostUuid)) {
+                        && d.getOriginalHostUuid().equals(hostUuid) && d.getCurrentHostUuid() == null) {
                     success1 = true;
                 }
             }

@@ -454,7 +454,19 @@ public class KVMAgentCommands {
     public static class AttachDataVolumeCmd extends AgentCommand {
         private VolumeTO volume;
         private String vmInstanceUuid;
-        
+        private Map<String, Object> addons;
+
+        public Map<String, Object> getAddons() {
+            if (addons == null) {
+                addons = new HashMap<String, Object>();
+            }
+            return addons;
+        }
+
+        public void setAddons(Map<String, Object> addons) {
+            this.addons = addons;
+        }
+
         public VolumeTO getVolume() {
             return volume;
         }

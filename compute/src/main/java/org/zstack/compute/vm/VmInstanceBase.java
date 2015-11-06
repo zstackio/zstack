@@ -336,9 +336,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 VmStateChangedData data = new VmStateChangedData();
                 data.setVmUuid(self.getUuid());
                 data.setFrom(originalState);
-                data.setTo(currentState);
+                data.setTo(self.getState());
                 data.setOriginalHostUuid(originalHostUuid);
-                data.setCurrentHostUuid(currentHostUuid);
+                data.setCurrentHostUuid(self.getHostUuid());
                 evtf.fire(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, data);
             }
         };

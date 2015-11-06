@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
+import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -21,6 +22,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
 import org.zstack.kvm.KVMSystemTags;
 import org.zstack.mevoco.KVMAddOns.NicQos;
@@ -36,6 +38,7 @@ import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
@@ -53,8 +56,12 @@ import static org.zstack.core.Platform._;
  * 1. create a vm with mevoco setting
  *
  * confirm the vm created successfully
+ * confirm the qos set
  * confirm the flat dhcp works
  * confirm the over-provisioning works
+ *
+ * 2. attach a data volume
+ * confirm the qos set
  */
 public class TestMevoco {
     CLogger logger = Utils.getLogger(TestMevoco.class);
@@ -104,7 +111,7 @@ public class TestMevoco {
     }
     
 	@Test
-	public void test() {
+	public void test() throws ApiSenderException {
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
         Assert.assertTrue(KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2.getUuid()));
 
@@ -178,5 +185,14 @@ public class TestMevoco {
         Assert.assertEquals(usedDisk, psRatioMgr.calculateByRatio(vol.getPrimaryStorageUuid(), vol.getSize()));
 
         logger.debug(_("hello.world"));
+
+        DiskOfferingInventory doinv = deployer.diskOfferings.get("TestRootDiskOffering");
+        VolumeInventory datavol = api.createDataVolume("data", doinv.getUuid());
+        api.attachVolumeToVm(vm.getUuid(), datavol.getUuid());
+        AttachDataVolumeCmd atcmd = kconfig.attachDataVolumeCmds.get(0);
+        m = (Map) atcmd.getAddons().get(MevocoConstants.KVM_VOLUME_QOS);
+        vqos = JSONObjectUtil.rehashObject(m.get(datavol.getUuid()), VolumeQos.class);
+        Assert.assertEquals(Long.valueOf(2000), vqos.totalBandwidth);
+        Assert.assertEquals(Long.valueOf(10000), vqos.totalIops);
     }
 }

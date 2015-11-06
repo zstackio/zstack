@@ -81,7 +81,7 @@ public class TestVmStateTracer {
             public void run(Map tokens, Object data) {
                 VmStateChangedData d = (VmStateChangedData) data;
                 if (d.getVmUuid().equals(vmUuid) && d.getTo() == VmInstanceState.Stopped
-                        && d.getOriginalHostUuid().equals(hostUuid) && d.getCurrentHostUuid().equals(hostUuid)) {
+                        && d.getOriginalHostUuid().equals(hostUuid) && d.getCurrentHostUuid() == null) {
                     // abnormally stopped
                     success1 = true;
                 } else if (d.getVmUuid().equals(vmUuid) && d.getTo() == VmInstanceState.Running &&
