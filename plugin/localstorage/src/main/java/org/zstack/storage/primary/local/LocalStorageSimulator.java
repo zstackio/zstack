@@ -3,6 +3,8 @@ package org.zstack.storage.primary.local;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.RebaseSnapshotBackingFilesCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.VerifySnapshotChainCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsRsp;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpUploadBitsCmd;
@@ -54,7 +56,7 @@ public class LocalStorageSimulator {
         restf.getRESTTemplate().exchange(callbackUrl, HttpMethod.POST, rreq, String.class);
     }
 
-    @RequestMapping(value=LocalStorageKvmBackend.REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, method= RequestMethod.POST)
+    @RequestMapping(value=LocalStorageKvmMigrateVmFlow.REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String rebaseRootVolumeToBackingFile(HttpEntity<String> entity) {
         RebaseRootVolumeToBackingFileCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RebaseRootVolumeToBackingFileCmd.class);
@@ -62,6 +64,25 @@ public class LocalStorageSimulator {
         reply(entity, new RebaseRootVolumeToBackingFileRsp());
         return null;
     }
+
+    @RequestMapping(value=LocalStorageKvmMigrateVmFlow.REBASE_SNAPSHOT_BACKING_FILES_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String rebaseSnapshotBackingFiles(HttpEntity<String> entity) {
+        RebaseSnapshotBackingFilesCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RebaseSnapshotBackingFilesCmd.class);
+        config.rebaseSnapshotBackingFilesCmds.add(cmd);
+        reply(entity, new AgentResponse());
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmMigrateVmFlow.VERIFY_SNAPSHOT_CHAIN_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String verifySnapshotChain(HttpEntity<String> entity) {
+        VerifySnapshotChainCmd cmd = JSONObjectUtil.toObject(entity.getBody(), VerifySnapshotChainCmd.class);
+        config.verifySnapshotChainCmds.add(cmd);
+        reply(entity, new AgentResponse());
+        return null;
+    }
+
 
     @RequestMapping(value=LocalStorageKvmBackend.INIT_PATH, method= RequestMethod.POST)
     public @ResponseBody

@@ -10,6 +10,8 @@ import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
@@ -44,17 +46,29 @@ public class AllocatePrimaryStorageForVmMigrationFlow  extends AbstractHostAlloc
             }
         });
 
-        long requiredSize = 0;
+        long volumeSize = 0;
+        List<String> volUuids = new ArrayList<String>();
         for (VolumeInventory vol : spec.getVmInstance().getAllVolumes()) {
-            requiredSize += vol.getSize();
+            volumeSize += vol.getSize();
+            volUuids.add(vol.getUuid());
         }
+
+        long snapshotSize = 0;
+        SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
+        sq.select(VolumeSnapshotVO_.size);
+        sq.add(VolumeSnapshotVO_.volumeUuid, Op.IN, volUuids);
+        List<Long> snapshotSizes = sq.listValue();
+        for (Long s : snapshotSizes) {
+            snapshotSize += s;
+        }
+
         SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
         q.add(LocalStorageHostRefVO_.hostUuid, Op.IN, huuids);
         q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, psUuid);
         List<LocalStorageHostRefVO> refs = q.list();
         final List<String> hostUuids = new ArrayList<String>();
         for (LocalStorageHostRefVO ref : refs) {
-            if (ref.getAvailableCapacity() > ratioMgr.calculateByRatio(psUuid, requiredSize)) {
+            if (ref.getAvailableCapacity() > ratioMgr.calculateByRatio(psUuid, volumeSize) + snapshotSize) {
                 hostUuids.add(ref.getHostUuid());
             }
         }
@@ -67,7 +81,7 @@ public class AllocatePrimaryStorageForVmMigrationFlow  extends AbstractHostAlloc
         });
 
         if (candidates.isEmpty()) {
-            fail(String.format("no hosts can provide %s bytes for all volumes of the vm[uuid:%s]", requiredSize, spec.getVmInstance().getUuid()));
+            fail(String.format("no hosts can provide %s bytes for all volumes of the vm[uuid:%s]", volumeSize, spec.getVmInstance().getUuid()));
         } else {
             next(candidates);
         }

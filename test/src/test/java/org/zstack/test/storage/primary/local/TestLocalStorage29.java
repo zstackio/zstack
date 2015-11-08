@@ -16,7 +16,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.storage.primary.local.LocalStorageDirectlyDeleteVolumeMsg;
+import org.zstack.storage.primary.local.LocalStorageDirectlyDeleteBitsMsg;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
@@ -105,7 +105,7 @@ public class TestLocalStorage29 {
             @Override
             public void intercept(Message msg) {
                 // when rollback, the volumes are deleted on the dst host
-                LocalStorageDirectlyDeleteVolumeMsg lmsg = (LocalStorageDirectlyDeleteVolumeMsg) msg;
+                LocalStorageDirectlyDeleteBitsMsg lmsg = (LocalStorageDirectlyDeleteBitsMsg) msg;
                 if (lmsg.getHostUuid().equals(host2.getUuid())) {
                     directDeleteOnDst = true;
                 }
@@ -115,7 +115,7 @@ public class TestLocalStorage29 {
                     directDeleteOnSrc = true;
                 }
             }
-        }, LocalStorageDirectlyDeleteVolumeMsg.class);
+        }, LocalStorageDirectlyDeleteBitsMsg.class);
 
         config.createEmptyVolumeCmds.clear();
         config.deleteBitsCmds.clear();

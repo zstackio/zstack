@@ -5,5 +5,5 @@ import org.zstack.header.message.MessageReply;
 /**
  * Created by frank on 10/24/2015.
  */
-public class LocalStorageDirectlyDeleteVolumeReply extends MessageReply {
+public class LocalStorageDirectlyDeleteBitsReply extends MessageReply {
 }

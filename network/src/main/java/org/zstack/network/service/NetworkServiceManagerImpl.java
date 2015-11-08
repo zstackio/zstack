@@ -285,7 +285,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             }
 
             Flow flow = new Flow() {
-                String __name__ = String.format(ns.getClass().getName());
+                String __name__ = String.format("network-service-%s", ns.getNetworkServiceType());
 
                 @Override
                 public void run(final FlowTrigger chain, Map data) {
@@ -397,6 +397,8 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             }
 
             NoRollbackFlow flow = new NoRollbackFlow() {
+                String __name__ = String.format("network-service-%s", ns.getNetworkServiceType());
+
                 @Override
                 public void run(final FlowTrigger chain, Map data) {
                     logger.debug(String.format("NetworkServiceExtensionPoint[%s] is asking back ends to release network service[%s] if needed", ns.getClass().getName(), ns.getNetworkServiceType()));

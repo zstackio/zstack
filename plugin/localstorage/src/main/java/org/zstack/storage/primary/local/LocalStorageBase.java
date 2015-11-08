@@ -32,7 +32,6 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -40,16 +39,13 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
-import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import javax.rmi.CORBA.Util;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -108,20 +104,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((DownloadImageToPrimaryStorageCacheMsg) msg);
         } else if (msg instanceof LocalStorageCreateEmptyVolumeMsg) {
             handle((LocalStorageCreateEmptyVolumeMsg) msg);
-        } else if (msg instanceof LocalStorageDirectlyDeleteVolumeMsg) {
-            handle((LocalStorageDirectlyDeleteVolumeMsg) msg);
+        } else if (msg instanceof LocalStorageDirectlyDeleteBitsMsg) {
+            handle((LocalStorageDirectlyDeleteBitsMsg) msg);
         } else if (msg instanceof LocalStorageReserveHostCapacityMsg) {
             handle((LocalStorageReserveHostCapacityMsg) msg);
         } else if (msg instanceof LocalStorageReturnHostCapacityMsg) {
             handle((LocalStorageReturnHostCapacityMsg) msg);
-        } else if (msg instanceof LocalStorageKvmRebaseRootVolumeToBackingFileMsg) {
-            handle((LocalStorageKvmRebaseRootVolumeToBackingFileMsg) msg);
+        } else if (msg instanceof LocalStorageHypervisorSpecificMessage) {
+            handle((LocalStorageHypervisorSpecificMessage) msg);
         } else {
             super.handleLocalMessage(msg);
         }
     }
 
-    private void handle(LocalStorageKvmRebaseRootVolumeToBackingFileMsg msg) {
+    private void handle(LocalStorageHypervisorSpecificMessage msg) {
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
         bkd.handleHypervisorSpecificMessage(msg);
@@ -141,18 +137,18 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
-    private void handle(final LocalStorageDirectlyDeleteVolumeMsg msg) {
+    private void handle(final LocalStorageDirectlyDeleteBitsMsg msg) {
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, msg.getHostUuid(), new ReturnValueCompletion<LocalStorageDirectlyDeleteVolumeReply>(msg) {
+        bkd.handle(msg, msg.getHostUuid(), new ReturnValueCompletion<LocalStorageDirectlyDeleteBitsReply>(msg) {
             @Override
-            public void success(LocalStorageDirectlyDeleteVolumeReply reply) {
+            public void success(LocalStorageDirectlyDeleteBitsReply reply) {
                 bus.reply(msg, reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                LocalStorageDirectlyDeleteVolumeReply reply = new LocalStorageDirectlyDeleteVolumeReply();
+                LocalStorageDirectlyDeleteBitsReply reply = new LocalStorageDirectlyDeleteBitsReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

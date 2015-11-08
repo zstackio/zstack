@@ -18,7 +18,6 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -44,9 +43,10 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
-import org.zstack.kvm.*;
-import org.zstack.kvm.KVMAgentCommands.AgentResponse;
-import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.MergeVolumeSnapshotOnKvmMsg;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.utils.CollectionUtils;
@@ -70,8 +70,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     private AccountManager acntMgr;
     @Autowired
     private LocalStorageFactory localStorageFactory;
-    @Autowired
-    private PrimaryStorageOverProvisioningManager ratioMgrhostUuid;
 
     public static class AgentCommand {
     }
@@ -418,7 +416,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String MERGE_SNAPSHOT_PATH = "/localstorage/snapshot/merge";
     public static final String MERGE_AND_REBASE_SNAPSHOT_PATH = "/localstorage/snapshot/mergeandrebase";
     public static final String OFFLINE_MERGE_PATH = "/localstorage/snapshot/offlinemerge";
-    public static final String REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH = "/localstorage/volume/rebaserootvolumetobackingfile";
+
 
     public LocalStorageKvmBackend(PrimaryStorageVO self) {
         super(self);
@@ -1123,7 +1121,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    void handle(final TakeSnapshotMsg msg, String hostUuid, final ReturnValueCompletion<TakeSnapshotReply> completion) {
+    void handle(final TakeSnapshotMsg msg, final String hostUuid, final ReturnValueCompletion<TakeSnapshotReply> completion) {
         final VolumeSnapshotInventory sp = msg.getStruct().getCurrent();
         VolumeInventory vol = VolumeInventory.valueOf(dbf.findByUuid(sp.getVolumeUuid(), VolumeVO.class));
 
@@ -1153,6 +1151,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 TakeSnapshotReply ret = new TakeSnapshotReply();
                 ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 ret.setInventory(sp);
+
+                reserveCapacityOnHost(hostUuid, sp.getSize());
                 completion.success(ret);
             }
         });
@@ -1679,14 +1679,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    void handle(LocalStorageDirectlyDeleteVolumeMsg msg, String hostUuid, final ReturnValueCompletion<LocalStorageDirectlyDeleteVolumeReply> completion) {
+    void handle(LocalStorageDirectlyDeleteBitsMsg msg, String hostUuid, final ReturnValueCompletion<LocalStorageDirectlyDeleteBitsReply> completion) {
         DeleteBitsCmd cmd = new DeleteBitsCmd();
-        cmd.setPath(msg.getVolume().getInstallPath());
+        cmd.setPath(msg.getPath());
 
         httpCall(DELETE_BITS_PATH, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
             @Override
             public void success(DeleteBitsRsp returnValue) {
-                completion.success(new LocalStorageDirectlyDeleteVolumeReply());
+                completion.success(new LocalStorageDirectlyDeleteBitsReply());
             }
 
             @Override
@@ -1698,47 +1698,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     @MessageSafe
-    void handleHypervisorSpecificMessage(Message msg) {
-        if (msg instanceof LocalStorageKvmRebaseRootVolumeToBackingFileMsg) {
-            handle((LocalStorageKvmRebaseRootVolumeToBackingFileMsg) msg);
-        } else {
-            bus.dealWithUnknownMessage(msg);
-        }
-    }
-
-    private void handle(final LocalStorageKvmRebaseRootVolumeToBackingFileMsg msg) {
-        SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
-        q.select(ImageCacheVO_.installUrl);
-        q.add(ImageCacheVO_.imageUuid, Op.EQ, msg.getImageUuid());
-        q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-        q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", msg.getHostUuid()));
-        String backingFilePath = q.findValue();
-        if (backingFilePath == null) {
-            throw new CloudRuntimeException( String.format("cannot find ImageCacheVO[uuid:%s] of the local primary storage[uuid:%s]", msg.getImageUuid(), self.getUuid()));
-        }
-
-        CacheInstallPath cp = new CacheInstallPath();
-        cp.fullPath = backingFilePath;
-        cp.disassemble();
-        backingFilePath = cp.installPath;
-
-        RebaseRootVolumeToBackingFileCmd cmd = new RebaseRootVolumeToBackingFileCmd();
-        cmd.backingFilePath = backingFilePath;
-        cmd.rootVolumePath = msg.getRootVolume().getInstallPath();
-
-        final LocalStorageKvmRebaseRootVolumeToBackingFileReply reply = new LocalStorageKvmRebaseRootVolumeToBackingFileReply();
-        httpCall(REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, msg.getHostUuid(), cmd, RebaseAndMergeSnapshotsRsp.class, new ReturnValueCompletion<RebaseAndMergeSnapshotsRsp>(msg) {
-            @Override
-            public void success(RebaseAndMergeSnapshotsRsp rsp) {
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
+    void handleHypervisorSpecificMessage(LocalStorageHypervisorSpecificMessage msg) {
+        bus.dealWithUnknownMessage((Message)msg);
     }
 
     @Override

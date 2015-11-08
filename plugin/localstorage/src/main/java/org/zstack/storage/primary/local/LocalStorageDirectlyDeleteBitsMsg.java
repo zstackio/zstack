@@ -5,13 +5,20 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
 import org.zstack.header.volume.VolumeInventory;
 
 /**
- * Created by frank on 10/26/2015.
+ * Created by frank on 10/24/2015.
  */
-public class LocalStorageKvmRebaseRootVolumeToBackingFileMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+public class LocalStorageDirectlyDeleteBitsMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private String hostUuid;
-    private VolumeInventory rootVolume;
-    private String imageUuid;
+    private String path;
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
 
     @Override
     public String getPrimaryStorageUuid() {
@@ -28,21 +35,5 @@ public class LocalStorageKvmRebaseRootVolumeToBackingFileMsg extends NeedReplyMe
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
-    }
-
-    public VolumeInventory getRootVolume() {
-        return rootVolume;
-    }
-
-    public void setRootVolume(VolumeInventory rootVolume) {
-        this.rootVolume = rootVolume;
-    }
-
-    public String getImageUuid() {
-        return imageUuid;
-    }
-
-    public void setImageUuid(String imageUuid) {
-        this.imageUuid = imageUuid;
     }
 }
