@@ -1,5 +1,6 @@
 package org.zstack.test.kvm;
 
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -7,8 +8,11 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.host.CheckVmStateOnHypervisorMsg;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.APICreateVmInstanceEvent;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
@@ -48,7 +52,7 @@ public class TestCreateVmOnKvmFailure {
         session = api.loginAsAdmin();
     }
     
-	@Test(expected=ApiSenderException.class)
+	@Test
 	public void test() throws ApiSenderException {
 		ImageInventory iminv = deployer.images.get("TestImage");
 		InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
@@ -65,6 +69,13 @@ public class TestCreateVmOnKvmFailure {
 		msg.setType(VmInstanceConstant.USER_VM_TYPE);
 		config.startVmSuccess = false;
 		ApiSender sender = api.getApiSender();
-		sender.send(msg, APICreateVmInstanceEvent.class);
+
+        boolean s = false;
+        try {
+            sender.send(msg, APICreateVmInstanceEvent.class);
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
 	}
 }
