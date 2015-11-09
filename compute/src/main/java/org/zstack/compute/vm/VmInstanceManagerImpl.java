@@ -15,6 +15,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.gc.*;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
@@ -34,6 +35,7 @@ import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -67,7 +69,7 @@ import java.util.concurrent.TimeUnit;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager, HostStatusChangeNotifyPoint,
-        ReportQuotaExtensionPoint, ManagementNodeChangeListener {
+        ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<String, VmInstanceFactory>());
     private List<String> createVmWorkFlowElements;
@@ -710,18 +712,6 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         return list(quota);
     }
 
-    @Override
-    public void nodeJoin(String nodeId) {
-    }
-
-    @Override
-    public void nodeLeft(String nodeId) {
-    }
-
-    @Override
-    public void iAmDead(String nodeId) {
-    }
-
     private List<String> getVmInUnknownStateManagedByUs() {
         int qun = 10000;
         SimpleQuery q = dbf.createQuery(VmInstanceVO.class);
@@ -759,7 +749,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     }
 
     @Override
-    public void iJoin(String nodeId) {
+    @AsyncThread
+    public void managementNodeReady() {
         List<String> unknownVmUuids = getVmInUnknownStateManagedByUs();
         if (unknownVmUuids.isEmpty()) {
             return;

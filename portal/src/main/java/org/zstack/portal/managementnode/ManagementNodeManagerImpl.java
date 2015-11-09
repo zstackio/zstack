@@ -415,6 +415,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
 		installShutdownHook();
 
+        for (ManagementNodeReadyExtensionPoint ext : pluginRgty.getExtensionList(ManagementNodeReadyExtensionPoint.class)) {
+            ext.managementNodeReady();
+        }
+
 		synchronized (this) {
 		    isNodeRunning = NODE_RUNNING;
 			while (isRunning) {

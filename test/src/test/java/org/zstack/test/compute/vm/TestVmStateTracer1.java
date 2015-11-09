@@ -14,6 +14,9 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.host.RecalculateHostCapacityMsg;
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
 import org.zstack.simulator.SimulatorController;
@@ -38,6 +41,7 @@ import java.util.concurrent.TimeUnit;
  *
  * confirm the vm becomes running
  * confirm VmStateChangedData issued
+ * confirm the RecalculateHostCapacityMsg message sent
  *
  */
 public class TestVmStateTracer1 {
@@ -51,6 +55,7 @@ public class TestVmStateTracer1 {
     EventFacade evtf;
     boolean success1 = false;
     boolean success2 = false;
+    boolean success3 = false;
 
     @Before
     public void setUp() throws Exception {
@@ -106,11 +111,21 @@ public class TestVmStateTracer1 {
         Assert.assertEquals(cap1.getAvailableMemory(), cap2.getAvailableMemory());
         Assert.assertEquals(cap1.getAvailableCpu(), cap2.getAvailableCpu());
 
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            public void intercept(Message msg) {
+                if (((RecalculateHostCapacityMsg)msg).getHostUuid().equals(hostUuid)) {
+                    success3 = true;
+                }
+            }
+        }, RecalculateHostCapacityMsg.class);
+
         sctrl.setSimulatorHostConnectionState(hostUuid, false);
         api.reconnectHost(hostUuid);
         TimeUnit.SECONDS.sleep(3);
         vm1 = q.find();
         Assert.assertEquals(VmInstanceState.Running, vm1.getState());
         Assert.assertTrue(success2);
+        Assert.assertTrue(success3);
     }
 }

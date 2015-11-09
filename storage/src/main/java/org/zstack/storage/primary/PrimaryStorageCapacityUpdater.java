@@ -10,7 +10,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
-import org.zstack.header.storage.primary.RecalculatePrimaryStorageMsg;
+import org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -108,7 +108,7 @@ public class PrimaryStorageCapacityUpdater {
             logger.debug(String.format("the physical capacity of primary storage[uuid:%s] changed from %s to %s, this indicates the primary storage is re-sized." +
                     " We need to recalculate its capacity", capacityVO.getUuid(), originalCopy.getTotalPhysicalCapacity(), capacityVO.getTotalPhysicalCapacity()));
             // primary storage re-sized
-            RecalculatePrimaryStorageMsg msg = new RecalculatePrimaryStorageMsg();
+            RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
             msg.setPrimaryStorageUuid(capacityVO.getUuid());
             bus.makeLocalServiceId(msg, PrimaryStorageConstant.SERVICE_ID);
             bus.send(msg);

@@ -10,6 +10,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.tacker.PingTracker;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -24,7 +25,7 @@ import java.util.List;
 /**
  * Created by frank on 6/29/2015.
  */
-public class VirtualRouterPingTracker extends PingTracker implements ManagementNodeChangeListener {
+public class VirtualRouterPingTracker extends PingTracker implements ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint {
     private final static CLogger logger = Utils.getLogger(VirtualRouterPingTracker.class);
 
     @Autowired
@@ -113,9 +114,7 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
     }
 
     @Override
-    @AsyncThread
     public void iJoin(String nodeId) {
-        trackOurs();
     }
 
     @Override
@@ -126,5 +125,11 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
                 pingIntervalChanged();
             }
         });
+    }
+
+    @Override
+    @AsyncThread
+    public void managementNodeReady() {
+        trackOurs();
     }
 }

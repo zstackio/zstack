@@ -13,6 +13,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -27,7 +28,7 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  * Created by frank on 8/5/2015.
  */
-public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener {
+public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(GCFacadeImpl.class);
 
     @Autowired
@@ -214,8 +215,12 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener {
     }
 
     @Override
-    @AsyncThread
     public void iJoin(String nodeId) {
+    }
+
+    @Override
+    @AsyncThread
+    public void managementNodeReady() {
         SimpleQuery<GarbageCollectorVO> q = dbf.createQuery(GarbageCollectorVO.class);
         q.select(GarbageCollectorVO_.id);
         q.add(GarbageCollectorVO_.status, Op.IN, list(GCStatus.Idle, GCStatus.Processing));

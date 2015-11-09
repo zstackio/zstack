@@ -19,8 +19,8 @@
             <zstack:extension
                 interface="org.zstack.header.cluster.ClusterChangeStateExtensionPoint"
                 instance-ref="HostExtensionToCluster" />
-            <zstack:extension
-                interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
     </bean>
 

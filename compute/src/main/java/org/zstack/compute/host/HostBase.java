@@ -752,7 +752,7 @@ public abstract class HostBase extends AbstractHost {
         checkState();
         final ConnectHostReply reply = new ConnectHostReply();
 
-        FlowChain flowChain = FlowChainBuilder.newShareFlowChain();
+        final FlowChain flowChain = FlowChainBuilder.newShareFlowChain();
         flowChain.setName(String.format("connect-host-%s", self.getUuid()));
         flowChain.then(new ShareFlow() {
             @Override
@@ -774,6 +774,19 @@ public abstract class HostBase extends AbstractHost {
                                 trigger.fail(errorCode);
                             }
                         });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "recalculate-host-capacity";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RecalculateHostCapacityMsg msg = new RecalculateHostCapacityMsg();
+                        msg.setHostUuid(self.getUuid());
+                        bus.makeLocalServiceId(msg, HostConstant.SERVICE_ID);
+                        bus.send(msg);
+                        trigger.next();
                     }
                 });
 

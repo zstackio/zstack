@@ -6,6 +6,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.*;
@@ -16,6 +18,9 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.RecalculateHostCapacityMsg;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
@@ -26,11 +31,10 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager, VmAbnormalLifeCycleExtensionPoint {
 	private static final CLogger logger = Utils.getLogger(HostAllocatorManagerImpl.class);
@@ -66,13 +70,74 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 		} else if (msg instanceof ReportHostCapacityMessage) {
 			handle((ReportHostCapacityMessage) msg);
 		} else if (msg instanceof ReturnHostCapacityMsg) {
-		    handle((ReturnHostCapacityMsg)msg);
+            handle((ReturnHostCapacityMsg) msg);
+        } else if (msg instanceof RecalculateHostCapacityMsg) {
+            handle((RecalculateHostCapacityMsg) msg);
 		} else {
 			bus.dealWithUnknownMessage(msg);
 		}
 	}
 
-	private void handle(ReturnHostCapacityMsg msg) {
+    private void handle(RecalculateHostCapacityMsg msg) {
+        final List<String> hostUuids = new ArrayList<String>();
+        if (msg.getHostUuid() != null) {
+            hostUuids.add(msg.getHostUuid());
+        } else {
+            SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
+            q.select(HostVO_.uuid);
+            q.add(HostVO_.zoneUuid, Op.EQ, msg.getZoneUuid());
+            hostUuids.addAll(q.<String>listValue());
+        }
+
+        if (hostUuids.isEmpty()) {
+            return;
+        }
+
+        class Struct {
+            String hostUuid;
+            long usedMemory;
+        }
+
+        List<Struct> ss = new Callable<List<Struct>>() {
+            @Override
+            @Transactional(readOnly = true)
+            public List<Struct> call() {
+                String sql = "select sum(vm.memorySize), vm.hostUuid from VmInstanceVO vm where vm.hostUuid in (:hostUuids) group by vm.hostUuid";
+                TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("hostUuids", hostUuids);
+                List<Tuple> ts = q.getResultList();
+
+                List<Struct> ret = new ArrayList<Struct>();
+                for (Tuple t : ts) {
+                    if (t.get(0, Long.class) == null) {
+                        // no vm
+                        continue;
+                    }
+
+                    Struct s = new Struct();
+                    s.hostUuid = t.get(1, String.class);
+                    s.usedMemory = ratioMgr.calculateMemoryByRatio(s.hostUuid, t.get(0, Long.class));
+                    ret.add(s);
+                }
+                return ret;
+            }
+        }.call();
+
+        for (final Struct s : ss) {
+            new HostCapacityUpdater(s.hostUuid).run(new HostCapacityUpdaterRunnable() {
+                @Override
+                public HostCapacityVO call(HostCapacityVO cap) {
+                    long before = cap.getAvailableMemory();
+                    long avail = cap.getTotalMemory() - s.usedMemory;
+                    cap.setAvailableMemory(avail);
+                    logger.debug(String.format("re-calculated available memory on the host[uuid:%s,  before: %s, now: %s]", s.hostUuid, before, avail));
+                    return cap;
+                }
+            });
+        }
+    }
+
+    private void handle(ReturnHostCapacityMsg msg) {
 	    returnCapacity(msg.getHostUuid(), msg.getCpuCapacity(), msg.getMemoryCapacity());
     }
 

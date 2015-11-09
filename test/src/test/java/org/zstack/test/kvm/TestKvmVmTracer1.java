@@ -94,7 +94,7 @@ public class TestKvmVmTracer1 {
         Map<String, String> m = new HashMap<String, String>();
         m.put(vm.getUuid(), KvmVmState.Running.toString());
         config.checkVmStatesConfig.put(vm.getHostUuid(), m);
-        vmMgr.iJoin(Platform.getManagementServerId());
+        vmMgr.managementNodeReady();
         TimeUnit.SECONDS.sleep(5);
         Assert.assertEquals(1, config.checkVmStateCmds.size());
         vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);

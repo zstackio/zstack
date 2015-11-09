@@ -19,6 +19,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.AbstractService;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -38,7 +39,8 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-public class BackupStorageManagerImpl extends AbstractService implements BackupStorageManager, ManagementNodeChangeListener {
+public class BackupStorageManagerImpl extends AbstractService implements BackupStorageManager,
+        ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(BackupStorageManager.class);
 
     @Autowired
@@ -405,39 +407,13 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
     }
 
     @Override
-    @AsyncThread
     public void iJoin(String nodeId) {
-        logger.debug(String.format("management node[uuid:%s] joins, starts load backup storage...", nodeId));
+    }
+
+    @Override
+    @AsyncThread
+    public void managementNodeReady() {
+        logger.debug(String.format("management node[uuid:%s] joins, starts load backup storage...", Platform.getManagementServerId()));
         loadBackupStorage();
     }
-
-    /*
-    @Override
-    public APIMessage intercept(APIMessage msg, ApiMessageInterceptorChain chain) throws CloudApiMessageInterceptorException {
-        ErrorCode err = null;
-        if (msg instanceof APIAddBackupStorageMsg) {
-            SimpleQuery<BackupStorageVO> query = dbf.createQuery(BackupStorageVO.class);
-            query.select(BackupStorageVO_.uuid);
-            query.add(BackupStorageVO_.url, Op.EQ, ((APIAddBackupStorageMsg) msg).getUrl());
-            String uuid = query.findValue();
-            if (uuid != null) {
-                String details = String.mediaType("There is a Backup storage[uuid:%s] having the same url[%s]", uuid, ((APIAddBackupStorageMsg) msg).getUrl());
-                err = ErrorCodeFacade.generateErrorCode(BackupStorageErrorCodes.FAILS_TO_ADD_BACKUP_STORAGE.toString(), details);
-                throw new CloudApiMessageInterceptorException(err);
-            }
-        } else if (msg instanceof APIChangeBackupStorageStateMsg) {
-            try {
-                BackupStorageStateEvent.valueOf(((APIChangeBackupStorageStateMsg) msg).getStateEvent());
-            } catch (IllegalArgumentException e) {
-                err = ErrorCodeFacade.generateErrorCode(ErrorCodeFacade.BuiltinErrors.INVALID_ARGRUMENT.toString(), "Unknown BackupStorageStateEvent: "
-                        + ((APIChangeBackupStorageStateMsg) msg).getStateEvent());
-                logger.warn("", e);
-                throw new CloudApiMessageInterceptorException(err);
-            }
-        }
-
-        return chain.intercept(msg);
-    }
-
-    */
 }

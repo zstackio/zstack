@@ -32,7 +32,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.console.ConsoleBackend" />
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
 
         <property name="agentPort" value="${ManagementServerConsoleProxyBackend.agentPort:7758}" />

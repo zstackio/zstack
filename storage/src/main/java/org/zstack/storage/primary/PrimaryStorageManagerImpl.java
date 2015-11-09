@@ -23,6 +23,7 @@ import org.zstack.core.safeguard.Guard;
 import org.zstack.header.AbstractService;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -41,7 +42,8 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager, ManagementNodeChangeListener {
+public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
+        ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -276,8 +278,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             handle((AllocatePrimaryStorageMsg) msg);
         } else if (msg instanceof ReturnPrimaryStorageCapacityMsg) {
             handle((ReturnPrimaryStorageCapacityMsg) msg);
-        } else if (msg instanceof RecalculatePrimaryStorageMsg) {
-            handle((RecalculatePrimaryStorageMsg) msg);
+        } else if (msg instanceof RecalculatePrimaryStorageCapacityMsg) {
+            handle((RecalculatePrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof PrimaryStorageMessage) {
             passThrough((PrimaryStorageMessage) msg);
         } else {
@@ -285,7 +287,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
     }
 
-    private void handle(final RecalculatePrimaryStorageMsg msg) {
+    private void handle(final RecalculatePrimaryStorageCapacityMsg msg) {
         final List<String> psUuids = new ArrayList<String>();
 
         if (msg.getPrimaryStorageUuid() != null) {
@@ -609,9 +611,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     @Override
-    @AsyncThread
     public void iJoin(String nodeId) {
-        logger.debug(String.format("management node[uuid:%s] joins, starts load primary storage ...", nodeId));
+    }
+
+    @AsyncThread
+    @Override
+    public void managementNodeReady() {
+        logger.debug(String.format("management node[uuid:%s] joins, starts load primary storage ...", Platform.getManagementServerId()));
         loadPrimaryStorage();
     }
 }

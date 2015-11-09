@@ -15,6 +15,7 @@
     <bean id="GCFacade" class="org.zstack.core.gc.GCFacadeImpl" >
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
         </zstack:plugin>
     </bean>
 </beans>

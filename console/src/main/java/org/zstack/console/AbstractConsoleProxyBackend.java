@@ -16,6 +16,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.Utils;
@@ -27,7 +28,7 @@ import org.zstack.utils.logging.CLogger;
  * Time: 7:32 PM
  * To change this template use File | Settings | File Templates.
  */
-public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Component, ManagementNodeChangeListener {
+public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Component, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AbstractConsoleProxyBackend.class);
 
     @Autowired
@@ -156,20 +157,8 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     }
 
     @Override
-    public void nodeJoin(String nodeId) {
-    }
-
-    @Override
-    public void nodeLeft(String nodeId) {
-    }
-
-    @Override
-    public void iAmDead(String nodeId) {
-    }
-
-    @Override
     @AsyncThread
-    public void iJoin(String nodeId) {
+    public void managementNodeReady() {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             return;
         }

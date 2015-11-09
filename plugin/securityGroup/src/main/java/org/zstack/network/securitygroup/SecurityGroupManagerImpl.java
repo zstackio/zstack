@@ -28,6 +28,7 @@ import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
@@ -56,7 +57,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.list;
 
-public class SecurityGroupManagerImpl extends AbstractService implements SecurityGroupManager, ManagementNodeChangeListener,
+public class SecurityGroupManagerImpl extends AbstractService implements SecurityGroupManager, ManagementNodeReadyExtensionPoint,
           VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
     private static CLogger logger = Utils.getLogger(SecurityGroupManagerImpl.class);
 
@@ -125,6 +126,12 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         quota.addPair(p);
 
         return list(quota);
+    }
+
+    @Override
+    @AsyncThread
+    public void managementNodeReady() {
+        startFailureHostCopingThread();
     }
 
     private class RuleCalculator {
@@ -1143,23 +1150,4 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             return FailureHostWorker.class.getName();
         }
     }
-
-    @Override
-    public void nodeJoin(String nodeId) {
-    }
-
-    @Override
-    public void nodeLeft(String nodeId) {
-    }
-
-    @Override
-    public void iAmDead(String nodeId) {
-    }
-
-    @Override
-    @AsyncThread
-    public void iJoin(String nodeId) {
-        startFailureHostCopingThread();
-    }
-
 }
