@@ -84,22 +84,6 @@ public abstract class VmTracer {
             bus.send(msg);
         }
 
-        private void fireStateChangeEvent(String vmUuid, VmInstanceState from, VmInstanceState to) {
-            VmStateChangedData data = new VmStateChangedData();
-            data.setVmUuid(vmUuid);
-            data.setFrom(from);
-            data.setTo(to);
-            evtf.fire(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, data);
-        }
-
-        private void fireHostChangeEvent(String vmUuid, String from, String to) {
-            HostChangedData data = new HostChangedData();
-            data.setVmUuid(vmUuid);
-            data.setFrom(from);
-            data.setTo(to);
-            evtf.fire(VmTracerCanonicalEvents.HOST_CHANGED_PATH, data);
-        }
-
         private void handleAnonymousVm(final String vmUuid, final VmInstanceState actualState) {
             final VmInstanceVO vm = dbf.findByUuid(vmUuid, VmInstanceVO.class);
             if (vm == null) {

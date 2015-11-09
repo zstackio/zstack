@@ -37,7 +37,7 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener {
     @Autowired
     private ResourceDestinationMaker destinationMaker;
 
-    private GarbageCollectorVO save(GCContext context) {
+    private GarbageCollectorVO save(GCPersistentContext context) {
         DebugUtils.Assert(context.getTimeUnit() != null, "timeUnit cannot be null");
         DebugUtils.Assert(context.getInterval() > 0, "interval must be greater than 0");
         DebugUtils.Assert(context.getRunnerClass() != null, "runnerClass cannot be null");
@@ -53,14 +53,18 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener {
     }
 
     private GCRunner getGCRunner(GCContext context) {
-        try {
-            return (GCRunner) context.getRunnerClass().newInstance();
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
+        if (context instanceof GCPersistentContext) {
+            try {
+                return (GCRunner)((GCPersistentContext)context).getRunnerClass().newInstance();
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
+            }
+        } else {
+            return ((GCEphemeralContext)context).getRunner();
         }
     }
 
-    private void scheduleTask(final GCContext context, final GarbageCollectorVO vo, boolean instant) {
+    private void scheduleTask(final GCPersistentContext context, final GarbageCollectorVO vo, boolean instant) {
         final GCCompletion completion = new GCCompletion() {
             @Override
             public void success() {
@@ -72,7 +76,7 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener {
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.debug(String.format("GC job[id:%s, runner class:%s] failed, %s. Reschedule it", vo.getId(), vo.getRunnerClass(), errorCode));
-                scheduleTask(context, vo, true);
+                scheduleTask(context, vo, false);
             }
 
             @Override
@@ -119,12 +123,71 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener {
 
     @Override
     public void schedule(final GCContext context) {
-        scheduleTask(context, save(context), false);
+        if (context instanceof GCPersistentContext) {
+            scheduleTask((GCPersistentContext) context, save((GCPersistentContext) context), false);
+        } else {
+            scheduleTask((GCEphemeralContext) context, false);
+        }
+    }
+
+    private void scheduleTask(final GCEphemeralContext context, boolean instant) {
+        final GCCompletion completion = new GCCompletion() {
+            @Override
+            public void success() {
+                logger.debug(String.format("GC ephemeral job[name:%s] is done", context.getName()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.debug(String.format("GC ephemeral job[name:%s] failed, %s. Reschedule it", context.getName(), errorCode));
+                scheduleTask(context, false);
+            }
+
+            @Override
+            public void cancel() {
+                logger.debug(String.format("GC ephemeral job[name:%s] is cancelled by the runner", context.getName()));
+            }
+        };
+
+        final GCRunner runner = getGCRunner(context);
+        CancelablePeriodicTask ct = new CancelablePeriodicTask() {
+            @Override
+            public boolean run() {
+                logger.debug(String.format("starting GC ephemeral job[name:%s]", context.getName()));
+                runner.run(context, completion);
+                return true;
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return context.getTimeUnit();
+            }
+
+            @Override
+            public long getInterval() {
+                return context.getInterval();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("gc-%s", context.getName());
+            }
+        };
+
+        if (instant) {
+            thdf.submitCancelablePeriodicTask(ct);
+        } else {
+            thdf.submitCancelablePeriodicTask(ct, context.getTimeUnit().toMillis(context.getInterval()));
+        }
     }
 
     @Override
     public void scheduleImmediately(GCContext context) {
-        scheduleTask(context, save(context), true);
+        if (context instanceof GCPersistentContext) {
+            scheduleTask((GCPersistentContext) context, save((GCPersistentContext) context), true);
+        } else {
+            scheduleTask((GCEphemeralContext)context, true);
+        }
     }
 
     @Override

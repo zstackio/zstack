@@ -44,6 +44,22 @@ public class KVMSimulatorController {
 
     private AsyncRESTReplyer replyer = new AsyncRESTReplyer();
 
+    @RequestMapping(value=KVMConstant.KVM_VM_CHECK_STATE, method=RequestMethod.POST)
+    public @ResponseBody String checkVmState(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        CheckVmStateCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CheckVmStateCmd.class);
+        CheckVmStateRsp rsp = new CheckVmStateRsp();
+        Map<String, String> m = new HashMap<String, String>();
+        for (String vmUuid : cmd.vmUuids) {
+            Map<String, String> h = config.checkVmStatesConfig.get(cmd.hostUuid);
+            m.put(vmUuid, h.get(vmUuid));
+        }
+        rsp.states = m;
+        config.checkVmStateCmds.add(cmd);
+        replyer.reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=KVMConstant.KVM_ATTACH_NIC_PATH, method=RequestMethod.POST)
     public @ResponseBody String attachNic(HttpServletRequest req) {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
@@ -201,6 +217,13 @@ public class KVMSimulatorController {
     private void doVmSync(HttpEntity<String> entity) {
         synchronized (config) {
             VmSyncResponse rsp = new VmSyncResponse();
+            if (!config.vmSyncSuccess) {
+                rsp.setSuccess(false);
+                rsp.setError("on purpose");
+                reply(entity, rsp);
+                return;
+            }
+
             HashMap<String, String> vms = new HashMap<String, String>();
             for (Map.Entry<String, KvmVmState> e : config.vms.entrySet()) {
                 vms.put(e.getKey(), e.getValue().toString());

@@ -7,12 +7,15 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.gc.*;
+import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -20,9 +23,7 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostStatusChangeNotifyPoint;
+import org.zstack.header.host.*;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
@@ -32,6 +33,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -40,13 +42,11 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
-import org.zstack.tag.SystemTag;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
@@ -61,10 +61,13 @@ import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.list;
 
-public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager, HostStatusChangeNotifyPoint, ReportQuotaExtensionPoint {
+public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager, HostStatusChangeNotifyPoint,
+        ReportQuotaExtensionPoint, ManagementNodeChangeListener {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<String, VmInstanceFactory>());
     private List<String> createVmWorkFlowElements;
@@ -105,6 +108,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private TagManager tagMgr;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ResourceDestinationMaker destMaker;
+    @Autowired
+    private GCFacade gcf;
 
     @Override
     @MessageSafe
@@ -701,5 +708,88 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         quota.setChecker(checker);
 
         return list(quota);
+    }
+
+    @Override
+    public void nodeJoin(String nodeId) {
+    }
+
+    @Override
+    public void nodeLeft(String nodeId) {
+    }
+
+    @Override
+    public void iAmDead(String nodeId) {
+    }
+
+    private List<String> getVmInUnknownStateManagedByUs() {
+        int qun = 10000;
+        SimpleQuery q = dbf.createQuery(VmInstanceVO.class);
+        q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
+        long amount = q.count();
+        int times = (int)(amount / qun) + (amount % qun != 0 ? 1 : 0);
+        int start = 0;
+        List<String> ret = new ArrayList<String>();
+        for (int i=0; i<times; i++) {
+            q = dbf.createQuery(VmInstanceVO.class);
+            q.select(VmInstanceVO_.uuid, VmInstanceVO_.hostUuid);
+            q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
+            q.setLimit(qun);
+            q.setStart(start);
+            List<Tuple> lst = q.listTuple();
+            start += qun;
+            for (Tuple t : lst) {
+                String vmUuid = t.get(0, String.class);
+                if (!destMaker.isManagedByUs(vmUuid)) {
+                    continue;
+                }
+
+                String hostUuid = t.get(1, String.class);
+                if (hostUuid == null) {
+                    //TODO
+                    logger.warn(String.format("the vm[uuid:%s] is in Unknown state, but its hostUuid is null, we cannot check its" +
+                            " real state", vmUuid));
+                    continue;
+                }
+
+                ret.add(vmUuid);
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public void iJoin(String nodeId) {
+        List<String> unknownVmUuids = getVmInUnknownStateManagedByUs();
+        if (unknownVmUuids.isEmpty()) {
+            return;
+        }
+
+        for (final String uuid : unknownVmUuids) {
+            GCEphemeralContext<Void> context = new GCEphemeralContext<Void>();
+            context.setInterval(5);
+            context.setTimeUnit(TimeUnit.SECONDS);
+            context.setRunner(new GCRunner() {
+                @Override
+                public void run(GCContext context, final GCCompletion completion) {
+                    VmCheckOwnStateMsg msg = new VmCheckOwnStateMsg();
+                    msg.setVmInstanceUuid(uuid);
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
+                    bus.send(msg, new CloudBusCallBack() {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                completion.success();
+                            } else {
+                                completion.fail(errf.stringToOperationError(
+                                        String.format("unable to check the vm[uuid:%s]'s state, %s", uuid, reply.getError())
+                                ));
+                            }
+                        }
+                    });
+                }
+            });
+            gcf.scheduleImmediately(context);
+        }
     }
 }

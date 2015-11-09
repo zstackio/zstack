@@ -37,6 +37,15 @@ public class KVMAgentCommands {
     public static class AgentCommand {
     }
 
+    public static class CheckVmStateCmd extends AgentCommand {
+        public List<String> vmUuids;
+        public String hostUuid;
+    }
+
+    public static class CheckVmStateRsp extends AgentResponse {
+        public Map<String, String> states;
+    }
+
     public static class DetachNicCommand extends AgentCommand {
         private String vmUuid;
         private NicTO nic;

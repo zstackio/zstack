@@ -32,9 +32,9 @@ class GCContextInternal {
         interval = i.interval;
     }
 
-    public GCContext toGCContext() {
+    public GCPersistentContext toGCContext() {
         try {
-            GCContext ctx = new GCContext();
+            GCPersistentContext ctx = new GCPersistentContext();
             if (contextClassName != null) {
                 ctx.setContextClass(Class.forName(contextClassName));
             }

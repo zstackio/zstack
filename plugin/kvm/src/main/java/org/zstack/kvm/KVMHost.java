@@ -42,6 +42,7 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.*;
+import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
@@ -95,6 +96,7 @@ public class KVMHost extends HostBase implements Host {
     private String hostFactPath;
     private String attachIsoPath;
     private String detachIsoPath;
+    private String checkVmStatePath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -175,6 +177,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DETACH_ISO_PATH);
         detachIsoPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_CHECK_STATE);
+        checkVmStatePath = ub.build().toString();
     }
 
     @Override
@@ -218,9 +224,62 @@ public class KVMHost extends HostBase implements Host {
             handle((AttachIsoOnHypervisorMsg) msg);
         } else if (msg instanceof DetachIsoOnHypervisorMsg) {
             handle((DetachIsoOnHypervisorMsg) msg);
+        } else if (msg instanceof CheckVmStateOnHypervisorMsg) {
+            handle((CheckVmStateOnHypervisorMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final CheckVmStateOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return id;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final CheckVmStateOnHypervisorReply reply = new CheckVmStateOnHypervisorReply();
+                CheckVmStateCmd cmd = new CheckVmStateCmd();
+                cmd.vmUuids = msg.getVmInstanceUuids();
+                cmd.hostUuid = self.getUuid();
+                restf.asyncJsonPost(checkVmStatePath, cmd, new JsonAsyncRESTCallback<CheckVmStateRsp>(msg, chain) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        reply.setError(err);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void success(CheckVmStateRsp ret) {
+                        if (!ret.isSuccess()) {
+                            reply.setError(errf.stringToOperationError(ret.getError()));
+                        } else {
+                            Map<String, String> m = new HashMap<String, String>();
+                            for (Map.Entry<String, String> e : ret.states.entrySet()) {
+                                m.put(e.getKey(), KvmVmState.valueOf(e.getValue()).toVmInstanceState().toString());
+                            }
+                            reply.setStates(m);
+                        }
+
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public Class<CheckVmStateRsp> getReturnClass() {
+                        return CheckVmStateRsp.class;
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "check=vm-states";
+            }
+        });
     }
 
     private void handle(final DetachIsoOnHypervisorMsg msg) {

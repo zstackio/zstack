@@ -55,6 +55,7 @@ import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
@@ -94,7 +95,43 @@ public class VmInstanceBase extends AbstractVmInstance {
 
 
     protected VmInstanceVO self;
+    protected VmInstanceVO originalCopy;
     protected String syncThreadName;
+
+    private void checkState(final String hostUuid, final NoErrorCompletion completion) {
+        CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
+        msg.setVmInstanceUuids(list(self.getUuid()));
+        msg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    //TODO
+                    logger.warn(String.format("unable to check state of the vm[uuid:%s] on the host[uuid:%s], %s. Put the vm to Unknown state",
+                            self.getUuid(), hostUuid, reply.getError()));
+                    self = dbf.reload(self);
+                    changeVmStateInDb(VmInstanceStateEvent.unknown);
+                    completion.done();
+                    return;
+                }
+
+                CheckVmStateOnHypervisorReply r = reply.castReply();
+                String state = r.getStates().get(self.getUuid());
+                self = dbf.reload(self);
+                if (VmInstanceState.Running.toString().equals(state)) {
+                    changeVmStateInDb(VmInstanceStateEvent.running);
+                } else if (VmInstanceState.Stopped.toString().equals(state)) {
+                    changeVmStateInDb(VmInstanceStateEvent.stopped);
+                } else {
+                    throw new CloudRuntimeException(String.format("CheckVmStateOnHypervisorMsg should only reprot states[Running or Stopped]," +
+                            "but it reports %s for the vm[uuid:%s] on the host[uuid:%s]", state, self.getUuid(), hostUuid));
+                }
+
+                completion.done();
+            }
+        });
+    }
 
     public void destroy(final Completion completion){
         self = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
@@ -127,10 +164,19 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
-            public void handle(ErrorCode errCode, Map data) {
-                self = dbf.reload(self);
-                changeVmStateInDb(VmInstanceStateEvent.unknown);
-                completion.fail(errCode);
+            public void handle(final ErrorCode errCode, Map data) {
+                if (originalCopy.getState() == VmInstanceState.Running) {
+                    checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
+                        @Override
+                        public void done() {
+                            completion.fail(errCode);
+                        }
+                    });
+                } else {
+                    self = dbf.reload(self);
+                    changeVmStateInDb(VmInstanceStateEvent.unknown);
+                    completion.fail(errCode);
+                }
             }
         }).start();
     }
@@ -146,6 +192,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     public VmInstanceBase(VmInstanceVO vo) {
         this.self = vo;
         this.syncThreadName = "Vm-" + vo.getUuid();
+        this.originalCopy = ObjectUtils.newAndCopy(vo, vo.getClass());
     }
 
     protected VmInstanceVO refreshVO() {
@@ -154,6 +201,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (self == null) {
             throw new OperationFailureException(errf.stringToOperationError(String.format("vm[uuid:%s, name:%s] has been deleted", vo.getUuid(), vo.getName())));
         }
+
+        originalCopy = ObjectUtils.newAndCopy(vo, vo.getClass());
         return self;
     }
 
@@ -252,9 +301,68 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((DetachNicFromVmMsg) msg);
         } else if (msg instanceof VmStateChangedOnHostMsg) {
             handle((VmStateChangedOnHostMsg) msg);
+        } else if (msg instanceof VmCheckOwnStateMsg) {
+            handle((VmCheckOwnStateMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final VmCheckOwnStateMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                refreshVO();
+                final VmCheckOwnStateReply reply = new VmCheckOwnStateReply();
+                if (self.getHostUuid() == null) {
+                    // no way to check
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                final CheckVmStateOnHypervisorMsg cmsg = new CheckVmStateOnHypervisorMsg();
+                cmsg.setVmInstanceUuids(list(self.getUuid()));
+                cmsg.setHostUuid(self.getHostUuid());
+                bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, self.getHostUuid());
+                bus.send(cmsg, new CloudBusCallBack(msg, chain) {
+                    @Override
+                    public void run(MessageReply r) {
+                        if (!r.isSuccess()) {
+                            reply.setError(r.getError());
+                            bus.reply(msg, r);
+                            chain.next();
+                            return;
+                        }
+
+                        CheckVmStateOnHypervisorReply cr = r.castReply();
+                        String s = cr.getStates().get(self.getUuid());
+                        VmInstanceState state = VmInstanceState.valueOf(s);
+                        if (state != self.getState()) {
+                            VmStateChangedOnHostMsg vcmsg = new VmStateChangedOnHostMsg();
+                            vcmsg.setHostUuid(self.getHostUuid());
+                            vcmsg.setVmInstanceUuid(self.getUuid());
+                            vcmsg.setStateOnHost(state);
+                            bus.makeTargetServiceIdByResourceUuid(vcmsg, VmInstanceConstant.SERVICE_ID, self.getUuid());
+                            bus.send(vcmsg);
+                        }
+
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "check-state";
+            }
+        });
     }
 
     private void handle(final VmStateChangedOnHostMsg msg) {
@@ -305,6 +413,10 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Running && !currentHostUuid.equals(originalHostUuid)) {
             return VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostChanged;
+        }
+
+        if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Stopped && currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmStoppedOnTheSameHost;
         }
 
         if (originalState == VmInstanceState.Running && originalState == currentState && !currentHostUuid.equals(originalHostUuid)) {
@@ -1956,14 +2068,19 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
+                extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), spec.getDestHost().getUuid(), errCode);
                 if (HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
-                    self = changeVmStateInDb(VmInstanceStateEvent.unknown);
+                    checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
+                        @Override
+                        public void done() {
+                            completion.fail(errCode);
+                        }
+                    });
                 } else {
                     self.setState(originState);
                     self = dbf.updateAndRefresh(self);
+                    completion.fail(errCode);
                 }
-                extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), spec.getDestHost().getUuid(), errCode);
-                completion.fail(errCode);
             }
         }).start();
     }
@@ -2062,14 +2179,20 @@ public class VmInstanceBase extends AbstractVmInstance {
                 // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
                 // reload to avoid JPA EntityNotFoundException
                 self = dbf.reload(self);
+                extEmitter.failedToStartVm(VmInstanceInventory.valueOf(self), errCode);
+                VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
                 if (HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
-                    self = changeVmStateInDb(VmInstanceStateEvent.unknown);
+                    checkState(spec.getDestHost().getUuid(), new NoErrorCompletion(completion) {
+                        @Override
+                        public void done() {
+                            completion.fail(errCode);
+                        }
+                    });
                 } else {
                     self.setState(originState);
                     self = dbf.updateAndRefresh(self);
+                    completion.fail(errCode);
                 }
-                extEmitter.failedToStartVm(VmInstanceInventory.valueOf(self), errCode);
-                completion.fail(errCode);
             }
         }).start();
     }
@@ -2364,14 +2487,19 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
+                extEmitter.failedToRebootVm(VmInstanceInventory.valueOf(self), errCode);
                 if (HostErrors.FAILED_TO_REBOOT_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
-                    self = changeVmStateInDb(VmInstanceStateEvent.unknown);
+                    checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
+                        @Override
+                        public void done() {
+                            completion.fail(errCode);
+                        }
+                    });
                 } else {
                     self.setState(originState);
                     self = dbf.updateAndRefresh(self);
+                    completion.fail(errCode);
                 }
-                extEmitter.failedToRebootVm(VmInstanceInventory.valueOf(self), errCode);
-                completion.fail(errCode);
             }
         }).start();
     }
@@ -2482,15 +2610,20 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
+                VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+                extEmitter.failedToStopVm(inv, errCode);
                 if (HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
-                    self = changeVmStateInDb(VmInstanceStateEvent.unknown);
+                    checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
+                        @Override
+                        public void done() {
+                            completion.fail(errCode);
+                        }
+                    });
                 } else {
                     self.setState(originState);
                     self = dbf.updateAndRefresh(self);
+                    completion.fail(errCode);
                 }
-                VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-                extEmitter.failedToStopVm(inv, errCode);
-                completion.fail(errCode);
             }
         }).start();
     }

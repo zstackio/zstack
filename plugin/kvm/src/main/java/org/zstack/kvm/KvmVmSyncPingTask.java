@@ -2,6 +2,11 @@ package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.VmTracer;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
@@ -10,10 +15,13 @@ import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.kvm.KVMAgentCommands.ReportVmStateCmd;
 import org.zstack.kvm.KVMAgentCommands.VmSyncCmd;
 import org.zstack.kvm.KVMAgentCommands.VmSyncResponse;
@@ -22,13 +30,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
-public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtensionPoint, KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint, Component {
+public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtensionPoint, KVMHostConnectExtensionPoint,
+        HostConnectionReestablishExtensionPoint, HostAfterConnectedExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(KvmVmSyncPingTask.class);
     
     @Autowired
@@ -37,6 +47,10 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
     private KVMHostFactory factory;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private DatabaseFacade dbf;
+    @Autowired
+    private CloudBus bus;
 
     private void syncVm(final KVMHostContext host, final Completion completion) {
         VmSyncCmd cmd = new VmSyncCmd();
@@ -126,5 +140,39 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
     @Override
     public boolean stop() {
         return true;
+    }
+
+    @Override
+    public void afterHostConnected(final HostInventory host) {
+        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+        q.select(VmInstanceVO_.uuid);
+        q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
+        q.add(VmInstanceVO_.hostUuid, Op.EQ, host.getUuid());
+        final List<String> vmUuids = q.listValue();
+        if (!vmUuids.isEmpty()) {
+            CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
+            msg.setVmInstanceUuids(vmUuids);
+            msg.setHostUuid(host.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
+            bus.send(msg, new CloudBusCallBack() {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        //TODO
+                        logger.warn(String.format("unable to check states of vms[uuids:%s] on the host[uuid:%s], %s",
+                                vmUuids, host.getUuid(), reply.getError()));
+                        return;
+                    }
+
+                    CheckVmStateOnHypervisorReply r = reply.castReply();
+                    Map<String, VmInstanceState> states = new HashMap<String, VmInstanceState>();
+                    for (Map.Entry<String, String> e : r.getStates().entrySet()) {
+                        states.put(e.getKey(), VmInstanceState.valueOf(e.getValue()));
+                    }
+
+                    reportVmState(host.getUuid(), states);
+                }
+            });
+        }
     }
 }

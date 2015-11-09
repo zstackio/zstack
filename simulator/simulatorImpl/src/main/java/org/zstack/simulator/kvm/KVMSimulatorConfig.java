@@ -71,4 +71,7 @@ public class KVMSimulatorConfig {
     public volatile List<AttachIsoCmd> attachIsoCmds = new ArrayList<AttachIsoCmd>();
     public volatile List<DetachIsoCmd> detachIsoCmds = new ArrayList<DetachIsoCmd>();
     public volatile double startVmFailureChance = 0;
+    public volatile List<CheckVmStateCmd> checkVmStateCmds = new ArrayList<CheckVmStateCmd>();
+    public volatile Map<String, Map<String, String>> checkVmStatesConfig = new HashMap<String, Map<String, String>>();
+    public volatile boolean vmSyncSuccess = true;
 }
