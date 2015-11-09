@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.RebaseSnapshotBackingFilesCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.VerifySnapshotChainCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
@@ -54,6 +55,15 @@ public class LocalStorageSimulator {
         headers.set(RESTConstant.TASK_UUID, taskUuid);
         HttpEntity<String> rreq = new HttpEntity<String>(rspBody, headers);
         restf.getRESTTemplate().exchange(callbackUrl, HttpMethod.POST, rreq, String.class);
+    }
+
+    @RequestMapping(value=LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String copyBitsFromRemote(HttpEntity<String> entity) {
+        CopyBitsFromRemoteCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CopyBitsFromRemoteCmd.class);
+        config.copyBitsFromRemoteCmds.add(cmd);
+        reply(entity, new AgentResponse());
+        return null;
     }
 
     @RequestMapping(value=LocalStorageKvmMigrateVmFlow.REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, method= RequestMethod.POST)
@@ -162,7 +172,9 @@ public class LocalStorageSimulator {
     public @ResponseBody
     String delete(HttpEntity<String> entity) {
         DeleteBitsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteBitsCmd.class);
-        config.deleteBitsCmds.add(cmd);
+        synchronized (config) {
+            config.deleteBitsCmds.add(cmd);
+        }
         DeleteBitsRsp rsp = new DeleteBitsRsp();
         reply(entity, rsp);
         return null;

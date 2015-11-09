@@ -38,6 +38,7 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KVMHostVO;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -65,6 +66,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
     public static final String VERIFY_SNAPSHOT_CHAIN_PATH = "/localstorage/snapshot/verifychain";
     public static final String REBASE_SNAPSHOT_BACKING_FILES_PATH = "/localstorage/snapshot/rebasebackingfiles";
     public static final String REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH = "/localstorage/volume/rebaserootvolumetobackingfile";
+    public static final String COPY_TO_REMOTE_BITS_PATH = "/localstorage/copytoremote";
 
     public static class SnapshotTO {
         public String path;
@@ -78,6 +80,13 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
     public static class RebaseSnapshotBackingFilesCmd extends LocalStorageKvmBackend.AgentCommand {
         public List<SnapshotTO> snapshots;
+    }
+
+    public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand {
+        public List<String> paths;
+        public String dstIp;
+        public String dstPassword;
+        public String dstUsername;
     }
 
     class BackingImage {
@@ -652,43 +661,34 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
             });
 
             flows.add(new Flow() {
-                String __name__ = String.format("create-snapshots-for-volume-%s-on-dst-host", p.volume.getUuid());
+                String __name__ = String.format("copy-snapshots-for-volume-%s-on-dst-host", p.volume.getUuid());
 
                 List<VolumeSnapshotInventory> success = new ArrayList<VolumeSnapshotInventory>();
+                KVMHostVO dstHost = dbf.findByUuid(dstHostUuid, KVMHostVO.class);
 
-
-                private void create(final Iterator<VolumeSnapshotInventory> it, final FlowTrigger trigger) {
-                    if (!it.hasNext()) {
-                        trigger.next();
-                        return;
-                    }
-
-                    final VolumeSnapshotInventory sp = it.next();
-                    final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
-                    cmd.setInstallUrl(sp.getPrimaryStorageInstallPath());
-                    cmd.setSize(sp.getSize());
-                    cmd.setVolumeUuid(sp.getUuid());
-
-                    callKvmHost(dstHostUuid, LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH, cmd, CreateEmptyVolumeRsp.class,
-                            new ReturnValueCompletion<CreateEmptyVolumeRsp>(trigger) {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
+                    cmd.paths = CollectionUtils.transformToList(children, new Function<String, VolumeSnapshotInventory>() {
                         @Override
-                        public void success(CreateEmptyVolumeRsp returnValue) {
-                            success.add(sp);
-                            create(it, trigger);
+                        public String call(VolumeSnapshotInventory arg) {
+                            return arg.getPrimaryStorageInstallPath();
+                        }
+                    });
+                    cmd.dstIp = dstHost.getManagementIp();
+                    cmd.dstPassword = dstHost.getPassword();
+                    cmd.dstUsername = dstHost.getUsername();
+                    callKvmHost(srcHostUuid, COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                        @Override
+                        public void success(AgentResponse returnValue) {
+                            trigger.next();
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                                    String.format("unable to create an empty snapshot[uuid:%s, name:%s] on the kvm host[uuid:%s]",
-                                            sp.getUuid(), sp.getName(), dstHostUuid), errorCode));
+                            trigger.fail(errorCode);
                         }
                     });
-                }
-
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    create(children.iterator(), trigger);
                 }
 
                 @Override

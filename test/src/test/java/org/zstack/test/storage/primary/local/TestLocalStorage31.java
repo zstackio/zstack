@@ -26,12 +26,15 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
+import org.zstack.kvm.KVMHost;
+import org.zstack.kvm.KVMHostVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.RebaseRootVolumeToBackingFileCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.RebaseSnapshotBackingFilesCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.SnapshotTO;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.VerifySnapshotChainCmd;
@@ -145,24 +148,31 @@ public class TestLocalStorage31 {
         config.createEmptyVolumeCmds.clear();
         config.deleteBitsCmds.clear();
         vm = api.migrateVmInstance(vm.getUuid(), host2.getUuid());
-        TimeUnit.SECONDS.sleep(10);
+        TimeUnit.SECONDS.sleep(5);
         final VolumeVO root = dbf.findByUuid(vm.getRootVolume().getUuid(), VolumeVO.class);
 
-        Assert.assertEquals(spNum+vm.getAllVolumes().size(), config.createEmptyVolumeCmds.size());
+        Assert.assertEquals(vm.getAllVolumes().size(), config.createEmptyVolumeCmds.size());
         Assert.assertEquals(2, config.verifySnapshotChainCmds.size());
         Assert.assertEquals(1, config.rebaseSnapshotBackingFilesCmds.size());
+        Assert.assertEquals(1, config.copyBitsFromRemoteCmds.size());
         VerifySnapshotChainCmd vcmd = config.verifySnapshotChainCmds.get(0);
         RebaseSnapshotBackingFilesCmd rcmd = config.rebaseSnapshotBackingFilesCmds.get(0);
+        CopyBitsFromRemoteCmd ccmd = config.copyBitsFromRemoteCmds.get(0);
+
+        KVMHostVO kvm = dbf.findByUuid(host2.getUuid(), KVMHostVO.class);
+        Assert.assertEquals(kvm.getManagementIp(), ccmd.dstIp);
+        Assert.assertEquals(kvm.getUsername(), ccmd.dstUsername);
+        Assert.assertEquals(kvm.getPassword(), ccmd.dstPassword);
+
         for (final VolumeSnapshotVO sp : snapshthots) {
-            // snapshots are created on dst host
-            CreateEmptyVolumeCmd cmd = CollectionUtils.find(config.createEmptyVolumeCmds, new Function<CreateEmptyVolumeCmd, CreateEmptyVolumeCmd>() {
+            // snapshots are copied on dst host
+            String copyPath = CollectionUtils.find(ccmd.paths, new Function<String, String>() {
                 @Override
-                public CreateEmptyVolumeCmd call(CreateEmptyVolumeCmd arg) {
-                    return arg.getInstallUrl().equals(sp.getPrimaryStorageInstallPath()) ? arg : null;
+                public String call(String arg) {
+                    return arg.equals(sp.getPrimaryStorageInstallPath()) ? arg : null;
                 }
             });
-            Assert.assertNotNull(cmd);
-            Assert.assertEquals(sp.getSize(), cmd.getSize());
+            Assert.assertNotNull(copyPath);
 
             // snapshots are verified
             SnapshotTO to = CollectionUtils.find(vcmd.snapshots, new Function<SnapshotTO, SnapshotTO>() {
@@ -216,18 +226,7 @@ public class TestLocalStorage31 {
         });
         Assert.assertEquals(1, cmds.size());
 
-        // the root volume is created on the dst host
-        CreateEmptyVolumeCmd cmd = CollectionUtils.find(config.createEmptyVolumeCmds, new Function<CreateEmptyVolumeCmd, CreateEmptyVolumeCmd>() {
-            @Override
-            public CreateEmptyVolumeCmd call(CreateEmptyVolumeCmd arg) {
-                return arg.getInstallUrl().equals(root.getInstallPath()) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(cmd);
-        Assert.assertEquals(root.getUuid(), cmd.getVolumeUuid());
-        Assert.assertEquals(root.getSize(), cmd.getSize());
-
-        // the link to the parent of root volume is verified
+        // the link to the parent of the root volume is verified
         SnapshotTO to = CollectionUtils.find(vcmd.snapshots, new Function<SnapshotTO, SnapshotTO>() {
             @Override
             public SnapshotTO call(SnapshotTO arg) {
@@ -265,6 +264,17 @@ public class TestLocalStorage31 {
         Assert.assertEquals(ref2.getTotalCapacity() - imageSize - usedVolumeSize, ref2.getAvailableCapacity());
 
         for (final VolumeInventory vol : vm.getAllVolumes()) {
+            // volumes are created on dst host
+            CreateEmptyVolumeCmd createEmptyVolumeCmd = CollectionUtils.find(config.createEmptyVolumeCmds, new Function<CreateEmptyVolumeCmd, CreateEmptyVolumeCmd>() {
+                @Override
+                public CreateEmptyVolumeCmd call(CreateEmptyVolumeCmd arg) {
+                    return arg.getInstallUrl().equals(vol.getInstallPath()) ? arg : null;
+                }
+            });
+            Assert.assertNotNull(createEmptyVolumeCmd);
+            Assert.assertEquals(vol.getUuid(), createEmptyVolumeCmd.getVolumeUuid());
+            Assert.assertEquals(vol.getSize(), createEmptyVolumeCmd.getSize());
+
             LocalStorageResourceRefVO r = dbf.findByUuid(vol.getUuid(), LocalStorageResourceRefVO.class);
             Assert.assertEquals(host2.getUuid(), r.getHostUuid());
 

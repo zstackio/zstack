@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.local;
 
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.RebaseSnapshotBackingFilesCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.VerifySnapshotChainCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
@@ -37,5 +38,6 @@ public class LocalStorageSimulatorConfig {
     public List<RebaseRootVolumeToBackingFileCmd> rebaseRootVolumeToBackingFileCmds = new ArrayList<RebaseRootVolumeToBackingFileCmd>();
     public List<RebaseSnapshotBackingFilesCmd> rebaseSnapshotBackingFilesCmds = new ArrayList<RebaseSnapshotBackingFilesCmd>();
     public List<VerifySnapshotChainCmd> verifySnapshotChainCmds = new ArrayList<VerifySnapshotChainCmd>();
+    public List<CopyBitsFromRemoteCmd> copyBitsFromRemoteCmds = new ArrayList<CopyBitsFromRemoteCmd>();
     public volatile boolean checkBitsSuccess = true;
 }
