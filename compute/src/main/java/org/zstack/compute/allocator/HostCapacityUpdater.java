@@ -23,8 +23,6 @@ public class HostCapacityUpdater {
 
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private CloudBus bus;
 
     private String hostUuid;
     private TypedQuery<HostCapacityVO> query;
