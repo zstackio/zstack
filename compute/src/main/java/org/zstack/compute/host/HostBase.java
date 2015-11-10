@@ -14,6 +14,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -784,7 +785,7 @@ public abstract class HostBase extends AbstractHost {
                     public void run(FlowTrigger trigger, Map data) {
                         RecalculateHostCapacityMsg msg = new RecalculateHostCapacityMsg();
                         msg.setHostUuid(self.getUuid());
-                        bus.makeLocalServiceId(msg, HostConstant.SERVICE_ID);
+                        bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
                         bus.send(msg);
                         trigger.next();
                     }

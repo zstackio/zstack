@@ -34,8 +34,6 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import static org.zstack.utils.CollectionDSL.list;
-
 public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager, VmAbnormalLifeCycleExtensionPoint {
 	private static final CLogger logger = Utils.getLogger(HostAllocatorManagerImpl.class);
 
