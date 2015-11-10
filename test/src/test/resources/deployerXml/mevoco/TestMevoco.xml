@@ -41,7 +41,7 @@
                 <cluster name="Cluster1" description="Test" hypervisorType="KVM">
                     <hosts>
                         <kvmHost name="host1" description="Test" managementIp="localhost"
-                            memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                            memoryCapacity="80G" cpuNum="20" cpuSpeed="2600" />
                     </hosts>
                     <primaryStorageRef>local</primaryStorageRef>
                     <l2NetworkRef>TestL2Network</l2NetworkRef>

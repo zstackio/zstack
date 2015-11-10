@@ -26,10 +26,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheMsg;
-import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.ImageCacheVO_;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -39,12 +36,14 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostVO;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -125,7 +124,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 cmd.backingFilePath = backingFilePath;
                 cmd.rootVolumePath = rootVolumePath;
 
-                callKvmHost(hostUuid, REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                callKvmHost(hostUuid, psUuid, REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                     @Override
                     public void success(AgentResponse rsp) {
                         trigger.next();
@@ -535,7 +534,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         }).start();
     }
 
-    private <T extends AgentResponse> void callKvmHost(String hostUuid, String path, AgentCommand cmd, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
+    private <T extends AgentResponse> void callKvmHost(final String hostUuid, final String psUuid, String path, AgentCommand cmd, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
         msg.setPath(path);
@@ -554,6 +553,10 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 if (!rsp.isSuccess()) {
                     completion.fail(errf.stringToOperationError(rsp.getError()));
                     return;
+                }
+
+                if (rsp.getTotalCapacity() != null && rsp.getAvailableCapacity() != null) {
+                    new LocalStorageCapacityUpdater().updatePhysicalCapacityByKvmAgentResponse(psUuid, hostUuid, rsp);
                 }
 
                 completion.success(rsp);
@@ -646,7 +649,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 public void run(final FlowTrigger trigger, Map data) {
                     VerifySnapshotChainCmd cmd = new VerifySnapshotChainCmd();
                     cmd.snapshots = snapshotTOs;
-                    callKvmHost(srcHostUuid, VERIFY_SNAPSHOT_CHAIN_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                    callKvmHost(srcHostUuid, p.volume.getPrimaryStorageUuid(), VERIFY_SNAPSHOT_CHAIN_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                         @Override
                         public void success(AgentResponse returnValue) {
                             trigger.next();
@@ -678,7 +681,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     cmd.dstIp = dstHost.getManagementIp();
                     cmd.dstPassword = dstHost.getPassword();
                     cmd.dstUsername = dstHost.getUsername();
-                    callKvmHost(srcHostUuid, COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                    callKvmHost(srcHostUuid, p.volume.getPrimaryStorageUuid(), COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                         @Override
                         public void success(AgentResponse returnValue) {
                             trigger.next();
@@ -737,7 +740,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     cmd.setSize(p.volume.getSize());
                     cmd.setVolumeUuid(p.volume.getUuid());
 
-                    callKvmHost(dstHostUuid, LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH, cmd, CreateEmptyVolumeRsp.class,
+                    callKvmHost(dstHostUuid, p.volume.getPrimaryStorageUuid(), LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH, cmd, CreateEmptyVolumeRsp.class,
                             new ReturnValueCompletion<CreateEmptyVolumeRsp>(trigger) {
                                 @Override
                                 public void success(CreateEmptyVolumeRsp returnValue) {
@@ -784,7 +787,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 public void run(final FlowTrigger trigger, Map data) {
                     RebaseSnapshotBackingFilesCmd cmd = new RebaseSnapshotBackingFilesCmd();
                     cmd.snapshots = snapshotTOs;
-                    callKvmHost(dstHostUuid, REBASE_SNAPSHOT_BACKING_FILES_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                    callKvmHost(dstHostUuid, p.volume.getPrimaryStorageUuid(), REBASE_SNAPSHOT_BACKING_FILES_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                         @Override
                         public void success(AgentResponse returnValue) {
                             trigger.next();
@@ -805,7 +808,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 public void run(final FlowTrigger trigger, Map data) {
                     VerifySnapshotChainCmd cmd = new VerifySnapshotChainCmd();
                     cmd.snapshots = snapshotTOs;
-                    callKvmHost(dstHostUuid, VERIFY_SNAPSHOT_CHAIN_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                    callKvmHost(dstHostUuid, p.volume.getPrimaryStorageUuid(), VERIFY_SNAPSHOT_CHAIN_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                         @Override
                         public void success(AgentResponse returnValue) {
                             trigger.next();

@@ -550,38 +550,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 }
 
                 if (rsp.getTotalCapacity() != null && rsp.getAvailableCapacity() != null) {
-                    updateCapacity(hostUuid, rsp);
+                    new LocalStorageCapacityUpdater().updatePhysicalCapacityByKvmAgentResponse(self.getUuid(), hostUuid, rsp);
                 }
 
                 completion.success(rsp);
-            }
-
-            @Transactional
-            private void updateCapacity(String hostUuid, T rsp) {
-                LocalStorageHostRefVO ref = dbf.getEntityManager().find(LocalStorageHostRefVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
-                if (ref == null) {
-                    return;
-                }
-
-                if (ref.getAvailablePhysicalCapacity() == rsp.getAvailableCapacity() && ref.getTotalPhysicalCapacity() == rsp.getTotalCapacity()) {
-                    return;
-                }
-
-                ref.setTotalPhysicalCapacity(rsp.getTotalCapacity());
-                ref.setAvailablePhysicalCapacity(rsp.getAvailableCapacity());
-                dbf.getEntityManager().merge(ref);
-
-                final long totalChange = rsp.getTotalCapacity() - ref.getTotalPhysicalCapacity();
-                final long availChange = rsp.getAvailableCapacity() - ref.getAvailablePhysicalCapacity();
-
-                new PrimaryStorageCapacityUpdater(self.getUuid()).run(new PrimaryStorageCapacityUpdaterRunnable() {
-                    @Override
-                    public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                        cap.setTotalPhysicalCapacity(cap.getTotalPhysicalCapacity() + totalChange);
-                        cap.setAvailablePhysicalCapacity(cap.getAvailablePhysicalCapacity() + availChange);
-                        return cap;
-                    }
-                });
             }
         });
     }

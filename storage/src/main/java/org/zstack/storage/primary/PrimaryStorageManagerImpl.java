@@ -443,7 +443,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             PrimaryStorageInventory inv = it.next();
 
             if (!physicalCapacityMgr.checkCapacityByRatio(inv.getUuid(), inv.getTotalPhysicalCapacity(), inv.getAvailablePhysicalCapacity())) {
-                errs.add(String.format("primary storage[uuid:%s]'s physical capacity usage has exceeded the ratio[%s]", inv.getUuid(), physicalCapacityMgr.getRatio(inv.getUuid())));
+                errs.add(String.format("primary storage[uuid:%s]'s physical capacity usage has exceeded the threshold[%s]", inv.getUuid(), physicalCapacityMgr.getRatio(inv.getUuid())));
                 continue;
             }
 
