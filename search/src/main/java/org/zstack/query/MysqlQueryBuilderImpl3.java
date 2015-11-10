@@ -380,6 +380,12 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 for (String it : value.split(",")) {
                     ret.add(doNormalizeValue(it.trim()));
                 }
+
+                if (ret.isEmpty()) {
+                    // the query value is like ",,,,",
+                    // in this case, compliment an empty string
+                    ret.add("");
+                }
                 return ret;
             } else {
                 return doNormalizeValue(value);

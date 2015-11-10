@@ -10,6 +10,7 @@ import org.zstack.header.host.APIQueryHostMsg;
 import org.zstack.header.host.APIQueryHostReply;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.query.QueryCondition;
+import org.zstack.header.query.QueryOp;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -49,5 +50,10 @@ public class TestQueryHost {
         msg.setConditions(new ArrayList<QueryCondition>());
         APIQueryHostReply reply = api.query(msg, APIQueryHostReply.class);
         Assert.assertEquals(5, reply.getInventories().size());
+
+        msg = new APIQueryHostMsg();
+        // this case should not cause error
+        msg.addQueryCondition("uuid", QueryOp.IN, ",,,,,");
+        api.query(msg, APIQueryHostReply.class);
     }
 }
