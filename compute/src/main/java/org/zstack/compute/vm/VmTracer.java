@@ -67,16 +67,17 @@ public abstract class VmTracer {
                 VmInstanceState expectedState = mgmtSideStates.get(vmUuid);
                 if (expectedState == null) {
                     // an anonymous vm showing on this host
-                    handleAnonymousVm(vmUuid, actualState);
+                    handleAnonymousVm(vmUuid, actualState, expectedState);
                 } else if (actualState != expectedState) {
                     // vm state changed on host side
-                    handleStateChangeOnHostSide(vmUuid, actualState);
+                    handleStateChangeOnHostSide(vmUuid, actualState, expectedState);
                 }
             }
         }
 
-        private void handleStateChangeOnHostSide(final String vmUuid, final VmInstanceState actualState) {
+        private void handleStateChangeOnHostSide(final String vmUuid, final VmInstanceState actualState, VmInstanceState expected) {
             VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
+            msg.setVmStateAtTracingMonment(expected);
             msg.setVmInstanceUuid(vmUuid);
             msg.setStateOnHost(actualState);
             msg.setHostUuid(hostUuid);
@@ -84,7 +85,7 @@ public abstract class VmTracer {
             bus.send(msg);
         }
 
-        private void handleAnonymousVm(final String vmUuid, final VmInstanceState actualState) {
+        private void handleAnonymousVm(final String vmUuid, final VmInstanceState actualState, VmInstanceState expected) {
             final VmInstanceVO vm = dbf.findByUuid(vmUuid, VmInstanceVO.class);
             if (vm == null) {
                 logger.debug(String.format("[Vm Tracer] detects stranger vm[identity:%s, state:%s]", vmUuid, actualState));
@@ -96,7 +97,7 @@ public abstract class VmTracer {
                 return;
             }
 
-            handleStateChangeOnHostSide(vmUuid, actualState);
+            handleStateChangeOnHostSide(vmUuid, actualState, expected);
         }
 
         private void checkFromManagementServerSide() {
@@ -112,6 +113,7 @@ public abstract class VmTracer {
 
         private void handleMissingVm(final String vmUuid, final VmInstanceState expectedState) {
             VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
+            msg.setVmStateAtTracingMonment(expectedState);
             msg.setHostUuid(hostUuid);
             msg.setVmInstanceUuid(vmUuid);
             msg.setStateOnHost(VmInstanceState.Stopped);

@@ -19,6 +19,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -103,6 +104,13 @@ public class VmAllocateHostFlow implements Flow {
                 if (reply.isSuccess()) {
                     AllocateHostReply areply = (AllocateHostReply) reply;
                     spec.setDestHost(areply.getHost());
+
+                    // update the vm's host uuid so even if the management node died later and the vm's state
+                    // is stuck in Starting, we know which host it's created on and can check its state on the host
+                    VmInstanceVO vmvo = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
+                    vmvo.setHostUuid(spec.getDestHost().getUuid());
+                    dbf.update(vmvo);
+
                     chain.next();
                 } else {
                     chain.fail(reply.getError());

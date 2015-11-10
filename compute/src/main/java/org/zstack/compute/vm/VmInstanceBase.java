@@ -430,6 +430,16 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void vmStateChangeOnHost(final VmStateChangedOnHostMsg msg, final NoErrorCompletion completion) {
         refreshVO();
 
+        if (msg.getVmStateAtTracingMonment() != null) {
+            // the vm tracer periodically reports vms's state. It catches an old state
+            // before an vm operation(start, stop, reboot, migrate) completes. Ignore this
+            VmInstanceState expected = VmInstanceState.valueOf(msg.getVmStateAtTracingMonment());
+            if (expected != self.getState()) {
+                completion.done();
+                return;
+            }
+        }
+
         final String originalHostUuid = self.getHostUuid();
         final String currentHostUuid = msg.getHostUuid();
         final VmInstanceState originalState = self.getState();
