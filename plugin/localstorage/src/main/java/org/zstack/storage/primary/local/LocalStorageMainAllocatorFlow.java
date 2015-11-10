@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -14,6 +15,7 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
+import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.utils.SizeUtils;
 
 import javax.persistence.TypedQuery;
@@ -30,6 +32,8 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
     protected ErrorFacade errf;
     @Autowired
     protected PrimaryStorageOverProvisioningManager ratioMgr;
+    @Autowired
+    protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
 
     private class Result {
         List<PrimaryStorageVO> result;
@@ -111,12 +115,31 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             }
         }
 
+        if (!candidateHosts.isEmpty()) {
+            Iterator<LocalStorageHostRefVO> it = candidateHosts.iterator();
+            List<String> err = new ArrayList<String>();
+            while (it.hasNext()) {
+                LocalStorageHostRefVO ref = it.next();
+                if (!physicalCapacityMgr.checkCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())) {
+                    err.add(String.format("{the physical capacity usage of the host[uuid:%s] has exceeded the threshold[%s]}", ref.getHostUuid(),
+                            physicalCapacityMgr.getRatio(ref.getPrimaryStorageUuid())));
+                    it.remove();
+                }
+            }
+
+            if (candidateHosts.isEmpty()) {
+                errorInfo = StringUtils.join(err, ",");
+            }
+        }
+
         Set<String> candidates = new HashSet<String>();
-        if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose())) {
-            candidates.addAll(considerImageCache(spec, candidateHosts));
-        } else {
-            for (LocalStorageHostRefVO ref : candidateHosts) {
-                candidates.add(ref.getPrimaryStorageUuid());
+        if (!candidateHosts.isEmpty()) {
+            if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose())) {
+                candidates.addAll(considerImageCache(spec, candidateHosts));
+            } else {
+                for (LocalStorageHostRefVO ref : candidateHosts) {
+                    candidates.add(ref.getPrimaryStorageUuid());
+                }
             }
         }
 

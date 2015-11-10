@@ -42,7 +42,7 @@ import org.zstack.storage.backup.sftp.SftpBackupStorageVO;
 import org.zstack.storage.backup.sftp.SftpBackupStorageVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
-import org.zstack.storage.primary.PrimaryStorageManager;
+import org.zstack.header.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
 import org.zstack.storage.primary.iscsi.IscsiIsoStoreManager.IscsiIsoSpec;
 import org.zstack.utils.DebugUtils;

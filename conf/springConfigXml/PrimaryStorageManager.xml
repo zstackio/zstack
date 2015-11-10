@@ -64,4 +64,6 @@
     </bean>
 
     <bean id="PrimaryStorageOverProvisioningManager" class="org.zstack.storage.primary.PrimaryStorageOverProvisioningManagerImpl" />
+
+    <bean id="PrimaryStoragePhysicalCapacityManager" class="org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManagerImpl" />
 </beans>

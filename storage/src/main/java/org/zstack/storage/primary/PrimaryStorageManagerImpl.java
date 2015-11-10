@@ -62,6 +62,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private ResourceDestinationMaker destMaker;
     @Autowired
     private PrimaryStorageOverProvisioningManager ratioMgr;
+    @Autowired
+    private PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
 
     private Map<String, RecalculatePrimaryStorageCapacityExtensionPoint> recalculateCapacityExtensions = new HashMap<String, RecalculatePrimaryStorageCapacityExtensionPoint>();
     private Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<String, PrimaryStorageFactory>());
@@ -435,9 +437,15 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
         Iterator<PrimaryStorageInventory> it = ret.iterator();
 
+        List<String> errs = new ArrayList<String>();
         PrimaryStorageInventory target = null;
         while (it.hasNext()) {
             PrimaryStorageInventory inv = it.next();
+
+            if (!physicalCapacityMgr.checkCapacityByRatio(inv.getUuid(), inv.getTotalPhysicalCapacity(), inv.getAvailablePhysicalCapacity())) {
+                errs.add(String.format("primary storage[uuid:%s]'s physical capacity usage has exceeded the ratio[%s]", inv.getUuid(), physicalCapacityMgr.getRatio(inv.getUuid())));
+                continue;
+            }
 
             long requiredSize = spec.getSize();
             if (!msg.isNoOverProvisioning())  {
@@ -448,12 +456,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 target = inv;
                 break;
             } else {
-                logger.debug(String.format("concurrent reservation on primary storage[uuid:%s], try next one", inv.getUuid()));
+                errs.add(String.format("unable to reserve capacity on the primary storage[uuid:%s], it has no space", inv.getUuid()));
+                logger.debug(String.format("concurrent reservation on the primary storage[uuid:%s], try next one", inv.getUuid()));
             }
         }
 
         if (target == null) {
-            throw new OperationFailureException(errf.stringToOperationError(String.format("failed to reserve capacity on all qualified primary storage, no primary storage has space available")));
+            throw new OperationFailureException(errf.stringToOperationError(String.format("cannot find any qualified primary storage, errors are %s", errs)));
         }
 
         reply.setPrimaryStorageInventory(target);

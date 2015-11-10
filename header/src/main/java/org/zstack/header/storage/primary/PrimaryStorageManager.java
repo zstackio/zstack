@@ -1,4 +1,4 @@
-package org.zstack.storage.primary;
+package org.zstack.header.storage.primary;
 
 import org.zstack.header.storage.primary.PrimaryStorageFactory;
 import org.zstack.header.storage.primary.PrimaryStorageType;
