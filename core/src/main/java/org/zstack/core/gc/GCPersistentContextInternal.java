@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by frank on 8/5/2015.
  */
-class GCContextInternal {
+class GCPersistentContextInternal {
     String runnerClassName;
     String contextClassName;
     LinkedHashMap context;
@@ -20,11 +20,11 @@ class GCContextInternal {
         return JSONObjectUtil.toJsonString(this);
     }
 
-    public GCContextInternal() {
+    public GCPersistentContextInternal() {
     }
 
-    public GCContextInternal(GarbageCollectorVO vo) {
-        GCContextInternal i = JSONObjectUtil.toObject(vo.getContext(), GCContextInternal.class);
+    public GCPersistentContextInternal(GarbageCollectorVO vo) {
+        GCPersistentContextInternal i = JSONObjectUtil.toObject(vo.getContext(), GCPersistentContextInternal.class);
         runnerClassName = i.runnerClassName;
         contextClassName = i.contextClassName;
         context = i.context;

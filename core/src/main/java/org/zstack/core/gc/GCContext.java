@@ -9,4 +9,6 @@ public interface GCContext<T> {
     T getContext();
     TimeUnit getTimeUnit();
     long getInterval();
+    String getName();
+    long getExecutedTimes();
 }
