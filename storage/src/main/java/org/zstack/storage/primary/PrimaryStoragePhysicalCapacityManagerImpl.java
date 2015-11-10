@@ -45,6 +45,10 @@ public class PrimaryStoragePhysicalCapacityManagerImpl implements PrimaryStorage
 
     @Override
     public boolean checkCapacityByRatio(String psUuid, long totalPhysicalCapacity, long totalAvailableCapacity) {
+        if (totalAvailableCapacity == totalPhysicalCapacity) {
+            return true;
+        }
+
         double ratio = getRatio(psUuid);
         long used = totalPhysicalCapacity - totalAvailableCapacity;
         return used < Math.round(totalPhysicalCapacity * ratio);
