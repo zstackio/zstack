@@ -10,6 +10,7 @@ public class VmAbnormalLifeCycleStruct {
         VmStoppedFromIntermediateState,
         VmRunningFromUnknownStateHostNotChanged,
         VmRunningFromUnknownStateHostChanged,
+        VmStoppedFromUnknownStateHostNotChanged,
         VmMigrateToAnotherHost,
         VmRunningOnTheHost
     }

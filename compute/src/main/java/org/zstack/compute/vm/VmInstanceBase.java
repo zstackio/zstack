@@ -419,6 +419,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmStoppedOnTheSameHost;
         }
 
+        if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Stopped
+                && originalHostUuid == null && currentHostUuid.equals(self.getLastHostUuid())) {
+            return VmAbnormalLifeCycleOperation.VmStoppedFromUnknownStateHostNotChanged;
+        }
+
         if (originalState == VmInstanceState.Running && originalState == currentState && !currentHostUuid.equals(originalHostUuid)) {
             return VmAbnormalLifeCycleOperation.VmMigrateToAnotherHost;
         }
@@ -474,10 +479,19 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         VmAbnormalLifeCycleOperation operation = getVmAbnormalLifeCycleOperation(originalHostUuid, currentHostUuid, originalState, currentState);
         if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged) {
-            // vm is detected on the host again. It's largely because the host disconnected before
+            // the vm is detected on the host again. It's largely because the host disconnected before
             // and now reconnected
             self.setHostUuid(msg.getHostUuid());
             changeVmStateInDb(VmInstanceStateEvent.running);
+            fireEvent.run();
+            completion.done();
+            return;
+        } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedFromUnknownStateHostNotChanged) {
+            // the vm comes out of the unknown state to the stopped state
+            // it happens when an operation failure led the vm from the stopped state to the unknown state,
+            // and later on the vm was detected as stopped on the host again
+            self.setHostUuid(null);
+            changeVmStateInDb(VmInstanceStateEvent.stopped);
             fireEvent.run();
             completion.done();
             return;
