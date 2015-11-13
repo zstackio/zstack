@@ -86,7 +86,7 @@ public class TestDeleteDataVolumeOnKvm {
         Assert.assertNull(volvo1);
         Assert.assertEquals(1, nconfig.deleteCmds.size());
         DeleteCmd cmd = nconfig.deleteCmds.get(0);
-        Assert.assertEquals(vol1.getInstallPath(), cmd.getInstallPath());
+        Assert.assertTrue(vol1.getInstallPath().contains(cmd.getInstallPath()));
 
         nconfig.deleteCmds.clear();
         VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Direct);
@@ -95,7 +95,7 @@ public class TestDeleteDataVolumeOnKvm {
         Assert.assertNull(volvo2);
         Assert.assertEquals(1, nconfig.deleteCmds.size());
         cmd = nconfig.deleteCmds.get(0);
-        Assert.assertEquals(vol2.getInstallPath(), cmd.getInstallPath());
+        Assert.assertTrue(vol2.getInstallPath().contains(cmd.getInstallPath()));
 
         nconfig.deleteCmds.clear();
         VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Never);
@@ -110,10 +110,10 @@ public class TestDeleteDataVolumeOnKvm {
         VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Delay);
         TimeUnit.SECONDS.sleep(3);
         volvo3 = dbf.findByUuid(vol3.getUuid(), VolumeVO.class);
-        Assert.assertNotNull(volvo3);
+        Assert.assertNull(volvo3);
         Assert.assertEquals(1, nconfig.deleteCmds.size());
         cmd = nconfig.deleteCmds.get(0);
-        Assert.assertEquals(vol3.getInstallPath(), cmd.getInstallPath());
+        Assert.assertTrue(vol3.getInstallPath().contains(cmd.getInstallPath()));
 
         VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Never);
         nconfig.deleteCmds.clear();
@@ -126,5 +126,13 @@ public class TestDeleteDataVolumeOnKvm {
 
         vol4 = api.recoverVolume(vol4.getUuid(), null);
         api.attachVolumeToVm(vm.getUuid(), vol4.getUuid());
+
+        VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Delay);
+        VolumeInventory vol5 = api.createDataVolume("d4", dinv.getUuid());
+        api.deleteDataVolume(vol5.getUuid());
+        TimeUnit.SECONDS.sleep(3);
+        VolumeVO volvo5 = dbf.findByUuid(vol5.getUuid(), VolumeVO.class);
+        Assert.assertNull(volvo5);
+        Assert.assertTrue(nconfig.deleteCmds.isEmpty());
 	}
 }

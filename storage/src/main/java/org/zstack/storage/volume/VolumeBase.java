@@ -110,8 +110,35 @@ public class VolumeBase implements Volume {
             handle((DeleteVolumeMsg) msg);
         } else if (msg instanceof CreateDataVolumeTemplateFromDataVolumeMsg) {
             handle((CreateDataVolumeTemplateFromDataVolumeMsg) msg);
+        } else if (msg instanceof ExpungeVolumeMsg) {
+            handle((ExpungeVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(final ExpungeVolumeMsg msg) {
+        final ExpungeVmReply reply = new ExpungeVmReply();
+        if (self.getPrimaryStorageUuid() != null) {
+            DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
+            dmsg.setVolume(getSelfInventory());
+            dmsg.setUuid(self.getPrimaryStorageUuid());
+            bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+            bus.send(dmsg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply r) {
+                    if (!r.isSuccess()) {
+                        reply.setError(r.getError());
+                    } else {
+                        dbf.remove(self);
+                    }
+
+                    bus.reply(msg, reply);
+                }
+            });
+        } else {
+            dbf.remove(self);
+            bus.reply(msg, reply);
         }
     }
 
@@ -175,6 +202,8 @@ public class VolumeBase implements Volume {
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-volume-%s", self.getUuid()));
+        // for NotInstantiated Volume, no flow to execute
+        chain.allowEmptyFlow();
         chain.then(new ShareFlow() {
             VolumeDeletionPolicy deletionPolicy;
 

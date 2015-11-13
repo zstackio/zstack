@@ -523,7 +523,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }
 
         volumeExpungeTask = thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
-            private List<VolumeVO> getDeletedVolumeManagedByUs() {
+            private List<Tuple> getDeletedVolumeManagedByUs() {
                 int qun = 1000;
                 SimpleQuery q = dbf.createQuery(VolumeVO.class);
                 q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Deleted);
@@ -531,21 +531,23 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 long amount = q.count();
                 int times = (int)(amount / qun) + (amount % qun != 0 ? 1 : 0);
                 int start = 0;
-                List<VolumeVO> ret = new ArrayList<VolumeVO>();
+                List<Tuple> ret = new ArrayList<Tuple>();
                 for (int i=0; i<times; i++) {
                     q = dbf.createQuery(VolumeVO.class);
+                    q.select(VolumeVO_.uuid, VolumeVO_.lastOpDate);
                     q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Deleted);
                     q.add(VolumeVO_.type, Op.EQ, VolumeType.Data);
                     q.setLimit(qun);
                     q.setStart(start);
-                    List<VolumeVO> lst = q.list();
+                    List<Tuple> lst = q.listTuple();
                     start += qun;
-                    for (VolumeVO v : lst) {
-                        if (!destMaker.isManagedByUs(v.getUuid())) {
+                    for (Tuple t : lst) {
+                        String uuid = t.get(0, String.class);
+                        if (!destMaker.isManagedByUs(uuid)) {
                             continue;
                         }
 
-                        ret.add(v);
+                        ret.add(t);
                     }
                 }
 
@@ -554,32 +556,40 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
             @Override
             public boolean run() {
-                List<VolumeVO> vols = getDeletedVolumeManagedByUs();
+                List<Tuple> vols = getDeletedVolumeManagedByUs();
                 if (vols.isEmpty()) {
                     logger.debug("[Volume Expunging Task]: no volume to expunge");
                     return false;
                 }
 
                 Timestamp current = dbf.getCurrentSqlTime();
-                for (VolumeVO vol : vols)  {
-                    long end = vol.getLastOpDate().getTime() + TimeUnit.SECONDS.toMillis(VolumeGlobalConfig.VOLUME_EXPUNGE_PERIOD.value(Long.class));
+                for (final Tuple v : vols)  {
+                    final String uuid = v.get(0, String.class);
+                    Timestamp date = v.get(1, Timestamp.class);
+                    long end = date.getTime() + TimeUnit.SECONDS.toMillis(VolumeGlobalConfig.VOLUME_EXPUNGE_PERIOD.value(Long.class));
                     if (current.getTime() >= end) {
 
-                        VolumeDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(vol.getUuid());
+                        VolumeDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(uuid);
                         if (deletionPolicy == VolumeDeletionPolicy.Never) {
                             logger.debug(String.format("the deletion policy of the volume[uuid:%s] is Never, don't expunge it",
-                                    vol.getUuid()));
+                                    uuid));
                             continue;
                         }
 
-                        DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
-                        dmsg.setVolume(VolumeInventory.valueOf(vol));
-                        dmsg.setUuid(vol.getPrimaryStorageUuid());
-                        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
-                        bus.send(dmsg);
-                        logger.debug(String.format("expunged the volume[uuid:%s] from the primary storage[uuid:%s]," +
-                                " it's deleted time[%s] has exceeded the period of %s seconds", vol.getUuid(), vol.getPrimaryStorageUuid(), vol.getLastOpDate(),
-                                VolumeGlobalConfig.VOLUME_EXPUNGE_PERIOD.value(Long.class)));
+                        ExpungeVolumeMsg msg = new ExpungeVolumeMsg();
+                        msg.setVolumeUuid(uuid);
+                        bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, uuid);
+                        bus.send(msg, new CloudBusCallBack() {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    logger.warn(String.format("failed to expunge the volume[uuid:%s], %s", uuid, reply.getError()));
+                                } else {
+                                    logger.debug(String.format("successfully expunged the volume [uuid:%s]", uuid));
+                                }
+                            }
+                        });
+
                     }
                 }
 
