@@ -3567,4 +3567,24 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         sender.send(msg, APIDetachIsoFromVmInstanceEvent.class);
     }
+
+    public VmInstanceInventory recoverVm(String vmUuid, SessionInventory session) throws ApiSenderException {
+        APIRecoverVmInstanceMsg msg = new APIRecoverVmInstanceMsg();
+        msg.setVmInstanceUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIRecoverVmInstanceEvent evt = sender.send(msg, APIRecoverVmInstanceEvent.class);
+        return evt.getInventory();
+    }
+
+    public VolumeInventory recoverVolume(String volUuid, SessionInventory session) throws ApiSenderException {
+        APIRecoverDataVolumeMsg msg = new APIRecoverDataVolumeMsg();
+        msg.setVolumeUuid(volUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIRecoverDataVolumeEvent evt = sender.send(msg, APIRecoverDataVolumeEvent.class);
+        return evt.getInventory();
+    }
 }

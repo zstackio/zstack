@@ -40,11 +40,6 @@ public class TestDeleteDataVolume {
         api.startServer();
     }
 
-    @After
-    public void tearDown() throws Exception {
-        api.stopServer();
-    }
-
     @Test
     public void test() throws ApiSenderException {
         DiskOfferingInventory dinv = new DiskOfferingInventory();

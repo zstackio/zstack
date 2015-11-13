@@ -7,4 +7,27 @@
 		<defaultValue>true</defaultValue>
 		<type>java.lang.Boolean</type>
 	</config>
+
+	<config>
+		<name>deletionPolicy</name>
+        <description>the behavior of deleting a data volume, options are [Direct, Delay, Never]. Direct: delete the volume from database and primary storage; Delay: change the volume's state to Deleted in database; after the period controlled by 'expungePeriod' passes, delete the volume from database and primary storage; Never: delete the volume from database but from the primary storage</description>
+		<category>volume</category>
+		<defaultValue>Delay</defaultValue>
+	</config>
+
+	<config>
+		<name>expungePeriod</name>
+        <description>the period before a deleted data volume being deleted from database and primary storage, in seconds</description>
+		<category>volume</category>
+		<defaultValue>86400</defaultValue>
+		<type>java.lang.Long</type>
+	</config>
+
+	<config>
+		<name>expungeInterval</name>
+        <description>the interval the expunging data volume task runs, in seconds</description>
+		<category>volume</category>
+		<defaultValue>3600</defaultValue>
+		<type>java.lang.Long</type>
+	</config>
 </globalConfig>

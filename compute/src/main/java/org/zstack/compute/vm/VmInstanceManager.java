@@ -24,5 +24,7 @@ public interface VmInstanceManager {
 
     FlowChain getDetachIsoWorkFlowChain(VmInstanceInventory inv);
 
+    FlowChain getExpungeVmWorkFlowChain(VmInstanceInventory inv);
+
     VmInstanceFactory getVmInstanceFactory(VmInstanceType vmType);
 }

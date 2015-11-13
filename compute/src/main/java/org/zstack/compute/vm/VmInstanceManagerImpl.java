@@ -4,11 +4,10 @@ import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
@@ -17,6 +16,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.gc.*;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -24,7 +24,9 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostStatusChangeNotifyPoint;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
@@ -34,7 +36,6 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
-import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
@@ -44,6 +45,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
@@ -62,6 +64,7 @@ import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -81,6 +84,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private List<String> attachIsoWorkFlowElements;
     private List<String> detachIsoWorkFlowElements;
     private List<String> attachVolumeWorkFlowElements;
+    private List<String> expungeVmWorkFlowElements;
     private FlowChainBuilder createVmFlowBuilder;
     private FlowChainBuilder stopVmFlowBuilder;
     private FlowChainBuilder rebootVmFlowBuilder;
@@ -90,7 +94,9 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private FlowChainBuilder attachVolumeFlowBuilder;
     private FlowChainBuilder attachIsoFlowBuilder;
     private FlowChainBuilder detachIsoFlowBuilder;
+    private FlowChainBuilder expungeVmFlowBuilder;
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
+    private Future<Void> expungeVmTask;
 
     static {
         allowedMessageAfterSoftDeletion.add(VmInstanceDeletionMsg.class);
@@ -114,6 +120,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private ResourceDestinationMaker destMaker;
     @Autowired
     private GCFacade gcf;
+    @Autowired
+    private ThreadFacade thdf;
+    @Autowired
+    private VmInstanceDeletionPolicyManager deletionPolicyMgr;
 
     @Override
     @MessageSafe
@@ -289,6 +299,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         attachVolumeFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(attachVolumeWorkFlowElements).construct();
         attachIsoFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(attachIsoWorkFlowElements).construct();
         detachIsoFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(detachIsoWorkFlowElements).construct();
+        expungeVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(expungeVmWorkFlowElements).construct();
     }
 
     private void populateExtensions() {
@@ -309,10 +320,32 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             createVmFlowChainBuilder();
             populateExtensions();
             installSystemTagValidator();
+            installGlobalConfigUpdater();
             return true;
         } catch (Exception e) {
             throw new CloudConfigureFailException(VmInstanceManagerImpl.class, e.getMessage(), e);
         }
+    }
+
+    private void installGlobalConfigUpdater() {
+        VmGlobalConfig.VM_EXPUNGE_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startVmExpungeTask();
+            }
+        });
+        VmGlobalConfig.VM_EXPUNGE_PERIOD.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startVmExpungeTask();
+            }
+        });
+        VmGlobalConfig.VM_DELETION_POLICY.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startVmExpungeTask();
+            }
+        });
     }
 
     private void installSystemTagValidator() {
@@ -513,6 +546,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         return attachVolumeFlowBuilder.build();
     }
 
+
     @Override
     public FlowChain getAttachIsoWorkFlowChain(VmInstanceInventory inv) {
         return attachIsoFlowBuilder.build();
@@ -521,6 +555,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     @Override
     public FlowChain getDetachIsoWorkFlowChain(VmInstanceInventory inv) {
         return detachIsoFlowBuilder.build();
+    }
+
+    @Override
+    public FlowChain getExpungeVmWorkFlowChain(VmInstanceInventory inv) {
+        return expungeVmFlowBuilder.build();
     }
 
     public void setCreateVmWorkFlowElements(List<String> createVmWorkFlowElements) {
@@ -557,6 +596,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
     public void setDetachIsoWorkFlowElements(List<String> detachIsoWorkFlowElements) {
         this.detachIsoWorkFlowElements = detachIsoWorkFlowElements;
+    }
+
+    public void setExpungeVmWorkFlowElements(List<String> expungeVmWorkFlowElements) {
+        this.expungeVmWorkFlowElements = expungeVmWorkFlowElements;
     }
 
     @Override
@@ -748,9 +791,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         return ret;
     }
 
-    @Override
-    @AsyncThread
-    public void managementNodeReady() {
+    private void checkUnknownVm() {
         List<String> unknownVmUuids = getVmInUnknownStateManagedByUs();
         if (unknownVmUuids.isEmpty()) {
             return;
@@ -782,5 +823,125 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             });
             gcf.scheduleImmediately(context);
         }
+    }
+
+    @Override
+    @AsyncThread
+    public void managementNodeReady() {
+        checkUnknownVm();
+        startVmExpungeTask();
+    }
+
+    private synchronized void startVmExpungeTask() {
+        if (expungeVmTask != null) {
+            expungeVmTask.cancel(true);
+        }
+
+        expungeVmTask = thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+
+            private List<Tuple> getVmDeletedStateManagedByUs() {
+                int qun = 10000;
+                SimpleQuery q = dbf.createQuery(VmInstanceVO.class);
+                q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Destroyed);
+                long amount = q.count();
+                int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
+                int start = 0;
+                List<Tuple> ret = new ArrayList<Tuple>();
+                for (int i = 0; i < times; i++) {
+                    q = dbf.createQuery(VmInstanceVO.class);
+                    q.select(VmInstanceVO_.uuid, VmInstanceVO_.lastOpDate);
+                    q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Destroyed);
+                    q.setLimit(qun);
+                    q.setStart(start);
+                    List<Tuple> ts = q.listTuple();
+                    start += qun;
+
+                    for (Tuple t : ts) {
+                        String vmUuid = t.get(0, String.class);
+                        if (!destMaker.isManagedByUs(vmUuid)) {
+                            continue;
+                        }
+                        ret.add(t);
+                    }
+                }
+
+                return ret;
+            }
+
+            @Override
+            public synchronized boolean run() {
+                final List<Tuple> vms = getVmDeletedStateManagedByUs();
+                if (vms.isEmpty()) {
+                    logger.debug("[VM Expunging Task]: no vm to expunge");
+                    return false;
+                }
+
+                final Timestamp current = dbf.getCurrentSqlTime();
+
+                final List<ExpungeVmMsg> msgs = CollectionUtils.transformToList(vms, new Function<ExpungeVmMsg, Tuple>() {
+                    @Override
+                    public ExpungeVmMsg call(Tuple t) {
+                        String uuid = t.get(0, String.class);
+                        Timestamp date = t.get(1, Timestamp.class);
+                        long end = date.getTime() + TimeUnit.SECONDS.toMillis(VmGlobalConfig.VM_EXPUNGE_PERIOD.value(Long.class));
+                        if (current.getTime() >= end) {
+                            VmInstanceDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(uuid);
+
+                            if (deletionPolicy == VmInstanceDeletionPolicy.Never) {
+                                logger.debug(String.format("[VM Expunging Task]: the deletion policy of the vm[uuid:%s] is Never, don't expunge it",
+                                        uuid));
+                                return null;
+                            } else {
+                                ExpungeVmMsg msg = new ExpungeVmMsg();
+                                msg.setVmInstanceUuid(uuid);
+                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
+                                return msg;
+                            }
+                        } else {
+                            return null;
+                        }
+                    }
+                });
+
+                if (msgs.isEmpty()) {
+                    logger.debug("[VM Expunging Task]: no vm to expunge");
+                    return false;
+                }
+
+                bus.send(msgs, 100, new CloudBusListCallBack() {
+                    @Override
+                    public void run(List<MessageReply> replies) {
+                        for (MessageReply r : replies) {
+                            ExpungeVmMsg msg = msgs.get(replies.indexOf(r));
+                            if (!r.isSuccess()) {
+                                logger.warn(String.format("failed to expunge the vm[uuid:%s], %s", msg.getVmInstanceUuid(), r.getError()));
+                            } else {
+                                logger.debug(String.format("successfully expunged the vm[uuid:%s]", msg.getVmInstanceUuid()));
+                            }
+                        }
+                    }
+                });
+
+                return false;
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return VmGlobalConfig.VM_EXPUNGE_INTERVAL.value(Long.class);
+            }
+
+            @Override
+            public String getName() {
+                return "expunge-vm-task";
+            }
+        });
+
+        logger.debug(String.format("vm expunging task starts running, [period: %s seconds, interval: %s seconds]",
+                VmGlobalConfig.VM_EXPUNGE_PERIOD.value(Long.class), VmGlobalConfig.VM_EXPUNGE_INTERVAL.value(Long.class)));
     }
 }

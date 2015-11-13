@@ -6,12 +6,18 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.workflow.*;
+import org.zstack.core.thread.CancelablePeriodicTask;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.workflow.*;
@@ -20,15 +26,18 @@ import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.search.SearchOp;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.BackupStorageState;
+import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
+import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -41,11 +50,14 @@ import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-public class VolumeManagerImpl extends AbstractService implements VolumeManager {
+public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint {
 	private static final CLogger logger = Utils.getLogger(VolumeManagerImpl.class);
 
 	@Autowired
@@ -60,6 +72,14 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
     private ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ThreadFacade thdf;
+    @Autowired
+    private ResourceDestinationMaker destMaker;
+    @Autowired
+    private VolumeDeletionPolicyManager deletionPolicyMgr;
+
+    private Future<Void> volumeExpungeTask;
 
     private void passThrough(VolumeMessage vmsg) {
         Message msg = (Message)vmsg;
@@ -469,6 +489,26 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
 
 	@Override
 	public boolean start() {
+        VolumeGlobalConfig.VOLUME_EXPUNGE_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startExpungeTask();
+            }
+        });
+
+        VolumeGlobalConfig.VOLUME_EXPUNGE_PERIOD.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startExpungeTask();
+            }
+        });
+
+        VolumeGlobalConfig.VOLUME_DELETION_POLICY.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startExpungeTask();
+            }
+        });
 		return true;
 	}
 
@@ -476,4 +516,99 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager 
 	public boolean stop() {
 		return true;
 	}
+
+    private synchronized void startExpungeTask() {
+        if (volumeExpungeTask != null) {
+            volumeExpungeTask.cancel(true);
+        }
+
+        volumeExpungeTask = thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+            private List<VolumeVO> getDeletedVolumeManagedByUs() {
+                int qun = 1000;
+                SimpleQuery q = dbf.createQuery(VolumeVO.class);
+                q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Deleted);
+                q.add(VolumeVO_.type, Op.EQ, VolumeType.Data);
+                long amount = q.count();
+                int times = (int)(amount / qun) + (amount % qun != 0 ? 1 : 0);
+                int start = 0;
+                List<VolumeVO> ret = new ArrayList<VolumeVO>();
+                for (int i=0; i<times; i++) {
+                    q = dbf.createQuery(VolumeVO.class);
+                    q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Deleted);
+                    q.add(VolumeVO_.type, Op.EQ, VolumeType.Data);
+                    q.setLimit(qun);
+                    q.setStart(start);
+                    List<VolumeVO> lst = q.list();
+                    start += qun;
+                    for (VolumeVO v : lst) {
+                        if (!destMaker.isManagedByUs(v.getUuid())) {
+                            continue;
+                        }
+
+                        ret.add(v);
+                    }
+                }
+
+                return ret;
+            }
+
+            @Override
+            public boolean run() {
+                List<VolumeVO> vols = getDeletedVolumeManagedByUs();
+                if (vols.isEmpty()) {
+                    logger.debug("[Volume Expunging Task]: no volume to expunge");
+                    return false;
+                }
+
+                Timestamp current = dbf.getCurrentSqlTime();
+                for (VolumeVO vol : vols)  {
+                    long end = vol.getLastOpDate().getTime() + TimeUnit.SECONDS.toMillis(VolumeGlobalConfig.VOLUME_EXPUNGE_PERIOD.value(Long.class));
+                    if (current.getTime() >= end) {
+
+                        VolumeDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(vol.getUuid());
+                        if (deletionPolicy == VolumeDeletionPolicy.Never) {
+                            logger.debug(String.format("the deletion policy of the volume[uuid:%s] is Never, don't expunge it",
+                                    vol.getUuid()));
+                            continue;
+                        }
+
+                        DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
+                        dmsg.setVolume(VolumeInventory.valueOf(vol));
+                        dmsg.setUuid(vol.getPrimaryStorageUuid());
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
+                        bus.send(dmsg);
+                        logger.debug(String.format("expunged the volume[uuid:%s] from the primary storage[uuid:%s]," +
+                                " it's deleted time[%s] has exceeded the period of %s seconds", vol.getUuid(), vol.getPrimaryStorageUuid(), vol.getLastOpDate(),
+                                VolumeGlobalConfig.VOLUME_EXPUNGE_PERIOD.value(Long.class)));
+                    }
+                }
+
+                return false;
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return VolumeGlobalConfig.VOLUME_EXPUNGE_INTERVAL.value(Long.class);
+            }
+
+            @Override
+            public String getName() {
+                return "expunging-volume-task";
+            }
+        });
+
+        logger.debug(String.format("volume expunging task starts [period: %s seconds, interval: %s seconds]",
+                VolumeGlobalConfig.VOLUME_EXPUNGE_PERIOD.value(Long.class),
+                VolumeGlobalConfig.VOLUME_EXPUNGE_INTERVAL.value(Long.class)));
+    }
+
+    @Override
+    public void managementNodeReady() {
+        startExpungeTask();
+    }
 }

@@ -5,8 +5,17 @@ package org.zstack.header.volume;
  */
 public class VolumeDeletionStruct extends VolumeInventory {
     private boolean detachBeforeDeleting;
+    private String deletionPolicy;
 
     public VolumeDeletionStruct() {
+    }
+
+    public String getDeletionPolicy() {
+        return deletionPolicy;
+    }
+
+    public void setDeletionPolicy(String deletionPolicy) {
+        this.deletionPolicy = deletionPolicy;
     }
 
     public VolumeDeletionStruct(VolumeInventory other) {

@@ -49,6 +49,7 @@ import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.header.vm.VmInstanceConstant.Params;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
@@ -59,6 +60,7 @@ import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -92,7 +94,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected EventFacade evtf;
     @Autowired
     protected PluginRegistry pluginRgty;
-
+    @Autowired
+    protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
@@ -133,14 +136,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    public void destroy(final Completion completion){
-        self = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
-        if (self == null) {
-            // the vm has been destroyed, most likely by rollback
-            completion.success();
-            return;
-        }
-
+    protected void destroy(VmInstanceDeletionPolicy deletionPolicy, final Completion completion){
         if (VmInstanceState.Created == self.getState()) {
             // the vm is only created in DB, no need to go through normal destroying process
             completion.success();
@@ -157,6 +153,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.setName(String.format("destroy-vm-%s", self.getUuid()));
         spec.setCurrentVmOperation(VmOperation.Destroy);
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.getData().put(Params.DeletionPolicy, deletionPolicy);
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
@@ -224,6 +221,10 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     protected FlowChain getDestroyVmWorkFlowChain(VmInstanceInventory inv) {
         return vmMgr.getDestroyVmWorkFlowChain(inv);
+    }
+
+    protected FlowChain getExpungeVmWorkFlowChain(VmInstanceInventory inv) {
+        return vmMgr.getExpungeVmWorkFlowChain(inv);
     }
 
     protected FlowChain getMigrateVmWorkFlowChain(VmInstanceInventory inv) {
@@ -303,9 +304,79 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((VmStateChangedOnHostMsg) msg);
         } else if (msg instanceof VmCheckOwnStateMsg) {
             handle((VmCheckOwnStateMsg) msg);
+        } else if (msg instanceof ExpungeVmMsg) {
+            handle((ExpungeVmMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final ExpungeVmMsg msg) {
+        final ExpungeVmReply reply = new ExpungeVmReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                expunge(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "expunge-vm";
+            }
+        });
+    }
+
+    private void expunge(Message msg, final Completion completion) {
+        refreshVO();
+        ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (error != null) {
+            throw new OperationFailureException(error);
+        }
+
+        VmInstanceInventory inv = getSelfInventory();
+        if (inv.getAllVolumes().size() > 1) {
+            throw new CloudRuntimeException(String.format("why the deleted vm[uuid:%s] has data volumes??? %s",
+                    self.getUuid(), JSONObjectUtil.toJsonString(inv.getAllVolumes())));
+        }
+
+        VmInstanceSpec spec = buildSpecFromInventory(inv);
+        FlowChain chain = getExpungeVmWorkFlowChain(inv);
+        setFlowMarshaller(chain);
+        chain.setName(String.format("destroy-vm-%s", self.getUuid()));
+        spec.setCurrentVmOperation(VmOperation.Expunge);
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.getData().put(Params.DeletionPolicy, VmInstanceDeletionPolicy.Direct);
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                dbf.remove(self);
+                logger.debug(String.format("successfully expunged the vm[uuid:%s]", self.getUuid()));
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(final ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     private void handle(final VmCheckOwnStateMsg msg) {
@@ -951,22 +1022,45 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final VmInstanceDeletionMsg msg) {
+        final VmInstanceDeletionReply r = new VmInstanceDeletionReply();
+        self = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
+        if (self == null) {
+            // the vm has been destroyed, most likely by rollback
+            bus.reply(msg, r);
+            return;
+        }
+
         final VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         extEmitter.beforeDestroyVm(inv);
-        destroy(new Completion(msg) {
+
+        final VmInstanceDeletionPolicy deletionPolicy = msg.getDeletionPolicy() == null ?
+                deletionPolicyMgr.getDeletionPolicy(self.getUuid()) : VmInstanceDeletionPolicy.valueOf(msg.getDeletionPolicy());
+
+        destroy(deletionPolicy, new Completion(msg) {
             @Override
             public void success() {
                 extEmitter.afterDeleteVm(inv);
                 logger.debug(String.format("successfully deleted vm instance[name:%s, uuid:%s]", self.getName(), self.getUuid()));
-                dbf.remove(getSelf());
-                bus.reply(msg, new VmInstanceDeletionReply());
+                if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
+                    dbf.remove(getSelf());
+                } else if (deletionPolicy == VmInstanceDeletionPolicy.Delay) {
+                    self = dbf.reload(self);
+                    self.setHostUuid(null);
+                    changeVmStateInDb(VmInstanceStateEvent.destroyed);
+                } else if (deletionPolicy == VmInstanceDeletionPolicy.Never) {
+                    logger.warn(String.format("the vm[uuid:%s] is deleted, but by it's deletion policy[Never], the root volume is not deleted on the primary storage", self.getUuid()));
+                    self = dbf.reload(self);
+                    self.setHostUuid(null);
+                    changeVmStateInDb(VmInstanceStateEvent.destroyed);
+                }
+
+                bus.reply(msg, r);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 extEmitter.failedToDestroyVm(inv, errorCode);
                 logger.debug(String.format("failed to delete vm instance[name:%s, uuid:%s], because %s", self.getName(), self.getUuid(), errorCode));
-                VmInstanceDeletionReply r = new VmInstanceDeletionReply();
                 r.setError(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, errorCode));
                 bus.reply(msg, r);
             }
@@ -1438,9 +1532,79 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIAttachIsoToVmInstanceMsg) msg);
         } else if (msg instanceof APIDetachIsoFromVmInstanceMsg) {
             handle((APIDetachIsoFromVmInstanceMsg) msg);
+        } else if (msg instanceof APIExpungeVmInstanceMsg) {
+            handle((APIExpungeVmInstanceMsg) msg);
+        } else if (msg instanceof APIRecoverVmInstanceMsg) {
+            handle((APIRecoverVmInstanceMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APIRecoverVmInstanceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                APIRecoverVmInstanceEvent evt = new APIRecoverVmInstanceEvent(msg.getId());
+                refreshVO();
+
+                ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (error != null) {
+                    evt.setErrorCode(error);
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+
+                changeVmStateInDb(VmInstanceStateEvent.stopped);
+                evt.setInventory(getSelfInventory());
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "recover-vm";
+            }
+        });
+    }
+
+    private void handle(final APIExpungeVmInstanceMsg msg) {
+        final APIExpungeVmInstanceEvent evt = new APIExpungeVmInstanceEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                expunge(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setErrorCode(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "expunge-vm-by-api";
+            }
+        });
     }
 
     private void handle(final APIDetachIsoFromVmInstanceMsg msg) {

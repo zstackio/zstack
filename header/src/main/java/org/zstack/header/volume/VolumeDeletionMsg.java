@@ -7,6 +7,15 @@ import org.zstack.header.message.DeletionMessage;
 public class VolumeDeletionMsg extends DeletionMessage implements VolumeMessage {
     private String volumeUuid;
     private boolean detachBeforeDeleting;
+    private String deletionPolicy;
+
+    public String getDeletionPolicy() {
+        return deletionPolicy;
+    }
+
+    public void setDeletionPolicy(String deletionPolicy) {
+        this.deletionPolicy = deletionPolicy;
+    }
 
     public boolean isDetachBeforeDeleting() {
         return detachBeforeDeleting;

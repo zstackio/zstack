@@ -84,6 +84,11 @@
                 <value>org.zstack.compute.vm.DetachIsoOnHypervisorFlow</value>
             </list>
         </property>
+        <property name="expungeVmWorkFlowElements">
+            <list>
+                <value>org.zstack.compute.vm.VmDeleteVolumeFlow</value>
+            </list>
+        </property>
 
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
@@ -123,4 +128,7 @@
 			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="VmInstanceDeletionPolicyManager" class="org.zstack.compute.vm.VmInstanceDeletionPolicyManagerImpl" />
+
 </beans>

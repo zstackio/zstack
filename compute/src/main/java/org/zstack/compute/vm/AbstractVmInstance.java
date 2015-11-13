@@ -84,6 +84,12 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIDestroyVmInstanceMsg.class.getName(),
                 DestroyVmInstanceMsg.class.getName());
 
+        allowedOperations.addState(VmInstanceState.Destroyed,
+                ExpungeVmMsg.class.getName(),
+                APIExpungeVmInstanceMsg.class.getName(),
+                APIRecoverVmInstanceMsg.class.getName());
+
+
         stateChangeChecker.addState(VmInstanceStateEvent.unknown.toString(),
                 VmInstanceState.Created.toString(),
                 VmInstanceState.Stopped.toString(),

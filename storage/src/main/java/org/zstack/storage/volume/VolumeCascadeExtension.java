@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.configuration.DiskOffering;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.Completion;
@@ -16,12 +15,10 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.*;
-import org.zstack.identity.Account;
+import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -75,6 +72,16 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
         }
 
         throw new CloudRuntimeException(String.format("unknown edge [%s]", action.getParentIssuer()));
+    }
+
+    private String actionToDeletionPolicy(CascadeAction action) {
+        if (action.getParentIssuer().equals(PrimaryStorageVO.class.getSimpleName())) {
+            return VolumeDeletionPolicy.Never.toString();
+        } else if (action.getParentIssuer().equals(AccountVO.class.getSimpleName())) {
+            return VolumeDeletionPolicy.Delay.toString();
+        } else {
+            return null;
+        }
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
@@ -175,6 +182,18 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
             msg.setDetachBeforeDeleting(!(vol instanceof VolumeDeletionStruct) || ((VolumeDeletionStruct) vol).isDetachBeforeDeleting());
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
             msg.setVolumeUuid(vol.getUuid());
+
+            if (vol instanceof VolumeDeletionStruct) {
+                VolumeDeletionStruct s = (VolumeDeletionStruct) vol;
+                if (s.getDeletionPolicy() != null) {
+                    msg.setDeletionPolicy(VolumeDeletionPolicy.valueOf(s.getDeletionPolicy()).toString());
+                }
+            }
+
+            if (msg.getDeletionPolicy() == null) {
+                msg.setDeletionPolicy(actionToDeletionPolicy(action));
+            }
+
             bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, vol.getUuid());
             msgs.add(msg);
         }

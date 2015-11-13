@@ -139,6 +139,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     allConfigs.putAll(configsFromXml);
                     // re-validate after merging xml's with db's
                     validateAll();
+                } catch (IllegalArgumentException ie) {
+                    throw ie;
                 } catch (Exception e) {
                     throw new CloudRuntimeException(e);
                 } finally {
@@ -163,9 +165,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     try {
                         g.validate();
                     } catch (Exception e) {
-                        throw new IllegalArgumentException(String.format(
-                                String.format("exception happened when validating global config:\n%s", g.toString())
-                        ), e);
+                        throw new IllegalArgumentException(String.format("exception happened when validating global config:\n%s", g.toString()), e);
                     }
                 }
             }

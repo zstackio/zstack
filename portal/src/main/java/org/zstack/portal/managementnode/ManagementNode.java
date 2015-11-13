@@ -152,7 +152,7 @@ public class ManagementNode implements CloudBusEventListener {
                         continue;
                     }
 
-                    Timestamp curr = getCurrentSqlTime();
+                    Timestamp curr = dbf.getCurrentSqlTime();
                     Timestamp lastHeartbeat = vo.getHeartBeat();
                     long end = lastHeartbeat.getTime() + TimeUnit.SECONDS.toMillis(2 * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
                     if (end < curr.getTime()) {
@@ -274,12 +274,6 @@ public class ManagementNode implements CloudBusEventListener {
             ids.add(vo.getUuid());
         }
         return ids;
-    }
-
-    @Transactional
-    private Timestamp getCurrentSqlTime() {
-        Query query = dbf.getEntityManager().createNativeQuery("select current_timestamp()");
-        return (Timestamp) query.getSingleResult();
     }
 
 

@@ -69,10 +69,35 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APIGetDataVolumeAttachableVmMsg) msg);
         } else if (msg instanceof APICreateDataVolumeFromVolumeTemplateMsg) {
             validate((APICreateDataVolumeFromVolumeTemplateMsg) msg);
+        } else if (msg instanceof APIRecoverDataVolumeMsg) {
+            validate((APIRecoverDataVolumeMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIRecoverDataVolumeMsg msg) {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
+        q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Deleted);
+        if (!q.isExists()) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the volume[uuid:%s] is not in status of deleted. This is operation is to recover a deleted data volume",
+                            msg.getVolumeUuid())
+            ));
+        }
+    }
+
+    private void exceptionIsVolumeIsDeleted(String volumeUuid) {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.add(VolumeVO_.uuid, Op.EQ, volumeUuid);
+        q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Deleted);
+        if (q.isExists()) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the volume[uuid:%s] is in status of deleted, cannot do the operation", volumeUuid)
+            ));
+        }
     }
 
     private void validate(APICreateDataVolumeFromVolumeTemplateMsg msg) {
@@ -148,7 +173,13 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
         if (vol.getState() == VolumeState.Disabled) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format(String.format("data volume[uuid:%s] is Disabled, can't attach", vol.getUuid()))
+                    String.format("data volume[uuid:%s] is Disabled, can't attach", vol.getUuid())
+            ));
+        }
+
+        if (vol.getStatus() == VolumeStatus.Deleted) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the volume[uuid:%s] is in status of deleted, cannot do the operation", vol.getUuid())
             ));
         }
 
@@ -204,6 +235,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                     String.format("it's not allowed to backup root volume, uuid:%s", msg.getUuid())
             ));
         }
+
+        exceptionIsVolumeIsDeleted(msg.getVolumeUuid());
     }
 
     private void validate(APIDeleteDataVolumeMsg msg) {
@@ -214,12 +247,20 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         }
 
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.select(VolumeVO_.type);
+        q.select(VolumeVO_.type, VolumeVO_.status);
         q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
-        VolumeType type = q.findValue();
+        Tuple t = q.findTuple();
+        VolumeType type = t.get(0, VolumeType.class);
         if (type == VolumeType.Root) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                     String.format("volume[uuid:%s] is Root volume, can't be deleted", msg.getVolumeUuid())
+            ));
+        }
+
+        VolumeStatus status = t.get(1, VolumeStatus.class);
+        if (status == VolumeStatus.Deleted) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("volume[uuid:%s] is already in status of deleted", msg.getVolumeUuid())
             ));
         }
     }
@@ -238,6 +279,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                     String.format("it's not allowed to change state of root volume, uuid:%s", msg.getUuid())
             ));
         }
+
+        exceptionIsVolumeIsDeleted(msg.getVolumeUuid());
     }
 
     private void populateExtensions() {
