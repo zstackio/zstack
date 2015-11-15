@@ -77,8 +77,6 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
     private String actionToDeletionPolicy(CascadeAction action) {
         if (action.getParentIssuer().equals(PrimaryStorageVO.class.getSimpleName())) {
             return VolumeDeletionPolicy.Never.toString();
-        } else if (action.getParentIssuer().equals(AccountVO.class.getSimpleName())) {
-            return VolumeDeletionPolicy.Delay.toString();
         } else {
             return null;
         }

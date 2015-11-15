@@ -47,6 +47,7 @@ import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
@@ -621,10 +622,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 long volSize = pairs.get(VolumeConstant.QUOTA_VOLUME_SIZE).getValue();
 
                 String sql = "select count(vm), sum(vm.cpuNum), sum(vm.memorySize) from VmInstanceVO vm, AccountResourceRefVO ref where" +
-                        " vm.uuid = ref.resourceUuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                        " vm.uuid = ref.resourceUuid and ref.accountUuid = :auuid and ref.resourceType = :rtype and vm.state != :vstate";
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("auuid", msg.getSession().getAccountUuid());
                 q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
+                q.setParameter("vstate", VmInstanceState.Destroyed);
                 Tuple t = q.getSingleResult();
                 Long vnum = t.get(0, Long.class);
                 vnum = vnum == null ? 0 : vnum;
@@ -663,11 +665,13 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
                 // check data volume num
                 if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
-                    sql = "select count(vol) from VolumeVO vol, AccountResourceRefVO ref where vol.type = :vtype and ref.resourceUuid = vol.uuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                    sql = "select count(vol) from VolumeVO vol, AccountResourceRefVO ref where vol.type = :vtype and ref.resourceUuid = vol.uuid" +
+                            " and ref.accountUuid = :auuid and ref.resourceType = :rtype and vol.status != :vstatus";
                     TypedQuery<Tuple> volq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     volq.setParameter("auuid", msg.getSession().getAccountUuid());
                     volq.setParameter("rtype", VolumeVO.class.getSimpleName());
                     volq.setParameter("vtype", VolumeType.Data);
+                    volq.setParameter("vstatus", VolumeStatus.Deleted);
                     Long n = volq.getSingleResult().get(0, Long.class);
                     n = n == null ? 0 : n;
 
@@ -707,10 +711,12 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 }
 
                 sql = "select sum(vol.size) from VolumeVO vol, AccountResourceRefVO ref where" +
-                        " ref.resourceUuid = vol.uuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                        " ref.resourceUuid = vol.uuid and ref.accountUuid = :auuid and ref.resourceType = :rtype" +
+                        " and vol.status != :vstatus";
                 TypedQuery<Long> vq = dbf.getEntityManager().createQuery(sql, Long.class);
                 vq.setParameter("auuid", msg.getSession().getAccountUuid());
                 vq.setParameter("rtype", VolumeVO.class.getSimpleName());
+                vq.setParameter("vstatus", VolumeStatus.Deleted);
                 Long vsize = vq.getSingleResult();
                 vsize = vsize == null ? 0 : vsize;
 

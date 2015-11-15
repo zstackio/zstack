@@ -293,10 +293,10 @@ public class VolumeBase implements Volume {
                             dbf.remove(self);
                         } else if (deletionPolicy == VolumeDeletionPolicy.Delay) {
                             self.setStatus(VolumeStatus.Deleted);
-                            dbf.update(self);
+                            self = dbf.updateAndRefresh(self);
                         } else if (deletionPolicy == VolumeDeletionPolicy.Never) {
                             self.setStatus(VolumeStatus.Deleted);
-                            dbf.update(self);
+                            self = dbf.updateAndRefresh(self);
                         }
 
                         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class), new ForEachFunction<VolumeDeletionExtensionPoint>() {

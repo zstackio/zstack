@@ -23,6 +23,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.volume.VolumeDeletionExtensionPoint;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
@@ -46,7 +47,8 @@ import static org.zstack.utils.CollectionDSL.list;
  */
 public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         MarshalVmOperationFlowExtensionPoint, HostDeleteExtensionPoint, VmAttachVolumeExtensionPoint,
-        GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint {
+        GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
+        VolumeDeletionExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
@@ -355,5 +357,37 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.setMaxResults(1);
         Long count = q.getSingleResult();
         return count > 0 ? HostMaintenancePolicy.StopVm : null;
+    }
+
+    @Override
+    public void preDeleteVolume(VolumeInventory volume) {
+    }
+
+    @Override
+    public void beforeDeleteVolume(VolumeInventory volume) {
+
+    }
+
+    @Override
+    public void afterDeleteVolume(VolumeInventory volume) {
+        if (volume.getPrimaryStorageUuid() != null && VolumeStatus.Deleted.toString().equals(volume.getStatus())) {
+            SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
+            q.select(LocalStorageResourceRefVO_.hostUuid);
+            q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, volume.getUuid());
+            q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
+            String huuid = q.findValue();
+
+            LocalStorageReturnHostCapacityMsg msg = new LocalStorageReturnHostCapacityMsg();
+            msg.setHostUuid(huuid);
+            msg.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
+            msg.setSize(volume.getSize());
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, volume.getPrimaryStorageUuid());
+            bus.send(msg);
+        }
+    }
+
+    @Override
+    public void failedToDeleteVolume(VolumeInventory volume, ErrorCode errorCode) {
+
     }
 }

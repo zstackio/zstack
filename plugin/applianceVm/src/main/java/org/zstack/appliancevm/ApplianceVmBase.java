@@ -26,6 +26,7 @@ import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.RangeSet;
@@ -81,6 +82,12 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         flows.add(new ApplianceVmSetFirewallFlow());
 
         return flows;
+    }
+
+    @Override
+    protected void destroyHook(VmInstanceDeletionPolicy deletionPolicy, final Completion completion){
+        logger.debug(String.format("deleting appliance vm[uuid:%s], always use Direct deletion policy", self.getUuid()));
+        super.doDestroy(VmInstanceDeletionPolicy.Direct, completion);
     }
 
     @Override

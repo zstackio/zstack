@@ -136,7 +136,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    protected void destroy(VmInstanceDeletionPolicy deletionPolicy, final Completion completion){
+    protected void destroy(final VmInstanceDeletionPolicy deletionPolicy, final Completion completion){
         if (VmInstanceState.Created == self.getState()) {
             // the vm is only created in DB, no need to go through normal destroying process
             completion.success();
@@ -506,10 +506,10 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void vmStateChangeOnHost(final VmStateChangedOnHostMsg msg, final NoErrorCompletion completion) {
         refreshVO();
 
-        if (msg.getVmStateAtTracingMonment() != null) {
+        if (msg.getVmStateAtTracingMoment() != null) {
             // the vm tracer periodically reports vms's state. It catches an old state
             // before an vm operation(start, stop, reboot, migrate) completes. Ignore this
-            VmInstanceState expected = VmInstanceState.valueOf(msg.getVmStateAtTracingMonment());
+            VmInstanceState expected = VmInstanceState.valueOf(msg.getVmStateAtTracingMoment());
             if (expected != self.getState()) {
                 completion.done();
                 return;
@@ -1021,22 +1021,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void handle(final VmInstanceDeletionMsg msg) {
-        final VmInstanceDeletionReply r = new VmInstanceDeletionReply();
-        self = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
-        if (self == null) {
-            // the vm has been destroyed, most likely by rollback
-            bus.reply(msg, r);
-            return;
-        }
-
+    protected void doDestroy(final VmInstanceDeletionPolicy deletionPolicy, final Completion completion) {
         final VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         extEmitter.beforeDestroyVm(inv);
 
-        final VmInstanceDeletionPolicy deletionPolicy = msg.getDeletionPolicy() == null ?
-                deletionPolicyMgr.getDeletionPolicy(self.getUuid()) : VmInstanceDeletionPolicy.valueOf(msg.getDeletionPolicy());
-
-        destroy(deletionPolicy, new Completion(msg) {
+        destroy(deletionPolicy, new Completion(completion) {
             @Override
             public void success() {
                 extEmitter.afterDeleteVm(inv);
@@ -1054,17 +1043,46 @@ public class VmInstanceBase extends AbstractVmInstance {
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
                 }
 
-                bus.reply(msg, r);
+                completion.success();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 extEmitter.failedToDestroyVm(inv, errorCode);
                 logger.debug(String.format("failed to delete vm instance[name:%s, uuid:%s], because %s", self.getName(), self.getUuid(), errorCode));
-                r.setError(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, errorCode));
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private void handle(final VmInstanceDeletionMsg msg) {
+        final VmInstanceDeletionReply r = new VmInstanceDeletionReply();
+        self = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
+        if (self == null || self.getState() == VmInstanceState.Destroyed) {
+            // the vm has been destroyed, most likely by rollback
+            bus.reply(msg, r);
+            return;
+        }
+
+        final VmInstanceDeletionPolicy deletionPolicy = msg.getDeletionPolicy() == null ?
+                deletionPolicyMgr.getDeletionPolicy(self.getUuid()) : VmInstanceDeletionPolicy.valueOf(msg.getDeletionPolicy());
+
+        destroyHook(deletionPolicy, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                r.setError(errorCode);
                 bus.reply(msg, r);
             }
         });
+    }
+
+    protected void destroyHook(VmInstanceDeletionPolicy deletionPolicy, Completion completion) {
+        doDestroy(deletionPolicy, completion);
     }
 
     private void handle(final RebootVmInstanceMsg msg) {

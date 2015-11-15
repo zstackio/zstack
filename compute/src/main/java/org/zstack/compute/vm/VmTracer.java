@@ -4,19 +4,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
-import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
-import org.zstack.header.vm.VmTracerCanonicalEvents.HostChangedData;
 import org.zstack.header.vm.VmTracerCanonicalEvents.StrangerVmFoundData;
-import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -77,7 +71,7 @@ public abstract class VmTracer {
 
         private void handleStateChangeOnHostSide(final String vmUuid, final VmInstanceState actualState, VmInstanceState expected) {
             VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
-            msg.setVmStateAtTracingMonment(expected);
+            msg.setVmStateAtTracingMoment(expected);
             msg.setVmInstanceUuid(vmUuid);
             msg.setStateOnHost(actualState);
             msg.setHostUuid(hostUuid);
@@ -113,7 +107,7 @@ public abstract class VmTracer {
 
         private void handleMissingVm(final String vmUuid, final VmInstanceState expectedState) {
             VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
-            msg.setVmStateAtTracingMonment(expectedState);
+            msg.setVmStateAtTracingMoment(expectedState);
             msg.setHostUuid(hostUuid);
             msg.setVmInstanceUuid(vmUuid);
             msg.setStateOnHost(VmInstanceState.Stopped);

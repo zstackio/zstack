@@ -21,6 +21,7 @@
             <zstack:extension interface="org.zstack.header.vm.GetAttachableVolumeExtensionPoint" />
             <zstack:extension interface="org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostMaintenancePolicyExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.volume.VolumeDeletionExtensionPoint" />
         </zstack:plugin>
     </bean>
 

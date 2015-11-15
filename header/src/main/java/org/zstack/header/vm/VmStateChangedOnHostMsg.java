@@ -11,12 +11,12 @@ public class VmStateChangedOnHostMsg extends NeedReplyMessage implements VmInsta
     private String hostUuid;
     private String stateOnHost;
 
-    public String getVmStateAtTracingMonment() {
+    public String getVmStateAtTracingMoment() {
         return vmStateAtTracingMonment;
     }
 
-    public void setVmStateAtTracingMonment(VmInstanceState vmStateAtTracingMonment) {
-        this.vmStateAtTracingMonment = vmStateAtTracingMonment.toString();
+    public void setVmStateAtTracingMoment(VmInstanceState vmStateAtTracingMoment) {
+        this.vmStateAtTracingMonment = vmStateAtTracingMoment == null ? null : vmStateAtTracingMoment.toString();
     }
 
     public String getHostUuid() {

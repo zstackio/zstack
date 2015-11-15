@@ -32,6 +32,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -828,15 +829,19 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "return-capacity-to-host";
+                if (!VolumeStatus.Deleted.toString().endsWith(msg.getVolume().getStatus())) {
+                    // if the volume's status is Deleted, its capacity has been returned
+                    // when it's deleted
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "return-capacity-to-host";
 
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        returnCapacityToHostByResourceUuid(msg.getVolume().getUuid());
-                        trigger.next();
-                    }
-                });
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            returnCapacityToHostByResourceUuid(msg.getVolume().getUuid());
+                            trigger.next();
+                        }
+                    });
+                }
 
                 done(new FlowDoneHandler(msg) {
                     @Override
