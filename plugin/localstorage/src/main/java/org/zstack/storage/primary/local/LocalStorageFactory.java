@@ -19,8 +19,13 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.query.AddExpandedQueryExtensionPoint;
+import org.zstack.header.query.ExpandedQueryAliasStruct;
+import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeDeletionExtensionPoint;
@@ -36,6 +41,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +54,7 @@ import static org.zstack.utils.CollectionDSL.list;
 public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         MarshalVmOperationFlowExtensionPoint, HostDeleteExtensionPoint, VmAttachVolumeExtensionPoint,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
-        VolumeDeletionExtensionPoint {
+        VolumeDeletionExtensionPoint, AddExpandedQueryExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
@@ -389,5 +395,33 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public void failedToDeleteVolume(VolumeInventory volume, ErrorCode errorCode) {
 
+    }
+
+    @Override
+    public List<ExpandedQueryStruct> getExpandedQueryStructs() {
+        List<ExpandedQueryStruct> structs = new ArrayList<ExpandedQueryStruct>();
+
+        ExpandedQueryStruct s = new ExpandedQueryStruct();
+        s.setExpandedField("localStorageHostRef");
+        s.setExpandedInventoryKey("resourceUuid");
+        s.setForeignKey("uuid");
+        s.setInventoryClass(LocalStorageResourceRefInventory.class);
+        s.setInventoryClassToExpand(VolumeInventory.class);
+        structs.add(s);
+
+        s = new ExpandedQueryStruct();
+        s.setExpandedField("localStorageHostRef");
+        s.setExpandedInventoryKey("resourceUuid");
+        s.setForeignKey("uuid");
+        s.setInventoryClass(LocalStorageResourceRefInventory.class);
+        s.setInventoryClassToExpand(VolumeSnapshotInventory.class);
+        structs.add(s);
+
+        return structs;
+    }
+
+    @Override
+    public List<ExpandedQueryAliasStruct> getExpandedQueryAliasesStructs() {
+        return null;
     }
 }

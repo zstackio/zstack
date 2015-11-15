@@ -22,6 +22,7 @@
             <zstack:extension interface="org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostMaintenancePolicyExtensionPoint" />
             <zstack:extension interface="org.zstack.header.volume.VolumeDeletionExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.query.AddExpandedQueryExtensionPoint" />
         </zstack:plugin>
     </bean>
 
