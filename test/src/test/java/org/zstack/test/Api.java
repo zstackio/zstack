@@ -3587,4 +3587,12 @@ public class Api implements CloudBusEventListener {
         APIRecoverDataVolumeEvent evt = sender.send(msg, APIRecoverDataVolumeEvent.class);
         return evt.getInventory();
     }
+
+    public String getVersion() throws ApiSenderException {
+        APIGetVersionMsg msg = new APIGetVersionMsg();
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVersionReply reply = sender.call(msg, APIGetVersionReply.class);
+        return reply.getVersion();
+    }
 }
