@@ -19,9 +19,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.*;
 import org.zstack.kvm.KVMAgentCommands.ReportVmStateCmd;
 import org.zstack.kvm.KVMAgentCommands.VmSyncCmd;
 import org.zstack.kvm.KVMAgentCommands.VmSyncResponse;
@@ -130,7 +128,24 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
             @Override
             public String handleSyncHttpCall(ReportVmStateCmd cmd) {
                 VmInstanceState state = KvmVmState.valueOf(cmd.vmState).toVmInstanceState();
-                reportVmState(cmd.hostUuid, map(e(cmd.vmUuid, state)));
+
+                SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+                q.select(VmInstanceVO_.state);
+                q.add(VmInstanceVO_.uuid, Op.EQ, cmd.vmUuid);
+                VmInstanceState stateInDb = q.findValue();
+                if (stateInDb == null) {
+                    //TODO: handle anonymous vm
+                    logger.warn(String.format("an anonymous VM[uuid:%s, state:%s] is detected on the host[uuid:%s]", cmd.hostUuid, state, cmd.hostUuid));
+                    return null;
+                }
+
+                VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
+                msg.setVmStateAtTracingMoment(stateInDb);
+                msg.setVmInstanceUuid(cmd.vmUuid);
+                msg.setStateOnHost(state);
+                msg.setHostUuid(cmd.hostUuid);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, cmd.vmUuid);
+                bus.send(msg);
                 return null;
             }
         });
