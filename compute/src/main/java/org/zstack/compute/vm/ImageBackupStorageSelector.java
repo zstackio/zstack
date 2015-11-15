@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.image.ImageStatus;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 
 import javax.persistence.TypedQuery;
@@ -53,18 +54,20 @@ public class ImageBackupStorageSelector {
         if (checkStatus) {
             String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO bsRef, ImageBackupStorageRefVO iref where" +
                     " bs.uuid = bsRef.backupStorageUuid and bsRef.zoneUuid = :zoneUuid and iref.backupStorageUuid = bs.uuid and" +
-                    " bs.status = :bsStatus and iref.imageUuid = :imageUuid";
+                    " bs.status = :bsStatus and iref.imageUuid = :imageUuid and iref.status != :refStatus";
             q = dbf.getEntityManager().createQuery(sql, String.class);
             q.setParameter("zoneUuid", zoneUuid);
             q.setParameter("bsStatus", BackupStorageStatus.Connected);
             q.setParameter("imageUuid", imageUuid);
+            q.setParameter("refStatus", ImageStatus.Deleted);
         } else {
             String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO bsRef, ImageBackupStorageRefVO iref where" +
                     " bs.uuid = bsRef.backupStorageUuid and bsRef.zoneUuid = :zoneUuid and iref.backupStorageUuid = bs.uuid and" +
-                    " iref.imageUuid = :imageUuid";
+                    " iref.imageUuid = :imageUuid and iref.status != :refStatus";
             q = dbf.getEntityManager().createQuery(sql, String.class);
             q.setParameter("zoneUuid", zoneUuid);
             q.setParameter("imageUuid", imageUuid);
+            q.setParameter("refStatus", ImageStatus.Deleted);
         }
 
         List<String> bsUuids = q.getResultList();

@@ -32,9 +32,20 @@ public class ImageBackupStorageRefVO {
     @Column
     private String installPath;
     @Column
+    @Enumerated(EnumType.STRING)
+    private ImageStatus status;
+    @Column
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
+
+    public ImageStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ImageStatus status) {
+        this.status = status;
+    }
 
     public long getId() {
         return id;

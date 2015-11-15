@@ -6,17 +6,21 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -28,9 +32,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -50,6 +52,8 @@ public class ImageBase implements Image {
     private CascadeFacade casf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ImageDeletionPolicyManager deletionPolicyMgr;
 
     protected  ImageVO self;
 
@@ -71,10 +75,6 @@ public class ImageBase implements Image {
         }
     }
 
-    @Override
-    public void deleteHook() {
-    }
-
     protected ImageVO getSelf() {
         return self;
     }
@@ -86,67 +86,141 @@ public class ImageBase implements Image {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof ImageDeletionMsg) {
             handle((ImageDeletionMsg) msg);
+        } else if (msg instanceof ExpungeImageMsg) {
+            handle((ExpungeImageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    private void handle(final ImageDeletionMsg msg) {
-        if (self.getStatus() == ImageStatus.Ready) {
-            final boolean deleteAll = msg.getBackupStorageUuids() == null;
+    private void handle(final ExpungeImageMsg msg) {
+        final ExpungeImageReply reply = new ExpungeImageReply();
+        final ImageBackupStorageRefVO ref = CollectionUtils.find(self.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
+            @Override
+            public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
+                return arg.getBackupStorageUuid().equals(msg.getBackupStorageUuid()) ? arg : null;
+            }
+        });
 
-            final List<ImageBackupStorageRefVO> toDelete = CollectionUtils.transformToList(self.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
-                @Override
-                public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
-                    if (deleteAll) {
-                        return arg;
-                    } else {
-                        return msg.getBackupStorageUuids().contains(arg.getBackupStorageUuid()) ? arg : null;
-                    }
-                }
-            });
-
-            List<DeleteBitsOnBackupStorageMsg> dmsgs = CollectionUtils.transformToList(toDelete, new Function<DeleteBitsOnBackupStorageMsg, ImageBackupStorageRefVO>() {
-                @Override
-                public DeleteBitsOnBackupStorageMsg call(ImageBackupStorageRefVO arg) {
-                    DeleteBitsOnBackupStorageMsg dmsg = new DeleteBitsOnBackupStorageMsg();
-                    dmsg.setBackupStorageUuid(arg.getBackupStorageUuid());
-                    dmsg.setInstallPath(arg.getInstallPath());
-                    bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, dmsg.getBackupStorageUuid());
-                    return dmsg;
-                }
-            });
-
-            bus.send(dmsgs, new CloudBusListCallBack() {
-                @Override
-                public void run(List<MessageReply> replies) {
-                    for (MessageReply reply : replies) {
-                        ImageBackupStorageRefVO ref = toDelete.get(replies.indexOf(reply));
-                        if (!reply.isSuccess()) {
-                            logger.warn(String.format("failed to delete image[uuid:%s, name:%s] from backup storage[uuid:%s] because %s, need to garbage collect it",
-                                    self.getUuid(), self.getName(), reply.getError(), ref.getBackupStorageUuid()));
-                        } else {
-                            logger.debug(String.format("successfully deleted image[uuid:%s, name:%s] from backup storage[uuid:%s]",
-                                    self.getUuid(), self.getName(), ref.getBackupStorageUuid()));
-                        }
-                    }
-                }
-            });
-
-            dbf.removeCollection(toDelete, ImageBackupStorageRefVO.class);
-        } else {
-            logger.warn(String.format("image[name: %s, uuid:%s] is deleted when downloading or creating, it will be garbage collected later", self.getName(), self.getUuid()));
+        if (ref == null) {
+            logger.debug(String.format("cannot find reference for the image[uuid:%s] on the backup storage[uuid:%s], assume it's been deleted",
+                    self.getUuid(), msg.getBackupStorageUuid()));
+            bus.reply(msg, reply);
+            return;
         }
 
-        deleteHook();
+        DeleteBitsOnBackupStorageMsg dmsg = new DeleteBitsOnBackupStorageMsg();
+        dmsg.setBackupStorageUuid(ref.getBackupStorageUuid());
+        dmsg.setInstallPath(ref.getInstallPath());
+        bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, dmsg.getBackupStorageUuid());
+        bus.send(dmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    //TODO
+                    logger.warn(String.format("failed to delete image[uuid:%s, name:%s] from backup storage[uuid:%s] because %s, need to garbage collect it",
+                            self.getUuid(), self.getName(), r.getError(), ref.getBackupStorageUuid()));
+                    reply.setError(r.getError());
+                } else {
+                    dbf.remove(ref);
+                    logger.debug(String.format("successfully expunged the image[uuid: %s, name: %s] on the backup storage[uuid: %s]",
+                            self.getUuid(), self.getName(), ref.getBackupStorageUuid()));
+                    self = dbf.findByUuid(self.getUuid(), ImageVO.class);
+                    if (self.getBackupStorageRefs().isEmpty()) {
+                        logger.debug(String.format("the image[uuid:%s, name:%s] has been expunged on all backup storage, remove it from database",
+                                self.getUuid(), self.getName()));
+                        dbf.remove(self);
+                    }
+                }
 
-        ImageDeletionReply reply = new ImageDeletionReply();
-        bus.reply(msg, reply);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final ImageDeletionMsg msg) {
+        final ImageDeletionPolicy deletionPolicy = msg.getDeletionPolicy() == null ? deletionPolicyMgr.getDeletionPolicy(self.getUuid()) : ImageDeletionPolicy.valueOf(msg.getDeletionPolicy());
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("delete-image-%s", self.getUuid()));
+        Collection<ImageBackupStorageRefVO> toDelete = msg.getBackupStorageUuids() == null ? self.getBackupStorageRefs() :
+                CollectionUtils.transformToList(self.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
+                    @Override
+                    public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
+                        return msg.getBackupStorageUuids().contains(arg.getBackupStorageUuid()) ? arg : null;
+                    }
+                });
+
+        for (final ImageBackupStorageRefVO ref : toDelete) {
+            chain.then(new NoRollbackFlow() {
+                String __name__ = String.format("delete-image-%s-from-backup-storage-%s", self.getUuid(), ref.getBackupStorageUuid());
+
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    if (deletionPolicy == ImageDeletionPolicy.Direct) {
+                        DeleteBitsOnBackupStorageMsg dmsg = new DeleteBitsOnBackupStorageMsg();
+                        dmsg.setBackupStorageUuid(ref.getBackupStorageUuid());
+                        dmsg.setInstallPath(ref.getInstallPath());
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, dmsg.getBackupStorageUuid());
+                        bus.send(dmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    //TODO
+                                    logger.warn(String.format("failed to delete image[uuid:%s, name:%s] from backup storage[uuid:%s] because %s, need to garbage collect it",
+                                            self.getUuid(), self.getName(), reply.getError(), ref.getBackupStorageUuid()));
+                                } else {
+                                    dbf.remove(ref);
+                                }
+                                trigger.next();
+                            }
+                        });
+                    } else {
+                        ref.setStatus(ImageStatus.Deleted);
+                        dbf.update(ref);
+                        trigger.next();
+                    }
+                }
+            });
+        }
+
+        final ImageDeletionReply reply = new ImageDeletionReply();
+        chain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                self = dbf.reload(self);
+                if (self.getBackupStorageRefs().isEmpty() && deletionPolicy == ImageDeletionPolicy.Direct) {
+                        dbf.remove(self);
+                        logger.debug(String.format("successfully directly deleted the image[uuid:%s, name:%s]", self.getUuid(), self.getName()));
+                } else {
+                    int deleteCount = 0;
+                    for (ImageBackupStorageRefVO ref : self.getBackupStorageRefs()) {
+                        if (ref.getStatus() == ImageStatus.Deleted) {
+                            deleteCount ++;
+                        }
+                    }
+                    if (deleteCount == self.getBackupStorageRefs().size()) {
+                        self.setStatus(ImageStatus.Deleted);
+                        self = dbf.updateAndRefresh(self);
+                        logger.debug(String.format("successfully deleted the image[uuid:%s, name:%s] with deletion policy[%s]", self.getUuid(), self.getName(), deletionPolicy));
+                    }
+                }
+
+                bus.reply(msg, reply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                reply.setError(errCode);
+                bus.reply(msg, reply);
+            }
+        }).start();
     }
 
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIChangeImageStateMsg) {
             handle((APIChangeImageStateMsg) msg);
+        } else if (msg instanceof APIExpungeImageMsg) {
+            handle((APIExpungeImageMsg) msg);
         } else if (msg instanceof APIDeleteImageMsg) {
             handle((APIDeleteImageMsg) msg);
         } else if (msg instanceof APIUpdateImageMsg) {
@@ -154,6 +228,77 @@ public class ImageBase implements Image {
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APIExpungeImageMsg msg) {
+        List<String> bsUuids = new ArrayList<String>();
+        if (msg.getBackupStorageUuids() == null || msg.getBackupStorageUuids().isEmpty()) {
+            bsUuids = CollectionUtils.transformToList(self.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefVO>() {
+                @Override
+                public String call(ImageBackupStorageRefVO arg) {
+                    return ImageStatus.Deleted == arg.getStatus() ? arg.getBackupStorageUuid() : null;
+                }
+            });
+
+            if (bsUuids.isEmpty()) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        String.format("the image[uuid:%s, name:%s] is not deleted on any backup storage",
+                                self.getUuid(), self.getName())
+                ));
+            }
+        }
+
+        for (final String bsUuid : msg.getBackupStorageUuids()) {
+            ImageBackupStorageRefVO ref = CollectionUtils.find(self.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
+                @Override
+                public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
+                    return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
+                }
+            });
+
+            if (ref == null) {
+                throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                        String.format("the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]", self.getUuid(), self.getName(), bsUuid)
+                ));
+            }
+
+            if (ref.getStatus() != ImageStatus.Deleted) {
+                throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                        String.format("the image[uuid:%s, name:%s] is not deleted on the backup storage[uuid:%s]", self.getUuid(), self.getName(), bsUuid)
+                ));
+            }
+
+            bsUuids.add(bsUuid);
+        }
+
+        List<ExpungeImageMsg> emsgs = CollectionUtils.transformToList(bsUuids, new Function<ExpungeImageMsg, String>() {
+            @Override
+            public ExpungeImageMsg call(String arg) {
+                ExpungeImageMsg emsg = new ExpungeImageMsg();
+                emsg.setBackupStorageUuid(arg);
+                emsg.setImageUuid(self.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(emsg, ImageConstant.SERVICE_ID, self.getUuid());
+                return emsg;
+            }
+        });
+
+        final List<String> finalBsUuids = bsUuids;
+        final APIExpungeImageEvent evt = new APIExpungeImageEvent(msg.getId());
+        bus.send(emsgs, new CloudBusListCallBack(msg) {
+            @Override
+            public void run(List<MessageReply> replies) {
+                for (MessageReply r : replies) {
+                    if (!r.isSuccess()) {
+                        String bsUuid = finalBsUuids.get(replies.indexOf(r));
+                        //TODO
+                        logger.warn(String.format("failed to expunge the image[uuid:%s, name:%s] on the backup storage[uuid:%s]" +
+                                ", %s", self.getUuid(), self.getName(), bsUuid, r.getError()));
+                    }
+                }
+
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(APIUpdateImageMsg msg) {

@@ -22,10 +22,8 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.image.ImageBackupStorageRefInventory;
-import org.zstack.header.image.ImageBackupStorageRefVO;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageVO;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.image.*;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -288,9 +286,15 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         List<String> bsUuids = CollectionUtils.transformToList(template.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefVO>() {
                             @Override
                             public String call(ImageBackupStorageRefVO arg) {
-                                return arg.getBackupStorageUuid();
+                                return ImageStatus.Deleted.equals(arg.getStatus()) ? null : arg.getBackupStorageUuid();
                             }
                         });
+
+                        if (bsUuids.isEmpty()) {
+                            throw new OperationFailureException(errf.stringToOperationError(
+                                    String.format("the image[uuid:%s, name:%s] has been deleted on all backup storage", template.getUuid(), template.getName())
+                            ));
+                        }
 
                         String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO zref, PrimaryStorageVO ps where zref.zoneUuid = ps.zoneUuid and bs.status = :bsStatus and bs.state = :bsState and ps.uuid = :psUuid and zref.backupStorageUuid = bs.uuid and bs.uuid in (:bsUuids)";
                         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);

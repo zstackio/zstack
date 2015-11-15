@@ -5,12 +5,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.safeguard.Guard;
 import org.zstack.core.safeguard.SafeGuard;
+import org.zstack.core.thread.CancelablePeriodicTask;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.workflow.*;
@@ -19,6 +23,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -43,10 +49,13 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-public class ImageManagerImpl extends AbstractService implements ImageManager {
+public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ImageManagerImpl.class);
 
     @Autowired
@@ -61,10 +70,17 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
     private ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ThreadFacade thdf;
+    @Autowired
+    private ResourceDestinationMaker destMaker;
+    @Autowired
+    private ImageDeletionPolicyManager deletionPolicyMgr;
 
 
     private Map<String, ImageFactory> imageFactories = Collections.synchronizedMap(new HashMap<String, ImageFactory>());
     private static final Set<Class> allowedMessageAfterDeletion = new HashSet<Class>();
+    private Future<Void> expungeTask;
 
     static {
         allowedMessageAfterDeletion.add(ImageDeletionMsg.class);
@@ -293,6 +309,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
                                     CreateDataVolumeTemplateFromDataVolumeReply reply = r.castReply();
                                     ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
                                     ref.setBackupStorageUuid(bs.getUuid());
+                                    ref.setStatus(ImageStatus.Ready);
                                     ref.setImageUuid(image.getUuid());
                                     ref.setInstallPath(reply.getInstallPath());
                                     dbf.persist(ref);
@@ -408,6 +425,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
                         ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
                         ref.setBackupStorageUuid(res.getBackupStorageUuid());
                         ref.setInstallPath(res.getInstallPath());
+                        ref.setStatus(ImageStatus.Ready);
                         ref.setImageUuid(vo.getUuid());
                         refs.add(ref);
                     }
@@ -647,6 +665,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
                                     CreateTemplateFromVmRootVolumeReply reply = (CreateTemplateFromVmRootVolumeReply) r;
                                     ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
                                     ref.setBackupStorageUuid(bs.getUuid());
+                                    ref.setStatus(ImageStatus.Ready);
                                     ref.setImageUuid(imageVO.getUuid());
                                     ref.setInstallPath(reply.getInstallPath());
                                     dbf.persist(ref);
@@ -805,6 +824,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
                         ref.setImageUuid(ivo.getUuid());
                         ref.setInstallPath(re.getInstallPath());
                         ref.setBackupStorageUuid(bsUuid);
+                        ref.setStatus(ImageStatus.Ready);
                         dbf.persist(ref);
 
                         if (!success) {
@@ -871,7 +891,122 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
     @Override
     public boolean start() {
         populateExtensions();
+        installGlobalConfigUpdater();
         return true;
+    }
+
+    private void installGlobalConfigUpdater() {
+        ImageGlobalConfig.DELETION_POLICY.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startExpungeTask();
+            }
+        });
+        ImageGlobalConfig.EXPUNGE_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startExpungeTask();
+            }
+        });
+        ImageGlobalConfig.EXPUNGE_PERIOD.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startExpungeTask();
+            }
+        });
+    }
+
+    private void startExpungeTask() {
+        if (expungeTask != null) {
+            expungeTask.cancel(true);
+        }
+
+        expungeTask = thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+            private List<Tuple> getDeletedImageManagedByUs() {
+                int qun = 1000;
+                SimpleQuery q = dbf.createQuery(ImageBackupStorageRefVO.class);
+                q.add(ImageBackupStorageRefVO_.status, Op.EQ, ImageStatus.Deleted);
+                long amount = q.count();
+                int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
+                int start = 0;
+                List<Tuple> ret = new ArrayList<Tuple>();
+                for (int i = 0; i < times; i++) {
+                    q = dbf.createQuery(ImageBackupStorageRefVO.class);
+                    q.select(ImageBackupStorageRefVO_.imageUuid, ImageBackupStorageRefVO_.lastOpDate, ImageBackupStorageRefVO_.backupStorageUuid);
+                    q.add(ImageBackupStorageRefVO_.status, Op.EQ, ImageStatus.Deleted);
+                    q.setLimit(qun);
+                    q.setStart(start);
+                    List<Tuple> ts = q.listTuple();
+                    start += qun;
+
+                    for (Tuple t : ts) {
+                        String imageUuid = t.get(0, String.class);
+                        if (!destMaker.isManagedByUs(imageUuid)) {
+                            continue;
+                        }
+                        ret.add(t);
+                    }
+                }
+
+                return ret;
+            }
+
+            @Override
+            public boolean run() {
+                final List<Tuple> images = getDeletedImageManagedByUs();
+                if (images.isEmpty()) {
+                    logger.debug("[Image Expunge Task]: no images to expunge");
+                    return false;
+                }
+
+                for (Tuple t : images) {
+                    String imageUuid = t.get(0, String.class);
+                    Timestamp date = t.get(1, Timestamp.class);
+                    String bsUuid = t.get(2, String.class);
+
+                    final Timestamp current = dbf.getCurrentSqlTime();
+                    if (current.getTime() >= date.getTime() + TimeUnit.SECONDS.toMillis(ImageGlobalConfig.EXPUNGE_PERIOD.value(Long.class))) {
+                        ImageDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(imageUuid);
+                        if (ImageDeletionPolicy.Never == deletionPolicy) {
+                            logger.debug(String.format("the deletion policy[Never] is set for the image[uuid:%s] on the backup storage[uuid:%s]," +
+                                    "don't expunge it", images, bsUuid));
+                            continue;
+                        }
+
+                        ExpungeImageMsg msg = new ExpungeImageMsg();
+                        msg.setImageUuid(imageUuid);
+                        msg.setBackupStorageUuid(bsUuid);
+                        bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, imageUuid);
+                        bus.send(msg, new CloudBusCallBack() {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    //TODO
+                                    logger.warn(String.format("failed to expunge the image[uuid:%s], %s", images, reply.getError()));
+                                }
+                            }
+                        });
+                    }
+                }
+
+                return false;
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return ImageGlobalConfig.EXPUNGE_INTERVAL.value(Long.class);
+            }
+
+            @Override
+            public String getName() {
+                return "expunge-image";
+            }
+        });
     }
 
     @Override
@@ -885,5 +1020,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager {
             throw new CloudRuntimeException(String.format("Unable to find ImageFactory with type[%s]", type));
         }
         return factory;
+    }
+
+    @Override
+    public void managementNodeReady() {
+        startExpungeTask();
     }
 }

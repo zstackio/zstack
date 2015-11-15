@@ -7,3 +7,5 @@ ALTER TABLE PrimaryStorageCapacityVO ADD systemUsedCapacity bigint signed DEFAUL
 
 ALTER TABLE LocalStorageHostRefVO MODIFY availableCapacity bigint signed NOT NULL DEFAULT 0;
 ALTER TABLE LocalStorageHostRefVO ADD systemUsedCapacity bigint signed NOT NULL DEFAULT 0;
+
+ALTER TABLE ImageBackupStorageRefVO ADD status varchar(32) NOT NULL;

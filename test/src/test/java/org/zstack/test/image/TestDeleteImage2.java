@@ -6,15 +6,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.header.simulator.storage.backup.SimulatorBackupStorageDetails;
 import org.zstack.header.storage.backup.BackupStorage;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.image.ImageGlobalConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
@@ -28,6 +28,9 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 public class TestDeleteImage2 {
     CLogger logger = Utils.getLogger(TestDeleteImage2.class);
@@ -53,12 +56,14 @@ public class TestDeleteImage2 {
     }
 
     @Test
-    public void test() throws ApiSenderException {
+    public void test() throws ApiSenderException, InterruptedException {
         SimulatorBackupStorageDetails ss = new SimulatorBackupStorageDetails();
         ss.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100));
         ss.setUsedCapacity(0);
         ss.setUrl("nfs://simulator/backupstorage/");
-        BackupStorageInventory bs = api.createSimulatorBackupStorage(5, ss).get(0);
+        final BackupStorageInventory bs1 = api.createSimulatorBackupStorage(1, ss).get(0);
+        BackupStorageInventory bs2 = api.createSimulatorBackupStorage(1, ss).get(0);
+        List<String> bsUuids = list(bs1.getUuid(), bs2.getUuid());
 
         ImageInventory iinv = new ImageInventory();
         iinv.setName("Test Image");
@@ -67,25 +72,101 @@ public class TestDeleteImage2 {
         iinv.setGuestOsType("Window7");
         iinv.setFormat(SimulatorConstant.SIMULATOR_VOLUME_FORMAT_STRING);
         iinv.setUrl("http://zstack.org/download/win7.qcow2");
-        List<BackupStorageVO> bsvos = dbf.listAll(BackupStorageVO.class);
-        List<String> bsUuids = CollectionUtils.transformToList(bsvos, new Function<String, BackupStorageVO>() {
-            @Override
-            public String call(BackupStorageVO arg) {
-                return arg.getUuid();
-            }
-        });
         iinv = api.addImage(iinv, bsUuids.toArray(new String[bsUuids.size()]));
 
-        ImageVO ivo = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
-        Assert.assertNotNull(ivo);
-        api.deleteImage(ivo.getUuid(), Arrays.asList(bs.getUuid()));
-        ivo = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
-        Assert.assertNotNull(ivo);
-        Assert.assertEquals(4, ivo.getBackupStorageRefs().size());
-        for (ImageBackupStorageRefVO ref : ivo.getBackupStorageRefs()) {
-            if (ref.getBackupStorageUuid().equals(bs.getUuid())) {
-                Assert.fail(String.format("image is still on backup storage %s", bs.getUuid()));
+        api.deleteImage(iinv.getUuid(), list(bs1.getUuid()));
+        ImageVO img = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
+        Assert.assertNotNull(img);
+        Assert.assertEquals(ImageStatus.Ready, img.getStatus());
+        Assert.assertEquals(2, img.getBackupStorageRefs().size());
+
+        ImageBackupStorageRefVO ref1 = CollectionUtils.find(img.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
+            @Override
+            public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
+                return arg.getBackupStorageUuid().equals(bs1.getUuid()) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(ref1);
+        Assert.assertEquals(ImageStatus.Deleted, ref1.getStatus());
+
+        ImageGlobalConfig.EXPUNGE_PERIOD.updateValue(1);
+        ImageGlobalConfig.EXPUNGE_INTERVAL.updateValue(1);
+        TimeUnit.SECONDS.sleep(3);
+        img = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
+        Assert.assertNotNull(img);
+        Assert.assertEquals(ImageStatus.Ready, img.getStatus());
+        Assert.assertEquals(1, img.getBackupStorageRefs().size());
+        ref1 = CollectionUtils.find(img.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
+            @Override
+            public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
+                return arg.getBackupStorageUuid().equals(bs1.getUuid()) ? arg : null;
+            }
+        });
+        Assert.assertNull(ref1);
+
+        ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
+        api.deleteImage(iinv.getUuid(), list(bs2.getUuid()));
+        img = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
+        Assert.assertNull(img);
+        long count = dbf.count(ImageBackupStorageRefVO.class);
+        Assert.assertEquals(0, count);
+
+        ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Delay.toString());
+        ImageGlobalConfig.EXPUNGE_PERIOD.updateValue(1000);
+        ImageGlobalConfig.EXPUNGE_INTERVAL.updateValue(1000);
+        TimeUnit.SECONDS.sleep(2);
+        iinv = api.addImage(iinv, bsUuids.toArray(new String[bsUuids.size()]));
+        api.deleteImage(iinv.getUuid());
+        img = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
+        Assert.assertNotNull(img);
+        Assert.assertEquals(ImageStatus.Deleted, img.getStatus());
+        Assert.assertEquals(2, img.getBackupStorageRefs().size());
+        for (ImageBackupStorageRefVO ref : img.getBackupStorageRefs()) {
+            if (ref.getStatus() != ImageStatus.Deleted) {
+                Assert.fail(String.format("ref[status:%s], ref.backupStorageUuid= %s", ref.getStatus(), ref.getBackupStorageUuid()));
             }
         }
+
+        api.expungeImage(img.getUuid(), list(bs1.getUuid()), null);
+        img = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
+        Assert.assertNotNull(img);
+        Assert.assertEquals(ImageStatus.Deleted, img.getStatus());
+        Assert.assertEquals(1, img.getBackupStorageRefs().size());
+        ref1 = CollectionUtils.find(img.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
+            @Override
+            public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
+                return arg.getBackupStorageUuid().equals(bs1.getUuid()) ? arg : null;
+            }
+        });
+        Assert.assertNull(ref1);
+        ImageGlobalConfig.EXPUNGE_PERIOD.updateValue(1);
+        ImageGlobalConfig.EXPUNGE_INTERVAL.updateValue(1);
+        TimeUnit.SECONDS.sleep(3);
+
+        img = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
+        Assert.assertNull(img);
+        count = dbf.count(ImageBackupStorageRefVO.class);
+        Assert.assertEquals(0, count);
+
+        ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Never.toString());
+        iinv = api.addImage(iinv, bsUuids.toArray(new String[bsUuids.size()]));
+        api.deleteImage(iinv.getUuid());
+        TimeUnit.SECONDS.sleep(3);
+        img = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
+        Assert.assertNotNull(img);
+        Assert.assertEquals(ImageStatus.Deleted, img.getStatus());
+        Assert.assertEquals(2, img.getBackupStorageRefs().size());
+        for (ImageBackupStorageRefVO ref : img.getBackupStorageRefs()) {
+            if (ref.getStatus() != ImageStatus.Deleted) {
+                Assert.fail(String.format("ref[status:%s], ref.backupStorageUuid= %s", ref.getStatus(), ref.getBackupStorageUuid()));
+            }
+        }
+
+        ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Delay.toString());
+        TimeUnit.SECONDS.sleep(3);
+        img = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
+        Assert.assertNull(img);
+        count = dbf.count(ImageBackupStorageRefVO.class);
+        Assert.assertEquals(0, count);
     }
 }

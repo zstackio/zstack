@@ -12,6 +12,7 @@ import org.zstack.header.allocator.*;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.ImageStatus;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
@@ -74,9 +75,15 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         List<String> bsUuids = CollectionUtils.transformToList(spec.getImage().getBackupStorageRefs(), new Function<String, ImageBackupStorageRefInventory>() {
             @Override
             public String call(ImageBackupStorageRefInventory arg) {
-                return arg.getBackupStorageUuid();
+                return ImageStatus.Deleted.toString().equals(arg.getStatus()) ? null : arg.getBackupStorageUuid();
             }
         });
+
+        if (bsUuids.isEmpty()) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("the image[uuid:%s, name:%s] is deleted on all backup storage", spec.getImage().getUuid(), spec.getImage().getName())
+            ));
+        }
 
         SimpleQuery<BackupStorageVO> bq = dbf.createQuery(BackupStorageVO.class);
         bq.select(BackupStorageVO_.uuid);

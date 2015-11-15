@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+	<config>
+		<name>deletionPolicy</name>
+        <description>the behavior of deleting a image, options are [Direct, Delay, Never]. Direct: delete the image from database and directly delete its root volume; Delay: change the image's state to Destroyed in database; after the period controlled by 'expungePeriod' passes, delete the image from database and delete it's root volume; Never: delete the image from database but never delete its root volume</description>
+		<category>image</category>
+		<defaultValue>Delay</defaultValue>
+	</config>
+
+	<config>
+		<name>expungePeriod</name>
+        <description>the period before a destroyed image being deleted from database and before its root volume being deleted from backup storage, in seconds</description>
+		<category>image</category>
+		<defaultValue>86400</defaultValue>
+		<type>java.lang.Long</type>
+	</config>
+
+	<config>
+		<name>expungeInterval</name>
+        <description>the interval the expunging image task runs, in seconds</description>
+		<category>image</category>
+		<defaultValue>3600</defaultValue>
+		<type>java.lang.Long</type>
+	</config>
+</globalConfig>

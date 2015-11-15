@@ -10,6 +10,4 @@ import org.zstack.header.message.Message;
  */
 public interface Image {
     void handleMessage(Message msg);
-
-    void deleteHook();
 }

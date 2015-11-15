@@ -3595,4 +3595,15 @@ public class Api implements CloudBusEventListener {
         APIGetVersionReply reply = sender.call(msg, APIGetVersionReply.class);
         return reply.getVersion();
     }
+
+    public void expungeImage(String imageUuid, List<String> bsUuids, SessionInventory session) throws ApiSenderException {
+        APIExpungeImageMsg msg = new APIExpungeImageMsg();
+        msg.setImageUuid(imageUuid);
+        msg.setBackupStorageUuids(bsUuids);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIExpungeImageEvent.class);
+        return;
+    }
 }
