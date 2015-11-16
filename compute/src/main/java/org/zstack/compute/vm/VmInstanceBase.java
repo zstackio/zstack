@@ -506,11 +506,13 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void vmStateChangeOnHost(final VmStateChangedOnHostMsg msg, final NoErrorCompletion completion) {
         refreshVO();
 
+        final VmStateChangedOnHostReply reply = new VmStateChangedOnHostReply();
         if (msg.getVmStateAtTracingMoment() != null) {
             // the vm tracer periodically reports vms's state. It catches an old state
             // before an vm operation(start, stop, reboot, migrate) completes. Ignore this
             VmInstanceState expected = VmInstanceState.valueOf(msg.getVmStateAtTracingMoment());
             if (expected != self.getState()) {
+                bus.reply(msg, reply);
                 completion.done();
                 return;
             }
@@ -524,6 +526,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (originalState == currentState && originalHostUuid != null && currentHostUuid.equals(originalHostUuid)) {
             logger.debug(String.format("vm[uuid:%s]'s state[%s] is inline with its state on the host[uuid:%s], ignore VmStateChangeOnHostMsg",
                     self.getUuid(), originalState, originalHostUuid));
+            bus.reply(msg, reply);
             completion.done();
             return;
         }
@@ -544,6 +547,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (currentState == VmInstanceState.Unknown) {
             changeVmStateInDb(VmInstanceStateEvent.unknown);
             fireEvent.run();
+            bus.reply(msg, reply);
             completion.done();
             return;
         }
@@ -555,6 +559,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             self.setHostUuid(msg.getHostUuid());
             changeVmStateInDb(VmInstanceStateEvent.running);
             fireEvent.run();
+            bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedFromUnknownStateHostNotChanged) {
@@ -564,6 +569,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             self.setHostUuid(null);
             changeVmStateInDb(VmInstanceStateEvent.stopped);
             fireEvent.run();
+            bus.reply(msg, reply);
             completion.done();
             return;
         }
@@ -602,6 +608,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 fireEvent.run();
+                bus.reply(msg, reply);
                 completion.done();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -611,6 +618,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 logger.warn(String.format("failed to handle abnormal lifecycle of the vm[uuid:%s, original state: %s, current state:%s," +
                         "original host: %s, current host: %s], %s", self.getUuid(), originalState, currentState,
                         originalHostUuid, currentHostUuid, errCode));
+                reply.setError(errCode);
+                bus.reply(msg, reply);
                 completion.done();
             }
         }).start();

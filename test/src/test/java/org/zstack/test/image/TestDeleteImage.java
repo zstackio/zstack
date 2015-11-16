@@ -7,12 +7,14 @@ import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.header.simulator.storage.backup.SimulatorBackupStorageDetails;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.image.ImageGlobalConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
@@ -39,13 +41,10 @@ public class TestDeleteImage {
         api.startServer();
     }
 
-    @After
-    public void tearDown() throws Exception {
-        api.stopServer();
-    }
-
     @Test
     public void test() throws ApiSenderException {
+        ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
+
         SimulatorBackupStorageDetails ss = new SimulatorBackupStorageDetails();
         ss.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100));
         ss.setUsedCapacity(0);

@@ -17,6 +17,7 @@ import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.*;
+import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -29,6 +30,7 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.image.ImageGlobalConfig;
 import org.zstack.storage.volume.VolumeGlobalConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -68,6 +70,7 @@ public class TestPolicyForVm4 {
     public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Direct.toString());
+        ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
 
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
         ImageInventory img = deployer.images.get("TestImage");

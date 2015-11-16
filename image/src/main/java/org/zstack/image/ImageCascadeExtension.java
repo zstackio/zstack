@@ -145,7 +145,7 @@ public class ImageCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private ImageDeletionPolicy deletionPolicyFromAction(CascadeAction action) {
         if (BackupStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            return ImageDeletionPolicy.Never;
+            return ImageDeletionPolicy.DeleteReference;
         } else {
             return null;
         }

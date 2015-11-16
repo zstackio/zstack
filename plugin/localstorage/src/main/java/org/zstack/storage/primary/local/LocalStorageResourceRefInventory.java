@@ -28,7 +28,7 @@ public class LocalStorageResourceRefInventory {
     private String resourceUuid;
     private String primaryStorageUuid;
     private String hostUuid;
-    private long size;
+    private Long size;
     private String resourceType;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -77,11 +77,11 @@ public class LocalStorageResourceRefInventory {
         this.hostUuid = hostUuid;
     }
 
-    public long getSize() {
+    public Long getSize() {
         return size;
     }
 
-    public void setSize(long size) {
+    public void setSize(Long size) {
         this.size = size;
     }
 

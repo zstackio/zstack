@@ -10,11 +10,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.image.ImageGlobalConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.ceph.CephGlobalConfig;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
@@ -70,6 +72,7 @@ public class TestCeph5 {
 	public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         CephGlobalConfig.IMAGE_CACHE_CLEANUP_INTERVAL.updateValue(1);
+        ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
         TimeUnit.SECONDS.sleep(5);
 
         ImageInventory img = deployer.images.get("TestImage");

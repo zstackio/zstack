@@ -30,6 +30,7 @@ import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
@@ -174,6 +175,11 @@ public class ImageBase implements Image {
                                 trigger.next();
                             }
                         });
+                    } else if (deletionPolicy == ImageDeletionPolicy.DeleteReference) {
+                        dbf.remove(ref);
+                        logger.debug(String.format("delete the image[uuid: %s, name:%s]'s reference of the backup storage[uuid:%s]",
+                                self.getUuid(), self.getName(), ref.getBackupStorageUuid()));
+                        trigger.next();
                     } else {
                         ref.setStatus(ImageStatus.Deleted);
                         dbf.update(ref);
@@ -188,9 +194,14 @@ public class ImageBase implements Image {
             @Override
             public void handle(Map data) {
                 self = dbf.reload(self);
-                if (self.getBackupStorageRefs().isEmpty() && deletionPolicy == ImageDeletionPolicy.Direct) {
-                        dbf.remove(self);
+                if (self.getBackupStorageRefs().isEmpty()) {
+                    dbf.remove(self);
+                    if (deletionPolicy == ImageDeletionPolicy.DeleteReference) {
+                        logger.debug(String.format("successfully directly deleted the image[uuid:%s, name:%s] from the database," +
+                                " as the policy is DeleteReference, it's still on the physical backup storage", self.getUuid(), self.getName()));
+                    } else {
                         logger.debug(String.format("successfully directly deleted the image[uuid:%s, name:%s]", self.getUuid(), self.getName()));
+                    }
                 } else {
                     int deleteCount = 0;
                     for (ImageBackupStorageRefVO ref : self.getBackupStorageRefs()) {

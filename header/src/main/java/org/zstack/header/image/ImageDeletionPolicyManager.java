@@ -7,7 +7,8 @@ public interface ImageDeletionPolicyManager {
     enum ImageDeletionPolicy {
         Direct,
         Delay,
-        Never
+        Never,
+        DeleteReference
     }
 
     ImageDeletionPolicy getDeletionPolicy(String imageUuid);

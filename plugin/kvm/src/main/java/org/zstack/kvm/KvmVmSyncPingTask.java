@@ -8,6 +8,9 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
@@ -49,6 +52,8 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private ThreadFacade thdf;
 
     private void syncVm(final KVMHostContext host, final Completion completion) {
         VmSyncCmd cmd = new VmSyncCmd();
@@ -125,27 +130,58 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
     @Override
     public boolean start() {
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_STATE, ReportVmStateCmd.class, new SyncHttpCallHandler<ReportVmStateCmd>() {
+            private void reportState(final ReportVmStateCmd cmd) {
+                thdf.chainSubmit(new ChainTask() {
+                    @Override
+                    public String getSyncSignature() {
+                        return String.format("report-state-of-vm-%s", cmd.vmUuid);
+                    }
+
+                    @Override
+                    public void run(final SyncTaskChain chain) {
+                        VmInstanceState state = KvmVmState.valueOf(cmd.vmState).toVmInstanceState();
+
+                        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+                        q.select(VmInstanceVO_.state);
+                        q.add(VmInstanceVO_.uuid, Op.EQ, cmd.vmUuid);
+                        VmInstanceState stateInDb = q.findValue();
+                        if (stateInDb == null) {
+                            //TODO: handle anonymous vm
+                            logger.warn(String.format("an anonymous VM[uuid:%s, state:%s] is detected on the host[uuid:%s]", cmd.hostUuid, state, cmd.hostUuid));
+                            chain.next();
+                            return;
+                        }
+
+                        VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
+                        msg.setVmStateAtTracingMoment(stateInDb);
+                        msg.setVmInstanceUuid(cmd.vmUuid);
+                        msg.setStateOnHost(state);
+                        msg.setHostUuid(cmd.hostUuid);
+                        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, cmd.vmUuid);
+                        bus.send(msg, new CloudBusCallBack(chain) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    //TODO
+                                    logger.warn(String.format("failed to report state[%s] of the vm[uuid:%s] on the host[uuid:%s]",
+                                            cmd.vmState, cmd.vmUuid, cmd.hostUuid));
+                                }
+
+                                chain.next();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public String getName() {
+                        return "report-vm-state";
+                    }
+                });
+            }
+
             @Override
             public String handleSyncHttpCall(ReportVmStateCmd cmd) {
-                VmInstanceState state = KvmVmState.valueOf(cmd.vmState).toVmInstanceState();
-
-                SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-                q.select(VmInstanceVO_.state);
-                q.add(VmInstanceVO_.uuid, Op.EQ, cmd.vmUuid);
-                VmInstanceState stateInDb = q.findValue();
-                if (stateInDb == null) {
-                    //TODO: handle anonymous vm
-                    logger.warn(String.format("an anonymous VM[uuid:%s, state:%s] is detected on the host[uuid:%s]", cmd.hostUuid, state, cmd.hostUuid));
-                    return null;
-                }
-
-                VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
-                msg.setVmStateAtTracingMoment(stateInDb);
-                msg.setVmInstanceUuid(cmd.vmUuid);
-                msg.setStateOnHost(state);
-                msg.setHostUuid(cmd.hostUuid);
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, cmd.vmUuid);
-                bus.send(msg);
+                reportState(cmd);
                 return null;
             }
         });

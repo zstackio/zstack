@@ -6,17 +6,17 @@ import org.zstack.header.message.NeedReplyMessage;
  * Created by frank on 11/1/2015.
  */
 public class VmStateChangedOnHostMsg extends NeedReplyMessage implements VmInstanceMessage {
-    private String vmStateAtTracingMonment;
+    private String vmStateAtTracingMoment;
     private String vmInstanceUuid;
     private String hostUuid;
     private String stateOnHost;
 
     public String getVmStateAtTracingMoment() {
-        return vmStateAtTracingMonment;
+        return vmStateAtTracingMoment;
     }
 
     public void setVmStateAtTracingMoment(VmInstanceState vmStateAtTracingMoment) {
-        this.vmStateAtTracingMonment = vmStateAtTracingMoment == null ? null : vmStateAtTracingMoment.toString();
+        this.vmStateAtTracingMoment = vmStateAtTracingMoment == null ? null : vmStateAtTracingMoment.toString();
     }
 
     public String getHostUuid() {
