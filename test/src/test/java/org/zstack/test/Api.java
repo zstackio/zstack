@@ -3606,4 +3606,15 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIExpungeImageEvent.class);
         return;
     }
+
+    public ImageInventory recoverImage(String imageUuid, List<String> bsUuids, SessionInventory session) throws ApiSenderException {
+        APIRecoverImageMsg msg = new APIRecoverImageMsg();
+        msg.setImageUuid(imageUuid);
+        msg.setBackupStorageUuids(bsUuids);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIRecoverImageEvent evt = sender.send(msg, APIRecoverImageEvent.class);
+        return evt.getInventory();
+    }
 }

@@ -168,5 +168,25 @@ public class TestDeleteImage2 {
         Assert.assertNull(img);
         count = dbf.count(ImageBackupStorageRefVO.class);
         Assert.assertEquals(0, count);
+
+        ImageGlobalConfig.EXPUNGE_PERIOD.updateValue(1000);
+        ImageGlobalConfig.EXPUNGE_INTERVAL.updateValue(1000);
+        TimeUnit.SECONDS.sleep(2);
+        iinv = api.addImage(iinv, bsUuids.toArray(new String[bsUuids.size()]));
+        api.deleteImage(iinv.getUuid(), list(bs1.getUuid()));
+        iinv = api.recoverImage(iinv.getUuid(), list(bs1.getUuid()), null);
+        Assert.assertEquals(2, iinv.getBackupStorageRefs().size());
+        for (ImageBackupStorageRefInventory ref : iinv.getBackupStorageRefs()) {
+            Assert.assertEquals(ImageStatus.Ready.toString(), ref.getStatus());
+        }
+        Assert.assertEquals(ImageStatus.Ready.toString(), iinv.getStatus());
+
+        api.deleteImage(iinv.getUuid());
+        iinv = api.recoverImage(iinv.getUuid(), null, null);
+        Assert.assertEquals(2, iinv.getBackupStorageRefs().size());
+        for (ImageBackupStorageRefInventory ref : iinv.getBackupStorageRefs()) {
+            Assert.assertEquals(ImageStatus.Ready.toString(), ref.getStatus());
+        }
+        Assert.assertEquals(ImageStatus.Ready.toString(), iinv.getStatus());
     }
 }

@@ -236,9 +236,72 @@ public class ImageBase implements Image {
             handle((APIDeleteImageMsg) msg);
         } else if (msg instanceof APIUpdateImageMsg) {
             handle((APIUpdateImageMsg) msg);
+        } else if (msg instanceof APIRecoverImageMsg) {
+            handle((APIRecoverImageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIRecoverImageMsg msg) {
+        List<String> toRecoverBsUuids;
+        if (msg.getBackupStorageUuids() == null || msg.getBackupStorageUuids().isEmpty()) {
+            toRecoverBsUuids = CollectionUtils.transformToList(self.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefVO>() {
+                @Override
+                public String call(ImageBackupStorageRefVO arg) {
+                    return arg.getStatus() == ImageStatus.Deleted ? arg.getBackupStorageUuid() : null;
+                }
+            });
+
+            if (toRecoverBsUuids.isEmpty()) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        String.format("the image[uuid:%s, name:%s] is not deleted on any backup storage",
+                                self.getUuid(), self.getName())
+                ));
+            }
+        } else {
+            toRecoverBsUuids = new ArrayList<String>();
+            for (final String bsUuid :  msg.getBackupStorageUuids()) {
+                ImageBackupStorageRefVO ref = CollectionUtils.find(self.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
+                    @Override
+                    public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
+                        return bsUuid.equals(arg.getBackupStorageUuid()) ? arg : null;
+                    }
+                });
+
+                if (ref == null) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]",
+                                    self.getUuid(), self.getName(), bsUuid)
+                    ));
+                }
+
+                if (ref.getStatus() != ImageStatus.Deleted) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("the image[uuid:%s, name:%s]'s status[%s] is not Deleted on the backup storage[uuid:%s]",
+                                    self.getUuid(), self.getName(), ref.getStatus(), bsUuid)
+                    ));
+                }
+
+                toRecoverBsUuids.add(bsUuid);
+            }
+        }
+
+        for (ImageBackupStorageRefVO ref : self.getBackupStorageRefs()) {
+            if (toRecoverBsUuids.contains(ref.getBackupStorageUuid())) {
+                ref.setStatus(ImageStatus.Ready);
+                dbf.update(ref);
+            }
+        }
+
+        self.setStatus(ImageStatus.Ready);
+        self = dbf.updateAndRefresh(self);
+
+        logger.debug(String.format("successfully recovered the image[uuid:%s, name:%s] on the backup storage%s",
+                self.getUuid(), self.getName(), toRecoverBsUuids));
+        APIRecoverImageEvent evt = new APIRecoverImageEvent(msg.getId());
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     private void handle(final APIExpungeImageMsg msg) {
