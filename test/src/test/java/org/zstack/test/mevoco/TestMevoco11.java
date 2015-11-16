@@ -20,6 +20,7 @@ import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo;
 import org.zstack.network.service.flat.FlatDhcpBackend.PrepareDhcpCmd;
 import org.zstack.network.service.flat.FlatDhcpBackend.ReleaseDhcpCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
+import org.zstack.network.service.flat.FlatNetworkSystemTags;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -48,6 +49,11 @@ import java.util.List;
  * 5. create a vm
  *
  * confirm the dhcp IP is from the new range
+ *
+ * 6. add a new IP range2
+ * 7. delete the IP range2
+ *
+ * confirm the DHCP IP tag is still on the L3
  */
 public class TestMevoco11 {
     CLogger logger = Utils.getLogger(TestMevoco11.class);
@@ -169,5 +175,18 @@ public class TestMevoco11 {
         Assert.assertNotNull(pcmd.dhcpServerIp);
         Assert.assertTrue(NetworkUtils.isIpv4InRange(pcmd.dhcpServerIp, ipr.getStartIp(), ipr.getEndIp()));
         Assert.assertEquals(ipr.getNetmask(), pcmd.dhcpNetmask);
+
+        ipr = new IpRangeInventory();
+        ipr.setName("new-ipr2");
+        ipr.setStartIp("192.16.10.10");
+        ipr.setEndIp("192.16.10.200");
+        ipr.setGateway("192.16.10.1");
+        ipr.setNetmask("255.255.0.0");
+        ipr.setL3NetworkUuid(l3Uuid);
+        ipr = api.addIpRangeByFullConfig(ipr);
+        api.deleteIpRange(ipr.getUuid());
+
+        String dhcpTag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(l3Uuid);
+        Assert.assertNotNull(dhcpTag);
 	}
 }
