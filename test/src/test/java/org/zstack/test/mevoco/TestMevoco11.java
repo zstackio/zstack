@@ -9,6 +9,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkDnsVO;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
@@ -16,6 +17,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.flat.FlatDhcpBackend.ApplyDhcpCmd;
 import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo;
+import org.zstack.network.service.flat.FlatDhcpBackend.PrepareDhcpCmd;
 import org.zstack.network.service.flat.FlatDhcpBackend.ReleaseDhcpCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -31,6 +33,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.util.List;
 
@@ -40,6 +43,11 @@ import java.util.List;
  *
  * confirm the dhcp is set on the dst host and removed from the dst host
  *
+ * 3. delete the ip range
+ * 4. add a new ip range
+ * 5. create a vm
+ *
+ * confirm the dhcp IP is from the new range
  */
 public class TestMevoco11 {
     CLogger logger = Utils.getLogger(TestMevoco11.class);
@@ -140,5 +148,26 @@ public class TestMevoco11 {
         Assert.assertEquals(1, fconfig.releaseDhcpCmds.size());
         ReleaseDhcpCmd rcmd = fconfig.releaseDhcpCmds.get(0);
         checkNic(nic, rcmd.dhcp);
+
+        IpRangeInventory ipr = deployer.ipRanges.get("TestIpRange");
+        api.deleteIpRange(ipr.getUuid());
+
+        String l3Uuid = ipr.getL3NetworkUuid();
+        ipr = new IpRangeInventory();
+        ipr.setName("new-ipr");
+        ipr.setStartIp("172.16.10.10");
+        ipr.setEndIp("172.16.10.200");
+        ipr.setGateway("172.16.10.1");
+        ipr.setNetmask("255.255.0.0");
+        ipr.setL3NetworkUuid(l3Uuid);
+        ipr = api.addIpRangeByFullConfig(ipr);
+
+        fconfig.prepareDhcpCmdList.clear();
+        api.createVmFromClone(vm);
+        Assert.assertEquals(1, fconfig.prepareDhcpCmdList.size());
+        PrepareDhcpCmd pcmd = fconfig.prepareDhcpCmdList.get(0);
+        Assert.assertNotNull(pcmd.dhcpServerIp);
+        Assert.assertTrue(NetworkUtils.isIpv4InRange(pcmd.dhcpServerIp, ipr.getStartIp(), ipr.getEndIp()));
+        Assert.assertEquals(ipr.getNetmask(), pcmd.dhcpNetmask);
 	}
 }

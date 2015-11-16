@@ -78,14 +78,6 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
                     }
                 }
 
-                List<String> uuids = new ArrayList<String>();
-                for (MessageReply r : replies) {
-                    IpRangeInventory inv = iprinvs.get(replies.indexOf(r));
-                    uuids.add(inv.getUuid());
-                    logger.debug(String.format("successfully delete ip range[uuid:%s, name:%s]", inv.getUuid(), inv.getName()));
-                }
-
-                dbf.removeByPrimaryKeys(uuids, IpRangeVO.class);
                 completion.success();
             }
         });

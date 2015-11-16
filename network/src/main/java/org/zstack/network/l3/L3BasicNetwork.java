@@ -8,6 +8,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -26,6 +27,7 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -57,6 +59,8 @@ public class L3BasicNetwork implements L3Network {
     protected ErrorFacade errf;
     @Autowired
     protected TagManager tagMgr;
+    @Autowired
+    protected PluginRegistry pluginRgty;
 
     private L3NetworkVO self;
 
@@ -134,14 +138,33 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(IpRangeDeletionMsg msg) {
-        IpRangeDeletionReply reply = new IpRangeDeletionReply();
+        List<IpRangeDeletionExtensionPoint> exts = pluginRgty.getExtensionList(IpRangeDeletionExtensionPoint.class);
         IpRangeVO iprvo = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
-        deleteIpRangeHook(IpRangeInventory.valueOf(iprvo));
-        bus.reply(msg, reply);
-    }
+        final IpRangeInventory inv = IpRangeInventory.valueOf(iprvo);
 
-    // for inheriting
-    protected void deleteIpRangeHook(IpRangeInventory ipRangeInventory) {
+        for (IpRangeDeletionExtensionPoint ext : exts) {
+            ext.preDeleteIpRange(inv);
+        }
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
+            @Override
+            public void run(IpRangeDeletionExtensionPoint arg) {
+                arg.beforeDeleteIpRange(inv);
+            }
+        });
+
+        IpRangeDeletionReply reply = new IpRangeDeletionReply();
+
+        dbf.remove(iprvo);
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
+            @Override
+            public void run(IpRangeDeletionExtensionPoint arg) {
+                arg.afterDeleteIpRange(inv);
+            }
+        });
+
+        bus.reply(msg, reply);
     }
 
     private void handle(L3NetworkDeletionMsg msg) {
