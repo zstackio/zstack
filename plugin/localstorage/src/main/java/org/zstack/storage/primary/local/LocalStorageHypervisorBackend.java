@@ -3,8 +3,8 @@ package org.zstack.storage.primary.local;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
 
 import java.util.List;
@@ -54,4 +54,6 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract void handleHypervisorSpecificMessage(LocalStorageHypervisorSpecificMessage msg);
 
     abstract void downloadImageToCache(ImageInventory img, String hostUuid, Completion completion);
+
+    abstract List<Flow> createMigrateBitsFlow(MigrateBitsStruct struct);
 }

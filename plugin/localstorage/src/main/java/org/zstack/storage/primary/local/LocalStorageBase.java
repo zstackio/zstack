@@ -29,6 +29,7 @@ import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrima
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -38,6 +39,7 @@ import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
+import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -76,9 +78,162 @@ public class LocalStorageBase extends PrimaryStorageBase {
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIGetLocalStorageHostDiskCapacityMsg) {
             handle((APIGetLocalStorageHostDiskCapacityMsg) msg);
+        } else if (msg instanceof APILocalStorageMigrateVolumeMsg) {
+            handle((APILocalStorageMigrateVolumeMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
+    }
+
+    private void handle(final APILocalStorageMigrateVolumeMsg msg) {
+        final APILocalStorageMigrateVolumeEvent evt = new APILocalStorageMigrateVolumeEvent(msg.getId());
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("migrate-volume-%s-local-storage-%s-to-host-%s", msg.getVolumeUuid(), msg.getPrimaryStorageUuid(), msg.getDestHostUuid()));
+        chain.then(new ShareFlow() {
+            LocalStorageResourceRefVO volumeRefVO;
+            List<LocalStorageResourceRefVO> snapshotRefVOS;
+            LocalStorageResourceRefInventory ref;
+            long requiredSize;
+            List<VolumeSnapshotVO> snapshots;
+            String volumePath;
+            MigrateBitsStruct struct = new MigrateBitsStruct();
+
+            {
+                SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
+                q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
+                q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolumeUuid());
+                volumeRefVO = q.find();
+                ref = LocalStorageResourceRefInventory.valueOf(volumeRefVO);
+
+                SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
+                sq.add(VolumeSnapshotVO_.volumeUuid, Op.EQ, ref.getResourceUuid());
+                snapshots = sq.list();
+
+                SimpleQuery<VolumeVO> vq = dbf.createQuery(VolumeVO.class);
+                vq.select(VolumeVO_.installPath);
+                vq.add(VolumeVO_.uuid, Op.EQ, ref.getResourceUuid());
+                volumePath = vq.findValue();
+
+                requiredSize = ratioMgr.calculateByRatio(self.getUuid(), ref.getSize());
+
+                ResourceInfo info = new ResourceInfo();
+                info.setResourceRef(ref);
+                info.setPath(volumePath);
+
+                MigrateBitsStruct s = new MigrateBitsStruct();
+                s.getInfos().add(info);
+                s.setDestHostUuid(msg.getDestHostUuid());
+                s.setSrcHostUuid(ref.getHostUuid());
+
+                if (!snapshots.isEmpty()) {
+                    List<String> spUuids = CollectionUtils.transformToList(snapshots, new Function<String, VolumeSnapshotVO>() {
+                        @Override
+                        public String call(VolumeSnapshotVO arg) {
+                            return arg.getUuid();
+                        }
+                    });
+
+                    SimpleQuery<LocalStorageResourceRefVO> rq = dbf.createQuery(LocalStorageResourceRefVO.class);
+                    rq.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeSnapshotVO.class.getSimpleName());
+                    rq.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, spUuids);
+                    snapshotRefVOS = rq.list();
+
+                    for (final VolumeSnapshotVO vo : snapshots) {
+                        info = new ResourceInfo();
+                        info.setPath(vo.getPrimaryStorageInstallPath());
+                        info.setResourceRef(CollectionUtils.find(snapshotRefVOS, new Function<LocalStorageResourceRefInventory, LocalStorageResourceRefVO>() {
+                            @Override
+                            public LocalStorageResourceRefInventory call(LocalStorageResourceRefVO arg) {
+                                return arg.getResourceUuid().equals(vo.getUuid()) ? LocalStorageResourceRefInventory.valueOf(arg) : null;
+                            }
+                        }));
+
+                        if (info.getResourceRef() == null) {
+                            throw new CloudRuntimeException(String.format("cannot find reference of snapshot[uuid:%s, name:%s] on the local storage[uuid:%s, name:%s]",
+                                    vo.getUuid(), vo.getName(), self.getUuid(), self.getName()));
+                        }
+
+                        struct.getInfos().add(info);
+
+                        requiredSize += vo.getSize();
+                    }
+                }
+            }
+
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "reserve-capacity-on-dest-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        reserveCapacityOnHost(msg.getDestHostUuid(), requiredSize);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowTrigger trigger, Map data) {
+                        returnCapacityToHost(msg.getDestHostUuid(), requiredSize);
+                        trigger.rollback();
+                    }
+                });
+
+                LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid());
+                LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+                List<Flow> flows = bkd.createMigrateBitsFlow(struct);
+                for (Flow fl : flows) {
+                    flow(fl);
+                }
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "change-reference-to-dst-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<LocalStorageResourceRefVO> refs = new ArrayList<LocalStorageResourceRefVO>();
+                        volumeRefVO.setHostUuid(msg.getDestHostUuid());
+                        if (snapshotRefVOS != null) {
+                            for (LocalStorageResourceRefVO r : snapshotRefVOS) {
+                                r.setHostUuid(msg.getDestHostUuid());
+                                refs.add(r);
+                            }
+                        }
+
+                        dbf.updateCollection(refs);
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "return-capacity-to-src-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        returnCapacityToHost(ref.getHostUuid(), requiredSize);
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        evt.setInventory(
+                                LocalStorageResourceRefInventory.valueOf(dbf.reload(volumeRefVO))
+                        );
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setErrorCode(errCode);
+                        bus.publish(evt);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override

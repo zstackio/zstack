@@ -1,7 +1,6 @@
 package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -43,12 +42,10 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
-import org.zstack.kvm.KVMConstant;
-import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
-import org.zstack.kvm.KVMHostAsyncHttpCallReply;
-import org.zstack.kvm.MergeVolumeSnapshotOnKvmMsg;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.kvm.*;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
+import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -56,9 +53,10 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import javax.persistence.LockModeType;
+import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * Created by frank on 6/30/2015.
@@ -402,8 +400,32 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class RebaseRootVolumeToBackingFileRsp extends AgentResponse {
-
     }
+
+    public static class GetMd5TO {
+        public String resourceUuid;
+        public String path;
+    }
+
+    public static class GetMd5Cmd extends AgentCommand {
+        public List<GetMd5TO> md5s;
+    }
+
+    public static class Md5TO {
+        public String resourceUuid;
+        public String path;
+        public String md5;
+    }
+
+    public static class GetMd5Rsp extends AgentResponse {
+        public List<Md5TO> md5s;
+    }
+
+
+    public static class CheckMd5sumCmd extends AgentCommand {
+        public List<Md5TO> md5s;
+    }
+
 
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
@@ -416,6 +438,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String MERGE_SNAPSHOT_PATH = "/localstorage/snapshot/merge";
     public static final String MERGE_AND_REBASE_SNAPSHOT_PATH = "/localstorage/snapshot/mergeandrebase";
     public static final String OFFLINE_MERGE_PATH = "/localstorage/snapshot/offlinemerge";
+    public static final String GET_MD5_PATH = "/localstorage/getmd5";
+    public static final String CHECK_MD5_PATH = "/localstorage/checkmd5";
 
 
     public LocalStorageKvmBackend(PrimaryStorageVO self) {
@@ -1697,6 +1721,148 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 completion.fail(errorCode);
             }
         });
+    }
+
+    @Override
+    public List<Flow> createMigrateBitsFlow(final MigrateBitsStruct struct) {
+        List<Flow> flows = new ArrayList<Flow>();
+
+        class Context {
+            GetMd5Rsp getMd5Rsp;
+        }
+        final Context context = new Context();
+
+        flows.add(new NoRollbackFlow() {
+            String __name__ = "get-md5-on-src-host";
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                GetMd5Cmd cmd = new GetMd5Cmd();
+                cmd.md5s = CollectionUtils.transformToList(struct.getInfos(), new Function<GetMd5TO, ResourceInfo>() {
+                    @Override
+                    public GetMd5TO call(ResourceInfo arg) {
+                        GetMd5TO to = new GetMd5TO();
+                        to.path = arg.getPath();
+                        to.resourceUuid = arg.getResourceRef().getResourceUuid();
+                        return to;
+                    }
+                });
+
+                httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
+                    @Override
+                    public void success(GetMd5Rsp rsp) {
+                        context.getMd5Rsp = rsp;
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        });
+
+        flows.add(new Flow() {
+            String __name__ = "migrate-bits-to-dst-host";
+
+            List<String> migrated;
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+
+                SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
+                q.select(KVMHostVO_.managementIp, KVMHostVO_.username, KVMHostVO_.password);
+                q.add(KVMHostVO_.uuid, Op.EQ, struct.getSrcHostUuid());
+                Tuple t = q.findTuple();
+
+                String mgmtIp = t.get(0, String.class);
+                String username = t.get(1, String.class);
+                String password = t.get(2, String.class);
+
+                final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
+                cmd.dstIp = mgmtIp;
+                cmd.dstUsername = username;
+                cmd.dstPassword = password;
+                cmd.paths = CollectionUtils.transformToList(struct.getInfos(), new Function<String, ResourceInfo>() {
+                    @Override
+                    public String call(ResourceInfo arg) {
+                        return arg.getPath();
+                    }
+                });
+
+                httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getDestHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                    @Override
+                    public void success(AgentResponse rsp) {
+                        migrated = cmd.paths;
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowTrigger trigger, Map data) {
+                if (migrated != null) {
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            doDelete(migrated.iterator());
+                        }
+
+                        private void doDelete(Iterator<String> it) {
+                            if (!it.hasNext()) {
+                                return;
+                            }
+
+                            final String path = it.next();
+                            deleteBits(path, struct.getDestHostUuid(), new Completion() {
+                                @Override
+                                public void success() {
+                                    //ignore
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    //TODO
+                                    logger.warn(String.format("failed to delete %s on the host[uuid:%s], %s",
+                                            path, struct.getDestHostUuid(), errorCode));
+                                }
+                            });
+                        }
+
+                    }.run();
+                }
+
+                trigger.rollback();
+            }
+        });
+
+        flows.add(new NoRollbackFlow() {
+            String __name__ = "check-md5-on-dst";
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                CheckMd5sumCmd cmd = new CheckMd5sumCmd();
+                cmd.md5s = context.getMd5Rsp.md5s;
+                httpCall(CHECK_BITS_PATH, struct.getDestHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                    @Override
+                    public void success(AgentResponse rsp) {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        });
+
+        return flows;
     }
 
     @Override
