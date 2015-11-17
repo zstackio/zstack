@@ -59,6 +59,10 @@ import java.util.concurrent.TimeUnit;
  * 12. update volume expunge interval and period to 1s
  *
  * confirm root volume of the vm3 is still there
+ *
+ * 13. delete and expunge the vm4
+ *
+ * confirm the vm4 is expunged
  */
 public class TestDestroyVm {
     Deployer deployer;
@@ -70,7 +74,7 @@ public class TestDestroyVm {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        deployer = new Deployer("deployerXml/vm/TestCreateVm.xml");
+        deployer = new Deployer("deployerXml/vm/TestDestroyVm.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
@@ -83,6 +87,7 @@ public class TestDestroyVm {
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");
         VmInstanceInventory vm2 = api.createVmFromClone(vm1);
         VmInstanceInventory vm3 = api.createVmFromClone(vm1);
+        VmInstanceInventory vm4 = api.createVmFromClone(vm1);
 
         api.destroyVmInstance(vm1.getUuid());
         VmInstanceVO vmvo1 = dbf.findByUuid(vm1.getUuid(), VmInstanceVO.class);
@@ -131,5 +136,12 @@ public class TestDestroyVm {
         TimeUnit.SECONDS.sleep(3);
         vmvo3 = dbf.findByUuid(vm3.getUuid(), VmInstanceVO.class);
         Assert.assertNull(vmvo3);
+
+        VmGlobalConfig.VM_EXPUNGE_PERIOD.updateValue(1000);
+        VmGlobalConfig.VM_EXPUNGE_INTERVAL.updateValue(100);
+        api.destroyVmInstance(vm4.getUuid());
+        api.expungeVm(vm4.getUuid(), null);
+        VmInstanceVO vmvo4 = dbf.findByUuid(vm4.getUuid(), VmInstanceVO.class);
+        Assert.assertNull(vmvo4);
     }
 }

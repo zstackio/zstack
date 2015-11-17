@@ -13,6 +13,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -117,29 +118,50 @@ public class VolumeBase implements Volume {
         }
     }
 
-    private void handle(final ExpungeVolumeMsg msg) {
-        final ExpungeVmReply reply = new ExpungeVmReply();
+    private void expunge(final Completion completion) {
+        if (self.getStatus() != VolumeStatus.Deleted) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("the volume[uuid:%s, name:%s] is not deleted yet, can't expunge it",
+                            self.getUuid(), self.getName())
+            ));
+        }
+
         if (self.getPrimaryStorageUuid() != null) {
             DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
             dmsg.setVolume(getSelfInventory());
             dmsg.setUuid(self.getPrimaryStorageUuid());
             bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-            bus.send(dmsg, new CloudBusCallBack(msg) {
+            bus.send(dmsg, new CloudBusCallBack(completion) {
                 @Override
                 public void run(MessageReply r) {
                     if (!r.isSuccess()) {
-                        reply.setError(r.getError());
+                        completion.fail(r.getError());
                     } else {
                         dbf.remove(self);
+                        completion.success();
                     }
-
-                    bus.reply(msg, reply);
                 }
             });
         } else {
             dbf.remove(self);
-            bus.reply(msg, reply);
+            completion.success();
         }
+    }
+
+    private void handle(final ExpungeVolumeMsg msg) {
+        final ExpungeVmReply reply = new ExpungeVmReply();
+        expunge(new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final CreateDataVolumeTemplateFromDataVolumeMsg msg) {
@@ -344,9 +366,27 @@ public class VolumeBase implements Volume {
             handle((APIUpdateVolumeMsg) msg);
         } else if (msg instanceof APIRecoverDataVolumeMsg) {
             handle((APIRecoverDataVolumeMsg) msg);
+        } else if (msg instanceof APIExpungeDataVolumeMsg) {
+            handle((APIExpungeDataVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIExpungeDataVolumeMsg msg) {
+        final APIExpungeDataVolumeEvent evt = new APIExpungeDataVolumeEvent(msg.getId());
+        expunge(new Completion(msg) {
+            @Override
+            public void success() {
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(APIRecoverDataVolumeMsg msg) {

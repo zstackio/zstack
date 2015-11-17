@@ -3570,7 +3570,7 @@ public class Api implements CloudBusEventListener {
 
     public VmInstanceInventory recoverVm(String vmUuid, SessionInventory session) throws ApiSenderException {
         APIRecoverVmInstanceMsg msg = new APIRecoverVmInstanceMsg();
-        msg.setVmInstanceUuid(vmUuid);
+        msg.setUuid(vmUuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -3578,9 +3578,18 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public void expungeVm(String vmUuid, SessionInventory session) throws ApiSenderException {
+        APIExpungeVmInstanceMsg msg = new APIExpungeVmInstanceMsg();
+        msg.setUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIExpungeVmInstanceEvent.class);
+    }
+
     public VolumeInventory recoverVolume(String volUuid, SessionInventory session) throws ApiSenderException {
         APIRecoverDataVolumeMsg msg = new APIRecoverDataVolumeMsg();
-        msg.setVolumeUuid(volUuid);
+        msg.setUuid(volUuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
@@ -3604,7 +3613,6 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APIExpungeImageEvent.class);
-        return;
     }
 
     public ImageInventory recoverImage(String imageUuid, List<String> bsUuids, SessionInventory session) throws ApiSenderException {
@@ -3616,5 +3624,14 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIRecoverImageEvent evt = sender.send(msg, APIRecoverImageEvent.class);
         return evt.getInventory();
+    }
+
+    public void expungeDataVolume(String volumeUuid, SessionInventory session) throws ApiSenderException {
+        APIExpungeDataVolumeMsg msg = new APIExpungeDataVolumeMsg();
+        msg.setUuid(volumeUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIExpungeDataVolumeEvent.class);
     }
 }
