@@ -27,8 +27,11 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.stopwatch.StopWatch;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -42,6 +45,7 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class TestLocalStorage37 {
+    CLogger logger = Utils.getLogger(TestLocalStorage37.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -125,7 +129,11 @@ public class TestLocalStorage37 {
         }
         dbf.updateCollection(sps);
 
+        StopWatch watch = Utils.getStopWatch();
+        watch.start();
         targets = api.getLocalStorageVolumeMigratableHost(data.getUuid(), null);
+        watch.stop();
+        logger.debug("xxxxxxxxxxx time: " + watch.getLapse());
         Assert.assertEquals(0, targets.size());
     }
 }

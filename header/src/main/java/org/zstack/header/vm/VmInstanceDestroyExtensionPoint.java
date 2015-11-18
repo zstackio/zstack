@@ -10,6 +10,4 @@ public interface VmInstanceDestroyExtensionPoint {
     void afterDestroyVm(VmInstanceInventory inv);
 
     void failedToDestroyVm(VmInstanceInventory inv, ErrorCode reason);
-
-    void afterDeleteVm(VmInstanceInventory inv);
 }

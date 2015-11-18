@@ -50,11 +50,6 @@ public class VmDestroyExtension implements VmInstanceDestroyExtensionPoint {
         }
     }
 
-    @Override
-    public void afterDeleteVm(VmInstanceInventory inv) {
-        afterCalled = true;
-    }
-
     public boolean isPreventDestroy() {
         return preventDestroy;
     }

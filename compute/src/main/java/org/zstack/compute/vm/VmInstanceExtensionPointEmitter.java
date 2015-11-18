@@ -194,15 +194,6 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
-    public void afterDeleteVm(final VmInstanceInventory inv) {
-        CollectionUtils.safeForEach(destroyVmExtensions, new ForEachFunction<VmInstanceDestroyExtensionPoint>() {
-            @Override
-            public void run(VmInstanceDestroyExtensionPoint arg) {
-                arg.afterDeleteVm(inv);
-            }
-        });
-    }
-
     public void failedToDestroyVm(final VmInstanceInventory inv, final ErrorCode reason) {
         CollectionUtils.safeForEach(destroyVmExtensions, new ForEachFunction<VmInstanceDestroyExtensionPoint>() {
             @Override
