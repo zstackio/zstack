@@ -6,21 +6,17 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
-import org.zstack.storage.primary.local.LocalStorageResourceRefInventory;
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -32,19 +28,20 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
  * 1. use local storage
  * 2. create a vm with data volume
  * 3. stop the vm and detach the data volume
- * 4. migrate the data volume with snapshots, and fails it on purpose
+ * 4. delete the image, set the backing file existing on the dst
+ * 5. migrate the root volume to host2
+ * 7. make the migrate cmd fail
  *
- * confirm all rollback happened
+ * confirm the migration failed but the backing file not deleted on the dst
  *
  */
-public class TestLocalStorage33 {
+public class TestLocalStorage36 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -85,6 +82,7 @@ public class TestLocalStorage33 {
     
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
+        ImageInventory image = deployer.images.get("TestImage");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 
@@ -97,54 +95,30 @@ public class TestLocalStorage33 {
 
         api.detachVolumeFromVm(data.getUuid());
 
-        HostInventory host1 = deployer.hosts.get("host1");
+        config.backingFilePath = image.getBackupStorageRefs().get(0).getInstallPath();
+        config.backingFileSize = image.getSize();
+        config.checkBitsSuccess = true;
+        config.copyBitsFromRemoteSuccess = false;
+
+        api.deleteImage(image.getUuid());
+
+        VolumeInventory root = vm.getRootVolume();
+
         HostInventory host2 = deployer.hosts.get("host2");
-
-        int spNum = 30;
-        for (int i=0; i<spNum; i++) {
-            api.createSnapshot(data.getUuid());
-        }
-
-        LocalStorageHostRefVO hcap1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
         LocalStorageHostRefVO hcap2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
 
-        SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-        q.add(VolumeSnapshotVO_.volumeUuid, Op.EQ, data.getUuid());
-        List<VolumeSnapshotVO> snapshots = q.list();
-
-        config.checkMd5Success = false;
-        config.deleteBitsCmds.clear();
         boolean s = false;
         try {
-            api.localStorageMigrateVolume(data.getUuid(), host2.getUuid(), null);
+            api.localStorageMigrateVolume(root.getUuid(), host2.getUuid(), null);
         } catch (ApiSenderException e) {
             s = true;
         }
         Assert.assertTrue(s);
 
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(3);
+        Assert.assertEquals(0, config.deleteBitsCmds.size());
 
-        Assert.assertFalse(config.deleteBitsCmds.isEmpty());
-        for (final VolumeSnapshotVO sp : snapshots) {
-            LocalStorageResourceRefVO spRef = dbf.findByUuid(sp.getUuid(), LocalStorageResourceRefVO.class);
-            Assert.assertEquals(host1.getUuid(), spRef.getHostUuid());
-
-            DeleteBitsCmd deleteBitsCmd = CollectionUtils.find(config.deleteBitsCmds, new Function<DeleteBitsCmd, DeleteBitsCmd>() {
-                @Override
-                public DeleteBitsCmd call(DeleteBitsCmd arg) {
-                    return arg.getPath().equals(sp.getPrimaryStorageInstallPath()) ? arg : null;
-                }
-            });
-            Assert.assertNotNull(String.format("fails to check snapshot[uuid:%s], deleteBitsCmd", sp.getUuid()), deleteBitsCmd);
-            Assert.assertEquals(host2.getUuid(), deleteBitsCmd.getHostUuid());
-        }
-
-        LocalStorageResourceRefVO dref = dbf.findByUuid(data.getUuid(), LocalStorageResourceRefVO.class);
-        Assert.assertEquals(host1.getUuid(), dref.getHostUuid());
-
-        LocalStorageHostRefVO hcap11 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
         LocalStorageHostRefVO hcap22 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(hcap1.getAvailableCapacity(), hcap11.getAvailableCapacity());
         Assert.assertEquals(hcap2.getAvailableCapacity(), hcap22.getAvailableCapacity());
     }
 }

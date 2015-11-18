@@ -23,11 +23,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageVO;
-import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
@@ -445,7 +442,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class GetBackingFileRsp extends AgentResponse {
-        public String backingFile;
+        public String backingFilePath;
         public Long size;
     }
 
@@ -463,7 +460,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String OFFLINE_MERGE_PATH = "/localstorage/snapshot/offlinemerge";
     public static final String GET_MD5_PATH = "/localstorage/getmd5";
     public static final String CHECK_MD5_PATH = "/localstorage/checkmd5";
-    public static final String GET_BACKING_FILE = "/localstorage/volume/getbackingfile";
+    public static final String GET_BACKING_FILE_PATH = "/localstorage/volume/getbackingfile";
 
 
     public LocalStorageKvmBackend(PrimaryStorageVO self) {
@@ -1790,7 +1787,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             String imageUuid = struct.getVolume().getRootImageUuid();
             if (imageUuid != null) {
                 context.image = dbf.findByUuid(imageUuid, ImageVO.class);
-                downloadImage = !(context.image == null || context.image.getMediaType() == ImageMediaType.ISO);
+                downloadImage = !(context.image == null || context.image.getMediaType() == ImageMediaType.ISO || context.image.getStatus() == ImageStatus.Deleted);
             } else {
                 downloadImage = false;
             }
@@ -1823,10 +1820,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         GetBackingFileCmd cmd = new GetBackingFileCmd();
                         cmd.path = struct.getVolume().getInstallPath();
                         cmd.volumeUuid = struct.getVolume().getUuid();
-                        httpCall(GET_BACKING_FILE, struct.getSrcHostUuid(), cmd, GetBackingFileRsp.class, new ReturnValueCompletion<GetBackingFileRsp>() {
+                        httpCall(GET_BACKING_FILE_PATH, struct.getSrcHostUuid(), cmd, GetBackingFileRsp.class, new ReturnValueCompletion<GetBackingFileRsp>() {
                             @Override
                             public void success(GetBackingFileRsp rsp) {
-                                context.backingFilePath = rsp.backingFile;
+                                context.backingFilePath = rsp.backingFilePath;
                                 context.backingFileSize = rsp.size;
                                 trigger.next();
                             }
@@ -1903,6 +1900,45 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     boolean s = false;
 
+                    private void migrate(final FlowTrigger trigger) {
+                        // sync here for migrating multiple volumes having the same backing file
+                        thdf.chainSubmit(new ChainTask(trigger) {
+                            @Override
+                            public String getSyncSignature() {
+                                return String.format("migrate-backing-file-%s-to-host-%s", context.backingFilePath, struct.getDestHostUuid());
+                            }
+
+                            @Override
+                            public void run(final SyncTaskChain chain) {
+                                final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
+                                cmd.dstIp = mgmtIp;
+                                cmd.dstUsername = username;
+                                cmd.dstPassword = password;
+                                cmd.paths = list(context.backingFilePath);
+
+                                httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                                    @Override
+                                    public void success(AgentResponse rsp) {
+                                        s = true;
+                                        trigger.next();
+                                        chain.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                        chain.next();
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public String getName() {
+                                return getSyncSignature();
+                            }
+                        });
+                    }
+
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         if (context.backingFilePath == null) {
@@ -1911,22 +1947,41 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             return;
                         }
 
-                        final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
-                        cmd.dstIp = mgmtIp;
-                        cmd.dstUsername = username;
-                        cmd.dstPassword = password;
-                        cmd.paths = list(context.backingFilePath);
-
-                        httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                        checkIfExistOnDst(new ReturnValueCompletion<Boolean>(trigger) {
                             @Override
-                            public void success(AgentResponse rsp) {
-                                s = true;
-                                trigger.next();
+                            public void success(Boolean existing) {
+                                if (existing) {
+                                    // DO NOT set success = true here, otherwise the rollback
+                                    // will delete the backing file which belongs to others on the dst host
+                                    logger.debug(String.format("found %s on the dst host[uuid:%s], don't copy it",
+                                            context.backingFilePath, struct.getDestHostUuid()));
+                                    trigger.next();
+                                } else {
+                                    migrate(trigger);
+                                }
+
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
                                 trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    private void checkIfExistOnDst(final ReturnValueCompletion<Boolean> completion) {
+                        CheckBitsCmd cmd = new CheckBitsCmd();
+                        cmd.path = context.backingFilePath;
+
+                        httpCall(CHECK_BITS_PATH, struct.getDestHostUuid(), cmd, CheckBitsRsp.class, new ReturnValueCompletion<CheckBitsRsp>(completion) {
+                            @Override
+                            public void success(CheckBitsRsp rsp) {
+                                completion.success(rsp.existing);
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                completion.fail(errorCode);
                             }
                         });
                     }
@@ -1958,6 +2013,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        if (context.backingFilePath == null) {
+                            logger.debug("no backing file, skip this flow");
+                            trigger.next();
+                            return;
+                        }
+
                         Md5TO to = new Md5TO();
                         to.resourceUuid = "backing-file";
                         to.path = context.backingFilePath;

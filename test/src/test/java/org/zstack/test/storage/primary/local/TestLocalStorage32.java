@@ -11,6 +11,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
@@ -20,6 +21,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.storage.primary.local.*;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
+import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
@@ -111,20 +113,29 @@ public class TestLocalStorage32 {
 
         api.detachVolumeFromVm(data.getUuid());
 
+        ImageInventory image = deployer.images.get("TestImage");
+
         long rootVolumeSize = psRatioMgr.calculateByRatio(ps.getUuid(), root.getSize());
         long dataVolumeSize = psRatioMgr.calculateByRatio(ps.getUuid(), data.getSize());
+        long imageSize = image.getSize();
 
         HostInventory host1 = deployer.hosts.get("host1");
         HostInventory host2 = deployer.hosts.get("host2");
         LocalStorageHostRefVO hcap1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
         LocalStorageHostRefVO hcap2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
 
+        config.downloadBitsCmds.clear();
         LocalStorageResourceRefInventory ref = api.localStorageMigrateVolume(root.getUuid(), host2.getUuid(), null);
+
+        Assert.assertEquals(1, config.downloadBitsCmds.size());
+        SftpDownloadBitsCmd downloadBitsCmd = config.downloadBitsCmds.get(0);
+        Assert.assertEquals(image.getBackupStorageRefs().get(0).getInstallPath(), downloadBitsCmd.getBackupStorageInstallPath());
+
         Assert.assertEquals(host2.getUuid(), ref.getHostUuid());
         LocalStorageHostRefVO hcap11 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
         LocalStorageHostRefVO hcap22 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
         Assert.assertEquals(hcap1.getAvailableCapacity() + rootVolumeSize, hcap11.getAvailableCapacity());
-        Assert.assertEquals(hcap2.getAvailableCapacity() - rootVolumeSize, hcap22.getAvailableCapacity());
+        Assert.assertEquals(hcap2.getAvailableCapacity() - rootVolumeSize - imageSize, hcap22.getAvailableCapacity());
 
         Assert.assertFalse(config.getMd5Cmds.isEmpty());
         GetMd5Cmd getMd5Cmd = config.getMd5Cmds.get(0);

@@ -10,6 +10,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
@@ -19,7 +20,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
-import org.zstack.storage.primary.local.LocalStorageResourceRefInventory;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -39,12 +40,13 @@ import java.util.concurrent.TimeUnit;
  * 1. use local storage
  * 2. create a vm with data volume
  * 3. stop the vm and detach the data volume
- * 4. migrate the data volume with snapshots, and fails it on purpose
+ * 4. delete the image
+ * 5. migrate the root volume to host2
  *
- * confirm all rollback happened
+ * confirm the migration succeeded by copying the backing file
  *
  */
-public class TestLocalStorage33 {
+public class TestLocalStorage34 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -85,7 +87,9 @@ public class TestLocalStorage33 {
     
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
+        ImageInventory image = deployer.images.get("TestImage");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
+        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
         api.stopVmInstance(vm.getUuid());
 
         VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -97,54 +101,47 @@ public class TestLocalStorage33 {
 
         api.detachVolumeFromVm(data.getUuid());
 
-        HostInventory host1 = deployer.hosts.get("host1");
+        config.backingFilePath = image.getBackupStorageRefs().get(0).getInstallPath();
+        config.backingFileSize = image.getSize();
+        config.checkBitsSuccess = false;
+
+        api.deleteImage(image.getUuid());
+
+        VolumeInventory root = vm.getRootVolume();
+
+        long requiredSize = image.getSize() + psRatioMgr.calculateByRatio(ps.getUuid(), root.getSize());
+
         HostInventory host2 = deployer.hosts.get("host2");
-
-        int spNum = 30;
-        for (int i=0; i<spNum; i++) {
-            api.createSnapshot(data.getUuid());
-        }
-
-        LocalStorageHostRefVO hcap1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
         LocalStorageHostRefVO hcap2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
 
-        SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-        q.add(VolumeSnapshotVO_.volumeUuid, Op.EQ, data.getUuid());
-        List<VolumeSnapshotVO> snapshots = q.list();
+        api.localStorageMigrateVolume(root.getUuid(), host2.getUuid(), null);
+        Assert.assertEquals(1, config.getBackingFileCmds.size());
+        GetBackingFileCmd getBackingFileCmd = config.getBackingFileCmds.get(0);
+        Assert.assertEquals(root.getUuid(), getBackingFileCmd.volumeUuid);
+        Assert.assertEquals(root.getInstallPath(), getBackingFileCmd.path);
 
-        config.checkMd5Success = false;
-        config.deleteBitsCmds.clear();
-        boolean s = false;
-        try {
-            api.localStorageMigrateVolume(data.getUuid(), host2.getUuid(), null);
-        } catch (ApiSenderException e) {
-            s = true;
-        }
-        Assert.assertTrue(s);
+        Assert.assertEquals(2, config.getMd5Cmds.size());
+        GetMd5Cmd getMd5Cmd = config.getMd5Cmds.get(0);
+        GetMd5TO to = getMd5Cmd.md5s.get(0);
+        Assert.assertEquals(config.backingFilePath, to.path);
+
+        Assert.assertEquals(2, config.checkMd5sumCmds.size());
+        CheckMd5sumCmd checkMd5sumCmd = config.checkMd5sumCmds.get(0);
+        Md5TO md5TO = checkMd5sumCmd.md5s.get(0);
+        Assert.assertEquals(config.backingFilePath, md5TO.path);
+
+        Assert.assertEquals(2, config.copyBitsFromRemoteCmds.size());
+        CopyBitsFromRemoteCmd copyBitsFromRemoteCmd = config.copyBitsFromRemoteCmds.get(0);
+        Assert.assertEquals(config.backingFilePath, copyBitsFromRemoteCmd.paths.get(0));
+        Assert.assertEquals(host2.getManagementIp(), copyBitsFromRemoteCmd.dstIp);
+
 
         TimeUnit.SECONDS.sleep(2);
+        Assert.assertEquals(1, config.deleteBitsCmds.size());
+        DeleteBitsCmd deleteBitsCmd = config.deleteBitsCmds.get(0);
+        Assert.assertEquals(root.getInstallPath(), deleteBitsCmd.getPath());
 
-        Assert.assertFalse(config.deleteBitsCmds.isEmpty());
-        for (final VolumeSnapshotVO sp : snapshots) {
-            LocalStorageResourceRefVO spRef = dbf.findByUuid(sp.getUuid(), LocalStorageResourceRefVO.class);
-            Assert.assertEquals(host1.getUuid(), spRef.getHostUuid());
-
-            DeleteBitsCmd deleteBitsCmd = CollectionUtils.find(config.deleteBitsCmds, new Function<DeleteBitsCmd, DeleteBitsCmd>() {
-                @Override
-                public DeleteBitsCmd call(DeleteBitsCmd arg) {
-                    return arg.getPath().equals(sp.getPrimaryStorageInstallPath()) ? arg : null;
-                }
-            });
-            Assert.assertNotNull(String.format("fails to check snapshot[uuid:%s], deleteBitsCmd", sp.getUuid()), deleteBitsCmd);
-            Assert.assertEquals(host2.getUuid(), deleteBitsCmd.getHostUuid());
-        }
-
-        LocalStorageResourceRefVO dref = dbf.findByUuid(data.getUuid(), LocalStorageResourceRefVO.class);
-        Assert.assertEquals(host1.getUuid(), dref.getHostUuid());
-
-        LocalStorageHostRefVO hcap11 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
         LocalStorageHostRefVO hcap22 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(hcap1.getAvailableCapacity(), hcap11.getAvailableCapacity());
-        Assert.assertEquals(hcap2.getAvailableCapacity(), hcap22.getAvailableCapacity());
+        Assert.assertEquals(hcap2.getAvailableCapacity() - requiredSize, hcap22.getAvailableCapacity());
     }
 }

@@ -59,6 +59,18 @@ public class LocalStorageSimulator {
         restf.getRESTTemplate().exchange(callbackUrl, HttpMethod.POST, rreq, String.class);
     }
 
+    @RequestMapping(value=LocalStorageKvmBackend.GET_BACKING_FILE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getBackingFile(HttpEntity<String> entity) {
+        GetBackingFileCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetBackingFileCmd.class);
+        GetBackingFileRsp rsp = new GetBackingFileRsp();
+        config.getBackingFileCmds.add(cmd);
+        rsp.backingFilePath = config.backingFilePath;
+        rsp.size = config.backingFileSize;
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=LocalStorageKvmBackend.GET_MD5_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String getMd5sum(HttpEntity<String> entity) {
@@ -98,8 +110,14 @@ public class LocalStorageSimulator {
     public @ResponseBody
     String copyBitsFromRemote(HttpEntity<String> entity) {
         CopyBitsFromRemoteCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CopyBitsFromRemoteCmd.class);
-        config.copyBitsFromRemoteCmds.add(cmd);
-        reply(entity, new AgentResponse());
+        AgentResponse rsp = new AgentResponse();
+        if (config.copyBitsFromRemoteSuccess) {
+            config.copyBitsFromRemoteCmds.add(cmd);
+        } else {
+            rsp.setError("on purpose");
+            rsp.setSuccess(false);
+        }
+        reply(entity, rsp);
         return null;}
 
     @RequestMapping(value=LocalStorageKvmMigrateVmFlow.REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, method= RequestMethod.POST)

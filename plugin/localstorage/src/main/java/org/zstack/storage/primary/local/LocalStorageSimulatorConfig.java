@@ -41,6 +41,10 @@ public class LocalStorageSimulatorConfig {
     public List<CopyBitsFromRemoteCmd> copyBitsFromRemoteCmds = new ArrayList<CopyBitsFromRemoteCmd>();
     public List<GetMd5Cmd> getMd5Cmds = new ArrayList<GetMd5Cmd>();
     public List<CheckMd5sumCmd> checkMd5sumCmds = new ArrayList<CheckMd5sumCmd>();
+    public List<GetBackingFileCmd> getBackingFileCmds = new ArrayList<GetBackingFileCmd>();
+    public volatile String backingFilePath;
+    public volatile Long backingFileSize;
     public volatile boolean checkMd5Success = true;
     public volatile boolean checkBitsSuccess = true;
+    public volatile boolean copyBitsFromRemoteSuccess = true;
 }
