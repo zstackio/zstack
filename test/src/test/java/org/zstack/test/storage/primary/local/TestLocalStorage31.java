@@ -118,7 +118,6 @@ public class TestLocalStorage31 {
     
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
-        api.setTimeout(100000);
         HostInventory host2 = deployer.hosts.get("host2");
         HostInventory host1 = deployer.hosts.get("host1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");

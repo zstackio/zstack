@@ -2,7 +2,6 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -20,16 +19,13 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
-import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
@@ -42,6 +38,7 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.utils.CollectionUtils;
@@ -51,6 +48,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
+import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -68,6 +66,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private PluginRegistry pluginRgty;
     @Autowired
     protected PrimaryStorageOverProvisioningManager ratioMgr;
+    @Autowired
+    protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
 
     static class FactoryCluster {
         LocalStorageHypervisorFactory factory;
@@ -84,9 +84,64 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((APIGetLocalStorageHostDiskCapacityMsg) msg);
         } else if (msg instanceof APILocalStorageMigrateVolumeMsg) {
             handle((APILocalStorageMigrateVolumeMsg) msg);
+        } else if (msg instanceof APILocalStorageGetVolumeMigratableHostsMsg) {
+            handle((APILocalStorageGetVolumeMigratableHostsMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
+    }
+
+    @Transactional(readOnly = true)
+    private void handle(APILocalStorageGetVolumeMigratableHostsMsg msg) {
+        // this API does the best it can to find migratable hosts.
+        // it doesn't count the base image size because the image may have
+        // been deleted, and ZStack has to consult the host for the image size
+
+        APILocalStorageGetVolumeMigratableReply reply = new APILocalStorageGetVolumeMigratableReply();
+        String sql = "select vol.size from VolumeVO vol where vol.uuid = :uuid";
+        TypedQuery<Long> vq = dbf.getEntityManager().createQuery(sql, Long.class);
+        vq.setParameter("uuid", msg.getVolumeUuid());
+        long size = vq.getSingleResult();
+        size = ratioMgr.calculateByRatio(self.getUuid(), size);
+
+        sql = "select sum(sp.size) from VolumeSnapshotVO sp where sp.volumeUuid = :volUuid";
+        TypedQuery<Long> sq = dbf.getEntityManager().createQuery(sql, Long.class);
+        sq.setParameter("volUuid", msg.getVolumeUuid());
+        Long snapshotSize = sq.getSingleResult();
+
+        if (snapshotSize != null) {
+            size += snapshotSize;
+        }
+
+        sql = "select href.hostUuid from LocalStorageHostRefVO href where" +
+                " href.hostUuid != (select rref.hostUuid from LocalStorageResourceRefVO rref where rref.resourceUuid = :volUuid and rref.resourceType = :rtype)" +
+                " and (href.totalPhysicalCapacity * :thres) <= href.availablePhysicalCapacity" +
+                " and href.availableCapacity >= :size and href.primaryStorageUuid = :psUuid group by href.hostUuid";
+
+        double physicalThreshold = physicalCapacityMgr.getRatio(self.getUuid());
+
+        //TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        Query q = dbf.getEntityManager().createNativeQuery(sql);
+        q.setParameter("volUuid", msg.getVolumeUuid());
+        q.setParameter("rtype", VolumeVO.class.getSimpleName());
+        q.setParameter("thres", physicalThreshold);
+        q.setParameter("size", size);
+        q.setParameter("psUuid", self.getUuid());
+        List<String> hostUuids = q.getResultList();
+
+        if (hostUuids.isEmpty()) {
+            reply.setInventories(new ArrayList<HostInventory>());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        sql = "select h from HostVO h where h.uuid in (:uuids) and h.status = :hstatus";
+        TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
+        hq.setParameter("uuids", hostUuids);
+        hq.setParameter("hstatus", HostStatus.Connected);
+        List<HostVO> hosts = hq.getResultList();
+        reply.setInventories(HostInventory.valueOf(hosts));
+        bus.reply(msg, reply);
     }
 
     private void handle(final APILocalStorageMigrateVolumeMsg msg) {
@@ -828,7 +883,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
             throw new CloudRuntimeException(String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]", hostUuid, self.getUuid()));
         }
 
+
         LocalStorageHostRefVO ref = refs.get(0);
+
+        physicalCapacityMgr.checkCapacityByRatio(self.getUuid(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity());
 
         LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
         s.setLocalStorage(getSelfInventory());

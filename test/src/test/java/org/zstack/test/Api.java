@@ -3644,4 +3644,14 @@ public class Api implements CloudBusEventListener {
         APILocalStorageMigrateVolumeEvent evt = sender.send(msg, APILocalStorageMigrateVolumeEvent.class);
         return evt.getInventory();
     }
+
+    public List<HostInventory> getLocalStorageVolumeMigratableHost(String volUuid, SessionInventory session) throws ApiSenderException {
+        APILocalStorageGetVolumeMigratableHostsMsg msg = new APILocalStorageGetVolumeMigratableHostsMsg();
+        msg.setVolumeUuid(volUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APILocalStorageGetVolumeMigratableReply reply = sender.call(msg, APILocalStorageGetVolumeMigratableReply.class);
+        return reply.getInventories();
+    }
 }

@@ -20,4 +20,8 @@
         <name>org.zstack.storage.primary.local.APILocalStorageMigrateVolumeMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.storage.primary.local.APILocalStorageGetVolumeMigratableHostsMsg</name>
+    </message>
+
 </service>

@@ -1,17 +1,22 @@
 package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
+
+import java.util.ArrayList;
 
 /**
  * Created by frank on 7/1/2015.
@@ -21,6 +26,8 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
     private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private CloudBus bus;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
@@ -28,9 +35,27 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddLocalPrimaryStorageMsg) msg);
         } else if (msg instanceof APILocalStorageMigrateVolumeMsg) {
             validate((APILocalStorageMigrateVolumeMsg) msg);
+        } else if (msg instanceof APILocalStorageGetVolumeMigratableHostsMsg) {
+            validate((APILocalStorageGetVolumeMigratableHostsMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APILocalStorageGetVolumeMigratableHostsMsg msg) {
+        APILocalStorageGetVolumeMigratableReply reply = new APILocalStorageGetVolumeMigratableReply();
+
+        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
+        q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
+        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolumeUuid());
+        LocalStorageResourceRefVO ref =  q.find();
+        if (ref == null) {
+            reply.setInventories(new ArrayList<HostInventory>());
+            bus.reply(msg, reply);
+            throw new StopRoutingException();
+        }
+
+        msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
     }
 
     private void validate(APILocalStorageMigrateVolumeMsg msg) {

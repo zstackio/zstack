@@ -1916,7 +1916,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 cmd.dstPassword = password;
                                 cmd.paths = list(context.backingFilePath);
 
-                                httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                                httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger, chain) {
                                     @Override
                                     public void success(AgentResponse rsp) {
                                         s = true;
