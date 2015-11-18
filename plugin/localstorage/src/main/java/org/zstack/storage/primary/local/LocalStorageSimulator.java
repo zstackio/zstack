@@ -27,7 +27,9 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -57,14 +59,48 @@ public class LocalStorageSimulator {
         restf.getRESTTemplate().exchange(callbackUrl, HttpMethod.POST, rreq, String.class);
     }
 
+    @RequestMapping(value=LocalStorageKvmBackend.GET_MD5_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getMd5sum(HttpEntity<String> entity) {
+        GetMd5Cmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetMd5Cmd.class);
+        GetMd5Rsp rsp = new GetMd5Rsp();
+        config.getMd5Cmds.add(cmd);
+        rsp.md5s = CollectionUtils.transformToList(cmd.md5s, new Function<Md5TO, GetMd5TO>() {
+            @Override
+            public Md5TO call(GetMd5TO arg) {
+                Md5TO to = new Md5TO();
+                to.md5 = arg.resourceUuid;
+                to.path = arg.path;
+                to.resourceUuid = arg.resourceUuid;
+                return to;
+            }
+        });
+
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.CHECK_MD5_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String checkMd5sum(HttpEntity<String> entity) {
+        CheckMd5sumCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CheckMd5sumCmd.class);
+        config.checkMd5sumCmds.add(cmd);
+        AgentResponse rsp = new AgentResponse();
+        if (!config.checkMd5Success) {
+            rsp.setSuccess(false);
+            rsp.setError("on purpose");
+        }
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String copyBitsFromRemote(HttpEntity<String> entity) {
         CopyBitsFromRemoteCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CopyBitsFromRemoteCmd.class);
         config.copyBitsFromRemoteCmds.add(cmd);
         reply(entity, new AgentResponse());
-        return null;
-    }
+        return null;}
 
     @RequestMapping(value=LocalStorageKvmMigrateVmFlow.REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, method= RequestMethod.POST)
     public @ResponseBody

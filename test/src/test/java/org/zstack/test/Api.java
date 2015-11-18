@@ -74,8 +74,7 @@ import org.zstack.storage.ceph.backup.*;
 import org.zstack.storage.ceph.primary.*;
 import org.zstack.storage.primary.iscsi.APIUpdateIscsiFileSystemBackendPrimaryStorageMsg;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageInventory;
-import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityMsg;
-import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply;
+import org.zstack.storage.primary.local.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
@@ -3633,5 +3632,16 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APIExpungeDataVolumeEvent.class);
+    }
+
+    public LocalStorageResourceRefInventory localStorageMigrateVolume(String volUuid, String hostUuid, SessionInventory session) throws ApiSenderException {
+        APILocalStorageMigrateVolumeMsg msg = new APILocalStorageMigrateVolumeMsg();
+        msg.setVolumeUuid(volUuid);
+        msg.setDestHostUuid(hostUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APILocalStorageMigrateVolumeEvent evt = sender.send(msg, APILocalStorageMigrateVolumeEvent.class);
+        return evt.getInventory();
     }
 }

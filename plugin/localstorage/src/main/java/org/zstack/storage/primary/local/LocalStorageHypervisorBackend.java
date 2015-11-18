@@ -56,4 +56,6 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract void downloadImageToCache(ImageInventory img, String hostUuid, Completion completion);
 
     abstract List<Flow> createMigrateBitsFlow(MigrateBitsStruct struct);
+
+    abstract void deleteBits(String path, String hostUuid, Completion completion);
 }

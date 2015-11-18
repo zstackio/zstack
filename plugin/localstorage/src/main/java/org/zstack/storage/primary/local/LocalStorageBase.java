@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.workflow.*;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
@@ -98,6 +99,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             List<VolumeSnapshotVO> snapshots;
             String volumePath;
             MigrateBitsStruct struct = new MigrateBitsStruct();
+            LocalStorageHypervisorBackend bkd;
 
             {
                 SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
@@ -121,10 +123,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 info.setResourceRef(ref);
                 info.setPath(volumePath);
 
-                MigrateBitsStruct s = new MigrateBitsStruct();
-                s.getInfos().add(info);
-                s.setDestHostUuid(msg.getDestHostUuid());
-                s.setSrcHostUuid(ref.getHostUuid());
+                struct = new MigrateBitsStruct();
+                struct.getInfos().add(info);
+                struct.setDestHostUuid(msg.getDestHostUuid());
+                struct.setSrcHostUuid(ref.getHostUuid());
 
                 if (!snapshots.isEmpty()) {
                     List<String> spUuids = CollectionUtils.transformToList(snapshots, new Function<String, VolumeSnapshotVO>() {
@@ -159,6 +161,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         requiredSize += vo.getSize();
                     }
                 }
+
+                LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid());
+                bkd = f.getHypervisorBackend(self);
             }
 
             @Override
@@ -179,8 +184,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-                LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid());
-                LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
                 List<Flow> flows = bkd.createMigrateBitsFlow(struct);
                 for (Flow fl : flows) {
                     flow(fl);
@@ -193,6 +196,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     public void run(FlowTrigger trigger, Map data) {
                         List<LocalStorageResourceRefVO> refs = new ArrayList<LocalStorageResourceRefVO>();
                         volumeRefVO.setHostUuid(msg.getDestHostUuid());
+                        refs.add(volumeRefVO);
+
                         if (snapshotRefVOS != null) {
                             for (LocalStorageResourceRefVO r : snapshotRefVOS) {
                                 r.setHostUuid(msg.getDestHostUuid());
@@ -211,6 +216,48 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         returnCapacityToHost(ref.getHostUuid(), requiredSize);
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-bits-on-the-src-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<String> paths = new ArrayList<String>();
+                        paths.add(volumePath);
+                        for (VolumeSnapshotVO sp : snapshots) {
+                            paths.add(sp.getPrimaryStorageInstallPath());
+                        }
+
+                        final Iterator<String> it = paths.iterator();
+                        new Runnable() {
+                            @Override
+                            @AsyncThread
+                            public void run() {
+                                if (!it.hasNext()) {
+                                    return;
+                                }
+
+                                final String path = it.next();
+                                bkd.deleteBits(path, struct.getSrcHostUuid(), new Completion() {
+                                    @Override
+                                    public void success() {
+                                        run();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        //TODO
+                                        logger.warn(String.format("failed to delete %s on the host[uuid:%s], %s",
+                                                path, struct.getSrcHostUuid(), errorCode));
+                                        run();
+                                    }
+                                });
+                            }
+                        }.run();
+
                         trigger.next();
                     }
                 });

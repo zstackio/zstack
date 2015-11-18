@@ -44,6 +44,12 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
+        if (ref.getHostUuid().equals(msg.getDestHostUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the volume[uuid:%s] is already on the host[uuid:%s]", msg.getVolumeUuid(), msg.getDestHostUuid())
+            ));
+        }
+
         SimpleQuery<LocalStorageHostRefVO> hq = dbf.createQuery(LocalStorageHostRefVO.class);
         hq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getDestHostUuid());
         hq.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, ref.getPrimaryStorageUuid());
@@ -75,6 +81,17 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(errf.stringToOperationError(
                         String.format("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm is in" +
                                 " state of %s, please stop it before migration", vol.getUuid(), vol.getVmInstanceUuid(), vmstate)
+                ));
+            }
+
+            SimpleQuery<VolumeVO> vq = dbf.createQuery(VolumeVO.class);
+            vq.add(VolumeVO_.type, Op.EQ, VolumeType.Data);
+            vq.add(VolumeVO_.vmInstanceUuid, Op.EQ, vol.getVmInstanceUuid());
+            long count = vq.count();
+            if (count != 0) {
+                throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                        String.format("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm still" +
+                                " has %s data volumes attached, please detach them before migration", vol.getUuid(), vol.getVmInstanceUuid(), count)
                 ));
             }
         }

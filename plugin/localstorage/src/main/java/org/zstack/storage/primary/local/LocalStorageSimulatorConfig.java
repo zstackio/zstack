@@ -39,5 +39,8 @@ public class LocalStorageSimulatorConfig {
     public List<RebaseSnapshotBackingFilesCmd> rebaseSnapshotBackingFilesCmds = new ArrayList<RebaseSnapshotBackingFilesCmd>();
     public List<VerifySnapshotChainCmd> verifySnapshotChainCmds = new ArrayList<VerifySnapshotChainCmd>();
     public List<CopyBitsFromRemoteCmd> copyBitsFromRemoteCmds = new ArrayList<CopyBitsFromRemoteCmd>();
+    public List<GetMd5Cmd> getMd5Cmds = new ArrayList<GetMd5Cmd>();
+    public List<CheckMd5sumCmd> checkMd5sumCmds = new ArrayList<CheckMd5sumCmd>();
+    public volatile boolean checkMd5Success = true;
     public volatile boolean checkBitsSuccess = true;
 }

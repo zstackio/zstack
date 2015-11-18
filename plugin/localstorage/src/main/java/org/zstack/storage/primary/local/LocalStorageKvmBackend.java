@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -56,7 +57,6 @@ import org.zstack.utils.path.PathUtil;
 import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
-import java.util.Map.Entry;
 
 /**
  * Created by frank on 6/30/2015.
@@ -226,7 +226,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class DeleteBitsCmd extends AgentCommand {
+        private String hostUuid;
         private String path;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
 
         public String getPath() {
             return path;
@@ -986,9 +995,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }).start();
     }
 
-    private void deleteBits(String path, String hostUuid, final Completion completion) {
+    @Override
+    public void deleteBits(String path, String hostUuid, final Completion completion) {
         DeleteBitsCmd cmd = new DeleteBitsCmd();
         cmd.setPath(path);
+        cmd.setHostUuid(hostUuid);
 
         httpCall(DELETE_BITS_PATH, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
             @Override
@@ -1676,12 +1687,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void handle(LocalStorageDirectlyDeleteBitsMsg msg, String hostUuid, final ReturnValueCompletion<LocalStorageDirectlyDeleteBitsReply> completion) {
-        DeleteBitsCmd cmd = new DeleteBitsCmd();
-        cmd.setPath(msg.getPath());
-
-        httpCall(DELETE_BITS_PATH, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(completion) {
+        deleteBits(msg.getPath(), hostUuid, new Completion(completion) {
             @Override
-            public void success(DeleteBitsRsp returnValue) {
+            public void success() {
                 completion.success(new LocalStorageDirectlyDeleteBitsReply());
             }
 
@@ -1770,7 +1778,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-
                 SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
                 q.select(KVMHostVO_.managementIp, KVMHostVO_.username, KVMHostVO_.password);
                 q.add(KVMHostVO_.uuid, Op.EQ, struct.getSrcHostUuid());
@@ -1795,6 +1802,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     @Override
                     public void success(AgentResponse rsp) {
                         migrated = cmd.paths;
+                        trigger.next();
                     }
 
                     @Override
@@ -1809,11 +1817,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 if (migrated != null) {
                     new Runnable() {
                         @Override
+                        @AsyncThread
                         public void run() {
                             doDelete(migrated.iterator());
                         }
 
-                        private void doDelete(Iterator<String> it) {
+                        private void doDelete(final Iterator<String> it) {
                             if (!it.hasNext()) {
                                 return;
                             }
@@ -1822,7 +1831,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             deleteBits(path, struct.getDestHostUuid(), new Completion() {
                                 @Override
                                 public void success() {
-                                    //ignore
+                                    doDelete(it);
                                 }
 
                                 @Override
@@ -1830,6 +1839,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     //TODO
                                     logger.warn(String.format("failed to delete %s on the host[uuid:%s], %s",
                                             path, struct.getDestHostUuid(), errorCode));
+                                    doDelete(it);
                                 }
                             });
                         }
@@ -1848,7 +1858,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public void run(final FlowTrigger trigger, Map data) {
                 CheckMd5sumCmd cmd = new CheckMd5sumCmd();
                 cmd.md5s = context.getMd5Rsp.md5s;
-                httpCall(CHECK_BITS_PATH, struct.getDestHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                     @Override
                     public void success(AgentResponse rsp) {
                         trigger.next();
