@@ -2,6 +2,7 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -22,9 +23,13 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
+import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
@@ -34,9 +39,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeStatus;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
@@ -97,7 +100,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             LocalStorageResourceRefInventory ref;
             long requiredSize;
             List<VolumeSnapshotVO> snapshots;
-            String volumePath;
+            VolumeVO volume;
             MigrateBitsStruct struct = new MigrateBitsStruct();
             LocalStorageHypervisorBackend bkd;
 
@@ -112,21 +115,19 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 sq.add(VolumeSnapshotVO_.volumeUuid, Op.EQ, ref.getResourceUuid());
                 snapshots = sq.list();
 
-                SimpleQuery<VolumeVO> vq = dbf.createQuery(VolumeVO.class);
-                vq.select(VolumeVO_.installPath);
-                vq.add(VolumeVO_.uuid, Op.EQ, ref.getResourceUuid());
-                volumePath = vq.findValue();
+                volume = dbf.findByUuid(ref.getResourceUuid(), VolumeVO.class);
 
                 requiredSize = ratioMgr.calculateByRatio(self.getUuid(), ref.getSize());
 
                 ResourceInfo info = new ResourceInfo();
                 info.setResourceRef(ref);
-                info.setPath(volumePath);
+                info.setPath(volume.getInstallPath());
 
                 struct = new MigrateBitsStruct();
                 struct.getInfos().add(info);
                 struct.setDestHostUuid(msg.getDestHostUuid());
                 struct.setSrcHostUuid(ref.getHostUuid());
+                struct.setVolume(VolumeInventory.valueOf(volume));
 
                 if (!snapshots.isEmpty()) {
                     List<String> spUuids = CollectionUtils.transformToList(snapshots, new Function<String, VolumeSnapshotVO>() {
@@ -226,7 +227,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         List<String> paths = new ArrayList<String>();
-                        paths.add(volumePath);
+                        paths.add(volume.getInstallPath());
                         for (VolumeSnapshotVO sp : snapshots) {
                             paths.add(sp.getPrimaryStorageInstallPath());
                         }

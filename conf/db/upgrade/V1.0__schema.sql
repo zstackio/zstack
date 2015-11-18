@@ -9,3 +9,4 @@ ALTER TABLE LocalStorageHostRefVO MODIFY availableCapacity bigint signed NOT NUL
 ALTER TABLE LocalStorageHostRefVO ADD systemUsedCapacity bigint signed NOT NULL DEFAULT 0;
 
 ALTER TABLE ImageBackupStorageRefVO ADD status varchar(32) NOT NULL;
+UPDATE ImageBackupStorageRefVO SET status = 'Ready';

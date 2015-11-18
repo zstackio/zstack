@@ -1,5 +1,7 @@
 package org.zstack.storage.primary.local;
 
+import org.zstack.header.volume.VolumeInventory;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +30,15 @@ public class MigrateBitsStruct {
         }
     }
 
+    private VolumeInventory volume;
+
+    public VolumeInventory getVolume() {
+        return volume;
+    }
+
+    public void setVolume(VolumeInventory volume) {
+        this.volume = volume;
+    }
     private List<ResourceInfo> infos = new ArrayList<ResourceInfo>();
     private String srcHostUuid;
     private String destHostUuid;
