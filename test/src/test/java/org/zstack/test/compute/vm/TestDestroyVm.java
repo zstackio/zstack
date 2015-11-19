@@ -9,11 +9,8 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstance;
+import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.volume.VolumeGlobalConfig;
 import org.zstack.test.Api;
@@ -96,12 +93,18 @@ public class TestDestroyVm {
         vm1 = VmInstanceInventory.valueOf(vmvo1);
         Assert.assertNotNull(vm1.getRootVolume());
 
+        for (VmNicVO nic : vmvo1.getVmNics()) {
+            Assert.assertNull(nic.getUsedIpUuid());
+        }
+
         vm1 = api.recoverVm(vm1.getUuid(), null);
         Assert.assertEquals(VmInstanceState.Stopped.toString(), vm1.getState());
         Assert.assertNull(vm1.getHostUuid());
-        L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
-        api.attachNic(vm1.getUuid(), l3.getUuid());
-        api.startVmInstance(vm1.getUuid());
+        vm1 = api.startVmInstance(vm1.getUuid());
+
+        for (VmNicInventory nic : vm1.getVmNics()) {
+            Assert.assertNotNull(nic.getUsedIpUuid());
+        }
 
         api.destroyVmInstance(vm1.getUuid());
         VmGlobalConfig.VM_EXPUNGE_PERIOD.updateValue(1);

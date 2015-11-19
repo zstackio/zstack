@@ -61,7 +61,7 @@
                 <value>org.zstack.compute.vm.VmDestroyOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmReturnHostFlow</value>
                 <value>org.zstack.compute.vm.VmReleaseResourceFlow</value>
-                <value>org.zstack.compute.vm.VmReturnIpFlow</value>
+                <value>org.zstack.compute.vm.VmReturnReleaseNicFlow</value>
                 <value>org.zstack.compute.vm.VmDeleteVolumeFlow</value>
             </list>
         </property>

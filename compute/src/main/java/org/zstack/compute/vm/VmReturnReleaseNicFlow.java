@@ -9,30 +9,28 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VmReturnIpFlow extends NoRollbackFlow {
+public class VmReturnReleaseNicFlow extends NoRollbackFlow {
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
     protected CloudBus bus;
+    @Autowired
+    protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
 
     @Override
     public void run(FlowTrigger chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         if (!spec.getVmInventory().getVmNics().isEmpty()) {
             List<ReturnIpMsg> msgs = new ArrayList<ReturnIpMsg>(spec.getVmInventory().getVmNics().size());
-            List<String> nicUuids = new ArrayList<String>();
             for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
-                nicUuids.add(nic.getUuid());
                 if (nic.getUsedIpUuid() != null) {
                     ReturnIpMsg msg = new ReturnIpMsg();
                     msg.setL3NetworkUuid(nic.getL3NetworkUuid());
@@ -40,11 +38,24 @@ public class VmReturnIpFlow extends NoRollbackFlow {
                     bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
                     msgs.add(msg);
                 }
+
+                VmNicVO vo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+                if (VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())) {
+                    VmInstanceDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(spec.getVmInventory().getUuid());
+                    if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
+                        dbf.remove(vo);
+                    } else {
+                        vo.setUsedIpUuid(null);
+                        dbf.update(vo);
+                    }
+                } else {
+                    dbf.remove(vo);
+                }
             }
 
-            dbf.removeByPrimaryKeys(nicUuids, VmNicVO.class);
             bus.send(msgs);
         }
+
         chain.next();
     }
 }
