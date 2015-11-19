@@ -54,15 +54,17 @@ import java.util.Map;
 import static org.zstack.core.Platform._;
 
 /**
- * 1. create a vm with mevoco setting
+ * 1. create a vm with qos
+ * 2. change vm's instance offering to another one with different qos
+ * 3. stop/start vm
+ * confirm the vm's qos setting changed
  *
- * confirm the vm created successfully
- * confirm the qos set
- * confirm the flat dhcp works
- * confirm the over-provisioning works
+ * 4. change vm's instance offering to one without qos
+ * 5. stop/start vm
  *
- * 2. attach a data volume
- * confirm the qos set
+ * confirm ths vm's qos is gone
+ *
+ *
  */
 public class TestMevoco17 {
     CLogger logger = Utils.getLogger(TestMevoco17.class);

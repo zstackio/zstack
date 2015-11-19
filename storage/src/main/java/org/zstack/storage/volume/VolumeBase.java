@@ -464,9 +464,18 @@ public class VolumeBase implements Volume {
             q.setParameter("vmUuids", vmUuids);
         }
 
-
         q.setParameter("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped));
-        return q.getResultList();
+        List<VmInstanceVO> vms = q.getResultList();
+        if (vms.isEmpty()) {
+            return vms;
+        }
+
+        VolumeInventory vol = getSelfInventory();
+        for (VolumeGetAttachableVmExtensionPoint ext : pluginRgty.getExtensionList(VolumeGetAttachableVmExtensionPoint.class)) {
+            vms = ext.returnAttachableVms(vol, vms);
+        }
+
+        return vms;
     }
 
     private void handle(APIGetDataVolumeAttachableVmMsg msg) {

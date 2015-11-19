@@ -19,7 +19,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
@@ -28,10 +27,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
-import org.zstack.header.volume.VolumeDeletionExtensionPoint;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeStatus;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -54,7 +50,7 @@ import static org.zstack.utils.CollectionDSL.list;
 public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         MarshalVmOperationFlowExtensionPoint, HostDeleteExtensionPoint, VmAttachVolumeExtensionPoint,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
-        VolumeDeletionExtensionPoint, AddExpandedQueryExtensionPoint {
+        VolumeDeletionExtensionPoint, AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
@@ -326,6 +322,13 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return candidates;
         }
 
+        List<VolumeVO> uninstantiatedVolumes = CollectionUtils.transformToList(candidates, new Function<VolumeVO, VolumeVO>() {
+            @Override
+            public VolumeVO call(VolumeVO arg) {
+                return arg.getStatus() == VolumeStatus.NotInstantiated ? arg : null;
+            }
+        });
+
         String sql = "select ref.hostUuid from LocalStorageResourceRefVO ref where ref.resourceUuid = :volUuid and ref.resourceType = :rtype";
         TypedQuery<String>  q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("volUuid", vm.getRootVolumeUuid());
@@ -337,21 +340,21 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
         String hostUuid = ret.get(0);
         sql = "select ref.resourceUuid from LocalStorageResourceRefVO ref where ref.resourceUuid in (:uuids) and ref.resourceType = :rtype" +
-                " and ref.hostUuid != :huuid";
+                " and ref.hostUuid = :huuid";
         q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuids", volUuids);
         q.setParameter("huuid", hostUuid);
         q.setParameter("rtype", VolumeVO.class.getSimpleName());
-        final List<String> toExclude = q.getResultList();
+        final List<String> toInclude = q.getResultList();
 
-        if (!toExclude.isEmpty()) {
-            candidates = CollectionUtils.transformToList(candidates, new Function<VolumeVO, VolumeVO>() {
-                @Override
-                public VolumeVO call(VolumeVO arg) {
-                    return toExclude.contains(arg.getUuid()) ? null : arg;
-                }
-            });
-        }
+        candidates = CollectionUtils.transformToList(candidates, new Function<VolumeVO, VolumeVO>() {
+            @Override
+            public VolumeVO call(VolumeVO arg) {
+                return toInclude.contains(arg.getUuid()) ? arg : null;
+            }
+        });
+
+        candidates.addAll(uninstantiatedVolumes);
 
         return candidates;
     }
@@ -427,5 +430,45 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public List<ExpandedQueryAliasStruct> getExpandedQueryAliasesStructs() {
         return null;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<VmInstanceVO> returnAttachableVms(VolumeInventory vol, List<VmInstanceVO> candidates) {
+        String sql = "select ref.hostUuid from LocalStorageResourceRefVO ref where ref.resourceUuid = :uuid" +
+                " and ref.resourceType = :rtype";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("uuid", vol.getUuid());
+        q.setParameter("rtype", VolumeVO.class.getSimpleName());
+        List<String> ret = q.getResultList();
+        if (ret.isEmpty()) {
+            return candidates;
+        }
+
+        String hostUuid = ret.get(0);
+
+        List<String> vmRootVolumeUuids = CollectionUtils.transformToList(candidates, new Function<String, VmInstanceVO>() {
+            @Override
+            public String call(VmInstanceVO arg) {
+                return arg.getRootVolumeUuid();
+            }
+        });
+
+        sql = "select ref.resourceUuid from LocalStorageResourceRefVO ref where ref.hostUuid = :huuid" +
+                " and ref.resourceUuid in (:rootVolumeUuids) and ref.resourceType = :rtype";
+        q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("huuid", hostUuid);
+        q.setParameter("rootVolumeUuids", vmRootVolumeUuids);
+        q.setParameter("rtype", VolumeVO.class.getSimpleName());
+        final List<String> toInclude = q.getResultList();
+
+        candidates = CollectionUtils.transformToList(candidates, new Function<VmInstanceVO, VmInstanceVO>() {
+            @Override
+            public VmInstanceVO call(VmInstanceVO arg) {
+                return toInclude.contains(arg.getRootVolumeUuid()) ? arg : null;
+            }
+        });
+
+        return candidates;
     }
 }
