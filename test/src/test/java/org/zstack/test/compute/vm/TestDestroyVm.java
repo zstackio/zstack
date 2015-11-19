@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.network.l3.APIGetIpAddressCapacityReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
@@ -86,15 +87,22 @@ public class TestDestroyVm {
         VmInstanceInventory vm3 = api.createVmFromClone(vm1);
         VmInstanceInventory vm4 = api.createVmFromClone(vm1);
 
+        APIGetIpAddressCapacityReply ipcount = api.getIpAddressCapacityByAll();
         api.destroyVmInstance(vm1.getUuid());
         VmInstanceVO vmvo1 = dbf.findByUuid(vm1.getUuid(), VmInstanceVO.class);
         Assert.assertNotNull(vmvo1);
         Assert.assertEquals(VmInstanceState.Destroyed, vmvo1.getState());
         vm1 = VmInstanceInventory.valueOf(vmvo1);
         Assert.assertNotNull(vm1.getRootVolume());
+        APIGetIpAddressCapacityReply ipcount1 = api.getIpAddressCapacityByAll();
+
+        Assert.assertEquals(ipcount.getAvailableCapacity() + vm1.getVmNics().size(), ipcount1.getAvailableCapacity());
 
         for (VmNicVO nic : vmvo1.getVmNics()) {
             Assert.assertNull(nic.getUsedIpUuid());
+            Assert.assertNull(nic.getGateway());
+            Assert.assertNull(nic.getIp());
+            Assert.assertNull(nic.getNetmask());
         }
 
         vm1 = api.recoverVm(vm1.getUuid(), null);
@@ -104,6 +112,9 @@ public class TestDestroyVm {
 
         for (VmNicInventory nic : vm1.getVmNics()) {
             Assert.assertNotNull(nic.getUsedIpUuid());
+            Assert.assertNotNull(nic.getGateway());
+            Assert.assertNotNull(nic.getIp());
+            Assert.assertNotNull(nic.getNetmask());
         }
 
         api.destroyVmInstance(vm1.getUuid());

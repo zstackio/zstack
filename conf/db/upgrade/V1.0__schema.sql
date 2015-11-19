@@ -10,3 +10,5 @@ ALTER TABLE LocalStorageHostRefVO ADD systemUsedCapacity bigint signed NOT NULL 
 
 ALTER TABLE ImageBackupStorageRefVO ADD status varchar(32) NOT NULL;
 UPDATE ImageBackupStorageRefVO SET status = 'Ready';
+
+ALTER TABLE VmNicVO MODIFY ip varchar(128) DEFAULT NULL;

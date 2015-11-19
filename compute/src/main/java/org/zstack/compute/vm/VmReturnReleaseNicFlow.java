@@ -46,6 +46,9 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                         dbf.remove(vo);
                     } else {
                         vo.setUsedIpUuid(null);
+                        vo.setIp(null);
+                        vo.setGateway(null);
+                        vo.setNetmask(null);
                         dbf.update(vo);
                     }
                 } else {
