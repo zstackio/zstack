@@ -11,8 +11,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -24,6 +28,7 @@ import org.zstack.header.host.MigrateVmOnHypervisorMsg;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
@@ -48,6 +53,8 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  * Created by frank on 10/24/2015.
  */
@@ -61,6 +68,8 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
     private CloudBus bus;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ThreadFacade thdf;
 
     public static final String VERIFY_SNAPSHOT_CHAIN_PATH = "/localstorage/snapshot/verifychain";
     public static final String REBASE_SNAPSHOT_BACKING_FILES_PATH = "/localstorage/snapshot/rebasebackingfiles";
@@ -160,6 +169,14 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
             List<VolumeSnapshotTree> snapshotTrees = new ArrayList<VolumeSnapshotTree>();
             List<VolumeSnapshotInventory> allSnapshots;
 
+            boolean downloadImage;
+            ImageVO image;
+            VolumeInventory rootVolume;
+            String backingFilePath;
+            Long backingFileSize;
+            String backingFileMd5;
+            KVMHostVO dstHost;
+
             {
                 for (VolumeInventory vol : volumesOnLocalStorage) {
                     requiredSize += vol.getSize();
@@ -190,49 +207,293 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         allSnapshots =  VolumeSnapshotInventory.valueOf(vos);
                     }
                 }
+
+                rootVolume = spec.getVmInventory().getRootVolume();
+                String imageUuid = rootVolume.getRootImageUuid();
+                if (imageUuid == null) {
+                    downloadImage = false;
+                } else {
+                    image = dbf.findByUuid(imageUuid, ImageVO.class);
+                    downloadImage = !(image == null || image.getMediaType() == ImageMediaType.ISO
+                            || image.getStatus() == ImageStatus.Deleted);
+                }
+
+                dstHost = dbf.findByUuid(dstHostUuid, KVMHostVO.class);
             }
 
             @Override
             public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "download-image-to-cache";
+                if (downloadImage) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "download-image-to-cache";
 
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        String imageUuid = spec.getVmInventory().getRootVolume().getRootImageUuid();
-                        if (imageUuid == null) {
-                            throw new OperationFailureException(errf.stringToOperationError(
-                                    String.format("the root volume of the vm[uuid:%s] doesn't have a root image uuid", spec.getVmInventory().getUuid())
-                            ));
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            DownloadImageToPrimaryStorageCacheMsg msg = new DownloadImageToPrimaryStorageCacheMsg();
+                            msg.setImage(ImageInventory.valueOf(image));
+                            msg.setHostUuid(dstHostUuid);
+                            msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
+                            bus.send(msg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        trigger.fail(reply.getError());
+                                        return;
+                                    }
+
+                                    storageMigrationPolicy = StorageMigrationPolicy.IncCopy;
+                                    backingImage.uuid = image.getUuid();
+                                    trigger.next();
+                                }
+                            });
                         }
+                    });
+                } else {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "get-backing-file-of-root-volume";
 
-                        // image is deleted or is an ISO, do the full copy
-                        final ImageVO image = dbf.findByUuid(imageUuid, ImageVO.class);
-                        if (image == null || ImageMediaType.ISO == image.getMediaType()) {
-                            trigger.next();
-                            return;
-                        }
-
-                        DownloadImageToPrimaryStorageCacheMsg msg = new DownloadImageToPrimaryStorageCacheMsg();
-                        msg.setImage(ImageInventory.valueOf(image));
-                        msg.setHostUuid(dstHostUuid);
-                        msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-                        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
-                        bus.send(msg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            GetBackingFileCmd cmd = new GetBackingFileCmd();
+                            cmd.path = rootVolume.getInstallPath();
+                            cmd.volumeUuid = rootVolume.getUuid();
+                            callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_BACKING_FILE_PATH, cmd, GetBackingFileRsp.class, new ReturnValueCompletion<GetBackingFileRsp>(trigger) {
+                                @Override
+                                public void success(GetBackingFileRsp rsp) {
+                                    backingFilePath = rsp.backingFilePath;
+                                    backingFileSize = rsp.size;
+                                    trigger.next();
                                 }
 
-                                storageMigrationPolicy = StorageMigrationPolicy.IncCopy;
-                                backingImage.uuid = image.getUuid();
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+
+                    flow(new Flow() {
+                        String __name__ = "reserve-capacity-for-backing-file-on-dst-host";
+
+                        boolean s = false;
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            if (backingFilePath == null) {
+                                logger.debug("no backing file, skip this flow");
                                 trigger.next();
+                                return;
                             }
-                        });
-                    }
-                });
+
+                            reserveCapacityOnHost(dstHostUuid, ref.getPrimaryStorageUuid(), backingFileSize, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    s = true;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void rollback(final FlowTrigger trigger, Map data) {
+                            if (s) {
+                                returnCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), backingFileSize);
+                            }
+
+                            trigger.rollback();
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "get-md5-of-backing-file";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            if (backingFilePath == null) {
+                                logger.debug("no backing file, skip this flow");
+                                trigger.next();
+                                return;
+                            }
+
+                            GetMd5Cmd cmd = new GetMd5Cmd();
+                            GetMd5TO to = new GetMd5TO();
+                            to.resourceUuid = "backing-file";
+                            to.path = backingFilePath;
+                            cmd.md5s = list(to);
+
+                            callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_MD5_PATH, cmd, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
+                                @Override
+                                public void success(GetMd5Rsp rsp) {
+                                    backingFileMd5 = rsp.md5s.get(0).md5;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+
+                    flow(new Flow() {
+                        String __name__ = "migrate-backing-file";
+
+                        boolean s = false;
+
+                        private void migrate(final FlowTrigger trigger) {
+                            // sync here for migrating multiple volumes having the same backing file
+                            thdf.chainSubmit(new ChainTask(trigger) {
+                                @Override
+                                public String getSyncSignature() {
+                                    return String.format("migrate-backing-file-%s-to-host-%s", backingFilePath, dstHostUuid);
+                                }
+
+                                @Override
+                                public void run(final SyncTaskChain chain) {
+                                    final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
+                                    cmd.dstIp = dstHost.getManagementIp();
+                                    cmd.dstUsername = dstHost.getUsername();
+                                    cmd.dstPassword = dstHost.getPassword();
+                                    cmd.paths = list(backingFilePath);
+
+                                    callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class,
+                                            new ReturnValueCompletion<AgentResponse>(trigger, chain) {
+                                        @Override
+                                        public void success(AgentResponse rsp) {
+                                            s = true;
+                                            trigger.next();
+                                            chain.next();
+                                        }
+
+                                        @Override
+                                        public void fail(ErrorCode errorCode) {
+                                            trigger.fail(errorCode);
+                                            chain.next();
+                                        }
+                                    });
+                                }
+
+                                @Override
+                                public String getName() {
+                                    return getSyncSignature();
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            if (backingFilePath == null) {
+                                logger.debug("no backing file, skip this flow");
+                                trigger.next();
+                                return;
+                            }
+
+                            checkIfExistOnDst(new ReturnValueCompletion<Boolean>(trigger) {
+                                @Override
+                                public void success(Boolean existing) {
+                                    if (existing) {
+                                        // DO NOT set success = true here, otherwise the rollback
+                                        // will delete the backing file which belongs to others on the dst host
+                                        logger.debug(String.format("found %s on the dst host[uuid:%s], don't copy it",
+                                                backingFilePath, dstHostUuid));
+                                        trigger.next();
+                                    } else {
+                                        migrate(trigger);
+                                    }
+
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
+                        private void checkIfExistOnDst(final ReturnValueCompletion<Boolean> completion) {
+                            CheckBitsCmd cmd = new CheckBitsCmd();
+                            cmd.path = backingFilePath;
+
+                            callKvmHost(dstHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.CHECK_BITS_PATH,
+                                    cmd, CheckBitsRsp.class, new ReturnValueCompletion<CheckBitsRsp>(completion) {
+                                @Override
+                                public void success(CheckBitsRsp rsp) {
+                                    completion.success(rsp.existing);
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    completion.fail(errorCode);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void rollback(FlowTrigger trigger, Map data) {
+                            if (s) {
+                                LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
+                                msg.setPath(backingFilePath);
+                                msg.setHostUuid(dstHostUuid);
+                                msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
+                                bus.send(msg, new CloudBusCallBack() {
+                                    @Override
+                                    public void run(MessageReply reply) {
+                                        if (!reply.isSuccess()) {
+                                            //TODO
+                                            logger.warn(String.format("failed to delete %s on the host[uuid:%s] of local storage[uuid:%s], %s",
+                                                    backingFilePath, dstHostUuid, ref.getPrimaryStorageUuid(), reply.getError()));
+                                        }
+                                    }
+                                });
+                            }
+
+                            trigger.rollback();
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "check-md5-of-backing-file-on-dst-host";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            if (backingFilePath == null) {
+                                logger.debug("no backing file, skip this flow");
+                                trigger.next();
+                                return;
+                            }
+
+                            Md5TO to = new Md5TO();
+                            to.resourceUuid = "backing-file";
+                            to.path = backingFilePath;
+                            to.md5 = backingFileMd5;
+
+                            CheckMd5sumCmd cmd = new CheckMd5sumCmd();
+                            cmd.md5s = list(to);
+
+                            callKvmHost(dstHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.CHECK_MD5_PATH,
+                                    cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                                @Override
+                                public void success(AgentResponse returnValue) {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+                }
 
                 flow(new Flow() {
                     String __name__ = "reserve-capacity-on-host";
@@ -241,21 +502,16 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        LocalStorageReserveHostCapacityMsg msg = new LocalStorageReserveHostCapacityMsg();
-                        msg.setHostUuid(dstHostUuid);
-                        msg.setSize(requiredSize);
-                        msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-                        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
-                        bus.send(msg, new CloudBusCallBack(trigger) {
+                        reserveCapacityOnHost(dstHostUuid, ref.getPrimaryStorageUuid(), requiredSize, new Completion(trigger) {
                             @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-
+                            public void success() {
                                 s = true;
                                 trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
                             }
                         });
                     }
@@ -263,12 +519,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     @Override
                     public void rollback(FlowTrigger trigger, Map data) {
                         if (s) {
-                            LocalStorageReturnHostCapacityMsg msg = new LocalStorageReturnHostCapacityMsg();
-                            msg.setHostUuid(dstHostUuid);
-                            msg.setSize(requiredSize);
-                            msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
-                            bus.send(msg);
+                            returnCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), requiredSize);
                         }
 
                         trigger.rollback();
@@ -534,6 +785,42 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         }).start();
     }
 
+    private void returnCapacityToHost(final String dstHostUuid, final String primaryStorageUuid, final Long size) {
+        LocalStorageReturnHostCapacityMsg msg = new LocalStorageReturnHostCapacityMsg();
+        msg.setHostUuid(dstHostUuid);
+        msg.setSize(size);
+        msg.setPrimaryStorageUuid(primaryStorageUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+        bus.send(msg, new CloudBusCallBack() {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    //TODO
+                    logger.warn(String.format("failed to return capacity[%s] to the host[uuid:%s] of local storage[uuid:%s], %s",
+                            size, dstHostUuid, primaryStorageUuid, reply.getError()));
+                }
+            }
+        });
+    }
+
+    private void reserveCapacityOnHost(String dstHostUuid, String psUuid, Long size, final Completion completion) {
+        LocalStorageReserveHostCapacityMsg msg = new LocalStorageReserveHostCapacityMsg();
+        msg.setHostUuid(dstHostUuid);
+        msg.setSize(size);
+        msg.setPrimaryStorageUuid(psUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                } else {
+                    completion.success();
+                }
+            }
+        });
+    }
+
     private <T extends AgentResponse> void callKvmHost(final String hostUuid, final String psUuid, String path, AgentCommand cmd, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -642,6 +929,12 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
             to.snapshotUuid = p.volume.getUuid();
             snapshotTOs.add(to);
 
+            class Context {
+                List<Md5TO> md5s;
+            }
+
+            final Context context = new Context();
+
             flows.add(new NoRollbackFlow() {
                 String __name__ = String.format("verify-snapshot-integrity-of-volume-%s-on-src-host", p.volume.getUuid());
 
@@ -652,6 +945,38 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     callKvmHost(srcHostUuid, p.volume.getPrimaryStorageUuid(), VERIFY_SNAPSHOT_CHAIN_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                         @Override
                         public void success(AgentResponse returnValue) {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+
+            flows.add(new NoRollbackFlow() {
+                String __name__ = "get-snapshot-md5";
+
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    GetMd5Cmd cmd = new GetMd5Cmd();
+                    cmd.md5s = CollectionUtils.transformToList(snapshotTOs, new Function<GetMd5TO, SnapshotTO>() {
+                        @Override
+                        public GetMd5TO call(SnapshotTO arg) {
+                            GetMd5TO to = new GetMd5TO();
+                            to.path = arg.path;
+                            to.resourceUuid = arg.snapshotUuid;
+                            return to;
+                        }
+                    });
+
+                    callKvmHost(srcHostUuid, p.volume.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_MD5_PATH, cmd,
+                            GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
+                        @Override
+                        public void success(GetMd5Rsp rsp) {
+                            context.md5s = rsp.md5s;
                             trigger.next();
                         }
 
@@ -725,6 +1050,29 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     }
 
                     trigger.rollback();
+                }
+            });
+
+            flows.add(new NoRollbackFlow() {
+                String __name__ = "check-md5-on-dst-host";
+
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    CheckMd5sumCmd cmd = new CheckMd5sumCmd();
+                    cmd.md5s = context.md5s;
+
+                    callKvmHost(dstHostUuid, p.volume.getPrimaryStorageUuid(), LocalStorageKvmBackend.CHECK_MD5_PATH,
+                            cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                                @Override
+                                public void success(AgentResponse returnValue) {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.rollback();
+                                }
+                            });
                 }
             });
 

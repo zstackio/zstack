@@ -37,5 +37,7 @@
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage35"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage36"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage37"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage38"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage39"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestQueryLocalStorage"/>
 </UnitTestSuiteConfig>
