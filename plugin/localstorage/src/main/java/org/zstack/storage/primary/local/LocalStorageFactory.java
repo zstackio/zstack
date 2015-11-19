@@ -326,15 +326,19 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return candidates;
         }
 
-        String hostUuid =  VmInstanceState.Running.toString().equals(vm.getState()) ? vm.getHostUuid() : vm.getLastHostUuid();
-        if (hostUuid == null) {
-            throw new CloudRuntimeException(String.format("hostUuid is null; vm[uuid: %s, state: %s, hostUuid: %s, lastHostUuid: %s]",
-                    vm.getUuid(), vm.getState(), vm.getHostUuid(), vm.getLastHostUuid()));
+        String sql = "select ref.hostUuid from LocalStorageResourceRefVO ref where ref.resourceUuid = :volUuid and ref.resourceType = :rtype";
+        TypedQuery<String>  q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("volUuid", vm.getRootVolumeUuid());
+        q.setParameter("rtype", VolumeVO.class.getSimpleName());
+        List<String> ret = q.getResultList();
+        if (ret.isEmpty()) {
+            return candidates;
         }
 
-        String sql = "select ref.resourceUuid from LocalStorageResourceRefVO ref where ref.resourceUuid in (:uuids) and ref.resourceType = :rtype" +
+        String hostUuid = ret.get(0);
+        sql = "select ref.resourceUuid from LocalStorageResourceRefVO ref where ref.resourceUuid in (:uuids) and ref.resourceType = :rtype" +
                 " and ref.hostUuid != :huuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuids", volUuids);
         q.setParameter("huuid", hostUuid);
         q.setParameter("rtype", VolumeVO.class.getSimpleName());
