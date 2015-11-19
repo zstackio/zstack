@@ -273,9 +273,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         detachPortForwardingRule(struct, providerType.toString(), new Completion(msg) {
             @Override
             public void success() {
-                vo.setVmNicUuid(null);
-                vo.setGuestIp(null);
-                PortForwardingRuleVO prvo = dbf.updateAndRefresh(vo);
+                PortForwardingRuleVO prvo = dbf.reload(vo);
                 evt.setInventory(PortForwardingRuleInventory.valueOf(prvo));
                 bus.publish(evt);
             }
@@ -693,7 +691,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     }
 
     @Override
-    public void detachPortForwardingRule(PortForwardingStruct struct, String providerType, final Completion completion) {
+    public void detachPortForwardingRule(final PortForwardingStruct struct, String providerType, final Completion completion) {
         FlowChain chain;
         if (isNeedRemoveVip(struct.getRule())) {
             chain = detachPortForwardingAndReleaseVipBuidler.build();
@@ -709,6 +707,10 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                PortForwardingRuleVO vo = dbf.findByUuid(struct.getRule().getUuid(), PortForwardingRuleVO.class);
+                vo.setVmNicUuid(null);
+                vo.setGuestIp(null);
+                dbf.updateAndRefresh(vo);
                 completion.success();
 
             }
