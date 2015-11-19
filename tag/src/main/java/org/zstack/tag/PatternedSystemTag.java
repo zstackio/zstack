@@ -36,12 +36,22 @@ public class PatternedSystemTag extends SystemTag {
     }
 
     @Override
+    public void delete(String resourceUuid, Class resourceClass) {
+        tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), false);
+    }
+
+    @Override
     public void delete(String resourceUuid) {
         tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), false);
     }
 
     @Override
     public void deleteInherentTag(String resourceUuid) {
+        tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), true);
+    }
+
+    @Override
+    public void deleteInherentTag(String resourceUuid, Class resourceClass) {
         tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), true);
     }
 

@@ -231,6 +231,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         vo.setInherent(false);
         vo.setTag(tag);
         vo.setType(TagType.System);
+
+        preTagCreated(SystemTagInventory.valueOf(vo));
+
         vo = dbf.persistAndRefresh(vo);
         SystemTagInventory inv = SystemTagInventory.valueOf(vo);
 

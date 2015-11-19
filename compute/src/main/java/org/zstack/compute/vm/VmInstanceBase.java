@@ -17,10 +17,7 @@ import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostAllocatorError;
-import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.configuration.DiskOfferingVO;
-import org.zstack.header.configuration.DiskOfferingVO_;
-import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.configuration.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
@@ -2001,11 +1998,34 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         InstanceOfferingVO iovo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
+
+        final InstanceOfferingInventory inv = InstanceOfferingInventory.valueOf(iovo);
+        final VmInstanceInventory vm = getSelfInventory();
+
+        List<ChangeInstanceOfferingExtensionPoint> exts = pluginRgty.getExtensionList(ChangeInstanceOfferingExtensionPoint.class);
+        for (ChangeInstanceOfferingExtensionPoint ext : exts) {
+            ext.preChangeInstanceOffering(vm, inv);
+        }
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
+            @Override
+            public void run(ChangeInstanceOfferingExtensionPoint arg) {
+                arg.beforeChangeInstanceOffering(vm ,inv);
+            }
+        });
+
         self.setInstanceOfferingUuid(iovo.getUuid());
         self.setCpuNum(iovo.getCpuNum());
         self.setCpuSpeed(iovo.getCpuSpeed());
         self.setMemorySize(iovo.getMemorySize());
         self = dbf.updateAndRefresh(self);
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
+            @Override
+            public void run(ChangeInstanceOfferingExtensionPoint arg) {
+                arg.afterChangeInstanceOffering(vm ,inv);
+            }
+        });
 
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
