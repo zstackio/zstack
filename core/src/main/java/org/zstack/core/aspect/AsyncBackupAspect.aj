@@ -77,7 +77,7 @@ public aspect AsyncBackupAspect {
         if (flipThrowable && t instanceof RuntimeException) {
             throw (RuntimeException)t;
         } else {
-            logger.warn(String.format("unhandled exception happened"), t);
+            logger.warn("unhandled exception happened", t);
         }
     }
 
@@ -93,7 +93,23 @@ public aspect AsyncBackupAspect {
         }
     }
 
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.Completion+.fail(*)) {
+        try {
+            proceed(completion);
+        } catch (Throwable  t) {
+            backup(completion.getBackups(), t);
+        }
+    }
+
     void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.ReturnValueCompletion+.success(*)) {
+        try {
+            proceed(completion);
+        } catch (Throwable  t) {
+            backup(completion.getBackups(), t);
+        }
+    }
+
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.ReturnValueCompletion+.fail(*)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -110,6 +126,14 @@ public aspect AsyncBackupAspect {
     }
 
     void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.NopeCompletion+.success()) {
+        try {
+            proceed(completion);
+        } catch (Throwable  t) {
+            backup(completion.getBackups(), t);
+        }
+    }
+
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.NopeCompletion+.fail(*)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
