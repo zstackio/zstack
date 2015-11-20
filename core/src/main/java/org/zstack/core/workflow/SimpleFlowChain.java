@@ -214,15 +214,13 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
     }
 
     private void callErrorHandler(boolean info) {
-        try {
-            if (info) {
-                logger.debug(String.format("[FlowChain: %s] rolled back all flows because error%s", name, errorCode));
-            }
-            if (errorHandler != null) {
-                errorHandler.handle(errorCode, this.data);
-            }
-        } catch (Throwable t) {
-            logger.warn(String.format("[FlowChain: %s] unhandled exception when calling error handler", name), t);
+        // NOTE: don't wrap the code with try ... catch
+        // the throwable is handled by AsyncBackupAspect.aj
+        if (info) {
+            logger.debug(String.format("[FlowChain: %s] rolled back all flows because error%s", name, errorCode));
+        }
+        if (errorHandler != null) {
+            errorHandler.handle(errorCode, this.data);
         }
     }
 
@@ -306,14 +304,12 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
             stopWath.stop();
         }
 
-        try {
-            logger.debug(String.format("[FlowChain: %s] successfully completed", name));
-            if (doneHandler != null) {
-                doneHandler.handle(this.data);
-            }
-        } catch (Throwable t) {
-            logger.warn(String.format("[FlowChain: %s] unhandled exception when calling done handler", name), t);
+        // NOTE: don't wrap the code with try ... catch
+        // the throwable is handled by AsyncBackupAspect.aj
+        if (doneHandler != null) {
+            doneHandler.handle(this.data);
         }
+        logger.debug(String.format("[FlowChain: %s] successfully completed", name));
     }
 
     @Override
