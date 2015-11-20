@@ -334,7 +334,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         if (ip == null) {
                             trigger.rollback();
                             return;

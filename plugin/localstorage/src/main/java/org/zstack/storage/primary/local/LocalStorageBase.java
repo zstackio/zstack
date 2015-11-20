@@ -234,7 +234,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         returnCapacityToHost(msg.getDestHostUuid(), requiredSize);
                         trigger.rollback();
                     }
@@ -643,7 +643,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         returnCapacityToHost(hostUuid,size);
                         trigger.rollback();
                     }
@@ -994,7 +994,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         returnCapacityToHost(finalHostUuid, requiredSize);
                         trigger.rollback();
                     }
@@ -1161,7 +1161,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         returnCapacityToHost(msg.getHostUuid(), requiredSize);
                         trigger.rollback();
                     }
@@ -1290,7 +1290,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         returnCapacityToHost(msg.getDestHostUuid(), msg.getIsoSpec().getInventory().getSize());
                         trigger.rollback();
                     }

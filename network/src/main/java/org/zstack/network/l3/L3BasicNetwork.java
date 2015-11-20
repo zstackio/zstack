@@ -435,7 +435,7 @@ public class L3BasicNetwork implements L3Network {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
                             dbf.remove(dnsvo);
                         }

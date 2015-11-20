@@ -35,7 +35,6 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -317,7 +316,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         if (success) {
                             vipVrBkd.releaseVipOnVirtualRouterVm(vr, vip, new Completion(trigger) {
                                 @Override
@@ -408,7 +407,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (success) {
                             vipMgr.unlockVip(vip);
                         }
@@ -449,7 +448,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                         }
 
                         @Override
-                        public void rollback(final FlowTrigger trigger, Map data) {
+                        public void rollback(final FlowRollback trigger, Map data) {
                             if (vr == null) {
                                 trigger.rollback();
                                 return;
@@ -516,7 +515,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         if (success) {
                             vipVrBkd.releaseVipOnVirtualRouterVm(vr, vip, new Completion(trigger) {
                                 @Override

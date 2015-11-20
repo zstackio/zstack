@@ -14,6 +14,7 @@ import org.zstack.header.allocator.*;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -482,7 +483,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 if (rollback != null) {
                     rollback.run();
                 }

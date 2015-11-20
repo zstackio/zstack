@@ -744,7 +744,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 }
 
                                 @Override
-                                public void rollback(FlowTrigger trigger, Map data) {
+                                public void rollback(FlowRollback trigger, Map data) {
                                     if (s) {
                                         ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                         rmsg.setDiskSize(image.getSize());
@@ -768,7 +768,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 }
 
                                 @Override
-                                public void rollback(FlowTrigger trigger, Map data) {
+                                public void rollback(FlowRollback trigger, Map data) {
                                     returnCapacityToHost(hostUuid, image.getSize());
                                     trigger.rollback();
                                 }
@@ -1277,7 +1277,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             returnCapacityToHost(hostUuid, totalSnapshotSize);
                             trigger.rollback();
                         }
@@ -1327,7 +1327,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             for (String path : snapshotInstallPaths) {
                                 //TODO
                                 deleteBits(path, hostUuid, new NopeCompletion());
@@ -1474,7 +1474,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         deleteBits(workSpaceInstallPath, hostUuid, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -1855,7 +1855,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
                             returnCapacityToHost(struct.getDestHostUuid(), context.backingFileSize);
                         }
@@ -1987,7 +1987,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
                             deleteBits(context.backingFilePath, struct.getDestHostUuid(), new Completion() {
                                 @Override
@@ -2107,7 +2107,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 if (migrated != null) {
                     new Runnable() {
                         @Override
@@ -2327,7 +2327,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         returnCapacityToHost(ref.getHostUuid(), requiredSize);
                         trigger.rollback();
                     }
@@ -2356,7 +2356,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         deleteBits(temporaryTemplatePath, ref.getHostUuid(), new Completion(trigger) {
                             @Override
                             public void success() {

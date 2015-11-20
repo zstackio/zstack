@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.CheckL2NetworkOnHostMsg;
@@ -58,7 +59,7 @@ public class VmMigrationCheckL2NetworkOnHostFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger trigger, Map data) {
+    public void rollback(FlowRollback trigger, Map data) {
         trigger.rollback();
     }
 }

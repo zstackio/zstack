@@ -341,7 +341,7 @@ public class VirtualRouter extends ApplianceVmBase {
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 self = dbf.reload(self);
                 getSelf().setStatus(ApplianceVmStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);

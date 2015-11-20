@@ -103,7 +103,7 @@ public class NfsDownloadImageToCacheJob implements Job {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
                             ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                             rmsg.setDiskSize(image.getInventory().getSize());

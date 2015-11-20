@@ -403,7 +403,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 self = dbf.reload(self);
                 getSelf().setStatus(originStatus);
                 self = dbf.updateAndRefresh(self);
@@ -441,7 +441,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 self = dbf.reload(self);
                 getSelf().setStatus(originStatus);
                 self = dbf.updateAndRefresh(self);
@@ -500,7 +500,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 self = dbf.reload(self);
                 getSelf().setStatus(originStatus);
                 self = dbf.updateAndRefresh(self);
@@ -552,7 +552,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 self = dbf.reload(self);
                 getSelf().setStatus(originStatus);
                 self = dbf.updateAndRefresh(self);

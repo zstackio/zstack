@@ -242,7 +242,7 @@ public class VolumeSnapshotTreeBase {
             }
 
             @Override
-            public void rollback(final FlowTrigger trigger, Map data) {
+            public void rollback(final FlowRollback trigger, Map data) {
                 changeStatusOfSnapshots(StatusEvent.ready, currentLeaf.getDescendants(), new Completion(trigger) {
                     @Override
                     public void success() {
@@ -493,7 +493,7 @@ public class VolumeSnapshotTreeBase {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
                                 ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                 rmsg.setDiskSize(info.neededSizeOnWorkspacePrimaryStorage);
@@ -534,7 +534,7 @@ public class VolumeSnapshotTreeBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (info.bitsInstallPath != null) {
                             DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
                             dmsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(getSelfInventory().getFormat()).toString());
@@ -546,7 +546,7 @@ public class VolumeSnapshotTreeBase {
                             bus.send(dmsg);
                         }
 
-                        trigger.next();
+                        trigger.rollback();
                     }
                 });
 
@@ -936,7 +936,7 @@ public class VolumeSnapshotTreeBase {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
                                 ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                 rmsg.setDiskSize(info.neededSizeOnWorkspacePrimaryStorage);
@@ -1013,7 +1013,7 @@ public class VolumeSnapshotTreeBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (!info.destBackupStorages.isEmpty()) {
                             List<ReturnBackupStorageMsg> rmsgs = CollectionUtils.transformToList(info.destBackupStorages, new Function<ReturnBackupStorageMsg, BackupStorageInventory>() {
                                 @Override
@@ -1116,7 +1116,7 @@ public class VolumeSnapshotTreeBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (!info.results.isEmpty()) {
                             List<DeleteBitsOnBackupStorageMsg> dmsgs = CollectionUtils.transformToList(info.results, new Function<DeleteBitsOnBackupStorageMsg, CreateTemplateFromVolumeSnapshotResult>() {
                                 @Override
@@ -1493,7 +1493,7 @@ public class VolumeSnapshotTreeBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         for (Info info : needBackup) {
                             if (info.destBackupStorage != null) {
                                 ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
@@ -1549,7 +1549,7 @@ public class VolumeSnapshotTreeBase {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         List<VolumeSnapshotBackupStorageDeletionMsg> dmsgs = CollectionUtils.transformToList(needBackup, new Function<VolumeSnapshotBackupStorageDeletionMsg, Info>() {
                             @Override
                             public VolumeSnapshotBackupStorageDeletionMsg call(Info arg) {

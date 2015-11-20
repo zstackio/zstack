@@ -168,7 +168,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         backend.delete(pinv, volumeInWorkSpacePath, new NopeCompletion());
                         trigger.rollback();
                     }
@@ -278,7 +278,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (templateInstallPathOnPrimaryStorage != null) {
                             backend.delete(getSelfInventory(), templateInstallPathOnPrimaryStorage, new NopeCompletion());
                         }
@@ -333,7 +333,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (!results.isEmpty()) {
                             List<DeleteBitsOnBackupStorageMsg> dmsgs = CollectionUtils.transformToList(results, new Function<DeleteBitsOnBackupStorageMsg, CreateTemplateFromVolumeSnapshotResult>() {
                                 @Override
@@ -811,7 +811,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (templatePrimaryStorageInstallPath != null) {
                             bkd.delete(pinv, templatePrimaryStorageInstallPath, new NopeCompletion());
                         }

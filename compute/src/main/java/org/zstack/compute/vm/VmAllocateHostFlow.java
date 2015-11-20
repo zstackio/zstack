@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.allocator.*;
 import org.zstack.header.configuration.DiskOfferingInventory;
@@ -120,7 +121,7 @@ public class VmAllocateHostFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger chain, Map data) {
+    public void rollback(FlowRollback chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory host = spec.getDestHost();
         if (host != null) {

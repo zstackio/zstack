@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.ApplianceVmFacade;
 import org.zstack.appliancevm.ApplianceVmFirewallRuleInventory;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -55,7 +56,7 @@ public class PortForwardingRemoveVirtualRouterFirewallFlow implements Flow {
     }
 
     @Override
-    public void rollback(final FlowTrigger trigger, Map data) {
+    public void rollback(final FlowRollback trigger, Map data) {
         trigger.rollback();
     }
 }

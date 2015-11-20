@@ -166,7 +166,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (image != null) {
                             dbf.remove(image);
                         }
@@ -244,7 +244,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (!backupStorage.isEmpty()) {
                             List<ReturnBackupStorageMsg> rmsgs = CollectionUtils.transformToList(backupStorage, new Function<ReturnBackupStorageMsg, BackupStorageInventory>() {
                                 @Override
@@ -529,7 +529,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (imageVO != null) {
                             dbf.remove(imageVO);
                         }
@@ -595,7 +595,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         if (targetBackupStorages.isEmpty()) {
                             trigger.rollback();
                             return;

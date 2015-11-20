@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.errorcode.ErrorCode;
@@ -121,7 +122,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger chain, Map data) {
+    public void rollback(FlowRollback chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         List<Bucket> buckets = (List<Bucket>) data.get(SUCCESS);

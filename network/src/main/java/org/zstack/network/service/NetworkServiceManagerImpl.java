@@ -304,7 +304,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
                 }
 
                 @Override
-                public void rollback(final FlowTrigger chain, Map data) {
+                public void rollback(final FlowRollback chain, Map data) {
                     logger.debug(String.format("NetworkServiceExtensionPoint[%s] is asking back ends to release network service[%s] if needed", ns.getClass().getName(), ns.getNetworkServiceType()));
                     ns.releaseNetworkService(spec, data, new NoErrorCompletion() {
                         @Override

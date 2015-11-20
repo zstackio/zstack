@@ -313,7 +313,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                             }
 
                             @Override
-                            public void rollback(FlowTrigger trigger, Map data) {
+                            public void rollback(FlowRollback trigger, Map data) {
                                 if (s) {
                                     ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                     rmsg.setPrimaryStorageUuid(self.getUuid());
@@ -492,7 +492,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (volumePath != null) {
                                 deleteBits(volumePath, volume.getUuid(), new NopeCompletion());
                             }
@@ -663,7 +663,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         deleteBits(installPath, vol.getUuid(), new Completion(trigger) {
                             @Override
                             public void success() {
@@ -843,7 +843,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         if (isoSubVolumePath == null) {
                             trigger.rollback();
                             return;
@@ -906,7 +906,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         if (iscsiTarget == null) {
                             trigger.rollback();
                             return;
@@ -918,7 +918,9 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_TARGET_PATH), cmd, new JsonAsyncRESTCallback<DeleteIscsiTargetRsp>() {
                             @Override
                             public void fail(ErrorCode err) {
-                                trigger.fail(err);
+                                logger.warn(String.format("failed delete iscsi target[target:%s, sub volume uuid:%s], %s",
+                                        iscsiTarget, isoSubvolumeUuid, err));
+                                trigger.rollback();
                             }
 
                             @Override
@@ -1342,7 +1344,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         }
 
                         @Override
-                        public void rollback(final FlowTrigger trigger, Map data) {
+                        public void rollback(final FlowRollback trigger, Map data) {
                             if (primaryStorageInstallPath != null) {
                                 DeleteBitsCmd cmd = new DeleteBitsCmd();
                                 cmd.setInstallPath(primaryStorageInstallPath);
@@ -1534,7 +1536,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         if (newVolumePath == null) {
                             trigger.rollback();
                             return;

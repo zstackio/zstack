@@ -11,6 +11,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
@@ -140,7 +141,7 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger trigger, Map data) {
+    public void rollback(FlowRollback trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         if (spec.getVolumeSpecs().isEmpty()) {

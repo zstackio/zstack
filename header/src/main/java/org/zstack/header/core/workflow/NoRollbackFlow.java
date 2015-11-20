@@ -9,7 +9,7 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public abstract class NoRollbackFlow implements Flow {
-    public void rollback(FlowTrigger trigger, Map data) {
+    public void rollback(FlowRollback trigger, Map data) {
         trigger.rollback();
     }
 }

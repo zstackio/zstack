@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -60,7 +61,7 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger chain, Map data) {
+    public void rollback(FlowRollback chain, Map data) {
         Long size = (Long) data.get(VmAllocatePrimaryStorageForAttachingDiskFlow.class);
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());

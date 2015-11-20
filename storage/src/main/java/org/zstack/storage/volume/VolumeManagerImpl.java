@@ -348,7 +348,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (targetPrimaryStorage != null) {
                             ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                             rmsg.setDiskSize(template.getSize());
@@ -388,7 +388,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (primaryStorageInstallPath != null) {
                             DeleteBitsOnPrimaryStorageMsg delMsg = new DeleteBitsOnPrimaryStorageMsg();
                             delMsg.setInstallPath(PathUtil.parentFolder(primaryStorageInstallPath));

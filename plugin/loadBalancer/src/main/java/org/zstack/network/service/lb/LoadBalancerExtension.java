@@ -112,7 +112,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 }
 
                 @Override
-                public void rollback(final FlowTrigger trigger, Map data) {
+                public void rollback(final FlowRollback trigger, Map data) {
                     if (!s) {
                         LoadBalancerDeactiveVmNicMsg dmsg = new LoadBalancerDeactiveVmNicMsg();
                         dmsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());

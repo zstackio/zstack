@@ -10,6 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -183,7 +184,7 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger trigger, Map data) {
+    public void rollback(FlowRollback trigger, Map data) {
         List<VirtualRouterEipRefVO> refs = (List<VirtualRouterEipRefVO>) data.get(VirtualRouterSyncEipOnStartFlow.class.getName());
         if (refs != null) {
             dbf.removeCollection(refs, VirtualRouterEipRefVO.class);

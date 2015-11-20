@@ -231,7 +231,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger trigger, Map data) {
+    public void rollback(FlowRollback trigger, Map data) {
         List<VirtualRouterLoadBalancerRefVO> refs = (List<VirtualRouterLoadBalancerRefVO>) data.get(VirtualRouterSyncLbOnStartFlow.class);
         if (refs != null) {
             dbf.removeCollection(refs, VirtualRouterLoadBalancerRefVO.class);

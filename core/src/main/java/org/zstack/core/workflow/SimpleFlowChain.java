@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * To change this template use File | Settings | File Templates.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class SimpleFlowChain implements FlowTrigger, FlowChain {
+public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain {
     private static final CLogger logger = Utils.getLogger(SimpleFlowChain.class);
 
     private List<Flow> flows = new ArrayList<Flow>();
@@ -188,16 +188,13 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
         } catch (OperationFailureException oe) {
             String errInfo = oe.getErrorCode() != null ? oe.getErrorCode().toString() : "";
             logger.warn(errInfo, oe);
-            rollBackFlows.push(currentFlow);
             fail(oe.getErrorCode());
         } catch (FlowException fe) {
             String errInfo = fe.getErrorCode() != null ? fe.getErrorCode().toString() : "";
             logger.warn(errInfo, fe);
-            rollBackFlows.push(currentFlow);
             fail(fe.getErrorCode());
         } catch (Throwable t) {
             logger.warn(String.format("[FlowChain: %s] unhandled exception when executing flow[%s], start to rollback", name, flow.getClass().getName()), t);
-            rollBackFlows.push(currentFlow);
             fail(errf.throwableToInternalError(t));
         }
     }

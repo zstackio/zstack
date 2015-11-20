@@ -833,7 +833,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         for (String installPath : snapshotInstallPaths) {
                             delete(pinv, installPath, new NopeCompletion());
                         }
@@ -885,7 +885,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (mergeSuccess) {
                             delete(pinv, workspaceInstallPath, new NopeCompletion());
                         }

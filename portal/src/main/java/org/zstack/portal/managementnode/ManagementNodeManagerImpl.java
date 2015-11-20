@@ -298,7 +298,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     bus.stop();
                     trigger.rollback();
                 }
@@ -318,7 +318,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     bus.unregisterService(self);
                     trigger.rollback();
                 }
@@ -331,7 +331,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     stopComponents();
                     trigger.rollback();
                 }
@@ -344,7 +344,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     removeInventory(false);
                     trigger.rollback();
                 }
@@ -366,7 +366,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     node.leave();
                     trigger.rollback();
                 }
@@ -379,7 +379,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     apim.stop();
                     trigger.rollback();
                 }

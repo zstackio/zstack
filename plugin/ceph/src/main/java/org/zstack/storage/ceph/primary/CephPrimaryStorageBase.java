@@ -1006,7 +1006,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (s) {
                                 ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                 rmsg.setNoOverProvisioning(true);
@@ -1049,7 +1049,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (deleteOnRollback && cachePath != null) {
                                 DeleteCmd cmd = new DeleteCmd();
                                 cmd.installPath = cachePath;
@@ -1097,7 +1097,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (needCleanup) {
                                 DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
                                 cmd.snapshotPath = snapshotPath;
@@ -1714,7 +1714,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         dbf.removeCollection(monVOs, CephPrimaryStorageMonVO.class);
                         trigger.rollback();
                     }

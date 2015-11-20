@@ -3,6 +3,7 @@ package org.zstack.core.aspect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -28,7 +29,8 @@ public aspect AsyncBackupAspect {
 
     private boolean isAsyncBackup(Object backup) {
         return backup instanceof Message || backup instanceof Completion || backup instanceof ReturnValueCompletion
-                || backup instanceof FlowTrigger || backup instanceof SyncTaskChain || backup instanceof NoErrorCompletion;
+                || backup instanceof FlowTrigger || backup instanceof SyncTaskChain
+                || backup instanceof NoErrorCompletion || backup instanceof FlowRollback;
     }
 
 
@@ -58,6 +60,8 @@ public aspect AsyncBackupAspect {
                 ((ReturnValueCompletion)ancestor).fail(err);
             } else if (ancestor instanceof FlowTrigger) {
                 ((FlowTrigger) ancestor).fail(err);
+            } else if (ancestor instanceof FlowRollback) {
+                ((FlowRollback) ancestor).rollback();
             } else if (ancestor instanceof  SyncTaskChain) {
                 ((SyncTaskChain) ancestor).next();
             } else if (ancestor instanceof NoErrorCompletion) {

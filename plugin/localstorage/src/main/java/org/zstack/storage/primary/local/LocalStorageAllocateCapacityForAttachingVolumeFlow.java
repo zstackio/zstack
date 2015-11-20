@@ -11,6 +11,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -91,7 +92,7 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
     }
 
     @Override
-    public void rollback(FlowTrigger trigger, Map data) {
+    public void rollback(FlowRollback trigger, Map data) {
         Long size = (Long) data.get(LocalStorageAllocateCapacityForAttachingVolumeFlow.class);
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());

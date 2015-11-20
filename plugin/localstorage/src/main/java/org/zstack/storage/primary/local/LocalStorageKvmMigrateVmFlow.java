@@ -20,7 +20,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
@@ -41,14 +40,12 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostVO;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -302,7 +299,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         }
 
                         @Override
-                        public void rollback(final FlowTrigger trigger, Map data) {
+                        public void rollback(final FlowRollback trigger, Map data) {
                             if (s) {
                                 returnCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), backingFileSize);
                             }
@@ -437,7 +434,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (s) {
                                 LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
                                 msg.setPath(backingFilePath);
@@ -517,7 +514,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
                             returnCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), requiredSize);
                         }
@@ -569,7 +566,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (!successVolumes.isEmpty()) {
                                 List<LocalStorageDirectlyDeleteBitsMsg> msgs = CollectionUtils.transformToList(successVolumes, new Function<LocalStorageDirectlyDeleteBitsMsg, VolumeInventory>() {
                                     @Override
@@ -1020,7 +1017,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     if (!success.isEmpty()) {
                         final List<LocalStorageDirectlyDeleteBitsMsg> msgs = CollectionUtils.transformToList(success, new Function<LocalStorageDirectlyDeleteBitsMsg, VolumeSnapshotInventory>() {
                             @Override
@@ -1106,7 +1103,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     if (s) {
                         LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
                         msg.setHostUuid(dstHostUuid);
@@ -1198,7 +1195,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     if (s) {
                         LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
                         msg.setHostUuid(dstHostUuid);

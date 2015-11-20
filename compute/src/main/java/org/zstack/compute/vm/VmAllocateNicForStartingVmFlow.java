@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
@@ -160,7 +161,7 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger trigger, Map data) {
+    public void rollback(FlowRollback trigger, Map data) {
         List<UsedIpInventory> allocatedIps = (List<UsedIpInventory>) data.get(VmAllocateNicForStartingVmFlow.class);
         if (allocatedIps != null && !allocatedIps.isEmpty()) {
             List<ReturnIpMsg> rmsgs = CollectionUtils.transformToList(allocatedIps, new Function<ReturnIpMsg, UsedIpInventory>() {

@@ -68,7 +68,6 @@
     <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow8"/>
     <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow9"/>
     <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow10"/>
-    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow11"/>
     <TestCase class="org.zstack.test.core.workflow.TestShareFlow"/>
     <TestCase class="org.zstack.test.core.workflow.TestShareFlow1"/>
     <TestCase class="org.zstack.test.core.workflow.TestShareFlow2"/>
