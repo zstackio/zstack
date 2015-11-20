@@ -1070,7 +1070,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    trigger.rollback();
+                                    trigger.fail(errorCode);
                                 }
                             });
                 }

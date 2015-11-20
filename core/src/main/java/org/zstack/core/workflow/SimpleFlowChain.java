@@ -50,6 +50,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
     private boolean allowEmptyFlow;
     private FlowMarshaller flowMarshaller;
 
+    private boolean isFailCalled;
+
     private static final Map<String, WorkFlowStatistic> statistics = new ConcurrentHashMap<String, WorkFlowStatistic>();
 
     private class FlowStopWatch {
@@ -259,6 +261,10 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
 
     @Override
     public void rollback() {
+        if (!isFailCalled) {
+            throw new CloudRuntimeException("rollback() cannot be called before fail() is called");
+        }
+
         isRollbackStart = true;
         if (rollBackFlows.empty()) {
             callErrorHandler(true);
@@ -314,6 +320,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
 
     @Override
     public void fail(ErrorCode errorCode) {
+        isFailCalled = true;
         setErrorCode(errorCode);
         rollBackFlows.push(currentFlow);
         rollback();
