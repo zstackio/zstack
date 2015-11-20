@@ -59,6 +59,7 @@ public class TestSimpleFlow3 {
                     }
                 })
                 .then(new Flow() {
+                    boolean s = false;
                     @Override
                     public void run(FlowTrigger chain, Map data) {
                         throw new RuntimeException("on purpose");
@@ -66,12 +67,14 @@ public class TestSimpleFlow3 {
 
                     @Override
                     public void rollback(FlowTrigger chain, Map data) {
-                        count[0]--;
+                        if (s) {
+                            count[0]--;
+                        }
                         chain.rollback();
                     }
                 })
                 .start();
 
-        Assert.assertEquals(-1, count[0]);
+        Assert.assertEquals(0, count[0]);
     }
 }

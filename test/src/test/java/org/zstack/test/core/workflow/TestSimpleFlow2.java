@@ -54,16 +54,17 @@ public class TestSimpleFlow2 {
                 .then(new Flow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
-                        chain.rollback();
+                        chain.fail(null);
                     }
 
                     @Override
                     public void rollback(FlowTrigger chain, Map data) {
                         count[0] --;
+                        chain.rollback();
                     }
                 })
                 .start();
 
-        Assert.assertEquals(0, count[0]);
+        Assert.assertEquals(-1, count[0]);
     }
 }

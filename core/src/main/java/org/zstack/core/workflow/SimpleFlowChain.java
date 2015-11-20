@@ -188,20 +188,17 @@ public class SimpleFlowChain implements FlowTrigger, FlowChain {
         } catch (OperationFailureException oe) {
             String errInfo = oe.getErrorCode() != null ? oe.getErrorCode().toString() : "";
             logger.warn(errInfo, oe);
-            setErrorCode(oe.getErrorCode());
             rollBackFlows.push(currentFlow);
-            rollback();
+            fail(oe.getErrorCode());
         } catch (FlowException fe) {
             String errInfo = fe.getErrorCode() != null ? fe.getErrorCode().toString() : "";
             logger.warn(errInfo, fe);
-            setErrorCode(fe.getErrorCode());
             rollBackFlows.push(currentFlow);
-            rollback();
+            fail(fe.getErrorCode());
         } catch (Throwable t) {
             logger.warn(String.format("[FlowChain: %s] unhandled exception when executing flow[%s], start to rollback", name, flow.getClass().getName()), t);
-            setErrorCode(errf.throwableToInternalError(t));
             rollBackFlows.push(currentFlow);
-            rollback();
+            fail(errf.throwableToInternalError(t));
         }
     }
 

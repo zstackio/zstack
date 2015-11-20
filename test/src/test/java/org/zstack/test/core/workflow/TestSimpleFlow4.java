@@ -6,6 +6,7 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.core.workflow.WorkFlowException;
+import org.zstack.test.BeanConstructor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -22,6 +23,9 @@ public class TestSimpleFlow4 {
 
     @Test
     public void test() throws WorkFlowException {
+        BeanConstructor con = new BeanConstructor();
+        con.build();
+
         final int[] count = {0};
 
         new SimpleFlowChain()
@@ -54,12 +58,12 @@ public class TestSimpleFlow4 {
                 .then(new Flow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
-                        chain.rollback();
+                        throw new RuntimeException("fail");
                     }
 
                     @Override
                     public void rollback(FlowTrigger chain, Map data) {
-                        count[0]--;
+                        chain.rollback();
                     }
                 })
                 .start();
