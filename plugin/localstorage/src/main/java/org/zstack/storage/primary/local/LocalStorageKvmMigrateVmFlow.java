@@ -962,12 +962,12 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     GetMd5Cmd cmd = new GetMd5Cmd();
-                    cmd.md5s = CollectionUtils.transformToList(snapshotTOs, new Function<GetMd5TO, SnapshotTO>() {
+                    cmd.md5s = CollectionUtils.transformToList(children, new Function<GetMd5TO, VolumeSnapshotInventory>() {
                         @Override
-                        public GetMd5TO call(SnapshotTO arg) {
+                        public GetMd5TO call(VolumeSnapshotInventory arg) {
                             GetMd5TO to = new GetMd5TO();
-                            to.path = arg.path;
-                            to.resourceUuid = arg.snapshotUuid;
+                            to.path = arg.getPrimaryStorageInstallPath();
+                            to.resourceUuid = arg.getUuid();
                             return to;
                         }
                     });
