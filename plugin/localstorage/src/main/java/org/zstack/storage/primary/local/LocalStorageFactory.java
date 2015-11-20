@@ -390,6 +390,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
             String huuid = q.findValue();
 
+            if (huuid == null) {
+                return;
+            }
+
             LocalStorageReturnHostCapacityMsg msg = new LocalStorageReturnHostCapacityMsg();
             msg.setHostUuid(huuid);
             msg.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
