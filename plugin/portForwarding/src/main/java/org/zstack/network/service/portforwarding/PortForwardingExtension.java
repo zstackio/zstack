@@ -10,6 +10,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
@@ -38,7 +39,7 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
         return NetworkServiceType.PortForwarding;
     }
 
-    public List<PortForwardingStruct> makePortForwardingStruct(List<VmNicInventory> nics, L3NetworkInventory l3) {
+    protected List<PortForwardingStruct> makePortForwardingStruct(List<VmNicInventory> nics, boolean releaseVmNicInfo,L3NetworkInventory l3) {
         VmNicInventory nic = null;
         for (VmNicInventory inv : nics) {
             if (inv.getL3NetworkUuid().equals(l3.getUuid())) {
@@ -70,6 +71,7 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
             struct.setGuestL3Network(l3);
             struct.setSnatInboundTraffic(PortForwardingGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
             struct.setVipL3Network(L3NetworkInventory.valueOf(l3vo));
+            struct.setReleaseVmNicInfoWhenDetaching(releaseVmNicInfo);
             rules.add(struct);
         }
 
@@ -198,7 +200,7 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
             List<PortForwardingStruct> lst = new ArrayList<PortForwardingStruct>();
 
             for (L3NetworkInventory l3 : e.getValue()) {
-                lst.addAll(makePortForwardingStruct(spec.getDestNics(), l3));
+                lst.addAll(makePortForwardingStruct(spec.getDestNics(), spec.getCurrentVmOperation() == VmOperation.Destroy, l3));
             }
 
             map.put(ptype.toString(), lst);

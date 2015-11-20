@@ -718,46 +718,58 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     private void preTagCreated(SystemTagInventory tag) {
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
-        for (SystemTag stag : tags) {
-            stag.callCreatedJudger(tag);
+        if (tags != null) {
+            for (SystemTag stag : tags) {
+                stag.callCreatedJudger(tag);
+            }
         }
     }
 
     @Override
     public void tagCreated(SystemTagInventory tag) {
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
-        for (SystemTag stag : tags) {
-            stag.callTagCreatedListener(tag);
+        if (tags != null) {
+            for (SystemTag stag : tags) {
+                stag.callTagCreatedListener(tag);
+            }
         }
     }
 
     private void preTagDeleted(SystemTagInventory tag) {
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
-        for (SystemTag stag : tags) {
-            stag.callDeletedJudger(tag);
+        if (tags != null) {
+            for (SystemTag stag : tags) {
+                stag.callDeletedJudger(tag);
+            }
         }
     }
 
     @Override
     public void tagDeleted(SystemTagInventory tag) {
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
-        for (SystemTag stag : tags) {
-            stag.callTagDeletedListener(tag);
+        if (tags != null) {
+            for (SystemTag stag : tags) {
+                stag.callTagDeletedListener(tag);
+            }
         }
     }
 
     private void preTagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
         List<SystemTag> tags = resourceTypeSystemTagMap.get(old.getResourceType());
-        for (SystemTag stag : tags) {
-            stag.callUpdatedJudger(old, newTag);
+        if (tags != null) {
+            for (SystemTag stag : tags) {
+                stag.callUpdatedJudger(old, newTag);
+            }
         }
     }
 
     @Override
     public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
         List<SystemTag> tags = resourceTypeSystemTagMap.get(old.getResourceType());
-        for (SystemTag stag : tags) {
-            stag.callTagUpdatedListener(old, newTag);
+        if (tags != null) {
+            for (SystemTag stag : tags) {
+                stag.callTagUpdatedListener(old, newTag);
+            }
         }
     }
 

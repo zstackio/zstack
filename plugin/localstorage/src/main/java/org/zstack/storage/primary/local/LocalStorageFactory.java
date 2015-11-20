@@ -340,17 +340,17 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
         String hostUuid = ret.get(0);
         sql = "select ref.resourceUuid from LocalStorageResourceRefVO ref where ref.resourceUuid in (:uuids) and ref.resourceType = :rtype" +
-                " and ref.hostUuid = :huuid";
+                " and ref.hostUuid != :huuid";
         q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuids", volUuids);
         q.setParameter("huuid", hostUuid);
         q.setParameter("rtype", VolumeVO.class.getSimpleName());
-        final List<String> toInclude = q.getResultList();
+        final List<String> toExclude = q.getResultList();
 
         candidates = CollectionUtils.transformToList(candidates, new Function<VolumeVO, VolumeVO>() {
             @Override
             public VolumeVO call(VolumeVO arg) {
-                return toInclude.contains(arg.getUuid()) ? arg : null;
+                return toExclude.contains(arg.getUuid()) ? null : arg;
             }
         });
 

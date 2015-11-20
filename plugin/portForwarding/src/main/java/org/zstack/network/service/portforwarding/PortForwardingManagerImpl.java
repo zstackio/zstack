@@ -254,19 +254,9 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         final APIDetachPortForwardingRuleEvent evt = new APIDetachPortForwardingRuleEvent(msg.getId());
         final PortForwardingRuleVO vo = dbf.findByUuid(msg.getUuid(), PortForwardingRuleVO.class);
 
-        /*
-        VmInstanceState vmState = getVmStateFromVmNicUuid(vo.getVmNicUuid());
-        if (VmInstanceState.Running != vmState) {
-            vo.setVmNicUuid(null);
-            dbf.update(vo);
-            evt.setInventory(PortForwardingRuleInventory.valueOf(vo));
-            bus.publish(evt);
-            return;
-        }
-        */
-
         PortForwardingRuleInventory inv = PortForwardingRuleInventory.valueOf(vo);
         final PortForwardingStruct struct = makePortForwardingStruct(inv);
+        struct.setReleaseVmNicInfoWhenDetaching(true);
         final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(),
                 NetworkServiceType.PortForwarding);
 
@@ -707,10 +697,13 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                PortForwardingRuleVO vo = dbf.findByUuid(struct.getRule().getUuid(), PortForwardingRuleVO.class);
-                vo.setVmNicUuid(null);
-                vo.setGuestIp(null);
-                dbf.updateAndRefresh(vo);
+                if (struct.isReleaseVmNicInfoWhenDetaching()) {
+                    PortForwardingRuleVO vo = dbf.findByUuid(struct.getRule().getUuid(), PortForwardingRuleVO.class);
+                    vo.setVmNicUuid(null);
+                    vo.setGuestIp(null);
+                    dbf.updateAndRefresh(vo);
+                }
+
                 completion.success();
 
             }

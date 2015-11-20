@@ -60,6 +60,7 @@ public class TestCascadeDeletion24 {
         PrimaryStorageInventory ps = deployer.primaryStorages.get("TestPrimaryStorage");
         PrimaryStorageInventory ps1 = deployer.primaryStorages.get("TestPrimaryStorage1");
 
+        api.setTimeout(100000);
         String itag = PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG.instantiateTag(map(e("uuid", ps1.getUuid())));
         DiskOfferingInventory dinv = deployer.diskOfferings.get("TestDataDiskOffering");
         api.createSystemTag(dinv.getUuid(), itag, DiskOfferingVO.class);
