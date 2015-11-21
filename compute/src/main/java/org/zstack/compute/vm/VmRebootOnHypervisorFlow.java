@@ -13,6 +13,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.RebootVmOnHypervisorMsg;
+import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 
@@ -24,14 +25,17 @@ public class VmRebootOnHypervisorFlow implements Flow {
     protected DatabaseFacade dbf;
     @Autowired
     protected CloudBus bus;
-    @Autowired
-    private ErrorFacade errf;
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         RebootVmOnHypervisorMsg msg = new RebootVmOnHypervisorMsg();
         msg.setVmInventory(spec.getVmInventory());
+        if (spec.getDestIso() == null) {
+            msg.setBootDevice(VmBootDevice.HardDisk.toString());
+        } else {
+            msg.setBootDevice(VmBootDevice.CdRom.toString());
+        }
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getVmInventory().getHostUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

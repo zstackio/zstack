@@ -5,7 +5,16 @@ import org.zstack.header.message.NeedReplyMessage;
 
 public class RebootVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
     private VmInstanceInventory vmInventory;
-    
+    private String bootDevice;
+
+    public String getBootDevice() {
+        return bootDevice;
+    }
+
+    public void setBootDevice(String bootDevice) {
+        this.bootDevice = bootDevice;
+    }
+
     public VmInstanceInventory getVmInventory() {
         return vmInventory;
     }
