@@ -31,11 +31,6 @@ public class VmRebootOnHypervisorFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         RebootVmOnHypervisorMsg msg = new RebootVmOnHypervisorMsg();
         msg.setVmInventory(spec.getVmInventory());
-        if (spec.getDestIso() == null) {
-            msg.setBootDevice(VmBootDevice.HardDisk.toString());
-        } else {
-            msg.setBootDevice(VmBootDevice.CdRom.toString());
-        }
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getVmInventory().getHostUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

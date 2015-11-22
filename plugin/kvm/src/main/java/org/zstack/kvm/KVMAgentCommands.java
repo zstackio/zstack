@@ -694,15 +694,6 @@ public class KVMAgentCommands {
     public static class RebootVmCmd extends AgentCommand {
     	private String uuid;
     	private long timeout;
-        private String bootDevice;
-
-        public String getBootDevice() {
-            return bootDevice;
-        }
-
-        public void setBootDevice(String bootDevice) {
-            this.bootDevice = bootDevice;
-        }
 
         public String getUuid() {
 			return uuid;

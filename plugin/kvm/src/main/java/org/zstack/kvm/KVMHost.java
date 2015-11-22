@@ -1220,7 +1220,6 @@ public class KVMHost extends HostBase implements Host {
         long timeout = TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout());
         cmd.setUuid(vminv.getUuid());
         cmd.setTimeout(timeout);
-        cmd.setBootDevice(msg.getBootDevice());
         restf.asyncJsonPost(rebootVmPath, cmd, new JsonAsyncRESTCallback<RebootVmResponse>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
