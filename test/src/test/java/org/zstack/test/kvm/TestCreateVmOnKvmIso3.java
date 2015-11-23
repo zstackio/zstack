@@ -79,7 +79,7 @@ public class TestCreateVmOnKvmIso3 {
         StartVmCmd scmd = kconfig.startVmCmd;
         Assert.assertNotNull(scmd);
         Assert.assertNotNull(scmd.getBootIso());
-        Assert.assertEquals(BootDev.cdrom.toString(), scmd.getBootDev());
+        Assert.assertEquals(BootDev.cdrom.toString(), scmd.getBootDev().get(0));
 
         api.detachIso(vm.getUuid(), null);
         Assert.assertFalse(VmSystemTags.ISO.hasTag(vm.getUuid()));
@@ -89,6 +89,6 @@ public class TestCreateVmOnKvmIso3 {
         scmd = kconfig.startVmCmd;
         Assert.assertNotNull(scmd);
         Assert.assertNull(scmd.getBootIso());
-        Assert.assertEquals(BootDev.hd.toString(), scmd.getBootDev());
+        Assert.assertEquals(BootDev.hd.toString(), scmd.getBootDev().get(0));
     }
 }

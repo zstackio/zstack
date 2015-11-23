@@ -2,14 +2,25 @@ package org.zstack.kvm;
 
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.vm.VmBootDevice;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
 import java.util.*;
 
 public class KVMAgentCommands {
 	public static enum BootDev {
-		hd,
-		cdrom,
+		hd(VmBootDevice.HardDisk),
+		cdrom(VmBootDevice.CdRom);
+
+        private VmBootDevice device;
+
+        private BootDev(VmBootDevice dev) {
+            device = dev;
+        }
+
+        public VmBootDevice toVmBootDevice() {
+            return device;
+        }
 	}
 	
     public static class AgentResponse implements ConditionalValidation {
@@ -533,7 +544,7 @@ public class KVMAgentCommands {
     	private long memory;
     	private int cpuNum;
     	private long cpuSpeed;
-    	private String bootDev;
+    	private List<String> bootDev;
     	private VolumeTO rootVolume;
         private IsoTO bootIso;
     	private List<VolumeTO> dataVolumes;
@@ -586,16 +597,19 @@ public class KVMAgentCommands {
 		public long getCpuSpeed() {
 			return cpuSpeed;
 		}
-		public void setCpuSpeed(long cpuSpeed) {
+
+        public void setBootDev(List<String> bootDev) {
+            this.bootDev = bootDev;
+        }
+
+        public void setCpuSpeed(long cpuSpeed) {
 			this.cpuSpeed = cpuSpeed;
 		}
-		public String getBootDev() {
-			return bootDev;
-		}
-		public void setBootDev(String bootDev) {
-			this.bootDev = bootDev;
-		}
-		
+
+        public List<String> getBootDev() {
+            return bootDev;
+        }
+
 		public VolumeTO getRootVolume() {
             return rootVolume;
         }
@@ -694,6 +708,15 @@ public class KVMAgentCommands {
     public static class RebootVmCmd extends AgentCommand {
     	private String uuid;
     	private long timeout;
+        private List<String> bootDev;
+
+        public List<String> getBootDev() {
+            return bootDev;
+        }
+
+        public void setBootDev(List<String> bootDev) {
+            this.bootDev = bootDev;
+        }
 
         public String getUuid() {
 			return uuid;

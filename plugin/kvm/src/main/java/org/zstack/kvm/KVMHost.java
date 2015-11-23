@@ -20,15 +20,13 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
-import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -38,8 +36,6 @@ import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.VmInstanceConstant.VmOperation;
-import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
@@ -1203,6 +1199,21 @@ public class KVMHost extends HostBase implements Host {
 
     }
 
+    private List<String> toKvmBootDev(List<String> order) {
+        List<String> ret = new ArrayList<String>();
+        for (String o : order) {
+            if (VmBootDevice.HardDisk.toString().equals(o)) {
+                ret.add(BootDev.hd.toString());
+            } else if (VmBootDevice.CdRom.toString().equals(o)) {
+                ret.add(BootDev.cdrom.toString());
+            } else {
+                throw new CloudRuntimeException(String.format("unknown boot device[%s]", o));
+            }
+        }
+
+        return ret;
+    }
+
     private void rebootVm(final RebootVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
         final VmInstanceInventory vminv = msg.getVmInventory();
@@ -1220,6 +1231,7 @@ public class KVMHost extends HostBase implements Host {
         long timeout = TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout());
         cmd.setUuid(vminv.getUuid());
         cmd.setTimeout(timeout);
+        cmd.setBootDev(toKvmBootDev(msg.getBootOrders()));
         restf.asyncJsonPost(rebootVmPath, cmd, new JsonAsyncRESTCallback<RebootVmResponse>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
@@ -1445,10 +1457,9 @@ public class KVMHost extends HostBase implements Host {
             bootIso.setPath(spec.getDestIso().getInstallPath());
             bootIso.setImageUuid(spec.getDestIso().getImageUuid());
             cmd.setBootIso(bootIso);
-            cmd.setBootDev(BootDev.cdrom.toString());
-        } else {
-            cmd.setBootDev(BootDev.hd.toString());
         }
+
+        cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
 
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
         try {

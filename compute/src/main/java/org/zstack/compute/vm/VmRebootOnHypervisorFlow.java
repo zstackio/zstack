@@ -10,6 +10,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.RebootVmOnHypervisorMsg;
@@ -20,7 +21,7 @@ import org.zstack.header.vm.VmInstanceSpec;
 import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VmRebootOnHypervisorFlow implements Flow {
+public class VmRebootOnHypervisorFlow extends NoRollbackFlow {
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -31,6 +32,7 @@ public class VmRebootOnHypervisorFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         RebootVmOnHypervisorMsg msg = new RebootVmOnHypervisorMsg();
         msg.setVmInventory(spec.getVmInventory());
+        msg.setBootOrders(spec.getBootOrders());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getVmInventory().getHostUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override
@@ -42,10 +44,5 @@ public class VmRebootOnHypervisorFlow implements Flow {
                 }
             }
         });
-    }
-
-    @Override
-    public void rollback(FlowRollback chain, Map data) {
-        chain.rollback();
     }
 }

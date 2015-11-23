@@ -105,4 +105,5 @@
   <TestCase class="org.zstack.test.kvm.TestKvmVmTracer"/>
   <TestCase class="org.zstack.test.kvm.TestKvmVmTracer1"/>
   <TestCase class="org.zstack.test.kvm.TestKvmFailureCheckState"/>
+  <TestCase class="org.zstack.test.kvm.TestVmBootOrderOnKvm"/>
 </UnitTestSuiteConfig>

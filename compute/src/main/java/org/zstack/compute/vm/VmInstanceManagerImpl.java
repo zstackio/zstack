@@ -22,6 +22,7 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
@@ -67,6 +68,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -431,6 +433,21 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     validateHostNameOnDefaultL3Network(systemTag, hostname, defaultL3Uuid);
                 } else if (VmSystemTags.STATIC_IP.isMatch(systemTag)) {
                     validateStaticIp(systemTag);
+                } else if (VmSystemTags.BOOT_ORDER.isMatch(systemTag)) {
+                    validateBootOrder(systemTag);
+                }
+            }
+
+            private void validateBootOrder(String systemTag) {
+                String order = VmSystemTags.BOOT_ORDER.getTokenByTag(systemTag, VmSystemTags.BOOT_ORDER_TOKEN);
+                for (String o : order.split(",")) {
+                    try {
+                        VmBootDevice.valueOf(o);
+                    } catch (IllegalArgumentException e) {
+                        throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                                String.format("invalid boot device[%s] in boot order[%s]", o, order)
+                        ));
+                    }
                 }
             }
         }

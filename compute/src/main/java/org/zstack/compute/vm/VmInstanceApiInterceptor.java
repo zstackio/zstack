@@ -36,9 +36,6 @@ import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
-
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -74,10 +71,26 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIAttachL3NetworkToVmMsg) msg);
         } else if (msg instanceof APIAttachIsoToVmInstanceMsg) {
             validate((APIAttachIsoToVmInstanceMsg) msg);
+        } else if (msg instanceof APISetVmBootOrderMsg) {
+            validate((APISetVmBootOrderMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APISetVmBootOrderMsg msg) {
+        if (msg.getBootOrder() != null) {
+            for (String o : msg.getBootOrder()) {
+                try {
+                    VmBootDevice.valueOf(o);
+                } catch (IllegalArgumentException e) {
+                    throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                            String.format("invalid boot device[%s] in boot order%s", o, msg.getBootOrder())
+                    ));
+                }
+            }
+        }
     }
 
     private void validate(APIAttachIsoToVmInstanceMsg msg) {

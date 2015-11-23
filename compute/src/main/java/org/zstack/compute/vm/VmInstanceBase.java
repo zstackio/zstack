@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
@@ -142,13 +143,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         self = changeVmStateInDb(VmInstanceStateEvent.destroying);
         final VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-        VmInstanceSpec spec = buildSpecFromInventory(inv);
+        VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Destroy);
 
         FlowChain chain = getDestroyVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
 
         chain.setName(String.format("destroy-vm-%s", self.getUuid()));
-        spec.setCurrentVmOperation(VmOperation.Destroy);
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.getData().put(Params.DeletionPolicy, deletionPolicy);
         chain.done(new FlowDoneHandler(completion) {
@@ -354,11 +354,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     self.getUuid(), JSONObjectUtil.toJsonString(inv.getAllVolumes())));
         }
 
-        VmInstanceSpec spec = buildSpecFromInventory(inv);
+        VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Expunge);
         FlowChain chain = getExpungeVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
         chain.setName(String.format("destroy-vm-%s", self.getUuid()));
-        spec.setCurrentVmOperation(VmOperation.Expunge);
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.getData().put(Params.DeletionPolicy, VmInstanceDeletionPolicy.Direct);
         chain.done(new FlowDoneHandler(completion) {
@@ -979,9 +978,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory());
+                final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
                 spec.setVmInventory(VmInstanceInventory.valueOf(self));
-                spec.setCurrentVmOperation(VmOperation.AttachNic);
                 L3NetworkVO l3vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
                 spec.setL3Networks(list(L3NetworkInventory.valueOf(l3vo)));
                 spec.setDestNics(new ArrayList<VmNicInventory>());
@@ -1395,6 +1393,23 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    protected void selectBootOrder(VmInstanceSpec spec) {
+        if (spec.getCurrentVmOperation() == null) {
+            throw new CloudRuntimeException("selectBootOrder must be called after VmOperation is set");
+        }
+
+        if (spec.getCurrentVmOperation() == VmOperation.NewCreate && spec.getDestIso() != null) {
+            spec.setBootOrders(list(VmBootDevice.CdRom.toString()));
+        } else {
+            String order = VmSystemTags.BOOT_ORDER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_ORDER_TOKEN);
+            if (order == null) {
+                spec.setBootOrders(list(VmBootDevice.HardDisk.toString()));
+            } else {
+                spec.setBootOrders(list(order.split(",")));
+            }
+        }
+    }
+
     protected void startVmFromNewCreate(final StartNewCreatedVmInstanceMsg msg, final SyncTaskChain taskChain) {
         boolean callNext = true;
         try {
@@ -1465,6 +1480,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             buildHostname(spec);
 
             spec.setUserdata(buildUserdata());
+            selectBootOrder(spec);
 
             changeVmStateInDb(VmInstanceStateEvent.starting);
 
@@ -1570,9 +1586,35 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIExpungeVmInstanceMsg) msg);
         } else if (msg instanceof APIRecoverVmInstanceMsg) {
             handle((APIRecoverVmInstanceMsg) msg);
+        } else if (msg instanceof APISetVmBootOrderMsg) {
+            handle((APISetVmBootOrderMsg) msg);
+        } else if (msg instanceof APIGetVmBootOrderMsg) {
+            handle((APIGetVmBootOrderMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetVmBootOrderMsg msg) {
+        APIGetVmBootOrderReply reply = new APIGetVmBootOrderReply();
+        String order = VmSystemTags.BOOT_ORDER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_ORDER_TOKEN);
+        if (order == null) {
+            reply.setOrder(list(VmBootDevice.HardDisk.toString()));
+        } else {
+            reply.setOrder(list(order.split(",")));
+        }
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APISetVmBootOrderMsg msg) {
+        APISetVmBootOrderEvent evt = new APISetVmBootOrderEvent(msg.getId());
+        if (msg.getBootOrder() != null) {
+            VmSystemTags.BOOT_ORDER.recreateInherentTag(self.getUuid(), map(e(VmSystemTags.BOOT_ORDER_TOKEN, StringUtils.join(msg.getBootOrder(), ","))));
+        } else {
+            VmSystemTags.BOOT_ORDER.deleteInherentTag(self.getUuid());
+        }
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     private void handle(final APIRecoverVmInstanceMsg msg) {
@@ -1697,7 +1739,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory());
+        VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachIso);
         if (spec.getDestIso() == null) {
             // the image ISO has been deleted from backup storage
             // try to detach it from the VM anyway
@@ -1834,8 +1876,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory());
-        spec.setCurrentVmOperation(VmOperation.AttachIso);
+        VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachIso);
         IsoSpec isoSpec = new IsoSpec();
         isoSpec.setImageUuid(isoUuid);
         spec.setDestIso(isoSpec);
@@ -1927,9 +1968,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         });
 
-        final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory());
+        final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachNic);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
-        spec.setCurrentVmOperation(VmOperation.DetachNic);
         spec.setDestNics(list(nic));
         spec.setL3Networks(list(L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class))));
 
@@ -2287,9 +2327,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         changeVmStateInDb(VmInstanceStateEvent.migrating);
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
 
-        final VmInstanceSpec spec = buildSpecFromInventory(inv);
+        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Migrate);
         spec.setMessage(msg);
-        spec.setCurrentVmOperation(VmOperation.Migrate);
         FlowChain chain = getMigrateVmWorkFlowChain(inv);
 
         setFlowMarshaller(chain);
@@ -2392,9 +2431,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         changeVmStateInDb(VmInstanceStateEvent.starting);
 
         extEmitter.beforeStartVm(VmInstanceInventory.valueOf(self));
-        final VmInstanceSpec spec = buildSpecFromInventory(inv);
+        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Start);
         spec.setMessage(msg);
-        spec.setCurrentVmOperation(VmOperation.Start);
 
         FlowChain chain = getStartVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
@@ -2617,7 +2655,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.getHostnames().add(dhname);
     }
 
-    protected VmInstanceSpec buildSpecFromInventory(VmInstanceInventory inv) {
+    protected VmInstanceSpec buildSpecFromInventory(VmInstanceInventory inv, VmOperation operation) {
         VmInstanceSpec spec = new VmInstanceSpec();
 
         spec.setUserdata(buildUserdata());
@@ -2689,6 +2727,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
+        spec.setCurrentVmOperation(operation);
+        selectBootOrder(spec);
+
         return spec;
     }
 
@@ -2712,9 +2753,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         changeVmStateInDb(VmInstanceStateEvent.rebooting);
 
         extEmitter.beforeRebootVm(VmInstanceInventory.valueOf(self));
-        final VmInstanceSpec spec = buildSpecFromInventory(inv);
+        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Reboot);
         spec.setMessage(msg);
-        spec.setCurrentVmOperation(VmOperation.Reboot);
         FlowChain chain = getRebootVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
 
@@ -2834,9 +2874,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         changeVmStateInDb(VmInstanceStateEvent.stopping);
 
         extEmitter.beforeStopVm(VmInstanceInventory.valueOf(self));
-        final VmInstanceSpec spec = buildSpecFromInventory(inv);
+        final VmInstanceSpec spec = buildSpecFromInventory(inv,VmOperation.Stop);
         spec.setMessage(msg);
-        spec.setCurrentVmOperation(VmOperation.Stop);
         FlowChain chain = getStopVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
 

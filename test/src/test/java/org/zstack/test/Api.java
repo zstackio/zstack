@@ -3654,4 +3654,25 @@ public class Api implements CloudBusEventListener {
         APILocalStorageGetVolumeMigratableReply reply = sender.call(msg, APILocalStorageGetVolumeMigratableReply.class);
         return reply.getInventories();
     }
+
+    public VmInstanceInventory setVmBootOrder(String vmUuid, List<String> order, SessionInventory session) throws ApiSenderException {
+        APISetVmBootOrderMsg msg = new APISetVmBootOrderMsg();
+        msg.setUuid(vmUuid);
+        msg.setBootOrder(order);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISetVmBootOrderEvent evt = sender.send(msg, APISetVmBootOrderEvent.class);
+        return evt.getInventory();
+    }
+
+    public List<String> getVmBootOrder(String vmUuid, SessionInventory session) throws ApiSenderException {
+        APIGetVmBootOrderMsg msg = new APIGetVmBootOrderMsg();
+        msg.setUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVmBootOrderReply reply = sender.call(msg, APIGetVmBootOrderReply.class);
+        return reply.getOrder();
+    }
 }

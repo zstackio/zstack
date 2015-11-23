@@ -26,6 +26,7 @@ import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.utils.CollectionUtils;
@@ -364,8 +365,8 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     }
 
     @Override
-    protected VmInstanceSpec buildSpecFromInventory(VmInstanceInventory inv) {
-        VmInstanceSpec spec = super.buildSpecFromInventory(inv);
+    protected VmInstanceSpec buildSpecFromInventory(VmInstanceInventory inv, VmOperation operation) {
+        VmInstanceSpec spec = super.buildSpecFromInventory(inv, operation);
         spec.putExtensionData(ApplianceVmConstant.Params.applianceVmSubType.toString(), getSelf().getApplianceVmType());
         return spec;
     }
