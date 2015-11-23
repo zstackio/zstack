@@ -37,6 +37,8 @@ import org.zstack.utils.function.Function;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 public abstract class ApplianceVmBase extends VmInstanceBase implements ApplianceVm {
     @Autowired
     private RESTFacade restf;
@@ -658,6 +660,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             spec.putExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), aspec);
             spec.setCurrentVmOperation(VmInstanceConstant.VmOperation.NewCreate);
             spec.putExtensionData(ApplianceVmConstant.Params.applianceVmSubType.toString(), getSelf().getApplianceVmType());
+            spec.setBootOrders(list(VmBootDevice.HardDisk.toString()));
 
             changeVmStateInDb(VmInstanceStateEvent.starting);
 
