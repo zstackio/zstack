@@ -7,12 +7,15 @@ import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.network.l3.APIGetIpAddressCapacityReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.volume.VolumeGlobalConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -157,5 +160,13 @@ public class TestDestroyVm {
         api.expungeVm(vm4.getUuid(), null);
         VmInstanceVO vmvo4 = dbf.findByUuid(vm4.getUuid(), VmInstanceVO.class);
         Assert.assertNull(vmvo4);
+
+        SimpleQuery<VmNicVO> nicq = dbf.createQuery(VmNicVO.class);
+        nicq.add(VmNicVO_.vmInstanceUuid, Op.EQ, vm4.getUuid());
+        Assert.assertFalse(nicq.isExists());
+
+        SimpleQuery<VolumeVO> volq = dbf.createQuery(VolumeVO.class);
+        volq.add(VolumeVO_.vmInstanceUuid, Op.EQ, vm4.getUuid());
+        Assert.assertFalse(volq.isExists());
     }
 }
