@@ -72,6 +72,8 @@
             <primaryStorages>
                 <localPrimaryStorage name="local" description="Test"
                     url="/test" />
+                <localPrimaryStorage name="local2" description="Test"
+                                     url="/test" />
             </primaryStorages>
         </zone>
     </zones>
