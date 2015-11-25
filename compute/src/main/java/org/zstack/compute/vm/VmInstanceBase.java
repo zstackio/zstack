@@ -1638,8 +1638,29 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
+                final VmInstanceInventory vm = getSelfInventory();
+                List<RecoverVmExtensionPoint> exts = pluginRgty.getExtensionList(RecoverVmExtensionPoint.class);
+                for (RecoverVmExtensionPoint ext : exts) {
+                    ext.preRecoverVm(vm);
+                }
+
+                CollectionUtils.forEach(exts, new ForEachFunction<RecoverVmExtensionPoint>() {
+                    @Override
+                    public void run(RecoverVmExtensionPoint ext) {
+                        ext.beforeRecoverVm(vm);
+                    }
+                });
+
                 changeVmStateInDb(VmInstanceStateEvent.stopped);
                 evt.setInventory(getSelfInventory());
+
+                CollectionUtils.forEach(exts, new ForEachFunction<RecoverVmExtensionPoint>() {
+                    @Override
+                    public void run(RecoverVmExtensionPoint ext) {
+                        ext.afterRecoverVm(vm);
+                    }
+                });
+
                 bus.publish(evt);
                 chain.next();
             }

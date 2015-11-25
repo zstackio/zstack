@@ -392,12 +392,32 @@ public class VolumeBase implements Volume {
     private void handle(APIRecoverDataVolumeMsg msg) {
         APIRecoverDataVolumeEvent evt = new APIRecoverDataVolumeEvent(msg.getId());
 
+        final VolumeInventory vol = getSelfInventory();
+        List<RecoverDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(RecoverDataVolumeExtensionPoint.class);
+        for (RecoverDataVolumeExtensionPoint ext : exts) {
+            ext.preRecoverDataVolume(vol);
+        }
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<RecoverDataVolumeExtensionPoint>() {
+            @Override
+            public void run(RecoverDataVolumeExtensionPoint ext) {
+                ext.beforeRecoverDataVolume(vol);
+            }
+        });
+
         if (self.getInstallPath() != null) {
             self.setStatus(VolumeStatus.Ready);
         } else {
             self.setStatus(VolumeStatus.NotInstantiated);
         }
         self = dbf.updateAndRefresh(self);
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<RecoverDataVolumeExtensionPoint>() {
+            @Override
+            public void run(RecoverDataVolumeExtensionPoint ext) {
+                ext.afterRecoverDataVolume(vol);
+            }
+        });
 
         evt.setInventory(getSelfInventory());
         bus.publish(evt);

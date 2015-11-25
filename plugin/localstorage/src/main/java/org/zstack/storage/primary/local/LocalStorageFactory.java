@@ -50,7 +50,8 @@ import static org.zstack.utils.CollectionDSL.list;
 public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         MarshalVmOperationFlowExtensionPoint, HostDeleteExtensionPoint, VmAttachVolumeExtensionPoint,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
-        VolumeDeletionExtensionPoint, AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint {
+        VolumeDeletionExtensionPoint, AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
+        RecoverVmExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
@@ -474,5 +475,80 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         });
 
         return candidates;
+    }
+
+    @Override
+    public void preRecoverDataVolume(VolumeInventory vol) {
+        if (vol.getPrimaryStorageUuid() == null) {
+            return;
+        }
+
+        SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
+        q.select(PrimaryStorageVO_.type);
+        q.add(PrimaryStorageVO_.uuid, Op.EQ, vol.getPrimaryStorageUuid());
+        String type = q.findValue();
+        if (!LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(type)) {
+            return;
+        }
+
+        SimpleQuery<LocalStorageResourceRefVO> rq = dbf.createQuery(LocalStorageResourceRefVO.class);
+        rq.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, vol.getUuid());
+        rq.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
+        if (!rq.isExists()) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("the data volume[name:%s, uuid:%s] is on the local storage[uuid:%s]; however," +
+                            "the host on which the data volume is has been deleted. Unable to recover this volume",
+                            vol.getName(), vol.getUuid(), vol.getPrimaryStorageUuid())
+            ));
+        }
+    }
+
+    @Override
+    public void beforeRecoverDataVolume(VolumeInventory vol) {
+
+    }
+
+    @Override
+    public void afterRecoverDataVolume(VolumeInventory vol) {
+
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void preRecoverVm(VmInstanceInventory vm) {
+        String rootVolUuid = vm.getRootVolumeUuid();
+
+        String sql = "select ps.uuid from PrimaryStorageVO ps, VolumeVO vol where ps.uuid = vol.primaryStorageUuid" +
+                " and vol.uuid = :uuid and ps.type = :pstype";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("uuid", rootVolUuid);
+        q.setParameter("pstype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
+        String psuuid = q.getSingleResult();
+        if (psuuid == null) {
+            return;
+        }
+
+        sql = "select count(ref) from LocalStorageResourceRefVO ref where ref.resourceUuid = :uuid and ref.resourceType = :rtype";
+        TypedQuery<Long> rq = dbf.getEntityManager().createQuery(sql, Long.class);
+        rq.setParameter("uuid", rootVolUuid);
+        rq.setParameter("rtype", VolumeVO.class.getSimpleName());
+        long count = rq.getSingleResult();
+        if (count == 0) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("unable to recover the vm[uuid:%s, name:%s]. The vm's root volume is on the local" +
+                            " storage[uuid:%s]; however, the host on which the root volume is has been deleted",
+                            vm.getUuid(), vm.getName(), psuuid)
+            ));
+        }
+    }
+
+    @Override
+    public void beforeRecoverVm(VmInstanceInventory vm) {
+
+    }
+
+    @Override
+    public void afterRecoverVm(VmInstanceInventory vm) {
+
     }
 }

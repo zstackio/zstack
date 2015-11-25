@@ -24,6 +24,8 @@
             <zstack:extension interface="org.zstack.header.volume.VolumeDeletionExtensionPoint" />
             <zstack:extension interface="org.zstack.header.query.AddExpandedQueryExtensionPoint" />
             <zstack:extension interface="org.zstack.header.volume.VolumeGetAttachableVmExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.volume.RecoverDataVolumeExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.RecoverVmExtensionPoint" />
         </zstack:plugin>
     </bean>
 
