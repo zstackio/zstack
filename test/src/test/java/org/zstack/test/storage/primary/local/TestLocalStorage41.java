@@ -8,11 +8,12 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
+import org.zstack.storage.volume.VolumeGlobalConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -21,6 +22,8 @@ import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * 1. use local storage
@@ -67,7 +70,7 @@ public class TestLocalStorage41 {
     }
     
 	@Test
-	public void test() throws ApiSenderException {
+	public void test() throws ApiSenderException, InterruptedException {
         HostInventory host = deployer.hosts.get("host1");
         final VmInstanceInventory vm = deployer.vms.get("TestVm");
         VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -96,5 +99,10 @@ public class TestLocalStorage41 {
             s = true;
         }
         Assert.assertTrue(s);
+
+        VolumeGlobalConfig.VOLUME_EXPUNGE_INTERVAL.updateValue(1);
+        VolumeGlobalConfig.VOLUME_EXPUNGE_PERIOD.updateValue(1);
+        TimeUnit.SECONDS.sleep(3);
+        Assert.assertFalse(dbf.isExist(data.getUuid(), VolumeVO.class));
     }
 }

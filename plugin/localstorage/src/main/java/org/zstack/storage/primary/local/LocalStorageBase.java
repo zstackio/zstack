@@ -1061,6 +1061,19 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final DeleteVolumeOnPrimaryStorageMsg msg) {
+        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
+        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolume().getUuid());
+        q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
+        if (!q.isExists()) {
+            logger.debug(String.format("volume[uuid:%s] is not on the local storage[uuid:%s, name:%s]," +
+                            "the host the volume is on may have been deleted",
+                    msg.getVolume().getUuid(), self.getUuid(), self.getName()));
+
+            DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
+            bus.reply(msg, reply);
+            return;
+        }
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-volume-%s-local-primary-storage-%s", msg.getVolume().getUuid(), self.getUuid()));
         chain.then(new ShareFlow() {
