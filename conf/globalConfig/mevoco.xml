@@ -20,7 +20,7 @@
         <category>mevoco</category>
         <name>hostAllocatorStrategy</name>
         <description>global host allocator strategy</description>
-        <defaultValue>DefaultHostAllocatorStrategy</defaultValue>
+        <defaultValue>LeastVmPreferredHostAllocatorStrategy</defaultValue>
     </config>
 
     <config>
