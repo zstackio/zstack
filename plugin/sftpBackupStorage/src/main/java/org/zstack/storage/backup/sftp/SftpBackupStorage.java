@@ -79,7 +79,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         long size;
     }
 
-    private void download(String url, String installPath, final ReturnValueCompletion<DownloadResult> completion) {
+    private void download(String url, String installPath, String uuid, final ReturnValueCompletion<DownloadResult> completion) {
         try {
             URI uri = new URI(url);
             String scheme = uri.getScheme();
@@ -91,6 +91,7 @@ public class SftpBackupStorage extends BackupStorageBase {
 
             DownloadCmd cmd = new DownloadCmd();
             cmd.setUrl(url);
+            cmd.setUuid(uuid);
             cmd.setUrlScheme(scheme);
             cmd.setInstallPath(installPath);
             cmd.setTimeout(SftpBackupStorageGlobalProperty.DOWNLOAD_CMD_TIMEOUT);
@@ -131,7 +132,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         final DownloadImageReply reply = new DownloadImageReply();
         final ImageInventory iinv = msg.getImageInventory();
         final String installPath = PathUtil.join(getSelf().getUrl(), BackupStoragePathMaker.makeImageInstallPath(iinv));
-        download(iinv.getUrl(), installPath, new ReturnValueCompletion<DownloadResult>(msg) {
+        download(iinv.getUrl(), installPath, iinv.getUuid(), new ReturnValueCompletion<DownloadResult>(msg) {
             @Override
             public void success(DownloadResult res) {
                 reply.setInstallPath(installPath);
@@ -152,7 +153,7 @@ public class SftpBackupStorage extends BackupStorageBase {
     protected void handle(final DownloadVolumeMsg msg) {
         final DownloadVolumeReply reply = new DownloadVolumeReply();
         final String installPath = PathUtil.join(getSelf().getUrl(), BackupStoragePathMaker.makeVolumeInstallPath(msg.getUrl(), msg.getVolume()));
-        download(msg.getUrl(), installPath, new ReturnValueCompletion<DownloadResult>() {
+        download(msg.getUrl(), installPath, msg.getVolume().getUuid(), new ReturnValueCompletion<DownloadResult>() {
             @Override
             public void success(DownloadResult res) {
                 reply.setInstallPath(installPath);

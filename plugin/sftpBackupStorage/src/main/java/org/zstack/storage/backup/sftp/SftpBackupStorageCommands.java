@@ -57,10 +57,19 @@ public class SftpBackupStorageCommands {
     }
     
     public static class DownloadCmd extends AgentCommand {
+        private String uuid;
         private String installPath;
         private String url;
         private long timeout;
         private String urlScheme;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
 
         public String getUrl() {
             return url;

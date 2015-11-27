@@ -27,6 +27,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
+import org.zstack.header.storage.backup.ReturnBackupStorageMsg;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -123,6 +124,7 @@ public class ImageBase implements Image {
                             self.getUuid(), self.getName(), r.getError(), ref.getBackupStorageUuid()));
                     reply.setError(r.getError());
                 } else {
+                    returnBackupStoragCapacity(ref.getBackupStorageUuid(), self.getSize());
                     dbf.remove(ref);
                     logger.debug(String.format("successfully expunged the image[uuid: %s, name: %s] on the backup storage[uuid: %s]",
                             self.getUuid(), self.getName(), ref.getBackupStorageUuid()));
@@ -135,6 +137,22 @@ public class ImageBase implements Image {
                 }
 
                 bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void returnBackupStoragCapacity(final String bsUuid, final long size) {
+        ReturnBackupStorageMsg msg = new ReturnBackupStorageMsg();
+        msg.setBackupStorageUuid(bsUuid);
+        msg.setSize(size);
+        bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, bsUuid);
+        bus.send(msg, new CloudBusCallBack() {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    //TODO
+                    logger.warn(String.format("failed to return capacity[%s] to the backup storage[uuid:%s]", size, bsUuid));
+                }
             }
         });
     }
@@ -170,6 +188,7 @@ public class ImageBase implements Image {
                                     logger.warn(String.format("failed to delete image[uuid:%s, name:%s] from backup storage[uuid:%s] because %s, need to garbage collect it",
                                             self.getUuid(), self.getName(), reply.getError(), ref.getBackupStorageUuid()));
                                 } else {
+                                    returnBackupStoragCapacity(ref.getBackupStorageUuid(), self.getSize());
                                     dbf.remove(ref);
                                 }
                                 trigger.next();

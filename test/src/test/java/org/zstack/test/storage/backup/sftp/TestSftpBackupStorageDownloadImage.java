@@ -60,20 +60,24 @@ public class TestSftpBackupStorageDownloadImage {
         config.downloadSuccess1 = true;
         config.downloadSuccess2 = true;
         config.imageMd5sum = Platform.getUuid();
-        config.imageSize = SizeUnit.GIGABYTE.toByte(8);
+        long size = SizeUnit.GIGABYTE.toByte(8);
         ImageInventory iinv = new ImageInventory();
+        iinv.setUuid(Platform.getUuid());
         iinv.setMediaType(ImageMediaType.RootVolumeTemplate.toString());
         iinv.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
         iinv.setGuestOsType("CentOS6.3");
         iinv.setName("TestImage");
         iinv.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
         iinv.setUrl("http://zstack.org/download/testimage.qcow2");
+
+        config.imageSizes.put(iinv.getUuid(), size);
+
         iinv = api.addImage(iinv, sinv.getUuid());
-        Assert.assertEquals(config.imageSize, iinv.getSize());
+        Assert.assertEquals(size, iinv.getSize());
         Assert.assertEquals(config.imageMd5sum, iinv.getMd5Sum());
         Assert.assertNotNull(iinv.getBackupStorageRefs().get(0).getInstallPath());
         ImageVO vo = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
-        Assert.assertEquals(config.imageSize, vo.getSize());
+        Assert.assertEquals(size, vo.getSize());
         Assert.assertEquals(config.imageMd5sum, vo.getMd5Sum());
         Assert.assertNotNull(vo.getBackupStorageRefs().iterator().next().getInstallPath());
     }
