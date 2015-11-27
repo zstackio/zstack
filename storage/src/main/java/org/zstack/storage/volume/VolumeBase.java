@@ -209,6 +209,29 @@ public class VolumeBase implements Volume {
 
     private void handle(final VolumeDeletionMsg msg) {
         final VolumeDeletionReply reply = new VolumeDeletionReply();
+        thdf.chainSubmit(new ChainTask() {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                self = dbf.reload(self);
+                if (self.getStatus() == VolumeStatus.Deleted) {
+                    // the volume has been deleted
+                    // we run into this case because the cascading framework
+                    // will send duplicate messages when deleting a vm as the cascading
+                    // framework has no knowledge about
+                }
+
+            }
+
+            @Override
+            public String getName() {
+                return String.format("delete-volume-%s", self.getUuid());
+            }
+        });
 
         for (VolumeDeletionExtensionPoint extp : pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class)) {
             extp.preDeleteVolume(getSelfInventory());

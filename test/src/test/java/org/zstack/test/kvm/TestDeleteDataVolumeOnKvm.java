@@ -8,6 +8,8 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.header.volume.VolumeInventory;
@@ -78,6 +80,9 @@ public class TestDeleteDataVolumeOnKvm {
         Assert.assertEquals(VolumeStatus.Ready, volvo1.getStatus());
         api.attachVolumeToVm(vm.getUuid(), vol1.getUuid());
 
+        PrimaryStorageInventory ps = deployer.primaryStorages.get("nfs");
+        PrimaryStorageCapacityVO cap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+
         VolumeGlobalConfig.VOLUME_EXPUNGE_PERIOD.updateValue(1);
         VolumeGlobalConfig.VOLUME_EXPUNGE_INTERVAL.updateValue(1);
         api.deleteDataVolume(vol1.getUuid());
@@ -88,6 +93,9 @@ public class TestDeleteDataVolumeOnKvm {
         DeleteCmd cmd = nconfig.deleteCmds.get(0);
         Assert.assertTrue(vol1.getInstallPath().contains(cmd.getInstallPath()));
 
+        PrimaryStorageCapacityVO cap1 = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        Assert.assertEquals(cap1.getAvailableCapacity(), cap.getAvailableCapacity() + vol1.getSize());
+
         nconfig.deleteCmds.clear();
         VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Direct);
         api.deleteDataVolume(vol2.getUuid());
@@ -96,6 +104,9 @@ public class TestDeleteDataVolumeOnKvm {
         Assert.assertEquals(1, nconfig.deleteCmds.size());
         cmd = nconfig.deleteCmds.get(0);
         Assert.assertTrue(vol2.getInstallPath().contains(cmd.getInstallPath()));
+
+        PrimaryStorageCapacityVO cap2 = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        Assert.assertEquals(cap2.getAvailableCapacity(), cap1.getAvailableCapacity() + vol2.getSize());
 
         nconfig.deleteCmds.clear();
         VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Never);
@@ -114,6 +125,9 @@ public class TestDeleteDataVolumeOnKvm {
         Assert.assertEquals(1, nconfig.deleteCmds.size());
         cmd = nconfig.deleteCmds.get(0);
         Assert.assertTrue(vol3.getInstallPath().contains(cmd.getInstallPath()));
+
+        PrimaryStorageCapacityVO cap3 = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        Assert.assertEquals(cap3.getAvailableCapacity(), cap2.getAvailableCapacity() + vol3.getSize());
 
         VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Never);
         nconfig.deleteCmds.clear();

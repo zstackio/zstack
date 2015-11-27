@@ -1620,8 +1620,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 if (count > 0) {
                     throw new OperationFailureException(errf.stringToOperationError(
                             String.format("unable to attach the local storage[uuid:%s, name: %s] to the cluster[uuid:%s]," +
-                                    "there has been a local storage attached on the cluster already", self.getUuid(), self.getName(),
-                                    clusterUuid)
+                                    "there has been a local storage attached on the cluster already", self)
                     ));
                 }
             }

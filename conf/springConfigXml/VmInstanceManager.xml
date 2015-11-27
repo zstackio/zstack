@@ -86,7 +86,7 @@
         </property>
         <property name="expungeVmWorkFlowElements">
             <list>
-                <value>org.zstack.compute.vm.VmDeleteVolumeFlow</value>
+                <value>org.zstack.compute.vm.VmExpungeRootVolumeFlow</value>
             </list>
         </property>
 
