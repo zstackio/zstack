@@ -695,6 +695,7 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIAddImageMsg msg = new APIAddImageMsg();
+        msg.setResourceUuid(inv.getUuid());
         msg.setSession(session == null ? adminSession : session);
         msg.setDescription(inv.getDescription());
         msg.setMediaType(inv.getMediaType());

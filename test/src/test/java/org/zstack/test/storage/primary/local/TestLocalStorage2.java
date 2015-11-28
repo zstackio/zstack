@@ -88,9 +88,7 @@ public class TestLocalStorage2 {
         hq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, host.getUuid());
         LocalStorageHostRefVO href = hq.find();
         Assert.assertEquals(totalSize, href.getTotalCapacity());
-        Assert.assertEquals(totalSize-1, href.getAvailableCapacity());
-
-
+        Assert.assertEquals(totalSize-isize, href.getAvailableCapacity());
 
         PrimaryStorageInventory pri = deployer.primaryStorages.get("local");
         PrimaryStorageVO privo = dbf.findByUuid(pri.getUuid(), PrimaryStorageVO.class);
