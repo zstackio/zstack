@@ -76,13 +76,13 @@ public class TestMevoco18 {
     KVMSimulatorConfig kconfig;
     PrimaryStorageOverProvisioningManager psRatioMgr;
     HostCapacityOverProvisioningManager hostRatioMgr;
-    long totalSize = SizeUnit.GIGABYTE.toByte(100);
+    long totalSize = SizeUnit.GIGABYTE.toByte(1000);
 
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
+        deployer = new Deployer("deployerXml/mevoco/TestMevoco18.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
         deployer.addSpringConfig("mevoco.xml");
         deployer.addSpringConfig("localStorage.xml");
@@ -155,9 +155,27 @@ public class TestMevoco18 {
         Assert.assertEquals(cap4.getAvailableCapacity(), cap3.getAvailableCapacity() + size);
         Assert.assertEquals(ref4.getAvailableCapacity(), ref3.getAvailableCapacity() + size);
 
-        api.deleteHost(host.getUuid());
+        VmInstanceInventory vm1 = deployer.vms.get("TestVm1");
+        size = psRatioMgr.calculateByRatio(ps.getUuid(), vm1.getRootVolume().getSize());
+        VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Direct.toString());
+        api.destroyVmInstance(vm1.getUuid());
         PrimaryStorageCapacityVO cap5 = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        Assert.assertEquals(0, cap5.getAvailableCapacity());
-        Assert.assertEquals(0, cap5.getTotalCapacity());
+        LocalStorageHostRefVO ref5 = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        Assert.assertEquals(cap5.getAvailableCapacity(), cap4.getAvailableCapacity() + size);
+        Assert.assertEquals(ref5.getAvailableCapacity(), ref4.getAvailableCapacity() + size);
+
+        VmInstanceInventory vm2 = deployer.vms.get("TestVm2");
+        size = psRatioMgr.calculateByRatio(ps.getUuid(), vm1.getRootVolume().getSize());
+        VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Direct.toString());
+        api.destroyVmInstance(vm2.getUuid());
+        PrimaryStorageCapacityVO cap6 = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        LocalStorageHostRefVO ref6 = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        Assert.assertEquals(cap6.getAvailableCapacity(), cap5.getAvailableCapacity() + size);
+        Assert.assertEquals(ref6.getAvailableCapacity(), ref5.getAvailableCapacity() + size);
+
+        api.deleteHost(host.getUuid());
+        PrimaryStorageCapacityVO cap7 = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        Assert.assertEquals(0, cap7.getAvailableCapacity());
+        Assert.assertEquals(0, cap7.getTotalCapacity());
     }
 }

@@ -7,12 +7,14 @@ import org.zstack.compute.vm.VmAllocatePrimaryStorageForAttachingDiskFlow;
 import org.zstack.compute.vm.VmMigrateOnHypervisorFlow;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.errorcode.ErrorCode;
@@ -30,6 +32,7 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -41,6 +44,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -244,7 +249,112 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void beforeDeleteHost(HostInventory inventory) {
+    public void beforeDeleteHost(final HostInventory inventory) {
+        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+        q.select(LocalStorageHostRefVO_.primaryStorageUuid);
+        q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, inventory.getUuid());
+        final String psUuid = q.findValue();
+        if (psUuid == null) {
+            return;
+        }
+
+        logger.debug(String.format("the host[uuid:%s] belongs to the local storage[uuid:%s], starts to delete vms and" +
+                " volumes on the host", inventory.getUuid(), psUuid));
+
+        final List<String> vmUuids = new Callable<List<String>>() {
+            @Override
+            @Transactional(readOnly = true)
+            public List<String> call() {
+                String sql = "select vm.uuid from VolumeVO vol, LocalStorageResourceRefVO ref, VmInstanceVO vm where ref.primaryStorageUuid = :psUuid" +
+                        " and vol.type = :vtype and ref.resourceUuid = vol.uuid and ref.resourceType = :rtype and ref.hostUuid = :huuid" +
+                        " and vm.uuid = vol.vmInstanceUuid";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                q.setParameter("vtype", VolumeType.Root);
+                q.setParameter("rtype", VolumeVO.class.getSimpleName());
+                q.setParameter("huuid", inventory.getUuid());
+                q.setParameter("psUuid", psUuid);
+                return q.getResultList();
+            }
+        }.call();
+
+        // destroy vms
+        if (!vmUuids.isEmpty()) {
+            List<DestroyVmInstanceMsg> msgs = CollectionUtils.transformToList(vmUuids, new Function<DestroyVmInstanceMsg, String>() {
+                @Override
+                public DestroyVmInstanceMsg call(String uuid) {
+                    DestroyVmInstanceMsg msg = new DestroyVmInstanceMsg();
+                    msg.setVmInstanceUuid(uuid);
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
+                    return msg;
+                }
+            });
+
+            final FutureCompletion completion = new FutureCompletion();
+            bus.send(msgs, new CloudBusListCallBack(completion) {
+                @Override
+                public void run(List<MessageReply> replies) {
+                    for (MessageReply r : replies){
+                        if (!r.isSuccess()) {
+                            String vmUuid = vmUuids.get(replies.indexOf(r));
+                            //TODO
+                            logger.warn(String.format("failed to destroy the vm[uuid:%s], %s", vmUuid, r.getError()));
+                        }
+                    }
+
+                    completion.success();
+                }
+            });
+
+            completion.await(TimeUnit.MINUTES.toMillis(15));
+        }
+
+        final List<String> volUuids = new Callable<List<String>>() {
+            @Override
+            @Transactional(readOnly = true)
+            public List<String> call() {
+                String sql = "select vol.uuid from VolumeVO vol, LocalStorageResourceRefVO ref where ref.primaryStorageUuid = :psUuid" +
+                        " and vol.type = :vtype and ref.resourceUuid = vol.uuid and ref.resourceType = :rtype and ref.hostUuid = :huuid";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                q.setParameter("psUuid", psUuid);
+                q.setParameter("vtype", VolumeType.Data);
+                q.setParameter("rtype", VolumeVO.class.getSimpleName());
+                q.setParameter("huuid", inventory.getUuid());
+                return q.getResultList();
+            }
+        }.call();
+
+        // delete data volumes
+        if (!volUuids.isEmpty()) {
+            List<DeleteVolumeMsg> msgs = CollectionUtils.transformToList(volUuids, new Function<DeleteVolumeMsg, String>() {
+                @Override
+                public DeleteVolumeMsg call(String uuid) {
+                    DeleteVolumeMsg msg = new DeleteVolumeMsg();
+                    msg.setUuid(uuid);
+                    msg.setDetachBeforeDeleting(true);
+                    bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, uuid);
+                    return msg;
+                }
+            });
+
+            final FutureCompletion completion = new FutureCompletion();
+            bus.send(msgs, new CloudBusListCallBack(completion) {
+                @Override
+                public void run(List<MessageReply> replies) {
+                    for (MessageReply r : replies) {
+                        if (!r.isSuccess()) {
+                            String uuid = volUuids.get(replies.indexOf(r));
+                            //TODO
+                            logger.warn(String.format("failed to delete the data volume[uuid:%s], %s", uuid,
+                                    r.getError()));
+                        }
+                    }
+
+                    completion.success();
+                }
+            });
+
+            completion.await(TimeUnit.MINUTES.toMillis(15));
+        }
     }
 
     @Override

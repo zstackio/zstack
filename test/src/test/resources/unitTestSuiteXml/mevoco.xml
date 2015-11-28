@@ -17,5 +17,7 @@
     <TestCase class="org.zstack.test.mevoco.TestMevoco15"/>
     <TestCase class="org.zstack.test.mevoco.TestMevoco16"/>
     <TestCase class="org.zstack.test.mevoco.TestMevoco17"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco18"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco19"/>
     <TestCase class="org.zstack.test.mevoco.TestMonitor"/>
 </UnitTestSuiteConfig>

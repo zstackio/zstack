@@ -574,6 +574,11 @@ public abstract class HostBase extends AbstractHost {
             }
 
             @Override
+            public int getSyncLevel() {
+                return getHostSyncLevel();
+            }
+
+            @Override
             public String getName() {
                 return String.format("host-deletion-%s", self.getUuid());
             }

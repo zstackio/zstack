@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.errorcode.SysErrors;
@@ -40,5 +41,25 @@ public class TestFutureCompletion2 {
         completion.await(TimeUnit.SECONDS.toMillis(1));
         Assert.assertFalse(completion.isSuccess());
         Assert.assertEquals(SysErrors.TIMEOUT.toString(), completion.getErrorCode().getCode());
+
+        final FutureCompletion completion1 = new FutureCompletion();
+        new Runnable() {
+            @Override
+            @AsyncThread
+            public void run() {
+                for (int i=0; i<3; i++) {
+                    logger.debug("index: " + i);
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException e) {
+                    }
+                }
+
+                completion1.success();
+            }
+        }.run();
+
+        completion1.await(TimeUnit.SECONDS.toMillis(500));
+        Assert.assertTrue(completion1.isSuccess());
     }
 }
