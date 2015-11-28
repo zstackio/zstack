@@ -155,5 +155,14 @@ public class TestMevoco19 {
         cap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(0, cap.getAvailableCapacity());
         Assert.assertEquals(0, cap.getTotalCapacity());
+
+        VmGlobalConfig.VM_EXPUNGE_PERIOD.updateValue(1);
+        VmGlobalConfig.VM_EXPUNGE_INTERVAL.updateValue(1);
+        VolumeGlobalConfig.VOLUME_EXPUNGE_INTERVAL.updateValue(1);
+        VolumeGlobalConfig.VOLUME_EXPUNGE_PERIOD.updateValue(1);
+
+        TimeUnit.SECONDS.sleep(3);
+        Assert.assertEquals(0, dbf.count(VmInstanceVO.class));
+        Assert.assertEquals(0, dbf.count(VolumeVO.class));
     }
 }
