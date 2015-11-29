@@ -60,4 +60,13 @@
         <type>java.lang.Integer</type>
         <defaultValue>0</defaultValue>
      </config>
+
+	<config>
+        <category>kvm</category>
+        <name>consoleMode</name>
+        <description>You can choose a transport protocol for consolemode,when set to spice, enable the spice protocol connection virtual machine.options:[vnc,spice]</description>
+        <type>java.lang.String</type>
+        <defaultValue>vnc</defaultValue>
+    </config>
+
 </globalConfig>

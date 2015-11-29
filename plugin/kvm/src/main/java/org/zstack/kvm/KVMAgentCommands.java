@@ -509,6 +509,7 @@ public class KVMAgentCommands {
     	private long timeout;
         private Map<String, Object> addons;
         private boolean useVirtio;
+		private String consoleMode;
 
         public IsoTO getBootIso() {
             return bootIso;
@@ -563,6 +564,13 @@ public class KVMAgentCommands {
 		public void setBootDev(String bootDev) {
 			this.bootDev = bootDev;
 		}
+        public String getConsoleMode() {
+            return consoleMode;
+        }
+        public void setConsoleMode(String consoleMode) {
+            this.consoleMode = consoleMode;
+        }
+
 		
 		public VolumeTO getRootVolume() {
             return rootVolume;
