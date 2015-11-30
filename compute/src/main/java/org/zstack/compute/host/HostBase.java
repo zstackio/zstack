@@ -539,6 +539,7 @@ public abstract class HostBase extends AbstractHost {
             @Override
             public void success() {
                 reply.setConnected(true);
+                reply.setCurrentHostStatus(self.getStatus().toString());
                 bus.reply(msg, reply);
 
                 extpEmitter.hostPingTask(HypervisorType.valueOf(self.getHypervisorType()), getSelfInventory());
@@ -548,6 +549,7 @@ public abstract class HostBase extends AbstractHost {
             public void fail(ErrorCode errorCode) {
                 changeConnectionState(HostStatusEvent.disconnected);
                 reply.setConnected(false);
+                reply.setCurrentHostStatus(self.getStatus().toString());
                 reply.setError(errorCode);
                 reply.setSuccess(true);
                 bus.reply(msg, reply);
