@@ -17,6 +17,7 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands.*;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 import org.zstack.simulator.AsyncRESTReplyer;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -75,7 +76,11 @@ public class SftpBackupStorageSimulator {
             rsp.setSize(size == null ? 0 : size);
             rsp.setMd5Sum(config.imageMd5sum);
             rsp.setTotalCapacity(config.totalCapacity);
-            rsp.setAvailableCapacity(config.totalCapacity);
+            long usedSize = 0;
+            for (Long s : config.imageSizes.values()) {
+                usedSize += s;
+            }
+            rsp.setAvailableCapacity(config.totalCapacity-usedSize);
             logger.debug(String.format("Download %s", cmd.getUrl()));
         }
         

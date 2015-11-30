@@ -77,6 +77,7 @@ public class TestSftpBackupStorageExpungeImage {
         BackupStorageInventory sftp = deployer.backupStorages.get("sftp1");
         long size = SizeUnit.GIGABYTE.toByte(1);
         ImageInventory img = new ImageInventory();
+        img.setUuid(Platform.getUuid());
         img.setName("image1");
         img.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
         img.setUrl("http://download/image.qcow2");
@@ -87,6 +88,7 @@ public class TestSftpBackupStorageExpungeImage {
         img = api.addImage(img, sftp.getUuid());
 
         ImageInventory img1 = new ImageInventory();
+        img1.setUuid(Platform.getUuid());
         img1.setName("image1");
         img1.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
         img1.setUrl("http://download/image.qcow2");

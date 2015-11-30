@@ -4,6 +4,7 @@ import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.core.Platform;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.image.*;
@@ -148,6 +149,7 @@ public class TestDeleteImage2 {
         count = dbf.count(ImageBackupStorageRefVO.class);
         Assert.assertEquals(0, count);
 
+        iinv.setUuid(Platform.getUuid());
         ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Never.toString());
         iinv = api.addImage(iinv, bsUuids.toArray(new String[bsUuids.size()]));
         api.deleteImage(iinv.getUuid());
@@ -172,6 +174,7 @@ public class TestDeleteImage2 {
         ImageGlobalConfig.EXPUNGE_PERIOD.updateValue(1000);
         ImageGlobalConfig.EXPUNGE_INTERVAL.updateValue(1000);
         TimeUnit.SECONDS.sleep(2);
+        iinv.setUuid(Platform.getUuid());
         iinv = api.addImage(iinv, bsUuids.toArray(new String[bsUuids.size()]));
         api.deleteImage(iinv.getUuid(), list(bs1.getUuid()));
         iinv = api.recoverImage(iinv.getUuid(), list(bs1.getUuid()), null);
