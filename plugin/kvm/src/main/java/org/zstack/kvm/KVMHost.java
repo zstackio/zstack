@@ -1460,6 +1460,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
+        cmd.setHostManagementIp(self.getManagementIp());
 
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
         try {

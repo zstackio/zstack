@@ -552,6 +552,15 @@ public class KVMAgentCommands {
     	private long timeout;
         private Map<String, Object> addons;
         private boolean useVirtio;
+        private String hostManagementIp;
+
+        public String getHostManagementIp() {
+            return hostManagementIp;
+        }
+
+        public void setHostManagementIp(String hostManagementIp) {
+            this.hostManagementIp = hostManagementIp;
+        }
 
         public IsoTO getBootIso() {
             return bootIso;
