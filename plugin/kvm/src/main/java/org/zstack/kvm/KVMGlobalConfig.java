@@ -27,6 +27,7 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(inNumberRange = {0, 2})
     public static GlobalConfig LIBVIRT_CACHE_MODE = new GlobalConfig(CATEGORY, "vm.CacheMode");
     @GlobalConfigValidation(validValues = {"vnc","spice"})
-    public static GlobalConfig VM_CONSOLE_MODE = new GlobalConfig(CATEGORY, "consoleMode");
-
+    public static GlobalConfig VM_CONSOLE_MODE = new GlobalConfig(CATEGORY, "vm.ConsoleMode");
+    @GlobalConfigValidation
+    public static GlobalConfig NESTED_VIRTUALIZATION = new GlobalConfig(CATEGORY, "nestedVirtualization");
 }
