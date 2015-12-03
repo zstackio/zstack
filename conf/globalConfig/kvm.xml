@@ -51,13 +51,22 @@
         <description>when set to true, enable the live volume snapshot on RedHat series OS if the libvirt and QEMU versions match the requirement</description>
         <type>java.lang.Boolean</type>
         <defaultValue>false</defaultValue>
-     </config>
+    </config>
 
-     <config>
+    <config>
         <category>kvm</category>
         <name>vm.CacheMode</name>
         <description>libvirt cache optoin. 0=none, 1=writethrough, 2=writeback</description>
         <type>java.lang.Integer</type>
         <defaultValue>0</defaultValue>
      </config>
+
+    <config>
+        <category>kvm</category>
+        <name>consoleMode</name>
+        <description>You can choose a transport protocol for consolemode,when set to spice, enable the spice protocol connection virtual machine.options:[vnc,spice]</description>
+        <type>java.lang.String</type>
+        <defaultValue>vnc</defaultValue>
+    </config>
+
 </globalConfig>
