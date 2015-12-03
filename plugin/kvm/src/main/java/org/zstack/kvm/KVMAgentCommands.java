@@ -509,7 +509,7 @@ public class KVMAgentCommands {
     	private long timeout;
         private Map<String, Object> addons;
         private boolean useVirtio;
-		private String consoleMode;
+        private String consoleMode;
 
         public IsoTO getBootIso() {
             return bootIso;

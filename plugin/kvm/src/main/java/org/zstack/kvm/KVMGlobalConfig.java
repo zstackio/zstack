@@ -26,7 +26,7 @@ public class KVMGlobalConfig {
     public static GlobalConfig ALLOW_LIVE_SNAPSHOT_ON_REDHAT = new GlobalConfig(CATEGORY, "redhat.liveSnapshotOn");
     @GlobalConfigValidation(inNumberRange = {0, 2})
     public static GlobalConfig LIBVIRT_CACHE_MODE = new GlobalConfig(CATEGORY, "vm.CacheMode");
-	@GlobalConfigValidation(validValues = {"vnc","spice"})
+    @GlobalConfigValidation(validValues = {"vnc","spice"})
     public static GlobalConfig VM_CONSOLE_MODE = new GlobalConfig(CATEGORY, "consoleMode");
 
 }
