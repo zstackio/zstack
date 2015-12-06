@@ -547,11 +547,13 @@ public abstract class HostBase extends AbstractHost {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                changeConnectionState(HostStatusEvent.disconnected);
                 reply.setConnected(false);
                 reply.setCurrentHostStatus(self.getStatus().toString());
                 reply.setError(errorCode);
                 reply.setSuccess(true);
+
+                changeConnectionState(HostStatusEvent.disconnected);
+
                 bus.reply(msg, reply);
             }
         });

@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  */
 public abstract class VmTracer {
@@ -43,9 +45,11 @@ public abstract class VmTracer {
         private void buildManagementServerSideVmStates() {
             mgmtSideStates = new HashMap<String, VmInstanceState>();
 
-            String sql = "select vm.uuid, vm.state from VmInstanceVO vm where vm.hostUuid = :huuid or (vm.hostUuid is null and vm.lastHostUuid = :huuid)";
+            String sql = "select vm.uuid, vm.state from VmInstanceVO vm where vm.hostUuid = :huuid or (vm.hostUuid is null and vm.lastHostUuid = :huuid)" +
+                    " and vm.state not in (:vmstates)";
             TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
             q.setParameter("huuid", hostUuid);
+            q.setParameter("vmstates", list(VmInstanceState.Destroyed, VmInstanceState.Destroying));
             List<Tuple> ts = q.getResultList();
 
             for (Tuple t : ts) {
