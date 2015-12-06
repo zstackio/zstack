@@ -1,10 +1,10 @@
-package org.zstack.core.safeguard;
+package org.zstack.core.defer;
 
 import java.util.EmptyStackException;
 import java.util.Stack;
 
 
-class GuardStack<Runnable> extends Stack<Runnable> {
+class DeferStack<Runnable> extends Stack<Runnable> {
     private Stack<Integer> stackTop = new Stack<Integer>();
     
     void pushTop() {
@@ -12,7 +12,11 @@ class GuardStack<Runnable> extends Stack<Runnable> {
     }
     
     int popTop() {
-        return stackTop.pop();
+        try {
+            return stackTop.pop();
+        } catch (EmptyStackException e) {
+            return 0;
+        }
     }
     
     int getTop() {

@@ -12,8 +12,8 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.SoftDeleteEntityExtensionPoint;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.safeguard.Guard;
-import org.zstack.core.safeguard.SafeGuard;
+import org.zstack.core.defer.Deferred;
+import org.zstack.core.defer.Defer;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -24,7 +24,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.tag.*;
 import org.zstack.query.QueryFacade;
-import org.zstack.tag.SystemTag.SystemTagOperation;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -218,7 +217,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     @Override
-    @Guard
+    @Deferred
     public SystemTagInventory createNonInherentSystemTag(String resourceUuid, String tag, String resourceType) {
         if (isTagExisting(resourceUuid, tag, TagType.System, resourceType)) {
             return null;
@@ -238,7 +237,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         SystemTagInventory inv = SystemTagInventory.valueOf(vo);
 
         final SystemTagVO finalVo = vo;
-        SafeGuard.guard(new Runnable() {
+        Defer.guard(new Runnable() {
             @Override
             public void run() {
                 dbf.remove(finalVo);
@@ -501,7 +500,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
     }
 
-    @Guard
+    @Deferred
     private void handle(APIUpdateSystemTagMsg msg) {
         APIUpdateSystemTagEvent evt = new APIUpdateSystemTagEvent(msg.getId());
         SystemTagVO vo = dbf.findByUuid(msg.getUuid(), SystemTagVO.class);

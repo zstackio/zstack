@@ -11,8 +11,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.safeguard.Guard;
-import org.zstack.core.safeguard.SafeGuard;
+import org.zstack.core.defer.Deferred;
+import org.zstack.core.defer.Defer;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.workflow.*;
@@ -746,7 +746,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         bus.reply(msg, reply);
     }
 
-    @Guard
+    @Deferred
     private void handle(final APIAddImageMsg msg) {
         String imageType = msg.getType();
         imageType = imageType == null ? DefaultImageFactory.type.toString() : imageType;
@@ -777,7 +777,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), ImageVO.class);
         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
 
-        SafeGuard.guard(new Runnable() {
+        Defer.guard(new Runnable() {
             @Override
             public void run() {
                 dbf.remove(ivo);

@@ -54,8 +54,9 @@
 	
 	<TestCase class="org.zstack.test.core.errorcode.TestErrorCode"/>
 
-	<TestCase class="org.zstack.test.core.safeguard.TestSafeGuard"/>
-	<TestCase class="org.zstack.test.core.safeguard.TestSafeGuardComplex"/>
+    <TestCase class="org.zstack.test.core.defer.TestDefer"/>
+	<TestCase class="org.zstack.test.core.defer.TestDefer1"/>
+	<TestCase class="org.zstack.test.core.defer.TestDefer2"/>
 
     <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow"/>
     <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow1"/>

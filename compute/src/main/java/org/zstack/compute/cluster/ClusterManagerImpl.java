@@ -7,13 +7,12 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.safeguard.Guard;
+import org.zstack.core.defer.Deferred;
 import org.zstack.header.AbstractService;
 import org.zstack.header.cluster.*;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.query.QueryFacade;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -105,7 +104,7 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
 		bus.reply(msg, reply);
 	}
 
-	@Guard
+	@Deferred
 	private void handle(APICreateClusterMsg msg) {
 	    String clusterType = msg.getType();
 	    if (clusterType == null) {

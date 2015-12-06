@@ -17,9 +17,8 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.safeguard.Guard;
-import org.zstack.core.safeguard.SafeGuard;
-import org.zstack.core.thread.SyncThread;
+import org.zstack.core.defer.Deferred;
+import org.zstack.core.defer.Defer;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -211,7 +210,7 @@ public class ManagementNode implements CloudBusEventListener {
         startHeartbeat();
     }
 
-    @Guard
+    @Deferred
     public String join() {
         try {
             if (node == null) {
@@ -219,7 +218,7 @@ public class ManagementNode implements CloudBusEventListener {
                 vo.setHostName(Platform.getManagementServerIp());
                 vo.setUuid(Platform.getManagementServerId());
                 node = dbf.persistAndRefresh(vo);
-                SafeGuard.guard(new Runnable() {
+                Defer.guard(new Runnable() {
                     @Override
                     public void run() {
                         deleteNode(vo.getUuid());
@@ -229,7 +228,7 @@ public class ManagementNode implements CloudBusEventListener {
 
                 unsubscriber = bus.subscribeEvent(this, myEvents);
                 final ManagementNode grid = this;
-                SafeGuard.guard(new Runnable() {
+                Defer.guard(new Runnable() {
                     @Override
                     public void run() {
                         unsubscriber.unsubscribeAll();

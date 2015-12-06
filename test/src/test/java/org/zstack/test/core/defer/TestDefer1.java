@@ -1,16 +1,16 @@
-package org.zstack.test.core.safeguard;
+package org.zstack.test.core.defer;
 
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.core.safeguard.Guard;
-import org.zstack.core.safeguard.SafeGuard;
+import org.zstack.core.defer.Deferred;
+import org.zstack.core.defer.Defer;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-public class TestSafeGuard {
-    CLogger logger = Utils.getLogger(TestSafeGuard.class);
+public class TestDefer1 {
+    CLogger logger = Utils.getLogger(TestDefer1.class);
     int count = 0;
 
     @Before
@@ -18,13 +18,13 @@ public class TestSafeGuard {
     }
 
     
-    @Guard
+    @Deferred
     private void case1() {
         count ++;
-        SafeGuard.guard(new Runnable() {
+        Defer.guard(new Runnable() {
             @Override
             public void run() {
-                count --;
+                count--;
             }
         });
         throw new CloudRuntimeException("Roll back count");

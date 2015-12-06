@@ -19,7 +19,7 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.core.safeguard.Guard;
+import org.zstack.core.defer.Deferred;
 import org.zstack.header.AbstractService;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
@@ -209,7 +209,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         ps.handleMessage(msg);
     }
 
-    @Guard
+    @Deferred
     private void handle(final APIAddPrimaryStorageMsg msg) {
         PrimaryStorageType type = PrimaryStorageType.valueOf(msg.getType());
         final PrimaryStorageFactory factory = getPrimaryStorageFactory(type);

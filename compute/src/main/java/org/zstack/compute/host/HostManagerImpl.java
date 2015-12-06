@@ -10,7 +10,7 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.safeguard.Guard;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
 import org.zstack.core.workflow.*;
@@ -156,7 +156,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
     }
 
-    @Guard
+    @Deferred
     private void handle(APIAddHostMsg msg) {
         final APIAddHostEvent evt = new APIAddHostEvent(msg.getId());
 
