@@ -1078,4 +1078,9 @@ public class KVMAgentCommands {
         public String vmUuid;
         public String vmState;
     }
+
+    public static class ReconnectMeCmd {
+        public String hostUuid;
+        public String reason;
+    }
 }

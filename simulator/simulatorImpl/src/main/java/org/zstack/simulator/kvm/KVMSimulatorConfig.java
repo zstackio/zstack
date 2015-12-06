@@ -13,6 +13,7 @@ import java.util.Map;
 
 public class KVMSimulatorConfig {
     public volatile boolean connectSuccess = true;
+    public List<ConnectCmd> connectCmds = new ArrayList<ConnectCmd>();
     public volatile String simulatorHostUuid;
     public volatile boolean connectException = false;
     public volatile boolean pingSuccess = true;

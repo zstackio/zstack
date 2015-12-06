@@ -182,6 +182,7 @@ public class KVMSimulatorController {
         ConnectResponse rsp = new ConnectResponse();
         
         if (config.connectSuccess) {
+            config.connectCmds.add(cmd);
             rsp.setSuccess(true);
             rsp.setLibvirtVersion("1.0.0");
             rsp.setQemuVersion("1.3.0");

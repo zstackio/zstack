@@ -24,9 +24,12 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeFormat;
+import org.zstack.kvm.KVMAgentCommands.ReconnectMeCmd;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -61,6 +64,8 @@ public class KVMHostFactory implements HypervisorFactory, Component, ManagementN
     private ResourceDestinationMaker destMaker;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private RESTFacade restf;
 
     @Override
     public HostVO createHost(HostVO vo, APIAddHostMsg msg) {
@@ -173,6 +178,19 @@ public class KVMHostFactory implements HypervisorFactory, Component, ManagementN
                     throw new GlobalConfigException(String.format("%s only allows a size string. A size string is a number with suffix 'T/t/G/g/M/m/K/k/B/b' or without suffix, but got %s",
                             KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.getCanonicalName(), value));
                 }
+            }
+        });
+
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_RECONNECT_ME, ReconnectMeCmd.class, new SyncHttpCallHandler<ReconnectMeCmd>() {
+            @Override
+            public String handleSyncHttpCall(ReconnectMeCmd cmd) {
+                //TODO
+                logger.warn(String.format("the kvm host[uuid:%s] asks the mgmt server to reconnect it for %s", cmd.hostUuid, cmd.reason));
+                ReconnectHostMsg msg = new ReconnectHostMsg();
+                msg.setHostUuid(cmd.hostUuid);
+                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, cmd.hostUuid);
+                bus.send(msg);
+                return null;
             }
         });
 
