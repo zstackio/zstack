@@ -219,7 +219,7 @@ public class AnsibleRunner {
             if (!opened) {
                 logger.debug(String.format("agent port[%s] on target ip[%s] is not opened, run ansible[%s]", agentPort, targetIp, playBookName));
                 return true;
-        }
+            }
 
             if (runChecker()) {
                 return true;

@@ -10,6 +10,7 @@ public class DeployAgentMsg extends NeedReplyMessage {
     private String ip;
     private String username;
     private String password;
+    private Integer sshPort;
 
     public String getOwner() {
         return owner;
@@ -41,5 +42,13 @@ public class DeployAgentMsg extends NeedReplyMessage {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Integer getSshPort() {
+        return sshPort;
+    }
+
+    public void setSshPort(Integer sshPort) {
+        this.sshPort = sshPort;
     }
 }

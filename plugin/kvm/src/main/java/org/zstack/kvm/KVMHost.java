@@ -1695,6 +1695,8 @@ public class KVMHost extends HostBase implements Host {
             try {
                 KVMHostConnectedContext ctx = new KVMHostConnectedContext(factory.getHostContext(self.getUuid()), newAdded);
                 extp.kvmHostConnected(ctx);
+            } catch (OperationFailureException oe) {
+                throw new OperationFailureException(errf.instantiateErrorCode(HostErrors.CONNECTION_ERROR, oe.getErrorCode()));
             } catch (Exception e) {
                 String err = String.format("connection error for KVM host[uuid:%s, ip:%s] when calling %s, because %s", self.getUuid(),
                         self.getManagementIp(), extp.getClass().getName(), e.getMessage());
