@@ -106,4 +106,5 @@
   <TestCase class="org.zstack.test.kvm.TestKvmFailureCheckState"/>
   <TestCase class="org.zstack.test.kvm.TestVmBootOrderOnKvm"/>
   <TestCase class="org.zstack.test.kvm.TestKvmPingHost"/>
+  <TestCase class="org.zstack.test.kvm.TestKvmReconnectMe"/>
 </UnitTestSuiteConfig>

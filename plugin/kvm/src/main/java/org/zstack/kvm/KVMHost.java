@@ -228,52 +228,46 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final CheckVmStateOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
+        final CheckVmStateOnHypervisorReply reply = new CheckVmStateOnHypervisorReply();
+        if (self.getStatus() != HostStatus.Connected) {
+            reply.setError(errf.stringToOperationError(
+                    String.format("the host[uuid:%s, status:%s] is not Connected", self.getUuid(), self.getStatus())
+            ));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        // NOTE: don't run this message in the sync task
+        // there can be many such kind of messages
+        // running in the sync task may cause other tasks starved
+        CheckVmStateCmd cmd = new CheckVmStateCmd();
+        cmd.vmUuids = msg.getVmInstanceUuids();
+        cmd.hostUuid = self.getUuid();
+        restf.asyncJsonPost(checkVmStatePath, cmd, new JsonAsyncRESTCallback<CheckVmStateRsp>(msg) {
             @Override
-            public String getSyncSignature() {
-                return id;
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
             }
 
             @Override
-            public void run(final SyncTaskChain chain) {
-                final CheckVmStateOnHypervisorReply reply = new CheckVmStateOnHypervisorReply();
-                CheckVmStateCmd cmd = new CheckVmStateCmd();
-                cmd.vmUuids = msg.getVmInstanceUuids();
-                cmd.hostUuid = self.getUuid();
-                restf.asyncJsonPost(checkVmStatePath, cmd, new JsonAsyncRESTCallback<CheckVmStateRsp>(msg, chain) {
-                    @Override
-                    public void fail(ErrorCode err) {
-                        reply.setError(err);
-                        bus.reply(msg, reply);
-                        chain.next();
+            public void success(CheckVmStateRsp ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                } else {
+                    Map<String, String> m = new HashMap<String, String>();
+                    for (Map.Entry<String, String> e : ret.states.entrySet()) {
+                        m.put(e.getKey(), KvmVmState.valueOf(e.getValue()).toVmInstanceState().toString());
                     }
+                    reply.setStates(m);
+                }
 
-                    @Override
-                    public void success(CheckVmStateRsp ret) {
-                        if (!ret.isSuccess()) {
-                            reply.setError(errf.stringToOperationError(ret.getError()));
-                        } else {
-                            Map<String, String> m = new HashMap<String, String>();
-                            for (Map.Entry<String, String> e : ret.states.entrySet()) {
-                                m.put(e.getKey(), KvmVmState.valueOf(e.getValue()).toVmInstanceState().toString());
-                            }
-                            reply.setStates(m);
-                        }
-
-                        bus.reply(msg, reply);
-                        chain.next();
-                    }
-
-                    @Override
-                    public Class<CheckVmStateRsp> getReturnClass() {
-                        return CheckVmStateRsp.class;
-                    }
-                });
+                bus.reply(msg, reply);
             }
 
             @Override
-            public String getName() {
-                return "check=vm-states";
+            public Class<CheckVmStateRsp> getReturnClass() {
+                return CheckVmStateRsp.class;
             }
         });
     }

@@ -4,6 +4,8 @@ import org.apache.commons.io.FileUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.io.File;
 
@@ -13,6 +15,8 @@ import static org.zstack.utils.StringDSL.ln;
  * Created by frank on 12/5/2015.
  */
 public class SshShell {
+    private static final CLogger logger = Utils.getLogger(SshShell.class);
+
     private String hostname;
     private String username;
     private String password;
@@ -37,8 +41,12 @@ public class SshShell {
             } else {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 FileUtils.writeStringToFile(tempPasswordFile, password);
-                ssh = String.format("sshpass -f%s ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p %s %s@%s '%s'",
+                ssh = String.format("sshpass -f%s ssh -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p %s %s@%s '%s'",
                         tempPasswordFile.getAbsolutePath(), port, username, hostname, cmd);
+            }
+
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("[ssh shell]: %s", ssh));
             }
 
             ShellResult ret = ShellUtils.runAndReturn(ssh);
@@ -47,7 +55,9 @@ public class SshShell {
             sret.setReturnCode(ret.getRetCode());
             sret.setStderr(ret.getStderr());
             sret.setStdout(ret.getStdout());
-            if (sret.getReturnCode() == 255) {
+            if (sret.getReturnCode() == 255 && privateKeyFile != null) {
+                sret.setSshFailure(true);
+            } else if (sret.getReturnCode() == 5 && privateKeyFile == null) {
                 sret.setSshFailure(true);
             }
             return sret;
@@ -82,7 +92,7 @@ public class SshShell {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 FileUtils.writeStringToFile(tempPasswordFile, password);
                 ssh = ln(
-                        "sshpass -f{0} ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
+                        "sshpass -f{0} ssh -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
                         "s=`mktemp`",
                         "cat << 'EOT' > $s",
                         "{4}",
@@ -95,13 +105,19 @@ public class SshShell {
                 ).format(tempPasswordFile.getAbsolutePath(), port, username, hostname, script);
             }
 
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("[ssh shell]: %s", ssh));
+            }
+
             ShellResult ret = ShellUtils.runAndReturn(ssh);
             SshResult sret = new SshResult();
             sret.setCommandToExecute(script);
             sret.setReturnCode(ret.getRetCode());
             sret.setStderr(ret.getStderr());
             sret.setStdout(ret.getStdout());
-            if (sret.getReturnCode() == 255) {
+            if (sret.getReturnCode() == 255 && privateKeyFile != null) {
+                sret.setSshFailure(true);
+            } else if (sret.getReturnCode() == 5 && privateKeyFile == null) {
                 sret.setSshFailure(true);
             }
             return sret;
