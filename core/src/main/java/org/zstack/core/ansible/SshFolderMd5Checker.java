@@ -1,7 +1,9 @@
 package org.zstack.core.ansible;
 
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.utils.ShellResult;
@@ -20,6 +22,7 @@ import static org.zstack.utils.StringDSL.ln;
 /**
  * Created by frank on 12/6/2015.
  */
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SshFolderMd5Checker implements AnsibleChecker {
     private static final CLogger logger = Utils.getLogger(SshFolderMd5Checker.class);
 
@@ -38,7 +41,7 @@ public class SshFolderMd5Checker implements AnsibleChecker {
             "echo \"cannot find the folder {0}\"",
             "exit 101",
             "fi",
-            "files=`find {0}`",
+            "files=`find {0} -type f`",
             "for f in $files",
             "do",
             "md5sum $f",
@@ -97,7 +100,7 @@ public class SshFolderMd5Checker implements AnsibleChecker {
     @Override
     public boolean needDeploy() {
         String srcScript = script.format(srcFolder);
-        ShellResult srcRes = ShellUtils.runAndReturn(srcScript);
+        ShellResult srcRes = ShellUtils.runAndReturn(srcScript, false);
         if (!srcRes.isReturnCode(0)) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("cannot check md5sum of files in the folder[%s].\nstdout:%s\nstderr:%s", srcFolder,

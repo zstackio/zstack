@@ -52,11 +52,29 @@ public class AnsibleRunner {
     private String privateKey;
     private int sshPort = 22;
     private String playBookName;
+    private String playBookPath;
     private Map<String, Object> arguments = new HashMap<String, Object>();
     private int agentPort;
     private boolean fullDeploy;
     private boolean localPublicKey;
     private boolean runOnLocal;
+    private AnsibleNeedRun ansibleNeedRun;
+
+    public String getPlayBookPath() {
+        return playBookPath;
+    }
+
+    public void setPlayBookPath(String playBookPath) {
+        this.playBookPath = playBookPath;
+    }
+
+    public AnsibleNeedRun getAnsibleNeedRun() {
+        return ansibleNeedRun;
+    }
+
+    public void setAnsibleNeedRun(AnsibleNeedRun ansibleNeedRun) {
+        this.ansibleNeedRun = ansibleNeedRun;
+    }
 
     public boolean isRunOnLocal() {
         return runOnLocal;
@@ -172,12 +190,19 @@ public class AnsibleRunner {
         msg.setTargetIp(targetIp);
         msg.setPrivateKeyFile(privKeyFile);
         msg.setArguments(arguments);
-        msg.setPlayBookName(playBookName);
+
+        if (playBookPath != null) {
+            msg.setPlayBookPath(playBookPath);
+        } else {
+            msg.setPlayBookPath(PathUtil.join(AnsibleConstant.ROOT_DIR, playBookName));
+        }
+
         if (runOnLocal) {
             bus.makeLocalServiceId(msg, AnsibleConstant.SERVICE_ID);
         } else {
             bus.makeTargetServiceIdByResourceUuid(msg, AnsibleConstant.SERVICE_ID, targetIp);
         }
+
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
@@ -204,8 +229,12 @@ public class AnsibleRunner {
 
     private boolean isNeedRun() {
         if (isFullDeploy()) {
-            logger.debug(String.format("Ansible.fullDeploy is set, run ansible anyway"));
+            logger.debug("Ansible.fullDeploy is set, run ansible anyway");
             return true;
+        }
+
+        if (ansibleNeedRun != null) {
+            return ansibleNeedRun.isRunNeed();
         }
 
         boolean changed = asf.isModuleChanged(playBookName);
@@ -251,7 +280,7 @@ public class AnsibleRunner {
             putArgument("trusted_host", Platform.getManagementServerIp());
             putArgument("yum_server", String.format("%s:8080", Platform.getManagementServerIp()));
 
-            logger.debug(String.format("starts to run ansbile[%s]", playBookName));
+            logger.debug(String.format("starts to run ansbile[%s]", playBookPath == null ? playBookName : playBookPath));
             new PrepareAnsible().setTargetIp(targetIp).prepare();
             setupPublicKey();
             callAnsible(completion);

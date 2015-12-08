@@ -78,8 +78,16 @@ public class ShellUtils {
         return doRun(cmdstr, baseDir, false);
     }
 
+    public static String run(String cmdstr, String baseDir, boolean withSudo) {
+        return doRun(cmdstr, baseDir, withSudo, false);
+    }
+
     public static String run(String cmdsr) {
         return run(cmdsr, null);
+    }
+
+    public static String run(String cmdsr, boolean withSudo) {
+        return run(cmdsr, null, withSudo);
     }
 
     public static class ShellRunner {
@@ -296,18 +304,27 @@ public class ShellUtils {
         return sb.toString();
     }
 
+    public static ShellResult runAndReturn(String cmdstr, String baseDir, boolean withSudo) {
+        return doRunAndReturn(cmdstr, baseDir, withSudo);
+    }
+
     public static ShellResult runAndReturn(String cmdstr, String baseDir) {
-        return doRunAndReturn(cmdstr, baseDir);
+        return doRunAndReturn(cmdstr, baseDir, true);
     }
 
     public static ShellResult runAndReturn(String cmdsr) {
         return runAndReturn(cmdsr, null);
     }
 
-    private static ShellResult doRunAndReturn(String cmdstr, String baseDir) {
+    public static ShellResult runAndReturn(String cmdsr, boolean withSudo) {
+        return doRunAndReturn(cmdsr, null, withSudo);
+    }
+
+    private static ShellResult doRunAndReturn(String cmdstr, String baseDir, boolean withSudo) {
         ShellRunner runner = new ShellRunner();
         runner.command = cmdstr;
         runner.baseDir = baseDir;
+        runner.withSudo = withSudo;
         return runner.run();
     }
 }

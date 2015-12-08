@@ -27,8 +27,8 @@ public class KVMHostInventory extends HostInventory {
     
     protected KVMHostInventory(KVMHostVO vo) {
         super(vo);
-        this.setUsername(username);
-        this.setPassword(password);
+        this.setUsername(vo.getUsername());
+        this.setPassword(vo.getPassword());
     }
     
     public static KVMHostInventory valueOf(KVMHostVO vo) {

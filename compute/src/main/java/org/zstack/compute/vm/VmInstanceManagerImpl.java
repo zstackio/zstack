@@ -851,7 +851,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     @Override
     @AsyncThread
     public void managementNodeReady() {
-        checkUnknownVm();
+        //checkUnknownVm();
         startVmExpungeTask();
     }
 

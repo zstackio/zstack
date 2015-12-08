@@ -1693,7 +1693,9 @@ public class KVMHost extends HostBase implements Host {
 
         for (KVMHostConnectExtensionPoint extp : factory.getConnectExtensions()) {
             try {
-                KVMHostConnectedContext ctx = new KVMHostConnectedContext(factory.getHostContext(self.getUuid()), newAdded);
+                KVMHostConnectedContext ctx = new KVMHostConnectedContext();
+                ctx.setInventory((KVMHostInventory) getSelfInventory());
+                ctx.setNewAddedHost(newAdded);
                 extp.kvmHostConnected(ctx);
             } catch (OperationFailureException oe) {
                 throw new OperationFailureException(errf.instantiateErrorCode(HostErrors.CONNECTION_ERROR, oe.getErrorCode()));

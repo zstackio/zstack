@@ -3,7 +3,6 @@ package org.zstack.core.ansible;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.DirectoryWalker;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.ini4j.Wini;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
@@ -27,10 +26,8 @@ import org.zstack.utils.path.PathUtil;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  */
@@ -137,7 +134,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             private void run(Completion completion) {
                 new PrepareAnsible().setTargetIp(msg.getTargetIp()).prepare();
 
-                logger.debug(String.format("start running ansible for playbook[%s]", msg.getPlayBookName()));
+                logger.debug(String.format("start running ansible for playbook[%s]", msg.getPlayBookPath()));
                 Map<String, Object> arguments = new HashMap<String, Object>();
                 if (msg.getArguments() != null) {
                     arguments.putAll(msg.getArguments());
@@ -146,7 +143,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 arguments.put("zstack_root", AnsibleGlobalProperty.ZSTACK_ROOT);
                 arguments.put("pkg_zstacklib", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME);
                 arguments.putAll(getVariables());
-                String playBookPath = PathUtil.join(AnsibleConstant.ROOT_DIR, msg.getPlayBookName());
+                String playBookPath = msg.getPlayBookPath();
                 try {
                     String output;
                     if (AnsibleGlobalProperty.DEBUG_MODE2) {

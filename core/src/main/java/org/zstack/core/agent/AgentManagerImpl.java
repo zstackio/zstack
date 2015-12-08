@@ -2,6 +2,7 @@ package org.zstack.core.agent;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.ansible.AnsibleNeedRun;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFolderMd5Checker;
 import org.zstack.core.cloudbus.CloudBus;
@@ -20,6 +21,7 @@ import org.zstack.header.message.Message;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 
@@ -27,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -57,10 +60,10 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
     }
 
     void init() {
-        ShellUtils.run("mkdir -p %s", AgentConstant.SRC_ANSIBLE_ROOT);
+        ShellUtils.run(String.format("mkdir -p %s", AgentConstant.SRC_ANSIBLE_ROOT), false);
         File srcFolder = PathUtil.findFolderOnClassPath(AgentConstant.ANSIBLE_MODULE_PATH, true);
         srcRootFolder = srcFolder.getAbsolutePath();
-        ShellUtils.run(String.format("yes | cp -r %s/server %s", srcRootFolder, AgentConstant.SRC_ANSIBLE_ROOT));
+        ShellUtils.run(String.format("yes | cp -r %s/server %s", srcRootFolder, AgentConstant.SRC_ANSIBLE_ROOT), false);
     }
 
     private void handle(final DeployAgentMsg msg) {
@@ -88,6 +91,10 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
     }
 
     private void deployAgent(final DeployAgentMsg msg, final NoErrorCompletion noErrorCompletion) {
+        if (msg.getAgentPort() == null) {
+            throw new CloudRuntimeException("agentPort cannot be null");
+        }
+
         final DeployAgentReply reply = new DeployAgentReply();
         Map<String, AgentStruct> m = agents.get(msg.getOwner());
         if (m == null) {
@@ -98,23 +105,23 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
         }
 
         try {
-            String agentYamlPath = PathUtil.join(AgentConstant.ANSIBLE_MODULE_PATH, AgentConstant.ANSIBLE_PLAYBOOK_NAME);
-            File agentYaml = PathUtil.findFileOnClassPath(agentYamlPath);
-            if (agentYaml == null) {
-                throw new CloudRuntimeException(String.format("cannot find agent yaml file[%s] on the class path", agentYamlPath));
-            }
+            String agentYamlPath = PathUtil.join(AgentConstant.ANSIBLE_MODULE_PATH, "server", AgentConstant.ANSIBLE_PLAYBOOK_NAME);
+            File agentYaml = PathUtil.findFileOnClassPath(agentYamlPath, true);
 
-            final File include = File.createTempFile("zstack", "ansibleInclude");
+            final File tmpInclude = File.createTempFile("zstack", "ansibleInclude");
             StringBuilder sb = new StringBuilder("---\n\n");
             for (AgentStruct s : m.values()) {
                 sb.append(String.format("- include: %s\n", s.getAnsibleYaml()));
             }
-            FileUtils.writeStringToFile(include, sb.toString());
+            FileUtils.writeStringToFile(tmpInclude, sb.toString());
 
             String agentYamlContent = FileUtils.readFileToString(agentYaml);
             agentYamlContent = ln(agentYamlContent).formatByMap(map(
-                    e("root", AgentConstant.DST_ANSIBLE_ROOT),
-                    e("agentYamls", String.format("%s", include.getAbsolutePath()))
+                    e("remoteRoot", AgentConstant.DST_ANSIBLE_ROOT),
+                    e("srcRoot", srcRootFolder),
+                    e("agentYamls", String.format("%s", tmpInclude.getAbsolutePath())),
+                    e("outterServerIp", msg.getIp()),
+                    e("outterServerPort", msg.getAgentPort().toString())
             ));
 
             final File tmpAgentYaml = File.createTempFile("zstack", "ansilbeTempAgent");
@@ -129,7 +136,9 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
             checker.setHostname(msg.getIp());
             checker.setSrcFolder(srcRootFolder);
             checker.setDstFolder(AgentConstant.DST_ANSIBLE_ROOT);
-            if (checker.needDeploy()) {
+            final boolean fileChanged = checker.needDeploy();
+
+            if (fileChanged) {
                 Ssh ssh = new Ssh();
                 ssh.setPassword(msg.getPassword());
                 ssh.setUsername(msg.getUsername());
@@ -138,19 +147,26 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                     ssh.setPort(msg.getSshPort());
                 }
                 ssh.command(String.format("mkdir -p %s", AgentConstant.DST_ANSIBLE_ROOT))
-                        .scp(srcRootFolder, AgentConstant.DST_ANSIBLE_ROOT);
+                        .scp(srcRootFolder, PathUtil.parentFolder(AgentConstant.DST_ANSIBLE_ROOT));
                 ssh.runErrorByExceptionAndClose();
             }
 
             AnsibleRunner runner = new AnsibleRunner();
+            runner.setAnsibleNeedRun(new AnsibleNeedRun() {
+                @Override
+                public boolean isRunNeed() {
+                    return fileChanged || NetworkUtils.isRemotePortOpen(msg.getIp(), msg.getAgentPort(), (int) TimeUnit.SECONDS.toMillis(5));
+                }
+            });
             runner.setPassword(msg.getPassword());
             runner.setUsername(msg.getUsername());
-            runner.setAgentPort(AgentConstant.AGENT_PORT);
+            runner.setAgentPort(msg.getAgentPort());
+            runner.setFullDeploy(msg.isDeployAnyway());
             if (msg.getSshPort() != null) {
                 runner.setSshPort(msg.getSshPort());
             }
             runner.setTargetIp(msg.getIp());
-            runner.setPlayBookName(tmpAgentYaml.getAbsolutePath());
+            runner.setPlayBookPath(tmpAgentYaml.getAbsolutePath());
             runner.run(new Completion(msg, noErrorCompletion) {
                 @Override
                 @Deferred
@@ -158,8 +174,9 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                     Defer.defer(new Runnable() {
                         @Override
                         public void run() {
-                            include.delete();
-                            tmpAgentYaml.delete();
+                            //tmpInclude.delete();
+                            //tmpAgentYaml.delete();
+                            //tmpConf.delete();
                         }
                     });
 
@@ -173,8 +190,9 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                     Defer.defer(new Runnable() {
                         @Override
                         public void run() {
-                            include.delete();
-                            tmpAgentYaml.delete();
+                            //tmpInclude.delete();
+                            //tmpAgentYaml.delete();
+                            //tmpConf.delete();
                         }
                     });
 
@@ -217,6 +235,6 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
         }
 
         m.put(struct.getAgentId(), struct);
-        ShellUtils.run(String.format("yes | cp -r %s %s", struct.getFileFolder(), AgentConstant.SRC_ANSIBLE_ROOT));
+        ShellUtils.run(String.format("yes | cp -r %s %s", struct.getFileFolder(), AgentConstant.SRC_ANSIBLE_ROOT), false);
     }
 }

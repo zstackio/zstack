@@ -11,6 +11,24 @@ public class DeployAgentMsg extends NeedReplyMessage {
     private String username;
     private String password;
     private Integer sshPort;
+    private Integer agentPort;
+    private boolean deployAnyway;
+
+    public boolean isDeployAnyway() {
+        return deployAnyway;
+    }
+
+    public void setDeployAnyway(boolean deployAnyway) {
+        this.deployAnyway = deployAnyway;
+    }
+
+    public Integer getAgentPort() {
+        return agentPort;
+    }
+
+    public void setAgentPort(Integer agentPort) {
+        this.agentPort = agentPort;
+    }
 
     public String getOwner() {
         return owner;

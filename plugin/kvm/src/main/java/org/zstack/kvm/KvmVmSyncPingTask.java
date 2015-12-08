@@ -45,8 +45,6 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
     @Autowired
     private RESTFacade restf;
     @Autowired
-    private KVMHostFactory factory;
-    @Autowired
     private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
@@ -55,17 +53,23 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
     @Autowired
     private ThreadFacade thdf;
 
-    private void syncVm(final KVMHostContext host, final Completion completion) {
-        VmSyncCmd cmd = new VmSyncCmd();
-        restf.asyncJsonPost(host.buildUrl(KVMConstant.KVM_VM_SYNC_PATH), cmd, new JsonAsyncRESTCallback<VmSyncResponse>() {
+    private void syncVm(final HostInventory host, final Completion completion) {
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setCommand(new VmSyncCmd());
+        msg.setNoStatusCheck(true);
+        msg.setHostUuid(host.getUuid());
+        msg.setPath(KVMConstant.KVM_VM_SYNC_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
-            public void fail(ErrorCode err) {
-                logger.warn(String.format("unable to do vm sync on host[uuid:%s, ip:%s] because %s", host.getInventory().getUuid(), host.getInventory().getManagementIp(), err));
-                completion.fail(err);
-            }
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
 
-            @Override
-            public void success(VmSyncResponse ret) {
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                VmSyncResponse ret = r.toResponse(VmSyncResponse.class);
                 if (ret.isSuccess()) {
                     Map<String, VmInstanceState> states = new HashMap<String, VmInstanceState>(ret.getStates().size());
                     for (Map.Entry<String, String> e : ret.getStates().entrySet()) {
@@ -75,21 +79,15 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
                         }
                     }
 
-                    reportVmState(host.getInventory().getUuid(), states);
+                    reportVmState(host.getUuid(), states);
                     completion.success();
                 } else {
-                    ErrorCode errorCode = errf.stringToOperationError(String.format("unable to do vm sync on host[uuid:%s, ip:%s] because %s", host.getInventory().getUuid(), host.getInventory().getManagementIp(), ret.getError()));
+                    ErrorCode errorCode = errf.stringToOperationError(String.format("unable to do vm sync on host[uuid:%s, ip:%s] because %s", host.getUuid(), host.getManagementIp(), ret.getError()));
                     logger.warn(errorCode.toString());
                     completion.fail(errorCode);
                 }
             }
-
-            @Override
-            public Class<VmSyncResponse> getReturnClass() {
-                return VmSyncResponse.class;
-            }
-
-        }, TimeUnit.SECONDS, 300);
+        });
     }
 
     @Override
@@ -98,8 +96,7 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
             return;
         }
 
-        KVMHostContext host = factory.getHostContext(inv.getUuid());
-        syncVm(host, new NopeCompletion());
+        syncVm(inv, new NopeCompletion());
     }
 
     @Override
@@ -110,7 +107,7 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
     @Override
     public void kvmHostConnected(KVMHostConnectedContext context) throws KVMHostConnectException {
         FutureCompletion completion = new FutureCompletion();
-        syncVm(context, completion);
+        syncVm(context.getInventory(), completion);
         completion.await();
         if (completion.getErrorCode() != null) {
             throw new OperationFailureException(completion.getErrorCode());
@@ -119,7 +116,7 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
 
     @Override
     public void connectionReestablished(HostInventory inv) throws HostException {
-        syncVm(factory.getHostContext(inv.getUuid()), new NopeCompletion());
+        syncVm(inv, new NopeCompletion());
     }
 
     @Override

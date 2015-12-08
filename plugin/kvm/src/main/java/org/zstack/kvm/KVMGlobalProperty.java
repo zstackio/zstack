@@ -15,4 +15,6 @@ public class KVMGlobalProperty {
     public static String AGENT_URL_SCHEME;
     @GlobalProperty(name="KvmAgent.port", defaultValue = "7070")
     public static int AGENT_PORT;
+    @GlobalProperty(name="KvmAgentServer.port", defaultValue = "10001")
+    public static int AGENT_SERVER_PORT;
 }

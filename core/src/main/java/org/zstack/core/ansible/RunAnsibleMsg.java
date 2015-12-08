@@ -10,7 +10,7 @@ import java.util.Map;
 public class RunAnsibleMsg extends NeedReplyMessage {
     private String targetIp;
     private String privateKeyFile;
-    private String playBookName;
+    private String playBookPath;
     private Map<String, Object> arguments = new HashMap<String, Object>();
 
     public String getTargetIp() {
@@ -29,12 +29,12 @@ public class RunAnsibleMsg extends NeedReplyMessage {
         this.privateKeyFile = privateKeyFile;
     }
 
-    public String getPlayBookName() {
-        return playBookName;
+    public String getPlayBookPath() {
+        return playBookPath;
     }
 
-    public void setPlayBookName(String playBookName) {
-        this.playBookName = playBookName;
+    public void setPlayBookPath(String playBookPath) {
+        this.playBookPath = playBookPath;
     }
 
     public Map<String, Object> getArguments() {

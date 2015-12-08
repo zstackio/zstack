@@ -329,7 +329,21 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             cmd.setUrl(inv.getUrl());
             cmd.setMountPath(inv.getMountPath());
             cmd.setUuid(inv.getUuid());
-            MountAgentResponse rsp = restf.syncJsonPost(context.buildUrl(MOUNT_PRIMARY_STORAGE_PATH), cmd, MountAgentResponse.class);
+
+            KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
+            msg.setCommand(cmd);
+            msg.setNoStatusCheck(true);
+            msg.setPath(MOUNT_PRIMARY_STORAGE_PATH);
+            msg.setHostUuid(context.getInventory().getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+            MessageReply reply = bus.call(msg);
+            if (!reply.isSuccess()) {
+                throw new OperationFailureException(reply.getError());
+            }
+
+            KVMHostSyncHttpCallReply r = reply.castReply();
+            MountAgentResponse rsp = r.toResponse(MountAgentResponse.class);
+
             if (!rsp.isSuccess()) {
                 throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
             }
