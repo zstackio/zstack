@@ -63,10 +63,18 @@
 
     <config>
         <category>kvm</category>
-        <name>consoleMode</name>
-        <description>You can choose a transport protocol for consolemode,when set to spice, enable the spice protocol connection virtual machine.options:[vnc,spice]</description>
+        <name>vm.ConsoleMode</name>
+        <description>console mode for VM transport protocol. When set to spice, enable the spice protocol connection for VM. Options:[vnc, spice]</description>
         <type>java.lang.String</type>
         <defaultValue>vnc</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>nestedVirtualization</name>
+        <description>when set to true, enable VM nested virtualization. The VM CPU model will be set as host-mode. The nested virtualization will rely on host KVM capability. Firstly, the /sys/module/kvm_intel/parameters/nested should be set as 'Y'; Secondly, the /usr/libexec/qemu-kvm binary should support nested feature as well. </description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>false</defaultValue>
     </config>
 
 </globalConfig>
