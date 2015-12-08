@@ -85,7 +85,12 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             ini.put("defaults", "inventory", AnsibleConstant.INVENTORY_FILE);
             for (Map.Entry<String, String> e : cfgs.entrySet()) {
                 String key = StringDSL.stripStart(e.getKey(), "Ansible.cfg.");
-                ini.put("defaults", key, e.getValue());
+                if (!key.contains(".")) {
+                    ini.put("defaults", key, e.getValue());
+                } else {
+                    String[] pair = key.split("\\.", 2);
+                    ini.put(pair[0], pair[1], e.getValue());
+                }
                 logger.debug(String.format("added ansible cfg[%s=%s] to %s", key, e.getValue(), AnsibleConstant.CONFIGURATION_FILE));
             }
             ini.store();
