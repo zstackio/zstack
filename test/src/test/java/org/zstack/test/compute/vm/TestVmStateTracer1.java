@@ -13,6 +13,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.RecalculateHostCapacityMsg;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
@@ -98,7 +99,11 @@ public class TestVmStateTracer1 {
         });
 
         HostCapacityVO cap1 = dbf.findByUuid(hostUuid, HostCapacityVO.class);
+        // set the status to Disconnected, otherwise a reconnect will be issued anyway
         sctrl.setSimulatorHostConnectionState(hostUuid, true);
+        HostVO host = dbf.findByUuid(hostUuid, HostVO.class);
+        host.setStatus(HostStatus.Disconnected);
+        dbf.update(host);
         TimeUnit.SECONDS.sleep(3);
         vm1 = q.find();
 

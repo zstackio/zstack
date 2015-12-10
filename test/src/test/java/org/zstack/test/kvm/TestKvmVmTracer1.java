@@ -52,6 +52,8 @@ import static org.zstack.utils.CollectionDSL.map;
  * confirm the vm's state becomes running
  *
  */
+
+@Deprecated
 public class TestKvmVmTracer1 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;

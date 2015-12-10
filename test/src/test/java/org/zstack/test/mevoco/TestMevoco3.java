@@ -52,6 +52,7 @@ public class TestMevoco3 {
         deployer = new Deployer("deployerXml/mevoco/TestMevoco3.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
         deployer.addSpringConfig("mevoco.xml");
+        deployer.addSpringConfig("agentManager.xml");
         deployer.addSpringConfig("localStorage.xml");
         deployer.addSpringConfig("localStorageSimulator.xml");
         deployer.addSpringConfig("flatNetworkServiceSimulator.xml");

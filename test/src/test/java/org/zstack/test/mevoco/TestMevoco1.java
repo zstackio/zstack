@@ -64,6 +64,7 @@ public class TestMevoco1 {
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
+        deployer.addSpringConfig("agentManager.xml");
         deployer.addSpringConfig("mevoco.xml");
         deployer.addSpringConfig("localStorage.xml");
         deployer.addSpringConfig("localStorageSimulator.xml");

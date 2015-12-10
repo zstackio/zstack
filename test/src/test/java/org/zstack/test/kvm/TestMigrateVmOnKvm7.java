@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -18,14 +19,19 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-/*
-migrate vm to the host it's running
-should fail
+import java.util.concurrent.TimeUnit;
+
+/**
+ * 1. make migrating vm fail on the hypervisor
+ *
+ * confirm the capacity on the source/dest hosts are correct
  */
-public class TestMigrateVmOnKvm5 {
+public class TestMigrateVmOnKvm7 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;
     Api api;
@@ -50,22 +56,38 @@ public class TestMigrateVmOnKvm5 {
         session = api.loginAsAdmin();
     }
     
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
+	@Test
+	public void test() throws ApiSenderException, InterruptedException {
 	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
-        try {
-             api.migrateVmInstance(vm.getUuid(), vm.getHostUuid());
-        } catch (ApiSenderException e) {
-            HostCapacityVO cvo = dbf.findByUuid(vm.getHostUuid(), HostCapacityVO.class);
-            Assert.assertTrue(0 != cvo.getUsedCpu());
-            Assert.assertTrue(0 != cvo.getUsedMemory());
-            VmInstanceVO vo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-            Assert.assertEquals(VmInstanceState.Running, vo.getState());
+        HostInventory target = CollectionUtils.find(deployer.hosts.values(), new Function<HostInventory, HostInventory>() {
+            @Override
+            public HostInventory call(HostInventory arg) {
+                if (!arg.getUuid().equals(vm.getHostUuid())) {
+                    return arg;
+                }
+                return null;
+            }
+        });
 
-            HostCapacityVO tvo = dbf.findByUuid(vm.getHostUuid(), HostCapacityVO.class);
-            Assert.assertEquals(tvo.getTotalCpu(), tvo.getAvailableCpu());
-            Assert.assertEquals(tvo.getTotalMemory(), tvo.getAvailableMemory());
-            throw e;
+        boolean s = false;
+        config.migrateVmSuccess = false;
+        try {
+             api.migrateVmInstance(vm.getUuid(), target.getUuid());
+        } catch (ApiSenderException e) {
+            s = true;
         }
+
+        TimeUnit.SECONDS.sleep(3);
+
+        Assert.assertTrue(s);
+        HostCapacityVO cvo = dbf.findByUuid(vm.getHostUuid(), HostCapacityVO.class);
+        Assert.assertTrue(0 != cvo.getUsedCpu());
+        Assert.assertTrue(0 != cvo.getUsedMemory());
+        VmInstanceVO vo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
+        Assert.assertEquals(VmInstanceState.Unknown, vo.getState());
+
+        HostCapacityVO tvo = dbf.findByUuid(target.getUuid(), HostCapacityVO.class);
+        Assert.assertEquals(tvo.getTotalCpu(), tvo.getAvailableCpu());
+        Assert.assertEquals(tvo.getTotalMemory(), tvo.getAvailableMemory());
 	}
 }

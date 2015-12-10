@@ -11,7 +11,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
+import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -21,11 +21,16 @@ import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-/*
-migrate vm to the host it's running
-should fail
+import java.util.concurrent.TimeUnit;
+
+/**
+ * 1. create a vm
+ * 2. mark vm as destroyed
+ * 3. reconnect the host
+ *
+ * confirm the host capacity not used
  */
-public class TestMigrateVmOnKvm5 {
+public class TestKvmReconnectHost {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;
     Api api;
@@ -33,39 +38,36 @@ public class TestMigrateVmOnKvm5 {
     CloudBus bus;
     DatabaseFacade dbf;
     SessionInventory session;
-    KVMSimulatorConfig config;
+    SftpBackupStorageSimulatorConfig config;
 
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/kvm/TestMigrateVmOnKvm.xml", con);
+        deployer = new Deployer("deployerXml/kvm/TestCreateVmOnKvm.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
-        config = loader.getComponent(KVMSimulatorConfig.class);
+        config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
     
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
-	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
-        try {
-             api.migrateVmInstance(vm.getUuid(), vm.getHostUuid());
-        } catch (ApiSenderException e) {
-            HostCapacityVO cvo = dbf.findByUuid(vm.getHostUuid(), HostCapacityVO.class);
-            Assert.assertTrue(0 != cvo.getUsedCpu());
-            Assert.assertTrue(0 != cvo.getUsedMemory());
-            VmInstanceVO vo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-            Assert.assertEquals(VmInstanceState.Running, vo.getState());
+	@Test
+	public void test() throws ApiSenderException, InterruptedException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
+        vmvo.setState(VmInstanceState.Destroyed);
+        dbf.update(vmvo);
 
-            HostCapacityVO tvo = dbf.findByUuid(vm.getHostUuid(), HostCapacityVO.class);
-            Assert.assertEquals(tvo.getTotalCpu(), tvo.getAvailableCpu());
-            Assert.assertEquals(tvo.getTotalMemory(), tvo.getAvailableMemory());
-            throw e;
-        }
-	}
+        String hostUuid = vm.getHostUuid();
+        api.reconnectHost(hostUuid);
+        TimeUnit.SECONDS.sleep(3);
+        HostCapacityVO cap = dbf.findByUuid(hostUuid, HostCapacityVO.class);
+        Assert.assertEquals(cap.getTotalMemory(), cap.getAvailableMemory());
+        //Assert.assertEquals(cap.getTotalCpu(), cap.getAvailableCpu());
+    }
+
 }

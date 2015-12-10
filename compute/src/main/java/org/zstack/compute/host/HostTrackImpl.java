@@ -67,7 +67,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
             boolean needReconnect = false;
             final PingHostReply r = reply.castReply();
-            if (!r.isConnected() && HostStatus.Connected.toString().equals(r.getCurrentHostStatus())) {
+            if (!r.isConnected() && HostStatus.Connected.toString().equals(r.getCurrentHostStatus()) && HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class)) {
                 // cannot ping, but host is in Connected status
                 needReconnect = true;
             } else if (r.isConnected() && HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class) && HostStatus.Disconnected.toString().equals(r.getCurrentHostStatus())) {

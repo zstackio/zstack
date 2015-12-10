@@ -2,6 +2,7 @@ package org.zstack.core.agent;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleNeedRun;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFolderMd5Checker;
@@ -60,6 +61,10 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
     }
 
     void init() {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return;
+        }
+
         ShellUtils.run(String.format("mkdir -p %s", AgentConstant.SRC_ANSIBLE_ROOT), false);
         File srcFolder = PathUtil.findFolderOnClassPath(AgentConstant.ANSIBLE_MODULE_PATH, true);
         srcRootFolder = srcFolder.getAbsolutePath();

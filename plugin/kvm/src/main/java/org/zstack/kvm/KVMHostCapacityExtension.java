@@ -37,13 +37,13 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
             throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
         }
         ReportHostCapacityMessage rmsg = new ReportHostCapacityMessage();
-        msg.setHostUuid(host.getUuid());
+        rmsg.setHostUuid(host.getUuid());
         rmsg.setTotalCpu(rsp.getCpuNum() * rsp.getCpuSpeed());
         rmsg.setUsedCpu(rsp.getUsedCpu());
         rmsg.setTotalMemory(rsp.getTotalMemory());
         rmsg.setUsedMemory(rsp.getUsedMemory());
         rmsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
-        bus.send(msg);
+        bus.send(rmsg);
     }
 
     @Override

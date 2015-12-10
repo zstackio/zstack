@@ -27,13 +27,18 @@ import org.zstack.header.message.Message;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager, VmAbnormalLifeCycleExtensionPoint {
 	private static final CLogger logger = Utils.getLogger(HostAllocatorManagerImpl.class);
@@ -94,27 +99,28 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
         class Struct {
             String hostUuid;
-            long usedMemory;
+            Long usedMemory;
         }
 
         List<Struct> ss = new Callable<List<Struct>>() {
             @Override
             @Transactional(readOnly = true)
             public List<Struct> call() {
-                String sql = "select sum(vm.memorySize), vm.hostUuid from VmInstanceVO vm where vm.hostUuid in (:hostUuids) group by vm.hostUuid";
+                String sql = "select sum(vm.memorySize), vm.hostUuid from VmInstanceVO vm where vm.hostUuid in (:hostUuids) and vm.state not in (:vmStates) group by vm.hostUuid";
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("hostUuids", hostUuids);
+                q.setParameter("vmStates", list(VmInstanceState.Destroyed, VmInstanceState.Created, VmInstanceState.Destroying));
                 List<Tuple> ts = q.getResultList();
 
                 List<Struct> ret = new ArrayList<Struct>();
                 for (Tuple t : ts) {
+                    Struct s = new Struct();
+                    s.hostUuid = t.get(1, String.class);
+
                     if (t.get(0, Long.class) == null) {
-                        // no vm
                         continue;
                     }
 
-                    Struct s = new Struct();
-                    s.hostUuid = t.get(1, String.class);
                     s.usedMemory = ratioMgr.calculateMemoryByRatio(s.hostUuid, t.get(0, Long.class));
                     ret.add(s);
                 }
@@ -122,12 +128,27 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             }
         }.call();
 
+        List<String> hostHasVms = CollectionUtils.transformToList(ss, new Function<String, Struct>() {
+            @Override
+            public String call(Struct arg) {
+                return arg.hostUuid;
+            }
+        });
+
+        for (String huuid : hostUuids) {
+            if (!hostHasVms.contains(huuid)) {
+                Struct s = new Struct();
+                s.hostUuid = huuid;
+                ss.add(s);
+            }
+        }
+
         for (final Struct s : ss) {
             new HostCapacityUpdater(s.hostUuid).run(new HostCapacityUpdaterRunnable() {
                 @Override
                 public HostCapacityVO call(HostCapacityVO cap) {
                     long before = cap.getAvailableMemory();
-                    long avail = cap.getTotalMemory() - s.usedMemory;
+                    long avail = s.usedMemory == null ? cap.getTotalMemory() : cap.getTotalMemory() - s.usedMemory;
                     cap.setAvailableMemory(avail);
                     logger.debug(String.format("re-calculated available memory on the host[uuid:%s,  before: %s, now: %s]", s.hostUuid, before, avail));
                     return cap;
