@@ -73,6 +73,8 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
             } else if (r.isConnected() && HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class) && HostStatus.Disconnected.toString().equals(r.getCurrentHostStatus())) {
                 // can ping, but host is in Disconnected status
                 needReconnect = true;
+            } else if (!r.isConnected()) {
+                logger.debug(String.format("[Host Tracker]: detected host[uuid:%s] connection lost, but connection.autoReconnectOnError is set to false, no reconnect will issue", hostUuid));
             }
 
             //TODO: implement stopping PING after failing specific times

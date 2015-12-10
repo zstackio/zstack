@@ -54,6 +54,7 @@ public class TestKvmPingHost {
     
 	@Test
 	public void test() throws InterruptedException {
+        HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(false);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         HostInventory host = deployer.hosts.get("host1");
         HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1);
@@ -64,6 +65,7 @@ public class TestKvmPingHost {
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Unknown, vmvo.getState());
 
+        HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(true);
         config.pingSuccess = true;
         TimeUnit.SECONDS.sleep(3);
         hvo = dbf.findByUuid(host.getUuid(), HostVO.class);
