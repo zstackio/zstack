@@ -160,7 +160,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
             runner.setAnsibleNeedRun(new AnsibleNeedRun() {
                 @Override
                 public boolean isRunNeed() {
-                    return fileChanged || NetworkUtils.isRemotePortOpen(msg.getIp(), msg.getAgentPort(), (int) TimeUnit.SECONDS.toMillis(5));
+                    return fileChanged || !NetworkUtils.isRemotePortOpen(msg.getIp(), msg.getAgentPort(), (int) TimeUnit.SECONDS.toMillis(5));
                 }
             });
             runner.setPassword(msg.getPassword());

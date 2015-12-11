@@ -133,8 +133,9 @@ public class SshFolderMd5Checker implements AnsibleChecker {
                 continue;
             }
 
-            String[] pair = s.split(" ");
-            srcMd5sum.put(pair[1], pair[0]);
+            String[] pair = s.split(" +");
+            String fileName = pair[1].replaceAll(srcFolder, "");
+            srcMd5sum.put(fileName, pair[0]);
         }
 
         for (String s : dstRes.getStdout().split("\n")) {
@@ -142,8 +143,9 @@ public class SshFolderMd5Checker implements AnsibleChecker {
                 continue;
             }
 
-            String[] pair = s.split(" ");
-            dstMd5sum.put(pair[1], pair[0]);
+            String[] pair = s.split(" +");
+            String fileName = pair[1].replaceAll(dstFolder, "");
+            dstMd5sum.put(fileName, pair[0]);
         }
 
         if (dstMd5sum.size() != srcMd5sum.size()) {
@@ -170,6 +172,7 @@ public class SshFolderMd5Checker implements AnsibleChecker {
             }
         }
 
+        logger.debug(String.format("no files changed on the dest host[ip:%s]", hostname));
         return false;
     }
 
