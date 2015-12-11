@@ -195,6 +195,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
 
         final APIAddBackupStorageEvent evt = new APIAddBackupStorageEvent(msg.getId());
         ConnectBackupStorageMsg cmsg = new ConnectBackupStorageMsg();
+        cmsg.setNewAdd(true);
         cmsg.setBackupStorageUuid(inv.getUuid());
         bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, vo.getUuid());
         bus.send(cmsg, new CloudBusCallBack(msg) {

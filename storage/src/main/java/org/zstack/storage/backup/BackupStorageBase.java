@@ -204,7 +204,9 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                changeStatus(BackupStorageStatus.Disconnected);
+                if (!msg.isNewAdd()) {
+                    changeStatus(BackupStorageStatus.Disconnected);
+                }
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
