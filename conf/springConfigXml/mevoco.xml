@@ -84,4 +84,17 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KairosdbManager" class="org.zstack.monitoring.KairosdbManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Service" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KairosdbApiInterceptor" class="org.zstack.monitoring.KairosdbApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
 </beans>
