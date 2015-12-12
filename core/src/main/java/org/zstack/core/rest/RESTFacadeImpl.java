@@ -334,8 +334,7 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public <T> T syncJsonPost(String url, Object body, Class<T> returnClass) {
-        String jstr = JSONObjectUtil.toJsonString(body);
-        return syncJsonPost(url, jstr, returnClass);
+        return syncJsonPost(url, body == null ? null : JSONObjectUtil.toJsonString(body), returnClass);
     }
 
     @Override
@@ -350,9 +349,11 @@ public class RESTFacadeImpl implements RESTFacade {
             requestHeaders.setAll(headers);
         }
         requestHeaders.setContentType(MediaType.APPLICATION_JSON);
-        requestHeaders.setContentLength(body.length());
+        requestHeaders.setContentLength(body == null ? 0 : body.length());
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
-        logger.trace(String.format("json post[%s], %s", url, req.toString()));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("json post[%s], %s", url, req.toString()));
+        }
         ResponseEntity<String> rsp = template.exchange(url, HttpMethod.POST, req, String.class);
         if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
             String err = String.format("http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody());

@@ -1624,10 +1624,13 @@ public class KVMHost extends HostBase implements Host {
                         String info = String.format("detected abnormal status[host uuid change, expected: %s but: %s] of kvmagent," +
                                 "it's mainly caused by kvmagent restarts behind zstack management server. Report this to ping task, it will issue a reconnect soon", self.getUuid(), ret.getHostUuid());
                         logger.warn(info);
-                        completion.fail(errf.stringToOperationError(info));
-                    } else {
-                        completion.success();
+                        ReconnectHostMsg rmsg = new ReconnectHostMsg();
+                        rmsg.setHostUuid(self.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
+                        bus.send(rmsg);
                     }
+
+                    completion.success();
                 }
             }
 
