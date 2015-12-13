@@ -1,6 +1,7 @@
 package org.zstack.portal.managementnode;
 
 import com.rabbitmq.client.AlreadyClosedException;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
@@ -29,7 +30,10 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -391,6 +395,12 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             }).error(new FlowErrorHandler() {
                 @Override
                 public void handle(ErrorCode errCode, Map data) {
+                    String bootErrorPath = PathUtil.join(PathUtil.getZStackHomeFolder(), "bootError.log");
+                    try {
+                        FileUtils.writeStringToFile(new File(bootErrorPath), errCode.toString());
+                    } catch (IOException e) {
+                        logger.warn(String.format("unable to write error to %s", bootErrorPath));
+                    }
                     ret.success = false;
                 }
             }).start();
