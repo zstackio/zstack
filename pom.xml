@@ -296,6 +296,7 @@
         </dependencies>
     </dependencyManagement>
 
+<!--
     <pluginRepositories>
         <pluginRepository>
             <id>sonatype-repo</id>
@@ -311,7 +312,6 @@
     </pluginRepositories>
 
     <repositories>
-<!--
         <repository>
             <id>annotationrepo</id>
             <url>http://maven-annotation-plugin.googlecode.com/svn/trunk/mavenrepo/</url>
@@ -322,7 +322,6 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
--->
         <repository>
             <id>helper</id>
             <url>http://repo.jfrog.org/artifactory/plugins-releases/</url>
@@ -339,6 +338,7 @@
             <url>http://maven.springframework.org/milestone</url>
         </repository>
     </repositories>
+-->
 
     <build>
         <resources>

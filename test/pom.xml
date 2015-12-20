@@ -12,6 +12,7 @@
     </parent>
     <artifactId>test</artifactId>
 
+    <!--
     <repositories>
         <repository>
             <id>repository.jboss.org</id>
@@ -19,6 +20,7 @@
             <url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
         </repository>
     </repositories>
+-->
 
     <dependencies>
         <dependency>
