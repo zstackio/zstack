@@ -2076,11 +2076,24 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         });
 
-        self.setInstanceOfferingUuid(iovo.getUuid());
-        self.setCpuNum(iovo.getCpuNum());
-        self.setCpuSpeed(iovo.getCpuSpeed());
-        self.setMemorySize(iovo.getMemorySize());
-        self = dbf.updateAndRefresh(self);
+        if (self.getState() == VmInstanceState.Stopped) {
+            self.setInstanceOfferingUuid(iovo.getUuid());
+            self.setCpuNum(iovo.getCpuNum());
+            self.setCpuSpeed(iovo.getCpuSpeed());
+            self.setMemorySize(iovo.getMemorySize());
+            self = dbf.updateAndRefresh(self);
+        } else {
+            // the vm is running, make the capacity change pending, which will take effect the next
+            // the vm starts
+            Map m = new HashMap();
+            m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN, iovo.getCpuNum());
+            m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN, iovo.getCpuSpeed());
+            m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN, iovo.getMemorySize());
+            VmSystemTags.PENDING_CAPACITY_CHANGE.recreateInherentTag(self.getUuid(), m);
+
+            self.setInstanceOfferingUuid(iovo.getUuid());
+            self = dbf.updateAndRefresh(self);
+        }
 
         CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
             @Override
@@ -2426,6 +2439,24 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    protected void applyPendingCapacityChangeIfNeed() {
+        String pendingCapacityChange = VmSystemTags.PENDING_CAPACITY_CHANGE.getTag(self.getUuid());
+        if (pendingCapacityChange != null) {
+            // the instance offering had been changed, apply new capacity to myself
+            Map<String, String> tokens = VmSystemTags.PENDING_CAPACITY_CHANGE.getTokensByTag(pendingCapacityChange);
+            int cpuNum = Integer.valueOf(tokens.get(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN));
+            int cpuSpeed = Integer.valueOf(tokens.get(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN));
+            long memory = Long.valueOf(tokens.get(VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN));
+
+            self.setCpuNum(cpuNum);
+            self.setCpuSpeed(cpuSpeed);
+            self.setMemorySize(memory);
+            self = dbf.updateAndRefresh(self);
+
+            VmSystemTags.PENDING_CAPACITY_CHANGE.deleteInherentTag(self.getUuid());
+        }
+    }
+
     protected void startVm(final Message msg, final Completion completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
@@ -2434,13 +2465,14 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-
         if (self.getVmNics().isEmpty()) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("unable to start the vm[uuid:%s]. It doesn't have any nic, please attach a nic and try again",
                             self.getUuid())
             ));
         }
+
+        applyPendingCapacityChangeIfNeed();
 
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         ErrorCode preStart = extEmitter.preStartVm(inv);
@@ -2763,6 +2795,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             completion.fail(allowed);
             return;
         }
+
+        applyPendingCapacityChangeIfNeed();
 
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         ErrorCode preReboot = extEmitter.preRebootVm(inv);

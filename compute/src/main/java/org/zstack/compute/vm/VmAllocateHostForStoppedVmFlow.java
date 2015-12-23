@@ -32,8 +32,10 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
     @Autowired
     protected ErrorFacade errf;
 
+    private static final String SUCCESS = VmAllocateHostForStoppedVmFlow.class.getName();
+
     @Override
-    public void run(final FlowTrigger chain, Map data) {
+    public void run(final FlowTrigger chain, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         LastHostPreferredAllocateHostMsg msg = new LastHostPreferredAllocateHostMsg();
@@ -57,6 +59,7 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
                 if (reply.isSuccess()) {
                     AllocateHostReply areply = (AllocateHostReply) reply;
                     spec.setDestHost(areply.getHost());
+                    data.put(SUCCESS, true);
                     chain.next();
                 } else {
                     chain.fail(reply.getError());
@@ -68,10 +71,10 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
     @Override
     public void rollback(FlowRollback chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        HostInventory host = spec.getDestHost();
-        if (host != null) {
+        if (data.containsKey(SUCCESS)) {
+            HostInventory host = spec.getDestHost();
             ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
-            msg.setCpuCapacity(spec.getVmInventory().getCpuNum()*spec.getVmInventory().getCpuSpeed());
+            msg.setCpuCapacity(spec.getVmInventory().getCpuNum() * spec.getVmInventory().getCpuSpeed());
             msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
             msg.setHostUuid(host.getUuid());
             msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));

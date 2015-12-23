@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.test.Api;
@@ -33,34 +34,49 @@ public class TestChangeVmInstanceOffering {
     
     @Test
     public void test() throws ApiSenderException {
-        VmInstanceInventory vm = api.listVmInstances(null).get(0);
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+
         InstanceOfferingInventory ioinv1 = deployer.instanceOfferings.get("TestInstanceOffering");
         InstanceOfferingInventory ioinv2 = deployer.instanceOfferings.get("TestInstanceOffering1");
 
         vm = api.changeInstanceOffering(vm.getUuid(), ioinv2.getUuid());
+        // the vm is running, only instance offering uuid changed, capacity is not changed
         Assert.assertEquals(ioinv2.getUuid(), vm.getInstanceOfferingUuid());
+        Assert.assertEquals(ioinv1.getCpuNum(), (int)vm.getCpuNum());
+        Assert.assertEquals(ioinv1.getCpuSpeed(), (long)vm.getCpuSpeed());
+        Assert.assertEquals(ioinv1.getMemorySize(), (long)vm.getMemorySize());
+
+        vm = api.stopVmInstance(vm.getUuid());
+        vm = api.startVmInstance(vm.getUuid());
+
+        // after stop/start, the capacity changed
         Assert.assertEquals(ioinv2.getCpuNum(), (int)vm.getCpuNum());
         Assert.assertEquals(ioinv2.getCpuSpeed(), (long)vm.getCpuSpeed());
         Assert.assertEquals(ioinv2.getMemorySize(), (long)vm.getMemorySize());
 
+        vm = api.stopVmInstance(vm.getUuid());
+
         vm = api.changeInstanceOffering(vm.getUuid(), ioinv1.getUuid());
+        // the vm is stopped, the change take effect immediately
         Assert.assertEquals(ioinv1.getUuid(), vm.getInstanceOfferingUuid());
         Assert.assertEquals(ioinv1.getCpuNum(), (int)vm.getCpuNum());
         Assert.assertEquals(ioinv1.getCpuSpeed(), (long)vm.getCpuSpeed());
         Assert.assertEquals(ioinv1.getMemorySize(), (long)vm.getMemorySize());
 
-        api.stopVmInstance(vm.getUuid());
+        vm = api.startVmInstance(vm.getUuid());
 
         vm = api.changeInstanceOffering(vm.getUuid(), ioinv2.getUuid());
+        // the vm is running, only instance offering uuid changed, capacity is not changed
         Assert.assertEquals(ioinv2.getUuid(), vm.getInstanceOfferingUuid());
-        Assert.assertEquals(ioinv2.getCpuNum(), (int)vm.getCpuNum());
-        Assert.assertEquals(ioinv2.getCpuSpeed(), (long)vm.getCpuSpeed());
-        Assert.assertEquals(ioinv2.getMemorySize(), (long)vm.getMemorySize());
-
-        vm = api.changeInstanceOffering(vm.getUuid(), ioinv1.getUuid());
-        Assert.assertEquals(ioinv1.getUuid(), vm.getInstanceOfferingUuid());
         Assert.assertEquals(ioinv1.getCpuNum(), (int)vm.getCpuNum());
         Assert.assertEquals(ioinv1.getCpuSpeed(), (long)vm.getCpuSpeed());
         Assert.assertEquals(ioinv1.getMemorySize(), (long)vm.getMemorySize());
+
+        vm = api.rebootVmInstance(vm.getUuid());
+
+        // after reboot, the capacity changed
+        Assert.assertEquals(ioinv2.getCpuNum(), (int)vm.getCpuNum());
+        Assert.assertEquals(ioinv2.getCpuSpeed(), (long)vm.getCpuSpeed());
+        Assert.assertEquals(ioinv2.getMemorySize(), (long)vm.getMemorySize());
     }
 }

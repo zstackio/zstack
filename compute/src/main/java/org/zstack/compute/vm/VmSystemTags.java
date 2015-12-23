@@ -31,4 +31,12 @@ public class VmSystemTags {
 
     public static String BOOT_ORDER_TOKEN = "bootOrder";
     public static PatternedSystemTag BOOT_ORDER = new PatternedSystemTag(String.format("bootOrder::{%s}", BOOT_ORDER_TOKEN), VmInstanceVO.class);
+
+    public static String PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN = "cpuNum";
+    public static String PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN = "cpuSpeed";
+    public static String PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN = "memory";
+    public static PatternedSystemTag PENDING_CAPACITY_CHANGE = new PatternedSystemTag(
+            String.format("pendingCapacityChange::cpuNum::{%s}::cpuSpeed::{%s}::memory::{%s}",  PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN, PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN, PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN),
+            VmInstanceVO.class
+    );
 }
