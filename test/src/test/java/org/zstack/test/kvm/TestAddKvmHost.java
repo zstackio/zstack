@@ -77,7 +77,7 @@ public class TestAddKvmHost {
         HostCapacityVO hvo = dbf.findByUuid(huuid, HostCapacityVO.class);
         Assert.assertEquals(config.cpuNum * config.cpuSpeed, hvo.getTotalCpu());
         Assert.assertEquals(config.usedCpu, hvo.getUsedCpu());
-        Assert.assertEquals(config.usedMemory, hvo.getUsedMemory());
+        Assert.assertEquals(config.usedMemory, hvo.getUsedPhysicalMemory());
         Assert.assertEquals(config.totalMemory, hvo.getTotalMemory());
     }
 }

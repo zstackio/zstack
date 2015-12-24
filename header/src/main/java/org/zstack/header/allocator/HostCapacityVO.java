@@ -105,4 +105,8 @@ public class HostCapacityVO {
 	public long getUsedCpu() {
     	return totalCpu - availableCpu;
     }
+
+    public long getUsedPhysicalMemory() {
+        return totalPhysicalMemory - availablePhysicalMemory;
+    }
 }
