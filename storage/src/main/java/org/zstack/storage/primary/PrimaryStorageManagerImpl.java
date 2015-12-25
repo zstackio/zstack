@@ -125,17 +125,17 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             @Transactional(readOnly = true)
             public Tuple call() {
                 if (msg.getPrimaryStorageUuids() != null && !msg.getPrimaryStorageUuids().isEmpty()) {
-                    String sql = "select sum(psc.totalCapacity), sum(psc.availableCapacity) from PrimaryStorageCapacityVO psc where psc.uuid in (:psUuids)";
+                    String sql = "select sum(psc.totalCapacity), sum(psc.availableCapacity), sum(psc.totalPhysicalCapacity), sum(psc.availablePhysicalCapacity) from PrimaryStorageCapacityVO psc where psc.uuid in (:psUuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("psUuids", msg.getPrimaryStorageUuids());
                     return q.getSingleResult();
                 } else if (msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty()) {
-                    String sql = "select sum(psc.totalCapacity), sum(psc.availableCapacity) from PrimaryStorageCapacityVO psc, PrimaryStorageClusterRefVO ref where ref.primaryStorageUuid = psc.uuid and ref.clusterUuid in (:clusterUuids)";
+                    String sql = "select sum(psc.totalCapacity), sum(psc.availableCapacity), sum(psc.totalPhysicalCapacity), sum(psc.availablePhysicalCapacity) from PrimaryStorageCapacityVO psc, PrimaryStorageClusterRefVO ref where ref.primaryStorageUuid = psc.uuid and ref.clusterUuid in (:clusterUuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("clusterUuids", msg.getClusterUuids());
                     return q.getSingleResult();
                 } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
-                    String sql = "select sum(psc.totalCapacity), sum(psc.availableCapacity) from PrimaryStorageCapacityVO psc, PrimaryStorageVO ps where ps.uuid = psc.uuid and ps.zoneUuid in (:zoneUuids)";
+                    String sql = "select sum(psc.totalCapacity), sum(psc.availableCapacity), sum(psc.totalPhysicalCapacity), sum(psc.availablePhysicalCapacity) from PrimaryStorageCapacityVO psc, PrimaryStorageVO ps where ps.uuid = psc.uuid and ps.zoneUuid in (:zoneUuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("zoneUuids", msg.getZoneUuids());
                     return q.getSingleResult();
@@ -147,8 +147,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         Long total = ret.get(0, Long.class);
         Long avail = ret.get(1, Long.class);
+        Long ptotal = ret.get(2, Long.class);
+        Long pavail = ret.get(3, Long.class);
         reply.setTotalCapacity(total == null ? 0 : total);
         reply.setAvailableCapacity(avail == null ? 0 : avail);
+        reply.setTotalPhysicalCapacity(ptotal == null ? 0 : ptotal);
+        reply.setAvailablePhysicalCapacity(pavail == null ? 0 : pavail);
         bus.reply(msg, reply);
     }
 

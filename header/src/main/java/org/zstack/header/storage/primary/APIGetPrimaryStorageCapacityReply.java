@@ -7,6 +7,24 @@ import org.zstack.header.message.APIReply;
 public class APIGetPrimaryStorageCapacityReply extends APIReply {
     private long totalCapacity;
     private long availableCapacity;
+    private long totalPhysicalCapacity;
+    private long availablePhysicalCapacity;
+
+    public long getTotalPhysicalCapacity() {
+        return totalPhysicalCapacity;
+    }
+
+    public void setTotalPhysicalCapacity(long totalPhysicalCapacity) {
+        this.totalPhysicalCapacity = totalPhysicalCapacity;
+    }
+
+    public long getAvailablePhysicalCapacity() {
+        return availablePhysicalCapacity;
+    }
+
+    public void setAvailablePhysicalCapacity(long availablePhysicalCapacity) {
+        this.availablePhysicalCapacity = availablePhysicalCapacity;
+    }
 
     public long getTotalCapacity() {
         return totalCapacity;
