@@ -421,13 +421,14 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
 
         stopped = false;
-		logger.info("Management node: " + getId() + " starts successfully");
 
 		installShutdownHook();
 
         for (ManagementNodeReadyExtensionPoint ext : pluginRgty.getExtensionList(ManagementNodeReadyExtensionPoint.class)) {
             ext.managementNodeReady();
         }
+
+        logger.info("Management node: " + getId() + " starts successfully");
 
 		synchronized (this) {
 		    isNodeRunning = NODE_RUNNING;
