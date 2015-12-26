@@ -809,6 +809,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         bus.send(dmsgs, new CloudBusListCallBack(msg) {
             @Override
             public void run(List<MessageReply> replies) {
+                //TODO: check if the database still has the record of the image
+                // if there is no record, that means user delete the image during the downloading,
+                // then we need to cleanup
                 boolean success = false;
 
                 StringBuilder sb = new StringBuilder();

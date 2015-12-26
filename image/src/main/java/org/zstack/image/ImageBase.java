@@ -156,6 +156,16 @@ public class ImageBase implements Image {
     }
 
     private void handle(final ImageDeletionMsg msg) {
+        final ImageDeletionReply reply = new ImageDeletionReply();
+        if (self.getBackupStorageRefs().isEmpty()) {
+            // the image is not on any backup storage; mostly likely the image is not in the status of Ready, for example
+            // it's still downloading
+            // in this case, we directly delete it from the database
+            dbf.remove(self);
+            bus.reply(msg, reply);
+            return;
+        }
+
         final ImageDeletionPolicy deletionPolicy = msg.getDeletionPolicy() == null ? deletionPolicyMgr.getDeletionPolicy(self.getUuid()) : ImageDeletionPolicy.valueOf(msg.getDeletionPolicy());
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-image-%s", self.getUuid()));
@@ -206,7 +216,6 @@ public class ImageBase implements Image {
             });
         }
 
-        final ImageDeletionReply reply = new ImageDeletionReply();
         chain.done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
