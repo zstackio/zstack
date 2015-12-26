@@ -20,8 +20,8 @@ public class SftpBackupStorageSimulatorConfig {
     public volatile boolean deleteSuccess = true;
     public volatile boolean pingSuccess = true;
     public volatile boolean pingException = false;
+    public volatile String bsUuid;
     public volatile boolean getSshkeySuccess = true;
     public volatile boolean getSshkeyException = false;
     public volatile List<SftpBackupStorageCommands.DeleteCmd> deleteCmds = new ArrayList<SftpBackupStorageCommands.DeleteCmd>();
-
 }

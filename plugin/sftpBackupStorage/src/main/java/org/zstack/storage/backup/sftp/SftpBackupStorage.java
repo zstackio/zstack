@@ -181,6 +181,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             public void success() {
                 String url = buildUrl(SftpBackupStorageConstant.CONNECT_PATH);
                 ConnectCmd cmd = new ConnectCmd();
+                cmd.setUuid(self.getUuid());
                 cmd.setStoragePath(getSelf().getUrl());
                 ConnectResponse rsp = restf.syncJsonPost(url, cmd, ConnectResponse.class);
                 if (!rsp.isSuccess()) {
@@ -295,7 +296,8 @@ public class SftpBackupStorage extends BackupStorageBase {
 
     protected void handle(final PingBackupStorageMsg msg) {
         final PingBackupStorageReply reply = new PingBackupStorageReply();
-        PingCmd cmd = new PingCmd();
+
+        final PingCmd cmd = new PingCmd();
         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.PING_PATH), cmd, new JsonAsyncRESTCallback<PingResponse>() {
             @Override
             public void fail(ErrorCode err) {
@@ -305,8 +307,21 @@ public class SftpBackupStorage extends BackupStorageBase {
 
             @Override
             public void success(PingResponse ret) {
-                reply.setAvailable(ret.isSuccess());
-                bus.reply(msg, reply);
+                if (!self.getUuid().equals(ret.getUuid())) {
+                    logger.debug(String.format("the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it's most likely" +
+                            " the agent was manually restarted. Issue a reconnect to sync the status", self.getUuid(), ret.getUuid()));
+                    reply.setAvailable(false);
+                    bus.reply(msg, reply);
+
+                    ConnectBackupStorageMsg cmsg = new ConnectBackupStorageMsg();
+                    cmsg.setBackupStorageUuid(self.getUuid());
+                    cmsg.setNewAdd(false);
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, self.getUuid());
+                    bus.send(cmsg);
+                } else {
+                    reply.setAvailable(ret.isSuccess());
+                    bus.reply(msg, reply);
+                }
             }
 
             @Override

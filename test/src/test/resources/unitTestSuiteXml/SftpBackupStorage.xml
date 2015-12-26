@@ -10,6 +10,7 @@
 	<TestCase class="org.zstack.test.storage.backup.sftp.TestSftpBackupStoragePing"/>
 	<TestCase class="org.zstack.test.storage.backup.sftp.TestSftpBackupStoragePingFailure1"/>
 	<TestCase class="org.zstack.test.storage.backup.sftp.TestSftpBackupStoragePingFailure2"/>
+	<TestCase class="org.zstack.test.storage.backup.sftp.TestSftpBackupStoragePingFailure3"/>
 	<TestCase class="org.zstack.test.storage.backup.sftp.TestQuerySftpBackupStorage"/>
     <TestCase class="org.zstack.test.storage.backup.sftp.TestSftpBackupStorageReconnect"/>
 	<TestCase class="org.zstack.test.storage.backup.sftp.TestUpdateSftpBackupStorage"/>

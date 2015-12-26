@@ -41,6 +41,7 @@ public class SftpBackupStorageSimulator {
         ConnectCmd cmd = JSONObjectUtil.toObject(body, ConnectCmd.class);
         ConnectResponse rsp = new ConnectResponse();
         if (!config.connectSuccess) {
+            config.bsUuid = cmd.getUuid();
             rsp.setSuccess(false);
             rsp.setError("Fail connect on purpose");
         } else {
@@ -147,6 +148,8 @@ public class SftpBackupStorageSimulator {
         if (!config.pingSuccess) {
             rsp.setError("on purpose");
             rsp.setSuccess(false);
+        } else {
+            rsp.setUuid(config.bsUuid);
         }
         reply(entity, rsp);
     }

@@ -42,10 +42,29 @@ public class SftpBackupStorageCommands {
     public static class PingCmd extends AgentCommand {
     }
     public static class PingResponse extends AgentResponse {
+        private String uuid;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
     }
     
     public static class ConnectCmd extends AgentCommand {
+        private String uuid;
         private String storagePath;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
         public String getStoragePath() {
             return storagePath;
         }
