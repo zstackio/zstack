@@ -1,5 +1,6 @@
 package org.zstack.portal.apimediator;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -286,6 +287,22 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                         throw new  ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                                 String.format("field[%s] must be a nonempty list", f.getName())
                         ));
+                    }
+                }
+
+                if (value != null &&!at.emptyString()) {
+                    if (value instanceof String && StringUtils.isEmpty((String) value)) {
+                        throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                                String.format("field[%s] cannot be an empty string", f.getName())
+                        ));
+                    } else if (value instanceof Collection) {
+                        for (Object v : (Collection)value) {
+                            if (v instanceof String && StringUtils.isEmpty((String)v)) {
+                                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                                        String.format("field[%s] cannot contain any empty string", f.getName())
+                                ));
+                            }
+                        }
                     }
                 }
 

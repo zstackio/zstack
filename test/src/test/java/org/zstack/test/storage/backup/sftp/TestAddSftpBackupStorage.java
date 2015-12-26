@@ -59,6 +59,7 @@ public class TestAddSftpBackupStorage {
         msg.setHostname("localhost");
         msg.setUsername("root");
         msg.setPassword("password");
+
         ApiSender sender = api.getApiSender();
         APIAddBackupStorageEvent evt = sender.send(msg, APIAddSftpBackupStorageEvent.class);
         BackupStorageInventory binv = evt.getInventory();
@@ -69,5 +70,14 @@ public class TestAddSftpBackupStorage {
         Assert.assertEquals(vo.getTotalCapacity(), config.totalCapacity);
         Assert.assertEquals(vo.getAvailableCapacity(), config.availableCapacity);
         Assert.assertEquals(vo.getHostname(), "localhost");
+
+        boolean s = false;
+        msg.setHostname("");
+        try {
+            sender.send(msg, APIAddSftpBackupStorageEvent.class);
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
     }
 }

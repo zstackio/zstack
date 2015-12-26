@@ -15,7 +15,7 @@ import java.util.List;
         @OverriddenApiParam(field = "url", param = @APIParam(maxLength = 2048, required = false))
 })
 public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
-    @APIParam(nonempty = false)
+    @APIParam(nonempty = false, emptyString = false)
     private List<String> monUrls;
     @APIParam(required = false, maxLength = 255)
     private String rootVolumePoolName;
