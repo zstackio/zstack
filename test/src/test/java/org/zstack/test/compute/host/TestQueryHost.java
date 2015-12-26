@@ -21,6 +21,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 public class TestQueryHost {
     CLogger logger = Utils.getLogger(TestQueryHost.class);
     Deployer deployer;
@@ -55,5 +57,16 @@ public class TestQueryHost {
         // this case should not cause error
         msg.addQueryCondition("uuid", QueryOp.IN, ",,,,,");
         api.query(msg, APIQueryHostReply.class);
+
+        boolean s = false;
+        msg = new APIQueryHostMsg();
+        msg.setFields(list("totalCpuCapacity"));
+        msg.setConditions(new ArrayList<QueryCondition>());
+        try {
+            api.query(msg, APIQueryHostReply.class);
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
     }
 }

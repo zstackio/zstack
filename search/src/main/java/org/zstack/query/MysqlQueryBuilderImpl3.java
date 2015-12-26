@@ -142,6 +142,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
         ObjectInstantiator objectInstantiator;
         Map<String, Field> allFieldsMap = new HashMap<String, Field>();
         Map<String, ExpandedQueryAliasInfo> aliases = new HashMap<String, ExpandedQueryAliasInfo>();
+        List<String> premitiveFieldNames = new ArrayList<String>();
 
         EntityInfo(Class invClass) throws NoSuchMethodException {
             inventoryAnnotation = (Inventory) invClass.getAnnotation(Inventory.class);
@@ -204,6 +205,10 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             for (Field f : allFields) {
                 f.setAccessible(true);
                 allFieldsMap.put(f.getName(), f);
+
+                if (!f.isAnnotationPresent(Unqueryable.class) && !f.isAnnotationPresent(Queryable.class)) {
+                    premitiveFieldNames.add(f.getName());
+                }
             }
 
             for (List<ExpandedQueryAliasInfo> aliasList : aliasInfos.values()) {
@@ -978,10 +983,10 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
         private void validateFields() {
             EntityInfo info = entityInfos.get(inventoryClass);
             for (String f : msg.getFields()) {
-                Field field = info.allFieldsMap.get(f);
-                if (field == null || field.isAnnotationPresent(Unqueryable.class)) {
+                if (!info.premitiveFieldNames.contains(f)) {
                     throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                            String.format("inventory class[%s] has no field[%s]", inventoryClass.getName(), f)
+                            String.format("field[%s] is not a primitive of the inventory %s; you cannot specify it in the parameter 'fields';" +
+                                    "valid fields are %s", f, info.inventoryClass.getSimpleName(), info.premitiveFieldNames)
                     ));
                 }
             }
