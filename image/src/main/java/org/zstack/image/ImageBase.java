@@ -9,7 +9,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
@@ -31,7 +30,6 @@ import org.zstack.header.storage.backup.ReturnBackupStorageMsg;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
@@ -124,7 +122,7 @@ public class ImageBase implements Image {
                             self.getUuid(), self.getName(), r.getError(), ref.getBackupStorageUuid()));
                     reply.setError(r.getError());
                 } else {
-                    returnBackupStoragCapacity(ref.getBackupStorageUuid(), self.getSize());
+                    returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getSize());
                     dbf.remove(ref);
                     logger.debug(String.format("successfully expunged the image[uuid: %s, name: %s] on the backup storage[uuid: %s]",
                             self.getUuid(), self.getName(), ref.getBackupStorageUuid()));
@@ -141,7 +139,7 @@ public class ImageBase implements Image {
         });
     }
 
-    private void returnBackupStoragCapacity(final String bsUuid, final long size) {
+    private void returnBackupStorageCapacity(final String bsUuid, final long size) {
         ReturnBackupStorageMsg msg = new ReturnBackupStorageMsg();
         msg.setBackupStorageUuid(bsUuid);
         msg.setSize(size);
@@ -188,7 +186,7 @@ public class ImageBase implements Image {
                                     logger.warn(String.format("failed to delete image[uuid:%s, name:%s] from backup storage[uuid:%s] because %s, need to garbage collect it",
                                             self.getUuid(), self.getName(), reply.getError(), ref.getBackupStorageUuid()));
                                 } else {
-                                    returnBackupStoragCapacity(ref.getBackupStorageUuid(), self.getSize());
+                                    returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getSize());
                                     dbf.remove(ref);
                                 }
                                 trigger.next();

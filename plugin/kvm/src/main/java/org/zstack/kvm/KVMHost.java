@@ -8,6 +8,7 @@ import org.zstack.compute.host.HostBase;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
@@ -27,6 +28,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
+import org.zstack.header.image.Image;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -967,8 +969,10 @@ public class KVMHost extends HostBase implements Host {
         to.setDeviceId(vol.getDeviceId());
         to.setDeviceType(getVolumeTOType(vol));
         to.setVolumeUuid(vol.getUuid());
-        to.setUseVirtio(ImagePlatform.Linux.toString().equals(vm.getPlatform()) || ImagePlatform.Paravirtualization.toString().equals(vm.getPlatform())
-                || ImagePlatform.Windows.toString().equals(vm.getPlatform()));
+        // volumes can only be attached on Windows if the virtio is enabled
+        // so for Windows, use virtio as well
+        to.setUseVirtio(ImagePlatform.Windows.toString().equals(vm.getPlatform()) ||
+                ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization());
 
         final DetachVolumeFromVmOnHypervisorReply reply = new DetachVolumeFromVmOnHypervisorReply();
         final DetachDataVolumeCmd cmd = new DetachDataVolumeCmd();
@@ -1046,7 +1050,10 @@ public class KVMHost extends HostBase implements Host {
         to.setDeviceId(vol.getDeviceId());
         to.setDeviceType(getVolumeTOType(vol));
         to.setVolumeUuid(vol.getUuid());
-        to.setUseVirtio(ImagePlatform.Linux.toString().equals(vm.getPlatform()) || ImagePlatform.Paravirtualization.toString().equals(vm.getPlatform()) || ImagePlatform.Windows.toString().equals(vm.getPlatform()));
+        // volumes can only be attached on Windows if the virtio is enabled
+        // so for Windows, use virtio as well
+        to.setUseVirtio(ImagePlatform.Windows.toString().equals(vm.getPlatform()) ||
+                ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization());
 
         final AttachVolumeToVmOnHypervisorReply reply = new AttachVolumeToVmOnHypervisorReply();
         final AttachDataVolumeCmd cmd = new AttachDataVolumeCmd();
@@ -1387,9 +1394,7 @@ public class KVMHost extends HostBase implements Host {
             q.add(VmInstanceVO_.uuid, Op.EQ, nic.getVmInstanceUuid());
             String platform = q.findValue();
 
-            to.setUseVirtio(
-                    platform.equals(ImagePlatform.Linux.toString()) || platform.equals(ImagePlatform.Paravirtualization.toString())
-            );
+            to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
         }
 
         return to;
@@ -1410,7 +1415,7 @@ public class KVMHost extends HostBase implements Host {
         if (ImagePlatform.Windows.toString().equals(platform)) {
             virtio = VmSystemTags.WINDOWS_VOLUME_ON_VIRTIO.hasTag(spec.getVmInventory().getUuid());
         } else {
-            virtio = ImagePlatform.Linux.toString().equals(platform) || ImagePlatform.Paravirtualization.toString().equals(platform);
+            virtio = ImagePlatform.valueOf(platform).isParaVirtualization();
         }
 
         cmd.setVmName(spec.getVmInventory().getName());
@@ -1426,7 +1431,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
         rootVolume.setUseVirtio(virtio);
         cmd.setRootVolume(rootVolume);
-        cmd.setTimeout(TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout()));
+
         List<VolumeTO> dataVolumes = new ArrayList<VolumeTO>(spec.getDestDataVolumes().size());
         for (VolumeInventory data : spec.getDestDataVolumes()) {
             VolumeTO v = new VolumeTO();

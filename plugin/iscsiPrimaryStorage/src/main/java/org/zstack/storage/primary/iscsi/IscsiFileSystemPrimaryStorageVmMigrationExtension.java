@@ -59,7 +59,7 @@ public class IscsiFileSystemPrimaryStorageVmMigrationExtension implements VmInst
             return null;
         }
 
-        boolean useVirtio = (ImagePlatform.Paravirtualization.toString().equals(inv.getPlatform()) || ImagePlatform.Linux.toString().equals(inv.getPlatform()))
+        boolean useVirtio = ImagePlatform.valueOf(inv.getPlatform()).isParaVirtualization()
                 && KVMSystemTags.VIRTIO_SCSI.hasTag(destHostUuid);
 
         if (useVirtio) {

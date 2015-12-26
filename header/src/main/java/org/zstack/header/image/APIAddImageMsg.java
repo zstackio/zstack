@@ -23,7 +23,7 @@ public class APIAddImageMsg extends APICreateMessage {
     private boolean system;
     @APIParam
     private String format;
-    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization"})
+    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
     @APIParam(nonempty = true, resourceType = BackupStorageVO.class)
 	private List<String> backupStorageUuids;
