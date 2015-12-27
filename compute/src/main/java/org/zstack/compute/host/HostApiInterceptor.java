@@ -39,8 +39,23 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
 
         if (msg instanceof APIAddHostMsg) {
             validate((APIAddHostMsg) msg);
+        } else if (msg instanceof APIUpdateHostMsg) {
+            validate((APIUpdateHostMsg) msg);
         }
+
         return msg;
+    }
+
+    private void validate(APIUpdateHostMsg msg) {
+        if (msg.getManagementIp() != null) {
+            SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
+            q.add(HostVO_.managementIp, Op.EQ, msg.getManagementIp());
+            if (q.isExists()) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("there has been a host having managementIp[%s]", msg.getManagementIp())
+                ));
+            }
+        }
     }
 
     private void validate(APIAddHostMsg msg) {

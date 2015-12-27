@@ -1940,6 +1940,10 @@ public class KVMHost extends HostBase implements Host {
 
     @Override
     protected HostVO updateHost(APIUpdateHostMsg msg) {
+        if (!(msg instanceof APIUpdateKVMHostMsg)) {
+            return super.updateHost(msg);
+        }
+
         KVMHostVO vo = (KVMHostVO) super.updateHost(msg);
         vo = vo == null ? getSelf() : vo;
 

@@ -130,6 +130,10 @@ public abstract class HostBase extends AbstractHost {
             self.setDescription(msg.getDescription());
             update = true;
         }
+        if (msg.getManagementIp() != null) {
+            self.setManagementIp(msg.getManagementIp());
+            update = true;
+        }
 
         return update ? self : null;
     }
