@@ -3,7 +3,9 @@ package org.zstack.portal.managementnode;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -57,18 +59,34 @@ public class ManagementNode implements CloudBusEventListener {
 
     private JdbcTemplate jdbc;
     private Connection heartbeatDbConnection;
+    private SingleConnectionDataSource dbSource;
     private EventSubscriberReceipt unsubscriber;
     private ManagementNodeChangeListener nodeManagerCallback;
 
-    public ManagementNode() {
-        myEvents = new Event[] { new ManagementNodeJoinEvent(), new ManagementNodeLeftEvent(), };
+    private void createJdbcTemplate() {
+        if (dbSource != null) {
+            dbSource.destroy();
+        }
+        if (heartbeatDbConnection != null) {
+            try {
+                heartbeatDbConnection.close();
+            } catch (SQLException e) {
+                logger.warn(e.getMessage(), e);
+            }
+        }
+
         try {
             heartbeatDbConnection = dbf.getExtraDataSource().getConnection();
-            SingleConnectionDataSource dbSource = new SingleConnectionDataSource(heartbeatDbConnection, true);
+            dbSource = new SingleConnectionDataSource(heartbeatDbConnection, true);
             jdbc = new JdbcTemplate(dbSource);
         } catch (SQLException e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    public ManagementNode() {
+        myEvents = new Event[] { new ManagementNodeJoinEvent(), new ManagementNodeLeftEvent(), };
+        createJdbcTemplate();
     }
 
     private void setNodeRunning() {
@@ -178,7 +196,13 @@ public class ManagementNode implements CloudBusEventListener {
                             checkAllNodesHealth();
                         }
                     } catch (Throwable t) {
-                        logger.warn("unhandled exception happened", t);
+                        if (t instanceof RecoverableDataAccessException || t instanceof DataAccessResourceFailureException) {
+                            logger.warn(String.format("cannot communicate to the database, it's most likely the DB stopped or rebooted;" +
+                                    "try creating a new database connection. %s", t.getMessage()), t);
+                            createJdbcTemplate();
+                        } else {
+                            logger.warn("unhandled exception happened", t);
+                        }
                     }
 
                     try {
