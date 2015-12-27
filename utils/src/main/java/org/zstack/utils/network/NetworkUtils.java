@@ -15,6 +15,13 @@ import java.util.regex.Pattern;
 public class NetworkUtils {
     private static final CLogger logger = Utils.getLogger(NetworkUtils.class);
 
+    public static boolean isHostname(String hostname) {
+        String PATTERN = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
+        Pattern pattern = Pattern.compile(PATTERN);
+        Matcher matcher = pattern.matcher(hostname);
+        return matcher.matches();
+    }
+
     public static boolean isIpv4Address(String ip) {
         String PATTERN =
                 "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +

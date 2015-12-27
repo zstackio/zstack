@@ -11,6 +11,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
+import org.zstack.utils.network.NetworkUtils;
 
 /**
  */
@@ -48,6 +49,12 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddSftpBackupStorageMsg msg) {
+        if (!NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
+            ));
+        }
+
         SimpleQuery<SftpBackupStorageVO> q = dbf.createQuery(SftpBackupStorageVO.class);
         q.add(SftpBackupStorageVO_.hostname, Op.EQ, msg.getHostname());
         q.add(SftpBackupStorageVO_.url, Op.EQ, msg.getUrl());
