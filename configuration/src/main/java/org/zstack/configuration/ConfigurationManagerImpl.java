@@ -835,19 +835,21 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
         for (String pkg : basePkgs) {
             for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
+                Class<?> clazz = null;
                 try {
-                    Class<?> clazz = Class.forName(bd.getBeanClassName());
+                    clazz = Class.forName(bd.getBeanClassName());
                     logger.debug(String.format("dumping message: %s", bd.getBeanClassName()));
                     String template = RESTApiJsonTemplateGenerator.dump(clazz);
                     FileUtils.write(new File(PathUtil.join(jsonFolder.getAbsolutePath(), clazz.getName() + ".json")), template);
-                    if (APIMessage.class.isAssignableFrom(clazz)) {
-                        if (TypeUtils.isTypeOf(clazz, APISearchMessage.class, APIGetMessage.class, APIListMessage.class)) {
-                            continue;
-                        }
-                        apiNameBuilder.append(String.format("%s'%s',\n", whiteSpace(4), clazz.getName()));
-                    }
                 } catch (Exception e) {
                     logger.warn(String.format("Unable to generate json template for %s", bd.getBeanClassName()), e);
+                }
+
+                if (clazz != null && APIMessage.class.isAssignableFrom(clazz)) {
+                    if (TypeUtils.isTypeOf(clazz, APISearchMessage.class, APIGetMessage.class, APIListMessage.class)) {
+                        continue;
+                    }
+                    apiNameBuilder.append(String.format("%s'%s',\n", whiteSpace(4), clazz.getName()));
                 }
             }
         }
