@@ -20,6 +20,8 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     private String state;
     @APIParam(resourceType = L3NetworkVO.class, required = false)
     private String defaultL3NetworkUuid;
+    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
+    private String platform;
 
     public String getDefaultL3NetworkUuid() {
         return defaultL3NetworkUuid;
@@ -27,6 +29,14 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
 
     public void setDefaultL3NetworkUuid(String defaultL3NetworkUuid) {
         this.defaultL3NetworkUuid = defaultL3NetworkUuid;
+    }
+
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
     }
 
     public String getUuid() {

@@ -2132,6 +2132,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     self.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
                     update = true;
                 }
+                if (msg.getPlatform() != null) {
+                    self.setPlatform(msg.getPlatform());
+                    update = true;
+                }
                 if (update) {
                     self = dbf.updateAndRefresh(self);
                 }
