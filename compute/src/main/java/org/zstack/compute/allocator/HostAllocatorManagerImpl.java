@@ -100,13 +100,14 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         class Struct {
             String hostUuid;
             Long usedMemory;
+            Long usedCpu;
         }
 
         List<Struct> ss = new Callable<List<Struct>>() {
             @Override
             @Transactional(readOnly = true)
             public List<Struct> call() {
-                String sql = "select sum(vm.memorySize), vm.hostUuid from VmInstanceVO vm where vm.hostUuid in (:hostUuids) and vm.state not in (:vmStates) group by vm.hostUuid";
+                String sql = "select sum(vm.memorySize), vm.hostUuid, sum(vm.cpuNum * vm.cpuSpeed) from VmInstanceVO vm where vm.hostUuid in (:hostUuids) and vm.state not in (:vmStates) group by vm.hostUuid";
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("hostUuids", hostUuids);
                 q.setParameter("vmStates", list(VmInstanceState.Destroyed, VmInstanceState.Created, VmInstanceState.Destroying));
@@ -122,6 +123,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     }
 
                     s.usedMemory = ratioMgr.calculateMemoryByRatio(s.hostUuid, t.get(0, Long.class));
+                    s.usedCpu = t.get(2, Long.class);
                     ret.add(s);
                 }
                 return ret;
@@ -150,7 +152,14 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     long before = cap.getAvailableMemory();
                     long avail = s.usedMemory == null ? cap.getTotalMemory() : cap.getTotalMemory() - s.usedMemory;
                     cap.setAvailableMemory(avail);
-                    logger.debug(String.format("re-calculated available memory on the host[uuid:%s,  before: %s, now: %s]", s.hostUuid, before, avail));
+
+                    long beforeCpu = cap.getAvailableCpu();
+                    long availCpu = s.usedCpu == null ? cap.getTotalCpu() : cap.getTotalCpu() - s.usedCpu;
+                    cap.setAvailableCpu(availCpu);
+
+                    logger.debug(String.format("re-calculated available capacity on the host[uuid:%s]:" +
+                            "\n[available memory] before: %s, now: %s" +
+                            "\n[available cpu] before: %s, now :%s", s.hostUuid, before, avail, beforeCpu, availCpu));
                     return cap;
                 }
             });
@@ -193,6 +202,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             vo.setAvailableCpu(availCpu);
             vo.setTotalPhysicalMemory(msg.getTotalMemory());
             vo.setAvailablePhysicalMemory(availMem);
+            vo.setTotalMemory(msg.getTotalMemory());
 
             HostCapacityStruct s = new HostCapacityStruct();
             s.setCapacityVO(vo);
