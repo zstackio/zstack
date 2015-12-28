@@ -179,9 +179,8 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                     Defer.defer(new Runnable() {
                         @Override
                         public void run() {
-                            //tmpInclude.delete();
-                            //tmpAgentYaml.delete();
-                            //tmpConf.delete();
+                            tmpInclude.delete();
+                            tmpAgentYaml.delete();
                         }
                     });
 
@@ -195,9 +194,8 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                     Defer.defer(new Runnable() {
                         @Override
                         public void run() {
-                            //tmpInclude.delete();
-                            //tmpAgentYaml.delete();
-                            //tmpConf.delete();
+                            tmpInclude.delete();
+                            tmpAgentYaml.delete();
                         }
                     });
 
