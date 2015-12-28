@@ -2,6 +2,8 @@ package org.zstack.core.agent;
 
 import org.zstack.header.message.NeedReplyMessage;
 
+import java.util.Map;
+
 /**
  * Created by frank on 12/5/2015.
  */
@@ -13,6 +15,15 @@ public class DeployAgentMsg extends NeedReplyMessage {
     private Integer sshPort;
     private Integer agentPort;
     private boolean deployAnyway;
+    private Map<String, Object> config;
+
+    public Map<String, Object> getConfig() {
+        return config;
+    }
+
+    public void setConfig(Map<String, Object> config) {
+        this.config = config;
+    }
 
     public boolean isDeployAnyway() {
         return deployAnyway;

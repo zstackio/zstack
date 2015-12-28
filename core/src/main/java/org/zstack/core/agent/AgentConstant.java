@@ -16,4 +16,6 @@ public class AgentConstant {
     public static final String DST_ANSIBLE_ROOT = "/var/lib/zstack/ansible/zstack-agent";
 
     public static final int AGENT_PORT = 10001;
+
+    public static final String CONFIG_COMMAND_URL = "commandUrl";
 }

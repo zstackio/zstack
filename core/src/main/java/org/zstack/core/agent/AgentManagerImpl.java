@@ -13,12 +13,16 @@ import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -46,9 +50,18 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
     private CloudBus bus;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private RESTFacade restf;
 
     private Map<String, Map<String, AgentStruct>> agents = new HashMap<String, Map<String, AgentStruct>>();
     private String srcRootFolder;
+
+    public static final String ECHO_PATH = "/server/echo";
+    public static final String INIT_PATH = "/server/init";
+
+    public static final class InitAgentServerCmd {
+        public Map<String, Object> Config = new HashMap<String, Object>();
+    }
 
     @Override
     @MessageSafe
@@ -93,6 +106,71 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                 return getSyncSignature();
             }
         });
+    }
+
+    private void connect(final DeployAgentMsg msg, final Completion completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("continue-connect-agent-server-%s:%s", msg.getIp(), msg.getAgentPort()));
+        chain.then(new ShareFlow() {
+            private String url(String path) {
+                return String.format("http://%s:%s%s", msg.getIp(), msg.getAgentPort(), path);
+            }
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "echo-server";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        restf.echo(url(ECHO_PATH), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__= "init-server";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        Map<String, Object> config = new HashMap<String, Object>();
+                        config.put(AgentConstant.CONFIG_COMMAND_URL, restf.getSendCommandUrl());
+                        if (msg.getConfig() != null) {
+                            config.putAll(msg.getConfig());
+                        }
+
+                        InitAgentServerCmd cmd = new InitAgentServerCmd();
+                        cmd.Config = config;
+
+                        restf.syncJsonPost(url(INIT_PATH), cmd, Void.class);
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void deployAgent(final DeployAgentMsg msg, final NoErrorCompletion noErrorCompletion) {
@@ -184,8 +262,20 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                         }
                     });
 
-                    bus.reply(msg, reply);
-                    noErrorCompletion.done();
+                    connect(msg, new Completion(msg, noErrorCompletion) {
+                        @Override
+                        public void success() {
+                            bus.reply(msg, reply);
+                            noErrorCompletion.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCode);
+                            bus.reply(msg, reply);
+                            noErrorCompletion.done();
+                        }
+                    });
                 }
 
                 @Override
