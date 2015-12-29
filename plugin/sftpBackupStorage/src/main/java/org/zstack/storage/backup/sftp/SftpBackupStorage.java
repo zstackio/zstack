@@ -373,6 +373,10 @@ public class SftpBackupStorage extends BackupStorageBase {
 
     @Override
     protected BackupStorageVO updateBackupStorage(APIUpdateBackupStorageMsg msg) {
+        if (!(msg instanceof APIUpdateSftpBackupStorageMsg)) {
+            return super.updateBackupStorage(msg);
+        }
+
         SftpBackupStorageVO vo = (SftpBackupStorageVO) super.updateBackupStorage(msg);
         vo = vo == null ? getSelf() : vo;
 
