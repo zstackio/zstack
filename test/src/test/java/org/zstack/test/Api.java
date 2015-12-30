@@ -58,6 +58,8 @@ import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.zone.*;
 import org.zstack.kvm.APIUpdateKVMHostMsg;
 import org.zstack.kvm.KVMHostInventory;
+import org.zstack.license.APIGetLicenseInfoMsg;
+import org.zstack.license.APIGetLicenseInfoReply;
 import org.zstack.network.securitygroup.*;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.network.service.eip.*;
@@ -3675,5 +3677,13 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIGetVmBootOrderReply reply = sender.call(msg, APIGetVmBootOrderReply.class);
         return reply.getOrder();
+    }
+
+    public APIGetLicenseInfoReply getLicenseInfo() throws ApiSenderException {
+        APIGetLicenseInfoMsg msg = new APIGetLicenseInfoMsg();
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        return sender.call(msg, APIGetLicenseInfoReply.class);
     }
 }
