@@ -46,8 +46,7 @@ public class TestMevoco12 {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/mevoco/TestMevoco12.xml", con);
-        deployer.addSpringConfig("mevoco.xml");
-        deployer.addSpringConfig("agentManager.xml");
+        deployer.addSpringConfig("mevocoRelated.xml");
         deployer.load();
 
         loader = deployer.getComponentLoader();

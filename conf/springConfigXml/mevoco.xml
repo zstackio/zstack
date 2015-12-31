@@ -96,12 +96,4 @@
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
-
-    <bean id="LicenseManager" class="org.zstack.license.LicenseManagerImpl">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.Service" />
-        </zstack:plugin>
-    </bean>
-
 </beans>

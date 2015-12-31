@@ -80,4 +80,5 @@
     <import resource="springConfigXml/ceph.xml" />
     <import resource="springConfigXml/lb.xml" />
     <import resource="springConfigXml/mevoco.xml" />
+    <import resource="springConfigXml/license.xml" />
 </beans>

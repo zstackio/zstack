@@ -9,4 +9,8 @@
     <message>
         <name>org.zstack.license.APIGenerateNewLicenseRequestMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.license.APIGetLicenseCapabilitiesMsg</name>
+    </message>
 </service>

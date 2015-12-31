@@ -56,10 +56,10 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.zone.*;
+import org.zstack.kvm.APIAddKVMHostMsg;
 import org.zstack.kvm.APIUpdateKVMHostMsg;
 import org.zstack.kvm.KVMHostInventory;
-import org.zstack.license.APIGetLicenseInfoMsg;
-import org.zstack.license.APIGetLicenseInfoReply;
+import org.zstack.license.*;
 import org.zstack.network.securitygroup.*;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.network.service.eip.*;
@@ -3679,11 +3679,35 @@ public class Api implements CloudBusEventListener {
         return reply.getOrder();
     }
 
-    public APIGetLicenseInfoReply getLicenseInfo() throws ApiSenderException {
+    public LicenseInventory getLicenseInfo() throws ApiSenderException {
         APIGetLicenseInfoMsg msg = new APIGetLicenseInfoMsg();
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        return sender.call(msg, APIGetLicenseInfoReply.class);
+        APIGetLicenseInfoReply r = sender.call(msg, APIGetLicenseInfoReply.class);
+        return r.getInventory();
+    }
+
+    public KVMHostInventory addKvmHost(String name, String mgmtIp, String clusterUuid) throws ApiSenderException {
+        APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
+        msg.setName(name);
+        msg.setManagementIp(mgmtIp);
+        msg.setClusterUuid(clusterUuid);
+        msg.setUsername("root");
+        msg.setPassword("password");
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
+        return (KVMHostInventory) evt.getInventory();
+    }
+
+    public Map<String, String> getLicenseCapabilities() throws ApiSenderException {
+        APIGetLicenseCapabilitiesMsg msg = new APIGetLicenseCapabilitiesMsg();
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetLicenseCapabilitiesReply reply = sender.call(msg, APIGetLicenseCapabilitiesReply.class);
+        return reply.getCapabilities();
     }
 }

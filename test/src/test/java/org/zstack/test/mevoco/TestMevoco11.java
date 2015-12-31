@@ -74,12 +74,7 @@ public class TestMevoco11 {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/mevoco/TestMevoco10.xml", con);
-        deployer.addSpringConfig("KVMRelated.xml");
-        deployer.addSpringConfig("mevoco.xml");
-        deployer.addSpringConfig("agentManager.xml");
-        deployer.addSpringConfig("localStorage.xml");
-        deployer.addSpringConfig("localStorageSimulator.xml");
-        deployer.addSpringConfig("flatNetworkServiceSimulator.xml");
+        deployer.addSpringConfig("mevocoRelated.xml");
         deployer.load();
 
         loader = deployer.getComponentLoader();
