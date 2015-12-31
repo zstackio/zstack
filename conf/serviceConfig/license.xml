@@ -5,4 +5,8 @@
     <message>
         <name>org.zstack.license.APIGetLicenseInfoMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.license.APIGenerateNewLicenseRequestMsg</name>
+    </message>
 </service>

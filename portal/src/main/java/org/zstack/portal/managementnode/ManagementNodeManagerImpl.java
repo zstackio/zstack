@@ -224,8 +224,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 @Override
                 public void start() {
+                    logger.info("starting component: " + c.getClass().getName());
                     c.start();
-                    logger.info("Started component: " + c.getClass().getName());
+                    logger.info(String.format("component[%s] starts successfully", c.getClass()));
                     isStart = true;
                 }
 

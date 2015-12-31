@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.search.Inventory;
@@ -54,6 +55,7 @@ public class InventoryQueryDetailsGenerator {
             ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
             scanner.addIncludeFilter(new AnnotationTypeFilter(Inventory.class));
             scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
+            scanner.addExcludeFilter(new AnnotationTypeFilter(Component.class));
             for (String pkg : basePkgs) {
                 for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
                     Class<?> clazz = Class.forName(bd.getBeanClassName());

@@ -112,6 +112,7 @@ public class Deployer {
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(true);
         scanner.addIncludeFilter(new AssignableTypeFilter(AbstractDeployer.class));
         scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
+        scanner.addExcludeFilter(new AnnotationTypeFilter(org.springframework.stereotype.Component.class));
         for (BeanDefinition bd : scanner.findCandidateComponents("org.zstack.test")) {
             try {
                 Class<?> clazz = Class.forName(bd.getBeanClassName());

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.AssignableTypeFilter;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -289,6 +290,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(true);
             scanner.addIncludeFilter(new AnnotationTypeFilter(EO.class));
             scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
+            scanner.addExcludeFilter(new AnnotationTypeFilter(Component.class));
             StringBuilder sb = new StringBuilder();
             for (String pkg : msg.getBasePackageNames()) {
                 for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
@@ -398,6 +400,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         scanner.addIncludeFilter(new AssignableTypeFilter(APIReply.class));
         scanner.addIncludeFilter(new AssignableTypeFilter(APIEvent.class));
         scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
+        scanner.addExcludeFilter(new AnnotationTypeFilter(Component.class));
         for (String pkg : basePkgs) {
             for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
                 try {
@@ -666,6 +669,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         scanner.addIncludeFilter(new AssignableTypeFilter(APIReply.class));
         scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
         scanner.addExcludeFilter(new AnnotationTypeFilter(NoPython.class));
+        scanner.addExcludeFilter(new AnnotationTypeFilter(Component.class));
         List<String> apiNames = new ArrayList<String>(100);
         for (String pkg : basePkgs) {
             for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
@@ -740,6 +744,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         List<String> inventoryPython = new ArrayList<String>();
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
         scanner.addIncludeFilter(new AnnotationTypeFilter(PythonClassInventory.class));
+        scanner.addExcludeFilter(new AnnotationTypeFilter(Component.class));
         for (String pkg : basePkgs) {
             for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
                 try {
@@ -833,6 +838,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         scanner.addIncludeFilter(new AssignableTypeFilter(APIReply.class));
         scanner.addIncludeFilter(new AssignableTypeFilter(APIMessage.class));
         scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
+        scanner.addExcludeFilter(new AnnotationTypeFilter(Component.class));
         for (String pkg : basePkgs) {
             for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
                 Class<?> clazz = null;
