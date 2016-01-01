@@ -13,4 +13,8 @@
     <message>
         <name>org.zstack.license.APIGetLicenseCapabilitiesMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.license.APIReloadLicenseMsg</name>
+    </message>
 </service>
