@@ -72,11 +72,9 @@ public class TestAddKvmHost {
         config.cpuSpeed = 2600;
         config.totalMemory = SizeUnit.GIGABYTE.toByte(8);
         config.usedMemory = SizeUnit.MEGABYTE.toByte(512);
-        config.usedCpu = 512;
         String huuid = addHost().getUuid();
         HostCapacityVO hvo = dbf.findByUuid(huuid, HostCapacityVO.class);
         Assert.assertEquals(config.cpuNum * config.cpuSpeed, hvo.getTotalCpu());
-        Assert.assertEquals(config.usedCpu, hvo.getUsedCpu());
         Assert.assertEquals(config.usedMemory, hvo.getUsedPhysicalMemory());
         Assert.assertEquals(config.totalMemory, hvo.getTotalMemory());
     }

@@ -307,7 +307,7 @@ public class SftpBackupStorage extends BackupStorageBase {
 
             @Override
             public void success(PingResponse ret) {
-                if (!self.getUuid().equals(ret.getUuid())) {
+                if (ret.isSuccess() && !self.getUuid().equals(ret.getUuid())) {
                     logger.debug(String.format("the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it's most likely" +
                             " the agent was manually restarted. Issue a reconnect to sync the status", self.getUuid(), ret.getUuid()));
                     reply.setAvailable(false);
