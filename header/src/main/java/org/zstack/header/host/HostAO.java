@@ -52,6 +52,10 @@ public class HostAO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     public HostAO() {
     }

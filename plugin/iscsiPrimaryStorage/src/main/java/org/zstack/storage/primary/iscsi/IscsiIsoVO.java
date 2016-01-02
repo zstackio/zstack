@@ -5,10 +5,7 @@ import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.sql.Timestamp;
 
 /**
@@ -42,6 +39,11 @@ public class IscsiIsoVO {
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     public String getVmInstanceUuid() {
         return vmInstanceUuid;

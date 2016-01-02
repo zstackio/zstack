@@ -7,10 +7,7 @@ import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
@@ -37,6 +34,11 @@ public class SecurityGroupL3NetworkRefVO {
     
     @Column
     private Timestamp lastOpDate;
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     public String getUuid() {
         return uuid;

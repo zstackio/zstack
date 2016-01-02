@@ -72,6 +72,11 @@ public class PortForwardingRuleVO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public String getVipIp() {
         return vipIp;
     }

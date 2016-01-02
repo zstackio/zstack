@@ -42,6 +42,11 @@ public class SecurityGroupVO {
     @JoinColumn(name="securityGroupUuid", insertable=false, updatable=false)
     private Set<SecurityGroupL3NetworkRefVO> attachedL3NetworkRefs = new HashSet<SecurityGroupL3NetworkRefVO>();
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public String getUuid() {
         return uuid;
     }

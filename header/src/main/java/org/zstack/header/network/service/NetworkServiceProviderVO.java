@@ -42,6 +42,11 @@ public class NetworkServiceProviderVO {
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="networkServiceProviderUuid", insertable=false, updatable=false)
     private Set<NetworkServiceProviderL2NetworkRefVO> attachedL2NetworkRefs = new HashSet<NetworkServiceProviderL2NetworkRefVO>();
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
     
 	public String getUuid() {
 		return uuid;

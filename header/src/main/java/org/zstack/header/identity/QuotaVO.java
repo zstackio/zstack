@@ -32,6 +32,11 @@ public class QuotaVO {
     @Column
     private Timestamp createDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public Long getId() {
         return id;
     }

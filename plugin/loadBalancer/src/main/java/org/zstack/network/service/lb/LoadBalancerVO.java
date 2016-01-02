@@ -49,6 +49,11 @@ public class LoadBalancerVO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public Set<LoadBalancerListenerVO> getListeners() {
         return listeners;
     }

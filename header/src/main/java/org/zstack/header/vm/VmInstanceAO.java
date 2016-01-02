@@ -117,6 +117,11 @@ public class VmInstanceAO {
         this.platform = other.platform;
     }
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public String getPlatform() {
         return platform;
     }

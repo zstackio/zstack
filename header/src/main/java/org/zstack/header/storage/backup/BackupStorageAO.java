@@ -44,6 +44,11 @@ public class BackupStorageAO {
 	@Column
 	private Timestamp lastOpDate;
 
+	@PreUpdate
+	private void preUpdate() {
+		lastOpDate = null;
+	}
+
 	public BackupStorageAO() {
 	}
 

@@ -7,6 +7,7 @@ import org.zstack.header.vo.Index;
 import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.PreUpdate;
 import java.sql.Timestamp;
 
 @MappedSuperclass
@@ -50,6 +51,11 @@ public class IpRangeAO {
     
     @Column
     private Timestamp lastOpDate;
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     public String getNetworkCidr() {
         return networkCidr;

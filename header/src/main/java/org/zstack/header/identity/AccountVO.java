@@ -37,6 +37,11 @@ public class AccountVO {
 	@Enumerated(EnumType.STRING)
 	private AccountType type;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public String getDescription() {
         return description;
     }

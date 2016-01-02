@@ -63,6 +63,10 @@ public class PrimaryStorageAO {
         this.lastOpDate = other.lastOpDate;
     }
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     public PrimaryStorageStatus getStatus() {
         return status;

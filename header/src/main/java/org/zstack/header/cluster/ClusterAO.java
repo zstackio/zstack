@@ -50,6 +50,11 @@ public class ClusterAO {
         this.state = ClusterState.Disabled;
     }
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public String getName() {
         return name;
     }

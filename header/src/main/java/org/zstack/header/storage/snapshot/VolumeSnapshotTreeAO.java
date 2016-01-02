@@ -7,6 +7,7 @@ import org.zstack.header.volume.VolumeEO;
 import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.PreUpdate;
 import java.sql.Timestamp;
 
 /**
@@ -29,6 +30,11 @@ public class VolumeSnapshotTreeAO {
 
     @Column
     private Timestamp lastOpDate;
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     public String getUuid() {
         return uuid;
