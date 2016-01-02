@@ -158,7 +158,14 @@ public class DnsExtension extends AbstractNetworkServiceExtension implements Com
     private void handle(final RemoveDnsMsg msg) {
         final RemoveDnsReply reply = new RemoveDnsReply();
         L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class));
-        NetworkServiceDnsBackend bkd = dnsBackends.get(getNetworkServiceProviderType(NetworkServiceType.DNS, l3));
+        NetworkServiceProviderType ptype = getNetworkServiceProviderType(NetworkServiceType.DNS, l3);
+        if (ptype == null) {
+            // backends don't need to be informed
+            bus.reply(msg, reply);
+            return;
+        }
+
+        NetworkServiceDnsBackend bkd = dnsBackends.get(ptype);
         bkd.removeDns(l3, list(msg.getDns()), new Completion(msg) {
             @Override
             public void success() {
@@ -176,7 +183,14 @@ public class DnsExtension extends AbstractNetworkServiceExtension implements Com
     private void handle(final AddDnsMsg msg) {
         final AddDnsReply reply = new AddDnsReply();
         L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class));
-        NetworkServiceDnsBackend bkd = dnsBackends.get(getNetworkServiceProviderType(NetworkServiceType.DNS, l3));
+        NetworkServiceProviderType ptype = getNetworkServiceProviderType(NetworkServiceType.DNS, l3);
+        if (ptype == null) {
+            // backends don't need to be informed
+            bus.reply(msg, reply);
+            return;
+        }
+
+        NetworkServiceDnsBackend bkd = dnsBackends.get(ptype);
         bkd.addDns(l3, list(msg.getDns()), new Completion(msg) {
             @Override
             public void success() {

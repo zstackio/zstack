@@ -62,6 +62,9 @@ import static org.zstack.core.Platform._;
  *
  * 2. attach a data volume
  * confirm the qos set
+ *
+ * 3. add DNS
+ * confirm the DNS added successfully
  */
 public class TestMevoco {
     CLogger logger = Utils.getLogger(TestMevoco.class);
@@ -190,5 +193,7 @@ public class TestMevoco {
         vqos = JSONObjectUtil.rehashObject(m.get(datavol.getUuid()), VolumeQos.class);
         Assert.assertEquals(Long.valueOf(2000), vqos.totalBandwidth);
         Assert.assertEquals(Long.valueOf(10000), vqos.totalIops);
+
+        api.addDns(l3.getUuid(), "114.114.114.114");
     }
 }
