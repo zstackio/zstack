@@ -10,7 +10,16 @@ import org.zstack.header.volume.VolumeInventory;
 public class LocalStorageCreateEmptyVolumeMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private String hostUuid;
+    private String backingFile;
     private VolumeInventory volume;
+
+    public String getBackingFile() {
+        return backingFile;
+    }
+
+    public void setBackingFile(String backingFile) {
+        this.backingFile = backingFile;
+    }
 
     @Override
     public String getPrimaryStorageUuid() {

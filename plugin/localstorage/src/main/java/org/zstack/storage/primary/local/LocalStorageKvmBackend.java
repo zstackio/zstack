@@ -135,6 +135,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         private String accountUuid;
         private String name;
         private String volumeUuid;
+        private String backingFile;
+
+        public String getBackingFile() {
+            return backingFile;
+        }
+
+        public void setBackingFile(String backingFile) {
+            this.backingFile = backingFile;
+        }
 
         public String getInstallUrl() {
             return installUrl;
@@ -627,6 +636,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final ReturnValueCompletion<String> completion) {
+        createEmptyVolume(volume, hostUuid, null, completion);
+    }
+
+    private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final String backingFile, final ReturnValueCompletion<String> completion) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         cmd.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(volume.getUuid()));
         if (VolumeType.Root.toString().equals(volume.getType())) {
@@ -637,6 +650,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.setName(volume.getName());
         cmd.setSize(volume.getSize());
         cmd.setVolumeUuid(volume.getUuid());
+        cmd.setBackingFile(backingFile);
 
         httpCall(CREATE_EMPTY_VOLUME_PATH, hostUuid, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(completion) {
             @Override
@@ -1683,7 +1697,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void handle(LocalStorageCreateEmptyVolumeMsg msg, final ReturnValueCompletion<LocalStorageCreateEmptyVolumeReply> completion) {
-        createEmptyVolume(msg.getVolume(), msg.getHostUuid(), new ReturnValueCompletion<String>(completion) {
+        createEmptyVolume(msg.getVolume(), msg.getHostUuid(), msg.getBackingFile(), new ReturnValueCompletion<String>(completion) {
             @Override
             public void success(String returnValue) {
                 LocalStorageCreateEmptyVolumeReply reply = new LocalStorageCreateEmptyVolumeReply();
@@ -1719,7 +1733,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    void downloadImageToCache(ImageInventory img, String hostUuid, final Completion completion) {
+    void downloadImageToCache(ImageInventory img, String hostUuid, final ReturnValueCompletion<String> completion) {
         ImageBackupStorageSelector selector = new ImageBackupStorageSelector();
         selector.setZoneUuid(self.getZoneUuid());
         selector.setImageUuid(img.getUuid());
@@ -1741,7 +1755,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             }
         });
 
-        ImageCache cache = new ImageCache();
+        final ImageCache cache = new ImageCache();
         cache.image = img;
         cache.hostUuid = hostUuid;
         cache.primaryStorageInstallPath = makeCachedImageInstallUrl(img);
@@ -1750,7 +1764,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cache.download(new ReturnValueCompletion<String>(completion) {
             @Override
             public void success(String returnValue) {
-                completion.success();
+                completion.success(cache.primaryStorageInstallPath);
             }
 
             @Override
@@ -1798,9 +1812,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        downloadImageToCache(ImageInventory.valueOf(context.image), struct.getDestHostUuid(), new Completion(trigger) {
+                        downloadImageToCache(ImageInventory.valueOf(context.image), struct.getDestHostUuid(), new ReturnValueCompletion<String>(trigger) {
                             @Override
-                            public void success() {
+                            public void success(String returnValue) {
                                 trigger.next();
                             }
 

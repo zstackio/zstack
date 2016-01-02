@@ -508,6 +508,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         class Ret {
             List<HostError> errorCodes = new ArrayList<HostError>();
+            String installPath;
 
             synchronized void addError(HostError err) {
                 errorCodes.add(err);
@@ -530,6 +531,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 }
 
+                reply.setInstallPath(ret.installPath);
                 bus.reply(msg, reply);
             }
         });
@@ -548,9 +550,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         public void run(final FlowTrigger trigger, Map data) {
                             LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
                             LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-                            bkd.downloadImageToCache(msg.getImage(), hostUuid, new Completion(trigger) {
+                            bkd.downloadImageToCache(msg.getImage(), hostUuid, new ReturnValueCompletion<String>(trigger) {
                                 @Override
-                                public void success() {
+                                public void success(String returnValue) {
+                                    ret.installPath = returnValue;
                                     trigger.next();
                                 }
 

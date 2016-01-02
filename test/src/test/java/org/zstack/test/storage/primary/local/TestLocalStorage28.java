@@ -18,6 +18,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -118,6 +119,11 @@ public class TestLocalStorage28 {
             usedVolumeSize += ratioMgr.calculateByRatio(vol.getPrimaryStorageUuid(), vol.getSize());
         }
 
+
+        CacheInstallPath cp = new CacheInstallPath();
+        cp.fullPath = cacheVO.getInstallUrl();
+        cp.disassemble();
+
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
             public void intercept(Message msg) {
@@ -133,14 +139,6 @@ public class TestLocalStorage28 {
         TimeUnit.SECONDS.sleep(5);
 
         Assert.assertTrue(downloadImageCalled);
-        Assert.assertEquals(1, config.rebaseRootVolumeToBackingFileCmds.size());
-        RebaseRootVolumeToBackingFileCmd recmd = config.rebaseRootVolumeToBackingFileCmds.get(0);
-        CacheInstallPath cp = new CacheInstallPath();
-        cp.fullPath = cacheVO.getInstallUrl();
-        cp.disassemble();
-
-        Assert.assertEquals(cp.installPath, recmd.backingFilePath);
-        Assert.assertEquals(vm.getRootVolume().getInstallPath(), recmd.rootVolumePath);
 
         LocalStorageHostRefVO ref1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
         Assert.assertEquals(ref1.getTotalCapacity() - imageSize, ref1.getAvailableCapacity());
@@ -158,6 +156,10 @@ public class TestLocalStorage28 {
             });
             Assert.assertNotNull(cmd);
             Assert.assertEquals(vol.getInstallPath(), cmd.getInstallUrl());
+
+            if (VolumeType.Root.toString().equals(vol.getType())) {
+                Assert.assertEquals(cp.installPath, cmd.getBackingFile());
+            }
 
             LocalStorageResourceRefVO r = dbf.findByUuid(vol.getUuid(), LocalStorageResourceRefVO.class);
             Assert.assertEquals(host2.getUuid(), r.getHostUuid());

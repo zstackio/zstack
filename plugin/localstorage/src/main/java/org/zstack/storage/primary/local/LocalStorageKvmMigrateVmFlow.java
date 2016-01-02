@@ -96,53 +96,9 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
     class BackingImage {
         String uuid;
-    }
-
-    private Flow createRebaseRootVolumeToBackingFileFlow(final BackingImage image, final String psUuid,
-                                                         final String hostUuid, final String rootVolumePath) {
-        return new NoRollbackFlow() {
-            String __name__ = "rebase-root-volume-to-backing-file";
-
-            @Override
-            public void run(final FlowTrigger trigger, Map data) {
-                if (image.uuid == null) {
-                    trigger.next();
-                    return;
-                }
-
-                SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
-                q.select(ImageCacheVO_.installUrl);
-                q.add(ImageCacheVO_.imageUuid, Op.EQ, image.uuid);
-                q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, psUuid);
-                q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", hostUuid));
-                String backingFilePath = q.findValue();
-                if (backingFilePath == null) {
-                    throw new CloudRuntimeException( String.format("cannot find ImageCacheVO[uuid:%s] of the local primary storage[uuid:%s]",
-                            image.uuid, psUuid));
-                }
-
-                CacheInstallPath cp = new CacheInstallPath();
-                cp.fullPath = backingFilePath;
-                cp.disassemble();
-                backingFilePath = cp.installPath;
-
-                RebaseRootVolumeToBackingFileCmd cmd = new RebaseRootVolumeToBackingFileCmd();
-                cmd.backingFilePath = backingFilePath;
-                cmd.rootVolumePath = rootVolumePath;
-
-                callKvmHost(hostUuid, psUuid, REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
-                    @Override
-                    public void success(AgentResponse rsp) {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
-        };
+        String path;
+        Long size;
+        String md5;
     }
 
     @Override
@@ -169,9 +125,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
             boolean downloadImage;
             ImageVO image;
             VolumeInventory rootVolume;
-            String backingFilePath;
-            Long backingFileSize;
-            String backingFileMd5;
             KVMHostVO dstHost;
 
             {
@@ -239,8 +192,10 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                         return;
                                     }
 
+                                    DownloadImageToPrimaryStorageCacheReply r = reply.castReply();
                                     storageMigrationPolicy = StorageMigrationPolicy.IncCopy;
                                     backingImage.uuid = image.getUuid();
+                                    backingImage.path = r.getInstallPath();
                                     trigger.next();
                                 }
                             });
@@ -258,8 +213,8 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_BACKING_FILE_PATH, cmd, GetBackingFileRsp.class, new ReturnValueCompletion<GetBackingFileRsp>(trigger) {
                                 @Override
                                 public void success(GetBackingFileRsp rsp) {
-                                    backingFilePath = rsp.backingFilePath;
-                                    backingFileSize = rsp.size;
+                                    backingImage.path = rsp.backingFilePath;
+                                    backingImage.size = rsp.size;
                                     trigger.next();
                                 }
 
@@ -278,13 +233,13 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            if (backingFilePath == null) {
+                            if (backingImage.path == null) {
                                 logger.debug("no backing file, skip this flow");
                                 trigger.next();
                                 return;
                             }
 
-                            reserveCapacityOnHost(dstHostUuid, ref.getPrimaryStorageUuid(), backingFileSize, new Completion(trigger) {
+                            reserveCapacityOnHost(dstHostUuid, ref.getPrimaryStorageUuid(), backingImage.size, new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     s = true;
@@ -301,7 +256,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         @Override
                         public void rollback(final FlowRollback trigger, Map data) {
                             if (s) {
-                                returnCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), backingFileSize);
+                                returnCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), backingImage.size);
                             }
 
                             trigger.rollback();
@@ -313,7 +268,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            if (backingFilePath == null) {
+                            if (backingImage.path == null) {
                                 logger.debug("no backing file, skip this flow");
                                 trigger.next();
                                 return;
@@ -322,13 +277,13 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             GetMd5Cmd cmd = new GetMd5Cmd();
                             GetMd5TO to = new GetMd5TO();
                             to.resourceUuid = "backing-file";
-                            to.path = backingFilePath;
+                            to.path = backingImage.path;
                             cmd.md5s = list(to);
 
                             callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_MD5_PATH, cmd, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
                                 @Override
                                 public void success(GetMd5Rsp rsp) {
-                                    backingFileMd5 = rsp.md5s.get(0).md5;
+                                    backingImage.md5 = rsp.md5s.get(0).md5;
                                     trigger.next();
                                 }
 
@@ -350,7 +305,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             thdf.chainSubmit(new ChainTask(trigger) {
                                 @Override
                                 public String getSyncSignature() {
-                                    return String.format("migrate-backing-file-%s-to-host-%s", backingFilePath, dstHostUuid);
+                                    return String.format("migrate-backing-file-%s-to-host-%s", backingImage.path, dstHostUuid);
                                 }
 
                                 @Override
@@ -359,7 +314,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                     cmd.dstIp = dstHost.getManagementIp();
                                     cmd.dstUsername = dstHost.getUsername();
                                     cmd.dstPassword = dstHost.getPassword();
-                                    cmd.paths = list(backingFilePath);
+                                    cmd.paths = list(backingImage.path);
 
                                     callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class,
                                             new ReturnValueCompletion<AgentResponse>(trigger, chain) {
@@ -387,7 +342,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            if (backingFilePath == null) {
+                            if (backingImage.path == null) {
                                 logger.debug("no backing file, skip this flow");
                                 trigger.next();
                                 return;
@@ -400,7 +355,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                         // DO NOT set success = true here, otherwise the rollback
                                         // will delete the backing file which belongs to others on the dst host
                                         logger.debug(String.format("found %s on the dst host[uuid:%s], don't copy it",
-                                                backingFilePath, dstHostUuid));
+                                                backingImage.path, dstHostUuid));
                                         trigger.next();
                                     } else {
                                         migrate(trigger);
@@ -417,7 +372,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                         private void checkIfExistOnDst(final ReturnValueCompletion<Boolean> completion) {
                             CheckBitsCmd cmd = new CheckBitsCmd();
-                            cmd.path = backingFilePath;
+                            cmd.path = backingImage.path;
 
                             callKvmHost(dstHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.CHECK_BITS_PATH,
                                     cmd, CheckBitsRsp.class, new ReturnValueCompletion<CheckBitsRsp>(completion) {
@@ -437,7 +392,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         public void rollback(FlowRollback trigger, Map data) {
                             if (s) {
                                 LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
-                                msg.setPath(backingFilePath);
+                                msg.setPath(backingImage.path);
                                 msg.setHostUuid(dstHostUuid);
                                 msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
                                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
@@ -447,7 +402,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                         if (!reply.isSuccess()) {
                                             //TODO
                                             logger.warn(String.format("failed to delete %s on the host[uuid:%s] of local storage[uuid:%s], %s",
-                                                    backingFilePath, dstHostUuid, ref.getPrimaryStorageUuid(), reply.getError()));
+                                                    backingImage.path, dstHostUuid, ref.getPrimaryStorageUuid(), reply.getError()));
                                         }
                                     }
                                 });
@@ -462,7 +417,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            if (backingFilePath == null) {
+                            if (backingImage.path == null) {
                                 logger.debug("no backing file, skip this flow");
                                 trigger.next();
                                 return;
@@ -470,8 +425,8 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                             Md5TO to = new Md5TO();
                             to.resourceUuid = "backing-file";
-                            to.path = backingFilePath;
-                            to.md5 = backingFileMd5;
+                            to.path = backingImage.path;
+                            to.md5 = backingImage.md5;
 
                             CheckMd5sumCmd cmd = new CheckMd5sumCmd();
                             cmd.md5s = list(to);
@@ -542,6 +497,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                     LocalStorageCreateEmptyVolumeMsg msg = new LocalStorageCreateEmptyVolumeMsg();
                                     msg.setHostUuid(dstHostUuid);
                                     msg.setVolume(arg);
+
+                                    if (VolumeType.Root.toString().equals(arg.getType())) {
+                                        msg.setBackingFile(backingImage.path);
+                                    }
+
                                     msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
                                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
                                     return msg;
@@ -586,10 +546,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             trigger.rollback();
                         }
                     });
-
-                    flow(createRebaseRootVolumeToBackingFileFlow(backingImage, ref.getPrimaryStorageUuid(),
-                            dstHostUuid, spec.getVmInventory().getRootVolume().getInstallPath()));
-
                 }
 
                 flow(new NoRollbackFlow() {
@@ -919,12 +875,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 }
             });
 
-            // the volume links to the latest snapshot
-            SnapshotTO to = new SnapshotTO();
-            to.parentPath = p.latest.getPrimaryStorageInstallPath();
-            to.path = p.volume.getInstallPath();
-            to.snapshotUuid = p.volume.getUuid();
-            snapshotTOs.add(to);
 
             class Context {
                 List<Md5TO> md5s;
@@ -1051,7 +1001,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
             });
 
             flows.add(new NoRollbackFlow() {
-                String __name__ = "check-md5-on-dst-host";
+                String __name__ = "check-snapshots-md5-on-dst-host";
 
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -1084,6 +1034,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     cmd.setInstallUrl(p.volume.getInstallPath());
                     cmd.setSize(p.volume.getSize());
                     cmd.setVolumeUuid(p.volume.getUuid());
+                    cmd.setBackingFile(p.latest.getPrimaryStorageInstallPath());
 
                     callKvmHost(dstHostUuid, p.volume.getPrimaryStorageUuid(), LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH, cmd, CreateEmptyVolumeRsp.class,
                             new ReturnValueCompletion<CreateEmptyVolumeRsp>(trigger) {
@@ -1126,7 +1077,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
             });
 
             flows.add(new NoRollbackFlow() {
-                String __name__ = String.format("rebase-backing-files-of-volume-%s-on-dst-host", p.volume.getUuid());
+                String __name__ = String.format("rebase-backing-files-of-snapshots-of-volume-%s-on-dst-host", p.volume.getUuid());
 
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
@@ -1147,12 +1098,22 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
             });
 
             flows.add(new NoRollbackFlow() {
-                String __name__ = String.format("verify-snapshot-integrity-of-volume-%s-on-dst-host", p.volume.getUuid());
+                String __name__ = String.format("verify-backingfile-integrity-of-volume-%s-on-dst-host", p.volume.getUuid());
 
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
+                    List<SnapshotTO> s = new ArrayList<SnapshotTO>();
+                    s.addAll(snapshotTOs);
+
+                    // the volume links to the latest snapshot
+                    SnapshotTO to = new SnapshotTO();
+                    to.parentPath = p.latest.getPrimaryStorageInstallPath();
+                    to.path = p.volume.getInstallPath();
+                    to.snapshotUuid = p.volume.getUuid();
+                    s.add(to);
+
                     VerifySnapshotChainCmd cmd = new VerifySnapshotChainCmd();
-                    cmd.snapshots = snapshotTOs;
+                    cmd.snapshots = s;
                     callKvmHost(dstHostUuid, p.volume.getPrimaryStorageUuid(), VERIFY_SNAPSHOT_CHAIN_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                         @Override
                         public void success(AgentResponse returnValue) {
@@ -1179,6 +1140,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     LocalStorageCreateEmptyVolumeMsg msg = new LocalStorageCreateEmptyVolumeMsg();
                     msg.setHostUuid(dstHostUuid);
                     msg.setVolume(vol);
+
+                    if (VolumeType.Root.toString().equals(vol.getType())) {
+                        msg.setBackingFile(image.path);
+                    }
+
                     msg.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
                     bus.send(msg, new CloudBusCallBack(trigger) {
@@ -1217,11 +1183,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     trigger.rollback();
                 }
             });
-
-            if (VolumeType.Root.toString().equals(vol.getType())) {
-                flows.add(createRebaseRootVolumeToBackingFileFlow(image, vol.getPrimaryStorageUuid(), dstHostUuid,
-                        vol.getInstallPath()));
-            }
         }
 
         return flows;
