@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageForAttachingDiskFlow;
 import org.zstack.compute.vm.VmMigrateOnHypervisorFlow;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
@@ -56,7 +57,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         MarshalVmOperationFlowExtensionPoint, HostDeleteExtensionPoint, VmAttachVolumeExtensionPoint,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
         VolumeDeletionExtensionPoint, AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
-        RecoverVmExtensionPoint {
+        RecoverVmExtensionPoint, VmPreMigrationExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
@@ -660,5 +661,30 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public void afterRecoverVm(VmInstanceInventory vm) {
 
+    }
+
+    @Override
+    @Transactional(readOnly = true, noRollbackForClassName = {"org.zstack.header.errorcode.OperationFailureException"})
+    public void preVmMigration(VmInstanceInventory vm) {
+        List<String> volUuids = CollectionUtils.transformToList(vm.getAllVolumes(), new Function<String, VolumeInventory>() {
+            @Override
+            public String call(VolumeInventory arg) {
+                return arg.getUuid();
+            }
+        });
+
+        String sql = "select count(ps) from PrimaryStorageVO ps, VolumeVO vol where ps.uuid = vol.primaryStorageUuid and" +
+                " vol.uuid in (:volUuids) and ps.type = :ptype";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("volUuids", volUuids);
+        q.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
+        q.setMaxResults(1);
+        Long count = q.getSingleResult();
+        if (count > 0) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("unable to live migrate with local storage. The vm[uuid:%s] has volumes on local storage," +
+                            "to protect your data, please stop the vm and do the volume migration", vm.getUuid())
+            ));
+        }
     }
 }

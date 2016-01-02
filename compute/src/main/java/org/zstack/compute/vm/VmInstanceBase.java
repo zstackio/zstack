@@ -2362,6 +2362,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        VmInstanceInventory pinv = getSelfInventory();
+        for (VmPreMigrationExtensionPoint ext : pluginRgty.getExtensionList(VmPreMigrationExtensionPoint.class)) {
+            ext.preVmMigration(pinv);
+        }
+
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.migrating);
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
