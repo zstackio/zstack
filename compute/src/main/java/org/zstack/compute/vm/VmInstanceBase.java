@@ -54,6 +54,7 @@ import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
@@ -1434,10 +1435,25 @@ public class VmInstanceBase extends AbstractVmInstance {
                 nwquery.add(L3NetworkVO_.uuid, Op.IN, msg.getL3NetworkUuids());
                 List<L3NetworkVO> vos = nwquery.list();
                 List<L3NetworkInventory> nws = L3NetworkInventory.valueOf(vos);
-                spec.setL3Networks(nws);
+
+                // order L3 networks by the order they specified in the API
+                List<L3NetworkInventory> l3s = new ArrayList<L3NetworkInventory>(nws.size());
+                for (final String l3Uuid : msg.getL3NetworkUuids()) {
+                    L3NetworkInventory l3 =  CollectionUtils.find(nws, new Function<L3NetworkInventory, L3NetworkInventory>() {
+                        @Override
+                        public L3NetworkInventory call(L3NetworkInventory arg) {
+                            return arg.getUuid().equals(l3Uuid) ? arg : null;
+                        }
+                    });
+                    DebugUtils.Assert(l3 != null, "where is the L3???");
+                    l3s.add(l3);
+                }
+
+                spec.setL3Networks(l3s);
             } else {
                 spec.setL3Networks(new ArrayList<L3NetworkInventory>(0));
             }
+
             if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
                 SimpleQuery<DiskOfferingVO> dquery = dbf.createQuery(DiskOfferingVO.class);
                 dquery.add(DiskOfferingVO_.uuid, SimpleQuery.Op.IN, msg.getDataDiskOfferingUuids());
