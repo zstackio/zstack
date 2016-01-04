@@ -386,14 +386,22 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
         q.select(LocalStorageResourceRefVO_.hostUuid);
         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, list(vm.getRootVolumeUuid(), volume.getUuid()));
-        List<String> huuids = q.listValue();
+        q.groupBy(LocalStorageResourceRefVO_.hostUuid);
+        long count = q.count();
 
-        if (huuids.size() < 2) {
+        if (count < 2) {
             return;
         }
 
-        String rootHost = huuids.get(0);
-        String dataHost = huuids.get(1);
+        q = dbf.createQuery(LocalStorageResourceRefVO.class);
+        q.select(LocalStorageResourceRefVO_.hostUuid);
+        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, vm.getRootVolumeUuid());
+        String rootHost = q.findValue();
+
+        q = dbf.createQuery(LocalStorageResourceRefVO.class);
+        q.select(LocalStorageResourceRefVO_.hostUuid);
+        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, volume.getUuid());
+        String dataHost = q.findValue();
 
         if (!rootHost.equals(dataHost)) {
             throw new OperationFailureException(errf.stringToOperationError(
