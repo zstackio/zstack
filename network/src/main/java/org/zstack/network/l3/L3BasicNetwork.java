@@ -207,7 +207,9 @@ public class L3BasicNetwork implements L3Network {
         } else if (msg instanceof APIAddIpRangeMsg) {
             handle((APIAddIpRangeMsg) msg);
         } else if (msg instanceof APIAttachNetworkServiceToL3NetworkMsg) {
-        	handle((APIAttachNetworkServiceToL3NetworkMsg)msg);
+            handle((APIAttachNetworkServiceToL3NetworkMsg) msg);
+        } else if (msg instanceof APIDetachNetworkServiceFromL3NetworkMsg) {
+            handle((APIDetachNetworkServiceFromL3NetworkMsg) msg);
         } else if (msg instanceof APIAddDnsToL3NetworkMsg) {
         	handle((APIAddDnsToL3NetworkMsg)msg);
         } else if (msg instanceof APIRemoveDnsFromL3NetworkMsg) {
@@ -225,6 +227,24 @@ public class L3BasicNetwork implements L3Network {
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIDetachNetworkServiceFromL3NetworkMsg msg) {
+        for (Map.Entry<String, List<String>> e : msg.getNetworkServices().entrySet()) {
+            SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
+            q.add(NetworkServiceL3NetworkRefVO_.networkServiceProviderUuid, Op.EQ, e.getKey());
+            q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, self.getUuid());
+            q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.IN, e.getValue());
+            List<NetworkServiceL3NetworkRefVO> refs = q.list();
+            dbf.removeCollection(refs, NetworkServiceL3NetworkRefVO.class);
+
+            logger.debug(String.format("successfully attached network service provider[uuid:%s] to l3network[uuid:%s, name:%s] with services%s", e.getKey(), self.getUuid(), self.getName(), e.getValue()));
+        }
+
+        self = dbf.reload(self);
+        APIDetachNetworkServiceFromL3NetworkEvent evt = new APIDetachNetworkServiceFromL3NetworkEvent(msg.getId());
+        evt.setInventory(L3NetworkInventory.valueOf(self));
+        bus.publish(evt);
     }
 
     private void handle(APIUpdateIpRangeMsg msg) {
@@ -500,7 +520,7 @@ public class L3BasicNetwork implements L3Network {
     		logger.debug(String.format("successfully attached network service provider[uuid:%s] to l3network[uuid:%s, name:%s] with services%s", e.getKey(), self.getUuid(), self.getName(), e.getValue()));
     	}
     	
-    	self = dbf.findByUuid(self.getUuid(), L3NetworkVO.class);
+    	self = dbf.reload(self);
     	APIAttachNetworkServiceToL3NetworkEvent evt = new APIAttachNetworkServiceToL3NetworkEvent(msg.getId());
     	evt.setInventory(L3NetworkInventory.valueOf(self));
     	bus.publish(evt);

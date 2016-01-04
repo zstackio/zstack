@@ -3710,4 +3710,14 @@ public class Api implements CloudBusEventListener {
         APIGetLicenseCapabilitiesReply reply = sender.call(msg, APIGetLicenseCapabilitiesReply.class);
         return reply.getCapabilities();
     }
+
+    public void detachNetworkServicesFromL3Network(String l3Uuid, Map<String, List<String>> services) throws ApiSenderException {
+        APIDetachNetworkServiceFromL3NetworkMsg msg = new APIDetachNetworkServiceFromL3NetworkMsg();
+        msg.setL3NetworkUuid(l3Uuid);
+        msg.setNetworkServices(services);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDetachNetworkServiceFromL3NetworkEvent.class);
+    }
 }
