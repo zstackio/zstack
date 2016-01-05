@@ -2,6 +2,7 @@ package com.zstack.utils.test;
 
 import groovy.util.Eval;
 import org.junit.Test;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.io.IOException;
 
@@ -13,5 +14,7 @@ public class TestEval {
     public void test() throws IOException {
         int num = (Integer) Eval.me("2 * 10 + 6");
         System.out.print(num);
+
+        System.out.println(NetworkUtils.getAllMac());
     }
 }

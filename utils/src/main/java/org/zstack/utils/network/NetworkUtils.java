@@ -38,18 +38,18 @@ public class NetworkUtils {
         Matcher matcher = pattern.matcher(cidr);
         return matcher.find();
     }
-    
+
     public static long bytesToLong(byte[] bytes) {
         long value = 0;
         for (int i = 0; i < bytes.length; i++) {
             value = (value << 8) + (bytes[i] & 0xff);
-        } 
+        }
         return value;
     }
-    
+
     public static long ipv4StringToLong(String ip) {
         validateIp(ip);
-        
+
         try {
             InetAddress ia = InetAddress.getByName(ip);
             byte[] bytes = ia.getAddress();
@@ -65,7 +65,7 @@ public class NetworkUtils {
         long endIpl = ipv4StringToLong(endIp);
         return (ipl <= endIpl && ipl >= startIpl);
     }
-    
+
     public static String longToIpv4String(long ip) {
         byte[] bytes = ByteBuffer.allocate(4).putInt((int) ip).array();
         try {
@@ -81,13 +81,13 @@ public class NetworkUtils {
         validateIp(endIp);
         return (int)(ipv4StringToLong(endIp) - ipv4StringToLong(startIp) + 1);
     }
-    
+
     private static void validateIp(String ip) {
         if (!isIpv4Address(ip)) {
             throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address", ip));
         }
     }
-    
+
     private static void validateIpRange(String startIp, String endIp) {
         validateIp(startIp);
         validateIp(endIp);
@@ -97,20 +97,20 @@ public class NetworkUtils {
             throw new IllegalArgumentException(String.format("[%s, %s] is not an invalid ip range, end ip must be greater than start ip", startIp, endIp));
         }
     }
-    
+
     public static boolean isIpv4RangeOverlap(String startIp1, String endIp1, String startIp2, String endIp2) {
         validateIpRange(startIp1, endIp1);
         validateIpRange(startIp2, endIp2);
-        
+
         long s1 = ipv4StringToLong(startIp1);
         long e1 = ipv4StringToLong(endIp1);
         long s2 = ipv4StringToLong(startIp2);
         long e2 = ipv4StringToLong(endIp2);
-        
+
         if ((s1 >= s2 && s1 <= e2) || (s1 <= s2 && s2 <= e1)) {
             return true;
         }
-        
+
         return false;
     }
 
@@ -121,7 +121,7 @@ public class NetworkUtils {
     private static boolean isConsecutiveRange(Long[] allocatedIps) {
         return allocatedIps[allocatedIps.length - 1] - allocatedIps[0] + 1 == allocatedIps.length;
     }
-    
+
     private static String[] longToIpv4String(Long[] ips) {
         String[] ret = new String[ips.length];
         for (int i=0; i<ips.length; i++) {
@@ -129,20 +129,20 @@ public class NetworkUtils {
         }
         return ret;
     }
-    
+
     private static long findFirstHoleByDichotomy(Long[] allocatedIps) {
         if (isConsecutiveRange(allocatedIps)) {
             String[] ips = longToIpv4String(allocatedIps);
             List<String> dips = new ArrayList<String>(allocatedIps.length);
             Collections.addAll(dips, ips);
-            String err = "You can not ask me to find a hole in consecutive range!!! " + dips; 
+            String err = "You can not ask me to find a hole in consecutive range!!! " + dips;
             assert false : err;
         }
-        
+
         if (allocatedIps.length == 2) {
             return allocatedIps[0] + 1;
         }
-        
+
         int mIndex = allocatedIps.length / 2;
         Long[] part1 = Arrays.copyOfRange(allocatedIps, 0, mIndex);
         Long[] part2 = Arrays.copyOfRange(allocatedIps, mIndex, allocatedIps.length);
@@ -163,42 +163,42 @@ public class NetworkUtils {
         if (isConsecutiveRange(part1) && isConsecutiveRange(part2)) {
             return part1[part1.length-1] + 1;
         }
-        
+
         if (!isConsecutiveRange(part1)) {
             return findFirstHoleByDichotomy(part1);
         } else {
             return findFirstHoleByDichotomy(part2);
         }
     }
-    
+
     // The allocatedIps must be sorted!
     public static Long findFirstAvailableIpv4Address(Long startIp, Long endIp, Long[] allocatedIps) {
         Long ret = null;
         if (startIp > endIp) {
             throw new IllegalArgumentException(String.format("[%s, %s] is an invalid ip range, end ip must be greater than start ip", longToIpv4String(startIp), longToIpv4String(endIp)));
         }
-        
+
         if (allocatedIps.length == 0) {
             return startIp;
         }
-        
+
         long lastAllocatedIp = allocatedIps[allocatedIps.length-1];
         long firstAllocatedIp = allocatedIps[0];
         if (firstAllocatedIp < startIp || lastAllocatedIp > endIp) {
             throw new IllegalArgumentException(String.format("[%s, %s] is an invalid allocated ip range, it's not a sub range of ip range[%s, %s]", longToIpv4String(firstAllocatedIp), longToIpv4String(lastAllocatedIp), longToIpv4String(startIp), longToIpv4String(endIp)));
         }
-        
-        
+
+
         if (allocatedIps.length == endIp - startIp + 1) {
             /* The ip range is fully occupied*/
             return null;
         }
-        
+
         if (firstAllocatedIp > startIp) {
             /* The allocatedIps doesn't begin with startIp, then startIp is first available one*/
             return startIp;
         }
-        
+
         if (isConsecutiveRange(allocatedIps)) {
             /* the allocated ip range is consecutive, allocate the first one out of allocated ip range */
             ret = lastAllocatedIp + 1;
@@ -209,7 +209,7 @@ public class NetworkUtils {
         /* Now the allocated ip range is inconsecutive, we are going to find out the first *hole* in it */
         return findFirstHoleByDichotomy(allocatedIps);
     }
-    
+
     public static String findFirstAvailableIpv4Address(String startIp, String endIp, Long[] allocatedIps) {
         Long ret = findFirstAvailableIpv4Address(ipv4StringToLong(startIp), ipv4StringToLong(endIp), allocatedIps);
         return ret == null ? null : longToIpv4String(ret);
@@ -240,20 +240,20 @@ public class NetworkUtils {
     public static String randomAllocateIpv4Address(String startIp, String endIp, List<Long> allocatedIps) {
         return randomAllocateIpv4Address(ipv4StringToLong(startIp), ipv4StringToLong(endIp), allocatedIps);
     }
-    
+
     public static int getTotalIpInRange(String startIp, String endIp) {
         validateIpRange(startIp, endIp);
         long s = ipv4StringToLong(startIp);
         long e = ipv4StringToLong(endIp);
         return (int) (e - s + 1);
     }
-    
-    
+
+
     public static String getIpAddressByName(String hostName) throws UnknownHostException {
         InetAddress ia = InetAddress.getByName(hostName);
         return ia.getHostAddress();
     }
-    
+
     public static String generateMacWithDeviceId(short deviceId) {
         int seed = new Random().nextInt();
         String seedStr = Integer.toHexString(seed);
@@ -277,21 +277,21 @@ public class NetworkUtils {
         sb.append(deviceIdStr);
         return sb.toString();
     }
-    
+
     public static List<Pair<String, String>> findConsecutiveIpRange(Collection<String> ips) {
         List<Pair<String, String>> ret = new ArrayList<Pair<String, String>>();
         if (ips.isEmpty()) {
             return ret;
         }
-        
+
         TreeSet<Long> orderIps = new TreeSet<Long>();
         for (String ip : ips) {
             orderIps.add(ipv4StringToLong(ip));
         }
-        
+
         Long s = null;
         Long e = null;
-        
+
         for (Long ip : orderIps) {
             if (s == null || e == null) {
                 s = ip;
@@ -358,5 +358,31 @@ public class NetworkUtils {
         }
 
         return res;
+    }
+
+    public static List<String> getAllMac() {
+        try {
+            List<String> macs = new ArrayList<String>();
+            Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
+            while (ifaces.hasMoreElements()) {
+                NetworkInterface iface = ifaces.nextElement();
+
+                byte[] mac = iface.getHardwareAddress();
+                if (mac == null) {
+                    // lo device
+                    continue;
+                }
+
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < mac.length; i++) {
+                    sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? ":" : ""));
+                }
+
+                macs.add(sb.toString().toLowerCase());
+            }
+            return macs;
+        } catch (SocketException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
