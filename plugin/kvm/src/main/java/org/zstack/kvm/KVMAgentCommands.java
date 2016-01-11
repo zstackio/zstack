@@ -510,7 +510,7 @@ public class KVMAgentCommands {
         private Map<String, Object> addons;
         private boolean useVirtio;
         private String consoleMode;
-        private boolean nestedVirtualization;
+        private String nestedVirtualization;
 
         public IsoTO getBootIso() {
             return bootIso;
@@ -571,10 +571,10 @@ public class KVMAgentCommands {
         public void setConsoleMode(String consoleMode) {
             this.consoleMode = consoleMode;
         }
-        public boolean getNestedVirtualization() {
+        public String getNestedVirtualization() {
             return nestedVirtualization;
         }
-        public void setNestedVirtualization(boolean nestedVirtualization) {
+        public void setNestedVirtualization(String nestedVirtualization) {
             this.nestedVirtualization = nestedVirtualization;
         }
 		public VolumeTO getRootVolume() {

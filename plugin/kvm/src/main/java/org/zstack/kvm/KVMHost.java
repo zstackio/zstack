@@ -1189,7 +1189,7 @@ public class KVMHost extends HostBase implements Host {
 
         boolean virtio;
         String consoleMode;
-        boolean nestedVirtualization;
+        String nestedVirtualization;
         int cacheMode;
         String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
                 spec.getVmInventory().getPlatform();
@@ -1209,7 +1209,7 @@ public class KVMHost extends HostBase implements Host {
         VolumeTO rootVolume = new VolumeTO();
         consoleMode = KVMGlobalConfig.VM_CONSOLE_MODE.value(String.class);
         cacheMode = KVMGlobalConfig.LIBVIRT_CACHE_MODE.value(Integer.class);
-        nestedVirtualization = KVMGlobalConfig.NESTED_VIRTUALIZATION.value(Boolean.class);
+        nestedVirtualization = KVMGlobalConfig.NESTED_VIRTUALIZATION.value(String.class);
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
