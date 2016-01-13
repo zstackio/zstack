@@ -42,6 +42,9 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
+import org.zstack.header.network.l3.L3NetworkException;
+import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.tag.*;
@@ -72,10 +75,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 
 public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager, HostStatusChangeNotifyPoint,
-        ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint {
+        ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<String, VmInstanceFactory>());
     private List<String> createVmWorkFlowElements;
@@ -966,5 +971,22 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
         logger.debug(String.format("vm expunging task starts running, [period: %s seconds, interval: %s seconds]",
                 VmGlobalConfig.VM_EXPUNGE_PERIOD.value(Long.class), VmGlobalConfig.VM_EXPUNGE_INTERVAL.value(Long.class)));
+    }
+
+    @Override
+    public String preDeleteL3Network(L3NetworkInventory inventory) throws L3NetworkException {
+        return null;
+    }
+
+    @Override
+    public void beforeDeleteL3Network(L3NetworkInventory inventory) {
+    }
+
+    @Override
+    public void afterDeleteL3Network(L3NetworkInventory inventory) {
+        VmSystemTags.STATIC_IP.delete(null, VmSystemTags.STATIC_IP.instantiateTag(map(
+                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, inventory.getUuid()),
+                e(VmSystemTags.STATIC_IP_TOKEN, "%")
+        )));
     }
 }
