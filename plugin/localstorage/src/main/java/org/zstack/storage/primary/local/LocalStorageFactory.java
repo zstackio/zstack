@@ -384,7 +384,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public void preAttachVolume(VmInstanceInventory vm, final VolumeInventory volume) {
         SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-        q.select(LocalStorageResourceRefVO_.hostUuid);
         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, list(vm.getRootVolumeUuid(), volume.getUuid()));
         q.groupBy(LocalStorageResourceRefVO_.hostUuid);
         long count = q.count();

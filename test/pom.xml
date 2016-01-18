@@ -264,7 +264,6 @@
                             <resources>
                                 <resource>
                                     <directory>../conf</directory>
-                                    <filtering>true</filtering>
                                 </resource>
                             </resources>
                         </configuration>

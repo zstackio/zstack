@@ -5,12 +5,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.core.config.APIUpdateGlobalConfigMsg;
 import org.zstack.core.config.GlobalConfigInventory;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.cluster.ClusterInventory;
-import org.zstack.header.configuration.InstanceOffering;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostInventory;
@@ -56,7 +54,7 @@ public class TestLicense1 {
     @Before
     public void setUp() throws Exception {
         LicenseInfo licInfo = new LicenseInfo();
-        licInfo.setLicenseType(LicenseType.Trail);
+        licInfo.setLicenseType(LicenseType.Trial);
         MockLicenseManagerImpl.mockLicenseInfo = licInfo;
 
         DBUtil.reDeployDB();

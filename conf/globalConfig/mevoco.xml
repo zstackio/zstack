@@ -2,22 +2,6 @@
 <globalConfig xmlns="http://zstack.org/schema/zstack">
     <config>
         <category>mevoco</category>
-        <name>overProvisioning.memory</name>
-        <description>the over-provisioning raito of memory, which must be greater than 1. For example, 1.2 means to treat the memory as 120% of current size</description>
-        <defaultValue>1.2</defaultValue>
-        <type>java.lang.Double</type>
-    </config>
-
-    <config>
-        <category>mevoco</category>
-        <name>overProvisioning.primaryStorage</name>
-        <description>the over-provisioning raito of primary storage, which must be greater than 1. For example, 1.2 means to treat the primary storage as 120% of current size</description>
-        <defaultValue>1.2</defaultValue>
-        <type>java.lang.Double</type>
-    </config>
-
-    <config>
-        <category>mevoco</category>
         <name>hostAllocatorStrategy</name>
         <description>global host allocator strategy</description>
         <defaultValue>LeastVmPreferredHostAllocatorStrategy</defaultValue>
@@ -45,13 +29,5 @@
         <description>the sleep time before retrying a failed VM related API, in second</description>
         <type>java.lang.Integer</type>
         <defaultValue>3</defaultValue>
-    </config>
-
-    <config>
-        <category>mevoco</category>
-        <name>threshold.primaryStorage.physicalCapacity</name>
-        <description>the threshold of primary storage physical capacity. If the physical capacity usage exceeds this value, the primary storage is considered as full, and no volume can be created on it</description>
-        <type>java.lang.Double</type>
-        <defaultValue>0.6</defaultValue>
     </config>
 </globalConfig>

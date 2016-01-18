@@ -122,12 +122,15 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         class GlobalConfigInitializer {
             Map<String, GlobalConfig> configsFromXml = new HashMap<String, GlobalConfig>();
             Map<String, GlobalConfig> configsFromDatabase = new HashMap<String, GlobalConfig>();
+            List<Field> globalConfigFields = new ArrayList<Field>();
 
             void init() {
                 GLock lock = new GLock(LOCK, 320);
                 lock.lock();
                 try {
+                    parseGlobalConfigFields();
                     loadConfigFromXml();
+                    loadConfigFromJava();
                     loadConfigFromDatabase();
                     createValidatorForBothXmlAndDatabase();
                     validateConfigFromXml();
@@ -145,6 +148,69 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     throw new CloudRuntimeException(e);
                 } finally {
                     lock.unlock();
+                }
+            }
+
+            private void parseGlobalConfigFields() {
+                List<Class> definitionClasses = BeanUtils.scanClass("org.zstack", GlobalConfigDefinition.class);
+                for (Class def : definitionClasses) {
+                    for (Field field : def.getDeclaredFields()) {
+                        if (Modifier.isStatic(field.getModifiers()) && GlobalConfig.class.isAssignableFrom(field.getType())) {
+                            field.setAccessible(true);
+
+                            try {
+                                GlobalConfig config = (GlobalConfig) field.get(null);
+                                if (config == null) {
+                                    throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] defines a null GlobalConfig[%s]." +
+                                                    "You must assign a value to it using new GlobalConfig(category, name)",
+                                            def.getClass().getName(), field.getName()));
+                                }
+
+                                globalConfigFields.add(field);
+                            } catch (IllegalAccessException e) {
+                                throw new CloudRuntimeException(e);
+                            }
+                        }
+                    }
+                }
+            }
+
+            private void loadConfigFromJava() {
+                for (Field field : globalConfigFields) {
+                    try {
+                        GlobalConfig config = (GlobalConfig) field.get(null);
+                        if (config == null) {
+                            throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] defines a null GlobalConfig[%s]." +
+                                            "You must assign a value to it using new GlobalConfig(category, name)",
+                                    field.getDeclaringClass().getClass().getName(), field.getName()));
+                        }
+
+                        GlobalConfigDef d = field.getAnnotation(GlobalConfigDef.class);
+                        if (d == null) {
+                            continue;
+                        }
+
+                        GlobalConfig c = new GlobalConfig();
+                        c.setCategory(config.getCategory());
+                        c.setName(config.getName());
+                        c.setDescription(d.description());
+                        c.setDefaultValue(d.defaultValue());
+                        c.setValue(d.defaultValue());
+                        c.setType(d.type().getName());
+                        if (!"".equals(d.validatorRegularExpression())) {
+                            c.setValidatorRegularExpression(d.validatorRegularExpression());
+                        }
+
+                        if (configsFromXml.containsKey(c.getIdentity())) {
+                            throw new CloudRuntimeException(String.format("duplicate global configuration. %s defines a" +
+                                    " global config[category: %s, name: %s] that has been defined by a XML configure or" +
+                                    " another java class", field.getDeclaringClass().getName(), c.getCategory(), c.getName()));
+                        }
+
+                        configsFromXml.put(c.getIdentity(), c);
+                    } catch (IllegalAccessException e) {
+                        throw new CloudRuntimeException(e);
+                    }
                 }
             }
 
@@ -311,30 +377,25 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             }
 
             private void link() {
-                List<Class> definitionClasses = BeanUtils.scanClass("org.zstack", GlobalConfigDefinition.class);
-                for (Class def : definitionClasses) {
-                    for (Field field : def.getDeclaredFields()) {
-                        if (Modifier.isStatic(field.getModifiers()) && GlobalConfig.class.isAssignableFrom(field.getType())) {
-                            field.setAccessible(true);
-                            try {
-                                GlobalConfig config = (GlobalConfig) field.get(null);
-                                if (config == null) {
-                                    throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] defines a null GlobalConfig[%s]." +
-                                                    "You must assign a value to it using new GlobalConfig(category, name)",
-                                            def.getClass().getName(), field.getName()));
-                                }
-
-                                link(field, config);
-                            } catch (IllegalAccessException e) {
-                                throw new CloudRuntimeException(e);
-                            }
+                for (Field field : globalConfigFields) {
+                    field.setAccessible(true);
+                    try {
+                        GlobalConfig config = (GlobalConfig) field.get(null);
+                        if (config == null) {
+                            throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] defines a null GlobalConfig[%s]." +
+                                    "You must assign a value to it using new GlobalConfig(category, name)",
+                                    field.getDeclaringClass().getName(), field.getName()));
                         }
+
+                        link(field, config);
+                    } catch (IllegalAccessException e) {
+                        throw new CloudRuntimeException(e);
                     }
                 }
 
                 for (GlobalConfig c : configsFromXml.values()) {
                     if (!c.isLinked()) {
-                        logger.warn(String.format("GlobalConfig[catetory: %s, name: %s] is not linked to any definition", c.getCategory(), c.getName()));
+                        logger.warn(String.format("GlobalConfig[category: %s, name: %s] is not linked to any definition", c.getCategory(), c.getName()));
                     }
                 }
             }
