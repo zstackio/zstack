@@ -100,7 +100,7 @@ public class TestLicense1 {
 
         // can add host with prepaid license
         LicenseInfo licInfo = new LicenseInfo();
-        licInfo.setLicenseType(LicenseType.Prepaid);
+        licInfo.setLicenseType(LicenseType.Paid);
         licInfo.setHostNum(2);
         MockLicenseManagerImpl.mockLicenseInfo = licInfo;
         KVMHostInventory host =  api.addKvmHost("host2", "127.0.0.1", cluster.getUuid());
@@ -267,7 +267,7 @@ public class TestLicense1 {
 
         // prepaid license with 10 host, the addHost capability should be true
         licInfo = new LicenseInfo();
-        licInfo.setLicenseType(LicenseType.Prepaid);
+        licInfo.setLicenseType(LicenseType.Paid);
         licInfo.setHostNum(10);
         MockLicenseManagerImpl.mockLicenseInfo = licInfo;
         caps = api.getLicenseCapabilities();

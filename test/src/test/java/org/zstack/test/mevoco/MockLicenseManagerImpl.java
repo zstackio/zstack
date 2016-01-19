@@ -12,7 +12,7 @@ public class MockLicenseManagerImpl extends LicenseManagerImpl {
 
     static {
         LicenseInfo l = new LicenseInfo();
-        l.setLicenseType(LicenseType.Prepaid);
+        l.setLicenseType(LicenseType.Paid);
         l.setHostNum(10);
         mockLicenseInfo = l;
     }
