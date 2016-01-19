@@ -7,6 +7,7 @@ import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeInventory;
@@ -346,6 +347,17 @@ public class VmInstanceSpec implements Serializable {
     public void setDataIsoPath(String dataIsoPath) {
         this.dataIsoPath = dataIsoPath;
     }
-	
-	
+
+
+    public List<String> getRequiredNetworkServiceTypes() {
+        List<String> nsTypes = new ArrayList<String>();
+        if (getL3Networks() != null) {
+            for (L3NetworkInventory l3 : getL3Networks()) {
+                for (NetworkServiceL3NetworkRefInventory ref : l3.getNetworkServices()) {
+                    nsTypes.add(ref.getNetworkServiceType());
+                }
+            }
+        }
+        return nsTypes;
+    }
 }
