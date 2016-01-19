@@ -20,7 +20,7 @@
         <name>apiRetry.vm</name>
         <description>the retry times when a VM related API fails</description>
         <type>java.lang.Integer</type>
-        <defaultValue>3</defaultValue>
+        <defaultValue>0</defaultValue>
     </config>
 
     <config>
