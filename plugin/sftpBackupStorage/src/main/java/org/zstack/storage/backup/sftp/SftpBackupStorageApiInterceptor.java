@@ -57,10 +57,9 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor {
 
         SimpleQuery<SftpBackupStorageVO> q = dbf.createQuery(SftpBackupStorageVO.class);
         q.add(SftpBackupStorageVO_.hostname, Op.EQ, msg.getHostname());
-        q.add(SftpBackupStorageVO_.url, Op.EQ, msg.getUrl());
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("there has been a sftp backup storage[hostname:%s, url:%s] existing", msg.getHostname(), msg.getUrl())
+                    String.format("duplicate backup storage. There has been a sftp backup storage[hostname:%s] existing", msg.getHostname())
             ));
         }
     }
