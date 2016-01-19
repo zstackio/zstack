@@ -555,12 +555,12 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             if (nicUuidsToExclued.isEmpty()) {
                 sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
                         "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType group by nic.uuid";
+                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
             } else {
                 sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
                         "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType and nic.uuid not in (:nicUuids) group by nic.uuid";
+                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (:nicUuids) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
                 q.setParameter("nicUuids", nicUuidsToExclued);
             }
@@ -569,13 +569,13 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             if (nicUuidsToExclued.isEmpty()) {
                 sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
                         "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType and nic.uuid in (:iuuids) group by nic.uuid";
+                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid in (:iuuids) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
                 q.setParameter("iuuids", nicUuidsToInclude);
             } else {
                 sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
                         "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType and nic.uuid not in (:nicUuids) and nic.uuid in (:iuuids) group by nic.uuid";
+                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (:nicUuids) and nic.uuid in (:iuuids) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
                 q.setParameter("nicUuids", nicUuidsToExclued);
                 q.setParameter("iuuids", nicUuidsToInclude);
@@ -585,6 +585,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         q.setParameter("sgUuid", sgId);
         q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
+        q.setParameter("vmStates", list(VmInstanceState.Running, VmInstanceState.Stopped));
         return q.getResultList();
     }
 
