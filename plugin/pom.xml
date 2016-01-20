@@ -23,6 +23,7 @@
         <module>localstorage</module>
         <module>ceph</module>
         <module>loadBalancer</module>
+        <module>flatNetworkProvider</module>
     </modules>
     <dependencies>
         <dependency>
