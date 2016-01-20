@@ -31,6 +31,8 @@
         <property name="numHelperThreads" value="${DbFacadeDataSource.numHelperThreads:15}" />
         <property name="acquireIncrement" value="50" />
         <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}"/>
+        <property name="testConnectionOnCheckout" value="${DbFacadeDataSource.testConnectionOnCheckout:false}"/>
+        <property name="preferredTestQuery" value="SELECT 1"/>
         <!--
         <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}" />
         <property name="unreturnedConnectionTimeout" value="10" />
@@ -47,7 +49,9 @@
         <property name="idleConnectionTestPeriod" value="${DbFacadeDataSource.idleConnectionTestPeriod:3000}" />
         <property name="loginTimeout" value="${DbFacadeDataSource.loginTimeout:300}" />
         <property name="connectionCustomizerClassName" value="org.zstack.core.db.TransactionIsolationLevelSetter" />
+        <property name="testConnectionOnCheckout" value="${DbFacadeDataSource.testConnectionOnCheckout:false}"/>
         <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}"/>
+        <property name="preferredTestQuery" value="SELECT 1"/>
     </bean>
 
     <bean id="entityManagerFactory"

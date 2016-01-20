@@ -114,6 +114,13 @@ class SimulatorHost extends HostBase {
 	    }
 	}
 
+    private void handle(MigrateVmOnHypervisorMsg msg) {
+        config.removeVm(msg.getSrcHostUuid(), msg.getVmInventory().getUuid());
+        config.putVm(msg.getDestHostInventory().getUuid(), msg.getVmInventory().getUuid(), VmInstanceState.Running);
+        MigrateVmOnHypervisorReply reply = new MigrateVmOnHypervisorReply();
+        bus.reply(msg, reply);
+    }
+
     private void handle(VmAttachNicOnHypervisorMsg msg) {
         bus.reply(msg, new VmAttachNicOnHypervisorReply());
     }

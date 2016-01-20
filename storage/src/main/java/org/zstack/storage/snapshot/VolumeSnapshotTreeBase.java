@@ -242,7 +242,7 @@ public class VolumeSnapshotTreeBase {
             }
 
             @Override
-            public void rollback(final FlowTrigger trigger, Map data) {
+            public void rollback(final FlowRollback trigger, Map data) {
                 changeStatusOfSnapshots(StatusEvent.ready, currentLeaf.getDescendants(), new Completion(trigger) {
                     @Override
                     public void success() {
@@ -474,8 +474,10 @@ public class VolumeSnapshotTreeBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
-                            amsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
+                            amsg.setRequiredPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                             amsg.setSize(info.neededSizeOnWorkspacePrimaryStorage);
+                            amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadSnapshot.toString());
+                            amsg.setNoOverProvisioning(true);
                             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                             bus.send(amsg, new CloudBusCallBack(trigger) {
                                 @Override
@@ -491,10 +493,11 @@ public class VolumeSnapshotTreeBase {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
                                 ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                 rmsg.setDiskSize(info.neededSizeOnWorkspacePrimaryStorage);
+                                rmsg.setNoOverProvisioning(true);
                                 rmsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                                 bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
                                 bus.send(rmsg);
@@ -531,7 +534,7 @@ public class VolumeSnapshotTreeBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (info.bitsInstallPath != null) {
                             DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
                             dmsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(getSelfInventory().getFormat()).toString());
@@ -543,7 +546,7 @@ public class VolumeSnapshotTreeBase {
                             bus.send(dmsg);
                         }
 
-                        trigger.next();
+                        trigger.rollback();
                     }
                 });
 
@@ -556,6 +559,7 @@ public class VolumeSnapshotTreeBase {
                             ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                             rmsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                             rmsg.setDiskSize(info.totalSnapshotSize);
+                            rmsg.setNoOverProvisioning(true);
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
                             bus.send(rmsg);
                             trigger.next();
@@ -913,8 +917,10 @@ public class VolumeSnapshotTreeBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
-                            amsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
+                            amsg.setRequiredPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                             amsg.setSize(info.neededSizeOnWorkspacePrimaryStorage);
+                            amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadSnapshot.toString());
+                            amsg.setNoOverProvisioning(true);
                             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                             bus.send(amsg, new CloudBusCallBack(trigger) {
                                 @Override
@@ -930,10 +936,11 @@ public class VolumeSnapshotTreeBase {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
                                 ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                 rmsg.setDiskSize(info.neededSizeOnWorkspacePrimaryStorage);
+                                rmsg.setNoOverProvisioning(true);
                                 rmsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                                 bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
                                 bus.send(rmsg);
@@ -1006,7 +1013,7 @@ public class VolumeSnapshotTreeBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (!info.destBackupStorages.isEmpty()) {
                             List<ReturnBackupStorageMsg> rmsgs = CollectionUtils.transformToList(info.destBackupStorages, new Function<ReturnBackupStorageMsg, BackupStorageInventory>() {
                                 @Override
@@ -1109,7 +1116,7 @@ public class VolumeSnapshotTreeBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (!info.results.isEmpty()) {
                             List<DeleteBitsOnBackupStorageMsg> dmsgs = CollectionUtils.transformToList(info.results, new Function<DeleteBitsOnBackupStorageMsg, CreateTemplateFromVolumeSnapshotResult>() {
                                 @Override
@@ -1148,6 +1155,7 @@ public class VolumeSnapshotTreeBase {
                         public void run(FlowTrigger trigger, Map data) {
                             ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                             rmsg.setDiskSize(info.totalSnapshotSize);
+                            rmsg.setNoOverProvisioning(true);
                             rmsg.setPrimaryStorageUuid(info.workspacePrimaryStorage.getUuid());
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
                             bus.send(rmsg);
@@ -1485,7 +1493,7 @@ public class VolumeSnapshotTreeBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         for (Info info : needBackup) {
                             if (info.destBackupStorage != null) {
                                 ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
@@ -1541,7 +1549,7 @@ public class VolumeSnapshotTreeBase {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         List<VolumeSnapshotBackupStorageDeletionMsg> dmsgs = CollectionUtils.transformToList(needBackup, new Function<VolumeSnapshotBackupStorageDeletionMsg, Info>() {
                             @Override
                             public VolumeSnapshotBackupStorageDeletionMsg call(Info arg) {

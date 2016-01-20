@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <category>mevoco</category>
+        <name>hostAllocatorStrategy</name>
+        <description>global host allocator strategy</description>
+        <defaultValue>LeastVmPreferredHostAllocatorStrategy</defaultValue>
+    </config>
+
+    <config>
+        <category>mevoco</category>
+        <name>distributeImage</name>
+        <description>whether to destribute images to primary storage cache after they are added</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>true</defaultValue>
+    </config>
+
+    <config>
+        <category>mevoco</category>
+        <name>apiRetry.vm</name>
+        <description>the retry times when a VM related API fails</description>
+        <type>java.lang.Integer</type>
+        <defaultValue>0</defaultValue>
+    </config>
+
+    <config>
+        <category>mevoco</category>
+        <name>apiRetry.interval.vm</name>
+        <description>the sleep time before retrying a failed VM related API, in second</description>
+        <type>java.lang.Integer</type>
+        <defaultValue>3</defaultValue>
+    </config>
+</globalConfig>

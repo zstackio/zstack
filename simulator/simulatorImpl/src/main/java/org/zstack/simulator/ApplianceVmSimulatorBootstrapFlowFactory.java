@@ -2,6 +2,7 @@ package org.zstack.simulator;
 
 import org.zstack.appliancevm.ApplianceVmBootstrapFlowFactory;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.simulator.SimulatorConstant;
 
@@ -24,7 +25,7 @@ public class ApplianceVmSimulatorBootstrapFlowFactory implements ApplianceVmBoot
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 trigger.rollback();
             }
         };

@@ -26,6 +26,8 @@ import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.RangeSet;
@@ -34,6 +36,8 @@ import org.zstack.utils.function.Function;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 public abstract class ApplianceVmBase extends VmInstanceBase implements ApplianceVm {
     @Autowired
@@ -81,6 +85,12 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         flows.add(new ApplianceVmSetFirewallFlow());
 
         return flows;
+    }
+
+    @Override
+    protected void destroyHook(VmInstanceDeletionPolicy deletionPolicy, final Completion completion){
+        logger.debug(String.format("deleting appliance vm[uuid:%s], always use Direct deletion policy", self.getUuid()));
+        super.doDestroy(VmInstanceDeletionPolicy.Direct, completion);
     }
 
     @Override
@@ -357,8 +367,8 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     }
 
     @Override
-    protected VmInstanceSpec buildSpecFromInventory(VmInstanceInventory inv) {
-        VmInstanceSpec spec = super.buildSpecFromInventory(inv);
+    protected VmInstanceSpec buildSpecFromInventory(VmInstanceInventory inv, VmOperation operation) {
+        VmInstanceSpec spec = super.buildSpecFromInventory(inv, operation);
         spec.putExtensionData(ApplianceVmConstant.Params.applianceVmSubType.toString(), getSelf().getApplianceVmType());
         return spec;
     }
@@ -396,7 +406,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 self = dbf.reload(self);
                 getSelf().setStatus(originStatus);
                 self = dbf.updateAndRefresh(self);
@@ -434,7 +444,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 self = dbf.reload(self);
                 getSelf().setStatus(originStatus);
                 self = dbf.updateAndRefresh(self);
@@ -486,13 +496,14 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                originStatus = getSelf().getStatus();
                 getSelf().setStatus(ApplianceVmStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);
                 trigger.next();
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 self = dbf.reload(self);
                 getSelf().setStatus(originStatus);
                 self = dbf.updateAndRefresh(self);
@@ -544,7 +555,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
 
             @Override
-            public void rollback(FlowTrigger trigger, Map data) {
+            public void rollback(FlowRollback trigger, Map data) {
                 self = dbf.reload(self);
                 getSelf().setStatus(originStatus);
                 self = dbf.updateAndRefresh(self);
@@ -649,6 +660,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             spec.putExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), aspec);
             spec.setCurrentVmOperation(VmInstanceConstant.VmOperation.NewCreate);
             spec.putExtensionData(ApplianceVmConstant.Params.applianceVmSubType.toString(), getSelf().getApplianceVmType());
+            spec.setBootOrders(list(VmBootDevice.HardDisk.toString()));
 
             changeVmStateInDb(VmInstanceStateEvent.starting);
 

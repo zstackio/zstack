@@ -3,7 +3,9 @@ package org.zstack.portal.managementnode;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -17,9 +19,8 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.safeguard.Guard;
-import org.zstack.core.safeguard.SafeGuard;
-import org.zstack.core.thread.SyncThread;
+import org.zstack.core.defer.Deferred;
+import org.zstack.core.defer.Defer;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -58,18 +59,34 @@ public class ManagementNode implements CloudBusEventListener {
 
     private JdbcTemplate jdbc;
     private Connection heartbeatDbConnection;
+    private SingleConnectionDataSource dbSource;
     private EventSubscriberReceipt unsubscriber;
     private ManagementNodeChangeListener nodeManagerCallback;
 
-    public ManagementNode() {
-        myEvents = new Event[] { new ManagementNodeJoinEvent(), new ManagementNodeLeftEvent(), };
+    private void createJdbcTemplate() {
+        if (dbSource != null) {
+            dbSource.destroy();
+        }
+        if (heartbeatDbConnection != null) {
+            try {
+                heartbeatDbConnection.close();
+            } catch (SQLException e) {
+                logger.warn(e.getMessage(), e);
+            }
+        }
+
         try {
             heartbeatDbConnection = dbf.getExtraDataSource().getConnection();
-            SingleConnectionDataSource dbSource = new SingleConnectionDataSource(heartbeatDbConnection, true);
+            dbSource = new SingleConnectionDataSource(heartbeatDbConnection, true);
             jdbc = new JdbcTemplate(dbSource);
         } catch (SQLException e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    public ManagementNode() {
+        myEvents = new Event[] { new ManagementNodeJoinEvent(), new ManagementNodeLeftEvent(), };
+        createJdbcTemplate();
     }
 
     private void setNodeRunning() {
@@ -152,7 +169,7 @@ public class ManagementNode implements CloudBusEventListener {
                         continue;
                     }
 
-                    Timestamp curr = getCurrentSqlTime();
+                    Timestamp curr = dbf.getCurrentSqlTime();
                     Timestamp lastHeartbeat = vo.getHeartBeat();
                     long end = lastHeartbeat.getTime() + TimeUnit.SECONDS.toMillis(2 * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
                     if (end < curr.getTime()) {
@@ -179,7 +196,13 @@ public class ManagementNode implements CloudBusEventListener {
                             checkAllNodesHealth();
                         }
                     } catch (Throwable t) {
-                        logger.warn("unhandled exception happened", t);
+                        if (t instanceof RecoverableDataAccessException || t instanceof DataAccessResourceFailureException) {
+                            logger.warn(String.format("cannot communicate to the database, it's most likely the DB stopped or rebooted;" +
+                                    "try creating a new database connection. %s", t.getMessage()), t);
+                            createJdbcTemplate();
+                        } else {
+                            logger.warn("unhandled exception happened", t);
+                        }
                     }
 
                     try {
@@ -211,7 +234,7 @@ public class ManagementNode implements CloudBusEventListener {
         startHeartbeat();
     }
 
-    @Guard
+    @Deferred
     public String join() {
         try {
             if (node == null) {
@@ -219,7 +242,7 @@ public class ManagementNode implements CloudBusEventListener {
                 vo.setHostName(Platform.getManagementServerIp());
                 vo.setUuid(Platform.getManagementServerId());
                 node = dbf.persistAndRefresh(vo);
-                SafeGuard.guard(new Runnable() {
+                Defer.guard(new Runnable() {
                     @Override
                     public void run() {
                         deleteNode(vo.getUuid());
@@ -229,7 +252,7 @@ public class ManagementNode implements CloudBusEventListener {
 
                 unsubscriber = bus.subscribeEvent(this, myEvents);
                 final ManagementNode grid = this;
-                SafeGuard.guard(new Runnable() {
+                Defer.guard(new Runnable() {
                     @Override
                     public void run() {
                         unsubscriber.unsubscribeAll();
@@ -274,12 +297,6 @@ public class ManagementNode implements CloudBusEventListener {
             ids.add(vo.getUuid());
         }
         return ids;
-    }
-
-    @Transactional
-    private Timestamp getCurrentSqlTime() {
-        Query query = dbf.getEntityManager().createNativeQuery("select current_timestamp()");
-        return (Timestamp) query.getSingleResult();
     }
 
 

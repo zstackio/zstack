@@ -11,4 +11,8 @@
         <serviceId>query</serviceId>
     </message>
 
+    <message>
+        <name>org.zstack.header.managementnode.APIGetVersionMsg</name>
+    </message>
+
 </service>

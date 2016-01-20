@@ -1,5 +1,6 @@
 package org.zstack.portal.apimediator;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -127,12 +128,11 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
             }
         }
 
-        Set<GlobalApiMessageInterceptor> gis = null;
+        Set<GlobalApiMessageInterceptor> gis = new HashSet<GlobalApiMessageInterceptor>();
         for (Map.Entry<Class, Set<GlobalApiMessageInterceptor>> e : globalInterceptors.entrySet()) {
             Class baseMsgClz = e.getKey();
             if (baseMsgClz.isAssignableFrom(desc.getClazz())) {
-                gis = e.getValue();
-                break;
+                gis.addAll(e.getValue());
             }
         }
 
@@ -140,18 +140,17 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         List<GlobalApiMessageInterceptor> front = new ArrayList<GlobalApiMessageInterceptor>();
         List<GlobalApiMessageInterceptor> end = new ArrayList<GlobalApiMessageInterceptor>();
 
-        if (gis != null) {
-            for (GlobalApiMessageInterceptor gi : gis) {
-                logger.debug(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
-                if (gi.getPosition() == GlobalApiMessageInterceptor.InterceptorPosition.FRONT) {
-                    front.add(gi);
-                } else if (gi.getPosition() == InterceptorPosition.END){
-                    end.add(gi);
-                } else if (gi.getPosition() == InterceptorPosition.SYSTEM) {
-                    system.add(gi);
-                }
+        for (GlobalApiMessageInterceptor gi : gis) {
+            logger.debug(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
+            if (gi.getPosition() == InterceptorPosition.FRONT) {
+                front.add(gi);
+            } else if (gi.getPosition() == InterceptorPosition.END){
+                end.add(gi);
+            } else if (gi.getPosition() == InterceptorPosition.SYSTEM) {
+                system.add(gi);
             }
         }
+
         for (GlobalApiMessageInterceptor gi : globalInterceptorsForAllMsg) {
             logger.debug(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
             if (gi.getPosition() == GlobalApiMessageInterceptor.InterceptorPosition.FRONT) {
@@ -288,6 +287,22 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                         throw new  ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                                 String.format("field[%s] must be a nonempty list", f.getName())
                         ));
+                    }
+                }
+
+                if (value != null &&!at.emptyString()) {
+                    if (value instanceof String && StringUtils.isEmpty((String) value)) {
+                        throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                                String.format("field[%s] cannot be an empty string", f.getName())
+                        ));
+                    } else if (value instanceof Collection) {
+                        for (Object v : (Collection)value) {
+                            if (v instanceof String && StringUtils.isEmpty((String)v)) {
+                                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                                        String.format("field[%s] cannot contain any empty string", f.getName())
+                                ));
+                            }
+                        }
                     }
                 }
 

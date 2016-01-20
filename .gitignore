@@ -20,3 +20,5 @@ test/unitTestSuiteReport/*
 .setting
 *.log
 premium/
+*.orig
+*.rej

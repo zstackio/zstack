@@ -3,6 +3,7 @@ package org.zstack.test.cascade;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -23,6 +24,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmInstance;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
@@ -63,6 +65,7 @@ public class TestCascadeDeletion16 {
 
     @Test
     public void test() throws ApiSenderException, InterruptedException {
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         ZoneInventory zone = deployer.zones.get("Zone1");
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network2");
         api.deleteL3Network(l3.getUuid());

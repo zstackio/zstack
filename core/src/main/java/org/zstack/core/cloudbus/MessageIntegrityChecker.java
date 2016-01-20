@@ -24,6 +24,7 @@ public class MessageIntegrityChecker implements Component {
         scanner.addIncludeFilter(new AssignableTypeFilter(APIEvent.class));
         scanner.addIncludeFilter(new AssignableTypeFilter(APIMessage.class));
         scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
+        scanner.addExcludeFilter(new AnnotationTypeFilter(org.springframework.stereotype.Component.class));
         for (String pkg : getBasePkgs()) {
             for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
                 Class<?> clazz;

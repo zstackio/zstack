@@ -1,9 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <service xmlns="http://zstack.org/schema/zstack">
     <id>storage.primary</id>
+    <interceptor>LocalStorageApiInterceptor</interceptor>
 
     <message>
         <name>org.zstack.storage.primary.local.APIAddLocalPrimaryStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.primary.local.APIQueryLocalStorageResourceRefMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.primary.local.APILocalStorageMigrateVolumeMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.primary.local.APILocalStorageGetVolumeMigratableHostsMsg</name>
     </message>
 
 </service>

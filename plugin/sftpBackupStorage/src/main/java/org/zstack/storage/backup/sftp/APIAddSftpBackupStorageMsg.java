@@ -50,7 +50,7 @@ import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
  * see :ref:`APIAddBackupStorageEvent`
  */
 public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, emptyString = false)
     private String hostname;
     @APIParam(maxLength = 255)
     private String username;

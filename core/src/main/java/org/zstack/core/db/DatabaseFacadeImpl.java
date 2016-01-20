@@ -469,6 +469,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     @Override
+    @DeadlockAutoRestart
     public void removeCollection(Collection entities, Class entityClass) {
         if (entities.isEmpty()) {
             return;
@@ -478,6 +479,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     @Override
+    @DeadlockAutoRestart
     public void removeByPrimaryKeys(Collection priKeys, Class entityClazz) {
         if (priKeys.isEmpty()) {
             return;
@@ -498,6 +500,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     @Override
+    @DeadlockAutoRestart
     public void removeByPrimaryKey(Object primaryKey, Class<?> entityClass) {
         getEntityInfo(entityClass).removeByPrimaryKey(primaryKey);
     }
@@ -580,12 +583,17 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         return (T) getEntityInfo(entity.getClass()).reload(entity);
 	}
 
-    @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void updateCollection(Collection entities) {
+    private void doUpdateCollection(Collection entities) {
         for (Object e : entities) {
             getEntityManager().merge(e);
         }
+    }
+
+    @Override
+    @DeadlockAutoRestart
+    public void updateCollection(Collection entities) {
+        doUpdateCollection(entities);
     }
 
     @Override
@@ -729,6 +737,13 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
                 exts.add(ext);
             }
         }
+    }
+
+    @Transactional
+    @Override
+    public Timestamp getCurrentSqlTime() {
+        Query query = getEntityManager().createNativeQuery("select current_timestamp()");
+        return (Timestamp) query.getSingleResult();
     }
 
     @Override

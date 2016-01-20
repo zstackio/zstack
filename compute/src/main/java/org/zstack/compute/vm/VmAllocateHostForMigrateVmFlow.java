@@ -7,7 +7,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.allocator.AllocateHostReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
@@ -32,8 +34,10 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
     @Autowired
     protected ErrorFacade errf;
 
+    private static final String SUCCESS = VmAllocateHostForMigrateVmFlow.class.getName();
+
     @Override
-    public void run(final FlowTrigger chain, Map data) {
+    public void run(final FlowTrigger chain, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         String destHostUuid = null;
@@ -68,6 +72,7 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
                 if (reply.isSuccess()) {
                     AllocateHostReply ar = (AllocateHostReply)reply;
                     spec.setDestHost(ar.getHost());
+                    data.put(SUCCESS, true);
                     chain.next();
                 } else {
                     chain.fail(reply.getError());
@@ -77,7 +82,16 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger chain, Map data) {
+    public void rollback(FlowRollback chain, Map data) {
+        if (data.containsKey(SUCCESS)) {
+            final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+            ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
+            msg.setHostUuid(spec.getDestHost().getUuid());
+            msg.setCpuCapacity(spec.getVmInventory().getCpuNum() * spec.getVmInventory().getCpuSpeed());
+            msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
+            bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
+            bus.send(msg);
+        }
         chain.rollback();
     }
 }

@@ -38,7 +38,7 @@ public class TestSimpleFlow8 {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
                         count[0] ++;
-                        chain.rollback();
+                        chain.fail(null);
                     }
                 })
                 .then(new NoRollbackFlow() {

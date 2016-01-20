@@ -4,7 +4,7 @@
         <instanceOffering name="TestInstanceOffering"
             description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000" />
         <instanceOffering name="TestInstanceOffering1"
-                          description="Test" memoryCapacity="4G" cpuNum="3" cpuSpeed="2600" />
+                          description="Test" memoryCapacity="2G" cpuNum="3" cpuSpeed="2600" />
     </instanceOfferings>
 
     <backupStorages>
@@ -33,6 +33,7 @@
             <l3NetworkRef>TestL3Network3</l3NetworkRef>
             <defaultL3NetworkRef>TestL3Network1</defaultL3NetworkRef>
             <diskOfferingRef>TestDataDiskOffering</diskOfferingRef>
+            <hostRef>TestHost1</hostRef>
         </userVm>
     </vm>
 

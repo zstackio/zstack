@@ -54,8 +54,9 @@
 	
 	<TestCase class="org.zstack.test.core.errorcode.TestErrorCode"/>
 
-	<TestCase class="org.zstack.test.core.safeguard.TestSafeGuard"/>
-	<TestCase class="org.zstack.test.core.safeguard.TestSafeGuardComplex"/>
+    <TestCase class="org.zstack.test.core.defer.TestDefer"/>
+	<TestCase class="org.zstack.test.core.defer.TestDefer1"/>
+	<TestCase class="org.zstack.test.core.defer.TestDefer2"/>
 
     <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow"/>
     <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow1"/>
@@ -68,6 +69,7 @@
     <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow8"/>
     <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow9"/>
     <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow10"/>
+    <TestCase class="org.zstack.test.core.workflow.TestSimpleFlow11"/>
     <TestCase class="org.zstack.test.core.workflow.TestShareFlow"/>
     <TestCase class="org.zstack.test.core.workflow.TestShareFlow1"/>
     <TestCase class="org.zstack.test.core.workflow.TestShareFlow2"/>
@@ -108,6 +110,8 @@
     <TestCase class="org.zstack.test.aop.TestAsyncBackup5" />
     <TestCase class="org.zstack.test.aop.TestAsyncBackup6" />
     <TestCase class="org.zstack.test.aop.TestAsyncBackup7" />
+    <TestCase class="org.zstack.test.aop.TestAsyncBackup8" />
+    <TestCase class="org.zstack.test.aop.TestAsyncBackup9" />
     <TestCase class="org.zstack.test.aop.TestWith" />
     <TestCase class="org.zstack.test.aop.TestWith1" />
     <TestCase class="org.zstack.test.aop.TestCompletionCallOnce" />
@@ -133,4 +137,6 @@
     <TestCase class="org.zstack.test.core.gc.TestGC1" />
     <TestCase class="org.zstack.test.core.gc.TestGC2" />
     <TestCase class="org.zstack.test.core.gc.TestGC3" />
+    <TestCase class="org.zstack.test.core.gc.TestGC4" />
+    <TestCase class="org.zstack.test.core.gc.TestGC5" />
 </UnitTestSuiteConfig>

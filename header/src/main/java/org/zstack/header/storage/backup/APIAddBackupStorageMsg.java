@@ -10,7 +10,7 @@ public abstract class APIAddBackupStorageMsg extends APICreateMessage {
      *
      * max length of 2048 characters
      */
-	@APIParam(maxLength = 2048)
+	@APIParam(maxLength = 2048, emptyString = false)
 	private String url;
     /**
      * @desc

@@ -70,6 +70,11 @@ public class VolumeAO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public VolumeAO() {
         this.state = VolumeState.Enabled;
     }

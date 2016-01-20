@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
@@ -21,8 +22,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.BackupStorageInventory;
@@ -40,7 +41,8 @@ import org.zstack.storage.backup.BackupStoragePathMaker;
 import org.zstack.storage.backup.sftp.SftpBackupStorageVO;
 import org.zstack.storage.backup.sftp.SftpBackupStorageVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
-import org.zstack.storage.primary.PrimaryStorageManager;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.header.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageCommands.*;
 import org.zstack.storage.primary.iscsi.IscsiIsoStoreManager.IscsiIsoSpec;
 import org.zstack.utils.DebugUtils;
@@ -229,8 +231,8 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         ImageSpec imageSpec;
 
         void run(final ReturnValueCompletion<ImageCacheVO> completion) {
-            DebugUtils.Assert(imageSpec!=null, "imageSpec cannot be null");
-            DebugUtils.Assert(bs!=null, "backup storage cannot bel null");
+            DebugUtils.Assert(imageSpec != null, "imageSpec cannot be null");
+            DebugUtils.Assert(bs != null, "backup storage cannot bel null");
 
             thdf.chainSubmit(new ChainTask(completion) {
                 @Override
@@ -273,14 +275,81 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         }
 
         private void downloadToCache(final ImageCacheVO cvo, final Completion completion) {
-            IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bs.getType()));
+            final IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bs.getType()));
 
             final String imagePathInCache = ImageMediaType.ISO.toString().equals(imageSpec.getInventory().getMediaType()) ?
                     makeIsoPathInImageCache(imageSpec.getInventory().getUuid()) : makePathInImageCache(imageSpec.getInventory().getUuid());
-            mediator.downloadBits(getSelfInventory(), bs,
-                    imageSpec.getSelectedBackupStorage().getInstallPath(),  imagePathInCache, new Completion() {
+
+            FlowChain chain  = FlowChainBuilder.newShareFlowChain();
+            chain.setName(String.format("download-image-%s-to-iscsi-primary-storage-%s", imageSpec.getInventory().getUuid(), self.getUuid()));
+            chain.then(new ShareFlow() {
+                @Override
+                public void setup() {
+                    if (cvo == null) {
+                        flow(new Flow() {
+                            String __name__ = "allocate-primary-storage";
+
+                            boolean s = true;
+
+                            @Override
+                            public void run(final FlowTrigger trigger, Map data) {
+                                AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                                amsg.setRequiredPrimaryStorageUuid(self.getUuid());
+                                amsg.setSize(imageSpec.getInventory().getSize());
+                                amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
+                                amsg.setNoOverProvisioning(true);
+                                bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
+                                bus.send(amsg, new CloudBusCallBack(trigger) {
+                                    @Override
+                                    public void run(MessageReply reply) {
+                                        if (!reply.isSuccess()) {
+                                            trigger.fail(reply.getError());
+                                        } else {
+                                            s = true;
+                                            trigger.next();
+                                        }
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void rollback(FlowRollback trigger, Map data) {
+                                if (s) {
+                                    ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+                                    rmsg.setPrimaryStorageUuid(self.getUuid());
+                                    rmsg.setDiskSize(imageSpec.getInventory().getSize());
+                                    rmsg.setNoOverProvisioning(true);
+                                    bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+                                    bus.send(rmsg);
+                                }
+
+                                trigger.rollback();
+                            }
+                        });
+                    }
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "download";
+
                         @Override
-                        public void success() {
+                        public void run(final FlowTrigger trigger, Map data) {
+                            mediator.downloadBits(getSelfInventory(), bs,imageSpec.getSelectedBackupStorage().getInstallPath(), imagePathInCache, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+
+                    done(new FlowDoneHandler(completion) {
+                        @Override
+                        public void handle(Map data) {
                             if (cvo == null) {
                                 ImageCacheVO vo = new ImageCacheVO();
                                 vo.setImageUuid(imageSpec.getInventory().getUuid());
@@ -300,12 +369,16 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
 
                             completion.success();
                         }
+                    });
 
+                    error(new FlowErrorHandler(completion) {
                         @Override
-                        public void fail(ErrorCode errorCode) {
-                            completion.fail(errorCode);
+                        public void handle(ErrorCode errCode, Map data) {
+                            completion.fail(errCode);
                         }
                     });
+                }
+            }).start();
         }
 
         private void checkCache(final ImageCacheVO cvo, final Completion completion) {
@@ -419,7 +492,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (volumePath != null) {
                                 deleteBits(volumePath, volume.getUuid(), new NopeCompletion());
                             }
@@ -453,7 +526,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
 
     private void reportCapacity(AgentCapacityResponse ret) {
         if (ret.getTotalCapacity() != null && ret.getAvailableCapacity() != null) {
-            psMgr.sendCapacityReportMessage(ret.getTotalCapacity(), ret.getAvailableCapacity(), self.getUuid());
+            new PrimaryStorageCapacityUpdater(self.getUuid()).updateAvailablePhysicalCapacity(ret.getAvailableCapacity());
         }
     }
 
@@ -590,7 +663,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         deleteBits(installPath, vol.getUuid(), new Completion(trigger) {
                             @Override
                             public void success() {
@@ -770,7 +843,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         if (isoSubVolumePath == null) {
                             trigger.rollback();
                             return;
@@ -833,7 +906,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         if (iscsiTarget == null) {
                             trigger.rollback();
                             return;
@@ -845,7 +918,9 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         restf.asyncJsonPost(makeHttpUrl(IscsiBtrfsPrimaryStorageConstants.DELETE_TARGET_PATH), cmd, new JsonAsyncRESTCallback<DeleteIscsiTargetRsp>() {
                             @Override
                             public void fail(ErrorCode err) {
-                                trigger.fail(err);
+                                logger.warn(String.format("failed delete iscsi target[target:%s, sub volume uuid:%s], %s",
+                                        iscsiTarget, isoSubvolumeUuid, err));
+                                trigger.rollback();
                             }
 
                             @Override
@@ -1038,15 +1113,10 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                             @Override
                             public void success(InitRsp ret) {
                                 if (ret.isSuccess()) {
-                                    reportCapacity(ret);
+                                    new PrimaryStorageCapacityUpdater(self.getUuid()).update(
+                                            ret.getTotalCapacity(), ret.getAvailableCapacity(), ret.getTotalCapacity(), ret.getAvailableCapacity()
+                                    );
 
-                                    PrimaryStorageReportCapacityMsg rmsg = new PrimaryStorageReportCapacityMsg();
-                                    rmsg.setPrimaryStorageUuid(self.getUuid());
-                                    rmsg.setAvailableCapacity(ret.getAvailableCapacity());
-                                    rmsg.setTotalCapacity(ret.getTotalCapacity());
-                                    bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-
-                                    bus.send(rmsg);
                                     trigger.next();
                                 } else {
                                     trigger.fail(errf.stringToOperationError(ret.getError()));
@@ -1274,7 +1344,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                         }
 
                         @Override
-                        public void rollback(final FlowTrigger trigger, Map data) {
+                        public void rollback(final FlowRollback trigger, Map data) {
                             if (primaryStorageInstallPath != null) {
                                 DeleteBitsCmd cmd = new DeleteBitsCmd();
                                 cmd.setInstallPath(primaryStorageInstallPath);
@@ -1466,7 +1536,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(final FlowTrigger trigger, Map data) {
+                    public void rollback(final FlowRollback trigger, Map data) {
                         if (newVolumePath == null) {
                             trigger.rollback();
                             return;

@@ -1,0 +1,19 @@
+<error>
+    <prefix>LICENSE</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>Expired license</description>
+    </code>
+
+    <code>
+        <id>1001</id>
+        <description>The license is not permitted for the operation</description>
+    </code>
+
+    <code>
+        <id>1002</id>
+        <description>The thumbprint of the machine changed</description>
+    </code>
+</error>
+

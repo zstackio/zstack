@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.workflow.*;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
@@ -16,26 +17,33 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
+import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -43,9 +51,10 @@ import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import javax.rmi.CORBA.Util;
 import java.util.*;
 import java.util.concurrent.Callable;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created by frank on 6/30/2015.
@@ -55,6 +64,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    protected PrimaryStorageOverProvisioningManager ratioMgr;
+    @Autowired
+    protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
 
     static class FactoryCluster {
         LocalStorageHypervisorFactory factory;
@@ -63,6 +76,267 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     public LocalStorageBase(PrimaryStorageVO self) {
         super(self);
+    }
+
+    @Override
+    protected void handleApiMessage(APIMessage msg) {
+        if (msg instanceof APIGetLocalStorageHostDiskCapacityMsg) {
+            handle((APIGetLocalStorageHostDiskCapacityMsg) msg);
+        } else if (msg instanceof APILocalStorageMigrateVolumeMsg) {
+            handle((APILocalStorageMigrateVolumeMsg) msg);
+        } else if (msg instanceof APILocalStorageGetVolumeMigratableHostsMsg) {
+            handle((APILocalStorageGetVolumeMigratableHostsMsg) msg);
+        } else {
+            super.handleApiMessage(msg);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private void handle(APILocalStorageGetVolumeMigratableHostsMsg msg) {
+        // this API does the best it can to find migratable hosts.
+        // it doesn't count the base image size because the image may have
+        // been deleted, and ZStack has to consult the host for the image size
+
+        APILocalStorageGetVolumeMigratableReply reply = new APILocalStorageGetVolumeMigratableReply();
+        String sql = "select vol.size from VolumeVO vol where vol.uuid = :uuid";
+        TypedQuery<Long> vq = dbf.getEntityManager().createQuery(sql, Long.class);
+        vq.setParameter("uuid", msg.getVolumeUuid());
+        long size = vq.getSingleResult();
+        size = ratioMgr.calculateByRatio(self.getUuid(), size);
+
+        sql = "select sum(sp.size) from VolumeSnapshotVO sp where sp.volumeUuid = :volUuid";
+        TypedQuery<Long> sq = dbf.getEntityManager().createQuery(sql, Long.class);
+        sq.setParameter("volUuid", msg.getVolumeUuid());
+        Long snapshotSize = sq.getSingleResult();
+
+        if (snapshotSize != null) {
+            size += snapshotSize;
+        }
+
+        sql = "select href.hostUuid from LocalStorageHostRefVO href where" +
+                " href.hostUuid != (select rref.hostUuid from LocalStorageResourceRefVO rref where rref.resourceUuid = :volUuid and rref.resourceType = :rtype)" +
+                " and (href.totalPhysicalCapacity * :thres) <= href.availablePhysicalCapacity" +
+                " and href.availableCapacity >= :size and href.primaryStorageUuid = :psUuid group by href.hostUuid";
+
+        double physicalThreshold = physicalCapacityMgr.getRatio(self.getUuid());
+
+        //TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        Query q = dbf.getEntityManager().createNativeQuery(sql);
+        q.setParameter("volUuid", msg.getVolumeUuid());
+        q.setParameter("rtype", VolumeVO.class.getSimpleName());
+        q.setParameter("thres", physicalThreshold);
+        q.setParameter("size", size);
+        q.setParameter("psUuid", self.getUuid());
+        List<String> hostUuids = q.getResultList();
+
+        if (hostUuids.isEmpty()) {
+            reply.setInventories(new ArrayList<HostInventory>());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        sql = "select h from HostVO h where h.uuid in (:uuids) and h.status = :hstatus";
+        TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
+        hq.setParameter("uuids", hostUuids);
+        hq.setParameter("hstatus", HostStatus.Connected);
+        List<HostVO> hosts = hq.getResultList();
+        reply.setInventories(HostInventory.valueOf(hosts));
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final APILocalStorageMigrateVolumeMsg msg) {
+        final APILocalStorageMigrateVolumeEvent evt = new APILocalStorageMigrateVolumeEvent(msg.getId());
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("migrate-volume-%s-local-storage-%s-to-host-%s", msg.getVolumeUuid(), msg.getPrimaryStorageUuid(), msg.getDestHostUuid()));
+        chain.then(new ShareFlow() {
+            LocalStorageResourceRefVO volumeRefVO;
+            List<LocalStorageResourceRefVO> snapshotRefVOS;
+            LocalStorageResourceRefInventory ref;
+            long requiredSize;
+            List<VolumeSnapshotVO> snapshots;
+            VolumeVO volume;
+            MigrateBitsStruct struct = new MigrateBitsStruct();
+            LocalStorageHypervisorBackend bkd;
+
+            {
+                SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
+                q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
+                q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolumeUuid());
+                volumeRefVO = q.find();
+                ref = LocalStorageResourceRefInventory.valueOf(volumeRefVO);
+
+                SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
+                sq.add(VolumeSnapshotVO_.volumeUuid, Op.EQ, ref.getResourceUuid());
+                snapshots = sq.list();
+
+                volume = dbf.findByUuid(ref.getResourceUuid(), VolumeVO.class);
+
+                requiredSize = ratioMgr.calculateByRatio(self.getUuid(), ref.getSize());
+
+                ResourceInfo info = new ResourceInfo();
+                info.setResourceRef(ref);
+                info.setPath(volume.getInstallPath());
+
+                struct = new MigrateBitsStruct();
+                struct.getInfos().add(info);
+                struct.setDestHostUuid(msg.getDestHostUuid());
+                struct.setSrcHostUuid(ref.getHostUuid());
+                struct.setVolume(VolumeInventory.valueOf(volume));
+
+                if (!snapshots.isEmpty()) {
+                    List<String> spUuids = CollectionUtils.transformToList(snapshots, new Function<String, VolumeSnapshotVO>() {
+                        @Override
+                        public String call(VolumeSnapshotVO arg) {
+                            return arg.getUuid();
+                        }
+                    });
+
+                    SimpleQuery<LocalStorageResourceRefVO> rq = dbf.createQuery(LocalStorageResourceRefVO.class);
+                    rq.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeSnapshotVO.class.getSimpleName());
+                    rq.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, spUuids);
+                    snapshotRefVOS = rq.list();
+
+                    for (final VolumeSnapshotVO vo : snapshots) {
+                        info = new ResourceInfo();
+                        info.setPath(vo.getPrimaryStorageInstallPath());
+                        info.setResourceRef(CollectionUtils.find(snapshotRefVOS, new Function<LocalStorageResourceRefInventory, LocalStorageResourceRefVO>() {
+                            @Override
+                            public LocalStorageResourceRefInventory call(LocalStorageResourceRefVO arg) {
+                                return arg.getResourceUuid().equals(vo.getUuid()) ? LocalStorageResourceRefInventory.valueOf(arg) : null;
+                            }
+                        }));
+
+                        if (info.getResourceRef() == null) {
+                            throw new CloudRuntimeException(String.format("cannot find reference of snapshot[uuid:%s, name:%s] on the local storage[uuid:%s, name:%s]",
+                                    vo.getUuid(), vo.getName(), self.getUuid(), self.getName()));
+                        }
+
+                        struct.getInfos().add(info);
+
+                        requiredSize += vo.getSize();
+                    }
+                }
+
+                LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid());
+                bkd = f.getHypervisorBackend(self);
+            }
+
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "reserve-capacity-on-dest-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        reserveCapacityOnHost(msg.getDestHostUuid(), requiredSize);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        returnCapacityToHost(msg.getDestHostUuid(), requiredSize);
+                        trigger.rollback();
+                    }
+                });
+
+                List<Flow> flows = bkd.createMigrateBitsFlow(struct);
+                for (Flow fl : flows) {
+                    flow(fl);
+                }
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "change-reference-to-dst-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<LocalStorageResourceRefVO> refs = new ArrayList<LocalStorageResourceRefVO>();
+                        volumeRefVO.setHostUuid(msg.getDestHostUuid());
+                        refs.add(volumeRefVO);
+
+                        if (snapshotRefVOS != null) {
+                            for (LocalStorageResourceRefVO r : snapshotRefVOS) {
+                                r.setHostUuid(msg.getDestHostUuid());
+                                refs.add(r);
+                            }
+                        }
+
+                        dbf.updateCollection(refs);
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "return-capacity-to-src-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        returnCapacityToHost(ref.getHostUuid(), requiredSize);
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-bits-on-the-src-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<String> paths = new ArrayList<String>();
+                        paths.add(volume.getInstallPath());
+                        for (VolumeSnapshotVO sp : snapshots) {
+                            paths.add(sp.getPrimaryStorageInstallPath());
+                        }
+
+                        final Iterator<String> it = paths.iterator();
+                        new Runnable() {
+                            @Override
+                            @AsyncThread
+                            public void run() {
+                                if (!it.hasNext()) {
+                                    return;
+                                }
+
+                                final String path = it.next();
+                                bkd.deleteBits(path, struct.getSrcHostUuid(), new Completion() {
+                                    @Override
+                                    public void success() {
+                                        run();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        //TODO
+                                        logger.warn(String.format("failed to delete %s on the host[uuid:%s], %s",
+                                                path, struct.getSrcHostUuid(), errorCode));
+                                        run();
+                                    }
+                                });
+                            }
+                        }.run();
+
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        evt.setInventory(
+                                LocalStorageResourceRefInventory.valueOf(dbf.reload(volumeRefVO))
+                        );
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setErrorCode(errCode);
+                        bus.publish(evt);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override
@@ -87,25 +361,140 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DownloadImageToPrimaryStorageCacheMsg) {
             handle((DownloadImageToPrimaryStorageCacheMsg) msg);
+        } else if (msg instanceof LocalStorageCreateEmptyVolumeMsg) {
+            handle((LocalStorageCreateEmptyVolumeMsg) msg);
+        } else if (msg instanceof LocalStorageDirectlyDeleteBitsMsg) {
+            handle((LocalStorageDirectlyDeleteBitsMsg) msg);
+        } else if (msg instanceof LocalStorageReserveHostCapacityMsg) {
+            handle((LocalStorageReserveHostCapacityMsg) msg);
+        } else if (msg instanceof LocalStorageReturnHostCapacityMsg) {
+            handle((LocalStorageReturnHostCapacityMsg) msg);
+        } else if (msg instanceof LocalStorageHypervisorSpecificMessage) {
+            handle((LocalStorageHypervisorSpecificMessage) msg);
         } else {
             super.handleLocalMessage(msg);
         }
     }
 
+    private void handle(LocalStorageHypervisorSpecificMessage msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handleHypervisorSpecificMessage(msg);
+    }
+
+    private void handle(LocalStorageReturnHostCapacityMsg msg) {
+        LocalStorageReturnHostCapacityReply reply = new LocalStorageReturnHostCapacityReply();
+        long size = msg.isNoOverProvisioning() ? msg.getSize() : ratioMgr.calculateByRatio(self.getUuid(), msg.getSize());
+        returnCapacityToHost(msg.getHostUuid(), size);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(LocalStorageReserveHostCapacityMsg msg) {
+        LocalStorageReserveHostCapacityReply reply = new LocalStorageReserveHostCapacityReply();
+        long size = msg.isNoOverProvisioning() ? msg.getSize() : ratioMgr.calculateByRatio(self.getUuid(), msg.getSize());
+        reserveCapacityOnHost(msg.getHostUuid(), size);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final LocalStorageDirectlyDeleteBitsMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, msg.getHostUuid(), new ReturnValueCompletion<LocalStorageDirectlyDeleteBitsReply>(msg) {
+            @Override
+            public void success(LocalStorageDirectlyDeleteBitsReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                LocalStorageDirectlyDeleteBitsReply reply = new LocalStorageDirectlyDeleteBitsReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final LocalStorageCreateEmptyVolumeMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<LocalStorageCreateEmptyVolumeReply>() {
+            @Override
+            public void success(LocalStorageCreateEmptyVolumeReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                LocalStorageCreateEmptyVolumeReply reply = new LocalStorageCreateEmptyVolumeReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(APIGetLocalStorageHostDiskCapacityMsg msg) {
+        APIGetLocalStorageHostDiskCapacityReply reply = new APIGetLocalStorageHostDiskCapacityReply();
+        if (msg.getHostUuid() != null) {
+            SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+            q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
+            q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getHostUuid());
+            LocalStorageHostRefVO ref = q.find();
+            if (ref == null) {
+                reply.setError(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND, String.format("local primary storage[uuid:%s] doesn't have the host[uuid:%s]", self.getUuid(), msg.getHostUuid())));
+                bus.reply(msg, reply);
+                return;
+            }
+
+            HostDiskCapacity c = new HostDiskCapacity();
+            c.setHostUuid(msg.getHostUuid());
+            c.setTotalCapacity(ref.getTotalCapacity());
+            c.setAvailableCapacity(ref.getAvailableCapacity());
+            c.setAvailablePhysicalCapacity(ref.getAvailablePhysicalCapacity());
+            c.setTotalPhysicalCapacity(ref.getTotalPhysicalCapacity());
+            reply.setInventories(list(c));
+        } else {
+            SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+            q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
+            List<LocalStorageHostRefVO> refs = q.list();
+
+            List<HostDiskCapacity> cs = CollectionUtils.transformToList(refs, new Function<HostDiskCapacity, LocalStorageHostRefVO>() {
+                @Override
+                public HostDiskCapacity call(LocalStorageHostRefVO ref) {
+                    HostDiskCapacity c = new HostDiskCapacity();
+                    c.setHostUuid(ref.getHostUuid());
+                    c.setTotalCapacity(ref.getTotalCapacity());
+                    c.setAvailableCapacity(ref.getAvailableCapacity());
+                    c.setAvailablePhysicalCapacity(ref.getAvailablePhysicalCapacity());
+                    c.setTotalPhysicalCapacity(ref.getTotalPhysicalCapacity());
+                    return c;
+                }
+            });
+
+            reply.setInventories(cs);
+        }
+
+        bus.reply(msg, reply);
+    }
+
     private void handle(final DownloadImageToPrimaryStorageCacheMsg msg) {
         final DownloadImageToPrimaryStorageCacheReply reply = new DownloadImageToPrimaryStorageCacheReply();
-        final List<String> hostUuids = new Callable<List<String>>() {
-            @Override
-            @Transactional(readOnly = true)
-            public List<String> call() {
-                String sql = "select h.hostUuid from LocalStorageHostRefVO h, HostVO host where h.primaryStorageUuid = :puuid" +
-                        " and h.hostUuid = host.uuid and host.status = :hstatus";
-                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                q.setParameter("puuid", self.getUuid());
-                q.setParameter("hstatus", HostStatus.Connected);
-                return q.getResultList();
-            }
-        }.call();
+        final List<String> hostUuids;
+        if (msg.getHostUuid() == null) {
+            hostUuids = new Callable<List<String>>() {
+                @Override
+                @Transactional(readOnly = true)
+                public List<String> call() {
+                    String sql = "select h.hostUuid from LocalStorageHostRefVO h, HostVO host where h.primaryStorageUuid = :puuid" +
+                            " and h.hostUuid = host.uuid and host.status = :hstatus";
+                    TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                    q.setParameter("puuid", self.getUuid());
+                    q.setParameter("hstatus", HostStatus.Connected);
+                    return q.getResultList();
+                }
+            }.call();
+        } else {
+            hostUuids = list(msg.getHostUuid());
+        }
 
         if (hostUuids.isEmpty()) {
             bus.reply(msg, reply);
@@ -119,6 +508,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         class Ret {
             List<HostError> errorCodes = new ArrayList<HostError>();
+            String installPath;
 
             synchronized void addError(HostError err) {
                 errorCodes.add(err);
@@ -141,6 +531,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 }
 
+                reply.setInstallPath(ret.installPath);
                 bus.reply(msg, reply);
             }
         });
@@ -151,21 +542,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
             chain.then(new ShareFlow() {
                 @Override
                 public void setup() {
-                    flow(new Flow() {
-                        String __name__ = "reserve-capacity-in-db";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            reserveCapacityOnHost(hostUuid, msg.getImage().getSize());
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
-                            returnCapacityToHost(hostUuid, msg.getImage().getSize());
-                            trigger.rollback();
-                        }
-                    });
 
                     flow(new NoRollbackFlow() {
                         String __name__ = "download-to-host";
@@ -174,9 +550,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         public void run(final FlowTrigger trigger, Map data) {
                             LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
                             LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-                            bkd.downloadImageToCache(msg.getImage(), hostUuid, new Completion(trigger) {
+                            bkd.downloadImageToCache(msg.getImage(), hostUuid, new ReturnValueCompletion<String>(trigger) {
                                 @Override
-                                public void success() {
+                                public void success(String returnValue) {
+                                    ret.installPath = returnValue;
                                     trigger.next();
                                 }
 
@@ -269,7 +646,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         returnCapacityToHost(hostUuid,size);
                         trigger.rollback();
                     }
@@ -453,7 +830,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private void handle(RemoveHostFromLocalStorageMsg msg) {
         LocalStorageHostRefVO ref = dbf.findByUuid(msg.getHostUuid(), LocalStorageHostRefVO.class);
         // on remove, substract the total capacity from every capacity
-        decreaseCapacity(ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity());
+        decreaseCapacity(ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getSystemUsedCapacity());
         dbf.remove(ref);
         bus.reply(msg, new RemoveHostFromLocalStorageReply());
     }
@@ -477,9 +854,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
                     ref.setHostUuid(msg.getHostUuid());
                     ref.setPrimaryStorageUuid(self.getUuid());
+                    ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize);
                     dbf.persist(ref);
 
-                    increaseCapacity(c.totalPhysicalSize, c.availablePhysicalSize, c.totalPhysicalSize, c.availablePhysicalSize);
+                    increaseCapacity(c.totalPhysicalSize, c.availablePhysicalSize, c.totalPhysicalSize, c.availablePhysicalSize, ref.getSystemUsedCapacity());
                 } else {
                     ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
                     dbf.update(ref);
@@ -508,8 +886,22 @@ public class LocalStorageBase extends PrimaryStorageBase {
             throw new CloudRuntimeException(String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]", hostUuid, self.getUuid()));
         }
 
+
         LocalStorageHostRefVO ref = refs.get(0);
-        long avail = ref.getAvailableCapacity() - size;
+
+        physicalCapacityMgr.checkCapacityByRatio(self.getUuid(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity());
+
+        LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
+        s.setLocalStorage(getSelfInventory());
+        s.setHostUuid(ref.getHostUuid());
+        s.setSizeBeforeOverProvisioning(size);
+        s.setSize(size);
+
+        for (LocalStorageReserveHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReserveHostCapacityExtensionPoint.class)) {
+            ext.beforeReserveLocalStorageCapacityOnHost(s);
+        }
+
+        long avail = ref.getAvailableCapacity() - s.getSize();
         if (avail < 0) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity[current: %s bytes, needed: %s]",
@@ -534,7 +926,18 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
 
         LocalStorageHostRefVO ref = refs.get(0);
-        ref.setAvailableCapacity(ref.getAvailableCapacity() + size);
+
+        LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
+        s.setSizeBeforeOverProvisioning(size);
+        s.setHostUuid(hostUuid);
+        s.setLocalStorage(getSelfInventory());
+        s.setSize(size);
+
+        for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReturnHostCapacityExtensionPoint.class)) {
+            ext.beforeReturnLocalStorageCapacityOnHost(s);
+        }
+
+        ref.setAvailableCapacity(ref.getAvailableCapacity() + s.getSize());
         dbf.getEntityManager().merge(ref);
     }
 
@@ -550,7 +953,21 @@ public class LocalStorageBase extends PrimaryStorageBase {
         LocalStorageHostRefVO href = ref.get(0, LocalStorageHostRefVO.class);
         LocalStorageResourceRefVO rref = ref.get(1, LocalStorageResourceRefVO.class);
 
-        href.setAvailableCapacity(href.getAvailableCapacity() + rref.getSize());
+        long requiredSize = rref.getSize();
+        if (VolumeVO.class.getSimpleName().equals(rref.getResourceType())) {
+            requiredSize = ratioMgr.calculateByRatio(self.getUuid(), requiredSize);
+        }
+
+        LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
+        s.setSizeBeforeOverProvisioning(rref.getSize());
+        s.setHostUuid(href.getHostUuid());
+        s.setLocalStorage(getSelfInventory());
+        s.setSize(requiredSize);
+        for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReturnHostCapacityExtensionPoint.class)) {
+            ext.beforeReturnLocalStorageCapacityOnHost(s);
+        }
+
+        href.setAvailableCapacity(href.getAvailableCapacity() + s.getSize());
         dbf.getEntityManager().merge(href);
     }
 
@@ -571,15 +988,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 flow(new Flow() {
                     String __name__ = "allocate-capacity-on-host";
 
+                    long requiredSize = ratioMgr.calculateByRatio(self.getUuid(), msg.getVolume().getSize());
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(finalHostUuid, msg.getVolume().getSize());
+                        reserveCapacityOnHost(finalHostUuid, requiredSize);
                         trigger.next();
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
-                        returnCapacityToHost(finalHostUuid, msg.getVolume().getSize());
+                    public void rollback(FlowRollback trigger, Map data) {
+                        returnCapacityToHost(finalHostUuid, requiredSize);
                         trigger.rollback();
                     }
                 });
@@ -645,6 +1064,19 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final DeleteVolumeOnPrimaryStorageMsg msg) {
+        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
+        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolume().getUuid());
+        q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
+        if (!q.isExists()) {
+            logger.debug(String.format("volume[uuid:%s] is not on the local storage[uuid:%s, name:%s]," +
+                            "the host the volume is on may have been deleted",
+                    msg.getVolume().getUuid(), self.getUuid(), self.getName()));
+
+            DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
+            bus.reply(msg, reply);
+            return;
+        }
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-volume-%s-local-primary-storage-%s", msg.getVolume().getUuid(), self.getUuid()));
         chain.then(new ShareFlow() {
@@ -674,15 +1106,19 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "return-capacity-to-host";
+                if (!VolumeStatus.Deleted.toString().endsWith(msg.getVolume().getStatus())) {
+                    // if the volume's status is Deleted, its capacity has been returned
+                    // when it's deleted
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "return-capacity-to-host";
 
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        returnCapacityToHostByResourceUuid(msg.getVolume().getUuid());
-                        trigger.next();
-                    }
-                });
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            returnCapacityToHostByResourceUuid(msg.getVolume().getUuid());
+                            trigger.next();
+                        }
+                    });
+                }
 
                 done(new FlowDoneHandler(msg) {
                     @Override
@@ -727,6 +1163,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
         chain.then(new ShareFlow() {
             DownloadDataVolumeToPrimaryStorageReply reply;
 
+            long requiredSize = ratioMgr.calculateByRatio(self.getUuid(), msg.getImage().getSize());
+
             @Override
             public void setup() {
                 flow(new Flow() {
@@ -734,13 +1172,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(msg.getHostUuid(), msg.getImage().getSize());
+                        reserveCapacityOnHost(msg.getHostUuid(), requiredSize);
                         trigger.next();
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
-                        returnCapacityToHost(msg.getHostUuid(), msg.getImage().getSize());
+                    public void rollback(FlowRollback trigger, Map data) {
+                        returnCapacityToHost(msg.getHostUuid(), requiredSize);
                         trigger.rollback();
                     }
                 });
@@ -868,7 +1306,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         returnCapacityToHost(msg.getDestHostUuid(), msg.getIsoSpec().getInventory().getSize());
                         trigger.rollback();
                     }
@@ -997,62 +1435,68 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
-    @Transactional
     protected void setCapacity(Long total, Long avail, Long totalPhysical, Long availPhysical) {
-        PrimaryStorageCapacityVO cvo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-        if (total != null) {
-            cvo.setTotalCapacity(total);
-        }
-        if (avail != null) {
-            cvo.setAvailableCapacity(avail);
-        }
-        if (totalPhysical != null) {
-            cvo.setTotalPhysicalCapacity(totalPhysical);
-        }
-        if (availPhysical != null) {
-            cvo.setAvailablePhysicalCapacity(availPhysical);
-        }
-        dbf.getEntityManager().merge(cvo);
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+        updater.update(total, avail, totalPhysical, availPhysical);
     }
 
-    @Transactional
-    protected void increaseCapacity(Long total, Long avail, Long totalPhysical, Long availPhysical) {
-        PrimaryStorageCapacityVO cvo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-        if (total != null) {
-            cvo.setTotalCapacity(cvo.getTotalCapacity() + total);
-        }
-        if (avail != null) {
-            cvo.setAvailableCapacity(cvo.getAvailableCapacity() + avail);
-        }
-        if (totalPhysical != null) {
-            cvo.setTotalPhysicalCapacity(cvo.getTotalPhysicalCapacity() + totalPhysical);
-        }
-        if (availPhysical != null) {
-            cvo.setAvailablePhysicalCapacity(cvo.getAvailablePhysicalCapacity() + availPhysical);
-        }
-        dbf.getEntityManager().merge(cvo);
+    protected void increaseCapacity(final Long total, final Long avail, final Long totalPhysical, final Long availPhysical, final Long sysmtemUsed) {
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                if (total != null) {
+                    cap.setTotalCapacity(cap.getTotalCapacity() + total);
+                }
+                if (avail != null) {
+                    cap.setAvailableCapacity(cap.getAvailableCapacity() + avail);
+                }
+                if (totalPhysical != null) {
+                    cap.setTotalPhysicalCapacity(cap.getTotalPhysicalCapacity() + totalPhysical);
+                }
+                if (availPhysical != null) {
+                    cap.setAvailablePhysicalCapacity(cap.getAvailablePhysicalCapacity() + availPhysical);
+                }
+                if (sysmtemUsed != null) {
+                    if (cap.getSystemUsedCapacity() == null) {
+                        cap.setSystemUsedCapacity(0L);
+                    }
+
+                    cap.setSystemUsedCapacity(cap.getSystemUsedCapacity() + sysmtemUsed);
+                }
+                return cap;
+            }
+        });
     }
 
-    @Transactional
-    protected void decreaseCapacity(Long total, Long avail, Long totalPhysical, Long availPhysical) {
-        PrimaryStorageCapacityVO cvo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-        if (total != null) {
-            long t = cvo.getTotalCapacity() - total;
-            cvo.setTotalCapacity(t < 0 ? 0 : t);
-        }
-        if (avail != null) {
-            long a = cvo.getAvailableCapacity() - avail;
-            cvo.setAvailableCapacity(a < 0 ? 0 : a);
-        }
-        if (totalPhysical != null) {
-            long tp = cvo.getTotalPhysicalCapacity() - totalPhysical;
-            cvo.setTotalPhysicalCapacity(tp < 0 ? 0 : tp);
-        }
-        if (availPhysical != null) {
-            long ap = cvo.getAvailablePhysicalCapacity() - availPhysical;
-            cvo.setAvailablePhysicalCapacity(ap < 0 ? 0 : ap);
-        }
-        dbf.getEntityManager().merge(cvo);
+    protected void decreaseCapacity(final Long total, final Long avail, final Long totalPhysical, final Long availPhysical, final Long systemUsed) {
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                if (total != null) {
+                    long t = cap.getTotalCapacity() - total;
+                    cap.setTotalCapacity(t < 0 ? 0 : t);
+                }
+                if (avail != null) {
+                    long a = cap.getAvailableCapacity() - avail;
+                    cap.setAvailableCapacity(a);
+                }
+                if (totalPhysical != null) {
+                    long tp = cap.getTotalPhysicalCapacity() - totalPhysical;
+                    cap.setTotalPhysicalCapacity(tp < 0 ? 0 : tp);
+                }
+                if (availPhysical != null) {
+                    long ap = cap.getAvailablePhysicalCapacity() - availPhysical;
+                    cap.setAvailablePhysicalCapacity(ap < 0 ? 0 : ap);
+                }
+                if (systemUsed != null) {
+                    long su = cap.getSystemUsedCapacity() - systemUsed;
+                    cap.setSystemUsedCapacity(su < 0 ? 0 : su);
+                }
+                return cap;
+            }
+        });
     }
 
 
@@ -1165,7 +1609,26 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    public void attachHook(String clusterUuid, Completion completion) {
+    public void attachHook(final String clusterUuid, Completion completion) {
+        new Runnable() {
+            @Override
+            @Transactional(readOnly = true)
+            public void run() {
+                String sql = "select count(ref) from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref where" +
+                        " ps.uuid = ref.primaryStorageUuid and ref.clusterUuid = :cuuid and ps.type = :ptype";
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("cuuid", clusterUuid);
+                q.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
+                long count = q.getSingleResult();
+                if (count > 0) {
+                    throw new OperationFailureException(errf.stringToOperationError(
+                            String.format("unable to attach the local storage[uuid:%s, name: %s] to the cluster[uuid:%s]," +
+                                    "there has been a local storage attached on the cluster already", self)
+                    ));
+                }
+            }
+        }.run();
+
         SimpleQuery<ClusterVO> q = dbf.createQuery(ClusterVO.class);
         q.select(ClusterVO_.hypervisorType);
         q.add(ClusterVO_.uuid, Op.EQ, clusterUuid);

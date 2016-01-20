@@ -116,15 +116,6 @@ public class TestAsyncBackup2 {
             }
 
             @Override
-            public void rollback() {
-
-            }
-
-            @Override
-            public void skipRestRollbacks() {
-            }
-
-            @Override
             public void setError(ErrorCode error) {
 
             }

@@ -1,5 +1,6 @@
 package org.zstack.test.kvm;
 
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -18,6 +19,11 @@ import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+/**
+ * 1 create a vm from a data volume template
+ *
+ * confirm the vm failed to create
+ */
 public class TestCreateVmOnKvm1 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;
@@ -62,7 +68,14 @@ public class TestCreateVmOnKvm1 {
         creator.name = "vm";
         creator.imageUuid = img.getUuid();
         creator.instanceOfferingUuid = ioinv.getUuid();
-        creator.create();
-	}
+        boolean s = false;
+        try {
+            creator.create();
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+
+        Assert.assertTrue(s);
+    }
 
 }

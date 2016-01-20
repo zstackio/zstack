@@ -13,6 +13,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -33,6 +34,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -75,6 +77,8 @@ public class VolumeBase implements Volume {
     private TagManager tagMgr;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private VolumeDeletionPolicyManager deletionPolicyMgr;
 
     private VolumeVO self;
 
@@ -107,9 +111,57 @@ public class VolumeBase implements Volume {
             handle((DeleteVolumeMsg) msg);
         } else if (msg instanceof CreateDataVolumeTemplateFromDataVolumeMsg) {
             handle((CreateDataVolumeTemplateFromDataVolumeMsg) msg);
+        } else if (msg instanceof ExpungeVolumeMsg) {
+            handle((ExpungeVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void expunge(final Completion completion) {
+        if (self.getStatus() != VolumeStatus.Deleted) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("the volume[uuid:%s, name:%s] is not deleted yet, can't expunge it",
+                            self.getUuid(), self.getName())
+            ));
+        }
+
+        if (self.getPrimaryStorageUuid() != null) {
+            DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
+            dmsg.setVolume(getSelfInventory());
+            dmsg.setUuid(self.getPrimaryStorageUuid());
+            bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+            bus.send(dmsg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply r) {
+                    if (!r.isSuccess()) {
+                        completion.fail(r.getError());
+                    } else {
+                        dbf.remove(self);
+                        completion.success();
+                    }
+                }
+            });
+        } else {
+            dbf.remove(self);
+            completion.success();
+        }
+    }
+
+    private void handle(final ExpungeVolumeMsg msg) {
+        final ExpungeVmReply reply = new ExpungeVmReply();
+        expunge(new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final CreateDataVolumeTemplateFromDataVolumeMsg msg) {
@@ -157,6 +209,29 @@ public class VolumeBase implements Volume {
 
     private void handle(final VolumeDeletionMsg msg) {
         final VolumeDeletionReply reply = new VolumeDeletionReply();
+        thdf.chainSubmit(new ChainTask() {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                self = dbf.reload(self);
+                if (self.getStatus() == VolumeStatus.Deleted) {
+                    // the volume has been deleted
+                    // we run into this case because the cascading framework
+                    // will send duplicate messages when deleting a vm as the cascading
+                    // framework has no knowledge about
+                }
+
+            }
+
+            @Override
+            public String getName() {
+                return String.format("delete-volume-%s", self.getUuid());
+            }
+        });
 
         for (VolumeDeletionExtensionPoint extp : pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class)) {
             extp.preDeleteVolume(getSelfInventory());
@@ -169,9 +244,23 @@ public class VolumeBase implements Volume {
             }
         });
 
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-volume-%s", self.getUuid()));
+        // for NotInstantiated Volume, no flow to execute
+        chain.allowEmptyFlow();
         chain.then(new ShareFlow() {
+            VolumeDeletionPolicy deletionPolicy;
+
+            {
+
+                if (msg.getDeletionPolicy() == null) {
+                    deletionPolicy = deletionPolicyMgr.getDeletionPolicy(self.getUuid());
+                } else {
+                    deletionPolicy = VolumeDeletionPolicy.valueOf(msg.getDeletionPolicy());
+                }
+            }
+
             @Override
             public void setup() {
                 if (self.getVmInstanceUuid() != null && self.getType() == VolumeType.Data && msg.isDetachBeforeDeleting()) {
@@ -185,6 +274,8 @@ public class VolumeBase implements Volume {
                             bus.send(dmsg, new CloudBusCallBack(trigger) {
                                 @Override
                                 public void run(MessageReply reply) {
+                                    self.setVmInstanceUuid(null);
+                                    self = dbf.updateAndRefresh(self);
                                     trigger.next();
                                 }
                             });
@@ -192,33 +283,36 @@ public class VolumeBase implements Volume {
                     });
                 }
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "delete-data-volume-from-primary-storage";
+                if (deletionPolicy == VolumeDeletionPolicy.Direct) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "delete-data-volume-from-primary-storage";
 
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        if (self.getStatus() == VolumeStatus.Ready) {
-                            DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
-                            dmsg.setVolume(getSelfInventory());
-                            dmsg.setUuid(self.getPrimaryStorageUuid());
-                            bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-                            logger.debug(String.format("Asking primary storage[uuid:%s] to remove data volume[uuid:%s]", self.getPrimaryStorageUuid(),
-                                    self.getUuid()));
-                            bus.send(dmsg, new CloudBusCallBack(trigger) {
-                                @Override
-                                public void run(MessageReply reply) {
-                                    if (!reply.isSuccess()) {
-                                        logger.warn(String.format("failed to delete volume[uuid:%s, name:%s], %s", self.getUuid(), self.getName(), reply.getError()));
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            if (self.getStatus() == VolumeStatus.Ready) {
+                                DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
+                                dmsg.setVolume(getSelfInventory());
+                                dmsg.setUuid(self.getPrimaryStorageUuid());
+                                bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+                                logger.debug(String.format("Asking primary storage[uuid:%s] to remove data volume[uuid:%s]", self.getPrimaryStorageUuid(),
+                                        self.getUuid()));
+                                bus.send(dmsg, new CloudBusCallBack(trigger) {
+                                    @Override
+                                    public void run(MessageReply reply) {
+                                        if (!reply.isSuccess()) {
+                                            logger.warn(String.format("failed to delete volume[uuid:%s, name:%s], %s", self.getUuid(), self.getName(), reply.getError()));
+                                        }
+
+                                        trigger.next();
                                     }
-
-                                    trigger.next();
-                                }
-                            });
-                        } else {
-                            trigger.next();
+                                });
+                            } else {
+                                trigger.next();
+                            }
                         }
-                    }
-                });
+                    });
+                }
+
 
                 if (self.getPrimaryStorageUuid() != null) {
                     flow(new NoRollbackFlow() {
@@ -240,7 +334,16 @@ public class VolumeBase implements Volume {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        dbf.remove(self);
+                        if (deletionPolicy == VolumeDeletionPolicy.Direct) {
+                            dbf.remove(self);
+                        } else if (deletionPolicy == VolumeDeletionPolicy.Delay) {
+                            self.setStatus(VolumeStatus.Deleted);
+                            self = dbf.updateAndRefresh(self);
+                        } else if (deletionPolicy == VolumeDeletionPolicy.Never) {
+                            self.setStatus(VolumeStatus.Deleted);
+                            self = dbf.updateAndRefresh(self);
+                        }
+
                         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class), new ForEachFunction<VolumeDeletionExtensionPoint>() {
                             @Override
                             public void run(VolumeDeletionExtensionPoint arg) {
@@ -284,9 +387,63 @@ public class VolumeBase implements Volume {
             handle((APIGetDataVolumeAttachableVmMsg) msg);
         } else if (msg instanceof APIUpdateVolumeMsg) {
             handle((APIUpdateVolumeMsg) msg);
+        } else if (msg instanceof APIRecoverDataVolumeMsg) {
+            handle((APIRecoverDataVolumeMsg) msg);
+        } else if (msg instanceof APIExpungeDataVolumeMsg) {
+            handle((APIExpungeDataVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIExpungeDataVolumeMsg msg) {
+        final APIExpungeDataVolumeEvent evt = new APIExpungeDataVolumeEvent(msg.getId());
+        expunge(new Completion(msg) {
+            @Override
+            public void success() {
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(APIRecoverDataVolumeMsg msg) {
+        APIRecoverDataVolumeEvent evt = new APIRecoverDataVolumeEvent(msg.getId());
+
+        final VolumeInventory vol = getSelfInventory();
+        List<RecoverDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(RecoverDataVolumeExtensionPoint.class);
+        for (RecoverDataVolumeExtensionPoint ext : exts) {
+            ext.preRecoverDataVolume(vol);
+        }
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<RecoverDataVolumeExtensionPoint>() {
+            @Override
+            public void run(RecoverDataVolumeExtensionPoint ext) {
+                ext.beforeRecoverDataVolume(vol);
+            }
+        });
+
+        if (self.getInstallPath() != null) {
+            self.setStatus(VolumeStatus.Ready);
+        } else {
+            self.setStatus(VolumeStatus.NotInstantiated);
+        }
+        self = dbf.updateAndRefresh(self);
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<RecoverDataVolumeExtensionPoint>() {
+            @Override
+            public void run(RecoverDataVolumeExtensionPoint ext) {
+                ext.afterRecoverDataVolume(vol);
+            }
+        });
+
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     private void handle(APIUpdateVolumeMsg msg) {
@@ -350,9 +507,18 @@ public class VolumeBase implements Volume {
             q.setParameter("vmUuids", vmUuids);
         }
 
-
         q.setParameter("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped));
-        return q.getResultList();
+        List<VmInstanceVO> vms = q.getResultList();
+        if (vms.isEmpty()) {
+            return vms;
+        }
+
+        VolumeInventory vol = getSelfInventory();
+        for (VolumeGetAttachableVmExtensionPoint ext : pluginRgty.getExtensionList(VolumeGetAttachableVmExtensionPoint.class)) {
+            vms = ext.returnAttachableVms(vol, vms);
+        }
+
+        return vms;
     }
 
     private void handle(APIGetDataVolumeAttachableVmMsg msg) {

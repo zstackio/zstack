@@ -7,49 +7,53 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
-import org.zstack.header.host.HostConnectionReestablishExtensionPoint;
-import org.zstack.header.host.HostException;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HypervisorType;
+import org.zstack.header.host.*;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityCmd;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityResponse;
 
 public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
     @Autowired
-    private RESTFacade restf;
-    @Autowired
     private CloudBus bus;
-    @Autowired
-    private KVMHostFactory factory;
     @Autowired
     private ErrorFacade errf;
 
-    @Override
-    public void kvmHostConnected(KVMHostConnectedContext context) {
-        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(context.getBaseUrl());
-        ub.path(KVMConstant.KVM_HOST_CAPACITY_PATH);
-        String url = ub.build().toUriString();
-        HostCapacityCmd cmd = new HostCapacityCmd();
-        HostCapacityResponse rsp = restf.syncJsonPost(url, cmd, HostCapacityResponse.class);
+    private void reportCapacity(HostInventory host) {
+        KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
+        msg.setHostUuid(host.getUuid());
+        msg.setPath(KVMConstant.KVM_HOST_CAPACITY_PATH);
+        msg.setNoStatusCheck(true);
+        msg.setCommand(new HostCapacityCmd());
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
+        MessageReply reply = bus.call(msg);
+        if (!reply.isSuccess()) {
+            throw new OperationFailureException(reply.getError());
+        }
+
+        KVMHostSyncHttpCallReply r = reply.castReply();
+        HostCapacityResponse rsp = r.toResponse(HostCapacityResponse.class);
         if (!rsp.isSuccess()) {
             throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
         }
+        ReportHostCapacityMessage rmsg = new ReportHostCapacityMessage();
+        rmsg.setHostUuid(host.getUuid());
+        rmsg.setTotalCpu(rsp.getCpuNum() * rsp.getCpuSpeed());
+        rmsg.setUsedCpu(rsp.getUsedCpu());
+        rmsg.setTotalMemory(rsp.getTotalMemory());
+        rmsg.setUsedMemory(rsp.getUsedMemory());
+        rmsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+        bus.send(rmsg);
+    }
 
-        ReportHostCapacityMessage msg = new ReportHostCapacityMessage();
-        msg.setHostUuid(context.getInventory().getUuid());
-        msg.setTotalCpu(rsp.getCpuNum() * rsp.getCpuSpeed());
-        msg.setUsedCpu(rsp.getUsedCpu());
-        msg.setTotalMemory(rsp.getTotalMemory());
-        msg.setUsedMemory(rsp.getUsedMemory());
-        msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
-        bus.send(msg);
+    @Override
+    public void kvmHostConnected(KVMHostConnectedContext host) {
+        reportCapacity(host.getInventory());
     }
 
     @Override
     public void connectionReestablished(HostInventory inv) throws HostException {
-        KVMHostConnectedContext ctx = new KVMHostConnectedContext(factory.getHostContext(inv.getUuid()), false);
-        kvmHostConnected(ctx);
+        reportCapacity(inv);
     }
 
     @Override

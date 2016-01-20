@@ -97,7 +97,7 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
                 next(candidates);
                 return;
             } else {
-                throw new CloudRuntimeException(String.format("l3Network uuids can not be empty AttachedL2NetworkAllocatorFlow"));
+                throw new CloudRuntimeException("l3Network uuids can not be empty AttachedL2NetworkAllocatorFlow");
             }
         }
 

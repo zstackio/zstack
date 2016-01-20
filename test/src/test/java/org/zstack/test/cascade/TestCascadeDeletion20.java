@@ -45,6 +45,7 @@ public class TestCascadeDeletion20 {
 
     @Test
     public void test() throws ApiSenderException, InterruptedException {
+        api.setTimeout(100000);
         ApplianceVmVO  vr = dbf.listAll(ApplianceVmVO.class).get(0);
         String lastHostUuid = vr.getHostUuid();
         api.deleteHost(lastHostUuid);

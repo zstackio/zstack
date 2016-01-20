@@ -50,6 +50,24 @@ public interface VmTracerCanonicalEvents {
         private String vmUuid;
         private String from;
         private String to;
+        private String originalHostUuid;
+        private String currentHostUuid;
+
+        public String getOriginalHostUuid() {
+            return originalHostUuid;
+        }
+
+        public void setOriginalHostUuid(String originalHostUuid) {
+            this.originalHostUuid = originalHostUuid;
+        }
+
+        public String getCurrentHostUuid() {
+            return currentHostUuid;
+        }
+
+        public void setCurrentHostUuid(String currentHostUuid) {
+            this.currentHostUuid = currentHostUuid;
+        }
 
         public String getVmUuid() {
             return vmUuid;

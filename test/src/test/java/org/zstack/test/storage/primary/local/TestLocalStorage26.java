@@ -27,7 +27,7 @@ import java.util.List;
  * 1. use local storage and nfs storage
  * 2. create a two vms: vm1 and vm2 on different hosts
  *
- * confirm vms cannot migrate
+ * confirm vms can migrate
  */
 public class TestLocalStorage26 {
     Deployer deployer;
@@ -72,8 +72,8 @@ public class TestLocalStorage26 {
         VmInstanceInventory vm2 = deployer.vms.get("TestVm1");
 
         List<HostInventory> hosts =  api.getMigrationTargetHost(vm1.getUuid());
-        Assert.assertTrue(hosts.isEmpty());
+        Assert.assertFalse(hosts.isEmpty());
         hosts =  api.getMigrationTargetHost(vm2.getUuid());
-        Assert.assertTrue(hosts.isEmpty());
+        Assert.assertFalse(hosts.isEmpty());
     }
 }

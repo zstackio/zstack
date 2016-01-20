@@ -171,13 +171,15 @@ public class RESTApiJsonTemplateGenerator {
                     if (isPrimitiveType(ct)) {
                         jo.put(f.getName(), populateTemplateString(f));
                     } else if (Collection.class.isAssignableFrom(ct)) {
-                        throw new IllegalArgumentException(String.format(
+                        logger.warn(String.format(
                                 "Field[%s] of class[%s] is type of Collection, unable to dump it because it doesn't have java generic type information",
                                 f.getName(), clazz.getName()));
+                        jo.put(f.getName(), dumpObject(ArrayList.class, hasDone));
                     } else if (Map.class.isAssignableFrom(ct)) {
-                        throw new IllegalArgumentException(String.format(
+                        logger.warn(String.format(
                                 "Field[%s] of class[%s] is type of Map, unable to dump it because it doesn't have java generic type information", f.getName(),
                                 clazz.getName()));
+                        jo.put(f.getName(), dumpObject(HashMap.class, hasDone));
                     } else {
                         logger.debug(String.format("dumping %s, %s", f.getName(), ct.getName()));
                         JSONObject oj = dumpObject(ct, hasDone);

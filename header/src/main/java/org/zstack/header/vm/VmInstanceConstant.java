@@ -14,6 +14,8 @@ public interface VmInstanceConstant {
         AttachingVolumeInventory,
         DestPrimaryStorageInventoryForAttachingVolume,
         AttachNicInventory,
+        AbnormalLifeCycleStruct,
+        DeletionPolicy,
     }
     
     public static enum VmOperation {
@@ -26,6 +28,9 @@ public interface VmInstanceConstant {
         AttachVolume,
         AttachNic,
         DetachNic,
+        AttachIso,
+        DetachIso,
+        Expunge
     }
 
     String QUOTA_VM_NUM = "vm.num";

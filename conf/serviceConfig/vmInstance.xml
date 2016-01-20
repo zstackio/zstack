@@ -62,4 +62,22 @@
     <message>
         <name>org.zstack.header.vm.APIGetVmAttachableL3NetworkMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIAttachIsoToVmInstanceMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIDetachIsoFromVmInstanceMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIRecoverVmInstanceMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIExpungeVmInstanceMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APISetVmBootOrderMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIGetVmBootOrderMsg</name>
+    </message>
 </service>

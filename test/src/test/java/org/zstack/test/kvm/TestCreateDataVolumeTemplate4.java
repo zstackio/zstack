@@ -28,6 +28,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 1. create a data volume template
@@ -61,8 +62,8 @@ public class TestCreateDataVolumeTemplate4 {
         session = api.loginAsAdmin();
     }
     
-	@Test(expected = ApiSenderException.class)
-	public void test() throws ApiSenderException {
+	@Test
+	public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         VolumeInventory dataVolume = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -78,12 +79,15 @@ public class TestCreateDataVolumeTemplate4 {
         Assert.assertEquals(ImageStatus.Ready.toString(), template.getStatus());
         PrimaryStorageVO psvo = dbf.findByUuid(nfs.getUuid(), PrimaryStorageVO.class);
         config.downloadFromSftpSuccess = false;
+        boolean s = false;
         try {
             api.createDataVolumeFromTemplate(template.getUuid(), nfs.getUuid());
         } catch (ApiSenderException e) {
+            TimeUnit.SECONDS.sleep(3);
             PrimaryStorageVO psvo1 = dbf.findByUuid(nfs.getUuid(), PrimaryStorageVO.class);
             Assert.assertEquals(psvo.getCapacity().getAvailableCapacity(), psvo1.getCapacity().getAvailableCapacity());
-            throw e;
+            s = true;
         }
+        Assert.assertTrue(s);
 	}
 }

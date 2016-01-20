@@ -66,6 +66,11 @@ public class VipVO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public String getUsedIpUuid() {
         return usedIpUuid;
     }

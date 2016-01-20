@@ -71,6 +71,10 @@ public class TestMigrateVmOnKvm2 {
             Assert.assertTrue(0 != cvo.getUsedMemory());
             VmInstanceVO vo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
             Assert.assertEquals(VmInstanceState.Running, vo.getState());
+
+            HostCapacityVO tvo = dbf.findByUuid(target.getUuid(), HostCapacityVO.class);
+            Assert.assertEquals(tvo.getTotalCpu(), tvo.getAvailableCpu());
+            Assert.assertEquals(tvo.getTotalMemory(), tvo.getAvailableMemory());
             throw e;
         }
 	}

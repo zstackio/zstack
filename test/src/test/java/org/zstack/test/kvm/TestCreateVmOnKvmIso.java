@@ -66,7 +66,7 @@ public class TestCreateVmOnKvmIso {
         StartVmCmd scmd = kconfig.startVmCmd;
         Assert.assertNotNull(scmd);
 
-        Assert.assertEquals(BootDev.cdrom.toString(), scmd.getBootDev());
+        Assert.assertEquals(BootDev.cdrom.toString(), scmd.getBootDev().get(0));
         Assert.assertEquals(isoCache.getInstallUrl(), scmd.getBootIso().getPath());
 
         VmInstanceInventory vm = deployer.vms.get("TestVm");

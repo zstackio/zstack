@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.errorcode.ErrorCode;
@@ -44,23 +45,27 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         final ImageInventory iminv = spec.getImageSpec().getInventory();
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
+        rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
         if (ImageMediaType.ISO.toString().equals(iminv.getMediaType())) {
             rmsg.setSize(spec.getRootDiskOffering().getDiskSize());
             rmsg.setAllocationStrategy(spec.getRootDiskOffering().getAllocatorStrategy());
-            rmsg.setHostUuid(destHost.getUuid());
+            rmsg.setRequiredHostUuid(destHost.getUuid());
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
         } else {
             //TODO: find a way to allow specifying strategy for root disk
             rmsg.setSize(iminv.getSize());
-            rmsg.setHostUuid(destHost.getUuid());
+            rmsg.setRequiredHostUuid(destHost.getUuid());
         }
+
+        rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
+
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
 
         for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
             amsg.setSize(dinv.getDiskSize());
-            amsg.setHostUuid(destHost.getUuid());
+            amsg.setRequiredHostUuid(destHost.getUuid());
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setDiskOfferingUuid(dinv.getUuid());
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
@@ -117,10 +122,18 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger chain, Map data) {
+    public void rollback(FlowRollback chain, Map data) {
+        final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+
         List<Bucket> buckets = (List<Bucket>) data.get(SUCCESS);
         if (buckets != null) {
             for (Bucket b : buckets) {
+                VolumeSpec vspec = spec.getVolumeSpecs().get(buckets.indexOf(b));
+                if (vspec.isVolumeCreated()) {
+                    // don't return capacity as it has been returned when the volume is deleted
+                    continue;
+                }
+
                 ReturnPrimaryStorageCapacityMsg msg = new ReturnPrimaryStorageCapacityMsg();
                 PrimaryStorageInventory pri = b.get(0);
                 Long size = b.get(1);

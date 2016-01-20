@@ -16,7 +16,10 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.service.APIQueryNetworkServiceProviderMsg;
+import org.zstack.header.network.service.APIQueryNetworkServiceProviderReply;
 import org.zstack.header.network.service.NetworkServiceProviderInventory;
+import org.zstack.header.query.QueryCondition;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -109,6 +112,7 @@ public class Deployer {
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(true);
         scanner.addIncludeFilter(new AssignableTypeFilter(AbstractDeployer.class));
         scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
+        scanner.addExcludeFilter(new AnnotationTypeFilter(org.springframework.stereotype.Component.class));
         for (BeanDefinition bd : scanner.findCandidateComponents("org.zstack.test")) {
             try {
                 Class<?> clazz = Class.forName(bd.getBeanClassName());
@@ -395,22 +399,25 @@ public class Deployer {
         }
     }
 
-    private String getNetworkServiceProviderUuid(List<NetworkServiceProviderInventory> providers, String providerName) {
+    private String getNetworkServiceProviderUuid(List<NetworkServiceProviderInventory> providers, String providerType) {
     	for (NetworkServiceProviderInventory p : providers) {
-    		if (p.getName().equals(providerName)) {
+    		if (p.getType().equals(providerType)) {
     			return p.getUuid();
     		}
     	}
-    	throw new CloudRuntimeException(String.format("unable to find network service provider[name:%s]", providerName));
+    	throw new CloudRuntimeException(String.format("unable to find network service provider[name:%s]", providerType));
     }
     
     public void attachNetworkServiceToL3Network(L3NetworkInventory l3, List<NetworkServiceConfig> services) throws ApiSenderException {
     	if (services == null || services.isEmpty()) {
     		return;
     	}
-    	
+
+        APIQueryNetworkServiceProviderMsg msg = new APIQueryNetworkServiceProviderMsg();
+        msg.setConditions(new ArrayList<QueryCondition>());
+        APIQueryNetworkServiceProviderReply r = api.query(msg, APIQueryNetworkServiceProviderReply.class);
+        List<NetworkServiceProviderInventory> providers = r.getInventories();
     	for (NetworkServiceConfig nc : services) {
-    		List<NetworkServiceProviderInventory> providers = api.listNetworkServiceProvider(null);
     		String uuid = getNetworkServiceProviderUuid(providers, nc.getProvider());
     		api.attachNetworkServiceToL3Network(l3.getUuid(), uuid, nc.getServiceType());
     	}
@@ -587,8 +594,8 @@ public class Deployer {
             doAttachL2Network();
             deploySecurityGroup();
             deployImage();
-            deployInstanceOffering();
             deployDiskOffering();
+            deployInstanceOffering();
             deployVm();
             deployPortForwarding();
             deployEip();

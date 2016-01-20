@@ -30,6 +30,7 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -177,14 +178,16 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         handle(msg);
     }
 
+    @Transactional
     private void handle(ReturnBackupStorageMsg msg) {
+        self = dbf.getEntityManager().find(BackupStorageVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
         long availSize = self.getAvailableCapacity() + msg.getSize();
         if (availSize > self.getTotalCapacity()) {
             availSize = self.getTotalCapacity();
         }
 
         self.setAvailableCapacity(availSize);
-        dbf.update(self);
+        dbf.getEntityManager().merge(self);
         bus.reply(msg, new ReturnBackupStorageReply());
     }
 
@@ -201,7 +204,9 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                changeStatus(BackupStorageStatus.Disconnected);
+                if (!msg.isNewAdd()) {
+                    changeStatus(BackupStorageStatus.Disconnected);
+                }
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

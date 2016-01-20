@@ -265,7 +265,7 @@ public class LoadBalancerBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         for (LoadBalancerListenerVmNicRefVO ref : refs) {
                             ref.setStatus(LoadBalancerVmNicStatus.Active);
                             dbf.update(ref);
@@ -360,7 +360,7 @@ public class LoadBalancerBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         for (LoadBalancerListenerVmNicRefVO ref : refs) {
                             ref.setStatus(LoadBalancerVmNicStatus.Inactive);
                             dbf.update(ref);
@@ -834,7 +834,7 @@ public class LoadBalancerBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (init) {
                             self = dbf.reload(self);
                             self.setProviderType(null);
@@ -866,7 +866,7 @@ public class LoadBalancerBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
                             dbf.removeCollection(refs, LoadBalancerListenerVmNicRefVO.class);
                         }

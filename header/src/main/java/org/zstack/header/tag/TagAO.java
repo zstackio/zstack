@@ -36,6 +36,11 @@ public class TagAO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public TagAO(TagAO other) {
         this.uuid = other.uuid;
         this.resourceUuid = other.resourceUuid;

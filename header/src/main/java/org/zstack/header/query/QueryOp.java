@@ -15,6 +15,8 @@ public class QueryOp {
         this.op = op;
         allOps.put(op, this);
     }
+
+
     
     @Override
     public boolean equals(Object obj) {

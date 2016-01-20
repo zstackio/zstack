@@ -1,6 +1,7 @@
 package org.zstack.portal.managementnode;
 
 import com.rabbitmq.client.AlreadyClosedException;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
@@ -29,7 +30,10 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -220,8 +224,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 @Override
                 public void start() {
+                    logger.info("starting component: " + c.getClass().getName());
                     c.start();
-                    logger.info("Started component: " + c.getClass().getName());
+                    logger.info(String.format("component[%s] starts successfully", c.getClass()));
                     isStart = true;
                 }
 
@@ -298,7 +303,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     bus.stop();
                     trigger.rollback();
                 }
@@ -318,7 +323,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     bus.unregisterService(self);
                     trigger.rollback();
                 }
@@ -331,7 +336,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     stopComponents();
                     trigger.rollback();
                 }
@@ -344,7 +349,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     removeInventory(false);
                     trigger.rollback();
                 }
@@ -366,7 +371,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     node.leave();
                     trigger.rollback();
                 }
@@ -379,7 +384,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
 
                 @Override
-                public void rollback(FlowTrigger trigger, Map data) {
+                public void rollback(FlowRollback trigger, Map data) {
                     apim.stop();
                     trigger.rollback();
                 }
@@ -391,6 +396,12 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             }).error(new FlowErrorHandler() {
                 @Override
                 public void handle(ErrorCode errCode, Map data) {
+                    String bootErrorPath = PathUtil.join(PathUtil.getZStackHomeFolder(), "bootError.log");
+                    try {
+                        FileUtils.writeStringToFile(new File(bootErrorPath), errCode.toString());
+                    } catch (IOException e) {
+                        logger.warn(String.format("unable to write error to %s", bootErrorPath));
+                    }
                     ret.success = false;
                 }
             }).start();
@@ -411,9 +422,14 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
 
         stopped = false;
-		logger.info("Management node: " + getId() + " starts successfully");
 
 		installShutdownHook();
+
+        for (ManagementNodeReadyExtensionPoint ext : pluginRgty.getExtensionList(ManagementNodeReadyExtensionPoint.class)) {
+            ext.managementNodeReady();
+        }
+
+        logger.info("Management node: " + getId() + " starts successfully");
 
 		synchronized (this) {
 		    isNodeRunning = NODE_RUNNING;

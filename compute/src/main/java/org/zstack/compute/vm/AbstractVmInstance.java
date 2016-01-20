@@ -38,7 +38,9 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIChangeInstanceOfferingMsg.class.getName(),
                 APIGetVmMigrationCandidateHostsMsg.class.getName(),
                 APIDetachL3NetworkFromVmMsg.class.getName(),
-                DetachNicFromVmMsg.class.getName()
+                DetachNicFromVmMsg.class.getName(),
+                APIAttachIsoToVmInstanceMsg.class.getName(),
+                APIDetachIsoFromVmInstanceMsg.class.getName()
         );
 
         allowedOperations.addState(VmInstanceState.Stopped,
@@ -55,7 +57,9 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIChangeInstanceOfferingMsg.class.getName(),
                 StopVmInstanceMsg.class.getName(),
                 APIDetachL3NetworkFromVmMsg.class.getName(),
-                DetachNicFromVmMsg.class.getName()
+                DetachNicFromVmMsg.class.getName(),
+                APIAttachIsoToVmInstanceMsg.class.getName(),
+                APIDetachIsoFromVmInstanceMsg.class.getName()
         );
 
         allowedOperations.addState(VmInstanceState.Unknown,
@@ -79,6 +83,12 @@ public abstract class AbstractVmInstance implements VmInstance {
         allowedOperations.addState(VmInstanceState.Rebooting,
                 APIDestroyVmInstanceMsg.class.getName(),
                 DestroyVmInstanceMsg.class.getName());
+
+        allowedOperations.addState(VmInstanceState.Destroyed,
+                ExpungeVmMsg.class.getName(),
+                APIExpungeVmInstanceMsg.class.getName(),
+                APIRecoverVmInstanceMsg.class.getName());
+
 
         stateChangeChecker.addState(VmInstanceStateEvent.unknown.toString(),
                 VmInstanceState.Created.toString(),

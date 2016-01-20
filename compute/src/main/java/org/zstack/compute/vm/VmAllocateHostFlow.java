@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.allocator.*;
 import org.zstack.header.configuration.DiskOfferingInventory;
@@ -19,6 +20,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -103,6 +105,13 @@ public class VmAllocateHostFlow implements Flow {
                 if (reply.isSuccess()) {
                     AllocateHostReply areply = (AllocateHostReply) reply;
                     spec.setDestHost(areply.getHost());
+
+                    // update the vm's host uuid so even if the management node died later and the vm's state
+                    // is stuck in Starting, we know which host it's created on and can check its state on the host
+                    VmInstanceVO vmvo = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
+                    vmvo.setHostUuid(spec.getDestHost().getUuid());
+                    dbf.update(vmvo);
+
                     chain.next();
                 } else {
                     chain.fail(reply.getError());
@@ -112,14 +121,14 @@ public class VmAllocateHostFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger chain, Map data) {
+    public void rollback(FlowRollback chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory host = spec.getDestHost();
         if (host != null) {
             ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
             msg.setCpuCapacity(spec.getVmInventory().getCpuNum()*spec.getVmInventory().getCpuSpeed());
             msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
-            msg.setHost(host);
+            msg.setHostUuid(host.getUuid());
             msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
             bus.send(msg);
         }

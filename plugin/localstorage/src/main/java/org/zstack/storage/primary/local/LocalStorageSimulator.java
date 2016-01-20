@@ -1,6 +1,11 @@
 package org.zstack.storage.primary.local;
 
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.ModelAndView;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.RebaseSnapshotBackingFilesCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.VerifySnapshotChainCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsRsp;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpUploadBitsCmd;
@@ -22,13 +27,19 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 /**
  * Created by frank on 7/1/2015.
  */
 @Controller
 public class LocalStorageSimulator {
+    private CLogger logger = Utils.getLogger(LocalStorageSimulator.class);
+
     @Autowired
     private RESTFacade restf;
     @Autowired
@@ -48,6 +59,95 @@ public class LocalStorageSimulator {
         restf.getRESTTemplate().exchange(callbackUrl, HttpMethod.POST, rreq, String.class);
     }
 
+    @RequestMapping(value=LocalStorageKvmBackend.GET_BACKING_FILE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getBackingFile(HttpEntity<String> entity) {
+        GetBackingFileCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetBackingFileCmd.class);
+        GetBackingFileRsp rsp = new GetBackingFileRsp();
+        config.getBackingFileCmds.add(cmd);
+        rsp.backingFilePath = config.backingFilePath;
+        rsp.size = config.backingFileSize;
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.GET_MD5_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getMd5sum(HttpEntity<String> entity) {
+        GetMd5Cmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetMd5Cmd.class);
+        GetMd5Rsp rsp = new GetMd5Rsp();
+        config.getMd5Cmds.add(cmd);
+        rsp.md5s = CollectionUtils.transformToList(cmd.md5s, new Function<Md5TO, GetMd5TO>() {
+            @Override
+            public Md5TO call(GetMd5TO arg) {
+                Md5TO to = new Md5TO();
+                to.md5 = arg.resourceUuid;
+                to.path = arg.path;
+                to.resourceUuid = arg.resourceUuid;
+                return to;
+            }
+        });
+
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.CHECK_MD5_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String checkMd5sum(HttpEntity<String> entity) {
+        CheckMd5sumCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CheckMd5sumCmd.class);
+        config.checkMd5sumCmds.add(cmd);
+        AgentResponse rsp = new AgentResponse();
+        if (!config.checkMd5Success) {
+            rsp.setSuccess(false);
+            rsp.setError("on purpose");
+        }
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String copyBitsFromRemote(HttpEntity<String> entity) {
+        CopyBitsFromRemoteCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CopyBitsFromRemoteCmd.class);
+        AgentResponse rsp = new AgentResponse();
+        if (config.copyBitsFromRemoteSuccess) {
+            config.copyBitsFromRemoteCmds.add(cmd);
+        } else {
+            rsp.setError("on purpose");
+            rsp.setSuccess(false);
+        }
+        reply(entity, rsp);
+        return null;}
+
+    @RequestMapping(value=LocalStorageKvmMigrateVmFlow.REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String rebaseRootVolumeToBackingFile(HttpEntity<String> entity) {
+        RebaseRootVolumeToBackingFileCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RebaseRootVolumeToBackingFileCmd.class);
+        config.rebaseRootVolumeToBackingFileCmds.add(cmd);
+        reply(entity, new RebaseRootVolumeToBackingFileRsp());
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmMigrateVmFlow.REBASE_SNAPSHOT_BACKING_FILES_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String rebaseSnapshotBackingFiles(HttpEntity<String> entity) {
+        RebaseSnapshotBackingFilesCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RebaseSnapshotBackingFilesCmd.class);
+        config.rebaseSnapshotBackingFilesCmds.add(cmd);
+        reply(entity, new AgentResponse());
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmMigrateVmFlow.VERIFY_SNAPSHOT_CHAIN_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String verifySnapshotChain(HttpEntity<String> entity) {
+        VerifySnapshotChainCmd cmd = JSONObjectUtil.toObject(entity.getBody(), VerifySnapshotChainCmd.class);
+        config.verifySnapshotChainCmds.add(cmd);
+        reply(entity, new AgentResponse());
+        return null;
+    }
+
+
     @RequestMapping(value=LocalStorageKvmBackend.INIT_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String init(HttpEntity<String> entity) {
@@ -62,10 +162,22 @@ public class LocalStorageSimulator {
         String hname = q.findValue();
 
         Capacity c = config.capacityMap.get(hname);
+        assert c!=null : String.format("cannot find host[name:%s] for configuring the local storage capacity", hname);
         rsp.setTotalCapacity(c.total);
         rsp.setAvailableCapacity(c.avail);
         reply(entity, rsp);
 
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.CHECK_BITS_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String checkBits(HttpEntity<String> entity) {
+        CheckBitsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CheckBitsCmd.class);
+        config.checkBitsCmds.add(cmd);
+        CheckBitsRsp rsp = new CheckBitsRsp();
+        rsp.existing = config.checkBitsSuccess;
+        reply(entity, rsp);
         return null;
     }
 
@@ -114,7 +226,9 @@ public class LocalStorageSimulator {
     public @ResponseBody
     String delete(HttpEntity<String> entity) {
         DeleteBitsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteBitsCmd.class);
-        config.deleteBitsCmds.add(cmd);
+        synchronized (config) {
+            config.deleteBitsCmds.add(cmd);
+        }
         DeleteBitsRsp rsp = new DeleteBitsRsp();
         reply(entity, rsp);
         return null;
@@ -188,5 +302,13 @@ public class LocalStorageSimulator {
         OfflineMergeSnapshotRsp rsp = new OfflineMergeSnapshotRsp();
         reply(entity, rsp);
         return null;
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ModelAndView handleAllException(Exception ex) {
+        logger.warn(ex.getMessage(), ex);
+        ModelAndView model = new ModelAndView("error/generic_error");
+        model.addObject("errMsg", ex.getMessage());
+        return model;
     }
 }

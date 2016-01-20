@@ -13,6 +13,16 @@ public class APIUpdateHostMsg extends APIMessage implements HostMessage {
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
+    @APIParam(maxLength = 32, required = false, emptyString = false)
+    private String managementIp;
+
+    public String getManagementIp() {
+        return managementIp;
+    }
+
+    public void setManagementIp(String managementIp) {
+        this.managementIp = managementIp;
+    }
 
     public String getUuid() {
         return uuid;

@@ -16,6 +16,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
     </bean>
 
@@ -36,4 +37,6 @@
 			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="ImageDeletionPolicyManager" class="org.zstack.image.ImageDeletionPolicyManagerImpl" />
 </beans>

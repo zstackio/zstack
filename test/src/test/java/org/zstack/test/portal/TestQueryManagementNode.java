@@ -49,5 +49,9 @@ public class TestQueryManagementNode {
         msg.setConditions(new ArrayList<QueryCondition>());
         APIQueryManagementNodeReply reply = api.query(msg, APIQueryManagementNodeReply.class);
         Assert.assertEquals(1, reply.getInventories().size());
+
+        String version = api.getVersion();
+        Assert.assertNotNull(version);
+        System.out.println(String.format("version: %s", version));
     }
 }

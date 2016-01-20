@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -80,7 +81,7 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
     }
 
     @Override
-    public void rollback(final FlowTrigger chain, Map data) {
+    public void rollback(final FlowRollback chain, Map data) {
         if (data.get(VR_APPLY_PORT_FORWARDING_RULE_SUCCESS) != null) {
             final PortForwardingRuleTO to = (PortForwardingRuleTO) data.get(VirtualRouterConstant.VR_PORT_FORWARDING_RULE);
             final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.VR_RESULT_VM);

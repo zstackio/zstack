@@ -76,6 +76,7 @@ public class IscsiBtrfsPrimaryStorageSimulator {
 
     @AsyncThread
     private void checkBits(HttpEntity<String> entity) {
+
         CheckBitsExistenceCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CheckBitsExistenceCmd.class);
         CheckBitsExistenceRsp rsp = new CheckBitsExistenceRsp();
 
@@ -208,7 +209,9 @@ public class IscsiBtrfsPrimaryStorageSimulator {
         CreateIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateIscsiTargetCmd.class);
         CreateIscsiTargetRsp rsp = new CreateIscsiTargetRsp();
         if (config.createTargetSuccess) {
-            config.createIscsiTargetCmds.add(cmd);
+            synchronized (config.createIscsiTargetCmds) {
+                config.createIscsiTargetCmds.add(cmd);
+            }
             rsp.setTarget("iqn.1994-05.com.redhat:3b93b069cc1");
             rsp.setLun(1);
         } else {
@@ -229,7 +232,9 @@ public class IscsiBtrfsPrimaryStorageSimulator {
 
     private void deleteTarget(HttpEntity<String> entity) {
         DeleteIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteIscsiTargetCmd.class);
-        config.deleteIscsiTargetCmds.add(cmd);
+        synchronized (config.deleteIscsiTargetCmds) {
+            config.deleteIscsiTargetCmds.add(cmd);
+        }
         logger.debug(String.format("delete iscsi target[name:%s, uuid:%s]", cmd.getTarget(), cmd.getUuid()));
         DeleteIscsiTargetRsp rsp = new DeleteIscsiTargetRsp();
         reply(entity, rsp);

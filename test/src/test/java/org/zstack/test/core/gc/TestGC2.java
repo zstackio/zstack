@@ -50,7 +50,7 @@ public class TestGC2 {
 
     @Test
     public void test() {
-        GCContext<String> context = new GCContext<String>();
+        GCPersistentContext<String> context = new GCPersistentContext<String>();
         context.setRunnerClass(TRunner.class);
         context.setInterval(1);
         context.setTimeUnit(TimeUnit.SECONDS);

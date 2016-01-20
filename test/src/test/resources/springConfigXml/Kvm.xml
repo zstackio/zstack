@@ -23,7 +23,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.host.HypervisorFactory" />
             <zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
             <zstack:extension interface="org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint" />
         </zstack:plugin>
     </bean>
@@ -67,6 +67,8 @@
             <zstack:extension interface="org.zstack.header.host.HostPingTaskExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>
 

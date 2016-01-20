@@ -174,7 +174,7 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
         vmq.add(VmInstanceVO_.uuid, Op.EQ, vol.getVmInstanceUuid());
         String platform = vmq.findValue();
 
-        boolean useVirtio = (ImagePlatform.Paravirtualization.toString().equals(platform) || ImagePlatform.Linux.toString().equals(platform))
+        boolean useVirtio = ImagePlatform.valueOf(platform).isParaVirtualization()
                 && KVMSystemTags.VIRTIO_SCSI.hasTag(host.getUuid());
         kto.setUseVirtio(useVirtio);
 

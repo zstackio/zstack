@@ -29,6 +29,11 @@ public class UserGroupUserRefVO {
     
     @Column
     private Timestamp lastOpDate;
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
     
     public long getId() {
         return id;

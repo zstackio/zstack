@@ -5,4 +5,5 @@ public enum ImageStatus {
 	Downloading,
     Ready,
 	Error,
+    Deleted,
 }

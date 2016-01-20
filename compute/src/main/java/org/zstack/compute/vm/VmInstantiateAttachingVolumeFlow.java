@@ -15,6 +15,7 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
@@ -50,6 +51,9 @@ public class VmInstantiateAttachingVolumeFlow extends NoRollbackFlow {
                     vo.setPrimaryStorageUuid(pinv.getUuid());
                     vo.setInstallPath(r.getVolume().getInstallPath());
                     vo.setFormat(r.getVolume().getFormat());
+                    if (vo.getFormat() == null) {
+                        vo.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getVmInventory().getHypervisorType()).toString());
+                    }
                     vo.setStatus(VolumeStatus.Ready);
                     vo = dbf.updateAndRefresh(vo);
                     ctx.put(VmInstanceConstant.Params.AttachingVolumeInventory.toString(), VolumeInventory.valueOf(vo));

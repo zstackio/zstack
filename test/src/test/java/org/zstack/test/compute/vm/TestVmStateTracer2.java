@@ -27,6 +27,11 @@ import org.zstack.test.deployer.Deployer;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 1. create a stranger vm
+ *
+ * confirm the stranger vm event is fired
+ */
 public class TestVmStateTracer2 {
     Deployer deployer;
     Api api;

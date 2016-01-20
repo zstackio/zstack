@@ -62,6 +62,11 @@ public class ImageAO {
     @Column
     private String guestOsType;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public boolean isSystem() {
         return system == null ? false : system;
     }

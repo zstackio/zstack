@@ -15,7 +15,8 @@ public class PrimaryStorageCapacityInventory {
     private Long totalCapacity;
     private Long availableCapacity;
     private Long totalPhysicalCapacity;
-    private Long availablePhsicalCapacity;
+    private Long availablePhysicalCapacity;
+    private Long systemUsedCapacity;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -27,7 +28,8 @@ public class PrimaryStorageCapacityInventory {
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setTotalPhysicalCapacity(vo.getTotalPhysicalCapacity());
-        inv.setAvailablePhsicalCapacity(vo.getAvailablePhysicalCapacity());
+        inv.setAvailablePhysicalCapacity(vo.getAvailablePhysicalCapacity());
+        inv.setSystemUsedCapacity(vo.getSystemUsedCapacity());
         return inv;
     }
 
@@ -39,6 +41,14 @@ public class PrimaryStorageCapacityInventory {
         return invs;
     }
 
+    public Long getSystemUsedCapacity() {
+        return systemUsedCapacity;
+    }
+
+    public void setSystemUsedCapacity(Long systemUsedCapacity) {
+        this.systemUsedCapacity = systemUsedCapacity;
+    }
+
     public Long getTotalPhysicalCapacity() {
         return totalPhysicalCapacity;
     }
@@ -47,12 +57,12 @@ public class PrimaryStorageCapacityInventory {
         this.totalPhysicalCapacity = totalPhysicalCapacity;
     }
 
-    public Long getAvailablePhsicalCapacity() {
-        return availablePhsicalCapacity;
+    public Long getAvailablePhysicalCapacity() {
+        return availablePhysicalCapacity;
     }
 
-    public void setAvailablePhsicalCapacity(Long availablePhsicalCapacity) {
-        this.availablePhsicalCapacity = availablePhsicalCapacity;
+    public void setAvailablePhysicalCapacity(Long availablePhysicalCapacity) {
+        this.availablePhysicalCapacity = availablePhysicalCapacity;
     }
 
     public String getUuid() {

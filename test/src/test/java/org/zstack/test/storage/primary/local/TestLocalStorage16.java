@@ -3,6 +3,7 @@ package org.zstack.test.storage.primary.local;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -10,8 +11,10 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.storage.primary.local.*;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -21,6 +24,8 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
+
+import java.util.List;
 
 /**
  * 1. use local storage
@@ -67,17 +72,24 @@ public class TestLocalStorage16 {
     
 	@Test
 	public void test() throws ApiSenderException {
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.destroyVmInstance(vm.getUuid());
 
         Assert.assertFalse(dbf.isExist(vm.getRootVolumeUuid(), LocalStorageResourceRefVO.class));
 
+        long isize = 0;
+        List<ImageCacheVO> is = dbf.listAll(ImageCacheVO.class);
+        for (ImageCacheVO ic : is) {
+            isize += ic.getSize();
+        }
+
         HostInventory host1 = deployer.hosts.get("host1");
         LocalStorageHostRefVO ref = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(totalSize, ref.getAvailableCapacity());
+        Assert.assertEquals(totalSize-isize, ref.getAvailableCapacity());
 
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         PrimaryStorageVO pvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
-        Assert.assertEquals(totalSize, pvo.getCapacity().getAvailableCapacity());
+        Assert.assertEquals(totalSize-isize, pvo.getCapacity().getAvailableCapacity());
     }
 }

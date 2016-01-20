@@ -12,20 +12,21 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.inventory.InventoryFacade;
+import org.zstack.core.job.JobQueueFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.core.inventory.InventoryFacade;
-import org.zstack.core.job.JobQueueFacade;
-import org.zstack.core.workflow.*;
-import org.zstack.header.core.Completion;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -39,7 +40,6 @@ import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -71,6 +71,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected ErrorFacade errf;
     @Autowired
     protected ThreadFacade thdf;
+    @Autowired
+    protected PrimaryStorageOverProvisioningManager ratioMgr;
 
     public static class PhysicalCapacityUsage {
         public long totalPhysicalSize;
@@ -167,8 +169,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((DeleteIsoFromPrimaryStorageMsg) msg);
         } else if (msg instanceof AskVolumeSnapshotCapabilityMsg) {
             handle((AskVolumeSnapshotCapabilityMsg) msg);
-        } else if (msg instanceof PrimaryStorageReportCapacityMsg) {
-            handle((PrimaryStorageReportCapacityMsg) msg);
         } else if (msg instanceof TakePrimaryStorageCapacityMsg) {
             handle((TakePrimaryStorageCapacityMsg) msg);
 	    } else {
@@ -176,28 +176,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 	    }
 	}
 
-    @Transactional
     private void handle(TakePrimaryStorageCapacityMsg msg) {
-        PrimaryStorageCapacityVO vo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-        vo.setAvailableCapacity(vo.getAvailableCapacity() - msg.getSize());
-        if (vo.getAvailableCapacity() < 0) {
-            vo.setAvailableCapacity(0);
-        }
-        dbf.getEntityManager().merge(vo);
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+        updater.decreaseAvailableCapacity(msg.getSize());
         TakePrimaryStorageCapacityReply reply = new TakePrimaryStorageCapacityReply();
-        bus.reply(msg, reply);
-    }
-
-    @Transactional
-    private void handle(PrimaryStorageReportCapacityMsg msg) {
-        PrimaryStorageCapacityVO vo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-        if (vo.getTotalCapacity() == 0) {
-            vo.setTotalCapacity(msg.getTotalCapacity());
-            vo.setAvailableCapacity(msg.getAvailableCapacity());
-            dbf.getEntityManager().merge(vo);
-        }
-
-        PrimaryStorageReportCapacityReply reply = new PrimaryStorageReportCapacityReply();
         bus.reply(msg, reply);
     }
 
@@ -382,6 +364,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
                                 VolumeReportPrimaryStorageCapacityUsageReply r = reply.castReply();
                                 volumeUsage = r.getUsedCapacity();
+                                volumeUsage = ratioMgr.calculateByRatio(self.getUuid(), volumeUsage);
                                 trigger.next();
                             }
                         });
@@ -404,6 +387,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                                     return;
                                 }
 
+                                // note: snapshot size is physical size,
+                                // don't calculate over-provisioning here
                                 VolumeSnapshotReportPrimaryStorageCapacityUsageReply r = reply.castReply();
                                 snapshotUsage = r.getUsedSize();
                                 trigger.next();
@@ -443,16 +428,18 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         bus.publish(evt);
                     }
 
-                    @Transactional
                     private void writeToDb() {
-                        PrimaryStorageCapacityVO vo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
-
-                        long avail = vo.getTotalCapacity() - volumeUsage - snapshotUsage;
-                        avail = avail < 0 ? 0 : avail;
-                        vo.setAvailableCapacity(avail);
-                        vo.setAvailablePhysicalCapacity(availablePhysicalSize);
-                        vo.setTotalPhysicalCapacity(totalPhysicalSize);
-                        dbf.getEntityManager().merge(vo);
+                        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
+                        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+                            @Override
+                            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                                long avail = cap.getTotalCapacity() - volumeUsage - snapshotUsage;
+                                cap.setAvailableCapacity(avail);
+                                cap.setAvailablePhysicalCapacity(availablePhysicalSize);
+                                cap.setTotalPhysicalCapacity(totalPhysicalSize);
+                                return cap;
+                            }
+                        });
                     }
                 });
 

@@ -80,7 +80,7 @@ public class TestIscsiBtrfsPrimaryStorage6 {
 
         Assert.assertEquals(1, iconfig.createSubVolumeCmds.size());
 
-        Assert.assertEquals(BootDev.cdrom.toString(), scmd.getBootDev());
+        Assert.assertEquals(BootDev.cdrom.toString(), scmd.getBootDev().get(0));
         IscsiVolumePath path = new IscsiVolumePath(scmd.getBootIso().getPath());
         path.disassemble();
         Assert.assertEquals(iscsi.getHostname(), path.getHostname());

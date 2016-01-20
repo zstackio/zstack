@@ -78,6 +78,11 @@ public class PathUtil {
         return f;
     }
 
+    public static boolean exists(String path) {
+        File f = new File(path);
+        return f.exists();
+    }
+
     public static File findFolderOnClassPath(String folderName,  boolean exceptionOnNotFound) {
         File folder = findFolderOnClassPath(folderName);
         if (folder == null && exceptionOnNotFound) {

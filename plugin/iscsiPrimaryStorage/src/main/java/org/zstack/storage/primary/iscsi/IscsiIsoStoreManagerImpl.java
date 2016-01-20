@@ -162,9 +162,4 @@ public class IscsiIsoStoreManagerImpl implements IscsiIsoStoreManager, Component
     public void failedToDestroyVm(VmInstanceInventory inv, ErrorCode reason) {
 
     }
-
-    @Override
-    public void afterDeleteVm(VmInstanceInventory inv) {
-
-    }
 }

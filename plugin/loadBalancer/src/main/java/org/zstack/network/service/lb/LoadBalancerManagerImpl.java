@@ -121,7 +121,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         vipMgr.unlockVip(vip);
                         trigger.rollback();
                     }

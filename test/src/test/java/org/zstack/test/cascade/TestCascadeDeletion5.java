@@ -3,6 +3,7 @@ package org.zstack.test.cascade;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -27,6 +28,7 @@ import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmInstance;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.zone.ZoneEO;
@@ -67,6 +69,7 @@ public class TestCascadeDeletion5 {
         DiskOfferingInventory do2 = deployer.diskOfferings.get("TestDataDiskOffering");
         InstanceOfferingInventory io = deployer.instanceOfferings.get("TestInstanceOffering");
         BackupStorageInventory bs = deployer.backupStorages.get("TestBackupStorage");
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
 
         api.deletePrimaryStorage(prinv.getUuid());
         long count = dbf.count(ZoneVO.class);

@@ -23,7 +23,7 @@ public abstract class APIAddHostMsg extends APICreateMessage {
      * @desc
      * IPv4 address or DNS name of management nic
      */
-	@APIParam
+	@APIParam(emptyString = false)
 	private String managementIp;
     /**
      * @desc

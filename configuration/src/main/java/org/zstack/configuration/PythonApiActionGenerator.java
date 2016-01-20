@@ -8,6 +8,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.AssignableTypeFilter;
+import org.springframework.stereotype.Component;
 import org.zstack.header.configuration.NoPython;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.APISessionMessage;
@@ -33,6 +34,7 @@ public class PythonApiActionGenerator {
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
         scanner.addIncludeFilter(new AssignableTypeFilter(APIMessage.class));
         scanner.addExcludeFilter(new AnnotationTypeFilter(NoPython.class));
+        scanner.addExcludeFilter(new AnnotationTypeFilter(Component.class));
         for (String pkg : basePkgs) {
             for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
                 try {

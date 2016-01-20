@@ -21,6 +21,8 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.VmCreator;
 import org.zstack.test.deployer.Deployer;
 
+import java.util.List;
+
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -28,6 +30,14 @@ import static org.zstack.utils.CollectionDSL.map;
  * 1 create vm with 3 static IP
  *
  * confirm three static IP are correctly allocated
+ *
+ * 2. delete l3 network1
+ *
+ * confirm the static ip tag of l3 network1 deleted
+ *
+ * 3. stop/start the vm
+ *
+ * confirm the vm starts/stops successfully
  */
 public class TestVmStaticIp {
     Deployer deployer;
@@ -89,5 +99,16 @@ public class TestVmStaticIp {
                 Assert.assertEquals(l3Ip3, nic.getIp());
             }
         }
+
+        api.deleteL3Network(l31.getUuid());
+        List<String> tags = VmSystemTags.STATIC_IP.getTags(vm.getUuid());
+        for (String t : tags) {
+            if (t.contains(l3Ip1)) {
+                Assert.fail("static ip tag is still on l3 network1");
+            }
+        }
+
+        api.stopVmInstance(vm.getUuid());
+        api.startVmInstance(vm.getUuid());
     }
 }

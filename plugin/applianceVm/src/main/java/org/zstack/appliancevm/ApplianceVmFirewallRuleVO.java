@@ -66,6 +66,11 @@ public class ApplianceVmFirewallRuleVO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public void makeIdentity() {
         identity = String.format("%s-%s-%s-%s-%s-%s-%s-%s",
                 applianceVmUuid, l3NetworkUuid, startPort, endPort, protocol, allowCidr, sourceIp, destIp);

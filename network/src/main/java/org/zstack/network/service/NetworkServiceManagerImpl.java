@@ -30,6 +30,7 @@ import org.zstack.header.vm.*;
 import org.zstack.query.QueryFacade;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -278,14 +279,22 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             return;
         }
 
+        List<String> nsTypes = spec.getRequiredNetworkServiceTypes();
+
         FlowChain schain = FlowChainBuilder.newSimpleFlowChain().setName(String.format("apply-network-service-to-vm-%s", spec.getVmInventory().getUuid()));
+        schain.allowEmptyFlow();
         for (final NetworkServiceExtensionPoint ns : nsExts) {
             if (ns.getNetworkServiceExtensionPosition() != position) {
                 continue;
             }
 
+            if (!nsTypes.contains(ns.getNetworkServiceType().toString())) {
+                continue;
+            }
+
+
             Flow flow = new Flow() {
-                String __name__ = String.format(ns.getClass().getName());
+                String __name__ = String.format("apply-network-service-%s", ns.getNetworkServiceType());
 
                 @Override
                 public void run(final FlowTrigger chain, Map data) {
@@ -304,7 +313,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
                 }
 
                 @Override
-                public void rollback(final FlowTrigger chain, Map data) {
+                public void rollback(final FlowRollback chain, Map data) {
                     logger.debug(String.format("NetworkServiceExtensionPoint[%s] is asking back ends to release network service[%s] if needed", ns.getClass().getName(), ns.getNetworkServiceType()));
                     ns.releaseNetworkService(spec, data, new NoErrorCompletion() {
                         @Override
@@ -390,13 +399,23 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             return;
         }
 
+        List<String> nsTypes = spec.getRequiredNetworkServiceTypes();
+
         FlowChain schain = FlowChainBuilder.newSimpleFlowChain().setName(String.format("release-network-services-from-vm-%s", spec.getVmInventory().getUuid()));
+        schain.allowEmptyFlow();
+
         for (final NetworkServiceExtensionPoint ns : nsExts) {
             if (position != null && ns.getNetworkServiceExtensionPosition() != position) {
                 continue;
             }
 
+            if (!nsTypes.contains(ns.getNetworkServiceType().toString())) {
+                continue;
+            }
+
             NoRollbackFlow flow = new NoRollbackFlow() {
+                String __name__ = String.format("release-network-service-%s", ns.getNetworkServiceType());
+
                 @Override
                 public void run(final FlowTrigger chain, Map data) {
                     logger.debug(String.format("NetworkServiceExtensionPoint[%s] is asking back ends to release network service[%s] if needed", ns.getClass().getName(), ns.getNetworkServiceType()));

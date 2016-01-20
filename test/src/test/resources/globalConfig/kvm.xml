@@ -52,4 +52,12 @@
         <type>java.lang.Boolean</type>
         <defaultValue>false</defaultValue>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>vmSyncOnHostPing</name>
+        <description>whether to sync VM states from hosts when host ping tasks execute</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>false</defaultValue>
+    </config>
 </globalConfig>

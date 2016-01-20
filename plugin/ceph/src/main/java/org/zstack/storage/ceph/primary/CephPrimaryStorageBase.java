@@ -980,6 +980,47 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 @Override
                 public void setup() {
                     flow(new Flow() {
+                        String __name__ = "allocate-primary-storage-capacity-for-image-cache";
+
+                        boolean s = false;
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                            amsg.setRequiredPrimaryStorageUuid(self.getUuid());
+                            amsg.setSize(image.getInventory().getSize());
+                            amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
+                            amsg.setNoOverProvisioning(true);
+                            bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
+                            bus.send(amsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        trigger.fail(reply.getError());
+                                    } else {
+                                        s = true;
+                                        trigger.next();
+                                    }
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void rollback(FlowRollback trigger, Map data) {
+                            if (s) {
+                                ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+                                rmsg.setNoOverProvisioning(true);
+                                rmsg.setPrimaryStorageUuid(self.getUuid());
+                                rmsg.setDiskSize(image.getInventory().getSize());
+                                bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+                                bus.send(rmsg);
+                            }
+
+                            trigger.rollback();
+                        }
+                    });
+
+                    flow(new Flow() {
                         String __name__ = "download-from-backup-storage";
 
                         boolean deleteOnRollback;
@@ -1008,7 +1049,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (deleteOnRollback && cachePath != null) {
                                 DeleteCmd cmd = new DeleteCmd();
                                 cmd.installPath = cachePath;
@@ -1056,7 +1097,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
 
                         @Override
-                        public void rollback(FlowTrigger trigger, Map data) {
+                        public void rollback(FlowRollback trigger, Map data) {
                             if (needCleanup) {
                                 DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
                                 cmd.snapshotPath = snapshotPath;
@@ -1673,7 +1714,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         dbf.removeCollection(monVOs, CephPrimaryStorageMonVO.class);
                         trigger.rollback();
                     }

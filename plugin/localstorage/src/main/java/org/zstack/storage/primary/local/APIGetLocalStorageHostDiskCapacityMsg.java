@@ -1,0 +1,34 @@
+package org.zstack.storage.primary.local;
+
+import org.zstack.header.host.HostVO;
+import org.zstack.header.message.APIParam;
+import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.storage.primary.PrimaryStorageMessage;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+
+/**
+ * Created by frank on 10/15/2015.
+ */
+public class APIGetLocalStorageHostDiskCapacityMsg extends APISyncCallMessage implements PrimaryStorageMessage {
+    @APIParam(resourceType = HostVO.class, required = false)
+    private String hostUuid;
+    @APIParam(resourceType = PrimaryStorageVO.class)
+    private String primaryStorageUuid;
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+
+    @Override
+    public String getPrimaryStorageUuid() {
+        return primaryStorageUuid;
+    }
+
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
+    }
+}

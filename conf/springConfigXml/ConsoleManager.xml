@@ -17,6 +17,8 @@
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceStopExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceDestroyExtensionPoint" />
         </zstack:plugin>
 
         <property name="useBackend" value="ManagementServerConsoleProxyBackend" />
@@ -32,7 +34,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.console.ConsoleBackend" />
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
 
         <property name="agentPort" value="${ManagementServerConsoleProxyBackend.agentPort:7758}" />

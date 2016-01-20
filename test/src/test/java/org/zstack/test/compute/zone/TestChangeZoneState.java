@@ -14,6 +14,8 @@ import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 public class TestChangeZoneState {
     Api api;
     ComponentLoader loader;
@@ -31,14 +33,12 @@ public class TestChangeZoneState {
     }
 
     @Test
-    public void test() throws ApiSenderException {
-        try {
-            List<ZoneInventory> zones = api.createZones(1);
-            ZoneInventory zone = zones.get(0);
-            ZoneInventory s1 = api.changeZoneState(zone.getUuid(), ZoneStateEvent.disable);
-            Assert.assertEquals(ZoneState.Disabled.toString(), s1.getState());
-        } finally {
-            api.stopServer();
-        }
+    public void test() throws ApiSenderException, InterruptedException {
+        List<ZoneInventory> zones = api.createZones(1);
+        ZoneInventory zone = zones.get(0);
+        TimeUnit.SECONDS.sleep(1);
+        ZoneInventory s1 = api.changeZoneState(zone.getUuid(), ZoneStateEvent.disable);
+        Assert.assertEquals(ZoneState.Disabled.toString(), s1.getState());
+        Assert.assertFalse(s1.getCreateDate().equals(s1.getLastOpDate()));
     }
 }

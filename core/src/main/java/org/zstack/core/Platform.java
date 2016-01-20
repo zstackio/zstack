@@ -1,6 +1,8 @@
 package org.zstack.core;
 
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.web.context.WebApplicationContext;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
@@ -43,6 +45,8 @@ public class Platform {
     public static final String COMPONENT_CLASSPATH_HOME = "componentsHome";
 
     private static final Map<String, String> globalProperties = new HashMap<String, String>();
+
+    private static Locale locale;
 
     private static Map<String, String> linkGlobalPropertyMap(String prefix) {
         Map<String, String> ret = new HashMap<String, String>();
@@ -270,12 +274,12 @@ public class Platform {
     }
 
     static {
-        msId = getUuid();
-
-        // TODO: get code version from MANIFEST file
-        codeVersion = "0.1.0";
-
         try {
+            msId = getUuid();
+
+            // TODO: get code version from MANIFEST file
+            codeVersion = "0.1.0";
+
             File globalPropertiesFile = PathUtil.findFileOnClassPath("zstack.properties", true);
             FileInputStream in = new FileInputStream(globalPropertiesFile);
             System.getProperties().load(in);
@@ -283,7 +287,10 @@ public class Platform {
             linkGlobalProperty();
             prepareDefaultDbProperties();
             writePidFile();
-        } catch (Exception e) {
+
+            locale = new Locale(CoreGlobalProperty.LOCALE);
+        } catch (Throwable e) {
+            logger.warn(String.format("unhandled exception when in Platform's static block, %s", e.getMessage()), e);
             throw new RuntimeException(e);
         }
     }
@@ -383,7 +390,7 @@ public class Platform {
 		/*
 		 * This part cannot be moved to static block at the beginning.
 		 * Because component code loaded by Spring may call other functions in Platform which
-		 * causes the static block to be executed, and results in cycle initialization of ComponentLoaderImpl.
+		 * causes the static block to be executed, which results in cycle initialization of ComponentLoaderImpl.
 		 */
         if (loader == null) {
             loader = createComponentLoaderFromWebApplicationContext(null);
@@ -460,5 +467,28 @@ public class Platform {
         logger.info(String.format("get management IP[%s] from default route[/sbin/ip route]", ip));
         managementServerIp = ip;
         return managementServerIp;
+    }
+
+    public static String _(String code, Object...args) {
+        if (loader == null) {
+            throw new CloudRuntimeException("ComponentLoader is null. i18n has not been initialized, you call it too early");
+        }
+
+        BeanFactory beanFactory = loader.getSpringIoc();
+        if (beanFactory == null) {
+            throw new CloudRuntimeException("BeanFactory is null. i18n has not been initialized, you call it too early");
+        }
+
+        if (!(beanFactory instanceof MessageSource)) {
+            throw new CloudRuntimeException("BeanFactory is not a spring MessageSource. i18n cannot be used");
+        }
+
+        MessageSource source = (MessageSource)beanFactory;
+
+        if (args.length > 0) {
+            return source.getMessage(code, args, locale);
+        } else {
+            return source.getMessage(code, null, locale);
+        }
     }
 }

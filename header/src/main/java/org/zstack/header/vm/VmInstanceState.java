@@ -3,7 +3,9 @@ package org.zstack.header.vm;
 import org.zstack.header.configuration.PythonClass;
 import org.zstack.header.exception.CloudRuntimeException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @PythonClass
@@ -21,7 +23,15 @@ public enum VmInstanceState {
     Error(null),
     Unknown(VmInstanceStateEvent.unknown);
 
+    public static List<VmInstanceState> intermediateStates = new ArrayList<VmInstanceState>();
+
     static {
+        intermediateStates.add(Starting);
+        intermediateStates.add(Stopping);
+        intermediateStates.add(Rebooting);
+        intermediateStates.add(Destroying);
+        intermediateStates.add(Migrating);
+
         Created.transactions(
                 new Transaction(VmInstanceStateEvent.starting, VmInstanceState.Starting),
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying)
@@ -33,6 +43,7 @@ public enum VmInstanceState {
                 new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown)
         );
         Running.transactions(
+                new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),
                 new Transaction(VmInstanceStateEvent.stopping, VmInstanceState.Stopping),
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
@@ -79,6 +90,9 @@ public enum VmInstanceState {
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
                 new Transaction(VmInstanceStateEvent.expunging, VmInstanceState.Expunging)
+        );
+        Destroyed.transactions(
+                new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped)
         );
     }
 

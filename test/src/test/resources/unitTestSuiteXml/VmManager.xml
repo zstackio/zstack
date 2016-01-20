@@ -31,6 +31,7 @@
 	<TestCase class="org.zstack.test.compute.vm.TestStartVmWithAttachedVolume"/>
 	<TestCase class="org.zstack.test.compute.vm.TestAttachedVolumeToStoppedVm"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer"/>
+	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer1"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer2"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer3"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer4"/>
@@ -56,5 +57,6 @@
 	<TestCase class="org.zstack.test.compute.vm.TestPolicyForVm5"/>
 	<TestCase class="org.zstack.test.compute.vm.TestQueryVm6"/>
 	<TestCase class="org.zstack.test.compute.vm.TestChangeVmInstanceOffering"/>
+	<TestCase class="org.zstack.test.compute.vm.TestChangeVmInstanceOffering1"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmGetAttachableL3Networks"/>
 </UnitTestSuiteConfig>

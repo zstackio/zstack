@@ -46,7 +46,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
         NetworkServiceDhcpBackend bkd = e.getKey();
         List<DhcpStruct> structs = e.getValue();
         logger.debug(String.format("%s is applying DHCP service", bkd.getClass().getName()));
-        bkd.applyDhcpService(structs, spec, new Completion() {
+        bkd.applyDhcpService(structs, spec, new Completion(complete) {
             @Override
             public void success() {
                 doDhcp(it, spec, complete);
@@ -69,7 +69,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
         NetworkServiceDhcpBackend bkd = e.getKey();
         List<DhcpStruct> structs = e.getValue();
         logger.debug(String.format("%s is releasing DHCP service", bkd.getClass().getName()));
-        bkd.releaseDhcpService(structs, spec, new NoErrorCompletion() {
+        bkd.releaseDhcpService(structs, spec, new NoErrorCompletion(completion) {
             @Override
             public void done() {
                 releaseDhcp(it, spec, completion);

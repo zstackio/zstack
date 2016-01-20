@@ -79,7 +79,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         long size;
     }
 
-    private void download(String url, String installPath, final ReturnValueCompletion<DownloadResult> completion) {
+    private void download(String url, String installPath, String uuid, final ReturnValueCompletion<DownloadResult> completion) {
         try {
             URI uri = new URI(url);
             String scheme = uri.getScheme();
@@ -91,6 +91,7 @@ public class SftpBackupStorage extends BackupStorageBase {
 
             DownloadCmd cmd = new DownloadCmd();
             cmd.setUrl(url);
+            cmd.setUuid(uuid);
             cmd.setUrlScheme(scheme);
             cmd.setInstallPath(installPath);
             cmd.setTimeout(SftpBackupStorageGlobalProperty.DOWNLOAD_CMD_TIMEOUT);
@@ -131,7 +132,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         final DownloadImageReply reply = new DownloadImageReply();
         final ImageInventory iinv = msg.getImageInventory();
         final String installPath = PathUtil.join(getSelf().getUrl(), BackupStoragePathMaker.makeImageInstallPath(iinv));
-        download(iinv.getUrl(), installPath, new ReturnValueCompletion<DownloadResult>(msg) {
+        download(iinv.getUrl(), installPath, iinv.getUuid(), new ReturnValueCompletion<DownloadResult>(msg) {
             @Override
             public void success(DownloadResult res) {
                 reply.setInstallPath(installPath);
@@ -152,7 +153,7 @@ public class SftpBackupStorage extends BackupStorageBase {
     protected void handle(final DownloadVolumeMsg msg) {
         final DownloadVolumeReply reply = new DownloadVolumeReply();
         final String installPath = PathUtil.join(getSelf().getUrl(), BackupStoragePathMaker.makeVolumeInstallPath(msg.getUrl(), msg.getVolume()));
-        download(msg.getUrl(), installPath, new ReturnValueCompletion<DownloadResult>() {
+        download(msg.getUrl(), installPath, msg.getVolume().getUuid(), new ReturnValueCompletion<DownloadResult>() {
             @Override
             public void success(DownloadResult res) {
                 reply.setInstallPath(installPath);
@@ -180,6 +181,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             public void success() {
                 String url = buildUrl(SftpBackupStorageConstant.CONNECT_PATH);
                 ConnectCmd cmd = new ConnectCmd();
+                cmd.setUuid(self.getUuid());
                 cmd.setStoragePath(getSelf().getUrl());
                 ConnectResponse rsp = restf.syncJsonPost(url, cmd, ConnectResponse.class);
                 if (!rsp.isSuccess()) {
@@ -294,7 +296,8 @@ public class SftpBackupStorage extends BackupStorageBase {
 
     protected void handle(final PingBackupStorageMsg msg) {
         final PingBackupStorageReply reply = new PingBackupStorageReply();
-        PingCmd cmd = new PingCmd();
+
+        final PingCmd cmd = new PingCmd();
         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.PING_PATH), cmd, new JsonAsyncRESTCallback<PingResponse>() {
             @Override
             public void fail(ErrorCode err) {
@@ -304,8 +307,21 @@ public class SftpBackupStorage extends BackupStorageBase {
 
             @Override
             public void success(PingResponse ret) {
-                reply.setAvailable(ret.isSuccess());
-                bus.reply(msg, reply);
+                if (ret.isSuccess() && !self.getUuid().equals(ret.getUuid())) {
+                    logger.debug(String.format("the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it's most likely" +
+                            " the agent was manually restarted. Issue a reconnect to sync the status", self.getUuid(), ret.getUuid()));
+                    reply.setAvailable(false);
+                    bus.reply(msg, reply);
+
+                    ConnectBackupStorageMsg cmsg = new ConnectBackupStorageMsg();
+                    cmsg.setBackupStorageUuid(self.getUuid());
+                    cmsg.setNewAdd(false);
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, self.getUuid());
+                    bus.send(cmsg);
+                } else {
+                    reply.setAvailable(ret.isSuccess());
+                    bus.reply(msg, reply);
+                }
             }
 
             @Override
@@ -357,6 +373,10 @@ public class SftpBackupStorage extends BackupStorageBase {
 
     @Override
     protected BackupStorageVO updateBackupStorage(APIUpdateBackupStorageMsg msg) {
+        if (!(msg instanceof APIUpdateSftpBackupStorageMsg)) {
+            return super.updateBackupStorage(msg);
+        }
+
         SftpBackupStorageVO vo = (SftpBackupStorageVO) super.updateBackupStorage(msg);
         vo = vo == null ? getSelf() : vo;
 

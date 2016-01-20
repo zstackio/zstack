@@ -4,20 +4,25 @@ import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.gc.*;
+import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.CancelablePeriodicTask;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
@@ -32,37 +37,50 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
+import org.zstack.header.network.l3.L3NetworkException;
+import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
-import org.zstack.tag.SystemTag;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 
-public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager, HostStatusChangeNotifyPoint, ReportQuotaExtensionPoint {
+public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager, HostStatusChangeNotifyPoint,
+        ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<String, VmInstanceFactory>());
     private List<String> createVmWorkFlowElements;
@@ -71,7 +89,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private List<String> startVmWorkFlowElements;
     private List<String> destroyVmWorkFlowElements;
     private List<String> migrateVmWorkFlowElements;
+    private List<String> attachIsoWorkFlowElements;
+    private List<String> detachIsoWorkFlowElements;
     private List<String> attachVolumeWorkFlowElements;
+    private List<String> expungeVmWorkFlowElements;
     private FlowChainBuilder createVmFlowBuilder;
     private FlowChainBuilder stopVmFlowBuilder;
     private FlowChainBuilder rebootVmFlowBuilder;
@@ -79,7 +100,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private FlowChainBuilder destroyVmFlowBuilder;
     private FlowChainBuilder migrateVmFlowBuilder;
     private FlowChainBuilder attachVolumeFlowBuilder;
+    private FlowChainBuilder attachIsoFlowBuilder;
+    private FlowChainBuilder detachIsoFlowBuilder;
+    private FlowChainBuilder expungeVmFlowBuilder;
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
+    private Future<Void> expungeVmTask;
 
     static {
         allowedMessageAfterSoftDeletion.add(VmInstanceDeletionMsg.class);
@@ -99,6 +124,14 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private TagManager tagMgr;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ResourceDestinationMaker destMaker;
+    @Autowired
+    private GCFacade gcf;
+    @Autowired
+    private ThreadFacade thdf;
+    @Autowired
+    private VmInstanceDeletionPolicyManager deletionPolicyMgr;
 
     @Override
     @MessageSafe
@@ -272,6 +305,9 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         destroyVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(destroyVmWorkFlowElements).construct();
         migrateVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(migrateVmWorkFlowElements).construct();
         attachVolumeFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(attachVolumeWorkFlowElements).construct();
+        attachIsoFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(attachIsoWorkFlowElements).construct();
+        detachIsoFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(detachIsoWorkFlowElements).construct();
+        expungeVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(expungeVmWorkFlowElements).construct();
     }
 
     private void populateExtensions() {
@@ -292,10 +328,32 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             createVmFlowChainBuilder();
             populateExtensions();
             installSystemTagValidator();
+            installGlobalConfigUpdater();
             return true;
         } catch (Exception e) {
             throw new CloudConfigureFailException(VmInstanceManagerImpl.class, e.getMessage(), e);
         }
+    }
+
+    private void installGlobalConfigUpdater() {
+        VmGlobalConfig.VM_EXPUNGE_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startVmExpungeTask();
+            }
+        });
+        VmGlobalConfig.VM_EXPUNGE_PERIOD.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startVmExpungeTask();
+            }
+        });
+        VmGlobalConfig.VM_DELETION_POLICY.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startVmExpungeTask();
+            }
+        });
     }
 
     private void installSystemTagValidator() {
@@ -380,6 +438,21 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     validateHostNameOnDefaultL3Network(systemTag, hostname, defaultL3Uuid);
                 } else if (VmSystemTags.STATIC_IP.isMatch(systemTag)) {
                     validateStaticIp(systemTag);
+                } else if (VmSystemTags.BOOT_ORDER.isMatch(systemTag)) {
+                    validateBootOrder(systemTag);
+                }
+            }
+
+            private void validateBootOrder(String systemTag) {
+                String order = VmSystemTags.BOOT_ORDER.getTokenByTag(systemTag, VmSystemTags.BOOT_ORDER_TOKEN);
+                for (String o : order.split(",")) {
+                    try {
+                        VmBootDevice.valueOf(o);
+                    } catch (IllegalArgumentException e) {
+                        throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                                String.format("invalid boot device[%s] in boot order[%s]", o, order)
+                        ));
+                    }
                 }
             }
         }
@@ -434,24 +507,24 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         return factory;
     }
 
-
-
     @Transactional
-    protected void putVmToUnknownState(String hostUuid) {
+    protected void putVmToUnknownState(final String hostUuid) {
         SimpleQuery<VmInstanceVO> query = dbf.createQuery(VmInstanceVO.class);
-        query.select(VmInstanceVO_.uuid, VmInstanceVO_.state);
+        query.select(VmInstanceVO_.uuid);
         query.add(VmInstanceVO_.hostUuid, Op.EQ, hostUuid);
-        List<Tuple> tss = query.listTuple();
-        for (Tuple ts : tss) {
-            ChangeVmMetaDataMsg msg = new ChangeVmMetaDataMsg();
-            msg.setVmInstanceUuid(ts.get(0, String.class));
-            AtomicVmState s = new AtomicVmState();
-            s.setExpected(ts.get(1, VmInstanceState.class));
-            s.setValue(VmInstanceState.Unknown);
-            msg.setState(s);
-            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, ts.get(0, String.class));
-            bus.send(msg);
-        }
+        List<String> tss = query.listValue();
+        List<VmStateChangedOnHostMsg> msgs = CollectionUtils.transformToList(tss, new Function<VmStateChangedOnHostMsg, String>() {
+            @Override
+            public VmStateChangedOnHostMsg call(String vmUuid) {
+                VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
+                msg.setVmInstanceUuid(vmUuid);
+                msg.setHostUuid(hostUuid);
+                msg.setStateOnHost(VmInstanceState.Unknown);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
+                return msg;
+            }
+        });
+        bus.send(msgs);
     }
 
     @Override
@@ -496,6 +569,22 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         return attachVolumeFlowBuilder.build();
     }
 
+
+    @Override
+    public FlowChain getAttachIsoWorkFlowChain(VmInstanceInventory inv) {
+        return attachIsoFlowBuilder.build();
+    }
+
+    @Override
+    public FlowChain getDetachIsoWorkFlowChain(VmInstanceInventory inv) {
+        return detachIsoFlowBuilder.build();
+    }
+
+    @Override
+    public FlowChain getExpungeVmWorkFlowChain(VmInstanceInventory inv) {
+        return expungeVmFlowBuilder.build();
+    }
+
     public void setCreateVmWorkFlowElements(List<String> createVmWorkFlowElements) {
         this.createVmWorkFlowElements = createVmWorkFlowElements;
     }
@@ -524,6 +613,17 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         this.attachVolumeWorkFlowElements = attachVolumeWorkFlowElements;
     }
 
+    public void setAttachIsoWorkFlowElements(List<String> attachIsoWorkFlowElements) {
+        this.attachIsoWorkFlowElements = attachIsoWorkFlowElements;
+    }
+
+    public void setDetachIsoWorkFlowElements(List<String> detachIsoWorkFlowElements) {
+        this.detachIsoWorkFlowElements = detachIsoWorkFlowElements;
+    }
+
+    public void setExpungeVmWorkFlowElements(List<String> expungeVmWorkFlowElements) {
+        this.expungeVmWorkFlowElements = expungeVmWorkFlowElements;
+    }
 
     @Override
     public List<Quota> reportQuota() {
@@ -544,10 +644,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 long volSize = pairs.get(VolumeConstant.QUOTA_VOLUME_SIZE).getValue();
 
                 String sql = "select count(vm), sum(vm.cpuNum), sum(vm.memorySize) from VmInstanceVO vm, AccountResourceRefVO ref where" +
-                        " vm.uuid = ref.resourceUuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                        " vm.uuid = ref.resourceUuid and ref.accountUuid = :auuid and ref.resourceType = :rtype and vm.state != :vstate";
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("auuid", msg.getSession().getAccountUuid());
                 q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
+                q.setParameter("vstate", VmInstanceState.Destroyed);
                 Tuple t = q.getSingleResult();
                 Long vnum = t.get(0, Long.class);
                 vnum = vnum == null ? 0 : vnum;
@@ -586,11 +687,13 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
                 // check data volume num
                 if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
-                    sql = "select count(vol) from VolumeVO vol, AccountResourceRefVO ref where vol.type = :vtype and ref.resourceUuid = vol.uuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                    sql = "select count(vol) from VolumeVO vol, AccountResourceRefVO ref where vol.type = :vtype and ref.resourceUuid = vol.uuid" +
+                            " and ref.accountUuid = :auuid and ref.resourceType = :rtype and vol.status != :vstatus";
                     TypedQuery<Tuple> volq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     volq.setParameter("auuid", msg.getSession().getAccountUuid());
                     volq.setParameter("rtype", VolumeVO.class.getSimpleName());
                     volq.setParameter("vtype", VolumeType.Data);
+                    volq.setParameter("vstatus", VolumeStatus.Deleted);
                     Long n = volq.getSingleResult().get(0, Long.class);
                     n = n == null ? 0 : n;
 
@@ -630,10 +733,12 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 }
 
                 sql = "select sum(vol.size) from VolumeVO vol, AccountResourceRefVO ref where" +
-                        " ref.resourceUuid = vol.uuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                        " ref.resourceUuid = vol.uuid and ref.accountUuid = :auuid and ref.resourceType = :rtype" +
+                        " and vol.status != :vstatus";
                 TypedQuery<Long> vq = dbf.getEntityManager().createQuery(sql, Long.class);
                 vq.setParameter("auuid", msg.getSession().getAccountUuid());
                 vq.setParameter("rtype", VolumeVO.class.getSimpleName());
+                vq.setParameter("vstatus", VolumeStatus.Deleted);
                 Long vsize = vq.getSingleResult();
                 vsize = vsize == null ? 0 : vsize;
 
@@ -676,5 +781,212 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         quota.setChecker(checker);
 
         return list(quota);
+    }
+
+    private List<String> getVmInUnknownStateManagedByUs() {
+        int qun = 10000;
+        SimpleQuery q = dbf.createQuery(VmInstanceVO.class);
+        q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
+        long amount = q.count();
+        int times = (int)(amount / qun) + (amount % qun != 0 ? 1 : 0);
+        int start = 0;
+        List<String> ret = new ArrayList<String>();
+        for (int i=0; i<times; i++) {
+            q = dbf.createQuery(VmInstanceVO.class);
+            q.select(VmInstanceVO_.uuid, VmInstanceVO_.hostUuid);
+            q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
+            q.setLimit(qun);
+            q.setStart(start);
+            List<Tuple> lst = q.listTuple();
+            start += qun;
+            for (Tuple t : lst) {
+                String vmUuid = t.get(0, String.class);
+                if (!destMaker.isManagedByUs(vmUuid)) {
+                    continue;
+                }
+
+                String hostUuid = t.get(1, String.class);
+                if (hostUuid == null) {
+                    //TODO
+                    logger.warn(String.format("the vm[uuid:%s] is in Unknown state, but its hostUuid is null, we cannot check its" +
+                            " real state", vmUuid));
+                    continue;
+                }
+
+                ret.add(vmUuid);
+            }
+        }
+        return ret;
+    }
+
+    private void checkUnknownVm() {
+        List<String> unknownVmUuids = getVmInUnknownStateManagedByUs();
+        if (unknownVmUuids.isEmpty()) {
+            return;
+        }
+
+        for (final String uuid : unknownVmUuids) {
+            GCEphemeralContext<Void> context = new GCEphemeralContext<Void>();
+            context.setInterval(5);
+            context.setTimeUnit(TimeUnit.SECONDS);
+            context.setRunner(new GCRunner() {
+                @Override
+                public void run(GCContext context, final GCCompletion completion) {
+                    VmCheckOwnStateMsg msg = new VmCheckOwnStateMsg();
+                    msg.setVmInstanceUuid(uuid);
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
+                    bus.send(msg, new CloudBusCallBack() {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                completion.success();
+                            } else {
+                                completion.fail(errf.stringToOperationError(
+                                        String.format("unable to check the vm[uuid:%s]'s state, %s", uuid, reply.getError())
+                                ));
+                            }
+                        }
+                    });
+                }
+            });
+            gcf.scheduleImmediately(context);
+        }
+    }
+
+    @Override
+    @AsyncThread
+    public void managementNodeReady() {
+        //checkUnknownVm();
+        startVmExpungeTask();
+    }
+
+    private synchronized void startVmExpungeTask() {
+        if (expungeVmTask != null) {
+            expungeVmTask.cancel(true);
+        }
+
+        expungeVmTask = thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+
+            private List<Tuple> getVmDeletedStateManagedByUs() {
+                int qun = 10000;
+                SimpleQuery q = dbf.createQuery(VmInstanceVO.class);
+                q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Destroyed);
+                long amount = q.count();
+                int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
+                int start = 0;
+                List<Tuple> ret = new ArrayList<Tuple>();
+                for (int i = 0; i < times; i++) {
+                    q = dbf.createQuery(VmInstanceVO.class);
+                    q.select(VmInstanceVO_.uuid, VmInstanceVO_.lastOpDate);
+                    q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Destroyed);
+                    q.setLimit(qun);
+                    q.setStart(start);
+                    List<Tuple> ts = q.listTuple();
+                    start += qun;
+
+                    for (Tuple t : ts) {
+                        String vmUuid = t.get(0, String.class);
+                        if (!destMaker.isManagedByUs(vmUuid)) {
+                            continue;
+                        }
+                        ret.add(t);
+                    }
+                }
+
+                return ret;
+            }
+
+            @Override
+            public synchronized boolean run() {
+                final List<Tuple> vms = getVmDeletedStateManagedByUs();
+                if (vms.isEmpty()) {
+                    logger.debug("[VM Expunging Task]: no vm to expunge");
+                    return false;
+                }
+
+                final Timestamp current = dbf.getCurrentSqlTime();
+
+                final List<ExpungeVmMsg> msgs = CollectionUtils.transformToList(vms, new Function<ExpungeVmMsg, Tuple>() {
+                    @Override
+                    public ExpungeVmMsg call(Tuple t) {
+                        String uuid = t.get(0, String.class);
+                        Timestamp date = t.get(1, Timestamp.class);
+                        long end = date.getTime() + TimeUnit.SECONDS.toMillis(VmGlobalConfig.VM_EXPUNGE_PERIOD.value(Long.class));
+                        if (current.getTime() >= end) {
+                            VmInstanceDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(uuid);
+
+                            if (deletionPolicy == VmInstanceDeletionPolicy.Never) {
+                                logger.debug(String.format("[VM Expunging Task]: the deletion policy of the vm[uuid:%s] is Never, don't expunge it",
+                                        uuid));
+                                return null;
+                            } else {
+                                ExpungeVmMsg msg = new ExpungeVmMsg();
+                                msg.setVmInstanceUuid(uuid);
+                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
+                                return msg;
+                            }
+                        } else {
+                            return null;
+                        }
+                    }
+                });
+
+                if (msgs.isEmpty()) {
+                    logger.debug("[VM Expunging Task]: no vm to expunge");
+                    return false;
+                }
+
+                bus.send(msgs, 100, new CloudBusListCallBack() {
+                    @Override
+                    public void run(List<MessageReply> replies) {
+                        for (MessageReply r : replies) {
+                            ExpungeVmMsg msg = msgs.get(replies.indexOf(r));
+                            if (!r.isSuccess()) {
+                                logger.warn(String.format("failed to expunge the vm[uuid:%s], %s", msg.getVmInstanceUuid(), r.getError()));
+                            } else {
+                                logger.debug(String.format("successfully expunged the vm[uuid:%s]", msg.getVmInstanceUuid()));
+                            }
+                        }
+                    }
+                });
+
+                return false;
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return VmGlobalConfig.VM_EXPUNGE_INTERVAL.value(Long.class);
+            }
+
+            @Override
+            public String getName() {
+                return "expunge-vm-task";
+            }
+        });
+
+        logger.debug(String.format("vm expunging task starts running, [period: %s seconds, interval: %s seconds]",
+                VmGlobalConfig.VM_EXPUNGE_PERIOD.value(Long.class), VmGlobalConfig.VM_EXPUNGE_INTERVAL.value(Long.class)));
+    }
+
+    @Override
+    public String preDeleteL3Network(L3NetworkInventory inventory) throws L3NetworkException {
+        return null;
+    }
+
+    @Override
+    public void beforeDeleteL3Network(L3NetworkInventory inventory) {
+    }
+
+    @Override
+    public void afterDeleteL3Network(L3NetworkInventory inventory) {
+        VmSystemTags.STATIC_IP.delete(null, VmSystemTags.STATIC_IP.instantiateTag(map(
+                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, inventory.getUuid()),
+                e(VmSystemTags.STATIC_IP_TOKEN, "%")
+        )));
     }
 }

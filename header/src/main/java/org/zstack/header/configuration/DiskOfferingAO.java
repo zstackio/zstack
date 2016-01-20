@@ -39,7 +39,12 @@ public class DiskOfferingAO {
     
     @Column
     private String allocatorStrategy;
-    
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
 	public String getUuid() {
     	return uuid;
     }

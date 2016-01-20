@@ -11,6 +11,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -64,12 +65,13 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
             msg.addExcludePrimaryStoratgeUuid(priUuid);
         } else {
             msg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-            msg.setPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
+            msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
         }
 
-        msg.setHostUuid(hostUuid);
+        msg.setRequiredHostUuid(hostUuid);
         msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         msg.setSize(volume.getSize());
+        msg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
         bus.makeLocalServiceId(msg, PrimaryStorageConstant.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(trigger) {
             @Override
@@ -90,7 +92,7 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
     }
 
     @Override
-    public void rollback(FlowTrigger trigger, Map data) {
+    public void rollback(FlowRollback trigger, Map data) {
         Long size = (Long) data.get(LocalStorageAllocateCapacityForAttachingVolumeFlow.class);
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());

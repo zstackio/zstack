@@ -15,6 +15,7 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.image.ImageEO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
@@ -32,6 +33,7 @@ import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.zone.ZoneEO;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.image.ImageGlobalConfig;
 import org.zstack.test.AccountReferenceValidator;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -69,6 +71,7 @@ public class TestCascadeDeletion7 {
         DiskOfferingInventory do2 = deployer.diskOfferings.get("TestDataDiskOffering");
         InstanceOfferingInventory io = deployer.instanceOfferings.get("TestInstanceOffering");
         BackupStorageInventory bs = deployer.backupStorages.get("TestBackupStorage");
+        ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
 
         AccountReferenceValidator referenceValidator = new AccountReferenceValidator();
 

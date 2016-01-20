@@ -1,8 +1,13 @@
 package org.zstack.test.deployer;
 
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.deployer.schema.DeployerConfig;
@@ -10,7 +15,11 @@ import org.zstack.test.deployer.schema.ImageConfig;
 
 import java.util.List;
 
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class DefaultImageDeployer implements ImageDeployer<ImageConfig> {
+    @Autowired
+    private DatabaseFacade dbf;
+
     @Override
     public Class<ImageConfig> getSupportedDeployerClassType() {
         return ImageConfig.class;
@@ -36,6 +45,13 @@ public class DefaultImageDeployer implements ImageDeployer<ImageConfig> {
                 SessionInventory session = ic.getAccountRef() == null ? null : deployer.loginByAccountRef(ic.getAccountRef(), config);
 
                 iinv = deployer.getApi().addImageByFullConfig(iinv, bs.getUuid(), session);
+                if (ic.getSize() != null) {
+                    ImageVO vo = dbf.findByUuid(iinv.getUuid(), ImageVO.class);
+                    long size = deployer.parseSizeCapacity(ic.getSize());
+                    vo.setSize(size);
+                    vo = dbf.updateAndRefresh(vo);
+                    iinv = ImageInventory.valueOf(vo);
+                }
                 deployer.images.put(iinv.getName(), iinv);
             }
         }

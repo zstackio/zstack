@@ -37,6 +37,11 @@ public class CephMonAO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public int getSshPort() {
         return sshPort;
     }

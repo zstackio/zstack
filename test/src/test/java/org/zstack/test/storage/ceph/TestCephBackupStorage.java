@@ -8,8 +8,10 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.image.ImageGlobalConfig;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageReply;
@@ -72,6 +74,7 @@ public class TestCephBackupStorage {
     
     @Test
     public void test() throws ApiSenderException, InterruptedException {
+        ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
         CephBackupStorageVO bs = dbf.listAll(CephBackupStorageVO.class).get(0);
         Assert.assertEquals("7ff218d9-f525-435f-8a40-3618d1772a64", bs.getFsid());
         Assert.assertEquals(SizeUnit.TERABYTE.toByte(1), bs.getTotalCapacity());

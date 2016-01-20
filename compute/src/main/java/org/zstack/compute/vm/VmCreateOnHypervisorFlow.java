@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
@@ -63,7 +64,7 @@ public class VmCreateOnHypervisorFlow implements Flow {
     }
 
     @Override
-    public void rollback(final FlowTrigger trigger, Map data) {
+    public void rollback(final FlowRollback trigger, Map data) {
         if (!data.containsKey(SUCCESS)) {
             trigger.rollback();
             return;

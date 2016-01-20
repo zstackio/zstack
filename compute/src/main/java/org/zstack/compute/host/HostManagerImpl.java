@@ -10,7 +10,7 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.safeguard.Guard;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
 import org.zstack.core.workflow.*;
@@ -23,6 +23,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -38,7 +39,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.util.*;
 
-public class HostManagerImpl extends AbstractService implements HostManager, ManagementNodeChangeListener {
+public class HostManagerImpl extends AbstractService implements HostManager, ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(HostManagerImpl.class);
 
     @Autowired
@@ -155,7 +156,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
     }
 
-    @Guard
+    @Deferred
     private void handle(APIAddHostMsg msg) {
         final APIAddHostEvent evt = new APIAddHostEvent(msg.getId());
 
@@ -441,10 +442,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     }
 
     @Override
-    @AsyncThread
     public void iJoin(String nodeId) {
-        logger.debug(String.format("Management node[uuid:%s] joins, start loading host...", nodeId));
-        loadHost();
     }
 
 
@@ -460,5 +458,12 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     @Override
     public HostMessageHandlerExtensionPoint getHostMessageHandlerExtension(Message msg) {
         return msgHandlers.get(msg.getMessageName());
+    }
+
+    @Override
+    @AsyncThread
+    public void managementNodeReady() {
+        logger.debug(String.format("Management node[uuid:%s] joins, start loading host...", Platform.getManagementServerId()));
+        loadHost();
     }
 }

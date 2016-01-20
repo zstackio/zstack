@@ -2,7 +2,8 @@ package org.zstack.kvm;
 
 /**
  */
-public class KVMHostConnectedContext extends KVMHostContext {
+public class KVMHostConnectedContext {
+    private KVMHostInventory inventory;
     private boolean newAddedHost;
 
     public boolean isNewAddedHost() {
@@ -13,9 +14,11 @@ public class KVMHostConnectedContext extends KVMHostContext {
         this.newAddedHost = newAddedHost;
     }
 
-    public KVMHostConnectedContext(KVMHostContext context, boolean newHost) {
-        newAddedHost = newHost;
-        setBaseUrl(context.getBaseUrl());
-        setInventory(context.getInventory());
+    public KVMHostInventory getInventory() {
+        return inventory;
+    }
+
+    public void setInventory(KVMHostInventory inventory) {
+        this.inventory = inventory;
     }
 }

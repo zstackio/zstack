@@ -59,7 +59,7 @@ public class IscsiFileSystemPrimaryStorageVmMigrationExtension implements VmInst
             return null;
         }
 
-        boolean useVirtio = (ImagePlatform.Paravirtualization.toString().equals(inv.getPlatform()) || ImagePlatform.Linux.toString().equals(inv.getPlatform()))
+        boolean useVirtio = ImagePlatform.valueOf(inv.getPlatform()).isParaVirtualization()
                 && KVMSystemTags.VIRTIO_SCSI.hasTag(destHostUuid);
 
         if (useVirtio) {
@@ -171,10 +171,10 @@ public class IscsiFileSystemPrimaryStorageVmMigrationExtension implements VmInst
     }
 
     @Override
-    public void afterMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
         List<VolumeInventory> volumes = vmVolumes.get(inv.getUuid());
         if (volumes != null) {
-            logoutIscsiTarget(volumes, inv.getLastHostUuid());
+            logoutIscsiTarget(volumes, srcHostUuid);
         }
     }
 

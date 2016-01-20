@@ -30,4 +30,6 @@ public class KVMGlobalConfig {
     public static GlobalConfig VM_CONSOLE_MODE = new GlobalConfig(CATEGORY, "vm.consoleMode");
     @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough"})
     public static GlobalConfig NESTED_VIRTUALIZATION = new GlobalConfig(CATEGORY, "vm.cpuMode");
+    @GlobalConfigValidation
+    public static GlobalConfig VM_SYNC_ON_HOST_PING = new GlobalConfig(CATEGORY, "vmSyncOnHostPing");
 }

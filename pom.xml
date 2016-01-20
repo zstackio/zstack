@@ -5,7 +5,7 @@
         <project.compiler.version>2.5.1</project.compiler.version>
         <project.java.version>1.6</project.java.version>
         <spring.framework.version>4.0.3.RELEASE</spring.framework.version>
-        <spring.security.version>3.2.3.RELEASE</spring.security.version>
+        <spring.security.version>4.0.2.RELEASE</spring.security.version>
         <hibernate.version>4.2.11.Final</hibernate.version>
         <aspectj.version>1.6.12</aspectj.version>
         <aspectj.plugin.version>1.4</aspectj.plugin.version>
@@ -36,6 +36,7 @@
         <module>console</module>
         <module>tag</module>
         <module>tool</module>
+        <module>premium</module>
     </modules>
 
     <dependencyManagement>
@@ -233,9 +234,13 @@
                 <version>15.0</version>
             </dependency>
             <dependency>
-                <!-- needed by sshj -->
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk16</artifactId>
+                <version>1.46</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcmail-jdk16</artifactId>
                 <version>1.46</version>
             </dependency>
             <dependency>
@@ -263,8 +268,16 @@
                 <artifactId>urlrewritefilter</artifactId>
                 <version>4.0.3</version>
             </dependency>
-
-
+            <dependency>
+                <groupId>com.sun.mail</groupId>
+                <artifactId>javax.mail</artifactId>
+                <version>1.5.5</version>
+            </dependency>
+            <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>2.9.1</version>
+            </dependency>
 
             <!-- build plugins -->
             <dependency>
@@ -289,9 +302,15 @@
                 <artifactId>gentyref</artifactId>
                 <version>1.1.0</version>
             </dependency>
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.18.2-GA</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
+<!--
     <pluginRepositories>
         <pluginRepository>
             <id>sonatype-repo</id>
@@ -333,6 +352,7 @@
             <url>http://maven.springframework.org/milestone</url>
         </repository>
     </repositories>
+-->
 
     <build>
         <resources>
@@ -362,6 +382,31 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>premium</id>
+            <modules>
+                <module>core</module>
+                <module>compute</module>
+                <module>utils</module>
+                <module>header</module>
+                <module>portal</module>
+                <module>test</module>
+                <module>simulator</module>
+                <module>build</module>
+                <module>storage</module>
+                <module>plugin</module>
+                <module>image</module>
+                <module>network</module>
+                <module>configuration</module>
+                <module>identity</module>
+                <module>search</module>
+                <module>console</module>
+                <module>tag</module>
+                <module>tool</module>
+                <module>premium</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>deploydb</id>
             <activation>

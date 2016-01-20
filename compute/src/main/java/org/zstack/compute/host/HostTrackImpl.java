@@ -32,7 +32,6 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     private final List<String> hostUuids = Collections.synchronizedList(new ArrayList<String>());
     private Set<String> hostInTracking = Collections.synchronizedSet(new HashSet<String>());
     private Future<Void> trackerThread = null;
-    private final Map<String, HostStatusEvent> hostConnectionStateEventMap = Collections.synchronizedMap(new HashMap<String, HostStatusEvent>());
     private final List<String> inReconnectingHost = Collections.synchronizedList(new ArrayList<String>());
 
     @Autowired
@@ -66,16 +65,20 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                 return;
             }
 
-            final PingHostReply preply = (PingHostReply)reply;
-            HostStatusEvent cevt = preply.isConnected() ? HostStatusEvent.connected : HostStatusEvent.disconnected;
-            if (logger.isTraceEnabled()) {
-                String moreInfo = preply.isConnected() ? "all good!" : preply.getError().toString();
-                logger.trace(String.format("[Host Tracker]: ping host[uuid:%s], connection state[%s], %s", hostUuid, cevt, moreInfo));
+            boolean needReconnect = false;
+            final PingHostReply r = reply.castReply();
+            if (!r.isConnected() && HostStatus.Connected.toString().equals(r.getCurrentHostStatus()) && HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class)) {
+                // cannot ping, but host is in Connected status
+                needReconnect = true;
+            } else if (r.isConnected() && HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class) && HostStatus.Disconnected.toString().equals(r.getCurrentHostStatus())) {
+                // can ping, but host is in Disconnected status
+                needReconnect = true;
+            } else if (!r.isConnected()) {
+                logger.debug(String.format("[Host Tracker]: detected host[uuid:%s] connection lost, but connection.autoReconnectOnError is set to false, no reconnect will issue", hostUuid));
             }
 
-            //TODO: use hostConnectionStateEventMap to implement stopping PING after failing specific times
+            //TODO: implement stopping PING after failing specific times
 
-            boolean needReconnect = cevt == HostStatusEvent.disconnected && preply.isSuccess() && HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class);
             if (needReconnect && !inReconnectingHost.contains(hostUuid)) {
                 inReconnectingHost.add(hostUuid);
                 logger.debug(String.format("[Host Tracker]: detected host[uuid:%s] connection lost, issue a reconnect because %s is set to true",
@@ -91,22 +94,16 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
                         if (!reply.isSuccess()) {
                             logger.warn(String.format("host[uuid:%s] failed to reconnect, %s", hostUuid, reply.getError()));
-                            hostConnectionStateEventMap.put(hostUuid, HostStatusEvent.disconnected);
-                        } else {
-                            hostConnectionStateEventMap.put(hostUuid, HostStatusEvent.connected);
                         }
-
                     }
                 });
-            } else {
-                hostConnectionStateEventMap.put(hostUuid, cevt);
             }
         }
 
         @Override
         public void run() {
             try {
-                List<PingHostMsg> msgs = null;
+                List<PingHostMsg> msgs;
                 synchronized (hostUuids) {
                     msgs = new ArrayList<PingHostMsg>();
                     for (String huuid : hostUuids) {
@@ -153,7 +150,6 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     public void untrackHost(String hostUuid) {
         synchronized (hostUuids) {
             hostUuids.remove(hostUuid);
-            hostConnectionStateEventMap.remove(hostUuid);
             logger.debug(String.format("stop tracking host[uuid:%s]", hostUuid));
         }
     }
@@ -175,7 +171,6 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
         synchronized (hostUuids) {
             for (String huuid : huuids) {
                 hostUuids.remove(huuid);
-                hostConnectionStateEventMap.remove(huuid);
                 logger.debug(String.format("stop tracking host[uuid:%s]", huuid));
             }
         }

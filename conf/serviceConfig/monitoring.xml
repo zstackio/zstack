@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>kairosdb</id>
+    <interceptor>KairosdbApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.monitoring.APIGetHostMonitoringDataMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.monitoring.APIGetVmMonitoringDataMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.monitoring.APIMonitoringPassThroughMsg</name>
+    </message>
+</service>

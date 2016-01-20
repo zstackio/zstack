@@ -3,10 +3,8 @@ package org.zstack.simulator.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.RESTFacade;
@@ -46,6 +44,22 @@ public class KVMSimulatorController {
 
     private AsyncRESTReplyer replyer = new AsyncRESTReplyer();
 
+    @RequestMapping(value=KVMConstant.KVM_VM_CHECK_STATE, method=RequestMethod.POST)
+    public @ResponseBody String checkVmState(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        CheckVmStateCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CheckVmStateCmd.class);
+        CheckVmStateRsp rsp = new CheckVmStateRsp();
+        Map<String, String> m = new HashMap<String, String>();
+        for (String vmUuid : cmd.vmUuids) {
+            Map<String, String> h = config.checkVmStatesConfig.get(cmd.hostUuid);
+            m.put(vmUuid, h.get(vmUuid));
+        }
+        rsp.states = m;
+        config.checkVmStateCmds.add(cmd);
+        replyer.reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=KVMConstant.KVM_ATTACH_NIC_PATH, method=RequestMethod.POST)
     public @ResponseBody String attachNic(HttpServletRequest req) {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
@@ -66,6 +80,24 @@ public class KVMSimulatorController {
         }
 
         replyer.reply(entity, rsp);
+    }
+
+    @RequestMapping(value=KVMConstant.KVM_ATTACH_ISO_PATH, method=RequestMethod.POST)
+    public @ResponseBody String attachIso(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        AttachIsoCmd cmd = JSONObjectUtil.toObject(entity.getBody(), AttachIsoCmd.class);
+        config.attachIsoCmds.add(cmd);
+        reply(entity, new AttachIsoRsp());
+        return null;
+    }
+
+    @RequestMapping(value=KVMConstant.KVM_DETACH_ISO_PATH, method=RequestMethod.POST)
+    public @ResponseBody String detachIso(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        DetachIsoCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DetachIsoCmd.class);
+        config.detachIsoCmds.add(cmd);
+        reply(entity, new DetachIsoRsp());
+        return null;
     }
 
     @RequestMapping(value=KVMConstant.KVM_DETACH_NIC_PATH, method=RequestMethod.POST)
@@ -150,6 +182,7 @@ public class KVMSimulatorController {
         ConnectResponse rsp = new ConnectResponse();
         
         if (config.connectSuccess) {
+            config.connectCmds.add(cmd);
             rsp.setSuccess(true);
             rsp.setLibvirtVersion("1.0.0");
             rsp.setQemuVersion("1.3.0");
@@ -185,6 +218,13 @@ public class KVMSimulatorController {
     private void doVmSync(HttpEntity<String> entity) {
         synchronized (config) {
             VmSyncResponse rsp = new VmSyncResponse();
+            if (!config.vmSyncSuccess) {
+                rsp.setSuccess(false);
+                rsp.setError("on purpose");
+                reply(entity, rsp);
+                return;
+            }
+
             HashMap<String, String> vms = new HashMap<String, String>();
             for (Map.Entry<String, KvmVmState> e : config.vms.entrySet()) {
                 vms.put(e.getKey(), e.getValue().toString());
@@ -437,10 +477,21 @@ public class KVMSimulatorController {
 	private void createVm(HttpEntity<String> entity) {
     	StartVmCmd cmd = JSONObjectUtil.toObject(entity.getBody(), StartVmCmd.class);
     	StartVmResponse rsp = new StartVmResponse();
+
     	if (config.startVmSuccess) {
-    		logger.debug(String.format("successfully start vm on kvm host, %s", entity.getBody()));
-    		config.vms.put(cmd.getVmInstanceUuid(), KvmVmState.Running);
-            config.startVmCmd = cmd;
+            if (config.startVmFailureChance != 0) {
+                if (Math.random() <= config.startVmFailureChance) {
+                    rsp.setError("on purpose");
+                    rsp.setSuccess(false);
+                }
+            } else {
+                logger.debug(String.format("successfully start vm on kvm host, %s", entity.getBody()));
+                synchronized (config) {
+                    config.vms.put(cmd.getVmInstanceUuid(), KvmVmState.Running);
+                    logger.debug(String.format("current running vm[%s]", config.vms.size()));
+                }
+                config.startVmCmd = cmd;
+            }
     	} else {
     		String err = "fail start vm on purpose";
     		rsp.setError(err);
@@ -461,7 +512,9 @@ public class KVMSimulatorController {
         StopVmResponse rsp = new StopVmResponse();
         if (config.stopVmSuccess) {
     		logger.debug(String.format("successfully stop vm on kvm host, %s", entity.getBody()));
-    		config.vms.put(cmd.getUuid(), KvmVmState.Shutdown);
+            synchronized (config) {
+                config.vms.put(cmd.getUuid(), KvmVmState.Shutdown);
+            }
             config.stopVmCmds.add(cmd);
         } else {
     		String err = "fail stop vm on purpose";
@@ -483,7 +536,10 @@ public class KVMSimulatorController {
         RebootVmResponse rsp = new RebootVmResponse();
         if (config.rebootVmSuccess) {
     		logger.debug(String.format("successfully reboot vm on kvm host, %s", entity.getBody()));
-    		config.vms.put(cmd.getUuid(), KvmVmState.Running);
+            synchronized (config) {
+                config.vms.put(cmd.getUuid(), KvmVmState.Running);
+            }
+            config.rebootVmCmds.add(cmd);
         } else {
     		String err = "fail reboot vm on purpose";
     		rsp.setError(err);
@@ -505,7 +561,9 @@ public class KVMSimulatorController {
         if (config.destroyVmSuccess) {
             config.destroyedVmUuid = cmd.getUuid();
     		logger.debug(String.format("successfully destroy vm on kvm host, %s", entity.getBody()));
-    		config.vms.remove(cmd.getUuid());
+            synchronized (config) {
+                config.vms.remove(cmd.getUuid());
+            }
         } else {
     		String err = "fail destroy vm on purpose";
     		rsp.setError(err);
@@ -539,7 +597,9 @@ public class KVMSimulatorController {
     private void logoutIscsiTarget(HttpEntity<String> entity) {
         LogoutIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), KVMAgentCommands.LogoutIscsiTargetCmd.class);
         LogoutIscsiTargetRsp rsp = new LogoutIscsiTargetRsp();
-        config.logoutIscsiTargetCmds.add(cmd);
+        synchronized (config.logoutIscsiTargetCmds) {
+            config.logoutIscsiTargetCmds.add(cmd);
+        }
         logger.debug(String.format("logout iscsi target: %s", cmd.getTarget()));
         replyer.reply(entity, rsp);
     }
@@ -554,8 +614,18 @@ public class KVMSimulatorController {
     private void loginIscsiTarget(HttpEntity<String> entity) {
         LoginIscsiTargetCmd cmd = JSONObjectUtil.toObject(entity.getBody(), KVMAgentCommands.LoginIscsiTargetCmd.class);
         LoginIscsiTargetRsp rsp = new LoginIscsiTargetRsp();
-        config.loginIscsiTargetCmds.add(cmd);
+        synchronized (config.loginIscsiTargetCmds) {
+            config.loginIscsiTargetCmds.add(cmd);
+        }
         logger.debug(String.format("login iscsi  target: %s", cmd.getTarget()));
         replyer.reply(entity, rsp);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ModelAndView handleAllException(Exception ex) {
+        logger.warn(ex.getMessage(), ex);
+        ModelAndView model = new ModelAndView("error/generic_error");
+        model.addObject("errMsg", ex.getMessage());
+        return model;
     }
 }

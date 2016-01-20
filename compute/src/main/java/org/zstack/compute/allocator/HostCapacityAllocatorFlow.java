@@ -21,26 +21,41 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
     private DatabaseFacade dbf;
     @Autowired
     private HostCapacityReserveManager reserveMgr;
+    @Autowired
+    private HostCapacityOverProvisioningManager ratioMgr;
 
 	@Transactional(readOnly = true)
 	private List<HostVO> allocate(long cpu, long memory) {
-		String sql = "select h from HostVO h, HostCapacityVO hc where h.uuid = hc.uuid and hc.availableCpu > :cpu and hc.availableMemory > :memory";
-		TypedQuery<HostVO> query = dbf.getEntityManager().createQuery(sql, HostVO.class);
-		query.setParameter("cpu", cpu);
-		query.setParameter("memory", memory);
-
+		String sql = "select c from HostCapacityVO c";
+		TypedQuery<HostCapacityVO> query = dbf.getEntityManager().createQuery(sql, HostCapacityVO.class);
         if (usePagination()) {
             query.setFirstResult(paginationInfo.getOffset());
             query.setMaxResults(paginationInfo.getLimit());
         }
+		List<HostCapacityVO> caps = query.getResultList();
 
-		return query.getResultList();
+        List<String> cds = new ArrayList<String>();
+        for (HostCapacityVO c : caps) {
+            if (c.getAvailableCpu() > cpu && ratioMgr.calculateHostAvailableMemoryByRatio(c.getUuid(), c.getAvailableMemory()) > memory) {
+                cds.add(c.getUuid());
+            }
+        }
+
+        if (cds.isEmpty()) {
+            return new ArrayList<HostVO>();
+        }
+
+        sql = "select h from HostVO h where h.uuid in (:huuids)";
+        TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
+        hq.setParameter("huuids", cds);
+        return hq.getResultList();
 	}
 
 	private List<HostVO> allocate(List<HostVO> vos, long cpu, long memory) {
         List<HostVO> ret = new ArrayList<HostVO>();
         for (HostVO hvo : vos) {
-            if (hvo.getCapacity().getAvailableCpu() >= cpu && hvo.getCapacity().getAvailableMemory() >= memory) {
+            if (hvo.getCapacity().getAvailableCpu() > cpu
+                    && ratioMgr.calculateHostAvailableMemoryByRatio(hvo.getUuid(), hvo.getCapacity().getAvailableMemory()) > memory) {
                 ret.add(hvo);
             }
         }

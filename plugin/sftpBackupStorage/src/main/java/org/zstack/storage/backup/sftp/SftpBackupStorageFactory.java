@@ -22,7 +22,7 @@ import java.util.List;
 public class SftpBackupStorageFactory implements BackupStorageFactory, GlobalApiMessageInterceptor, Component {
     private static final CLogger logger = Utils.getLogger(SftpBackupStorageFactory.class);
     public static BackupStorageType type = new BackupStorageType(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE, BackupStorageConstant.SCHEME_HTTP,
-            BackupStorageConstant.SCHEME_HTTPS, BackupStorageConstant.SCHEME_NFS);
+            BackupStorageConstant.SCHEME_HTTPS, BackupStorageConstant.SCHEME_NFS, BackupStorageConstant.SCHEME_FILE);
 
     @Autowired
     private DatabaseFacade dbf;

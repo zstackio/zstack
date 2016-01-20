@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+	<backupStorages>
+		<sftpBackupStorage name="sftp1" description="Test"
+			url="/path1" hostname="localhost" password="password"/>
+	</backupStorages>
+
+	<zones>
+		<zone name="Zone1" description="Test">
+			<backupStorageRef>sftp1</backupStorageRef>
+		</zone>
+	</zones>
+</deployerConfig>

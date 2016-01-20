@@ -17,6 +17,7 @@
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
     </bean>
 
@@ -61,4 +62,8 @@
 			<zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageTagAllocatorExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="PrimaryStorageOverProvisioningManager" class="org.zstack.storage.primary.PrimaryStorageOverProvisioningManagerImpl" />
+
+    <bean id="PrimaryStoragePhysicalCapacityManager" class="org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManagerImpl" />
 </beans>

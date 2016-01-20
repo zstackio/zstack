@@ -14,7 +14,9 @@
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage12"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage13"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage14"/>
+    <!-- disable live migration cases
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage15"/>
+    -->
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage16"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage17"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage18"/>
@@ -26,4 +28,28 @@
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage24"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage25"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage26"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage27"/>
+    <!-- disable live migration cases
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage28"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage29"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage30"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage31"/>
+    -->
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage32"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage33"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage34"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage35"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage36"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage37"/>
+    <!-- disable live migration cases
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage38"/>
+    -->
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage39"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage40"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage41"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage42"/>
+    <!-- disable live migration cases
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage43"/>
+    -->
+    <TestCase class="org.zstack.test.storage.primary.local.TestQueryLocalStorage"/>
 </UnitTestSuiteConfig>

@@ -49,6 +49,7 @@ public class InventoryFacadeImpl implements InventoryFacade, Component {
             ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(true);
             scanner.addIncludeFilter(new AnnotationTypeFilter(Inventory.class));
             scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
+            scanner.addExcludeFilter(new AnnotationTypeFilter(org.springframework.stereotype.Component.class));
             for (String pkg : getBasePkgNames()) {
                 for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
                     Class<?> inventoryClass = Class.forName(bd.getBeanClassName());

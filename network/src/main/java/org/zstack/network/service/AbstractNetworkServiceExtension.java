@@ -48,7 +48,7 @@ public abstract class AbstractNetworkServiceExtension implements NetworkServiceE
             return NetworkServiceProviderType.valueOf(providerType);
         }
 
-        throw new OperationFailureException(errf.stringToOperationError(String.format("cannot find any network service provider providing %s for L3 network[uuid:%s]", type, l3.getUuid())));
+        return null;
     }
 
 

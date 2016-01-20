@@ -49,6 +49,11 @@ public class L3NetworkAO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public String getDnsDomain() {
         return dnsDomain;
     }

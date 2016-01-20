@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.cluster.ClusterInventory;
-import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageDetails;
@@ -63,7 +62,7 @@ public class TestDefaultPrimaryStorageAllocatorStrategy {
         
         AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
         msg.setSize(requiredSize);
-        msg.setHostUuid(host.getUuid());
+        msg.setRequiredHostUuid(host.getUuid());
         msg.setServiceId(bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID));
 
         MessageReply reply = bus.call(msg);

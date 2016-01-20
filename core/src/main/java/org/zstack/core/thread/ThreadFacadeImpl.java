@@ -42,7 +42,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         List<TimerWrapper> pool;
 
         // never use a long type counter for self increment. two issues
-        // 1) Java will silently overflow a number; even long will be overflow some day
+        // 1) Java will silently overflow a number; even a long will be overflow someday
         // 2) big number causes extremely bad performance for mod operation
         // instead, reset the counter when it exceeds COUNTER_RESET_THRESHOLD to maintain
         // decent performance for mod operation.

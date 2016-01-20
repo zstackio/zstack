@@ -23,6 +23,9 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+
 public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExtensionPoint, KVMCompleteNicInformationExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KVMRealizeL2VlanNetworkBackend.class);
 
@@ -74,6 +77,10 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
                         "successfully realize bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s]", cmd
                                 .getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vlan.getVlan(), hostUuid);
                 logger.debug(info);
+                if (!KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2Network.getUuid())) {
+                    KVMSystemTags.L2_BRIDGE_NAME.createInherentTag(l2Network.getUuid(),
+                            map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
+                }
                 completion.success();
             }
         });
@@ -148,6 +155,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 	    L2VlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), L2VlanNetworkVO.class);
 		NicTO to = new NicTO();
 		to.setMac(nic.getMac());
+        to.setUuid(nic.getUuid());
 		to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface(), vo.getVlan()));
 		to.setDeviceId(nic.getDeviceId());
 		to.setNicInternalName(nic.getInternalName());

@@ -53,7 +53,8 @@ elif [ $tool = 'zstack-dashboard' ]; then
     rm -rf $UI_VIRENV_PATH && virtualenv $UI_VIRENV_PATH
     . $UI_VIRENV_PATH/bin/activate
     cd $cwd
-    pip install -i $pypi_path --trusted-host localhost --ignore-installed zstack_dashboard-*.tar.gz || exit 1
+    pip install -i $pypi_path --trusted-host localhost versiontools|| exit 1
+    pip install -i $pypi_path --trusted-host localhost zstack_dashboard-*.tar.gz || exit 1
     chmod +x /etc/init.d/zstack-dashboard
 else
     usage

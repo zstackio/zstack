@@ -4,12 +4,14 @@ import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.appliancevm.*;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -56,6 +58,7 @@ public class TestVirtualRouterOnIpRangeDelete {
 
 	@Test
 	public void test() throws ApiSenderException {
+		VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
 		L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network2");
         IpRangeInventory ipr = l3.getIpRanges().get(0);
         api.deleteIpRange(ipr.getUuid());

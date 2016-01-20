@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -104,7 +105,7 @@ public class VirtualRouterSyncVipForNewCreateFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger trigger, Map data) {
+    public void rollback(FlowRollback trigger, Map data) {
         List<VirtualRouterVipVO> refs = (List<VirtualRouterVipVO>) data.get(VirtualRouterSyncVipForNewCreateFlow.class.getName());
         if (refs != null) {
             dbf.removeCollection(refs, VirtualRouterVipVO.class);

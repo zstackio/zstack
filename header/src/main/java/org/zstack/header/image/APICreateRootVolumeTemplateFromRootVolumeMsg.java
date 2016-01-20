@@ -19,7 +19,7 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
     private List<String> backupStorageUuids;
     @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
     private String rootVolumeUuid;
-    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization"})
+    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
     private boolean system;
 

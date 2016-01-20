@@ -72,7 +72,7 @@ public class TestDefaultPrimaryStorageAllocatorStrategyFailure5 {
         dbf.update(pvo);
 
         AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
-        msg.setHostUuid(host.getUuid());
+        msg.setRequiredHostUuid(host.getUuid());
         msg.setSize(requiredSize);
         msg.setServiceId(bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID));
         MessageReply reply = bus.call(msg);

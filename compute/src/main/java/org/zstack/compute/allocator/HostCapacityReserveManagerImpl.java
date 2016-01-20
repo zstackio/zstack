@@ -9,6 +9,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.Component;
+import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.allocator.HostReservedCapacityExtensionPoint;
 import org.zstack.header.allocator.ReservedHostCapacity;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -33,6 +34,8 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
     private DatabaseFacade dbf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private HostCapacityOverProvisioningManager ratioMgr;
 
     private Map<String, HostReservedCapacityExtensionPoint> exts = new HashMap<String, HostReservedCapacityExtensionPoint>();
 
@@ -282,8 +285,8 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         List<HostVO> ret = new ArrayList<HostVO>(candidates.size());
         for (HostVO hvo : candidates) {
             ReservedHostCapacity hc = reserves.get(hvo.getUuid());
-            if (hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() >= requiredMemory
-                && hvo.getCapacity().getAvailableCpu() - hc.getReservedCpuCapacity() >= requiredCpu) {
+            if (hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() > ratioMgr.calculateMemoryByRatio(hvo.getUuid(), requiredMemory)
+                && hvo.getCapacity().getAvailableCpu() - hc.getReservedCpuCapacity() > requiredCpu) {
                 ret.add(hvo);
             } else {
                 if (logger.isTraceEnabled()) {

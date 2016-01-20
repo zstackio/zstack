@@ -559,7 +559,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger trigger, Map data) {
+                    public void rollback(FlowRollback trigger, Map data) {
                         dbf.removeCollection(monVOs, CephBackupStorageMonVO.class);
                         trigger.rollback();
                     }

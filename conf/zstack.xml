@@ -28,6 +28,7 @@
     </bean>
 
     <import resource="springConfigXml/AccountManager.xml" />
+    <import resource="springConfigXml/agentManager.xml" />
     <import resource="springConfigXml/ApiMediator.xml" />
     <import resource="springConfigXml/BackupStorageManager.xml" />
     <import resource="springConfigXml/CloudBus.xml" />
@@ -78,4 +79,6 @@
     <import resource="springConfigXml/localStorage.xml" />
     <import resource="springConfigXml/ceph.xml" />
     <import resource="springConfigXml/lb.xml" />
+    <import resource="springConfigXml/mevoco.xml" />
+    <import resource="springConfigXml/license.xml" />
 </beans>

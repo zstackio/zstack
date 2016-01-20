@@ -3,9 +3,11 @@ package org.zstack.test.core.workflow;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.core.workflow.WorkFlowException;
+import org.zstack.test.BeanConstructor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -22,6 +24,9 @@ public class TestSimpleFlow4 {
 
     @Test
     public void test() throws WorkFlowException {
+        BeanConstructor con = new BeanConstructor();
+        con.build();
+
         final int[] count = {0};
 
         new SimpleFlowChain()
@@ -33,7 +38,7 @@ public class TestSimpleFlow4 {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger chain, Map data) {
+                    public void rollback(FlowRollback chain, Map data) {
                         count[0] --;
                         chain.rollback();
                     }
@@ -46,7 +51,7 @@ public class TestSimpleFlow4 {
                     }
 
                     @Override
-                    public void rollback(FlowTrigger chain, Map data) {
+                    public void rollback(FlowRollback chain, Map data) {
                         count[0]--;
                         throw new RuntimeException("on purpose");
                     }
@@ -54,12 +59,12 @@ public class TestSimpleFlow4 {
                 .then(new Flow() {
                     @Override
                     public void run(FlowTrigger chain, Map data) {
-                        chain.rollback();
+                        throw new RuntimeException("fail");
                     }
 
                     @Override
-                    public void rollback(FlowTrigger chain, Map data) {
-                        count[0]--;
+                    public void rollback(FlowRollback chain, Map data) {
+                        chain.rollback();
                     }
                 })
                 .start();

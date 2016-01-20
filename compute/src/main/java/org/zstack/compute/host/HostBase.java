@@ -8,11 +8,13 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -25,6 +27,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
+import org.zstack.header.host.HostMaintenancePolicyExtensionPoint.HostMaintenancePolicy;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -33,6 +36,7 @@ import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -65,6 +69,8 @@ public abstract class HostBase extends AbstractHost {
     protected ErrorFacade errf;
     @Autowired
     protected HostTracker tracker;
+    @Autowired
+    protected PluginRegistry pluginRgty;
 
 	protected final String id;
 
@@ -124,6 +130,10 @@ public abstract class HostBase extends AbstractHost {
             self.setDescription(msg.getDescription());
             update = true;
         }
+        if (msg.getManagementIp() != null) {
+            self.setManagementIp(msg.getManagementIp());
+            update = true;
+        }
 
         return update ? self : null;
     }
@@ -142,54 +152,76 @@ public abstract class HostBase extends AbstractHost {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("maintenance-mode-host-%s-ip-%s", self.getUuid(), self.getManagementIp()));
 
+        HostMaintenancePolicy policy = HostMaintenancePolicy.MigrateVm;
+        for (HostMaintenancePolicyExtensionPoint ext : pluginRgty.getExtensionList(HostMaintenancePolicyExtensionPoint.class)) {
+            HostMaintenancePolicy p = ext.getHostMaintenancePolicy(getSelfInventory());
+            if (p != null) {
+                policy = p;
+                logger.debug(String.format("HostMaintenancePolicyExtensionPoint[%s] set maintenance policy for host[uuid:%s] to %s",
+                        ext.getClass(), self.getUuid(), policy));
+            }
+        }
+
         final int quantity = getVmMigrateQuantity();
-        DebugUtils.Assert(quantity!=0, String.format("getVmMigrateQuantity() cannot return 0"));
+        DebugUtils.Assert(quantity!=0, "getVmMigrateQuantity() cannot return 0");
+        final HostMaintenancePolicy finalPolicy = policy;
         chain.then(new ShareFlow() {
             List<String> vmFailedToMigrate = new ArrayList<String>();
 
             @Override
             public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "try-migrate-vm";
+                if (finalPolicy == HostMaintenancePolicy.MigrateVm) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "try-migrate-vm";
 
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-                        q.select(VmInstanceVO_.uuid);
-                        q.add(VmInstanceVO_.hostUuid, SimpleQuery.Op.EQ, self.getUuid());
-                        q.add(VmInstanceVO_.state, Op.NOT_EQ, VmInstanceState.Unknown);
-                        List<String> vmUuids = q.listValue();
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+                            q.select(VmInstanceVO_.uuid);
+                            q.add(VmInstanceVO_.hostUuid, SimpleQuery.Op.EQ, self.getUuid());
+                            q.add(VmInstanceVO_.state, Op.NOT_EQ, VmInstanceState.Unknown);
+                            List<String> vmUuids = q.listValue();
 
-                        if (vmUuids.isEmpty()) {
-                            trigger.next();
-                            return;
-                        }
-
-                        final List<MigrateVmMsg> msgs = new ArrayList<MigrateVmMsg>();
-                        for (String uuid : vmUuids) {
-                            MigrateVmMsg msg = new MigrateVmMsg();
-                            msg.setVmInstanceUuid(uuid);
-                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
-                            msgs.add(msg);
-                        }
-
-                        bus.send(msgs, quantity, new CloudBusListCallBack(trigger) {
-                            @Override
-                            public void run(List<MessageReply> replies) {
-                                for (MessageReply reply : replies) {
-                                    if (!reply.isSuccess()) {
-                                        MigrateVmMsg msg = msgs.get(replies.indexOf(reply));
-                                        logger.warn(String.format("failed to migrate vm[uuid:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it. %s",
-                                                msg.getVmInstanceUuid(), self.getUuid(), self.getName(), self.getManagementIp(), reply.getError()));
-                                        vmFailedToMigrate.add(msg.getVmInstanceUuid());
-                                    }
-                                }
-
+                            if (vmUuids.isEmpty()) {
                                 trigger.next();
+                                return;
                             }
-                        });
-                    }
-                });
+
+                            final List<MigrateVmMsg> msgs = new ArrayList<MigrateVmMsg>();
+                            for (String uuid : vmUuids) {
+                                MigrateVmMsg msg = new MigrateVmMsg();
+                                msg.setVmInstanceUuid(uuid);
+                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
+                                msgs.add(msg);
+                            }
+
+                            bus.send(msgs, quantity, new CloudBusListCallBack(trigger) {
+                                @Override
+                                public void run(List<MessageReply> replies) {
+                                    for (MessageReply reply : replies) {
+                                        if (!reply.isSuccess()) {
+                                            MigrateVmMsg msg = msgs.get(replies.indexOf(reply));
+                                            logger.warn(String.format("failed to migrate vm[uuid:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it. %s",
+                                                    msg.getVmInstanceUuid(), self.getUuid(), self.getName(), self.getManagementIp(), reply.getError()));
+                                            vmFailedToMigrate.add(msg.getVmInstanceUuid());
+                                        }
+                                    }
+
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    // the policy is not to migrate vm
+                    // put all vms in vmFailedToMigrate so the next flow will stop all of them
+                    SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+                    q.select(VmInstanceVO_.uuid);
+                    q.add(VmInstanceVO_.hostUuid, SimpleQuery.Op.EQ, self.getUuid());
+                    q.add(VmInstanceVO_.state, Op.NOT_EQ, VmInstanceState.Unknown);
+                    List<String> vmUuids = q.listValue();
+                    vmFailedToMigrate.addAll(vmUuids);
+                }
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "stop-vm-not-migrated";
@@ -511,6 +543,7 @@ public abstract class HostBase extends AbstractHost {
             @Override
             public void success() {
                 reply.setConnected(true);
+                reply.setCurrentHostStatus(self.getStatus().toString());
                 bus.reply(msg, reply);
 
                 extpEmitter.hostPingTask(HypervisorType.valueOf(self.getHypervisorType()), getSelfInventory());
@@ -518,10 +551,13 @@ public abstract class HostBase extends AbstractHost {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                changeConnectionState(HostStatusEvent.disconnected);
                 reply.setConnected(false);
+                reply.setCurrentHostStatus(self.getStatus().toString());
                 reply.setError(errorCode);
                 reply.setSuccess(true);
+
+                changeConnectionState(HostStatusEvent.disconnected);
+
                 bus.reply(msg, reply);
             }
         });
@@ -543,6 +579,11 @@ public abstract class HostBase extends AbstractHost {
                 bus.reply(msg, new HostDeletionReply());
                 tracker.untrackHost(self.getUuid());
                 chain.next();
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return getHostSyncLevel();
             }
 
             @Override
@@ -725,7 +766,7 @@ public abstract class HostBase extends AbstractHost {
         checkState();
         final ConnectHostReply reply = new ConnectHostReply();
 
-        FlowChain flowChain = FlowChainBuilder.newShareFlowChain();
+        final FlowChain flowChain = FlowChainBuilder.newShareFlowChain();
         flowChain.setName(String.format("connect-host-%s", self.getUuid()));
         flowChain.then(new ShareFlow() {
             @Override
@@ -750,11 +791,32 @@ public abstract class HostBase extends AbstractHost {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "recalculate-host-capacity";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RecalculateHostCapacityMsg msg = new RecalculateHostCapacityMsg();
+                        msg.setHostUuid(self.getUuid());
+                        bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
+                        bus.send(msg);
+                        trigger.next();
+                    }
+                });
+
                 done(new FlowDoneHandler(completion, msg) {
                     @Override
                     public void handle(Map data) {
                         changeConnectionState(HostStatusEvent.connected);
                         tracker.trackHost(self.getUuid());
+
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class), new ForEachFunction<HostAfterConnectedExtensionPoint>() {
+                            @Override
+                            public void run(HostAfterConnectedExtensionPoint ext) {
+                                ext.afterHostConnected(getSelfInventory());
+                            }
+                        });
+
                         bus.reply(msg, reply);
                         completion.done();
                     }

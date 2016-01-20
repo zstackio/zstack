@@ -8,6 +8,7 @@ import org.zstack.header.zone.ZoneEO;
 import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.PreUpdate;
 import java.sql.Timestamp;
 
 @MappedSuperclass
@@ -38,6 +39,11 @@ public class L2NetworkAO {
 
     @Column
     private Timestamp lastOpDate;
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     public L2NetworkAO() {
     }

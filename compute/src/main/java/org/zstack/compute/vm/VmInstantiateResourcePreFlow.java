@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowException;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -70,7 +71,7 @@ public class VmInstantiateResourcePreFlow implements Flow {
         runExtensions(extensions.iterator(), spec, chain);
     }
 
-    private void rollbackExtensions(final Iterator<PreVmInstantiateResourceExtensionPoint> it, final VmInstanceSpec spec, final FlowTrigger chain) {
+    private void rollbackExtensions(final Iterator<PreVmInstantiateResourceExtensionPoint> it, final VmInstanceSpec spec, final FlowRollback chain) {
         if (!it.hasNext()) {
             chain.rollback();
             return;
@@ -93,7 +94,7 @@ public class VmInstantiateResourcePreFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger chain, Map data) {
+    public void rollback(FlowRollback chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         rollbackExtensions(extensions.iterator(), spec, chain);
     }

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -66,12 +67,12 @@ public class VmInstantiateResourcePostFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger trigger, Map data) {
+    public void rollback(FlowRollback trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         rollbackExtensions(extensions.iterator(), spec, trigger);
     }
 
-    private void rollbackExtensions(final Iterator<PostVmInstantiateResourceExtensionPoint> iterator, final VmInstanceSpec spec, final FlowTrigger trigger) {
+    private void rollbackExtensions(final Iterator<PostVmInstantiateResourceExtensionPoint> iterator, final VmInstanceSpec spec, final FlowRollback trigger) {
         if (!iterator.hasNext()) {
             trigger.rollback();
             return;

@@ -6,18 +6,46 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
-    private String zoneUuid;
-    private List<String> clusterUuids;
-    private String hostUuid;
+    private String requiredZoneUuid;
+    private List<String> requiredClusterUuids;
+    private String requiredHostUuid;
+    private String requiredPrimaryStorageUuid;
+
     private long size;
     private boolean dryRun;
     private List<String> tags;
     private String allocationStrategy;
-    private String primaryStorageUuid;
     private String vmInstanceUuid;
     private String diskOfferingUuid;
     private List<String> excludePrimaryStorageUuids;
     private List<String> excludeAllocatorStrategies;
+    private String imageUuid;
+    private boolean noOverProvisioning;
+    private String purpose;
+
+    public String getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(String purpose) {
+        this.purpose = purpose;
+    }
+
+    public boolean isNoOverProvisioning() {
+        return noOverProvisioning;
+    }
+
+    public void setNoOverProvisioning(boolean noOverProvisioning) {
+        this.noOverProvisioning = noOverProvisioning;
+    }
+
+    public String getImageUuid() {
+        return imageUuid;
+    }
+
+    public void setImageUuid(String imageUuid) {
+        this.imageUuid = imageUuid;
+    }
 
     public List<String> getExcludeAllocatorStrategies() {
         return excludeAllocatorStrategies;
@@ -66,12 +94,12 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
         this.diskOfferingUuid = diskOfferingUuid;
     }
 
-    public String getPrimaryStorageUuid() {
-        return primaryStorageUuid;
+    public String getRequiredPrimaryStorageUuid() {
+        return requiredPrimaryStorageUuid;
     }
 
-    public void setPrimaryStorageUuid(String primaryStorageUuid) {
-        this.primaryStorageUuid = primaryStorageUuid;
+    public void setRequiredPrimaryStorageUuid(String requiredPrimaryStorageUuid) {
+        this.requiredPrimaryStorageUuid = requiredPrimaryStorageUuid;
     }
 
     public String getAllocationStrategy() {
@@ -82,28 +110,28 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
         this.allocationStrategy = allocationStrategy;
     }
 
-    public String getZoneUuid() {
-        return zoneUuid;
+    public String getRequiredZoneUuid() {
+        return requiredZoneUuid;
     }
 
-    public void setZoneUuid(String zoneUuid) {
-        this.zoneUuid = zoneUuid;
+    public void setRequiredZoneUuid(String requiredZoneUuid) {
+        this.requiredZoneUuid = requiredZoneUuid;
     }
 
-    public List<String> getClusterUuids() {
-        return clusterUuids;
+    public List<String> getRequiredClusterUuids() {
+        return requiredClusterUuids;
     }
 
-    public void setClusterUuids(List<String> clusterUuids) {
-        this.clusterUuids = clusterUuids;
+    public void setRequiredClusterUuids(List<String> requiredClusterUuids) {
+        this.requiredClusterUuids = requiredClusterUuids;
     }
 
-    public String getHostUuid() {
-        return hostUuid;
+    public String getRequiredHostUuid() {
+        return requiredHostUuid;
     }
 
-    public void setHostUuid(String hostUuid) {
-        this.hostUuid = hostUuid;
+    public void setRequiredHostUuid(String requiredHostUuid) {
+        this.requiredHostUuid = requiredHostUuid;
     }
 
     public long getSize() {

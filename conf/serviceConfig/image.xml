@@ -47,4 +47,12 @@
     <message>
         <name>org.zstack.header.image.APIUpdateImageMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.image.APIExpungeImageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.image.APIRecoverImageMsg</name>
+    </message>
 </service>

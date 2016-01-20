@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -186,7 +187,7 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
     }
 
     @Override
-    public void rollback(FlowTrigger chain, Map data) {
+    public void rollback(FlowRollback chain, Map data) {
         List<VirtualRouterPortForwardingRuleRefVO> refs = (List<VirtualRouterPortForwardingRuleRefVO>) data.get(VirtualRouterSyncPortForwardingRulesOnStartFlow.class.getName());
         if (refs != null) {
             dbf.removeCollection(refs, VirtualRouterPortForwardingRuleRefVO.class);

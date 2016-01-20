@@ -1,6 +1,7 @@
 package com.zstack.utils.test;
 
 import org.junit.Test;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 import org.zstack.utils.network.NetworkUtils;
 
 public class TestNetworkUtils {
@@ -27,5 +28,12 @@ public class TestNetworkUtils {
         System.out.println(NetworkUtils.isIpv4RangeOverlap("10.223.110.1", "10.223.110.1", "10.223.100.19", "10.223.110.60"));
         System.out.println(NetworkUtils.isIpv4RangeOverlap("10.223.110.1", "10.223.110.1", "10.223.110.1", "10.223.110.60"));
         System.out.println(3/2);
+
+        String hname = "http://192.168.0.199";
+        System.out.println(String.format("%s %s", hname, NetworkUtils.isHostname(hname)));
+        hname = "hostname";
+        System.out.println(String.format("%s %s", hname, NetworkUtils.isHostname(hname)));
+        hname = "hostname.zstack.org";
+        System.out.println(String.format("%s %s", hname, NetworkUtils.isHostname(hname)));
     }
 }

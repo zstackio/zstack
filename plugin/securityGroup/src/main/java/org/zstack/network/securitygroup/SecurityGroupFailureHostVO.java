@@ -30,6 +30,11 @@ public class SecurityGroupFailureHostVO {
     @ForeignKey(parentEntityClass = ManagementNodeVO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String managementNodeId;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public long getId() {
         return id;
     }

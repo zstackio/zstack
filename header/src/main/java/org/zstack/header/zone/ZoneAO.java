@@ -33,6 +33,11 @@ public class ZoneAO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public ZoneAO() {
         this.state = ZoneState.Enabled;
     }

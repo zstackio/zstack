@@ -6,6 +6,7 @@ import org.zstack.header.message.APIListMessage;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.sql.DataSource;
+import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;
 
@@ -65,4 +66,6 @@ public interface DatabaseFacade {
     DataSource getDataSource();
 
     DataSource getExtraDataSource();
+
+    Timestamp getCurrentSqlTime();
 }

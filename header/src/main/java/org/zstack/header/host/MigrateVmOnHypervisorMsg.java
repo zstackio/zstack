@@ -1,14 +1,27 @@
 package org.zstack.header.host;
 
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceInventory;
 
 public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
+    public static enum StorageMigrationPolicy {
+        FullCopy,
+        IncCopy
+    }
+
     private VmInstanceInventory vmInventory;
     private HostInventory destHostInventory;
     private String srcHostUuid;
+    private StorageMigrationPolicy storageMigrationPolicy;
+
+    public StorageMigrationPolicy getStorageMigrationPolicy() {
+        return storageMigrationPolicy;
+    }
+
+    public void setStorageMigrationPolicy(StorageMigrationPolicy storageMigrationPolicy) {
+        this.storageMigrationPolicy = storageMigrationPolicy;
+    }
+
     public VmInstanceInventory getVmInventory() {
         return vmInventory;
     }

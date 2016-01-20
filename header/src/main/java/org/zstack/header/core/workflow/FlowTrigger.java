@@ -10,10 +10,6 @@ public interface FlowTrigger extends AsyncBackup {
 
     void next();
 
-    void rollback();
-
-    void skipRestRollbacks();
-
     void setError(ErrorCode error);
 
 }

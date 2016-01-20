@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -14,6 +15,8 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceConstant.Params;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
 import org.zstack.utils.CollectionUtils;
@@ -21,6 +24,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,56 +40,35 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
     @Autowired
     private CascadeFacade casf;
 
-
-    /* root volume is detached as well, as it is going to be deleted*/
-    private void detachAllVolumes(VmInstanceSpec spec) {
-        List<String> volumeUuids = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<String, VolumeInventory>() {
-            @Override
-            public String call(VolumeInventory arg) {
-                return arg.getUuid();
-            }
-        });
-        SimpleQuery<VolumeVO> query = dbf.createQuery(VolumeVO.class);
-        query.add(VolumeVO_.uuid, Op.IN, volumeUuids);
-        /* if we failed in half way, the data volume may have been detached from the original vm and attached to another one,
-         * we check vm uuid here to avoid detaching a data disk from a healthy vm
-         */
-        query.add(VolumeVO_.vmInstanceUuid, Op.EQ, spec.getVmInventory().getUuid());
-        List<VolumeVO> vos = query.list();
-        for (VolumeVO vo : vos) {
-            vo.setVmInstanceUuid(null);
-            dbf.update(vo);
-        }
-    }
-
-    private List<VolumeInventory> getVolumesToExpunge(VmInstanceSpec spec, boolean expungeDataDisk) {
-        List<VolumeInventory> volumesToExpunge = new ArrayList<VolumeInventory>(spec.getVmInventory().getAllVolumes().size());
-        if (expungeDataDisk) {
-            volumesToExpunge.addAll(spec.getVmInventory().getAllVolumes());
-        } else {
-            for (VolumeInventory v : spec.getVmInventory().getAllVolumes()) {
-                if (v.getUuid().equals(spec.getVmInventory().getRootVolumeUuid())) {
-                    volumesToExpunge.add(v);
-                    break;
-                }
-            }
-        }
-        return volumesToExpunge;
-    }
-
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        boolean expungeDataDisk = VmGlobalConfig.DELETE_DATA_VOLUME_ON_VM_DESTROY.value(Boolean.class);
+        final boolean deleteDataDisk = VmGlobalConfig.DELETE_DATA_VOLUME_ON_VM_DESTROY.value(Boolean.class);
 
         /* data volume must be detached anyway no matter if it is going to be deleted */
-        if (!spec.getVmInventory().getAllVolumes().isEmpty()) {
-            detachAllVolumes(spec);
+        if (spec.getVmInventory().getAllVolumes().size() > 1) {
+            detachDataVolumes(spec);
         }
 
-        List<VolumeInventory> ctx = getVolumesToExpunge(spec, expungeDataDisk);
-        final String issuer = VolumeVO.class.getSimpleName();
+        final VmInstanceDeletionPolicy deletionPolicy = (VmInstanceDeletionPolicy) data.get(Params.DeletionPolicy);
+        List<VolumeDeletionStruct> ctx = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<VolumeDeletionStruct, VolumeInventory>() {
+            @Override
+            public VolumeDeletionStruct call(VolumeInventory arg) {
+                if (VolumeType.Data.toString().equals(arg.getType()) && !deleteDataDisk) {
+                    return null;
+                }
 
+                VolumeDeletionStruct s = new VolumeDeletionStruct(arg);
+                if (VolumeType.Root.toString().equals(arg.getType())) {
+                    s.setDeletionPolicy(deletionPolicy.toString());
+                }
+                // for data volume, use volume's own deletion policy
+
+                return s;
+            }
+        });
+
+        final String issuer = VolumeVO.class.getSimpleName();
         casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
             @Override
             public void success() {
@@ -97,5 +80,20 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
                 trigger.fail(errorCode);
             }
         });
+    }
+
+    @Transactional
+    private void detachDataVolumes(VmInstanceSpec spec) {
+        List<String> dataVolumeUuids = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<String, VolumeInventory>() {
+            @Override
+            public String call(VolumeInventory arg) {
+                return VolumeType.Data.toString().equals(arg.getType()) ? arg.getUuid() : null;
+            }
+        });
+
+        String sql = "update VolumeVO vol set vol.vmInstanceUuid = null where vol.uuid in (:uuids)";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("uuids", dataVolumeUuids);
+        q.executeUpdate();
     }
 }

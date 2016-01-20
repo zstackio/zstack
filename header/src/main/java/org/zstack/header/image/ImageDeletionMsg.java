@@ -9,6 +9,15 @@ import java.util.List;
 public class ImageDeletionMsg extends DeletionMessage implements ImageMessage {
     private String imageUuid;
     private List<String> backupStorageUuids;
+    private String deletionPolicy;
+
+    public String getDeletionPolicy() {
+        return deletionPolicy;
+    }
+
+    public void setDeletionPolicy(String deletionPolicy) {
+        this.deletionPolicy = deletionPolicy;
+    }
 
     public List<String> getBackupStorageUuids() {
         return backupStorageUuids;

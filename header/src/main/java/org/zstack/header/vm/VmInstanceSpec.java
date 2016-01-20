@@ -7,7 +7,7 @@ import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeInventory;
@@ -26,6 +26,19 @@ public class VmInstanceSpec implements Serializable {
         private boolean isRoot;
         private long size;
         private String diskOfferingUuid;
+        private boolean isVolumeCreated;
+
+        public boolean isVolumeCreated() {
+            return isVolumeCreated;
+        }
+
+        public void setIsVolumeCreated(boolean isVolumeCreated) {
+            this.isVolumeCreated = isVolumeCreated;
+        }
+
+        public void setIsRoot(boolean isRoot) {
+            this.isRoot = isRoot;
+        }
 
         public PrimaryStorageInventory getPrimaryStorageInventory() {
             return primaryStorageInventory;
@@ -84,6 +97,24 @@ public class VmInstanceSpec implements Serializable {
     public static class IsoSpec implements Serializable {
         private String installPath;
         private String imageUuid;
+        private String primaryStorageUuid;
+        private String backupStorageUuid;
+
+        public String getBackupStorageUuid() {
+            return backupStorageUuid;
+        }
+
+        public void setBackupStorageUuid(String backupStorageUuid) {
+            this.backupStorageUuid = backupStorageUuid;
+        }
+
+        public String getPrimaryStorageUuid() {
+            return primaryStorageUuid;
+        }
+
+        public void setPrimaryStorageUuid(String primaryStorageUuid) {
+            this.primaryStorageUuid = primaryStorageUuid;
+        }
 
         public String getImageUuid() {
             return imageUuid;
@@ -144,6 +175,24 @@ public class VmInstanceSpec implements Serializable {
     private Map<String, JsonWrapper> extensionData = new HashMap<String, JsonWrapper>();
     private String dataIsoPath;
     private IsoSpec destIso;
+    private String userdata;
+    private List<String> bootOrders;
+
+    public List<String> getBootOrders() {
+        return bootOrders;
+    }
+
+    public void setBootOrders(List<String> bootOrders) {
+        this.bootOrders = bootOrders;
+    }
+
+    public String getUserdata() {
+        return userdata;
+    }
+
+    public void setUserdata(String userdata) {
+        this.userdata = userdata;
+    }
 
     public IsoSpec getDestIso() {
         return destIso;
@@ -298,6 +347,17 @@ public class VmInstanceSpec implements Serializable {
     public void setDataIsoPath(String dataIsoPath) {
         this.dataIsoPath = dataIsoPath;
     }
-	
-	
+
+
+    public List<String> getRequiredNetworkServiceTypes() {
+        List<String> nsTypes = new ArrayList<String>();
+        if (getL3Networks() != null) {
+            for (L3NetworkInventory l3 : getL3Networks()) {
+                for (NetworkServiceL3NetworkRefInventory ref : l3.getNetworkServices()) {
+                    nsTypes.add(ref.getNetworkServiceType());
+                }
+            }
+        }
+        return nsTypes;
+    }
 }

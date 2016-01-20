@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -40,7 +41,7 @@ public class AttachEipFlow implements Flow {
     }
 
     @Override
-    public void rollback(final FlowTrigger trigger, Map data) {
+    public void rollback(final FlowRollback trigger, Map data) {
         if (data.get(SUCCESS) == null) {
             trigger.rollback();
             return;

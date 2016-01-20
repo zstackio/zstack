@@ -1,6 +1,9 @@
 package org.zstack.storage.primary.local;
 
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.RebaseSnapshotBackingFilesCmd;
+import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.VerifySnapshotChainCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpUploadBitsCmd;
 
@@ -31,4 +34,17 @@ public class LocalStorageSimulatorConfig {
     public List<MergeSnapshotCmd> mergeSnapshotCmds = new ArrayList<MergeSnapshotCmd>();
     public List<RebaseAndMergeSnapshotsCmd> rebaseAndMergeSnapshotsCmds = new ArrayList<RebaseAndMergeSnapshotsCmd>();
     public List<OfflineMergeSnapshotCmd> offlineMergeSnapshotCmds = new ArrayList<OfflineMergeSnapshotCmd>();
+    public List<CheckBitsCmd> checkBitsCmds = new ArrayList<CheckBitsCmd>();
+    public List<RebaseRootVolumeToBackingFileCmd> rebaseRootVolumeToBackingFileCmds = new ArrayList<RebaseRootVolumeToBackingFileCmd>();
+    public List<RebaseSnapshotBackingFilesCmd> rebaseSnapshotBackingFilesCmds = new ArrayList<RebaseSnapshotBackingFilesCmd>();
+    public List<VerifySnapshotChainCmd> verifySnapshotChainCmds = new ArrayList<VerifySnapshotChainCmd>();
+    public List<CopyBitsFromRemoteCmd> copyBitsFromRemoteCmds = new ArrayList<CopyBitsFromRemoteCmd>();
+    public List<GetMd5Cmd> getMd5Cmds = new ArrayList<GetMd5Cmd>();
+    public List<CheckMd5sumCmd> checkMd5sumCmds = new ArrayList<CheckMd5sumCmd>();
+    public List<GetBackingFileCmd> getBackingFileCmds = new ArrayList<GetBackingFileCmd>();
+    public volatile String backingFilePath;
+    public volatile Long backingFileSize;
+    public volatile boolean checkMd5Success = true;
+    public volatile boolean checkBitsSuccess = true;
+    public volatile boolean copyBitsFromRemoteSuccess = true;
 }
