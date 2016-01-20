@@ -123,6 +123,7 @@ public class VmAllocateNicFlow implements Flow {
                         nic.setUsedIpUuid(areply.getIpInventory().getUuid());
                         nic.setVmInstanceUuid(spec.getVmInventory().getUuid());
                         nic.setL3NetworkUuid(areply.getIpInventory().getL3NetworkUuid());
+                        assert nic.getL3NetworkUuid() != null;
                         nic.setMac(NetworkUtils.generateMacWithDeviceId((short) deviceId));
                         nic.setDeviceId(deviceId);
                         nic.setNetmask(areply.getIpInventory().getNetmask());
