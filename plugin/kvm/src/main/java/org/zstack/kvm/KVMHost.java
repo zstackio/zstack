@@ -1422,7 +1422,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         cmd.setVmName(spec.getVmInventory().getName());
-        cmd.setVmUuid(spec.getVmInventory().getUuid());
+        cmd.setVmInstanceUuid(spec.getVmInventory().getUuid());
         cmd.setCpuNum(spec.getVmInventory().getCpuNum());
         cmd.setCpuSpeed(spec.getVmInventory().getCpuSpeed());
         cmd.setMemory(spec.getVmInventory().getMemorySize());

@@ -564,12 +564,44 @@ public class KVMAgentCommands {
         private String nestedVirtualization;
         private String hostManagementIp;
 
-        public String getHostManagementIp() {
-            return hostManagementIp;
+        public String getVmName() {
+            return vmName;
         }
 
-        public void setHostManagementIp(String hostManagementIp) {
-            this.hostManagementIp = hostManagementIp;
+        public void setVmName(String vmName) {
+            this.vmName = vmName;
+        }
+
+        public long getMemory() {
+            return memory;
+        }
+
+        public void setMemory(long memory) {
+            this.memory = memory;
+        }
+
+        public int getCpuNum() {
+            return cpuNum;
+        }
+
+        public void setCpuNum(int cpuNum) {
+            this.cpuNum = cpuNum;
+        }
+
+        public long getCpuSpeed() {
+            return cpuSpeed;
+        }
+
+        public void setCpuSpeed(long cpuSpeed) {
+            this.cpuSpeed = cpuSpeed;
+        }
+
+        public List<String> getBootDev() {
+            return bootDev;
+        }
+
+        public void setBootDev(List<String> bootDev) {
+            this.bootDev = bootDev;
         }
 
         public IsoTO getBootIso() {
@@ -588,67 +620,31 @@ public class KVMAgentCommands {
             this.useVirtio = useVirtio;
         }
 
-        public String getVmUuid() {
-			return vmInstanceUuid;
-		}
-		public void setVmUuid(String vmInstanceUuid) {
-			this.vmInstanceUuid = vmInstanceUuid;
-		}
-		public String getVmName() {
-			return vmName;
-		}
-		public void setVmName(String vmName) {
-			this.vmName = vmName;
-		}
-		public long getMemory() {
-			return memory;
-		}
-		public void setMemory(long memory) {
-			this.memory = memory;
-		}
-		
-		public int getCpuNum() {
-			return cpuNum;
-		}
-		public void setCpuNum(int cpuNum) {
-			this.cpuNum = cpuNum;
-		}
-		public long getCpuSpeed() {
-			return cpuSpeed;
-		}
-
-        public void setBootDev(List<String> bootDev) {
-            this.bootDev = bootDev;
-        }
-
-        public void setCpuSpeed(long cpuSpeed) {
-			this.cpuSpeed = cpuSpeed;
-		}
-<<<<<<< HEAD
-		public String getBootDev() {
-			return bootDev;
-		}
-		public void setBootDev(String bootDev) {
-			this.bootDev = bootDev;
-		}
         public String getConsoleMode() {
             return consoleMode;
         }
+
         public void setConsoleMode(String consoleMode) {
             this.consoleMode = consoleMode;
         }
+
         public String getNestedVirtualization() {
             return nestedVirtualization;
         }
+
         public void setNestedVirtualization(String nestedVirtualization) {
             this.nestedVirtualization = nestedVirtualization;
         }
 
-        public List<String> getBootDev() {
-            return bootDev;
+        public String getHostManagementIp() {
+            return hostManagementIp;
         }
 
-		public VolumeTO getRootVolume() {
+        public void setHostManagementIp(String hostManagementIp) {
+            this.hostManagementIp = hostManagementIp;
+        }
+
+        public VolumeTO getRootVolume() {
             return rootVolume;
         }
         public void setRootVolume(VolumeTO rootVolume) {
