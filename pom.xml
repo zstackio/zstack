@@ -23,7 +23,6 @@
         <module>utils</module>
         <module>header</module>
         <module>portal</module>
-        <module>test</module>
         <module>simulator</module>
         <module>build</module>
         <module>storage</module>
