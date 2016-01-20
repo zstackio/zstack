@@ -64,12 +64,6 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="RetryCreateVmApiExtension" class="org.zstack.mevoco.RetryCreateVmApiExtension">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
-        </zstack:plugin>
-    </bean>
-
     <bean id="CollectdManager" class="org.zstack.monitoring.CollectdManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
