@@ -28,7 +28,7 @@ public class VmReturnHostFlow extends NoRollbackFlow {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         if (spec.getVmInventory().getHostUuid() == null) {
-            // the vm failed because no host available at that time
+            // the vm failed because no host available at that time or the vm is stopped
             // no need to return host
             chain.next();
             return;
