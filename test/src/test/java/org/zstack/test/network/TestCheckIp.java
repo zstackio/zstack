@@ -16,12 +16,7 @@ import org.zstack.test.DBUtil;
 
 import java.util.List;
 
-/**
- * 1. add two ip ranges
- *
- * confirm APIGetFreeIpMsg works
- */
-public class TestGetFreeIp1 {
+public class TestCheckIp {
     Api api;
     ComponentLoader loader;
     DatabaseFacade dbf;
@@ -49,27 +44,32 @@ public class TestGetFreeIp1 {
         Assert.assertNotNull(vo);
         String gw = "10.223.110.1";
         String nw = "255.255.255.0";
-        api.addIpRange(l3inv.getUuid(), "10.223.110.10", "10.223.110.20", gw, nw);
-        IpRangeInventory ipr = api.addIpRange(l3inv.getUuid(), "10.223.110.30", "10.223.110.40", gw, nw);
-        List<FreeIpInventory> ips = api.getFreeIp(l3inv.getUuid(), null);
-        Assert.assertEquals(22, ips.size());
-        FreeIpInventory ip1 = ips.get(20);
-        Assert.assertEquals(gw, ip1.getGateway());
-        Assert.assertEquals(nw, ip1.getNetmask());
+        IpRangeInventory ipr = api.addIpRange(l3inv.getUuid(), "10.223.110.10", "10.223.110.20", gw, nw);
 
-        ips = api.getFreeIp(null, ipr.getUuid());
-        Assert.assertEquals(11, ips.size());
+        // gateway is not allocatable
+        boolean avail = api.checkIpAvailability(l3inv.getUuid(), gw);
+        Assert.assertFalse(avail);
+
+        String testIp = "10.223.110.10";
+        avail = api.checkIpAvailability(l3inv.getUuid(), testIp);
+        Assert.assertTrue(avail);
 
         AllocateIpMsg amsg = new AllocateIpMsg();
+        amsg.setRequiredIp(testIp);
         amsg.setL3NetworkUuid(l3inv.getUuid());
         bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, amsg.getL3NetworkUuid());
         AllocateIpReply r = (AllocateIpReply) bus.call(amsg);
 
-        ips = api.getFreeIp(l3inv.getUuid(), null);
-        Assert.assertEquals(21, ips.size());
+        avail = api.checkIpAvailability(l3inv.getUuid(), testIp);
+        Assert.assertFalse(avail);
 
-        ips = api.getFreeIp(l3inv.getUuid(), null, 5);
-        Assert.assertEquals(5, ips.size());
+        ReturnIpMsg rmsg = new ReturnIpMsg();
+        rmsg.setUsedIpUuid(r.getIpInventory().getUuid());
+        rmsg.setL3NetworkUuid(r.getIpInventory().getL3NetworkUuid());
+        bus.makeLocalServiceId(rmsg, L3NetworkConstant.SERVICE_ID);
+        bus.call(rmsg);
+
+        avail = api.checkIpAvailability(l3inv.getUuid(), testIp);
+        Assert.assertTrue(avail);
     }
-
 }

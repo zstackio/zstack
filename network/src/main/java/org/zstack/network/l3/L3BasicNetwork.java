@@ -33,6 +33,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -224,9 +225,49 @@ public class L3BasicNetwork implements L3Network {
             handle((APIGetFreeIpMsg) msg);
         } else if (msg instanceof APIUpdateIpRangeMsg) {
             handle((APIUpdateIpRangeMsg) msg);
+        } else if (msg instanceof APICheckIpAvailabilityMsg) {
+            handle((APICheckIpAvailabilityMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APICheckIpAvailabilityMsg msg) {
+        APICheckIpAvailabilityReply reply = new APICheckIpAvailabilityReply();
+
+        SimpleQuery<IpRangeVO> rq = dbf.createQuery(IpRangeVO.class);
+        rq.select(IpRangeVO_.startIp, IpRangeVO_.endIp, IpRangeVO_.gateway);
+        rq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, self.getUuid());
+        List<Tuple> ts = rq.listTuple();
+
+        boolean inRange = false;
+        boolean isGateway = false;
+        for (Tuple t : ts) {
+            String sip = t.get(0, String.class);
+            String eip = t.get(1, String.class);
+            String gw = t.get(2, String.class);
+            if (msg.getIp().equals(gw)) {
+                isGateway = true;
+                break;
+            }
+
+            if (NetworkUtils.isIpv4InRange(msg.getIp(), sip, eip)) {
+                inRange = true;
+                break;
+            }
+        }
+
+        if (!inRange || isGateway) {
+            // not an IP of this L3 or is a gateway
+            reply.setAvailable(false);
+        } else {
+            SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
+            q.add(UsedIpVO_.l3NetworkUuid, Op.EQ, self.getUuid());
+            q.add(UsedIpVO_.ip, Op.EQ, msg.getIp());
+            reply.setAvailable(!q.isExists());
+        }
+
+        bus.reply(msg, reply);
     }
 
     private void handle(APIDetachNetworkServiceFromL3NetworkMsg msg) {

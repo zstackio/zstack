@@ -68,6 +68,8 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddIpRangeByNetworkCidrMsg) msg);
         } else if (msg instanceof APIGetFreeIpMsg) {
             validate((APIGetFreeIpMsg) msg);
+        } else if (msg instanceof APICheckIpAvailabilityMsg) {
+            validate((APICheckIpAvailabilityMsg) msg);
         }
 
         setServiceId(msg);
@@ -75,10 +77,18 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         return msg;
     }
 
+    private void validate(APICheckIpAvailabilityMsg msg) {
+        if (!NetworkUtils.isIpv4Address(msg.getIp())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("invalid IP[%s]", msg.getIp())
+            ));
+        }
+    }
+
     private void validate(APIGetFreeIpMsg msg) {
         if (msg.getIpRangeUuid() == null && msg.getL3NetworkUuid() == null) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("ipRangeUuid and l3NetworkUuid cannot both be null; you must set either one.")
+                    "ipRangeUuid and l3NetworkUuid cannot both be null; you must set either one."
             ));
         }
 

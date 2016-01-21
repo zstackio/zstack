@@ -1134,6 +1134,21 @@ public class Api implements CloudBusEventListener {
         return getFreeIp(l3Uuid, ipRangeUuid, limit, null);
     }
 
+    public boolean checkIpAvailability(String l3Uuid, String ip) throws ApiSenderException {
+        return checkIpAvailability(l3Uuid, ip, null);
+    }
+
+    public boolean checkIpAvailability(String l3Uuid, String ip, SessionInventory session) throws ApiSenderException {
+        APICheckIpAvailabilityMsg msg = new APICheckIpAvailabilityMsg();
+        msg.setL3NetworkUuid(l3Uuid);
+        msg.setIp(ip);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICheckIpAvailabilityReply rely = sender.call(msg, APICheckIpAvailabilityReply.class);
+        return rely.isAvailable();
+    }
+
     public List<FreeIpInventory> getFreeIp(String l3Uuid, String ipRangeUuid, int limit, SessionInventory session) throws ApiSenderException {
         APIGetFreeIpMsg msg = new APIGetFreeIpMsg();
         msg.setSession(session == null ? adminSession : session);
