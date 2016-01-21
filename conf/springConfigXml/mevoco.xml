@@ -23,44 +23,10 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="FlatDhcpBackend" class="org.zstack.network.service.flat.FlatDhcpBackend">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.network.l3.IpRangeDeletionExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDhcpBackend" />
-            <zstack:extension interface="org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint" />
-            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" order="-1"/>
-            <zstack:extension interface="org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint" order="-1"/>
-            <zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.Service" />
-        </zstack:plugin>
-    </bean>
-
-    <bean id="FlatProviderFactory" class="org.zstack.network.service.flat.FlatProviderFactory">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceProviderFactory" />
-            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkCreateExtensionPoint" />
-        </zstack:plugin>
-    </bean>
-
     <bean id="MevocoHostAllocatorFactory" class="org.zstack.mevoco.MevocoHostAllocatorFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.allocator.HostAllocatorStrategyFactory" />
-        </zstack:plugin>
-    </bean>
-
-    <bean id="FlatUserdataBackend" class="org.zstack.network.service.flat.FlatUserdataBackend">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.network.service.userdata.UserdataBackend" />
-        </zstack:plugin>
-    </bean>
-
-    <bean id="UserdataExtension" class="org.zstack.network.service.userdata.UserdataExtension">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" />
         </zstack:plugin>
     </bean>
 

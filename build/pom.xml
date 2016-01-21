@@ -45,12 +45,22 @@
 							<includes>
 								<include>**/*</include>
 							</includes>
+                            <excludes>
+                                <exclude>zstack.xml</exclude>
+                            </excludes>
 						</resource>
 						<resource>	
 							<directory>../conf</directory>
 							<targetPath>WEB-INF/</targetPath>
 							<includes>
                                 <include>urlrewrite.xml</include>
+							</includes>
+						</resource>
+						<resource>	
+                            <directory>${zstack.xml.dir}</directory>
+							<targetPath>WEB-INF/classes</targetPath>
+							<includes>
+								<include>zstack.xml</include>
 							</includes>
 						</resource>
 					</webResources>
