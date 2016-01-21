@@ -11,6 +11,16 @@ public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {
     private String username;
     @APIParam(maxLength = 255, required = false)
     private String password;
+    @APIParam(maxLength = 255, required = false)
+    private String hostname;
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
+    }
 
     public String getUsername() {
         return username;

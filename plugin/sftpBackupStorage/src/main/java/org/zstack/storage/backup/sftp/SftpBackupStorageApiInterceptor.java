@@ -27,9 +27,19 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddSftpBackupStorageMsg)msg);
         } else if (msg instanceof APIQuerySftpBackupStorageMsg) {
             validate((APIQuerySftpBackupStorageMsg)msg);
+        } else if (msg instanceof APIUpdateSftpBackupStorageMsg) {
+            validate((APIUpdateSftpBackupStorageMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIUpdateSftpBackupStorageMsg msg) {
+        if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
+            ));
+        }
     }
 
     private void validate(APIQuerySftpBackupStorageMsg msg) {

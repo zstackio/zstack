@@ -387,6 +387,9 @@ public class SftpBackupStorage extends BackupStorageBase {
         if (umsg.getPassword() != null) {
             vo.setPassword(umsg.getPassword());
         }
+        if (umsg.getHostname() != null) {
+            vo.setHostname(umsg.getHostname());
+        }
 
         return vo;
     }
