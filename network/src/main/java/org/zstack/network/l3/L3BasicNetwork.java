@@ -133,9 +133,17 @@ public class L3BasicNetwork implements L3Network {
             handle((L3NetworkDeletionMsg) msg);
         } else if (msg instanceof IpRangeDeletionMsg) {
             handle((IpRangeDeletionMsg) msg);
+        } else if (msg instanceof CheckIpAvailabilityMsg) {
+            handle((CheckIpAvailabilityMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(CheckIpAvailabilityMsg msg) {
+        CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
+        reply.setAvailable(checkIpAvailability(msg.getIp()));
+        bus.reply(msg, reply);
     }
 
     private void handle(IpRangeDeletionMsg msg) {
@@ -232,9 +240,7 @@ public class L3BasicNetwork implements L3Network {
         }
     }
 
-    private void handle(APICheckIpAvailabilityMsg msg) {
-        APICheckIpAvailabilityReply reply = new APICheckIpAvailabilityReply();
-
+    protected boolean checkIpAvailability(String ip) {
         SimpleQuery<IpRangeVO> rq = dbf.createQuery(IpRangeVO.class);
         rq.select(IpRangeVO_.startIp, IpRangeVO_.endIp, IpRangeVO_.gateway);
         rq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, self.getUuid());
@@ -246,12 +252,12 @@ public class L3BasicNetwork implements L3Network {
             String sip = t.get(0, String.class);
             String eip = t.get(1, String.class);
             String gw = t.get(2, String.class);
-            if (msg.getIp().equals(gw)) {
+            if (ip.equals(gw)) {
                 isGateway = true;
                 break;
             }
 
-            if (NetworkUtils.isIpv4InRange(msg.getIp(), sip, eip)) {
+            if (NetworkUtils.isIpv4InRange(ip, sip, eip)) {
                 inRange = true;
                 break;
             }
@@ -259,14 +265,18 @@ public class L3BasicNetwork implements L3Network {
 
         if (!inRange || isGateway) {
             // not an IP of this L3 or is a gateway
-            reply.setAvailable(false);
+            return false;
         } else {
             SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
             q.add(UsedIpVO_.l3NetworkUuid, Op.EQ, self.getUuid());
-            q.add(UsedIpVO_.ip, Op.EQ, msg.getIp());
-            reply.setAvailable(!q.isExists());
+            q.add(UsedIpVO_.ip, Op.EQ, ip);
+            return !q.isExists();
         }
+    }
 
+    private void handle(APICheckIpAvailabilityMsg msg) {
+        APICheckIpAvailabilityReply reply = new APICheckIpAvailabilityReply();
+        reply.setAvailable(checkIpAvailability(msg.getIp()));
         bus.reply(msg, reply);
     }
 

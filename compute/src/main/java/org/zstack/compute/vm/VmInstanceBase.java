@@ -14,6 +14,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
 import org.zstack.header.allocator.HostAllocatorConstant;
@@ -34,10 +35,7 @@ import org.zstack.header.image.ImageEO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkState;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageReply;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
@@ -304,9 +302,151 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((VmCheckOwnStateMsg) msg);
         } else if (msg instanceof ExpungeVmMsg) {
             handle((ExpungeVmMsg) msg);
+        } else if (msg instanceof ChangeVmIpMsg) {
+            handle((ChangeVmIpMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void changeVmIp(final ChangeVmIpMsg msg, final NoErrorCompletion completion) {
+        final VmNicVO targetNic = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
+            @Override
+            public VmNicVO call(VmNicVO arg) {
+                return msg.getL3NetworkUuid().equals(arg.getL3NetworkUuid()) ? arg : null;
+            }
+        });
+
+        if (targetNic == null) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("the vm[uuid:%s] has no nic on the L3 network[uuid:%s]", self.getUuid(), msg.getL3NetworkUuid())
+            ));
+        }
+
+        ErrorCode err = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (err != null) {
+            throw new OperationFailureException(err);
+        }
+
+        final ChangeVmIpReply reply = new ChangeVmIpReply();
+
+        final FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("change-vm-ip-to-%s-l3-%s-vm-%s", msg.getIp(), msg.getL3NetworkUuid(), self.getUuid()));
+        chain.then(new ShareFlow() {
+            UsedIpInventory newIp;
+            String oldIpUuid = targetNic.getUsedIpUuid();
+
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "acquire-new-ip";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        AllocateIpMsg amsg = new AllocateIpMsg();
+                        amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
+                        amsg.setRequiredIp(msg.getIp());
+                        bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
+                        bus.send(amsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    AllocateIpReply r = reply.castReply();
+                                    newIp = r.getIpInventory();
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (newIp != null) {
+                            ReturnIpMsg rmsg = new ReturnIpMsg();
+                            rmsg.setL3NetworkUuid(newIp.getL3NetworkUuid());
+                            rmsg.setUsedIpUuid(newIp.getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, newIp.getL3NetworkUuid());
+                            bus.send(rmsg);
+                        }
+
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "change-ip-in-database";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        targetNic.setUsedIpUuid(newIp.getUuid());
+                        targetNic.setGateway(newIp.getGateway());
+                        targetNic.setNetmask(newIp.getNetmask());
+                        targetNic.setIp(newIp.getIp());
+                        dbf.update(targetNic);
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "return-old-ip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ReturnIpMsg rmsg = new ReturnIpMsg();
+                        rmsg.setUsedIpUuid(oldIpUuid);
+                        rmsg.setL3NetworkUuid(targetNic.getL3NetworkUuid());
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, targetNic.getL3NetworkUuid());
+                        bus.send(rmsg);
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg, completion) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
+
+                error(new FlowErrorHandler(msg, completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void handle(final ChangeVmIpMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                changeVmIp(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "change-vm-ip";
+            }
+        });
+
+
     }
 
     private void handle(final ExpungeVmMsg msg) {

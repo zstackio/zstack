@@ -49,12 +49,14 @@ public class SystemTag {
         DELETE
     }
 
-    public void installLifeCycleListener(SystemTagLifeCycleListener listener) {
+    public SystemTag installLifeCycleListener(SystemTagLifeCycleListener listener) {
         lifeCycleListeners.add(listener);
+        return this;
     }
 
-    public void installJudger(SystemTagOperationJudger judger) {
+    public SystemTag installJudger(SystemTagOperationJudger judger) {
         judgers.add(judger);
+        return this;
     }
 
     void callCreatedJudger(SystemTagInventory tag) {
@@ -252,8 +254,9 @@ public class SystemTag {
         return createTag(resourceUuid, resourceClass, true, true);
     }
 
-    public void installValidator(SystemTagValidator validator) {
+    public SystemTag installValidator(SystemTagValidator validator) {
         validators.add(validator);
+        return this;
     }
 
     public boolean isMatch(String tag) {

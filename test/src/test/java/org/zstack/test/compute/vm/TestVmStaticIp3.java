@@ -39,6 +39,15 @@ import static org.zstack.utils.CollectionDSL.map;
  * 4. update the static IP to a new one
  *
  * confirm the new IP is allocated
+ *
+ * 5. delete the static IP
+ * 6. stop/start the vm
+ *
+ * confirm a new IP is allocated
+ *
+ * 7. change the static IP to a wrong one
+ *
+ * confirm the operation failed
  */
 public class TestVmStaticIp3 {
     Deployer deployer;
@@ -80,13 +89,13 @@ public class TestVmStaticIp3 {
         SystemTagInventory tag = VmSystemTags.STATIC_IP.getTagInventory(vm.getUuid());
         api.deleteTag(tag.getUuid());
 
+        api.stopVmInstance(vm.getUuid());
         String l3Ip2 = "10.10.1.102";
         api.createSystemTag(vm.getUuid(), VmSystemTags.STATIC_IP.instantiateTag(map(
                 e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l31.getUuid()),
                 e(VmSystemTags.STATIC_IP_TOKEN, l3Ip2)
         )), VmInstanceVO.class);
 
-        api.stopVmInstance(vm.getUuid());
         vm = api.startVmInstance(vm.getUuid());
 
         VmNicInventory nic = vm.findNic(l31.getUuid());
@@ -97,6 +106,7 @@ public class TestVmStaticIp3 {
         q.add(UsedIpVO_.l3NetworkUuid, Op.EQ, l31.getUuid());
         Assert.assertFalse(q.isExists());
 
+        api.stopVmInstance(vm.getUuid());
         tag = VmSystemTags.STATIC_IP.getTagInventory(vm.getUuid());
         String l3Ip3 = "10.10.1.103";
         api.updateSystemTag(tag.getUuid(), VmSystemTags.STATIC_IP.instantiateTag(map(
@@ -104,7 +114,6 @@ public class TestVmStaticIp3 {
                 e(VmSystemTags.STATIC_IP_TOKEN, l3Ip3)
         )), null);
 
-        api.stopVmInstance(vm.getUuid());
         vm = api.startVmInstance(vm.getUuid());
 
         nic = vm.findNic(l31.getUuid());
@@ -114,5 +123,51 @@ public class TestVmStaticIp3 {
         q.add(UsedIpVO_.ip, Op.EQ, l3Ip2);
         q.add(UsedIpVO_.l3NetworkUuid, Op.EQ, l31.getUuid());
         Assert.assertFalse(q.isExists());
+
+        tag = VmSystemTags.STATIC_IP.getTagInventory(vm.getUuid());
+        api.stopVmInstance(vm.getUuid());
+        api.deleteTag(tag.getUuid());
+        vm = api.startVmInstance(vm.getUuid());
+        nic = vm.findNic(l31.getUuid());
+        Assert.assertTrue(nic.getIp() != null);
+
+        boolean s = false;
+        api.stopVmInstance(vm.getUuid());
+        String wrongIp = "129.12.19.1";
+        try {
+            api.createSystemTag(vm.getUuid(), VmSystemTags.STATIC_IP.instantiateTag(map(
+                    e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l31.getUuid()),
+                    e(VmSystemTags.STATIC_IP_TOKEN, l3Ip3)
+            )), VmInstanceVO.class);
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
+
+        // set a correct static IP
+        // update a wrong static IP
+        // confirm the old static IP is not replaced
+        vm = api.stopVmInstance(vm.getUuid());
+        nic = vm.findNic(l31.getUuid());
+        l3Ip3 = "10.10.1.102";
+        api.createSystemTag(vm.getUuid(), VmSystemTags.STATIC_IP.instantiateTag(map(
+                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l31.getUuid()),
+                e(VmSystemTags.STATIC_IP_TOKEN, l3Ip3)
+        )), VmInstanceVO.class);
+        // check the old IP is returned
+        Assert.assertTrue(api.checkIpAvailability(nic.getL3NetworkUuid(), nic.getIp()));
+
+        try {
+            tag = VmSystemTags.STATIC_IP.getTagInventory(vm.getUuid());
+            api.updateSystemTag(tag.getUuid(), VmSystemTags.STATIC_IP.instantiateTag(map(
+                    e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l31.getUuid()),
+                    e(VmSystemTags.STATIC_IP_TOKEN, wrongIp)
+            )), null);
+        } catch (ApiSenderException e) {
+            // pass
+        }
+
+        tag = VmSystemTags.STATIC_IP.getTagInventory(vm.getUuid());
+        Assert.assertTrue(tag.getTag().contains(l3Ip3));
     }
 }

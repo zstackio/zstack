@@ -23,6 +23,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
@@ -42,10 +43,7 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
-import org.zstack.header.network.l3.L3NetworkException;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
@@ -405,6 +403,22 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                             String.format("%s is not a valid IPv4 address. Please correct your system tag[%s] of static IP", ip, sysTag)
                     ));
                 }
+
+                CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
+                cmsg.setIp(ip);
+                cmsg.setL3NetworkUuid(l3Uuid);
+                bus.makeLocalServiceId(cmsg, L3NetworkConstant.SERVICE_ID);
+                MessageReply r = bus.call(cmsg);
+                if (!r.isSuccess()) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INTERNAL, r.getError()));
+                }
+
+                CheckIpAvailabilityReply cr = r.castReply();
+                if (!cr.isAvailable()) {
+                    throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                            String.format("IP[%s] is not available on the L3 network[uuid:%s]", ip, l3Uuid)
+                    ));
+                }
             }
 
             @Transactional(readOnly = true)
@@ -461,34 +475,50 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), hostnameValidator);
         VmSystemTags.HOSTNAME.installValidator(hostnameValidator);
 
-        VmSystemTags.STATIC_IP.installLifeCycleListener(new AbstractSystemTagLifeCycleListener() {
-            private void markNicToReleaseAndAcquireNewIp(SystemTagInventory tag) {
-                String l3NetworkUuid = VmSystemTags.STATIC_IP.getTokenByTag(tag.getTag(), VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
-                SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
-                q.add(VmNicVO_.vmInstanceUuid, Op.EQ, tag.getResourceUuid());
-                q.add(VmNicVO_.l3NetworkUuid, Op.EQ, l3NetworkUuid);
-                VmNicVO nic = q.find();
-                if (nic == null) {
-                    logger.warn(String.format("cannot find nic[vm uuid:%s, l3 uuid:%s] for updating static ip system tag[uuid:%s]",
-                            tag.getResourceUuid(), l3NetworkUuid, tag.getUuid()));
+        VmSystemTags.STATIC_IP.installJudger(new SystemTagOperationJudger() {
+            private void changeVmIp(SystemTagInventory tag) {
+                SimpleQuery<VmInstanceVO> vmq  = dbf.createQuery(VmInstanceVO.class);
+                vmq.select(VmInstanceVO_.state);
+                vmq.add(VmInstanceVO_.uuid, Op.EQ, tag.getResourceUuid());
+                VmInstanceState state = vmq.findValue();
+                if (state == VmInstanceState.Created) {
+                    // the vm is just created, do nothing
+                    return;
+                }
+
+                if (state == VmInstanceState.Stopped) {
+                    String l3NetworkUuid = VmSystemTags.STATIC_IP.getTokenByTag(tag.getTag(), VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
+                    String ip = VmSystemTags.STATIC_IP.getTokenByTag(tag.getTag(), VmSystemTags.STATIC_IP_TOKEN);
+
+                    ChangeVmIpMsg cmsg = new ChangeVmIpMsg();
+                    cmsg.setVmInstanceUuid(tag.getResourceUuid());
+                    cmsg.setL3NetworkUuid(l3NetworkUuid);
+                    cmsg.setIp(ip);
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, tag.getResourceUuid());
+                    MessageReply reply = bus.call(cmsg);
+                    if (!reply.isSuccess()) {
+                        throw new OperationFailureException(reply.getError());
+                    }
                 } else {
-                    nic.setMetaData(VmInstanceConstant.NIC_META_RELEASE_IP_AND_ACQUIRE_NEW);
-                    dbf.update(nic);
+                    throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                            String.format("static IP can only be updated when the vm is stopped. Now the vm[uuid:%s] is in" +
+                                    " state[%s]", tag.getResourceUuid(), state)
+                    ));
                 }
             }
 
             @Override
-            public void tagCreated(SystemTagInventory tag) {
-                markNicToReleaseAndAcquireNewIp(tag);
+            public void tagPreCreated(SystemTagInventory tag) {
+                changeVmIp(tag);
             }
 
             @Override
-            public void tagDeleted(SystemTagInventory tag) {
+            public void tagPreDeleted(SystemTagInventory tag) {
             }
 
             @Override
-            public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
-                markNicToReleaseAndAcquireNewIp(newTag);
+            public void tagPreUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+                changeVmIp(newTag);
             }
         });
     }
