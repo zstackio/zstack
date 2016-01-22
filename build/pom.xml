@@ -196,10 +196,5 @@
             <artifactId>mediator</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>test</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 </project>
