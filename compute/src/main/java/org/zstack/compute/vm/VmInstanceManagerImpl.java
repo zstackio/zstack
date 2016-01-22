@@ -500,7 +500,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                         throw new OperationFailureException(reply.getError());
                     }
                 } else {
-                    throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    throw new OperationFailureException(errf.stringToOperationError(
                             String.format("static IP can only be updated when the vm is stopped. Now the vm[uuid:%s] is in" +
                                     " state[%s]", tag.getResourceUuid(), state)
                     ));

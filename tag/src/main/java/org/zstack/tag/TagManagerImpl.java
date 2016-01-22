@@ -708,6 +708,10 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return msg;
     }
 
+    private boolean isTagMatch(SystemTagInventory t, SystemTag s) {
+        return s.isMatch(t.getTag());
+    }
+
     @Override
     public List<String> getResourceTypeOfSystemTags() {
         List<String> lst = new ArrayList<String>();
@@ -719,7 +723,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
         if (tags != null) {
             for (SystemTag stag : tags) {
-                stag.callCreatedJudger(tag);
+                if (isTagMatch(tag, stag)) {
+                    stag.callCreatedJudger(tag);
+                }
             }
         }
     }
@@ -729,7 +735,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
         if (tags != null) {
             for (SystemTag stag : tags) {
-                stag.callTagCreatedListener(tag);
+                if (isTagMatch(tag, stag)) {
+                    stag.callTagCreatedListener(tag);
+                }
             }
         }
     }
@@ -738,7 +746,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
         if (tags != null) {
             for (SystemTag stag : tags) {
-                stag.callDeletedJudger(tag);
+                if (isTagMatch(tag, stag)) {
+                    stag.callDeletedJudger(tag);
+                }
             }
         }
     }
@@ -748,7 +758,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         List<SystemTag> tags = resourceTypeSystemTagMap.get(tag.getResourceType());
         if (tags != null) {
             for (SystemTag stag : tags) {
-                stag.callTagDeletedListener(tag);
+                if (isTagMatch(tag, stag)) {
+                    stag.callTagDeletedListener(tag);
+                }
             }
         }
     }
@@ -757,7 +769,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         List<SystemTag> tags = resourceTypeSystemTagMap.get(old.getResourceType());
         if (tags != null) {
             for (SystemTag stag : tags) {
-                stag.callUpdatedJudger(old, newTag);
+                if (isTagMatch(old, stag) && isTagMatch(newTag, stag)) {
+                    stag.callUpdatedJudger(old, newTag);
+                }
             }
         }
     }
@@ -767,7 +781,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         List<SystemTag> tags = resourceTypeSystemTagMap.get(old.getResourceType());
         if (tags != null) {
             for (SystemTag stag : tags) {
-                stag.callTagUpdatedListener(old, newTag);
+                if (isTagMatch(old, stag) && isTagMatch(newTag, stag)) {
+                    stag.callTagUpdatedListener(old, newTag);
+                }
             }
         }
     }
