@@ -17,7 +17,9 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -31,6 +33,8 @@ import java.util.concurrent.Callable;
 public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component,
         HostAllocatorFilterExtensionPoint, PrimaryStorageAllocatorStrategyExtensionPoint, PrimaryStorageAllocatorFlowNameSetter,
         HostAllocatorStrategyExtensionPoint {
+    private CLogger logger = Utils.getLogger(LocalStorageAllocatorFactory.class);
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -100,6 +104,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             }
 
             if (!toRemoveHuuids.isEmpty()) {
+                logger.debug(String.format("local storage filters out hosts%s, because they don't have required disk capacity[%s bytes]", toRemoveHuuids, spec.getDiskSize()));
+
                 candidates =  CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
                     @Override
                     public HostVO call(HostVO arg) {
