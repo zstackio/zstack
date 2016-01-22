@@ -9,7 +9,6 @@
         <hibernate.version>4.2.11.Final</hibernate.version>
         <aspectj.version>1.6.12</aspectj.version>
         <aspectj.plugin.version>1.4</aspectj.plugin.version>
-        <zstack.xml.dir>../conf</zstack.xml.dir>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>
@@ -404,10 +403,6 @@
                 <module>tool</module>
                 <module>premium</module>
             </modules>
-
-            <properties>
-                <zstack.xml.dir>../premium/conf</zstack.xml.dir>
-            </properties>
         </profile>
 
         <profile>
