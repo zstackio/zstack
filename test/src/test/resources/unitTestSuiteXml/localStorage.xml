@@ -51,5 +51,6 @@
     <!-- disable live migration cases
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage43"/>
     -->
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage44"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestQueryLocalStorage"/>
 </UnitTestSuiteConfig>

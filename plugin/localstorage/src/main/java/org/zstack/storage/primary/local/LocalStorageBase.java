@@ -846,6 +846,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getHostUuid());
                 q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
                 LocalStorageHostRefVO ref = q.find();
+
                 if (ref == null) {
                     ref = new LocalStorageHostRefVO();
                     ref.setTotalCapacity(c.totalPhysicalSize);
@@ -859,8 +860,26 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     increaseCapacity(c.totalPhysicalSize, c.availablePhysicalSize, c.totalPhysicalSize, c.availablePhysicalSize, ref.getSystemUsedCapacity());
                 } else {
+                    boolean totalCapacityChanged = false;
+                    if (ref.getTotalCapacity() != c.totalPhysicalSize) {
+                        totalCapacityChanged = true;
+                    }
+
                     ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
+                    ref.setTotalPhysicalCapacity(c.totalPhysicalSize);
+                    ref.setTotalCapacity(c.totalPhysicalSize);
                     dbf.update(ref);
+
+                    if (totalCapacityChanged) {
+                        // the host's local storage capacity changed
+                        // need to recalculate the capacity in the database
+                        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+                        rmsg.setPrimaryStorageUuid(self.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                        bus.send(rmsg);
+                    } else {
+                        new LocalStorageCapacityRecalculator().calculateByHostUuids(self.getUuid(), list(msg.getHostUuid()));
+                    }
                 }
 
                 bus.reply(msg, reply);

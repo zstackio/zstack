@@ -362,6 +362,19 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 @Override
                 @Transactional
                 public void run() {
+                    String sql = "select ps.type from PrimaryStorageVO ps where ps.uuid = :psUuid";
+                    TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                    q.setParameter("psUuid", psUuid);
+                    String type = q.getSingleResult();
+
+                    RecalculatePrimaryStorageCapacityExtensionPoint ext = recalculateCapacityExtensions.get(type);
+                    RecalculatePrimaryStorageCapacityStruct struct = new RecalculatePrimaryStorageCapacityStruct();
+                    struct.setPrimaryStorageUuid(psUuid);
+
+                    if (ext != null) {
+                        ext.beforeRecalculatePrimaryStorageCapacity(struct);
+                    }
+
                     PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(psUuid);
                     updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
                         @Override
@@ -375,15 +388,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                         }
                     });
 
-                    String sql = "select ps.type from PrimaryStorageVO ps where ps.uuid = :psUuid";
-                    TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                    q.setParameter("psUuid", psUuid);
-                    String type = q.getSingleResult();
-
-                    RecalculatePrimaryStorageCapacityExtensionPoint ext = recalculateCapacityExtensions.get(type);
-                    if (type != null) {
-                        RecalculatePrimaryStorageCapacityStruct struct = new RecalculatePrimaryStorageCapacityStruct();
-                        struct.setPrimaryStorageUuid(psUuid);
+                    if (ext != null) {
                         ext.afterRecalculatePrimaryStorageCapacity(struct);
                     }
                 }

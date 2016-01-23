@@ -7,4 +7,6 @@ public interface RecalculatePrimaryStorageCapacityExtensionPoint {
     String getPrimaryStorageTypeForRecalculateCapacityExtensionPoint();
 
     void afterRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct);
+
+    void beforeRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct);
 }

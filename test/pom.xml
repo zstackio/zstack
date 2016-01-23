@@ -258,7 +258,7 @@
                 <version>2.5</version>
                 <executions>
                     <execution>
-                        <id>copy-resources</id>
+                        <id>copy-conf</id>
                         <!-- here the phase you need -->
                         <phase>validate</phase>
                         <goals>
@@ -269,6 +269,23 @@
                             <resources>
                                 <resource>
                                     <directory>../conf</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>copy-premium-conf</id>
+                        <!-- here the phase you need -->
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>target/test-classes</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../premium/conf</directory>
                                 </resource>
                             </resources>
                         </configuration>
