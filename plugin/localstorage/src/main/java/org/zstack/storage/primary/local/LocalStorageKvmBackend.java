@@ -56,6 +56,7 @@ import org.zstack.utils.path.PathUtil;
 import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -582,11 +583,17 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     private <T extends AgentResponse> void httpCall(String path, final String hostUuid, AgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
+        httpCall(path, hostUuid, cmd, noCheckStatus, rspType, (int) TimeUnit.MINUTES.toSeconds(5), completion);
+    }
+
+    private <T extends AgentResponse> void httpCall(String path, final String hostUuid, AgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, int timeout, final ReturnValueCompletion<T> completion) {
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
         msg.setPath(path);
         msg.setNoStatusCheck(noCheckStatus);
         msg.setCommand(cmd);
+        msg.setCommandTimeout(timeout);
+        msg.setTimeout(TimeUnit.SECONDS.toMillis(timeout+30));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -1894,7 +1901,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         to.path = context.backingFilePath;
                         cmd.md5s = list(to);
 
-                        httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
+                        httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, false, GetMd5Rsp.class, (int) TimeUnit.MINUTES.toSeconds(90), new ReturnValueCompletion<GetMd5Rsp>(trigger) {
                             @Override
                             public void success(GetMd5Rsp rsp) {
                                 context.backingFileMd5 = rsp.md5s.get(0).md5;
@@ -1930,7 +1937,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 cmd.dstPassword = password;
                                 cmd.paths = list(context.backingFilePath);
 
-                                httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger, chain) {
+                                httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
+                                        AgentResponse.class, (int) TimeUnit.HOURS.toSeconds(24), new ReturnValueCompletion<AgentResponse>(trigger, chain) {
                                     @Override
                                     public void success(AgentResponse rsp) {
                                         s = true;
@@ -2041,7 +2049,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         CheckMd5sumCmd cmd = new CheckMd5sumCmd();
                         cmd.md5s = list(to);
 
-                        httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                        httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, (int) TimeUnit.MINUTES.toSeconds(90), new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse returnValue) {
                                 trigger.next();
@@ -2073,7 +2081,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     }
                 });
 
-                httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
+                httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, false, GetMd5Rsp.class, (int) TimeUnit.MINUTES.toSeconds(90), new ReturnValueCompletion<GetMd5Rsp>(trigger) {
                     @Override
                     public void success(GetMd5Rsp rsp) {
                         context.getMd5Rsp = rsp;
@@ -2106,7 +2114,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     }
                 });
 
-                httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
+                        AgentResponse.class, (int) TimeUnit.HOURS.toSeconds(24), new ReturnValueCompletion<AgentResponse>(trigger) {
                     @Override
                     public void success(AgentResponse rsp) {
                         migrated = cmd.paths;
@@ -2166,7 +2175,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public void run(final FlowTrigger trigger, Map data) {
                 CheckMd5sumCmd cmd = new CheckMd5sumCmd();
                 cmd.md5s = context.getMd5Rsp.md5s;
-                httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, (int) TimeUnit.MINUTES.toSeconds(90), new ReturnValueCompletion<AgentResponse>(trigger) {
                     @Override
                     public void success(AgentResponse rsp) {
                         trigger.next();
