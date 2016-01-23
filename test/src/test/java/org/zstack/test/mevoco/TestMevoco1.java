@@ -15,7 +15,11 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.BeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.Message;
 import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheMsg;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
@@ -46,6 +50,10 @@ import java.util.concurrent.TimeUnit;
  * 4. reconnect the host2
  *
  * confirm the image distributed to the host2
+ *
+ * 5. reconnect host1
+ *
+ * confirm no images get re-downloaded
  */
 public class TestMevoco1 {
     Deployer deployer;
@@ -57,6 +65,7 @@ public class TestMevoco1 {
     LocalStorageSimulatorConfig config;
     FlatNetworkServiceSimulatorConfig fconfig;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
+    boolean success = true;
 
     @Before
     public void setUp() throws Exception {
@@ -145,5 +154,15 @@ public class TestMevoco1 {
         Assert.assertFalse(config.downloadBitsCmds.isEmpty());
         cacheVO = findImageOnHost(local.getUuid(), img.getUuid(), host2.getUuid());
         Assert.assertNotNull(cacheVO);
+
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            public void intercept(Message msg) {
+                success = false;
+            }
+        }, DownloadImageToPrimaryStorageCacheMsg.class);
+        api.reconnectHost(host1.getUuid());
+        TimeUnit.SECONDS.sleep(3);
+        Assert.assertTrue(success);
     }
 }
