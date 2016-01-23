@@ -10,8 +10,10 @@
     <TestCase class="org.zstack.test.mevoco.TestMevoco7"/>
     <TestCase class="org.zstack.test.mevoco.TestMevoco8"/>
     <TestCase class="org.zstack.test.mevoco.TestMevoco9"/>
+    <!--
     <TestCase class="org.zstack.test.mevoco.TestMevoco10"/>
     <TestCase class="org.zstack.test.mevoco.TestMevoco11"/>
+    -->
     <TestCase class="org.zstack.test.mevoco.TestMevoco13"/>
     <TestCase class="org.zstack.test.mevoco.TestMevoco14"/>
     <TestCase class="org.zstack.test.mevoco.TestMevoco15"/>

@@ -92,7 +92,7 @@ public class TestMevoco5 {
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
-        long totalMemorySize = SizeUnit.GIGABYTE.toByte(8);
+        long totalMemorySize = SizeUnit.GIGABYTE.toByte(32);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmInstanceInventory vm1 = deployer.vms.get("TestVm1");
         HostInventory host = deployer.hosts.get("host1");
