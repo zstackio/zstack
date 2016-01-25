@@ -1748,9 +1748,39 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmBootOrderMsg) msg);
         } else if (msg instanceof APIGetVmBootOrderMsg) {
             handle((APIGetVmBootOrderMsg) msg);
+        } else if (msg instanceof APIGetVmConsoleAddressMsg) {
+            handle((APIGetVmConsoleAddressMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APIGetVmConsoleAddressMsg msg) {
+        ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (error != null) {
+            throw new OperationFailureException(error);
+        }
+
+        final APIGetVmConsoleAddressReply creply = new APIGetVmConsoleAddressReply();
+        GetVmConsoleAddressFromHostMsg hmsg = new GetVmConsoleAddressFromHostMsg();
+        hmsg.setHostUuid(self.getHostUuid());
+        hmsg.setVmInstanceUuid(self.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, self.getHostUuid());
+        bus.send(hmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    creply.setError(reply.getError());
+                } else {
+                    GetVmConsoleAddressFromHostReply hr = reply.castReply();
+                    creply.setHostIp(hr.getHostIp());
+                    creply.setPort(hr.getPort());
+                    creply.setProtocol(hr.getProtocol());
+                }
+
+                bus.reply(msg, creply);
+            }
+        });
     }
 
     private void handle(APIGetVmBootOrderMsg msg) {

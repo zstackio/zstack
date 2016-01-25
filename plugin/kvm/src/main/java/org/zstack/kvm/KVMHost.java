@@ -95,6 +95,7 @@ public class KVMHost extends HostBase implements Host {
     private String attachIsoPath;
     private String detachIsoPath;
     private String checkVmStatePath;
+    private String getConsolePortPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -179,6 +180,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_CHECK_STATE);
         checkVmStatePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_GET_VNC_PORT_PATH);
+        getConsolePortPath = ub.build().toString();
     }
 
     @Override
@@ -224,9 +229,42 @@ public class KVMHost extends HostBase implements Host {
             handle((DetachIsoOnHypervisorMsg) msg);
         } else if (msg instanceof CheckVmStateOnHypervisorMsg) {
             handle((CheckVmStateOnHypervisorMsg) msg);
+        } else if (msg instanceof GetVmConsoleAddressFromHostMsg) {
+            handle((GetVmConsoleAddressFromHostMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final GetVmConsoleAddressFromHostMsg msg) {
+        final GetVmConsoleAddressFromHostReply reply = new GetVmConsoleAddressFromHostReply();
+
+        GetVncPortCmd cmd = new GetVncPortCmd();
+        cmd.setVmUuid(msg.getVmInstanceUuid());
+        restf.asyncJsonPost(getConsolePortPath, cmd, new JsonAsyncRESTCallback<GetVncPortResponse>() {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(GetVncPortResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                } else {
+                    reply.setHostIp(self.getManagementIp());
+                    reply.setProtocol(KVMGlobalConfig.VM_CONSOLE_MODE.value());
+                    reply.setPort(ret.getPort());
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<GetVncPortResponse> getReturnClass() {
+                return GetVncPortResponse.class;
+            }
+        });
     }
 
     private void handle(final CheckVmStateOnHypervisorMsg msg) {
