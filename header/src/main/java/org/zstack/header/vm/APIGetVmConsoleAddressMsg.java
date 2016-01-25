@@ -8,14 +8,18 @@ import org.zstack.header.message.APISyncCallMessage;
  */
 public class APIGetVmConsoleAddressMsg extends APISyncCallMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class)
-    private String vmInstanceUuid;
+    private String uuid;
 
     @Override
     public String getVmInstanceUuid() {
-        return vmInstanceUuid;
+        return uuid;
     }
 
-    public void setVmInstanceUuid(String vmInstanceUuid) {
-        this.vmInstanceUuid = vmInstanceUuid;
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }
