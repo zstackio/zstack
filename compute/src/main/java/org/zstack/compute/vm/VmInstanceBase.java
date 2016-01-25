@@ -120,6 +120,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 String state = r.getStates().get(self.getUuid());
                 self = dbf.reload(self);
                 if (VmInstanceState.Running.toString().equals(state)) {
+                    self.setHostUuid(hostUuid);
                     changeVmStateInDb(VmInstanceStateEvent.running);
                 } else if (VmInstanceState.Stopped.toString().equals(state)) {
                     changeVmStateInDb(VmInstanceStateEvent.stopped);
