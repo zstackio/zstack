@@ -346,29 +346,29 @@ public class ImageBase implements Image {
                                 self.getUuid(), self.getName())
                 ));
             }
-        }
+        } else {
+            for (final String bsUuid : msg.getBackupStorageUuids()) {
+                ImageBackupStorageRefVO ref = CollectionUtils.find(self.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
+                    @Override
+                    public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
+                        return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
+                    }
+                });
 
-        for (final String bsUuid : msg.getBackupStorageUuids()) {
-            ImageBackupStorageRefVO ref = CollectionUtils.find(self.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
-                @Override
-                public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
-                    return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
+                if (ref == null) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]", self.getUuid(), self.getName(), bsUuid)
+                    ));
                 }
-            });
 
-            if (ref == null) {
-                throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                        String.format("the image[uuid:%s, name:%s] is not on the backup storage[uuid:%s]", self.getUuid(), self.getName(), bsUuid)
-                ));
+                if (ref.getStatus() != ImageStatus.Deleted) {
+                    throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                            String.format("the image[uuid:%s, name:%s] is not deleted on the backup storage[uuid:%s]", self.getUuid(), self.getName(), bsUuid)
+                    ));
+                }
+
+                bsUuids.add(bsUuid);
             }
-
-            if (ref.getStatus() != ImageStatus.Deleted) {
-                throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                        String.format("the image[uuid:%s, name:%s] is not deleted on the backup storage[uuid:%s]", self.getUuid(), self.getName(), bsUuid)
-                ));
-            }
-
-            bsUuids.add(bsUuid);
         }
 
         List<ExpungeImageMsg> emsgs = CollectionUtils.transformToList(bsUuids, new Function<ExpungeImageMsg, String>() {

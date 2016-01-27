@@ -65,7 +65,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
         LocalStorageResourceRefVO ref =  q.find();
         if (ref == null) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("the volume[uuid:%s] is not on any local primary storage", msg.getPrimaryStorageUuid())
+                    String.format("the volume[uuid:%s] is not on any local primary storage", msg.getVolumeUuid())
             ));
         }
 
