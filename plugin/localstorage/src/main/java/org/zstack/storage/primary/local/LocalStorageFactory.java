@@ -5,7 +5,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageForAttachingDiskFlow;
 import org.zstack.compute.vm.VmMigrateOnHypervisorFlow;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
@@ -33,13 +32,10 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.LockModeType;
-import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -88,25 +84,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    @Transactional
     public void beforeRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
-        String sql = "select sum(ref.totalCapacity), sum(ref.totalPhysicalCapacity), sum(ref.availablePhysicalCapacity)" +
-                " from LocalStorageHostRefVO ref where ref.primaryStorageUuid = :psUuid";
-        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        q.setParameter("psUuid", struct.getPrimaryStorageUuid());
-        List<Tuple> ts = q.getResultList();
-        if (!ts.isEmpty()) {
-            Tuple t = ts.get(0);
-            long total = t.get(0, Long.class);
-            long tp = t.get(1, Long.class);
-            long pa = t.get(2, Long.class);
-
-            PrimaryStorageCapacityVO pcap = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, struct.getPrimaryStorageUuid());
-            pcap.setTotalCapacity(total);
-            pcap.setTotalPhysicalCapacity(tp);
-            pcap.setAvailablePhysicalCapacity(pa);
-            dbf.getEntityManager().merge(pcap);
-        }
+        new LocalStorageCapacityRecalculator().calculateTotalCapacity(struct.getPrimaryStorageUuid());
     }
 
     @Override

@@ -2314,6 +2314,16 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIDeleteSecurityGroupEvent.class);
     }
 
+    public void reconnectPrimaryStorage(String psUuid) throws ApiSenderException {
+        APIReconnectPrimaryStorageMsg msg = new APIReconnectPrimaryStorageMsg();
+        msg.setUuid(psUuid);
+        msg.setSession(adminSession);
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIReconnectPrimaryStorageEvent.class);
+    }
+
     public void reconnectHost(String hostUuid) throws ApiSenderException {
         APIReconnectHostMsg msg = new APIReconnectHostMsg();
         msg.setUuid(hostUuid);

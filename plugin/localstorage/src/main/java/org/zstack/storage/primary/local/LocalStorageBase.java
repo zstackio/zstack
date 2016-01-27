@@ -47,10 +47,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.LockModeType;
-import javax.persistence.Query;
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
+import javax.persistence.*;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -89,6 +86,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
         } else {
             super.handleApiMessage(msg);
         }
+    }
+
+    @Override
+    @Transactional
+    protected void handle(APIReconnectPrimaryStorageMsg msg) {
+        APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
+        new LocalStorageCapacityRecalculator().calculateTotalCapacity(self.getUuid()).calculateByPrimaryStorageUuid(self.getUuid());
+        self = dbf.reload(self);
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     @Transactional(readOnly = true)
@@ -1642,7 +1649,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 if (count > 0) {
                     throw new OperationFailureException(errf.stringToOperationError(
                             String.format("unable to attach the local storage[uuid:%s, name: %s] to the cluster[uuid:%s]," +
-                                    "there has been a local storage attached on the cluster already", self)
+                                    "there has been a local storage attached on the cluster already", self.getUuid(), self.getName(),
+                                    clusterUuid)
                     ));
                 }
             }

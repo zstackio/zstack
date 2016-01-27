@@ -1,6 +1,7 @@
 package org.zstack.header.image;
 
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIParam;
 
 import java.util.List;
 
@@ -8,6 +9,7 @@ import java.util.List;
  * Created by frank on 11/15/2015.
  */
 public class APIRecoverImageMsg extends APIMessage implements ImageMessage {
+    @APIParam(resourceType = ImageVO.class)
     private String imageUuid;
     private List<String> backupStorageUuids;
 

@@ -5,12 +5,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
+import javax.persistence.NoResultException;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.HashMap;
@@ -30,7 +32,7 @@ public class LocalStorageCapacityRecalculator {
     private PrimaryStorageOverProvisioningManager ratioMgr;
 
     @Transactional
-    public void calculateByHostUuids(String psUuid, List<String> huuids) {
+    public LocalStorageCapacityRecalculator calculateByHostUuids(String psUuid, List<String> huuids) {
         DebugUtils.Assert(!huuids.isEmpty(), "hostUuids cannot be empty");
 
         Map<String, Long> hostCap = new HashMap<String, Long>();
@@ -60,8 +62,9 @@ public class LocalStorageCapacityRecalculator {
             TypedQuery<Long> iq = dbf.getEntityManager().createQuery(sql, Long.class);
             iq.setParameter("psUuid", psUuid);
             iq.setParameter("mark", String.format("%%hostUuid://%s%%", huuid));
-            Long isize = iq.getSingleResult();
-            if (isize != null) {
+            List<Long> is = iq.getResultList();
+            if (!is.isEmpty()) {
+                Long isize = is.get(0);
                 Long ncap = hostCap.get(huuid);
                 ncap = ncap == null ? isize : ncap + isize;
                 hostCap.put(huuid, ncap);
@@ -80,10 +83,12 @@ public class LocalStorageCapacityRecalculator {
             logger.debug(String.format("re-calculated available capacity[before:%s, now: %s] of host[uuid:%s] of the local storage[uuid:%s] with" +
                     " over-provisioning ratio[%s]", old, avail, hostUuid, psUuid, ratioMgr.getRatio(psUuid)));
         }
+
+        return this;
     }
 
     @Transactional
-    public void calculateByPrimaryStorageUuid(String psUuid) {
+    public LocalStorageCapacityRecalculator calculateByPrimaryStorageUuid(String psUuid) {
         // hmm, in some case, the mysql returns duplicate hostUuid
         // which I didn't figure out how. So use a groupby to remove the duplicates
         String sql = "select ref.hostUuid from LocalStorageResourceRefVO ref where ref.primaryStorageUuid = :psUuid group by ref.hostUuid";
@@ -91,5 +96,29 @@ public class LocalStorageCapacityRecalculator {
         hq.setParameter("psUuid", psUuid);
         List<String> huuids = hq.getResultList();
         calculateByHostUuids(psUuid, huuids);
+        return this;
+    }
+
+    @Transactional
+    public LocalStorageCapacityRecalculator calculateTotalCapacity(String psUuid) {
+        String sql = "select sum(ref.totalCapacity), sum(ref.totalPhysicalCapacity), sum(ref.availablePhysicalCapacity)" +
+                " from LocalStorageHostRefVO ref where ref.primaryStorageUuid = :psUuid";
+        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        q.setParameter("psUuid", psUuid);
+        List<Tuple> ts = q.getResultList();
+        if (!ts.isEmpty()) {
+            Tuple t = ts.get(0);
+            long total = t.get(0, Long.class);
+            long tp = t.get(1, Long.class);
+            long pa = t.get(2, Long.class);
+
+            PrimaryStorageCapacityVO pcap = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, psUuid);
+            pcap.setTotalCapacity(total);
+            pcap.setTotalPhysicalCapacity(tp);
+            pcap.setAvailablePhysicalCapacity(pa);
+            dbf.getEntityManager().merge(pcap);
+        }
+
+        return this;
     }
 }

@@ -38,6 +38,16 @@ import java.util.concurrent.TimeUnit;
  * 3. attach another local storage to the cluster
  *
  * confirm unable to attach
+ *
+ * 4. add a new host which doesn't have any image cache
+ * 5. reconnect the host
+ *
+ * confirm reconnect successfully
+ *
+ * 6. remove a host record of the local storage from database
+ * 7. reconnect the primary storage
+ *
+ * confirm the capacity re-calculated
  */
 public class TestLocalStorage44 {
     Deployer deployer;
@@ -143,5 +153,20 @@ public class TestLocalStorage44 {
         Assert.assertEquals(totalSize, pscap.getTotalPhysicalCapacity());
         Assert.assertEquals(totalSize, pscap.getAvailablePhysicalCapacity());
         Assert.assertEquals(totalSize-usedSize, pscap.getAvailableCapacity());
+
+        c = new Capacity();
+        c.total = totalSize;
+        c.avail = totalSize;
+
+        config.capacityMap.put("host2", c);
+        HostInventory host2 = api.addKvmHost("host2", "127.0.0.1", host.getClusterUuid());
+        api.reconnectHost(host2.getUuid());
+
+        LocalStorageHostRefVO refHost2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
+        dbf.remove(refHost2);
+        api.reconnectPrimaryStorage(local.getUuid());
+        PrimaryStorageCapacityVO pscap1 = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
+        Assert.assertTrue(pscap1.getTotalCapacity() < pscap.getTotalCapacity());
     }
 }
