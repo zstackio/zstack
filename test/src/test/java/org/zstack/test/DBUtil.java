@@ -35,7 +35,7 @@ public class DBUtil {
             }
 
             String shellcmd = String.format("build/deploydb.sh %s %s",  user, password);
-            ShellUtils.run(shellcmd, baseDir);
+            ShellUtils.run(shellcmd, baseDir, false);
             logger.info("Deploying database successfully");
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to deploy zstack database for testing", e);
