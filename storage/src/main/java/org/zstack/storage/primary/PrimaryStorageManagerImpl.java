@@ -294,6 +294,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void handle(final RecalculatePrimaryStorageCapacityMsg msg) {
+        RecalculatePrimaryStorageCapacityReply reply = new RecalculatePrimaryStorageCapacityReply();
+
         final List<String> psUuids = new ArrayList<String>();
 
         if (msg.getPrimaryStorageUuid() != null) {
@@ -308,6 +310,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
 
         if (psUuids.isEmpty()) {
+            bus.reply(msg, reply);
             return;
         }
 
@@ -394,6 +397,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 }
             }.run();
         }
+
+        bus.reply(msg, reply);
     }
 
     private void handle(ReturnPrimaryStorageCapacityMsg msg) {

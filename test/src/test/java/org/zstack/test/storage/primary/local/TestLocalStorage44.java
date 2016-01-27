@@ -163,10 +163,17 @@ public class TestLocalStorage44 {
         api.reconnectHost(host2.getUuid());
 
         LocalStorageHostRefVO refHost2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        // make available capacity bigger than total capacity
+        // to simulate abnormal conditions.
         pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
+        pscap.setAvailableCapacity(pscap.getTotalCapacity() + SizeUnit.GIGABYTE.toByte(10));
+        dbf.update(pscap);
         dbf.remove(refHost2);
+
+        // reconnect should be able to correct the capacity
         api.reconnectPrimaryStorage(local.getUuid());
         PrimaryStorageCapacityVO pscap1 = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertTrue(pscap1.getTotalCapacity() < pscap.getTotalCapacity());
+        Assert.assertTrue(pscap1.getAvailableCapacity() <= pscap1.getTotalCapacity());
     }
 }

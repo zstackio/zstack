@@ -2,6 +2,7 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -26,6 +27,7 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
@@ -89,13 +91,19 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    @Transactional
     protected void handle(APIReconnectPrimaryStorageMsg msg) {
-        APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
-        new LocalStorageCapacityRecalculator().calculateTotalCapacity(self.getUuid()).calculateByPrimaryStorageUuid(self.getUuid());
-        self = dbf.reload(self);
-        evt.setInventory(getSelfInventory());
-        bus.publish(evt);
+        final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
+        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+        rmsg.setPrimaryStorageUuid(self.getUuid());
+        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+        bus.send(rmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                self = dbf.reload(self);
+                evt.setInventory(getSelfInventory());
+                bus.publish(evt);
+            }
+        });
     }
 
     @Transactional(readOnly = true)
