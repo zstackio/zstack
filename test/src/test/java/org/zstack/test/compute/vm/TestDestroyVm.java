@@ -14,6 +14,7 @@ import org.zstack.header.network.l3.APIGetIpAddressCapacityReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
+import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.volume.VolumeGlobalConfig;
@@ -110,6 +111,7 @@ public class TestDestroyVm {
 
         vm1 = api.recoverVm(vm1.getUuid(), null);
         Assert.assertEquals(VmInstanceState.Stopped.toString(), vm1.getState());
+        Assert.assertEquals(VolumeStatus.Ready.toString(), vm1.getRootVolume().getStatus());
         Assert.assertNull(vm1.getHostUuid());
         vm1 = api.startVmInstance(vm1.getUuid());
 

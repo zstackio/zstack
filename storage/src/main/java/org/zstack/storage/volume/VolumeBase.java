@@ -113,9 +113,27 @@ public class VolumeBase implements Volume {
             handle((CreateDataVolumeTemplateFromDataVolumeMsg) msg);
         } else if (msg instanceof ExpungeVolumeMsg) {
             handle((ExpungeVolumeMsg) msg);
+        } else if (msg instanceof RecoverVolumeMsg) {
+            handle((RecoverVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final RecoverVolumeMsg msg) {
+        final RecoverVolumeReply reply = new RecoverVolumeReply();
+        recoverVolume(new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg ,reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg ,reply);
+            }
+        });
     }
 
     private void expunge(final Completion completion) {
@@ -412,9 +430,7 @@ public class VolumeBase implements Volume {
         });
     }
 
-    private void handle(APIRecoverDataVolumeMsg msg) {
-        APIRecoverDataVolumeEvent evt = new APIRecoverDataVolumeEvent(msg.getId());
-
+    protected void recoverVolume(Completion completion) {
         final VolumeInventory vol = getSelfInventory();
         List<RecoverDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(RecoverDataVolumeExtensionPoint.class);
         for (RecoverDataVolumeExtensionPoint ext : exts) {
@@ -442,8 +458,25 @@ public class VolumeBase implements Volume {
             }
         });
 
-        evt.setInventory(getSelfInventory());
-        bus.publish(evt);
+        completion.success();
+    }
+
+    private void handle(APIRecoverDataVolumeMsg msg) {
+        final APIRecoverDataVolumeEvent evt = new APIRecoverDataVolumeEvent(msg.getId());
+        recoverVolume(new Completion(msg) {
+            @Override
+            public void success() {
+                evt.setInventory(getSelfInventory());
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setInventory(getSelfInventory());
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(APIUpdateVolumeMsg msg) {

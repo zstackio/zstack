@@ -1805,6 +1805,81 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.publish(evt);
     }
 
+    private void recoverVm(final Completion completion) {
+        final VmInstanceInventory vm = getSelfInventory();
+        final List<RecoverVmExtensionPoint> exts = pluginRgty.getExtensionList(RecoverVmExtensionPoint.class);
+        for (RecoverVmExtensionPoint ext : exts) {
+            ext.preRecoverVm(vm);
+        }
+
+        CollectionUtils.forEach(exts, new ForEachFunction<RecoverVmExtensionPoint>() {
+            @Override
+            public void run(RecoverVmExtensionPoint ext) {
+                ext.beforeRecoverVm(vm);
+            }
+        });
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("recover-vm-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "recover-root-volume";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        RecoverVolumeMsg msg = new RecoverVolumeMsg();
+                        msg.setVolumeUuid(self.getRootVolumeUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, self.getRootVolumeUuid());
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "recover-vm";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        self = changeVmStateInDb(VmInstanceStateEvent.stopped);
+
+                        CollectionUtils.forEach(exts, new ForEachFunction<RecoverVmExtensionPoint>() {
+                            @Override
+                            public void run(RecoverVmExtensionPoint ext) {
+                                ext.afterRecoverVm(vm);
+                            }
+                        });
+
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
+    }
+
     private void handle(final APIRecoverVmInstanceMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -1813,8 +1888,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
 
             @Override
-            public void run(SyncTaskChain chain) {
-                APIRecoverVmInstanceEvent evt = new APIRecoverVmInstanceEvent(msg.getId());
+            public void run(final SyncTaskChain chain) {
+                final APIRecoverVmInstanceEvent evt = new APIRecoverVmInstanceEvent(msg.getId());
                 refreshVO();
 
                 ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
@@ -1825,31 +1900,21 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                final VmInstanceInventory vm = getSelfInventory();
-                List<RecoverVmExtensionPoint> exts = pluginRgty.getExtensionList(RecoverVmExtensionPoint.class);
-                for (RecoverVmExtensionPoint ext : exts) {
-                    ext.preRecoverVm(vm);
-                }
-
-                CollectionUtils.forEach(exts, new ForEachFunction<RecoverVmExtensionPoint>() {
+                recoverVm(new Completion(msg, chain) {
                     @Override
-                    public void run(RecoverVmExtensionPoint ext) {
-                        ext.beforeRecoverVm(vm);
+                    public void success() {
+                        evt.setInventory(getSelfInventory());
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setErrorCode(errorCode);
+                        bus.publish(evt);
+                        chain.next();
                     }
                 });
-
-                changeVmStateInDb(VmInstanceStateEvent.stopped);
-                evt.setInventory(getSelfInventory());
-
-                CollectionUtils.forEach(exts, new ForEachFunction<RecoverVmExtensionPoint>() {
-                    @Override
-                    public void run(RecoverVmExtensionPoint ext) {
-                        ext.afterRecoverVm(vm);
-                    }
-                });
-
-                bus.publish(evt);
-                chain.next();
             }
 
             @Override
