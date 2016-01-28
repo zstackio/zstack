@@ -2365,7 +2365,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         cmd.setInstallPath(temporaryTemplatePath);
                         cmd.setVolumePath(msg.getVolumeInventory().getInstallPath());
 
-                        httpCall(CREATE_TEMPLATE_FROM_VOLUME, ref.getHostUuid(), cmd, CreateTemplateFromVolumeRsp.class, new ReturnValueCompletion<CreateTemplateFromVolumeRsp>(trigger) {
+                        httpCall(CREATE_TEMPLATE_FROM_VOLUME, ref.getHostUuid(), cmd, false,
+                                CreateTemplateFromVolumeRsp.class, (int) TimeUnit.MINUTES.toSeconds(30),
+                                new ReturnValueCompletion<CreateTemplateFromVolumeRsp>(trigger) {
                             @Override
                             public void success(CreateTemplateFromVolumeRsp rsp) {
                                 trigger.next();
