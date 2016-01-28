@@ -6,10 +6,13 @@ import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.identity.IdentityGlobalConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+
+import java.util.concurrent.TimeUnit;
 
 public class TestValidateSession {
     Api api;
@@ -28,11 +31,17 @@ public class TestValidateSession {
     }
     
     @Test
-    public void test() throws ApiSenderException {
+    public void test() throws ApiSenderException, InterruptedException {
         SessionInventory session = api.loginAsAdmin();
         boolean ret = api.validateSession(session.getUuid());
         Assert.assertEquals(true, ret);
         api.logout(session.getUuid());
+        ret = api.validateSession(session.getUuid());
+        Assert.assertEquals(false, ret);
+
+        IdentityGlobalConfig.SESSION_TIMEOUT.updateValue(1);
+        session = api.loginAsAdmin();
+        TimeUnit.SECONDS.sleep(3);
         ret = api.validateSession(session.getUuid());
         Assert.assertEquals(false, ret);
     }

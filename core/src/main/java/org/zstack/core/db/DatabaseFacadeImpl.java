@@ -739,8 +739,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
     }
 
-    @Transactional
     @Override
+    @Transactional(readOnly = true)
     public Timestamp getCurrentSqlTime() {
         Query query = getEntityManager().createNativeQuery("select current_timestamp()");
         return (Timestamp) query.getSingleResult();
