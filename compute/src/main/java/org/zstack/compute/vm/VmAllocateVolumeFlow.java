@@ -60,7 +60,7 @@ public class VmAllocateVolumeFlow implements Flow {
                     msg.setFormat(imageFormat.getOutputFormat(spec.getDestHost().getHypervisorType()));
                 }
             } else {
-                msg.setName("DATA");
+                msg.setName(String.format("DATA-for-%s", spec.getVmInventory().getName()));
                 msg.setDescription(String.format("DataVolume-%s", spec.getVmInventory().getUuid()));
                 msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
             }
