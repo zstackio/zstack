@@ -91,11 +91,13 @@ public class LocalStorageCapacityRecalculator {
     public LocalStorageCapacityRecalculator calculateByPrimaryStorageUuid(String psUuid) {
         // hmm, in some case, the mysql returns duplicate hostUuid
         // which I didn't figure out how. So use a groupby to remove the duplicates
-        String sql = "select ref.hostUuid from LocalStorageResourceRefVO ref where ref.primaryStorageUuid = :psUuid group by ref.hostUuid";
+        String sql = "select ref.hostUuid from LocalStorageHostRefVO ref where ref.primaryStorageUuid = :psUuid group by ref.hostUuid";
         TypedQuery<String> hq = dbf.getEntityManager().createQuery(sql, String.class);
         hq.setParameter("psUuid", psUuid);
         List<String> huuids = hq.getResultList();
-        calculateByHostUuids(psUuid, huuids);
+        if (!huuids.isEmpty()) {
+            calculateByHostUuids(psUuid, huuids);
+        }
         return this;
     }
 
