@@ -130,7 +130,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         sql = "select href.hostUuid from LocalStorageHostRefVO href where" +
                 " href.hostUuid != (select rref.hostUuid from LocalStorageResourceRefVO rref where rref.resourceUuid = :volUuid and rref.resourceType = :rtype)" +
-                " and (href.totalPhysicalCapacity * :thres) <= href.availablePhysicalCapacity" +
+                " and (href.totalPhysicalCapacity * (1 - :thres)) <= href.availablePhysicalCapacity" +
                 " and href.availableCapacity >= :size and href.primaryStorageUuid = :psUuid group by href.hostUuid";
 
         double physicalThreshold = physicalCapacityMgr.getRatio(self.getUuid());
