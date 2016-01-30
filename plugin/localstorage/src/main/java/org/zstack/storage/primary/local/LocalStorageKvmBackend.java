@@ -887,7 +887,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             // the image is removed on the host
                             // delete the cache object and re-download it
                             SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+                            q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
                             q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());
+                            q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", hostUuid));
                             ImageCacheVO cvo = q.find();
 
                             ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
