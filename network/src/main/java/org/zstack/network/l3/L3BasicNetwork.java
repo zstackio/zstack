@@ -287,9 +287,15 @@ public class L3BasicNetwork implements L3Network {
             q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, self.getUuid());
             q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.IN, e.getValue());
             List<NetworkServiceL3NetworkRefVO> refs = q.list();
-            dbf.removeCollection(refs, NetworkServiceL3NetworkRefVO.class);
 
-            logger.debug(String.format("successfully attached network service provider[uuid:%s] to l3network[uuid:%s, name:%s] with services%s", e.getKey(), self.getUuid(), self.getName(), e.getValue()));
+            if (refs.isEmpty()) {
+                logger.warn(String.format("no network service references found for the provider[uuid:%s] and L3 network[uuid:%s]",
+                        e.getKey(), self.getUuid()));
+            } else {
+                dbf.removeCollection(refs, NetworkServiceL3NetworkRefVO.class);
+            }
+
+            logger.debug(String.format("successfully detached network service provider[uuid:%s] to l3network[uuid:%s, name:%s] with services%s", e.getKey(), self.getUuid(), self.getName(), e.getValue()));
         }
 
         self = dbf.reload(self);
