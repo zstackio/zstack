@@ -23,4 +23,8 @@
         <name>org.zstack.header.network.service.APIGetNetworkServiceTypesMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.header.network.service.APIAttachNetworkServiceProviderToL2NetworkMsg</name>
+    </message>
+
 </service>
