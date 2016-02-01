@@ -2553,6 +2553,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void attachVolume(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
+        throw new OperationFailureException(errf.stringToOperationError("test BAT"));
+        /*
         final AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);
@@ -2603,7 +2605,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 completion.done();
             }
         }).start();
-
+*/
     }
 
     protected void migrateVm(final Message msg, final Completion completion) {
