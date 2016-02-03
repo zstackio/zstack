@@ -290,6 +290,17 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                     }
                 }
 
+                if (value !=null && !at.nullElements() && value instanceof Collection) {
+                    Collection col = (Collection) value;
+                    for (Object o : col) {
+                        if (o == null) {
+                            throw new  ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                                    String.format("field[%s] cannot contain a NULL element", f.getName())
+                            ));
+                        }
+                    }
+                }
+
                 if (value != null &&!at.emptyString()) {
                     if (value instanceof String && StringUtils.isEmpty((String) value)) {
                         throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(

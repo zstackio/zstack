@@ -12,6 +12,7 @@ public @interface APIParam {
     Class resourceType() default Object.class;
     int maxLength() default Integer.MIN_VALUE;
     boolean nonempty() default false;
+    boolean nullElements() default false;
     boolean emptyString() default true;
     long[] numberRange() default {};
     boolean checkAccount() default false;
