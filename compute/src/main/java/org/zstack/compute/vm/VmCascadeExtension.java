@@ -483,11 +483,11 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Override
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
-                    String sql = "select vm from VmInstanceVO vm, L3NetworkVO l3, VmNicVO nic where vm.type = :vmType and vm.uuid = nic.vmInstanceUuid and vm.state not in (:vmStates)" +
+                    String sql = "select vm from VmInstanceVO vm, L3NetworkVO l3, VmNicVO nic where vm.type = :vmType and vm.uuid = nic.vmInstanceUuid and vm.state in (:vmStates)" +
                             " and nic.l3NetworkUuid = l3.uuid and l3.uuid in (:uuids) group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-                    q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Stopping));
+                    q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Running));
                     q.setParameter("uuids", l3uuids);
                     return q.getResultList();
                 }
