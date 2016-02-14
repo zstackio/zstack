@@ -10,8 +10,12 @@ import org.zstack.header.message.APIParam;
 public class APIUpdateUserMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = UserVO.class, checkAccount = true, operationTarget = true, required = false)
     private String uuid;
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, required = false)
     private String password;
+    @APIParam(maxLength = 255, required = false)
+    private String name;
+    @APIParam(maxLength = 2048, required = false)
+    private String description;
 
     public String getUuid() {
         return uuid;
@@ -32,5 +36,21 @@ public class APIUpdateUserMsg extends APIMessage implements AccountMessage {
     @Override
     public String getAccountUuid() {
         return getSession().getAccountUuid();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

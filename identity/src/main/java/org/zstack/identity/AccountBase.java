@@ -65,7 +65,15 @@ public class AccountBase extends AbstractAccount {
 
     private void handle(APIUpdateAccountMsg msg) {
         AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
-        account.setPassword(msg.getPassword());
+        if (msg.getName() != null) {
+            account.setName(msg.getName());
+        }
+        if (msg.getDescription() != null) {
+            account.setDescription(msg.getDescription());
+        }
+        if (msg.getPassword() != null) {
+            account.setPassword(msg.getPassword());
+        }
         account = dbf.updateAndRefresh(account);
 
         APIUpdateAccountEvent evt = new APIUpdateAccountEvent(msg.getId());
@@ -356,7 +364,15 @@ public class AccountBase extends AbstractAccount {
 
     private void handle(APIUpdateUserMsg msg) {
         UserVO user = dbf.findByUuid(msg.getUuid(), UserVO.class);
-        user.setPassword(msg.getPassword());
+        if (msg.getName() != null) {
+            user.setName(msg.getName());
+        }
+        if (msg.getDescription() != null) {
+            user.setDescription(msg.getDescription());
+        }
+        if (msg.getPassword() != null) {
+            user.setPassword(msg.getPassword());
+        }
         dbf.update(user);
 
         APIUpdateUserEvent evt = new APIUpdateUserEvent(msg.getId());
