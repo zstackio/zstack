@@ -508,6 +508,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     }
                 }
 
+                config.setConfigDef(field.getAnnotation(GlobalConfigDef.class));
                 config.setLinked(true);
                 logger.debug(String.format("linked GlobalConfig[category:%s, name:%s] to %s.%s",
                         config.getCategory(), config.getName(), field.getDeclaringClass().getName(), field.getName()));

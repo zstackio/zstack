@@ -42,6 +42,7 @@ public class GlobalConfig {
     private transient List<GlobalConfigUpdateExtensionPoint> updateExtensions = new ArrayList<GlobalConfigUpdateExtensionPoint>();
     private transient List<GlobalConfigValidatorExtensionPoint> validators = new ArrayList<GlobalConfigValidatorExtensionPoint>();
     private transient List<GlobalConfigUpdateExtensionPoint> localUpdateExtensions = new ArrayList<GlobalConfigUpdateExtensionPoint>();
+    private GlobalConfigDef configDef;
 
     @Autowired
     private DatabaseFacade dbf;
@@ -290,6 +291,14 @@ public class GlobalConfig {
 
     public boolean isMe(GlobalConfig other) {
         return category.equals(other.getCategory()) && name.equals(other.getName());
+    }
+
+    public GlobalConfigDef getConfigDef() {
+        return configDef;
+    }
+
+    public void setConfigDef(GlobalConfigDef configDef) {
+        this.configDef = configDef;
     }
 
     public String getCanonicalName() {
