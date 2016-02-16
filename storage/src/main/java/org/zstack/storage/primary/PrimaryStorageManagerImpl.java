@@ -383,7 +383,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                         @Override
                         public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
                             long before = cap.getAvailableCapacity();
-                            long avail = cap.getTotalCapacity() - used - cap.getSystemUsedCapacity();
+                            long avail = cap.getTotalCapacity() - used - (cap.getSystemUsedCapacity() == null ? 0 : cap.getSystemUsedCapacity());
                             cap.setAvailableCapacity(avail);
                             logger.debug(String.format("re-calculated available capacity of the primary storage[uuid:%s, before:%s, now:%s] with over-provisioning ratio[%s]",
                                     psUuid, before, avail, ratioMgr.getRatio(psUuid)));
