@@ -963,7 +963,7 @@ public class KVMHost extends HostBase implements Host {
             public Class<AttachNicResponse> getReturnClass() {
                 return AttachNicResponse.class;
             }
-        }, TimeUnit.SECONDS, 300);
+        });
     }
 
 
@@ -1046,7 +1046,7 @@ public class KVMHost extends HostBase implements Host {
             public Class<DetachDataVolumeResponse> getReturnClass() {
                 return DetachDataVolumeResponse.class;
             }
-        }, TimeUnit.SECONDS, 180);
+        });
     }
 
     private void handle(final AttachVolumeToVmOnHypervisorMsg msg) {
@@ -1127,7 +1127,7 @@ public class KVMHost extends HostBase implements Host {
                 return AttachDataVolumeResponse.class;
             }
 
-        }, TimeUnit.SECONDS, 180);
+        });
     }
 
     private void handle(final DestroyVmOnHypervisorMsg msg) {
@@ -1205,7 +1205,7 @@ public class KVMHost extends HostBase implements Host {
             public Class<DestroyVmResponse> getReturnClass() {
                 return DestroyVmResponse.class;
             }
-        }, TimeUnit.SECONDS, TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout()));
+        });
     }
 
     private void handle(final RebootVmOnHypervisorMsg msg) {
@@ -1301,7 +1301,7 @@ public class KVMHost extends HostBase implements Host {
                 return RebootVmResponse.class;
             }
 
-        }, TimeUnit.SECONDS, timeout);
+        });
     }
 
     private void handle(final StopVmOnHypervisorMsg msg) {
@@ -1380,7 +1380,7 @@ public class KVMHost extends HostBase implements Host {
                 return StopVmResponse.class;
             }
 
-        }, TimeUnit.SECONDS, TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout()));
+        });
     }
 
     private void handle(final CreateVmOnHypervisorMsg msg) {
@@ -1555,7 +1555,7 @@ public class KVMHost extends HostBase implements Host {
             public Class<StartVmResponse> getReturnClass() {
                 return StartVmResponse.class;
             }
-        }, TimeUnit.SECONDS, TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout()));
+        });
     }
 
     private void handle(final StartVmOnHypervisorMsg msg) {

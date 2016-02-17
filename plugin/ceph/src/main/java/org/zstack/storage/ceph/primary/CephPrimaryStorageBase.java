@@ -9,6 +9,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterVO;
@@ -72,6 +73,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private RESTFacade restf;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private TimeoutManager timeoutMgr;
 
 
     public static class AgentCommand {
@@ -1419,21 +1422,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
-    private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, Class<T> retClass, final ReturnValueCompletion<T> callback) {
-        httpCall(path, cmd, retClass, callback, 5, TimeUnit.MINUTES);
-    }
-
-    protected String makeHttpPath(String ip, String path) {
-        return String.format("http://%s:%s%s", ip, CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT, path);
-    }
-
-    private void updateCapacityIfNeeded(AgentResponse rsp) {
-        if (rsp.totalCapacity != null && rsp.availableCapacity != null) {
-            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availableCapacity);
-        }
-    }
-
-    private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, final long timeout, final TimeUnit timeUnit) {
+    private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
         cmd.setUuid(self.getUuid());
         cmd.setFsId(getSelf().getFsid());
 
@@ -1490,11 +1479,21 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     public Class<T> getReturnClass() {
                         return retClass;
                     }
-                }, timeUnit, timeout);
+                });
             }
         }
 
         new HttpCaller().call();
+    }
+
+    protected String makeHttpPath(String ip, String path) {
+        return String.format("http://%s:%s%s", ip, CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT, path);
+    }
+
+    private void updateCapacityIfNeeded(AgentResponse rsp) {
+        if (rsp.totalCapacity != null && rsp.availableCapacity != null) {
+            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availableCapacity);
+        }
     }
 
     private void connect(final Completion completion) {
@@ -2012,6 +2011,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 msg.setPath(KVM_CREATE_SECRET_PATH);
                 msg.setHostUuid(huuid);
                 msg.setNoStatusCheck(true);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
                 return msg;
             }

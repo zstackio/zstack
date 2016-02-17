@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -42,6 +43,8 @@ public class FlatUserdataBackend implements UserdataBackend {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private TimeoutManager timeoutMgr;
 
     public static final String APPLY_USER_DATA = "/flatnetworkprovider/userdata/apply";
     public static final String RELEASE_USER_DATA = "/flatnetworkprovider/userdata/release";
@@ -130,6 +133,7 @@ public class FlatUserdataBackend implements UserdataBackend {
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setHostUuid(struct.getVmSpec().getDestHost().getUuid());
                         msg.setCommand(cmd);
+                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
                         msg.setPath(APPLY_USER_DATA);
                         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getVmSpec().getDestHost().getUuid());
                         bus.send(msg, new CloudBusCallBack(trigger) {
@@ -210,6 +214,7 @@ public class FlatUserdataBackend implements UserdataBackend {
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setHostUuid(struct.getVmSpec().getDestHost().getUuid());
                         msg.setCommand(cmd);
+                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
                         msg.setPath(RELEASE_USER_DATA);
                         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getVmSpec().getDestHost().getUuid());
                         bus.send(msg, new CloudBusCallBack(trigger) {

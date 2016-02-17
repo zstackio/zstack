@@ -102,7 +102,7 @@ public class IscsiFileSystemBackendPrimaryToSftpBackupStorageMediator implements
                             public Class<DownloadBitsFromSftpBackupStorageRsp> getReturnClass() {
                                 return DownloadBitsFromSftpBackupStorageRsp.class;
                             }
-                        }, TimeUnit.SECONDS, IscsiBtrfsPrimaryStorageGlobalProperty.DownloadBitsFromSftpBackupStorageCmd_TIMEOUT);
+                        });
             }
         });
     }

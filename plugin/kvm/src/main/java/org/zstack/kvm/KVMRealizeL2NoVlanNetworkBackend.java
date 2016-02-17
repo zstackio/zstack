@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
@@ -35,6 +36,8 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     private ErrorFacade errf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private TimeoutManager timeoutMgr;
 
     private String makeBridgeName(String physicalInterfaceName) {
         return "br_" + physicalInterfaceName;
@@ -47,6 +50,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
         msg.setPath(KVMConstant.KVM_REALIZE_L2NOVLAN_NETWORK_PATH);
         msg.setNoStatusCheck(noStatusCheck);
         msg.setHostUuid(hostUuid);
@@ -96,6 +100,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setNoStatusCheck(noStatusCheck);
         msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
         msg.setHostUuid(hostUuid);
         msg.setPath(KVMConstant.KVM_CHECK_L2NOVLAN_NETWORK_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);

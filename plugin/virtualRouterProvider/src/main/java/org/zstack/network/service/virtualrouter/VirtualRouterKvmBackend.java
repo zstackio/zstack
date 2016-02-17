@@ -7,6 +7,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
@@ -35,9 +36,7 @@ public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 	@Autowired
 	private CloudBus bus;
 	@Autowired
-	private KVMHostFactory kvmFactory;
-	@Autowired
-	private RESTFacade restf;
+	private TimeoutManager timeoutMgr;
     @Autowired
     private ErrorFacade errf;
 
@@ -93,6 +92,7 @@ public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
+		msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
         msg.setPath(VirtualRouterConstant.VR_KVM_CREATE_BOOTSTRAP_ISO_PATH);
         msg.setHostUuid(vrSpec.getDestHost().getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, vrSpec.getDestHost().getUuid());
@@ -127,6 +127,7 @@ public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 		final String hostUuid = vrSpec.getHostUuid() == null ? vrSpec.getLastHostUuid() : vrSpec.getHostUuid();
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
+		msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
         msg.setPath(VirtualRouterConstant.VR_KVM_DELETE_BOOTSTRAP_ISO_PATH);
         msg.setHostUuid(hostUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);

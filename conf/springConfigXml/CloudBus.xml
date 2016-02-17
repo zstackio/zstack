@@ -11,7 +11,9 @@
      	 http://zstack.org/schema/zstack 
          http://zstack.org/schema/zstack/plugin.xsd"
 	default-init-method="init" default-destroy-method="destroy">
-    
+
+    <bean id="TimeoutManager" class="org.zstack.core.timeout.TimeoutManagerImpl" />
+
     <bean id="CloudBus" class = "org.zstack.core.cloudbus.CloudBusImpl2" depends-on="ThreadFacade,ThreadAspectj">
     	<zstack:plugin>
 			<zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" order="9999"/>

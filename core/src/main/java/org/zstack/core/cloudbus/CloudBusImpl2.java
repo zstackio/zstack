@@ -9,6 +9,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.header.apimediator.APIIsReadyToGoReply;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -66,6 +67,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private JmxFacade jmxf;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private TimeoutManager timeoutMgr;
 
     private List<String> serverIps;
     private List<Service> services = new ArrayList<Service>();
@@ -78,7 +81,6 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
     private Map<Class, Map<String, Serializable>> mvelExpressions = Collections.synchronizedMap(new HashMap<Class, Map<String,Serializable>>());
     private Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
-    private Map<Class, Long> messageTimeout = new ConcurrentHashMap<Class, Long>();
     private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
     private Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new HashMap<Class, List<BeforeSendMessageInterceptor>>();
     private Map<Class, List<BeforePublishEventInterceptor>> beforeEventPublishInterceptors = new HashMap<Class, List<BeforePublishEventInterceptor>>();
@@ -87,7 +89,6 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private final String CORRELATION_ID = "correlationId";
     private final String REPLY_TO = "replyTo";
     private final String IS_MESSAGE_REPLY = "isReply";
-    private final String TIMEOUT_PROPERTY_PREFIX = "CloudBus.messageTimeout.";
     private final String MESSAGE_META_DATA = "metaData";
     private final long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
     private final String DEAD_LETTER = "dead-message";
@@ -1197,7 +1198,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     private void evaluateMessageTimeout(NeedReplyMessage msg) {
-        Long timeout = messageTimeout.get(msg.getClass());
+        Long timeout = timeoutMgr.getTimeout(msg.getClass());
+
         if (timeout != null && msg.getTimeout() == -1) {
             msg.setTimeout(timeout);
         }
@@ -2211,40 +2213,10 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
     }
 
-    private void collectMessageTimeOut() {
-        Map<String, String> props = Platform.getGlobalPropertiesStartWith(TIMEOUT_PROPERTY_PREFIX);
-        for (Map.Entry<String, String> e : props.entrySet()) {
-            String timeoutStr = StringDSL.stripStart(e.getKey(), TIMEOUT_PROPERTY_PREFIX);
-            try {
-                long timeout = Long.valueOf(timeoutStr);
-                String[] msgNames = StringUtils.split(e.getValue(), ",");
-                for (String msgName : msgNames) {
-                    try {
-                        Class msgClz = Class.forName(msgName);
-                        if (!Message.class.isAssignableFrom(msgClz)) {
-                            throw new CloudRuntimeException(String.format("message name[%s] defined in property[%s] in zstack.properties is invalid. It's not sub-class of Message", msgName, e.getKey()));
-                        }
-                        if (APIMessage.class.isAssignableFrom(msgClz)) {
-                            continue;
-                        }
-
-                        messageTimeout.put(msgClz, TimeUnit.SECONDS.toMillis(timeout));
-                    } catch (ClassNotFoundException e1) {
-                        throw new CloudRuntimeException(String.format("message name[%s] defined in property[%s] in zstack.properties is invalid. Cannot find its java class", msgName, e.getKey()), e1);
-                    }
-                }
-            } catch (NumberFormatException ne) {
-                throw new CloudRuntimeException(String.format("property key[%s] defined in zstack.properties is not in correct mediaType. The correct mediaType must be %s.aNumericString(for example, %s.3600)",
-                        e.getKey(), TIMEOUT_PROPERTY_PREFIX, TIMEOUT_PROPERTY_PREFIX), ne);
-            }
-        }
-    }
-
     @Override
     public boolean start() {
         populateExtension();
         prepareStatistics();
-        collectMessageTimeOut();
 
         for (Service serv : services) {
             assert serv.getId() != null : String.format("service id can not be null[%s]", serv.getClass().getName());

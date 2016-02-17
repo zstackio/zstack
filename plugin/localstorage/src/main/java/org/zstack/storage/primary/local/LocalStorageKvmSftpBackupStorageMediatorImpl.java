@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HypervisorType;
@@ -32,6 +33,8 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     private CloudBus bus;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private TimeoutManager timeoutMgr;
 
     public static final String UPLOAD_BIT_PATH = "/localstorage/sftp/upload";
     public static final String DOWNLOAD_BIT_PATH = "/localstorage/sftp/download";
@@ -145,7 +148,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                 msg.setHostUuid(hostUuid);
                 msg.setPath(DOWNLOAD_BIT_PATH);
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(LocalStorageGlobalProperty.KVM_SftpDownloadBitsCmd_TIMEOUT);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
                 bus.send(msg, new CloudBusCallBack(completion) {
                     @Override
@@ -194,9 +197,9 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
                 msg.setPath(UPLOAD_BIT_PATH);
                 msg.setHostUuid(hostUuid);
-                msg.setCommandTimeout(LocalStorageGlobalProperty.KVM_SftpUploadBitsCmd_TIMEOUT);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
                 bus.send(msg, new CloudBusCallBack(completion) {
                     @Override

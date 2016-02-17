@@ -9,14 +9,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.core.validation.ValidationFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.*;
 import org.zstack.utils.DebugUtils;
@@ -28,7 +29,8 @@ import org.zstack.utils.logging.CLogger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,6 +42,8 @@ public class RESTFacadeImpl implements RESTFacade {
     private ThreadFacade thdf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private TimeoutManager timeoutMgr;
     @Autowired
     private ValidationFacade vf;
 
@@ -294,13 +298,13 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void asyncJsonPost(String url, Object body, AsyncRESTCallback callback) {
-        asyncJsonPost(url, body, callback, TimeUnit.SECONDS, 300);
+        Long timeout = timeoutMgr.getTimeout(body.getClass(), TimeUnit.SECONDS);
+        asyncJsonPost(url, body, callback, TimeUnit.SECONDS, timeout == null ? 300 : timeout);
     }
 
     @Override
     public void asyncJsonPost(String url, String body, AsyncRESTCallback callback) {
         asyncJsonPost(url, body, callback, TimeUnit.SECONDS, 300);
-
     }
 
     @Override

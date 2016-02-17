@@ -121,7 +121,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                 public Class<DownloadResponse> getReturnClass() {
                     return DownloadResponse.class;
                 }
-            }, TimeUnit.SECONDS, SftpBackupStorageGlobalProperty.DOWNLOAD_CMD_TIMEOUT);
+            });
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(e);
         }

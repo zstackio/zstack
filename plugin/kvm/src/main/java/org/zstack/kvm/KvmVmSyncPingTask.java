@@ -11,6 +11,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
@@ -52,10 +53,14 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
     private CloudBus bus;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private TimeoutManager timeoutMgr;
 
     private void syncVm(final HostInventory host, final Completion completion) {
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-        msg.setCommand(new VmSyncCmd());
+        VmSyncCmd cmd = new VmSyncCmd();
+        msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
         msg.setNoStatusCheck(true);
         msg.setHostUuid(host.getUuid());
         msg.setPath(KVMConstant.KVM_VM_SYNC_PATH);

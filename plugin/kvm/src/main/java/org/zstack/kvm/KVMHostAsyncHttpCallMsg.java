@@ -4,6 +4,8 @@ import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  */
 public class KVMHostAsyncHttpCallMsg extends NeedReplyMessage implements HostMessage {
@@ -11,9 +13,14 @@ public class KVMHostAsyncHttpCallMsg extends NeedReplyMessage implements HostMes
     private String command;
     private String hostUuid;
     private boolean noStatusCheck;
-    private int commandTimeout = 300;
+    private long commandTimeout = TimeUnit.SECONDS.toMillis(300);
 
-    public int getCommandTimeout() {
+    @Override
+    public long getTimeout() {
+        return getCommandTimeout() + TimeUnit.SECONDS.toMillis(30);
+    }
+
+    public long getCommandTimeout() {
         return commandTimeout;
     }
 

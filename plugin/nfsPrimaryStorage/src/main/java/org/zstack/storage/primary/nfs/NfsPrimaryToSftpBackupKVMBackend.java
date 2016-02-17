@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostConstant;
@@ -48,6 +49,8 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
     private DatabaseFacade dbf;
     @Autowired
     private NfsPrimaryStorageManager nfsMgr;
+    @Autowired
+    private TimeoutManager timeoutMgr;
 
     public static final String CREATE_VOLUME_FROM_TEMPLATE_PATH = "/nfsprimarystorage/sftp/createvolumefromtemplate";
     public static final String UPLOAD_TO_SFTP_PATH = "/nfsprimarystorage/uploadtosftpbackupstorage";
@@ -87,7 +90,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
         msg.setCommand(cmd);
         msg.setPath(CREATE_VOLUME_FROM_TEMPLATE_PATH);
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(NfsPrimaryStorageGlobalProperty.KVM_CreateRootVolumeFromTemplateCmd_TIMEOUT);
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -140,7 +143,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
                 msg.setCommand(cmd);
                 msg.setPath(DOWNLOAD_FROM_SFTP_PATH);
                 msg.setHostUuid(host.getUuid());
-                msg.setCommandTimeout(NfsPrimaryStorageGlobalProperty.KVM_DownloadBitsFromSftpBackupStorageCmd_TIMEOUT);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
                 bus.send(msg, new CloudBusCallBack(completion) {
                     @Override
@@ -197,7 +200,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
                 msg.setCommand(cmd);
                 msg.setPath(UPLOAD_TO_SFTP_PATH);
                 msg.setHostUuid(host.getUuid());
-                msg.setCommandTimeout(NfsPrimaryStorageGlobalProperty.KVM_UploadToSftpCmd_TIMEOUT);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
                 bus.send(msg, new CloudBusCallBack(completion) {
                     @Override
