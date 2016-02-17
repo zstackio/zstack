@@ -1420,7 +1420,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, Class<T> retClass, final ReturnValueCompletion<T> callback) {
-        httpCall(path, cmd, retClass, callback, 5, TimeUnit.MINUTES);
+        httpCall(path, cmd, retClass, callback, 3, TimeUnit.HOURS);
     }
 
     protected String makeHttpPath(String ip, String path) {
