@@ -298,8 +298,8 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void asyncJsonPost(String url, Object body, AsyncRESTCallback callback) {
-        Long timeout = timeoutMgr.getTimeout(body.getClass(), TimeUnit.SECONDS);
-        asyncJsonPost(url, body, callback, TimeUnit.SECONDS, timeout == null ? 300 : timeout);
+        Long timeout = timeoutMgr.getTimeout(body.getClass());
+        asyncJsonPost(url, body, callback, TimeUnit.MILLISECONDS, timeout == null ? 300000 : timeout);
     }
 
     @Override

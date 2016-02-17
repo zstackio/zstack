@@ -9,6 +9,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.message.MessageReply;
@@ -38,6 +39,8 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
 	private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private TimeoutManager timeoutManager;
 
     @Override
     public void run(final FlowTrigger chain, final Map data) {
@@ -83,6 +86,7 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setPath(VirtualRouterConstant.VR_SET_DNS_PATH);
         msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

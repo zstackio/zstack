@@ -4,13 +4,15 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceMessage;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  */
 public class VirtualRouterAsyncHttpCallMsg extends NeedReplyMessage implements VmInstanceMessage {
     private String vmInstanceUuid;
     private String path;
     private String command;
-    private int commandTimeout = 300;
+    private long commandTimeout = -1;
     private boolean checkStatus;
 
     public boolean isCheckStatus() {
@@ -50,11 +52,12 @@ public class VirtualRouterAsyncHttpCallMsg extends NeedReplyMessage implements V
         this.command = command;
     }
 
-    public int getCommandTimeout() {
+    public long getCommandTimeout() {
+        assert commandTimeout != -1 : "commandTimeout is not set";
         return commandTimeout;
     }
 
-    public void setCommandTimeout(int commandTimeout) {
+    public void setCommandTimeout(long commandTimeout) {
         this.commandTimeout = commandTimeout;
     }
 }

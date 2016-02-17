@@ -7,6 +7,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -46,6 +47,8 @@ public class VirtualRouterVipBackend implements VipBackend {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    private TimeoutManager timeoutManager;
 
     private String getOwnerMac(VirtualRouterVmInventory vr, VipInventory vip) {
         for (VmNicInventory nic : vr.getVmNics()) {
@@ -72,6 +75,7 @@ public class VirtualRouterVipBackend implements VipBackend {
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(VirtualRouterConstant.VR_CREATE_VIP);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -115,6 +119,7 @@ public class VirtualRouterVipBackend implements VipBackend {
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_REMOVE_VIP);
         msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
         msg.setVmInstanceUuid(vr.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.TimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -36,6 +37,8 @@ public class VirtualRouterDhcpBackend implements NetworkServiceDhcpBackend {
     private ErrorFacade errf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private TimeoutManager timeoutManager;
 
     @Override
     public NetworkServiceProviderType getProviderType() {
@@ -76,6 +79,7 @@ public class VirtualRouterDhcpBackend implements NetworkServiceDhcpBackend {
                 cmd.setDhcpEntries(Arrays.asList(e));
                 VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
                 cmsg.setCommand(cmd);
+                cmsg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
                 cmsg.setPath(VirtualRouterConstant.VR_ADD_DHCP_PATH);
                 cmsg.setVmInstanceUuid(vr.getUuid());
                 cmsg.setCheckStatus(true);
@@ -159,6 +163,7 @@ public class VirtualRouterDhcpBackend implements NetworkServiceDhcpBackend {
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setPath(VirtualRouterConstant.VR_REMOVE_DHCP_PATH);
         msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

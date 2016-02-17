@@ -111,6 +111,11 @@ public class TimeoutManagerImpl implements TimeoutManager {
     }
 
     private long parseTimeout(String timeout) {
+        if ("5m".equals(timeout)) {
+            // optimization as the most of default timeout are 5 minutes
+            return 300000;
+        }
+
         try {
             return Long.valueOf(timeout);
         } catch (NumberFormatException e) {
