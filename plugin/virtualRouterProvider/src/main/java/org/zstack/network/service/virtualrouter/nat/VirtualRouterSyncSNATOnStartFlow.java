@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.TimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.message.MessageReply;
@@ -35,7 +35,7 @@ public class VirtualRouterSyncSNATOnStartFlow extends NoRollbackFlow {
     @Autowired
     private ErrorFacade errf;
     @Autowired
-    private TimeoutManager timeoutManager;
+    private ApiTimeoutManager apiTimeoutManager;
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
@@ -72,7 +72,7 @@ public class VirtualRouterSyncSNATOnStartFlow extends NoRollbackFlow {
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_SYNC_SNAT_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
         msg.setVmInstanceUuid(vr.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(chain) {

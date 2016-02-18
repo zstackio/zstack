@@ -3,17 +3,13 @@ package org.zstack.network.service.virtualrouter.nat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.TimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
@@ -52,7 +48,7 @@ public class VirtualRouterSnatBackend implements NetworkServiceSnatBackend {
     @Autowired
     private CloudBus bus;
     @Autowired
-    private TimeoutManager timeoutManager;
+    private ApiTimeoutManager apiTimeoutManager;
 
     @Override
     public NetworkServiceProviderType getProviderType() {
@@ -105,7 +101,7 @@ public class VirtualRouterSnatBackend implements NetworkServiceSnatBackend {
                 msg.setVmInstanceUuid(vr.getUuid());
                 msg.setPath(VirtualRouterConstant.VR_SET_SNAT_PATH);
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+                msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
                 msg.setCheckStatus(true);
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
                 bus.send(msg, new CloudBusCallBack(completion) {
@@ -185,7 +181,7 @@ public class VirtualRouterSnatBackend implements NetworkServiceSnatBackend {
         msg.setCheckStatus(true);
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(VirtualRouterConstant.VR_REMOVE_SNAT_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, VirtualRouterConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {

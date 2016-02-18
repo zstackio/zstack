@@ -7,7 +7,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.TimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
@@ -47,7 +47,7 @@ public class IscsiFileSystemPrimaryStorageVmMigrationExtension implements VmInst
     @Autowired
     private ErrorFacade errf;
     @Autowired
-    private TimeoutManager timeoutMgr;
+    private ApiTimeoutManager timeoutMgr;
 
     @Override
     public String preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
@@ -88,7 +88,7 @@ public class IscsiFileSystemPrimaryStorageVmMigrationExtension implements VmInst
 
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
             msg.setCommand(cmd);
-            msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
+            msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
             msg.setPath(KVMConstant.KVM_LOGIN_ISCSI_PATH);
             msg.setHostUuid(destHostUuid);
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, destHostUuid);
@@ -141,7 +141,7 @@ public class IscsiFileSystemPrimaryStorageVmMigrationExtension implements VmInst
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
             msg.setPath(KVMConstant.KVM_LOGOUT_ISCSI_PATH);
             msg.setCommand(cmd);
-            msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
+            msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
             msgs.add(msg);
             msg.setHostUuid(hostUuid);
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);

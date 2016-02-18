@@ -8,7 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.TimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -51,7 +51,7 @@ public class VirtualRouterEipBackend implements EipBackend {
     @Autowired
     private ApplianceVmFacade asf;
     @Autowired
-    private TimeoutManager timeoutManager;
+    private ApiTimeoutManager apiTimeoutManager;
 
     private List<ApplianceVmFirewallRuleInventory> getFirewallRules(EipStruct struct) {
         ApplianceVmFirewallRuleInventory tcp = new ApplianceVmFirewallRuleInventory();
@@ -128,7 +128,7 @@ public class VirtualRouterEipBackend implements EipBackend {
                 msg.setCheckStatus(true);
                 msg.setPath(VirtualRouterConstant.VR_CREATE_EIP);
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+                msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
                 msg.setVmInstanceUuid(vr.getUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
                 bus.send(msg, new CloudBusCallBack(completion) {
@@ -267,7 +267,7 @@ public class VirtualRouterEipBackend implements EipBackend {
                 VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
                 msg.setVmInstanceUuid(vr.getUuid());
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+                msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
                 msg.setCheckStatus(true);
                 msg.setPath(VirtualRouterConstant.VR_REMOVE_EIP);
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());

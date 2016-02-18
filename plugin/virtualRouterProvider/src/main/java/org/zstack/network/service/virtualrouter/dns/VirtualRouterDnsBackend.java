@@ -5,7 +5,7 @@ import org.zstack.appliancevm.ApplianceVmStatus;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.TimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -42,7 +42,7 @@ public class VirtualRouterDnsBackend implements NetworkServiceDnsBackend {
     @Autowired
     private ErrorFacade errf;
     @Autowired
-    private TimeoutManager timeoutManager;
+    private ApiTimeoutManager apiTimeoutManager;
 
     @Override
     public NetworkServiceProviderType getProviderType() {
@@ -71,7 +71,7 @@ public class VirtualRouterDnsBackend implements NetworkServiceDnsBackend {
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setPath(VirtualRouterConstant.VR_SET_DNS_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
         msg.setCheckStatus(true);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -116,7 +116,7 @@ public class VirtualRouterDnsBackend implements NetworkServiceDnsBackend {
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setPath(VirtualRouterConstant.VR_REMOVE_DNS_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
         msg.setCheckStatus(true);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -165,7 +165,7 @@ public class VirtualRouterDnsBackend implements NetworkServiceDnsBackend {
                 msg.setVmInstanceUuid(vr.getUuid());
                 msg.setPath(VirtualRouterConstant.VR_SET_DNS_PATH);
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+                msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
                 msg.setCheckStatus(true);
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
                 bus.send(msg, new CloudBusCallBack(completion) {
@@ -240,7 +240,7 @@ public class VirtualRouterDnsBackend implements NetworkServiceDnsBackend {
         msg.setCheckStatus(true);
         msg.setPath(VirtualRouterConstant.VR_REMOVE_DNS_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
         msg.setVmInstanceUuid(vr.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {

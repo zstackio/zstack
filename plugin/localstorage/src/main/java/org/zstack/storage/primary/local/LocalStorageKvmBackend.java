@@ -10,7 +10,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.timeout.TimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterInventory;
@@ -57,7 +57,6 @@ import org.zstack.utils.path.PathUtil;
 import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -72,7 +71,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @Autowired
     private LocalStorageFactory localStorageFactory;
     @Autowired
-    private TimeoutManager timeoutMgr;
+    private ApiTimeoutManager timeoutMgr;
 
     public static class AgentCommand {
     }
@@ -545,7 +544,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setHostUuid(arg);
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                 msg.setPath(GET_PHYSICAL_CAPACITY_PATH);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, arg);
                 return msg;
@@ -592,7 +591,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         msg.setPath(path);
         msg.setNoStatusCheck(noCheckStatus);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -2267,6 +2266,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                 msg.setPath(INIT_PATH);
                 msg.setHostUuid(arg);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, arg);

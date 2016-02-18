@@ -15,6 +15,16 @@ public class ApplianceVmAsyncHttpCallMsg extends NeedReplyMessage implements VmI
     private String command;
     private long commandTimeout = -1;
     private boolean checkStatus;
+    private String commandClassName;
+
+    public String getCommandClassName() {
+        return commandClassName;
+    }
+
+    @Override
+    public long getTimeout() {
+        return getCommandTimeout() + TimeUnit.SECONDS.toMillis(30);
+    }
 
     @Override
     public String getVmInstanceUuid() {
@@ -39,6 +49,7 @@ public class ApplianceVmAsyncHttpCallMsg extends NeedReplyMessage implements VmI
 
     public void setCommand(Object cmd) {
         setCommandByString(JSONObjectUtil.toJsonString(cmd));
+        commandClassName = cmd.getClass().getName();
     }
 
     public void setCommandByString(String command) {

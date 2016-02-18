@@ -7,7 +7,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.TimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.console.ConsoleHypervisorBackend;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostConstant;
@@ -39,7 +39,7 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
     @Autowired
     private ErrorFacade errf;
     @Autowired
-    private TimeoutManager timeoutMgr;
+    private ApiTimeoutManager timeoutMgr;
 
     @Override
     public HypervisorType getConsoleBackendHypervisorType() {
@@ -54,7 +54,7 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(vm.getHostUuid());
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(KVMConstant.KVM_GET_VNC_PORT_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, vm.getHostUuid());
         bus.send(msg, new CloudBusCallBack(complete) {

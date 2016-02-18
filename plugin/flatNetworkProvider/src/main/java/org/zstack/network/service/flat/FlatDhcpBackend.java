@@ -10,7 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.timeout.TimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -68,7 +68,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     @Autowired
     private ThreadFacade thdf;
     @Autowired
-    private TimeoutManager timeoutMgr;
+    private ApiTimeoutManager timeoutMgr;
 
     public static final String APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/apply";
     public static final String PREPARE_DHCP_PATH = "/flatnetworkprovider/dhcp/prepare";
@@ -777,7 +777,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                 msg.setNoStatusCheck(true);
                                 msg.setCommand(cmd);
                                 msg.setPath(PREPARE_DHCP_PATH);
-                                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
+                                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
                                 bus.send(msg, new CloudBusCallBack(trigger) {
                                     @Override
@@ -811,7 +811,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                                 msg.setCommand(cmd);
-                                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
+                                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                                 msg.setHostUuid(hostUuid);
                                 msg.setPath(APPLY_DHCP_PATH);
                                 msg.setNoStatusCheck(true);
@@ -874,7 +874,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setHostUuid(hostUuid);
         msg.setPath(RELEASE_DHCP_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);

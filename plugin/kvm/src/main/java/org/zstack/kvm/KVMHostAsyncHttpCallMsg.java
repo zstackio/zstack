@@ -14,6 +14,11 @@ public class KVMHostAsyncHttpCallMsg extends NeedReplyMessage implements HostMes
     private String hostUuid;
     private boolean noStatusCheck;
     private long commandTimeout = -1;
+    private String commandClassName;
+
+    public String getCommandClassName() {
+        return commandClassName;
+    }
 
     @Override
     public long getTimeout() {
@@ -25,7 +30,7 @@ public class KVMHostAsyncHttpCallMsg extends NeedReplyMessage implements HostMes
         return commandTimeout;
     }
 
-    public void setCommandTimeout(int commandTimeout) {
+    public void setCommandTimeout(long commandTimeout) {
         this.commandTimeout = commandTimeout;
     }
 
@@ -51,6 +56,7 @@ public class KVMHostAsyncHttpCallMsg extends NeedReplyMessage implements HostMes
 
     public void setCommand(Object command) {
         this.command = JSONObjectUtil.toJsonString(command);
+        commandClassName = command.getClass().getName();
     }
 
     @Override

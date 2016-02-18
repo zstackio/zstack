@@ -8,7 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.TimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -68,7 +68,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
     @Autowired
     private TagManager tagMgr;
     @Autowired
-    private TimeoutManager timeoutManager;
+    private ApiTimeoutManager apiTimeoutManager;
 
     @Transactional(readOnly = true)
     private VirtualRouterVmInventory findVirtualRouterVm(String lbUuid) {
@@ -238,7 +238,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
         cmd.lbs = makeLbTOs(struct);
 
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -686,7 +686,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                             msg.setVmInstanceUuid(vr.getUuid());
                             msg.setPath(DELETE_LB_PATH);
                             msg.setCommand(cmd);
-                            msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+                            msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
                             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
                             bus.send(msg, new CloudBusCallBack(trigger) {
                                 @Override
@@ -771,7 +771,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(REFRESH_LB_PATH);
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setCheckStatus(false);

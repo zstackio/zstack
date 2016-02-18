@@ -6,7 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.TimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -28,7 +28,6 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.function.Function;
 
-import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,7 @@ public class FlatUserdataBackend implements UserdataBackend {
     @Autowired
     private ErrorFacade errf;
     @Autowired
-    private TimeoutManager timeoutMgr;
+    private ApiTimeoutManager timeoutMgr;
 
     public static final String APPLY_USER_DATA = "/flatnetworkprovider/userdata/apply";
     public static final String RELEASE_USER_DATA = "/flatnetworkprovider/userdata/release";
@@ -133,7 +132,7 @@ public class FlatUserdataBackend implements UserdataBackend {
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setHostUuid(struct.getVmSpec().getDestHost().getUuid());
                         msg.setCommand(cmd);
-                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
+                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                         msg.setPath(APPLY_USER_DATA);
                         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getVmSpec().getDestHost().getUuid());
                         bus.send(msg, new CloudBusCallBack(trigger) {
@@ -214,7 +213,7 @@ public class FlatUserdataBackend implements UserdataBackend {
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setHostUuid(struct.getVmSpec().getDestHost().getUuid());
                         msg.setCommand(cmd);
-                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m").intValue());
+                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                         msg.setPath(RELEASE_USER_DATA);
                         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getVmSpec().getDestHost().getUuid());
                         bus.send(msg, new CloudBusCallBack(trigger) {

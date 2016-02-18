@@ -14,6 +14,11 @@ public class VirtualRouterAsyncHttpCallMsg extends NeedReplyMessage implements V
     private String command;
     private long commandTimeout = -1;
     private boolean checkStatus;
+    private String commandClassName;
+
+    public String getCommandClassName() {
+        return commandClassName;
+    }
 
     public boolean isCheckStatus() {
         return checkStatus;
@@ -21,6 +26,11 @@ public class VirtualRouterAsyncHttpCallMsg extends NeedReplyMessage implements V
 
     public void setCheckStatus(boolean checkStatus) {
         this.checkStatus = checkStatus;
+    }
+
+    @Override
+    public long getTimeout() {
+        return getCommandTimeout() + TimeUnit.SECONDS.toMillis(30);
     }
 
     @Override
@@ -46,6 +56,7 @@ public class VirtualRouterAsyncHttpCallMsg extends NeedReplyMessage implements V
 
     public void setCommand(Object cmd) {
         setCommandByString(JSONObjectUtil.toJsonString(cmd));
+        commandClassName = cmd.getClass().getName();
     }
 
     public void setCommandByString(String command) {

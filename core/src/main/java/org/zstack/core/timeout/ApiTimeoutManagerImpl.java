@@ -14,23 +14,29 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by frank on 2/17/2016.
  */
-public class TimeoutManagerImpl implements TimeoutManager {
-    private static final CLogger logger = Utils.getLogger(TimeoutManagerImpl.class);
-
-    private class ApiTimeout {
-        List<Class> relatives;
-        long timeout;
-    }
+public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
+    private static final CLogger logger = Utils.getLogger(ApiTimeoutManagerImpl.class);
 
     private Map<Class, ApiTimeout> apiTimeouts = new HashMap<Class, ApiTimeout>();
+    private Map<Class, Long> timeouts = new HashMap<Class, Long>();
 
     void init() {
         try {
             collectTimeout();
             collectTimeoutForDerivedApi();
+            flatTimeout();
         } catch (RuntimeException e) {
             new BootErrorLog().write(e.getMessage());
             throw e;
+        }
+    }
+
+    private void flatTimeout() {
+        for (Map.Entry<Class, ApiTimeout> e :apiTimeouts.entrySet()) {
+            ApiTimeout v = e.getValue();
+            for (Class clz : v.getRelatives()) {
+                timeouts.put(clz, v.getTimeout());
+            }
         }
     }
 
@@ -149,8 +155,8 @@ public class TimeoutManagerImpl implements TimeoutManager {
         }
     }
 
-    private List<Class> parseRelatives(String relativeNames) throws ClassNotFoundException {
-        List<Class> classes = new ArrayList<Class>();
+    private Set<Class> parseRelatives(String relativeNames) throws ClassNotFoundException {
+        Set<Class> classes = new HashSet<Class>();
         String[] names = relativeNames.split(",");
 
         for (String name : names) {
@@ -163,8 +169,7 @@ public class TimeoutManagerImpl implements TimeoutManager {
 
     @Override
     public Long getTimeout(Class clz) {
-        ApiTimeout at = apiTimeouts.get(clz);
-        return at != null ? at.timeout : null;
+        return timeouts.get(clz);
     }
 
     @Override
@@ -185,7 +190,16 @@ public class TimeoutManagerImpl implements TimeoutManager {
 
     @Override
     public Long getTimeout(Class clz, TimeUnit tu) {
-        ApiTimeout at = apiTimeouts.get(clz);
-        return at != null ? tu.convert(at.timeout, TimeUnit.MILLISECONDS) : null;
+        Long t = getTimeout(clz);
+        if (t != null) {
+            return tu.convert(t, TimeUnit.MILLISECONDS);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Map<Class, ApiTimeout> getAllTimeout() {
+        return apiTimeouts;
     }
 }

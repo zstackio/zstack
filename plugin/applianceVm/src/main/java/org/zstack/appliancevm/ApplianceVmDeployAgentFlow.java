@@ -15,7 +15,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.TimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.workflow.*;
@@ -49,7 +49,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
     @Autowired
     private ErrorFacade errf;
     @Autowired
-    private TimeoutManager timeoutManager;
+    private ApiTimeoutManager apiTimeoutManager;
 
     private void continueConnect(final String echoUrl, final String apvmUuid, final FlowTrigger outerTrigger) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -86,7 +86,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
                         ApplianceVmAsyncHttpCallMsg msg = new ApplianceVmAsyncHttpCallMsg();
                         msg.setVmInstanceUuid(apvmUuid);
                         msg.setCommand(cmd);
-                        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
+                        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
                         msg.setCheckStatus(false);
                         msg.setPath(ApplianceVmConstant.INIT_PATH);
                         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, apvmUuid);

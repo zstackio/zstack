@@ -8,18 +8,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
-import org.zstack.core.timeout.TimeoutManager;
-import org.zstack.header.apimediator.APIIsReadyToGoReply;
-import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.jmx.JmxFacade;
 import org.zstack.core.thread.*;
+import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Service;
 import org.zstack.header.apimediator.APIIsReadyToGoMsg;
+import org.zstack.header.apimediator.APIIsReadyToGoReply;
+import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
@@ -68,7 +68,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     @Autowired
     private EventFacade evtf;
     @Autowired
-    private TimeoutManager timeoutMgr;
+    private ApiTimeoutManager timeoutMgr;
 
     private List<String> serverIps;
     private List<Service> services = new ArrayList<Service>();
@@ -81,9 +81,14 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
     private Map<Class, Map<String, Serializable>> mvelExpressions = Collections.synchronizedMap(new HashMap<Class, Map<String,Serializable>>());
     private Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
+
     private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
     private Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new HashMap<Class, List<BeforeSendMessageInterceptor>>();
     private Map<Class, List<BeforePublishEventInterceptor>> beforeEventPublishInterceptors = new HashMap<Class, List<BeforePublishEventInterceptor>>();
+
+    private List<BeforeDeliveryMessageInterceptor> beforeDeliveryMessageInterceptorsForAll = new ArrayList<BeforeDeliveryMessageInterceptor>();
+    private List<BeforeSendMessageInterceptor> beforeSendMessageInterceptorsForAll = new ArrayList<BeforeSendMessageInterceptor>();
+    private List<BeforePublishEventInterceptor> beforeEventPublishInterceptorsForAll = new ArrayList<BeforePublishEventInterceptor>();
 
     private final String NO_NEED_REPLY_MSG = "noReply";
     private final String CORRELATION_ID = "correlationId";
@@ -393,6 +398,14 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                     if (logger.isTraceEnabled()) {
                         logger.trace(String.format("called %s for message[%s]", interceptor.getClass(), msg.getClass()));
                     }
+                }
+            }
+
+            for (BeforeSendMessageInterceptor interceptor : beforeSendMessageInterceptorsForAll) {
+                interceptor.intercept(msg);
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("called %s for message[%s]", interceptor.getClass(), msg.getClass()));
                 }
             }
 
@@ -1611,19 +1624,27 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         buildResponseMessageMetaData(event);
         callReplyPreSendingExtensions(event);
 
-        List<BeforePublishEventInterceptor> is = beforeEventPublishInterceptors.get(event.getClass());
-        if (is != null) {
-            for (BeforePublishEventInterceptor i : is) {
-                try {
+        BeforePublishEventInterceptor c = null;
+        try {
+            List<BeforePublishEventInterceptor> is = beforeEventPublishInterceptors.get(event.getClass());
+            if (is != null) {
+                for (BeforePublishEventInterceptor i : is) {
+                    c = i;
                     i.beforePublishEvent(event);
-                } catch (StopRoutingException e) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("BeforePublishEventInterceptor[%s] stop publishing event: %s", i.getClass(), JSONObjectUtil.toJsonString(event)));
-                    }
-
-                    return;
                 }
             }
+
+            for (BeforePublishEventInterceptor i : beforeEventPublishInterceptorsForAll)  {
+                c = i;
+                i.beforePublishEvent(event);
+            }
+        } catch (StopRoutingException e) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("BeforePublishEventInterceptor[%s] stop publishing event: %s",
+                        c == null ? "null" : c.getClass().getName(), JSONObjectUtil.toJsonString(event)));
+            }
+
+            return;
         }
 
         wire.publish(event);
@@ -1857,6 +1878,14 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                                 if (logger.isTraceEnabled()) {
                                                     logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
                                                 }
+                                            }
+                                        }
+
+                                        for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
+                                            i.intercept(msg);
+
+                                            if (logger.isTraceEnabled()) {
+                                                logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
                                             }
                                         }
                                     } catch (Throwable t) {
@@ -2113,6 +2142,19 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
     @Override
     public void installBeforeDeliveryMessageInterceptor(BeforeDeliveryMessageInterceptor interceptor, Class<? extends Message>... classes) {
+        if (classes.length == 0) {
+            int order = 0;
+            for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
+                if (i.orderOfBeforeDeliveryMessageInterceptor() <= interceptor.orderOfBeforeDeliveryMessageInterceptor()) {
+                    order = beforeDeliveryMessageInterceptorsForAll.indexOf(i);
+                    break;
+                }
+            }
+
+            beforeDeliveryMessageInterceptorsForAll.add(order, interceptor);
+            return;
+        }
+
         for (Class clz : classes) {
             while (clz != Object.class) {
                 List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(clz);
@@ -2139,6 +2181,19 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
     @Override
     public void installBeforeSendMessageInterceptor(BeforeSendMessageInterceptor interceptor, Class<? extends Message>... classes) {
+        if (classes.length == 0) {
+            int order = 0;
+            for (BeforeSendMessageInterceptor i : beforeSendMessageInterceptorsForAll) {
+                if (i.order() <= interceptor.order()) {
+                    order = beforeSendMessageInterceptorsForAll.indexOf(i);
+                    break;
+                }
+            }
+
+            beforeSendMessageInterceptorsForAll.add(order, interceptor);
+            return;
+        }
+
         for (Class clz : classes) {
             while (clz != Object.class) {
                 List<BeforeSendMessageInterceptor> is = beforeSendMessageInterceptors.get(clz);
@@ -2165,6 +2220,19 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
     @Override
     public void installBeforePublishEventInterceptor(BeforePublishEventInterceptor interceptor, Class<? extends Event>... classes) {
+        if (classes.length == 0) {
+            int order = 0;
+            for (BeforePublishEventInterceptor i : beforeEventPublishInterceptorsForAll) {
+                if (i.orderOfBeforePublishEventInterceptor() <= interceptor.orderOfBeforePublishEventInterceptor()) {
+                    order = beforeEventPublishInterceptorsForAll.indexOf(i);
+                    break;
+                }
+            }
+
+            beforeEventPublishInterceptorsForAll.add(order, interceptor);
+            return;
+        }
+
         for (Class clz : classes) {
             while (clz != Object.class) {
                 List<BeforePublishEventInterceptor> is = beforeEventPublishInterceptors.get(clz);
