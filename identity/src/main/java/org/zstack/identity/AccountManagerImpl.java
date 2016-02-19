@@ -277,11 +277,28 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void handle(APILogInByUserMsg msg) {
         APILogInReply reply = new APILogInReply();
+
+        String accountUuid;
+        if (msg.getAccountUuid() != null) {
+            accountUuid = msg.getAccountUuid();
+        } else {
+            SimpleQuery<AccountVO> accountq = dbf.createQuery(AccountVO.class);
+            accountq.select(AccountVO_.uuid);
+            accountq.add(AccountVO_.name, Op.EQ, msg.getAccountName());
+            accountUuid = accountq.findValue();
+            if (accountUuid == null) {
+                throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                        String.format("account[%s] not found", msg.getAccountName())
+                ));
+            }
+        }
+
         SimpleQuery<UserVO> q = dbf.createQuery(UserVO.class);
-        q.add(UserVO_.accountUuid, Op.EQ, msg.getAccountUuid());
+        q.add(UserVO_.accountUuid, Op.EQ, accountUuid);
         q.add(UserVO_.password, Op.EQ, msg.getPassword());
         q.add(UserVO_.name, Op.EQ, msg.getUserName());
         UserVO user = q.find();
+
         if (user == null) {
             reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR,
                     "wrong username or password"
@@ -1010,11 +1027,21 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APICreateUserMsg) msg);
         } else if (msg instanceof APICreateUserGroupMsg) {
             validate((APICreateUserGroupMsg) msg);
+        } else if (msg instanceof APILogInByUserMsg) {
+            validate((APILogInByUserMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APILogInByUserMsg msg) {
+        if (msg.getAccountName() == null && msg.getAccountUuid() == null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    "accountName and accountUuid cannot both be null, you must specify at least one"
+            ));
+        }
     }
 
     private void validate(APICreateUserGroupMsg msg) {

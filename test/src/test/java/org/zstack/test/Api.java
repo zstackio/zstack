@@ -1698,6 +1698,17 @@ public class Api implements CloudBusEventListener {
         return reply.getInventory();
     }
 
+    public SessionInventory loginByUserAccountName(String userName, String password, String accountName) throws ApiSenderException {
+        APILogInByUserMsg msg = new APILogInByUserMsg();
+        msg.setAccountName(accountName);
+        msg.setUserName(userName);
+        msg.setPassword(password);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APILogInReply reply = sender.call(msg, APILogInReply.class);
+        return reply.getInventory();
+    }
+
     public SessionInventory loginByUser(String userName, String password, String accountUuid) throws ApiSenderException {
         APILogInByUserMsg msg = new APILogInByUserMsg();
         msg.setAccountUuid(accountUuid);
