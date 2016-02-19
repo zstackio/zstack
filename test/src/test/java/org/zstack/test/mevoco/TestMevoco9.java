@@ -30,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
  *
  * confirm the vm created successfully
  */
+@Deprecated
 public class TestMevoco9 {
     Deployer deployer;
     Api api;
