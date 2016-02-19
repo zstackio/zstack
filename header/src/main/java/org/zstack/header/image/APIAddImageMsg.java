@@ -8,7 +8,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import java.util.ArrayList;
 import java.util.List;
 
-@Action(category = ImageConstant.ACTION_CATEGORY)
+@Action(category = ImageConstant.ACTION_CATEGORY, accountControl = true)
 public class APIAddImageMsg extends APICreateMessage {
 	@APIParam(maxLength = 255)
 	private String name;

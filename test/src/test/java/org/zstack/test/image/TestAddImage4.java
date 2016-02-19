@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
@@ -15,6 +16,7 @@ import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.header.storage.backup.APIQueryBackupStorageMsg;
 import org.zstack.header.storage.backup.APIQueryBackupStorageReply;
 import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.identity.IdentityGlobalConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -26,6 +28,21 @@ import java.util.ArrayList;
 
 import static org.zstack.utils.CollectionDSL.list;
 
+/**
+ * 1. create a normal account 'test'
+ * 2. add an image using the account
+ *
+ * confirm the image added successfully
+ *
+ * 3. clear IdentityGlobalConfig.ACCOUNT_API_CONTROL
+ *
+ * confirm the account cannot query backup storage
+ *
+ * 4. set APIQueryBackupStorageMsg to IdentityGlobalConfig.ACCOUNT_API_CONTROL
+ *
+ * confirm the account can query backup storage
+ *
+ */
 public class TestAddImage4 {
     Deployer deployer;
     Api api;
@@ -69,5 +86,20 @@ public class TestAddImage4 {
         iinv.setUrl("http://zstack.org/download/win7.qcow2");
         iinv = api.addImage(iinv, session, sftp.getUuid());
         Assert.assertEquals(1, iinv.getBackupStorageRefs().size());
+
+        IdentityGlobalConfig.ACCOUNT_API_CONTROL.updateValue("");
+        boolean s = false;
+        try {
+            api.query(qmsg, APIQueryBackupStorageReply.class, session);
+        } catch (ApiSenderException e) {
+            if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
+                s = true;
+            }
+        }
+
+        Assert.assertTrue(s);
+
+        IdentityGlobalConfig.ACCOUNT_API_CONTROL.updateValue(APIQueryBackupStorageMsg.class.getName());
+        api.query(qmsg, APIQueryBackupStorageReply.class, session);
     }
 }

@@ -9,8 +9,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfigVO;
-import org.zstack.core.config.GlobalConfigVO_;
+import org.zstack.core.config.*;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -78,6 +77,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private List<Class> resourceTypes;
     private Map<String, SessionInventory> sessions = new ConcurrentHashMap<String, SessionInventory>();
     private Map<Class, Quota> messageQuotaMap = new HashMap<Class, Quota>();
+    private HashSet<Class> accountApiControl = new HashSet<Class>();
 
     class AccountCheckField {
         Field field;
@@ -90,6 +90,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         String category;
         boolean accountOnly;
         List<AccountCheckField> accountCheckFields;
+        boolean accountControl;
     }
 
     private Map<Class, MessageAction> actions = new HashMap<Class, MessageAction>();
@@ -437,10 +438,65 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             buildActions();
             startExpiredSessionCollector();
             collectDefaultQuota();
+            configureGlobalConfig();
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
         return true;
+    }
+
+    private void configureGlobalConfig() {
+        String v = IdentityGlobalConfig.ACCOUNT_API_CONTROL.value();
+        String[] classNames = v.split(",");
+        for (String cn : classNames) {
+            cn = cn.trim();
+            try {
+                Class clz = Class.forName(cn);
+                accountApiControl.add(clz);
+            } catch (ClassNotFoundException e) {
+                throw new CloudRuntimeException(String.format("no API found for %s", cn));
+            }
+        }
+
+        IdentityGlobalConfig.ACCOUNT_API_CONTROL.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
+                if (newValue.isEmpty()) {
+                    return;
+                }
+
+                String[] classNames = newValue.split(",");
+                for (String cn : classNames) {
+                    cn = cn.trim();
+                    try {
+                        Class.forName(cn);
+                    } catch (ClassNotFoundException e) {
+                        throw new GlobalConfigException(String.format("no API found for %s", cn));
+                    }
+                }
+            }
+        });
+
+        IdentityGlobalConfig.ACCOUNT_API_CONTROL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                if (newConfig.value().isEmpty()) {
+                    accountApiControl.clear();
+                    return;
+                }
+
+                String[] classNames = newConfig.value().split(",");
+                for (String name : classNames) {
+                    try {
+                        name = name.trim();
+                        Class clz = Class.forName(name);
+                        accountApiControl.add(clz);
+                    } catch (ClassNotFoundException e) {
+                        throw new CloudRuntimeException(e);
+                    }
+                }
+            }
+        });
     }
 
     private void collectDefaultQuota() {
@@ -550,6 +606,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 MessageAction ma = new MessageAction();
                 ma.adminOnly = true;
                 ma.accountOnly = true;
+                ma.accountControl = false;
                 actions.put(clz, ma);
                 continue;
             }
@@ -559,6 +616,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             ma.adminOnly = a.adminOnly();
             ma.category = a.category();
             ma.actions = new ArrayList<String>();
+            ma.accountControl = a.accountControl();
             ma.accountCheckFields = new ArrayList<AccountCheckField>();
             for (String ac : a.names()) {
                 ma.actions.add(String.format("%s:%s", ma.category, ac));
@@ -874,6 +932,22 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     throw ae;
                 } catch (Exception e) {
                     throw new CloudRuntimeException(e);
+                }
+            }
+
+            if (action.accountControl) {
+                boolean allow = false;
+                for (Class clz : accountApiControl) {
+                    if (clz.isAssignableFrom(msg.getClass())) {
+                        allow = true;
+                        break;
+                    }
+                }
+
+                if (!allow) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                            String.format("the API[%s] is not allowed for normal accounts", msg.getClass())
+                    ));
                 }
             }
 

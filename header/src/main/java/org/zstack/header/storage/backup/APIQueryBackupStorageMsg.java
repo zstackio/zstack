@@ -4,7 +4,7 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 
-@Action(category = BackupStorageConstant.ACTION_CATEGORY)
+@Action(category = BackupStorageConstant.ACTION_CATEGORY, accountControl = true)
 @AutoQuery(replyClass = APIQueryBackupStorageReply.class, inventoryClass = BackupStorageInventory.class)
 public class APIQueryBackupStorageMsg extends APIQueryMessage {
 
