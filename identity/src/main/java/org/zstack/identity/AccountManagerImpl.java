@@ -954,6 +954,15 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 }
 
                 if (!allow) {
+                    for (Class clz : accountApiControlInternal) {
+                        if (clz.isAssignableFrom(msg.getClass())) {
+                            allow = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!allow) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
                             String.format("the API[%s] is not allowed for normal accounts", msg.getClass())
                     ));
