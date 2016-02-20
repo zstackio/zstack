@@ -4,6 +4,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.BootErrorLog;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -20,7 +21,7 @@ public class ComponentLoaderWebListener implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent arg0) {
-        logger.warn(String.format("web listener issued context destroy event, start stropping process"));
+        logger.warn("web listener issued context destroy event, start stropping process");
         if (isInit) {
             throwableSafe(new Runnable() {
                 @Override
@@ -48,6 +49,8 @@ public class ComponentLoaderWebListener implements ServletContextListener {
             if (bus != null) {
                 bus.stop();
             }
+
+            new BootErrorLog().write(t.getMessage());
             throw new CloudRuntimeException(t);
         }
     }
