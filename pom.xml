@@ -36,6 +36,7 @@
         <module>tag</module>
         <module>tool</module>
         <module>test</module>
+        <module>premium</module>
     </modules>
 
     <dependencyManagement>

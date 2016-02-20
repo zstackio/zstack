@@ -78,6 +78,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private Map<String, SessionInventory> sessions = new ConcurrentHashMap<String, SessionInventory>();
     private Map<Class, Quota> messageQuotaMap = new HashMap<Class, Quota>();
     private HashSet<Class> accountApiControl = new HashSet<Class>();
+    private HashSet<Class> accountApiControlInternal = new HashSet<Class>();
 
     class AccountCheckField {
         Field field;
@@ -439,6 +440,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             startExpiredSessionCollector();
             collectDefaultQuota();
             configureGlobalConfig();
+
+            for (ReportApiAccountControlExtensionPoint ext : pluginRgty.getExtensionList(ReportApiAccountControlExtensionPoint.class)) {
+                List<Class> apis = ext.reportApiAccountControl();
+                DebugUtils.Assert(apis != null, String.format("%s.reportApiAccountControl() returns null", ext.getClass()));
+                accountApiControlInternal.addAll(apis);
+            }
+
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
@@ -480,8 +488,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         IdentityGlobalConfig.ACCOUNT_API_CONTROL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                accountApiControl.clear();
+
                 if (newConfig.value().isEmpty()) {
-                    accountApiControl.clear();
                     return;
                 }
 
