@@ -22,7 +22,7 @@ public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
     @APIParam(maxLength = 255, validValues = {"raw", "qcow2", "iso"}, required = false)
     private String format;
     private Boolean system;
-    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization"})
+    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
 
     public String getPlatform() {
