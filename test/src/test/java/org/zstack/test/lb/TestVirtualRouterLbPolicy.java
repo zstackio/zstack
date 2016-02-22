@@ -7,11 +7,9 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
-import org.zstack.header.identity.AccountInventory;
-import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyInventory.Statement;
-import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -26,8 +24,11 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.function.Function;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 
@@ -80,6 +81,18 @@ public class TestVirtualRouterLbPolicy {
         L3NetworkInventory pubNw = deployer.l3Networks.get("PublicNetwork");
         VipInventory vip = api.acquireIp(pubNw.getUuid(), session);
         LoadBalancerInventory lb = api.createLoadBalancer("lb", vip.getUuid(), null, session);
+
+        List<Quota.QuotaUsage> usages = api.getQuotaUsage(test.getUuid(), null);
+        Quota.QuotaUsage u = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
+            @Override
+            public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
+                return arg.getName().equals(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(u);
+        QuotaInventory lbquota = api.getQuota(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM, test.getUuid(), session);
+        Assert.assertEquals(lbquota.getValue(), u.getTotal().longValue());
+        Assert.assertEquals(1, u.getUsed().longValue());
 
         identityCreator.createUser("user1", "password");
         Statement s = new Statement();

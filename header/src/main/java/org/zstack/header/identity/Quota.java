@@ -10,8 +10,40 @@ import java.util.Map;
  * Created by frank on 7/13/2015.
  */
 public class Quota {
-    public interface CheckQuotaForApiMessage {
+    public interface QuotaOperator {
         void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs);
+
+        List<QuotaUsage> getQuotaUsageByAccount(String accountUuid);
+    }
+
+    public static class QuotaUsage {
+        private String name;
+        private Long total;
+        private Long used;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Long getTotal() {
+            return total;
+        }
+
+        public void setTotal(Long total) {
+            this.total = total;
+        }
+
+        public Long getUsed() {
+            return used;
+        }
+
+        public void setUsed(Long used) {
+            this.used = used;
+        }
     }
 
     public static class QuotaPair {
@@ -37,7 +69,7 @@ public class Quota {
 
     private List<QuotaPair> quotaPairs;
     private Class<APIMessage> messageNeedValidation;
-    private CheckQuotaForApiMessage checker;
+    private QuotaOperator operator;
 
     public void addPair(QuotaPair p) {
         if (quotaPairs == null) {
@@ -62,11 +94,11 @@ public class Quota {
         this.messageNeedValidation = messageNeedValidation;
     }
 
-    public CheckQuotaForApiMessage getChecker() {
-        return checker;
+    public QuotaOperator getOperator() {
+        return operator;
     }
 
-    public void setChecker(CheckQuotaForApiMessage checker) {
-        this.checker = checker;
+    public void setOperator(QuotaOperator operator) {
+        this.operator = operator;
     }
 }

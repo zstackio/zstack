@@ -18,7 +18,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
-import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
@@ -405,7 +405,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
     @Override
     public List<Quota> reportQuota() {
-        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+        QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
                 if (msg instanceof APICreateLoadBalancerMsg) {
@@ -413,22 +413,34 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 }
             }
 
-            @Transactional(readOnly = true)
-            private void check(APICreateLoadBalancerMsg msg, Map<String, QuotaPair> pairs) {
-                long lbNum = pairs.get(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM).getValue();
+            @Override
+            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
+                Quota.QuotaUsage usage = new Quota.QuotaUsage();
+                usage.setName(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM);
+                usage.setUsed(getUsedLb(accountUuid));
+                return list(usage);
+            }
 
+            @Transactional(readOnly = true)
+            private long getUsedLb(String accountUuid) {
                 String sql = "select count(lb) from LoadBalancerVO lb, AccountResourceRefVO ref where ref.resourceUuid = lb.uuid and " +
                         "ref.accountUuid = :auuid and ref.resourceType = :rtype";
 
                 TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("auuid", accountUuid);
                 q.setParameter("rtype", LoadBalancerVO.class.getSimpleName());
                 Long en = q.getSingleResult();
                 en = en == null ? 0 : en;
+                return en;
+            }
+
+            private void check(APICreateLoadBalancerMsg msg, Map<String, QuotaPair> pairs) {
+                long lbNum = pairs.get(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM).getValue();
+                long en = getUsedLb(msg.getSession().getAccountUuid());
 
                 if (en + 1 > lbNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
                                     msg.getSession().getAccountUuid(), LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM, lbNum)
                     ));
                 }
@@ -437,7 +449,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
         Quota quota = new Quota();
         quota.setMessageNeedValidation(APICreateLoadBalancerMsg.class);
-        quota.setChecker(checker);
+        quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
         p.setName(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM);

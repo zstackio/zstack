@@ -1760,6 +1760,33 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public QuotaInventory getQuota(String name, String accountUuid, SessionInventory session) throws ApiSenderException {
+        APIQueryQuotaMsg msg = new APIQueryQuotaMsg();
+        msg.addQueryCondition("name", QueryOp.EQ, name);
+        msg.addQueryCondition("identityUuid", QueryOp.EQ, accountUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIQueryQuotaReply r = sender.call(msg, APIQueryQuotaReply.class);
+        return r.getInventories().isEmpty() ? null : r.getInventories().get(0);
+    }
+
+    public List<Quota.QuotaUsage> getQuotaUsage(String accountUuid, SessionInventory session) throws ApiSenderException {
+        APIGetAccountQuotaUsageMsg msg = new APIGetAccountQuotaUsageMsg();
+        if (accountUuid != null) {
+            msg.setUuid(accountUuid);
+            msg.setSession(adminSession);
+        } else {
+            msg.setUuid(session.getAccountUuid());
+            msg.setSession(session);
+        }
+
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetAccountQuotaUsageReply reply = sender.call(msg, APIGetAccountQuotaUsageReply.class);
+        return reply.getUsages();
+    }
+
     public List<ManagementNodeInventory> listManagementNodes() throws ApiSenderException {
         APIListManagementNodeMsg msg = new APIListManagementNodeMsg();
         msg.setSession(adminSession);

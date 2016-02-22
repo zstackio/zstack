@@ -79,6 +79,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private Map<Class, Quota> messageQuotaMap = new HashMap<Class, Quota>();
     private HashSet<Class> accountApiControl = new HashSet<Class>();
     private HashSet<Class> accountApiControlInternal = new HashSet<Class>();
+    private List<Quota> definedQuotas = new ArrayList<Quota>();
 
     class AccountCheckField {
         Field field;
@@ -120,6 +121,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Override
     public Map<Class, Quota> getMessageQuotaMap() {
         return messageQuotaMap;
+    }
+
+    @Override
+    public List<Quota> getQuotas() {
+        return definedQuotas;
     }
 
     private void handle(GenerateMessageIdentityCategoryMsg msg) {
@@ -514,6 +520,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         for (ReportQuotaExtensionPoint ext : pluginRgty.getExtensionList(ReportQuotaExtensionPoint.class)) {
             List<Quota> quotas = ext.reportQuota();
             DebugUtils.Assert(quotas != null, String.format("%s.getQuotaPairs() returns null", ext.getClass()));
+
+            definedQuotas.addAll(quotas);
 
             for (Quota quota : quotas) {
                 DebugUtils.Assert(quota.getQuotaPairs() != null, String.format("%s reports a quota containing a null quotaPairs", ext.getClass()));
@@ -1121,11 +1129,19 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APICreateUserGroupMsg) msg);
         } else if (msg instanceof APILogInByUserMsg) {
             validate((APILogInByUserMsg) msg);
+        } else if (msg instanceof APIGetAccountQuotaUsageMsg) {
+            validate((APIGetAccountQuotaUsageMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIGetAccountQuotaUsageMsg msg) {
+        if (msg.getUuid() == null) {
+            msg.setUuid(msg.getSession().getAccountUuid());
+        }
     }
 
     private void validate(APILogInByUserMsg msg) {

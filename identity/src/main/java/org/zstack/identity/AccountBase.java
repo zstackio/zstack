@@ -23,6 +23,7 @@ import org.zstack.header.identity.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import javax.persistence.Query;
@@ -254,9 +255,50 @@ public class AccountBase extends AbstractAccount {
             handle((APIUpdateQuotaMsg) msg);
         } else if (msg instanceof APIDeleteAccountMsg) {
             handle((APIDeleteAccountMsg) msg);
+        } else if (msg instanceof APIGetAccountQuotaUsageMsg) {
+            handle((APIGetAccountQuotaUsageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetAccountQuotaUsageMsg msg) {
+        APIGetAccountQuotaUsageReply reply = new APIGetAccountQuotaUsageReply();
+
+        List<Quota> quotas = acntMgr.getQuotas();
+        List<Quota.QuotaUsage> usages = new ArrayList<Quota.QuotaUsage>();
+
+        for (Quota q : quotas) {
+            List<Quota.QuotaUsage> us = q.getOperator().getQuotaUsageByAccount(msg.getAccountUuid());
+            DebugUtils.Assert(us != null, String.format("%s returns null quotas", q.getOperator().getClass()));
+            usages.addAll(us);
+        }
+
+        Map<String, Quota.QuotaUsage> umap = new HashMap<String, Quota.QuotaUsage>();
+        for (Quota.QuotaUsage usage : usages) {
+            umap.put(usage.getName(), usage);
+        }
+
+        SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
+        q.add(QuotaVO_.identityUuid, Op.EQ, msg.getAccountUuid());
+        q.add(QuotaVO_.identityType, Op.EQ, AccountVO.class.getSimpleName());
+        q.add(QuotaVO_.name, Op.IN, umap.keySet());
+        List<QuotaVO> vos = q.list();
+        Map<String, QuotaVO> vmap = new HashMap<String, QuotaVO>();
+        for (QuotaVO vo : vos) {
+            vmap.put(vo.getName(), vo);
+        }
+
+        for (Map.Entry<String, Quota.QuotaUsage> e : umap.entrySet()) {
+            Quota.QuotaUsage u = e.getValue();
+            QuotaVO vo = vmap.get(u.getName());
+            u.setTotal(vo == null ? 0 : vo.getValue());
+        }
+
+        List<Quota.QuotaUsage> ret = new ArrayList<Quota.QuotaUsage>();
+        ret.addAll(umap.values());
+        reply.setUsages(ret);
+        bus.reply(msg, reply);
     }
 
     private void handle(APIUpdateQuotaMsg msg) {

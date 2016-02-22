@@ -87,6 +87,6 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
 
     private void check(APIMessage msg, Quota quota) {
         Map<String, QuotaPair> pairs = makeQuotaPairs(quota, msg.getSession());
-        quota.getChecker().checkQuota(msg, pairs);
+        quota.getOperator().checkQuota(msg, pairs);
     }
 }

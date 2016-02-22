@@ -13,19 +13,20 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.core.workflow.*;
-import org.zstack.header.AbstractService;
-import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
-import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
@@ -587,7 +588,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
 
     @Override
     public List<Quota> reportQuota() {
-        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+        QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
                 if (msg instanceof APICreateVipMsg) {
@@ -595,17 +596,29 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                 }
             }
 
-            @Transactional(readOnly = true)
-            private void check(APICreateVipMsg msg, Map<String, QuotaPair> pairs) {
-                long vipNum = pairs.get(VipConstant.QUOTA_VIP_NUM).getValue();
+            @Override
+            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
+                Quota.QuotaUsage usage = new Quota.QuotaUsage();
+                usage.setUsed(getUsedVip(accountUuid));
+                usage.setName(VipConstant.QUOTA_VIP_NUM);
+                return list(usage);
+            }
 
+            @Transactional(readOnly = true)
+            private long getUsedVip(String accountUuid) {
                 String sql = "select count(vip) from VipVO vip, AccountResourceRefVO ref where ref.resourceUuid = vip.uuid" +
                         " and ref.accountUuid = :auuid and ref.resourceType = :rtype";
                 TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("auuid", accountUuid);
                 q.setParameter("rtype", VipVO.class.getSimpleName());
                 Long vn = q.getSingleResult();
                 vn = vn == null ? 0 : vn;
+                return vn;
+            }
+
+            private void check(APICreateVipMsg msg, Map<String, QuotaPair> pairs) {
+                long vipNum = pairs.get(VipConstant.QUOTA_VIP_NUM).getValue();
+                long vn = getUsedVip(msg.getSession().getAccountUuid());
 
                 if (vn + 1 > vipNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
@@ -618,7 +631,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
 
         Quota quota = new Quota();
         quota.setMessageNeedValidation(APICreateVipMsg.class);
-        quota.setChecker(checker);
+        quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
         p.setName(VipConstant.QUOTA_VIP_NUM);
