@@ -37,6 +37,7 @@
 	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer4"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer5"/>
     <TestCase class="org.zstack.test.compute.vm.TestVmStateTracer6"/>
+	<TestCase class="org.zstack.test.compute.vm.TestVmStateTracer7"/>
 	<TestCase class="org.zstack.test.compute.vm.TestQueryVm"/>
 	<TestCase class="org.zstack.test.compute.vm.TestQueryVm2"/>
     <TestCase class="org.zstack.test.compute.vm.TestQueryVm3"/>

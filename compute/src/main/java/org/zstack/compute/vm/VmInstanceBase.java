@@ -670,6 +670,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        if (originalState == VmInstanceState.Stopped && currentState == VmInstanceState.Unknown) {
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
+
         final Runnable fireEvent = new Runnable() {
             @Override
             public void run() {
