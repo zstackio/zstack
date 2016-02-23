@@ -9,12 +9,11 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.identity.AccountInventory;
-import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.identity.SharedResourceVO;
+import org.zstack.header.identity.*;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.query.QueryCondition;
+import org.zstack.header.storage.backup.APIQueryBackupStorageReply;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.test.Api;
@@ -23,6 +22,8 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.VmCreator;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
+
+import java.util.ArrayList;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -67,6 +68,11 @@ public class TestPolicyForVm2 {
                 list(ioinv.getUuid(), l3.getUuid(), img.getUuid(), dov.getUuid()),
                 list(test.getUuid()), false
         );
+
+        APIQuerySharedResourceMsg qmsg = new APIQuerySharedResourceMsg();
+        qmsg.setConditions(new ArrayList<QueryCondition>());
+        APIQuerySharedResourceReply qr = api.query(qmsg, APIQuerySharedResourceReply.class);
+        Assert.assertFalse(qr.getInventories().isEmpty());
 
         SessionInventory session = identityCreator.getAccountSession();
 
