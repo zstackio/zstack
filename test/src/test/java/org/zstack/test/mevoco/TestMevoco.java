@@ -150,6 +150,7 @@ public class TestMevoco {
         Assert.assertNotNull(dhcp.dns);
         Assert.assertTrue(dhcp.dns.contains("1.1.1.1"));
         Assert.assertNotNull(dhcp.bridgeName);
+        Assert.assertEquals(dhcp.ip.replaceAll("\\.", "-"), dhcp.hostname);
 
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         Assert.assertTrue(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.hasTag(l3.getUuid()));

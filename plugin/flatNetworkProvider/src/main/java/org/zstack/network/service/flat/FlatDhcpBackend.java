@@ -708,6 +708,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 lst = new ArrayList<DhcpInfo>();
                 l3DhcpMap.put(d.l3NetworkUuid, lst);
             }
+
+            if (d.hostname == null) {
+                d.hostname = d.ip.replaceAll("\\.", "-");
+                if (d.dnsDomain != null) {
+                    d.hostname = String.format("%s.%s", d.hostname, d.dnsDomain);
+                }
+            }
+
             lst.add(d);
         }
 
