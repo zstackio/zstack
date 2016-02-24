@@ -146,19 +146,21 @@ public class Platform {
             return ret;
         }
 
-        for (Map.Entry<String, String> e : map.entrySet()) {
-            String index = StringDSL.stripStart(e.getKey(), name).trim();
+        List<String> orderedKeys = new ArrayList<String>();
+        orderedKeys.addAll(map.keySet());
+        Collections.sort(orderedKeys);
+
+        for (String key : orderedKeys) {
+            String index = StringDSL.stripStart(key, name).trim();
             try {
-                int i = Integer.valueOf(index);
-                if (i >= map.size()) {
-                    throw new IllegalArgumentException(String.format("[Illegal List Definition] %s is not a correct list definition, its index is %s, but total items are %s. Max index is size of items minus 1",
-                            e.getKey(), i, map.size()));
-                }
-                ret.add(i, e.getValue());
-            } catch (Exception ex) {
-                throw new IllegalArgumentException(String.format("[Illegal List Definition] %s is not a correct list definition, the end character must be a number, for example %s.1",
-                        e.getKey(), name), ex);
+                Long.valueOf(index);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(String.format("[Illegal List Definition] %s is an invalid list key" +
+                        " definition, the last character must be a number, for example %s1. %s is not a number", key, key, index));
+
             }
+
+            ret.add(map.get(key));
         }
 
         return ret;
