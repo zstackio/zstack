@@ -15,10 +15,13 @@ public class AccountResourceRefInventory {
     @APINoSee
     private Long id;
     private String accountUuid;
+    @APINoSee
     private String ownerAccountUuid;
     private String resourceUuid;
     private String resourceType;
+    @APINoSee
     private Integer permission;
+    @APINoSee
     private Boolean isShared;
     private Timestamp createDate;
     private Timestamp lastOpDate;
