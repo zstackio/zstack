@@ -2017,7 +2017,12 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     @Override
     public void dealWithUnknownMessage(Message msg) {
         String details = String.format("No service deals with message: %s", wire.dumpMessage(msg));
-        if (msg instanceof APIMessage) {
+        if (msg instanceof APISyncCallMessage) {
+            APIReply reply = new APIReply();
+            reply.setError(errf.instantiateErrorCode(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
+            reply.setSuccess(false);
+            this.reply(msg, reply);
+        } else if (msg instanceof APIMessage) {
             APIEvent evt = new APIEvent(msg.getId());
             evt.setErrorCode(errf.instantiateErrorCode(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
             this.publish(evt);
