@@ -1335,6 +1335,7 @@ public class Api implements CloudBusEventListener {
         msg.setMediaType(inv.getMediaType());
         msg.setGuestOsType(inv.getGuestOsType());
         msg.setFormat(inv.getFormat());
+        msg.setPlatform(inv.getPlatform());
         msg.setType(inv.getType());
         msg.setName(inv.getName());
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);

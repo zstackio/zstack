@@ -41,6 +41,7 @@ public class DefaultImageDeployer implements ImageDeployer<ImageConfig> {
                 iinv.setFormat(ic.getFormat());
                 iinv.setName(ic.getName());
                 iinv.setUrl(ic.getUrl());
+                iinv.setPlatform(ic.getPlatform());
 
                 SessionInventory session = ic.getAccountRef() == null ? null : deployer.loginByAccountRef(ic.getAccountRef(), config);
 

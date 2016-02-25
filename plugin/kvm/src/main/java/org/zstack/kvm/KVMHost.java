@@ -1459,9 +1459,32 @@ public class KVMHost extends HostBase implements Host {
             virtio = ImagePlatform.valueOf(platform).isParaVirtualization();
         }
 
+        int cpuNum = spec.getVmInventory().getCpuNum();
+        cmd.setCpuNum(cpuNum);
+
+        int socket;
+        int cpuOnSocket;
+        //TODO: this is a HACK!!!
+        if (ImagePlatform.Windows.toString().equals(platform) || ImagePlatform.WindowsVirtio.toString().equals(platform)) {
+            if (cpuNum == 1) {
+                socket = 1;
+                cpuOnSocket = 1;
+            } else if (cpuNum % 2 == 0) {
+                socket = 2;
+                cpuOnSocket = cpuNum / 2;
+            } else {
+                socket = cpuNum;
+                cpuOnSocket = 1;
+            }
+        } else {
+            socket = 1;
+            cpuOnSocket = cpuNum;
+        }
+
+        cmd.setSocketNum(socket);
+        cmd.setCpuOnSocket(cpuOnSocket);
         cmd.setVmName(spec.getVmInventory().getName());
         cmd.setVmInstanceUuid(spec.getVmInventory().getUuid());
-        cmd.setCpuNum(spec.getVmInventory().getCpuNum());
         cmd.setCpuSpeed(spec.getVmInventory().getCpuSpeed());
         cmd.setMemory(spec.getVmInventory().getMemorySize());
         cmd.setUseVirtio(virtio);

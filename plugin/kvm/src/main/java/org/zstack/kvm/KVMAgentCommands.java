@@ -544,7 +544,7 @@ public class KVMAgentCommands {
             this.path = path;
         }
     }
-    
+
     public static class StartVmCmd extends AgentCommand {
     	private String vmInstanceUuid;
     	private long vmInternalId;
@@ -552,6 +552,8 @@ public class KVMAgentCommands {
     	private long memory;
     	private int cpuNum;
     	private long cpuSpeed;
+        private int socketNum;
+        private int cpuOnSocket;
     	private List<String> bootDev;
     	private VolumeTO rootVolume;
         private IsoTO bootIso;
@@ -563,6 +565,22 @@ public class KVMAgentCommands {
         private String consoleMode;
         private String nestedVirtualization;
         private String hostManagementIp;
+
+        public int getSocketNum() {
+            return socketNum;
+        }
+
+        public void setSocketNum(int socketNum) {
+            this.socketNum = socketNum;
+        }
+
+        public int getCpuOnSocket() {
+            return cpuOnSocket;
+        }
+
+        public void setCpuOnSocket(int cpuOnSocket) {
+            this.cpuOnSocket = cpuOnSocket;
+        }
 
         public String getVmName() {
             return vmName;

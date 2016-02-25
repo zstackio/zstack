@@ -22,6 +22,7 @@
         <xsd:attribute name="bits" type="xsd:unsignedShort" default="64"></xsd:attribute>
         <xsd:attribute name="url" type="xsd:string" default="http://zstack.org/download/test.qcow2"></xsd:attribute>
         <xsd:attribute name="mediaType" type="xsd:string" default="RootVolumeTemplate"></xsd:attribute>
+        <xsd:attribute name="platform" type="xsd:string" default="Linux"></xsd:attribute>
         <xsd:attribute name="format" type="xsd:string" default="qcow2"></xsd:attribute>
         <xsd:attribute name="guestOsType" type="xsd:string" default="centos63"></xsd:attribute>
     </xsd:complexType>

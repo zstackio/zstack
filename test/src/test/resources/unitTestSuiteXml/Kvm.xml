@@ -101,6 +101,7 @@
   <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm7"/>
   <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm8"/>
   <TestCase class="org.zstack.test.kvm.TestDetachNicOnKvm9"/>
+  <TestCase class="org.zstack.test.kvm.TestVmSocketOnKvm"/>
   <TestCase class="org.zstack.test.kvm.TestAttachIsoOnKvm"/>
   <TestCase class="org.zstack.test.kvm.TestKvmHostCapacityOnFailure"/>
   <TestCase class="org.zstack.test.kvm.TestKvmVmTracer"/>
