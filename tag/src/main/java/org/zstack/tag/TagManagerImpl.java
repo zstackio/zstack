@@ -223,6 +223,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             return null;
         }
 
+        validateSystemTag(resourceUuid, resourceType, tag);
+
         SystemTagVO vo = new SystemTagVO();
         vo.setResourceType(resourceType);
         vo.setUuid(Platform.getUuid());
@@ -253,6 +255,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         if (isTagExisting(resourceUuid, tag, TagType.System, resourceType)) {
             return null;
         }
+
+        validateSystemTag(resourceUuid, resourceType, tag);
 
         SystemTagVO vo = new SystemTagVO();
         vo.setResourceType(resourceType);
@@ -302,6 +306,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public TagInventory createSysTag(String resourceUuid, String tag, String resourceType) {
+        validateSystemTag(resourceUuid, resourceType, tag);
+
         return createTag(resourceUuid, tag, TagType.System, resourceType);
     }
 
@@ -312,6 +318,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public TagInventory createSysTag(String resourceUuid, Enum tag, String resourceType) {
+        validateSystemTag(resourceUuid, resourceType, tag.toString());
+
         return createSysTag(resourceUuid, tag.toString(), resourceType);
     }
 

@@ -83,4 +83,10 @@
     <message>
         <name>org.zstack.header.vm.APIGetVmConsoleAddressMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIDeleteVmHostnameMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APISetVmHostnameMsg</name>
+    </message>
 </service>
