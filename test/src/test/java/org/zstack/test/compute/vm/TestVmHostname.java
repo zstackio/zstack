@@ -35,7 +35,7 @@ public class TestVmHostname {
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
-        vm = api.setHostname(vm.getUuid(), "vm1", null);
+        api.setHostname(vm.getUuid(), "vm1", null);
         String hostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.HOSTNAME_TOKEN);
         Assert.assertEquals("vm1", hostname);
 

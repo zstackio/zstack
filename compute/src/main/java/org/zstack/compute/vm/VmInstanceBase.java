@@ -1842,7 +1842,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         APISetVmHostnameEvent evt = new APISetVmHostnameEvent(msg.getId());
-        evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }
 

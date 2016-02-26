@@ -3784,25 +3784,23 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIDetachNetworkServiceFromL3NetworkEvent.class);
     }
 
-    public VmInstanceInventory setHostname(String uuid, String hostname, SessionInventory session) throws ApiSenderException {
+    public void setHostname(String uuid, String hostname, SessionInventory session) throws ApiSenderException {
         APISetVmHostnameMsg msg = new APISetVmHostnameMsg();
         msg.setUuid(uuid);
         msg.setHostname(hostname);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APISetVmHostnameEvent evt = sender.send(msg, APISetVmHostnameEvent.class);
-        return evt.getInventory();
+        sender.send(msg, APISetVmHostnameEvent.class);
     }
 
-    public VmInstanceInventory deleteHostname(String uuid, SessionInventory session) throws ApiSenderException {
+    public void deleteHostname(String uuid, SessionInventory session) throws ApiSenderException {
         APIDeleteVmHostnameMsg msg = new APIDeleteVmHostnameMsg();
         msg.setUuid(uuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIDeleteVmHostnameEvent evt = sender.send(msg, APIDeleteVmHostnameEvent.class);
-        return evt.getInventory();
+        sender.send(msg, APIDeleteVmHostnameEvent.class);
     }
 
     public void setStaticIp(String vmUuid, String l3Uuid, String ip) throws ApiSenderException {
