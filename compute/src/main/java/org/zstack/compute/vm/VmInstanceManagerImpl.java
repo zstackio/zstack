@@ -473,53 +473,6 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         HostNameValidator hostnameValidator = new HostNameValidator();
         tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), hostnameValidator);
         VmSystemTags.HOSTNAME.installValidator(hostnameValidator);
-
-        VmSystemTags.STATIC_IP.installJudger(new SystemTagOperationJudger() {
-            private void changeVmIp(SystemTagInventory tag) {
-                SimpleQuery<VmInstanceVO> vmq  = dbf.createQuery(VmInstanceVO.class);
-                vmq.select(VmInstanceVO_.state);
-                vmq.add(VmInstanceVO_.uuid, Op.EQ, tag.getResourceUuid());
-                VmInstanceState state = vmq.findValue();
-                if (state == VmInstanceState.Created) {
-                    // the vm is just created, do nothing
-                    return;
-                }
-
-                if (state == VmInstanceState.Stopped) {
-                    String l3NetworkUuid = VmSystemTags.STATIC_IP.getTokenByTag(tag.getTag(), VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
-                    String ip = VmSystemTags.STATIC_IP.getTokenByTag(tag.getTag(), VmSystemTags.STATIC_IP_TOKEN);
-
-                    ChangeVmIpMsg cmsg = new ChangeVmIpMsg();
-                    cmsg.setVmInstanceUuid(tag.getResourceUuid());
-                    cmsg.setL3NetworkUuid(l3NetworkUuid);
-                    cmsg.setIp(ip);
-                    bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, tag.getResourceUuid());
-                    MessageReply reply = bus.call(cmsg);
-                    if (!reply.isSuccess()) {
-                        throw new OperationFailureException(reply.getError());
-                    }
-                } else {
-                    throw new OperationFailureException(errf.stringToOperationError(
-                            String.format("static IP can only be updated when the vm is stopped. Now the vm[uuid:%s] is in" +
-                                    " state[%s]", tag.getResourceUuid(), state)
-                    ));
-                }
-            }
-
-            @Override
-            public void tagPreCreated(SystemTagInventory tag) {
-                changeVmIp(tag);
-            }
-
-            @Override
-            public void tagPreDeleted(SystemTagInventory tag) {
-            }
-
-            @Override
-            public void tagPreUpdated(SystemTagInventory old, SystemTagInventory newTag) {
-                changeVmIp(newTag);
-            }
-        });
     }
 
     @Override

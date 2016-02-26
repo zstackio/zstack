@@ -269,6 +269,10 @@ public class SystemTag {
         }
     }
 
+    public SystemTagInventory updateByTagUuid(String tagUuid, String newTag) {
+        return tagMgr.updateSystemTag(tagUuid, newTag);
+    }
+
     public SystemTagInventory update(String resourceUuid, String newTag) {
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.select(SystemTagVO_.uuid);

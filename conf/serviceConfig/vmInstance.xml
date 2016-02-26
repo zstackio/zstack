@@ -89,4 +89,10 @@
     <message>
         <name>org.zstack.header.vm.APISetVmHostnameMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APISetVmStaticIpMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIDeleteVmStaticIpMsg</name>
+    </message>
 </service>

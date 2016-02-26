@@ -43,8 +43,6 @@ public class TestVmHostname {
         hostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.HOSTNAME_TOKEN);
         Assert.assertEquals("vm2", hostname);
 
-
-
         api.deleteHostname(vm.getUuid(), null);
         Assert.assertFalse(VmSystemTags.HOSTNAME.hasTag(vm.getUuid()));
 

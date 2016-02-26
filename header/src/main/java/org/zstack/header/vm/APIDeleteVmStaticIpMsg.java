@@ -1,14 +1,18 @@
 package org.zstack.header.vm;
 
-import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIParam;
 
 /**
- * Created by frank on 1/21/2016.
+ * Created by frank on 2/26/2016.
  */
-public class ChangeVmIpMsg extends NeedReplyMessage implements VmInstanceMessage {
+@Action(category = VmInstanceConstant.ACTION_CATEGORY)
+public class APIDeleteVmStaticIpMsg extends APIDeleteMessage implements VmInstanceMessage {
+    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String vmInstanceUuid;
+    @APIParam
     private String l3NetworkUuid;
-    private String ip;
 
     @Override
     public String getVmInstanceUuid() {
@@ -25,13 +29,5 @@ public class ChangeVmIpMsg extends NeedReplyMessage implements VmInstanceMessage
 
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
-    }
-
-    public String getIp() {
-        return ip;
-    }
-
-    public void setIp(String ip) {
-        this.ip = ip;
     }
 }

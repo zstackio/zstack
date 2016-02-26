@@ -3804,4 +3804,25 @@ public class Api implements CloudBusEventListener {
         APIDeleteVmHostnameEvent evt = sender.send(msg, APIDeleteVmHostnameEvent.class);
         return evt.getInventory();
     }
+
+    public void setStaticIp(String vmUuid, String l3Uuid, String ip) throws ApiSenderException {
+        APISetVmStaticIpMsg msg = new APISetVmStaticIpMsg();
+        msg.setVmInstanceUuid(vmUuid);
+        msg.setL3NetworkUuid(l3Uuid);
+        msg.setIp(ip);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APISetVmStaticIpEvent.class);
+    }
+
+    public void deleteStaticIp(String vmUuid, String l3Uuid) throws ApiSenderException {
+        APIDeleteVmStaticIpMsg msg = new APIDeleteVmStaticIpMsg();
+        msg.setVmInstanceUuid(vmUuid);
+        msg.setL3NetworkUuid(l3Uuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteVmStaticIpEvent.class);
+    }
 }

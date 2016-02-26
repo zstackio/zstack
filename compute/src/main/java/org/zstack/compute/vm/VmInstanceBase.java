@@ -39,6 +39,8 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageReply;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -51,10 +53,7 @@ import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -303,36 +302,27 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((VmCheckOwnStateMsg) msg);
         } else if (msg instanceof ExpungeVmMsg) {
             handle((ExpungeVmMsg) msg);
-        } else if (msg instanceof ChangeVmIpMsg) {
-            handle((ChangeVmIpMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    private void changeVmIp(final ChangeVmIpMsg msg, final NoErrorCompletion completion) {
+    private void changeVmIp(final String l3Uuid, final String ip, final Completion completion) {
         final VmNicVO targetNic = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
             @Override
             public VmNicVO call(VmNicVO arg) {
-                return msg.getL3NetworkUuid().equals(arg.getL3NetworkUuid()) ? arg : null;
+                return l3Uuid.equals(arg.getL3NetworkUuid()) ? arg : null;
             }
         });
 
         if (targetNic == null) {
             throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("the vm[uuid:%s] has no nic on the L3 network[uuid:%s]", self.getUuid(), msg.getL3NetworkUuid())
+                    String.format("the vm[uuid:%s] has no nic on the L3 network[uuid:%s]", self.getUuid(), l3Uuid)
             ));
         }
 
-        ErrorCode err = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
-        if (err != null) {
-            throw new OperationFailureException(err);
-        }
-
-        final ChangeVmIpReply reply = new ChangeVmIpReply();
-
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("change-vm-ip-to-%s-l3-%s-vm-%s", msg.getIp(), msg.getL3NetworkUuid(), self.getUuid()));
+        chain.setName(String.format("change-vm-ip-to-%s-l3-%s-vm-%s", ip, l3Uuid, self.getUuid()));
         chain.then(new ShareFlow() {
             UsedIpInventory newIp;
             String oldIpUuid = targetNic.getUsedIpUuid();
@@ -345,9 +335,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         AllocateIpMsg amsg = new AllocateIpMsg();
-                        amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
-                        amsg.setRequiredIp(msg.getIp());
-                        bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
+                        amsg.setL3NetworkUuid(l3Uuid);
+                        amsg.setRequiredIp(ip);
+                        bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
                         bus.send(amsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
@@ -404,50 +394,21 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
-                done(new FlowDoneHandler(msg, completion) {
+                done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        bus.reply(msg, reply);
-                        completion.done();
+                        completion.success();
                     }
                 });
 
-                error(new FlowErrorHandler(msg, completion) {
+                error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        reply.setError(errCode);
-                        bus.reply(msg, reply);
-                        completion.done();
+                        completion.fail(errCode);
                     }
                 });
             }
         }).start();
-    }
-
-    private void handle(final ChangeVmIpMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                changeVmIp(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return "change-vm-ip";
-            }
-        });
-
-
     }
 
     private void handle(final ExpungeVmMsg msg) {
@@ -1761,17 +1722,111 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmHostnameMsg) msg);
         } else if (msg instanceof APIDeleteVmHostnameMsg) {
             handle((APIDeleteVmHostnameMsg) msg);
+        } else if (msg instanceof APISetVmStaticIpMsg) {
+            handle((APISetVmStaticIpMsg) msg);
+        } else if (msg instanceof APIDeleteVmStaticIpMsg) {
+            handle((APIDeleteVmStaticIpMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    private void handle(APIDeleteVmHostnameMsg msg) {
-        if (VmSystemTags.HOSTNAME.hasTag(self.getUuid())) {
-            VmSystemTags.HOSTNAME.delete(self.getUuid());
+    private void handle(final APIDeleteVmStaticIpMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                APIDeleteVmStaticIpEvent evt = new APIDeleteVmStaticIpEvent(msg.getId());
+                VmSystemTags.STATIC_IP.delete(self.getUuid(), TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_IP.instantiateTag(
+                        map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()))
+                )));
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "delete-static-ip";
+            }
+        });
+    }
+
+    private void handle(final APISetVmStaticIpMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                setStaticIp(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "set-static-ip";
+            }
+        });
+    }
+
+    private void setStaticIp(final APISetVmStaticIpMsg msg, final NoErrorCompletion completion) {
+        refreshVO();
+        ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (error != null) {
+            throw new OperationFailureException(error);
         }
 
+        SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
+        q.select(SystemTagVO_.uuid);
+        q.add(SystemTagVO_.resourceType, Op.EQ, VmInstanceVO.class.getSimpleName());
+        q.add(SystemTagVO_.resourceUuid, Op.EQ, self.getUuid());
+        q.add(SystemTagVO_.tag, Op.LIKE, TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_IP.instantiateTag(
+                map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()))
+        )));
+        final String tagUuid = q.findValue();
+
+        final APISetVmStaticIpEvent evt = new APISetVmStaticIpEvent(msg.getId());
+        changeVmIp(msg.getL3NetworkUuid(), msg.getIp(), new Completion(msg, completion) {
+            @Override
+            public void success() {
+                if (tagUuid == null) {
+                    VmSystemTags.STATIC_IP.createTag(self.getUuid(), map(
+                            e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
+                            e(VmSystemTags.STATIC_IP_TOKEN, msg.getIp())
+                    ));
+                } else {
+                    VmSystemTags.STATIC_IP.updateByTagUuid(tagUuid, VmSystemTags.STATIC_IP.instantiateTag(map(
+                            e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
+                            e(VmSystemTags.STATIC_IP_TOKEN, msg.getIp())
+                    )));
+                }
+
+                bus.publish(evt);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(APIDeleteVmHostnameMsg msg) {
         APIDeleteVmHostnameEvent evt = new APIDeleteVmHostnameEvent(msg.getId());
+        VmSystemTags.HOSTNAME.delete(self.getUuid());
         bus.publish(evt);
     }
 
