@@ -33,10 +33,8 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.message.Message;
 import org.zstack.header.search.APIGetMessage;
 import org.zstack.header.search.APISearchMessage;
-import org.zstack.utils.BeanUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.FieldUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -419,7 +417,15 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         dbf.persistCollection(quotas);
 
-        AccountInventory inv = AccountInventory.valueOf(vo);
+        final AccountInventory inv = AccountInventory.valueOf(vo);
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterCreateAccountExtensionPoint.class), new ForEachFunction<AfterCreateAccountExtensionPoint>() {
+            @Override
+            public void run(AfterCreateAccountExtensionPoint arg) {
+                arg.afterCreateAccount(inv);
+            }
+        });
+
         APICreateAccountEvent evt = new APICreateAccountEvent(msg.getId());
         evt.setInventory(inv);
         bus.publish(evt);

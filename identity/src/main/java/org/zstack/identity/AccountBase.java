@@ -543,8 +543,6 @@ public class AccountBase extends AbstractAccount {
         bus.publish(evt);
     }
 
-
-
     private void handle(APICreateUserMsg msg) {
         APICreateUserEvent evt = new APICreateUserEvent(msg.getId());
         UserVO uvo = new UserVO();
