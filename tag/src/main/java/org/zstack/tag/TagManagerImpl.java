@@ -343,6 +343,26 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     @Override
+    public SystemTagInventory updateSystemTag(String tagUuid, String newTag) {
+        SystemTagVO vo = dbf.findByUuid(tagUuid, SystemTagVO.class);
+        SystemTagInventory old = SystemTagInventory.valueOf(vo);
+        if (!vo.getTag().equals(newTag)) {
+            vo.setTag(newTag);
+
+            SystemTagInventory n = ObjectUtils.copy(new SystemTagInventory(), old);
+            n.setTag(newTag);
+            preTagUpdated(old, n);
+
+            vo = dbf.updateAndRefresh(vo);
+            SystemTagInventory nt = SystemTagInventory.valueOf(vo);
+            fireTagUpdated(old, nt);
+            return SystemTagInventory.valueOf(vo);
+        } else {
+            return old;
+        }
+    }
+
+    @Override
     public List<String> findSystemTags(String resourceUuid) {
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.select(SystemTagVO_.tag);
@@ -503,23 +523,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Deferred
     private void handle(APIUpdateSystemTagMsg msg) {
         APIUpdateSystemTagEvent evt = new APIUpdateSystemTagEvent(msg.getId());
-        SystemTagVO vo = dbf.findByUuid(msg.getUuid(), SystemTagVO.class);
-        SystemTagInventory old = SystemTagInventory.valueOf(vo);
-        if (!vo.getTag().equals(msg.getTag())) {
-            vo.setTag(msg.getTag());
-
-            SystemTagInventory n = ObjectUtils.copy(new SystemTagInventory(), old);
-            n.setTag(msg.getTag());
-            preTagUpdated(old, n);
-
-            vo = dbf.updateAndRefresh(vo);
-            SystemTagInventory newTag = SystemTagInventory.valueOf(vo);
-            fireTagUpdated(old, newTag);
-            evt.setInventory(SystemTagInventory.valueOf(vo));
-        } else {
-            evt.setInventory(old);
-        }
-
+        evt.setInventory(updateSystemTag(msg.getUuid(), msg.getTag()));
         bus.publish(evt);
     }
 

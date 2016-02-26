@@ -1757,9 +1757,38 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIGetVmBootOrderMsg) msg);
         } else if (msg instanceof APIGetVmConsoleAddressMsg) {
             handle((APIGetVmConsoleAddressMsg) msg);
+        } else if (msg instanceof APISetVmHostnameMsg) {
+            handle((APISetVmHostnameMsg) msg);
+        } else if (msg instanceof APIDeleteVmHostnameMsg) {
+            handle((APIDeleteVmHostnameMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIDeleteVmHostnameMsg msg) {
+        if (VmSystemTags.HOSTNAME.hasTag(self.getUuid())) {
+            VmSystemTags.HOSTNAME.delete(self.getUuid());
+        }
+
+        APIDeleteVmHostnameEvent evt = new APIDeleteVmHostnameEvent(msg.getId());
+        bus.publish(evt);
+    }
+
+    private void handle(APISetVmHostnameMsg msg) {
+        if (!VmSystemTags.HOSTNAME.hasTag(self.getUuid())) {
+            VmSystemTags.HOSTNAME.createTag(self.getUuid(), map(
+                    e(VmSystemTags.HOSTNAME_TOKEN, msg.getHostname())
+            ));
+        } else {
+            VmSystemTags.HOSTNAME.update(self.getUuid(), VmSystemTags.HOSTNAME.instantiateTag(
+                    map(e(VmSystemTags.HOSTNAME_TOKEN, msg.getHostname()))
+            ));
+        }
+
+        APISetVmHostnameEvent evt = new APISetVmHostnameEvent(msg.getId());
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     private void handle(final APIGetVmConsoleAddressMsg msg) {
