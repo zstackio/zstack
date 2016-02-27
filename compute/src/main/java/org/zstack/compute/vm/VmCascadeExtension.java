@@ -554,7 +554,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
     public CascadeAction createActionForChildResource(CascadeAction action) {
         if (CascadeConstant.DELETION_CODES.contains(action.getActionCode())) {
             int op = toDeletionOpCode(action);
-            if (op == OP_NOPE || op == OP_STOP || op == OP_REMOVE_INSTANCE_OFFERING) {
+            if (op == OP_NOPE || op == OP_STOP || op == OP_REMOVE_INSTANCE_OFFERING || op == OP_DETACH_NIC) {
                 return null;
             }
 

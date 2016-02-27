@@ -48,6 +48,7 @@
     <TestCase class="org.zstack.test.storage.snapshot.TestSnapshotOnKvm45"/>
     <TestCase class="org.zstack.test.storage.snapshot.TestSnapshotOnKvm46"/>
     <TestCase class="org.zstack.test.storage.snapshot.TestSnapshotOnKvm47"/>
+    <TestCase class="org.zstack.test.storage.snapshot.TestSnapshotOnKvm48"/>
     <TestCase class="org.zstack.test.storage.snapshot.TestQuerySnapshot"/>
     <TestCase class="org.zstack.test.storage.snapshot.TestQuerySnapshot1"/>
     <TestCase class="org.zstack.test.storage.snapshot.TestGetSnapshotTree"/>
