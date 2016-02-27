@@ -1127,6 +1127,28 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
+                class SetDefaultL3Network {
+                    boolean isSet = false;
+
+                    void set() {
+                        if (self.getDefaultL3NetworkUuid() == null) {
+                            self.setDefaultL3NetworkUuid(l3Uuid);
+                            self = dbf.updateAndRefresh(self);
+                            isSet = true;
+                        }
+                    }
+
+                    void rollback() {
+                        if (isSet) {
+                            self.setDefaultL3NetworkUuid(null);
+                            dbf.update(self);
+                        }
+                    }
+                }
+
+                final SetDefaultL3Network setDefaultL3Network = new SetDefaultL3Network();
+                setDefaultL3Network.set();
+
                 final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
                 spec.setVmInventory(VmInstanceInventory.valueOf(self));
                 L3NetworkVO l3vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
@@ -1154,6 +1176,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }).error(new FlowErrorHandler(chain) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        setDefaultL3Network.rollback();
                         completion.fail(errCode);
                         chain.next();
                     }

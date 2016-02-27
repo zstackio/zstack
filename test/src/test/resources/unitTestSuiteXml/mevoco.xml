@@ -23,6 +23,7 @@
     <TestCase class="org.zstack.test.mevoco.TestMevoco19"/>
     <TestCase class="org.zstack.test.mevoco.TestMevoco20"/>
     <TestCase class="org.zstack.test.mevoco.TestMevoco21"/>
+    <TestCase class="org.zstack.test.mevoco.TestMevoco22"/>
     <TestCase class="org.zstack.test.mevoco.TestLicense1"/>
     <TestCase class="org.zstack.test.mevoco.TestMevocoMultipleNetwork"/>
 </UnitTestSuiteConfig>
