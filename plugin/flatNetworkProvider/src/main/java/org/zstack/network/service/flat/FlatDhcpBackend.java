@@ -305,7 +305,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Override
     public void afterDeleteL3Network(L3NetworkInventory inventory) {
-        l3NetworkDhcpServerIp.remove(inventory.getUuid());
+        UsedIpInventory dhchip = l3NetworkDhcpServerIp.get(inventory.getUuid());
+        if (dhchip != null) {
+            deleteDhcpServerIp(dhchip);
+            logger.debug(String.format("delete DHCP IP[%s] of the flat network[uuid:%s] as the L3 network is deleted",
+                    dhchip.getIp(), dhchip.getL3NetworkUuid()));
+        }
     }
 
     @Transactional(readOnly = true)
@@ -614,13 +619,17 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     }
 
+    private void deleteDhcpServerIp(UsedIpInventory ip) {
+        l3NetworkDhcpServerIp.remove(ip.getL3NetworkUuid());
+        FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(ip.getL3NetworkUuid());
+        dbf.removeByPrimaryKey(ip.getUuid(), UsedIpVO.class);
+    }
+
     @Override
     public void afterDeleteIpRange(IpRangeInventory ipRange) {
         UsedIpInventory dhcpIp =  l3NetworkDhcpServerIp.get(ipRange.getL3NetworkUuid());
         if (dhcpIp != null && NetworkUtils.isIpv4InRange(dhcpIp.getIp(), ipRange.getStartIp(), ipRange.getEndIp())) {
-            l3NetworkDhcpServerIp.remove(ipRange.getL3NetworkUuid());
-            FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(ipRange.getL3NetworkUuid());
-            dbf.removeByPrimaryKey(dhcpIp.getUuid(), UsedIpVO.class);
+            deleteDhcpServerIp(dhcpIp);
             logger.debug(String.format("delete DHCP IP[%s] of the flat network[uuid:%s] as the IP range[uuid:%s] is deleted",
                     dhcpIp.getIp(), ipRange.getL3NetworkUuid(), ipRange.getUuid()));
         }
