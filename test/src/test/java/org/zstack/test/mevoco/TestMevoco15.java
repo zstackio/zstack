@@ -146,7 +146,11 @@ public class TestMevoco15 {
         Assert.assertEquals(nic.getNetmask(), target.netmask);
         Assert.assertEquals(nic.getGateway(), target.gateway);
         Assert.assertEquals(true, target.isDefaultL3Network);
-        Assert.assertEquals(VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.HOSTNAME_TOKEN), target.hostname);
+        String hostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.HOSTNAME_TOKEN);
+        if (hostname == null) {
+            hostname = nic.getIp().replaceAll("\\.", "-");
+        }
+        Assert.assertEquals(hostname, target.hostname);
         L3NetworkVO l3 = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
         Assert.assertEquals(l3.getDnsDomain(), target.dnsDomain);
         Assert.assertNotNull(target.dns);

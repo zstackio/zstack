@@ -162,9 +162,15 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 }
             });
 
-            info.hostname = hostnames.get(nic.getVmInstanceUuid());
-            if (info.hostname != null && info.dnsDomain != null) {
-                info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
+            if (info.isDefaultL3Network) {
+                info.hostname = hostnames.get(nic.getVmInstanceUuid());
+                if (info.hostname == null) {
+                    info.hostname = nic.getIp().replaceAll("\\.", "-");
+                }
+
+                if (info.dnsDomain != null) {
+                    info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
+                }
             }
 
             info.l3NetworkUuid = l3.getUuid();
@@ -387,9 +393,15 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 }
             });
 
-            info.hostname = hostnames.get(nic.getVmInstanceUuid());
-            if (info.hostname != null && info.dnsDomain != null) {
-                info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
+            if (info.isDefaultL3Network) {
+                info.hostname = hostnames.get(nic.getVmInstanceUuid());
+                if (info.hostname == null) {
+                    info.hostname = nic.getIp().replaceAll("\\.", "-");
+                }
+
+                if (info.dnsDomain != null) {
+                    info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
+                }
             }
 
             info.l3NetworkUuid = l3.getUuid();
@@ -716,13 +728,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             if (lst == null) {
                 lst = new ArrayList<DhcpInfo>();
                 l3DhcpMap.put(d.l3NetworkUuid, lst);
-            }
-
-            if (d.hostname == null) {
-                d.hostname = d.ip.replaceAll("\\.", "-");
-                if (d.dnsDomain != null) {
-                    d.hostname = String.format("%s.%s", d.hostname, d.dnsDomain);
-                }
             }
 
             lst.add(d);
