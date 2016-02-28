@@ -137,6 +137,10 @@ public class TestMevocoMultipleNetwork {
         goOn:
         for (ApplyDhcpCmd cmd : fconfig.applyDhcpCmdList) {
             DhcpInfo info = cmd.dhcp.get(0);
+            if (!info.isDefaultL3Network && info.hostname != null) {
+                Assert.fail(String.format("wrong hostname set. %s", JSONObjectUtil.toJsonString(info)));
+            }
+
             for (VmNicInventory nic : vm.getVmNics()) {
                 if (info.ip.equals(nic.getIp()) && info.gateway.equals(nic.getGateway()) && info.netmask.equals(nic.getNetmask())) {
                     break goOn;
