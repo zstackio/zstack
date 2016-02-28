@@ -10,6 +10,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
 import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.query.QueryOp;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
@@ -87,6 +88,13 @@ public class TestIdentity7 {
         UserGroupInventory g = creator.createGroup("group");
         p = creator.createPolicy("policy", s);
         creator.attachPolicyToGroup("group", "policy");
+
+        APIQueryPolicyMsg msg = new APIQueryPolicyMsg();
+        msg.addQueryCondition("group.uuid", QueryOp.EQ, g.getUuid());
+        APIQueryPolicyReply reply = api.query(msg, APIQueryPolicyReply.class);
+        Assert.assertEquals(1, reply.getInventories().size());
+        PolicyInventory retp = reply.getInventories().get(0);
+        Assert.assertEquals("policy", retp.getName());
 
         SimpleQuery<UserGroupPolicyRefVO> pq = dbf.createQuery(UserGroupPolicyRefVO.class);
         pq.add(UserGroupPolicyRefVO_.policyUuid, Op.EQ, p.getUuid());

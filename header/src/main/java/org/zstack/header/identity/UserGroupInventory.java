@@ -16,9 +16,9 @@ import java.util.*;
         @ExpandedQuery(expandedField = "account", inventoryClass = AccountInventory.class,
                 foreignKey = "accountUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "userRef", inventoryClass = UserGroupUserRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "userUuid", hidden = true),
+                foreignKey = "uuid", expandedInventoryKey = "groupUuid", hidden = true),
         @ExpandedQuery(expandedField = "policyRef", inventoryClass = UserGroupPolicyRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "policyUuid", hidden = true)
+                foreignKey = "uuid", expandedInventoryKey = "groupUuid", hidden = true)
 })
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "user", expandedField = "userRef.user"),
