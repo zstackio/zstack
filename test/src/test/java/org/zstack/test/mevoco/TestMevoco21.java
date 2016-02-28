@@ -138,6 +138,7 @@ public class TestMevoco21 {
         validate(ps, "VM.INSTANCE-OFFERING.CHANGE", "instance:APIChangeInstanceOfferingMsg", AccountConstant.StatementEffect.Allow);
 
         validate(ps, "VOLUME.CREATE-AND-ATTACH", list("volume:APICreateDataVolumeMsg", "volume:APIAttachDataVolumeToVmMsg"), AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.CREATE", "volume:APICreateDataVolumeMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.UPDATE", "volume:APIUpdateVolumeMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.ATTACH", "volume:APIAttachDataVolumeToVmMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.DETACH", "volume:APIDetachDataVolumeFromVmMsg", AccountConstant.StatementEffect.Allow);

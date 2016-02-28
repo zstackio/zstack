@@ -376,7 +376,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         PolicyVO p = new PolicyVO();
         p.setUuid(Platform.getUuid());
         p.setAccountUuid(vo.getUuid());
-        p.setName(String.format("DEFAULT-READ-%s", vo.getUuid()));
+        p.setName("DEFAULT-READ");
         Statement s = new Statement();
         s.setName(String.format("read-permission-for-account-%s", vo.getUuid()));
         s.setEffect(StatementEffect.Allow);
@@ -387,7 +387,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         p = new PolicyVO();
         p.setUuid(Platform.getUuid());
         p.setAccountUuid(vo.getUuid());
-        p.setName(String.format("USER-RESET-PASSWORD-%s", vo.getUuid()));
+        p.setName("USER-RESET-PASSWORD");
         s = new Statement();
         s.setName(String.format("user-reset-password-%s", vo.getUuid()));
         s.setEffect(StatementEffect.Allow);
