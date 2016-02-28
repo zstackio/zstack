@@ -94,6 +94,7 @@ public class TestMevoco21 {
                 effect, JSONObjectUtil.toJsonString(PolicyInventory.valueOf(ps))));
     }
 
+    /*
     private void validate(List<PolicyVO> ps, String policyName, List<String> statementActions, AccountConstant.StatementEffect effect) {
         for (PolicyVO vo : ps) {
             if (vo.getName().equals(policyName)) {
@@ -109,6 +110,7 @@ public class TestMevoco21 {
         Assert.fail(String.format("cannot find policy[name: %s, action: %s, effect: %s\n\n %s", policyName, statementActions,
                 effect, JSONObjectUtil.toJsonString(PolicyInventory.valueOf(ps))));
     }
+    */
     
 	@Test
 	public void test() throws ApiSenderException {
@@ -131,25 +133,21 @@ public class TestMevoco21 {
         validate(ps, "VM.ISO.ADD", "instance:APIAttachIsoToVmInstanceMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.ISO.REMOVE", "instance:APIDetachIsoFromVmInstanceMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.MIGRATE", "instance:APIMigrateVmMsg", AccountConstant.StatementEffect.Allow);
-        validate(ps, "VM.LOCAL-STORAGE.MIGRATE", list("volume:APILocalStorageMigrateVolumeMsg",
-                "volume:APIDetachDataVolumeFromVmMsg", "volume:APIAttachDataVolumeToVmMsg"), AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.L3.ATTACH", "instance:APIAttachL3NetworkToVmMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.L3.DETACH", "instance:APIDetachL3NetworkFromVmMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.INSTANCE-OFFERING.CHANGE", "instance:APIChangeInstanceOfferingMsg", AccountConstant.StatementEffect.Allow);
 
-        validate(ps, "VOLUME.CREATE-AND-ATTACH", list("volume:APICreateDataVolumeMsg", "volume:APIAttachDataVolumeToVmMsg"), AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.CREATE", "volume:APICreateDataVolumeMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.UPDATE", "volume:APIUpdateVolumeMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.ATTACH", "volume:APIAttachDataVolumeToVmMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.DETACH", "volume:APIDetachDataVolumeFromVmMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.CHANGE-STATE", "volume:APIChangeVolumeStateMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.DELETE", "volume:APIDeleteDataVolumeMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.EXPUNGE", "volume:APIExpungeDataVolumeMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.SNAPSHOT.CREATE", "volumeSnapshot:APICreateVolumeSnapshotMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.SNAPSHOT.UPDATE", "volumeSnapshot:APIUpdateVolumeSnapshotMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.SNAPSHOT.DELETE", "volumeSnapshot:APIDeleteVolumeSnapshotMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.SNAPSHOT.REVERT", "volumeSnapshot:APIRevertVolumeFromSnapshotMsg", AccountConstant.StatementEffect.Allow);
-        validate(ps, "VOLUME.LOCAL-STORAGE.MIGRATE", list("volume:APIDetachDataVolumeFromVmMsg",
-                "volume:APILocalStorageMigrateVolumeMsg", "volume:APIAttachDataVolumeToVmMsg"), AccountConstant.StatementEffect.Allow);
 
         validate(ps, "SECURITY-GROUP.CREATE", "securityGroup:APICreateSecurityGroupMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "SECURITY-GROUP.UPDATE", "securityGroup:APIUpdateSecurityGroupMsg", AccountConstant.StatementEffect.Allow);
