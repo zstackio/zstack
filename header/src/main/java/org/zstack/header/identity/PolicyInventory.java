@@ -20,9 +20,9 @@ import java.util.List;
         @ExpandedQuery(expandedField = "account", inventoryClass = AccountInventory.class,
                 foreignKey = "accountUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "groupRef", inventoryClass = UserGroupPolicyRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "groupUuid", hidden = true),
+                foreignKey = "uuid", expandedInventoryKey = "policyUuid", hidden = true),
         @ExpandedQuery(expandedField = "userRef", inventoryClass = UserPolicyRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "userUuid", hidden = true)
+                foreignKey = "uuid", expandedInventoryKey = "policyUuid", hidden = true)
 })
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "group", expandedField = "groupRef.group"),

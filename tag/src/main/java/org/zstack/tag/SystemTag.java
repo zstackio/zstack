@@ -269,6 +269,24 @@ public class SystemTag {
         }
     }
 
+    public SystemTagInventory updateByTagUuid(String tagUuid, String newTag) {
+        return tagMgr.updateSystemTag(tagUuid, newTag);
+    }
+
+    public SystemTagInventory update(String resourceUuid, String newTag) {
+        SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
+        q.select(SystemTagVO_.uuid);
+        q.add(SystemTagVO_.resourceType, Op.EQ, resourceClass.getSimpleName());
+        q.add(SystemTagVO_.resourceUuid, Op.EQ, resourceUuid);
+        q.add(SystemTagVO_.tag, useOp(), useTagFormat());
+        String tagUuid = q.findValue();
+        if (tagUuid == null) {
+            return null;
+        }
+
+        return tagMgr.updateSystemTag(tagUuid, newTag);
+    }
+
     void setTagMgr(TagManager tagMgr) {
         this.tagMgr = tagMgr;
     }

@@ -14,7 +14,6 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
@@ -22,7 +21,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
-import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
@@ -616,7 +615,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     @Override
     public List<Quota> reportQuota() {
-        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+        QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
                 if (msg instanceof APICreateEipMsg) {
@@ -624,18 +623,31 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 }
             }
 
-            @Transactional(readOnly = true)
-            private void check(APICreateEipMsg msg, Map<String, QuotaPair> pairs) {
-                long eipNum = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
+            @Override
+            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
+                Quota.QuotaUsage usage = new Quota.QuotaUsage();
+                usage.setName(EipConstant.QUOTA_EIP_NUM);
+                usage.setUsed(getUsedEip(accountUuid));
+                return list(usage);
+            }
 
+            @Transactional(readOnly = true)
+            private long getUsedEip(String accountUuid) {
                 String sql = "select count(eip) from EipVO eip, AccountResourceRefVO ref where ref.resourceUuid = eip.uuid and " +
                         "ref.accountUuid = :auuid and ref.resourceType = :rtype";
 
                 TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("auuid", accountUuid);
                 q.setParameter("rtype", EipVO.class.getSimpleName());
                 Long en = q.getSingleResult();
                 en = en == null ? 0 : en;
+                return en;
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APICreateEipMsg msg, Map<String, QuotaPair> pairs) {
+                long eipNum = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
+                long en = getUsedEip(msg.getSession().getAccountUuid());
 
                 if (en + 1 > eipNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
@@ -648,7 +660,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
         Quota quota = new Quota();
         quota.setMessageNeedValidation(APICreateEipMsg.class);
-        quota.setChecker(checker);
+        quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
         p.setName(EipConstant.QUOTA_EIP_NUM);

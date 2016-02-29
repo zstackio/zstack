@@ -96,7 +96,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
             public Class<ConsoleProxyCommands.EstablishProxyRsp> getReturnClass() {
                 return ConsoleProxyCommands.EstablishProxyRsp.class;
             }
-        }, TimeUnit.SECONDS, 300);
+        });
     }
 
     @Override
@@ -150,7 +150,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
                 return ConsoleProxyCommands.CheckAvailabilityRsp.class;
             }
 
-        }, TimeUnit.SECONDS, 300);
+        });
     }
 
     @Override

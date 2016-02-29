@@ -223,6 +223,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             return null;
         }
 
+        validateSystemTag(resourceUuid, resourceType, tag);
+
         SystemTagVO vo = new SystemTagVO();
         vo.setResourceType(resourceType);
         vo.setUuid(Platform.getUuid());
@@ -253,6 +255,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         if (isTagExisting(resourceUuid, tag, TagType.System, resourceType)) {
             return null;
         }
+
+        validateSystemTag(resourceUuid, resourceType, tag);
 
         SystemTagVO vo = new SystemTagVO();
         vo.setResourceType(resourceType);
@@ -302,6 +306,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public TagInventory createSysTag(String resourceUuid, String tag, String resourceType) {
+        validateSystemTag(resourceUuid, resourceType, tag);
+
         return createTag(resourceUuid, tag, TagType.System, resourceType);
     }
 
@@ -312,6 +318,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public TagInventory createSysTag(String resourceUuid, Enum tag, String resourceType) {
+        validateSystemTag(resourceUuid, resourceType, tag.toString());
+
         return createSysTag(resourceUuid, tag.toString(), resourceType);
     }
 
@@ -339,6 +347,26 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             ntag.setResourceType(dstResourceType);
             ntag.setResourceUuid(dstResourceUuid);
             dbf.getEntityManager().persist(ntag);
+        }
+    }
+
+    @Override
+    public SystemTagInventory updateSystemTag(String tagUuid, String newTag) {
+        SystemTagVO vo = dbf.findByUuid(tagUuid, SystemTagVO.class);
+        SystemTagInventory old = SystemTagInventory.valueOf(vo);
+        if (!vo.getTag().equals(newTag)) {
+            vo.setTag(newTag);
+
+            SystemTagInventory n = ObjectUtils.copy(new SystemTagInventory(), old);
+            n.setTag(newTag);
+            preTagUpdated(old, n);
+
+            vo = dbf.updateAndRefresh(vo);
+            SystemTagInventory nt = SystemTagInventory.valueOf(vo);
+            fireTagUpdated(old, nt);
+            return SystemTagInventory.valueOf(vo);
+        } else {
+            return old;
         }
     }
 
@@ -503,23 +531,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Deferred
     private void handle(APIUpdateSystemTagMsg msg) {
         APIUpdateSystemTagEvent evt = new APIUpdateSystemTagEvent(msg.getId());
-        SystemTagVO vo = dbf.findByUuid(msg.getUuid(), SystemTagVO.class);
-        SystemTagInventory old = SystemTagInventory.valueOf(vo);
-        if (!vo.getTag().equals(msg.getTag())) {
-            vo.setTag(msg.getTag());
-
-            SystemTagInventory n = ObjectUtils.copy(new SystemTagInventory(), old);
-            n.setTag(msg.getTag());
-            preTagUpdated(old, n);
-
-            vo = dbf.updateAndRefresh(vo);
-            SystemTagInventory newTag = SystemTagInventory.valueOf(vo);
-            fireTagUpdated(old, newTag);
-            evt.setInventory(SystemTagInventory.valueOf(vo));
-        } else {
-            evt.setInventory(old);
-        }
-
+        evt.setInventory(updateSystemTag(msg.getUuid(), msg.getTag()));
         bus.publish(evt);
     }
 

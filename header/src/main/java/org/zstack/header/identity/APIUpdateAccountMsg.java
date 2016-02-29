@@ -5,7 +5,7 @@ import org.zstack.header.message.APIParam;
 
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
 public class APIUpdateAccountMsg extends APIMessage implements AccountMessage {
-    @APIParam(resourceType = AccountVO.class, required = false)
+    @APIParam(resourceType = AccountVO.class, required = false, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String password;

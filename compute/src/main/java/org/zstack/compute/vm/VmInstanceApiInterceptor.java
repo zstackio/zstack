@@ -30,6 +30,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -73,10 +74,44 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIAttachIsoToVmInstanceMsg) msg);
         } else if (msg instanceof APISetVmBootOrderMsg) {
             validate((APISetVmBootOrderMsg) msg);
+        } else if (msg instanceof APIDeleteVmStaticIpMsg) {
+            validate((APIDeleteVmStaticIpMsg) msg);
+        } else if (msg instanceof APISetVmStaticIpMsg) {
+            validate((APISetVmStaticIpMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APISetVmStaticIpMsg msg) {
+        if (!NetworkUtils.isIpv4Address(msg.getIp())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("%s is not a valid IPv4 address", msg.getIp()))
+            );
+        }
+
+        SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
+        q.add(VmNicVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
+        q.add(VmNicVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+        if (!q.isExists()) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
+                            msg.getL3NetworkUuid())
+            ));
+        }
+    }
+
+    private void validate(APIDeleteVmStaticIpMsg msg) {
+        SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
+        q.add(VmNicVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
+        q.add(VmNicVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+        if (!q.isExists()) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
+                            msg.getL3NetworkUuid())
+            ));
+        }
     }
 
     private void validate(APISetVmBootOrderMsg msg) {

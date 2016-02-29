@@ -11,6 +11,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
@@ -19,7 +20,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.vm.*;
@@ -33,10 +33,6 @@ import org.zstack.utils.logging.CLogger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
 
 public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtensionPoint, KVMHostConnectExtensionPoint,
         HostConnectionReestablishExtensionPoint, HostAfterConnectedExtensionPoint, Component {
@@ -52,10 +48,14 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
     private CloudBus bus;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private ApiTimeoutManager timeoutMgr;
 
     private void syncVm(final HostInventory host, final Completion completion) {
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-        msg.setCommand(new VmSyncCmd());
+        VmSyncCmd cmd = new VmSyncCmd();
+        msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setNoStatusCheck(true);
         msg.setHostUuid(host.getUuid());
         msg.setPath(KVMConstant.KVM_VM_SYNC_PATH);

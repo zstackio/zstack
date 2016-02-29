@@ -24,10 +24,9 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
-import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
-import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -87,7 +86,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     @Override
     public List<Quota> reportQuota() {
-        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+        QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
                 if (msg instanceof APICreateSecurityGroupMsg) {
@@ -95,17 +94,29 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 }
             }
 
-            @Transactional(readOnly = true)
-            private void check(APICreateSecurityGroupMsg msg, Map<String, QuotaPair> pairs) {
-                long sgNum = pairs.get(SecurityGroupConstant.QUOTA_SG_NUM).getValue();
+            @Override
+            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
+                Quota.QuotaUsage usage = new Quota.QuotaUsage();
+                usage.setName(SecurityGroupConstant.QUOTA_SG_NUM);
+                usage.setUsed(getUsedSg(accountUuid));
+                return list(usage);
+            }
 
+            @Transactional(readOnly = true)
+            private long getUsedSg(String accountUuid) {
                 String sql = "select count(sg) from SecurityGroupVO sg, AccountResourceRefVO ref where ref.resourceUuid = sg.uuid" +
                         " and ref.accountUuid = :auuid and ref.resourceType = :rtype";
                 TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("auuid", accountUuid);
                 q.setParameter("rtype", SecurityGroupVO.class.getSimpleName());
                 Long sgn = q.getSingleResult();
                 sgn = sgn == null ? 0 : sgn;
+                return sgn;
+            }
+
+            private void check(APICreateSecurityGroupMsg msg, Map<String, QuotaPair> pairs) {
+                long sgNum = pairs.get(SecurityGroupConstant.QUOTA_SG_NUM).getValue();
+                long sgn =getUsedSg(msg.getSession().getAccountUuid());
 
                 if (sgn + 1 > sgNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
@@ -117,7 +128,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         };
 
         Quota quota = new Quota();
-        quota.setChecker(checker);
+        quota.setOperator(checker);
         quota.setMessageNeedValidation(APICreateSecurityGroupMsg.class);
 
         QuotaPair p = new QuotaPair();

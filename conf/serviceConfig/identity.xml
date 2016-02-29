@@ -136,4 +136,18 @@
     <message>
         <name>org.zstack.header.identity.APIDeleteAccountMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIGetAccountQuotaUsageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIQueryAccountResourceRefMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIQuerySharedResourceMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

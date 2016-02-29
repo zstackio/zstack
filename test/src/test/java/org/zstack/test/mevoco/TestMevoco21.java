@@ -35,6 +35,12 @@ import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo;
 import org.zstack.network.service.flat.FlatDhcpBackend.PrepareDhcpCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.network.service.flat.FlatNetworkSystemTags;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
+import org.zstack.header.identity.*;
+import org.zstack.header.query.QueryOp;
+import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
+import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -43,6 +49,7 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.test.identity.IdentityCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -54,24 +61,9 @@ import java.util.Map;
 
 import static org.zstack.core.Platform._;
 
+
 /**
- * 1. create a vm with flat network
- * 2. delete the l3
- *
- * confirm the DHCP server IP released
- *
- * 3. attach a new L3
- *
- * confirm the DHCP server IP set
- *
- * 4. delete the ip range
- *
- * confirm the DHCP server IP released
- *
- * 5. add a new ip range
- *
- * confirm the DHCP server IP set
- *
+ * test predefined policies
  */
 public class TestMevoco21 {
     CLogger logger = Utils.getLogger(TestMevoco21.class);
@@ -92,7 +84,7 @@ public class TestMevoco21 {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/mevoco/TestMevoco21.xml", con);
+        deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
         deployer.load();
 
@@ -115,32 +107,99 @@ public class TestMevoco21 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
+
+    private void validate(List<PolicyVO> ps, String policyName, String statementAction, AccountConstant.StatementEffect effect) {
+        for (PolicyVO vo : ps) {
+            if (vo.getName().equals(policyName)) {
+                List<PolicyInventory.Statement> ss = JSONObjectUtil.toCollection(vo.getData(), ArrayList.class, PolicyInventory.Statement.class);
+                for (PolicyInventory.Statement s : ss) {
+                    for (String action : s.getActions()) {
+                        if (action.equals(statementAction) && effect == s.getEffect()) {
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        Assert.fail(String.format("cannot find policy[name: %s, action: %s, effect: %s\n\n %s", policyName, statementAction,
+                effect, JSONObjectUtil.toJsonString(PolicyInventory.valueOf(ps))));
+    }
+
+    /*
+    private void validate(List<PolicyVO> ps, String policyName, List<String> statementActions, AccountConstant.StatementEffect effect) {
+        for (PolicyVO vo : ps) {
+            if (vo.getName().equals(policyName)) {
+                List<PolicyInventory.Statement> ss = JSONObjectUtil.toCollection(vo.getData(), ArrayList.class, PolicyInventory.Statement.class);
+                for (PolicyInventory.Statement s : ss) {
+                    if (s.getActions().containsAll(statementActions) && effect == s.getEffect()) {
+                        return;
+                    }
+                }
+            }
+        }
+
+        Assert.fail(String.format("cannot find policy[name: %s, action: %s, effect: %s\n\n %s", policyName, statementActions,
+                effect, JSONObjectUtil.toJsonString(PolicyInventory.valueOf(ps))));
+    }
+    */
     
 	@Test
 	public void test() throws ApiSenderException {
-        L3NetworkInventory l31 = deployer.l3Networks.get("TestL3Network1");
-        L3NetworkInventory l32 = deployer.l3Networks.get("TestL3Network2");
+        IdentityCreator creator = new IdentityCreator(api);
+        AccountInventory test = creator.createAccount("test", "test");
 
-        VmInstanceInventory vm = deployer.vms.get("TestVm");
-        api.deleteL3Network(l31.getUuid());
-        Assert.assertFalse(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.hasTag(l31.getUuid()));
+        SimpleQuery<PolicyVO> q = dbf.createQuery(PolicyVO.class);
+        q.add(PolicyVO_.accountUuid, SimpleQuery.Op.EQ, test.getUuid());
+        List<PolicyVO> ps = q.list();
 
-        api.attachNic(vm.getUuid(), l32.getUuid());
-        api.stopVmInstance(vm.getUuid());
-        vm = api.startVmInstance(vm.getUuid());
-        Assert.assertTrue(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.hasTag(l32.getUuid()));
-        Assert.assertEquals(1, vm.getVmNics().size());
-        VmNicInventory nic = vm.getVmNics().get(0);
-        Assert.assertEquals(l32.getUuid(), nic.getL3NetworkUuid());
+        validate(ps, "VM.CREATE", "instance:APICreateVmInstanceMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.UPDATE", "instance:APIUpdateVmInstanceMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.START", "instance:APIStartVmInstanceMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.STOP", "instance:APIStopVmInstanceMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.REBOOT", "instance:APIRebootVmInstanceMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.DESTROY", "instance:APIDestroyVmInstanceMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.RECOVER", "instance:APIRecoverVmInstanceMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.EXPUNGE", "instance:APIExpungeVmInstanceMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.CONSOLE", "instance:APIRequestConsoleAccessMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.ISO.ADD", "instance:APIAttachIsoToVmInstanceMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.ISO.REMOVE", "instance:APIDetachIsoFromVmInstanceMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.MIGRATE", "instance:APIMigrateVmMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.L3.ATTACH", "instance:APIAttachL3NetworkToVmMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.L3.DETACH", "instance:APIDetachL3NetworkFromVmMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.INSTANCE-OFFERING.CHANGE", "instance:APIChangeInstanceOfferingMsg", AccountConstant.StatementEffect.Allow);
 
-        IpRangeInventory ipr = deployer.ipRanges.get("TestIpRange2");
-        api.deleteIpRange(ipr.getUuid());
-        Assert.assertFalse(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.hasTag(l31.getUuid()));
+        validate(ps, "VOLUME.CREATE", "volume:APICreateDataVolumeMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.UPDATE", "volume:APIUpdateVolumeMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.ATTACH", "volume:APIAttachDataVolumeToVmMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.DETACH", "volume:APIDetachDataVolumeFromVmMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.CHANGE-STATE", "volume:APIChangeVolumeStateMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.DELETE", "volume:APIDeleteDataVolumeMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.EXPUNGE", "volume:APIExpungeDataVolumeMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.SNAPSHOT.CREATE", "volumeSnapshot:APICreateVolumeSnapshotMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.SNAPSHOT.UPDATE", "volumeSnapshot:APIUpdateVolumeSnapshotMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.SNAPSHOT.DELETE", "volumeSnapshot:APIDeleteVolumeSnapshotMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VOLUME.SNAPSHOT.REVERT", "volumeSnapshot:APIRevertVolumeFromSnapshotMsg", AccountConstant.StatementEffect.Allow);
 
-        ipr = api.addIpRange(l32.getUuid(), "172.168.0.200", "172.168.0.220", "172.168.0.1", "255.255.255.0");
-        api.stopVmInstance(vm.getUuid());
-        vm = api.startVmInstance(vm.getUuid());
-        Assert.assertTrue(NetworkUtils.isIpv4InRange(vm.getVmNics().get(0).getIp(), ipr.getStartIp(), ipr.getEndIp()));
-        Assert.assertTrue(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.hasTag(l32.getUuid()));
+        validate(ps, "SECURITY-GROUP.CREATE", "securityGroup:APICreateSecurityGroupMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "SECURITY-GROUP.UPDATE", "securityGroup:APIUpdateSecurityGroupMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "SECURITY-GROUP.CHANGE-STATE", "securityGroup:APIChangeSecurityGroupStateMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "SECURITY-GROUP.DELETE", "securityGroup:APIDeleteSecurityGroupMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "SECURITY-GROUP.ADD-NIC", "securityGroup:APIAddVmNicToSecurityGroupMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "SECURITY-GROUP.REMOVE-NIC", "securityGroup:APIDeleteVmNicFromSecurityGroupMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "SECURITY-GROUP.ADD-RULE", "securityGroup:APIAddSecurityGroupRuleMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "SECURITY-GROUP.REMOVE-RULE", "securityGroup:APIDeleteSecurityGroupRuleMsg", AccountConstant.StatementEffect.Allow);
+
+        APIQueryPolicyMsg qmsg = new APIQueryPolicyMsg();
+        qmsg.addQueryCondition("accountUuid", QueryOp.EQ, test.getUuid());
+        APIQueryPolicyReply r = api.query(qmsg, APIQueryPolicyReply.class, creator.getAccountSession());
+        Assert.assertFalse(r.getInventories().isEmpty());
+
+        UserInventory user = creator.createUser("user", "password");
+        qmsg = new APIQueryPolicyMsg();
+        qmsg.addQueryCondition("user.uuid", QueryOp.EQ, user.getUuid());
+        qmsg.addQueryCondition("name", QueryOp.EQ, "DEFAULT-READ");
+        r = api.query(qmsg, APIQueryPolicyReply.class, creator.getAccountSession());
+        Assert.assertEquals(1, r.getInventories().size());
     }
 }

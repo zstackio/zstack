@@ -7,11 +7,10 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.identity.PolicyVO;
-import org.zstack.header.identity.PolicyVO_;
-import org.zstack.header.identity.UserGroupVO;
-import org.zstack.header.identity.UserVO_;
+import org.zstack.header.identity.*;
+import org.zstack.header.query.QueryOp;
 import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 
@@ -32,6 +31,13 @@ public class TestAttachPolicyToGroup {
     }
 
     @Test
-    public void test() {
+    public void test() throws ApiSenderException {
+        UserGroupInventory group = deployer.groups.get("TestGroup1");
+        APIQueryPolicyMsg msg = new APIQueryPolicyMsg();
+        msg.addQueryCondition("group.uuid", QueryOp.EQ, group.getUuid());
+        APIQueryPolicyReply reply = api.query(msg, APIQueryPolicyReply.class);
+        Assert.assertEquals(1, reply.getInventories().size());
+        PolicyInventory p = reply.getInventories().get(0);
+        Assert.assertEquals("TestPolicy", p.getName());
     }
 }

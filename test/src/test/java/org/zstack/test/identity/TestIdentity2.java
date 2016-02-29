@@ -44,5 +44,7 @@ public class TestIdentity2 {
 
         QueryTestValidator.validateEQ(new APIQueryUserMsg(), api, APIQueryUserReply.class, u);
         QueryTestValidator.validateRandomEQConjunction(new APIQueryUserMsg(), api, APIQueryUserReply.class, u, 3);
+
+        api.loginByUserAccountName("test", "test", "test");
     }
 }

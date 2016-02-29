@@ -4,6 +4,8 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceMessage;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Created by frank on 8/22/2015.
  */
@@ -11,8 +13,18 @@ public class ApplianceVmAsyncHttpCallMsg extends NeedReplyMessage implements VmI
     private String vmInstanceUuid;
     private String path;
     private String command;
-    private int commandTimeout = 300;
+    private long commandTimeout = -1;
     private boolean checkStatus;
+    private String commandClassName;
+
+    public String getCommandClassName() {
+        return commandClassName;
+    }
+
+    @Override
+    public long getTimeout() {
+        return getCommandTimeout() + TimeUnit.SECONDS.toMillis(30);
+    }
 
     @Override
     public String getVmInstanceUuid() {
@@ -37,17 +49,19 @@ public class ApplianceVmAsyncHttpCallMsg extends NeedReplyMessage implements VmI
 
     public void setCommand(Object cmd) {
         setCommandByString(JSONObjectUtil.toJsonString(cmd));
+        commandClassName = cmd.getClass().getName();
     }
 
     public void setCommandByString(String command) {
         this.command = command;
     }
 
-    public int getCommandTimeout() {
+    public long getCommandTimeout() {
+        assert commandTimeout != -1 : "commandTimeout is not set";
         return commandTimeout;
     }
 
-    public void setCommandTimeout(int commandTimeout) {
+    public void setCommandTimeout(long commandTimeout) {
         this.commandTimeout = commandTimeout;
     }
 

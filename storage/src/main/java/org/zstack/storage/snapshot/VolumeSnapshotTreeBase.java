@@ -41,6 +41,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -54,6 +55,8 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.ln;
 
 /**
@@ -845,7 +848,9 @@ public class VolumeSnapshotTreeBase {
                         });
 
                         // filter primary storage that doesn't have ability to handle snapshot of specific hypervisor type
-                        final String tag = VolumeSnapshotTag.CAPABILITY_HYPERVISOR_SNAPSHOT.completeTag(hvType);
+                        final String tag = PrimaryStorageSystemTags.CAPABILITY_HYPERVISOR_SNAPSHOT.instantiateTag(map(
+                                e(PrimaryStorageSystemTags.CAPABILITY_HYPERVISOR_SNAPSHOT_TOKEN, hvType)
+                        ));
                         SimpleQuery<SystemTagVO> tagq = dbf.createQuery(SystemTagVO.class);
                         tagq.select(SystemTagVO_.resourceUuid);
                         tagq.add(SystemTagVO_.tag, Op.EQ, tag);

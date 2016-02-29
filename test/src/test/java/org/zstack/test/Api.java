@@ -1699,6 +1699,17 @@ public class Api implements CloudBusEventListener {
         return reply.getInventory();
     }
 
+    public SessionInventory loginByUserAccountName(String userName, String password, String accountName) throws ApiSenderException {
+        APILogInByUserMsg msg = new APILogInByUserMsg();
+        msg.setAccountName(accountName);
+        msg.setUserName(userName);
+        msg.setPassword(password);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APILogInReply reply = sender.call(msg, APILogInReply.class);
+        return reply.getInventory();
+    }
+
     public SessionInventory loginByUser(String userName, String password, String accountUuid) throws ApiSenderException {
         APILogInByUserMsg msg = new APILogInByUserMsg();
         msg.setAccountUuid(accountUuid);
@@ -1748,6 +1759,33 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIUpdateQuotaEvent evt = sender.send(msg, APIUpdateQuotaEvent.class);
         return evt.getInventory();
+    }
+
+    public QuotaInventory getQuota(String name, String accountUuid, SessionInventory session) throws ApiSenderException {
+        APIQueryQuotaMsg msg = new APIQueryQuotaMsg();
+        msg.addQueryCondition("name", QueryOp.EQ, name);
+        msg.addQueryCondition("identityUuid", QueryOp.EQ, accountUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIQueryQuotaReply r = sender.call(msg, APIQueryQuotaReply.class);
+        return r.getInventories().isEmpty() ? null : r.getInventories().get(0);
+    }
+
+    public List<Quota.QuotaUsage> getQuotaUsage(String accountUuid, SessionInventory session) throws ApiSenderException {
+        APIGetAccountQuotaUsageMsg msg = new APIGetAccountQuotaUsageMsg();
+        if (accountUuid != null) {
+            msg.setUuid(accountUuid);
+            msg.setSession(adminSession);
+        } else {
+            msg.setUuid(session.getAccountUuid());
+            msg.setSession(session);
+        }
+
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetAccountQuotaUsageReply reply = sender.call(msg, APIGetAccountQuotaUsageReply.class);
+        return reply.getUsages();
     }
 
     public List<ManagementNodeInventory> listManagementNodes() throws ApiSenderException {
@@ -3745,5 +3783,45 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APIDetachNetworkServiceFromL3NetworkEvent.class);
+    }
+
+    public void setHostname(String uuid, String hostname, SessionInventory session) throws ApiSenderException {
+        APISetVmHostnameMsg msg = new APISetVmHostnameMsg();
+        msg.setUuid(uuid);
+        msg.setHostname(hostname);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APISetVmHostnameEvent.class);
+    }
+
+    public void deleteHostname(String uuid, SessionInventory session) throws ApiSenderException {
+        APIDeleteVmHostnameMsg msg = new APIDeleteVmHostnameMsg();
+        msg.setUuid(uuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteVmHostnameEvent.class);
+    }
+
+    public void setStaticIp(String vmUuid, String l3Uuid, String ip) throws ApiSenderException {
+        APISetVmStaticIpMsg msg = new APISetVmStaticIpMsg();
+        msg.setVmInstanceUuid(vmUuid);
+        msg.setL3NetworkUuid(l3Uuid);
+        msg.setIp(ip);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APISetVmStaticIpEvent.class);
+    }
+
+    public void deleteStaticIp(String vmUuid, String l3Uuid) throws ApiSenderException {
+        APIDeleteVmStaticIpMsg msg = new APIDeleteVmStaticIpMsg();
+        msg.setVmInstanceUuid(vmUuid);
+        msg.setL3NetworkUuid(l3Uuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteVmStaticIpEvent.class);
     }
 }

@@ -13,4 +13,5 @@ public @interface Action {
     boolean accountOnly() default false;
     String category();
     String[] names() default {};
+    boolean accountControl() default false;
 }

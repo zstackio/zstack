@@ -6,11 +6,9 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
-import org.zstack.header.identity.AccountInventory;
-import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyInventory.Statement;
-import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -27,8 +25,11 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.function.Function;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * test quota
@@ -85,6 +86,17 @@ public class TestPolicyForPortForwarding1 {
         SessionInventory session = identityCreator.getAccountSession();
 
         createPortForwarding(vipNw.getUuid(), session);
+
+        List<Quota.QuotaUsage> usages = api.getQuotaUsage(test.getUuid(), session);
+        Quota.QuotaUsage u = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
+            @Override
+            public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
+                return arg.getName().equals(PortForwardingConstant.QUOTA_PF_NUM) ? arg : null;
+            }
+        });
+        QuotaInventory q = api.getQuota(PortForwardingConstant.QUOTA_PF_NUM, test.getUuid(), session);
+        Assert.assertEquals(1, u.getUsed().longValue());
+        Assert.assertEquals(q.getValue(), u.getTotal().longValue());
 
         api.updateQuota(test.getUuid(), PortForwardingConstant.QUOTA_PF_NUM, 1);
 

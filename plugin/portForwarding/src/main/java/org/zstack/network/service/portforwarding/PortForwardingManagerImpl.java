@@ -10,19 +10,19 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
-import org.zstack.header.AbstractService;
-import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
-import org.zstack.header.identity.Quota.CheckQuotaForApiMessage;
+import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
@@ -770,7 +770,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
     @Override
     public List<Quota> reportQuota() {
-        CheckQuotaForApiMessage checker = new CheckQuotaForApiMessage() {
+        QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
                 if (msg instanceof APICreatePortForwardingRuleMsg) {
@@ -778,17 +778,29 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 }
             }
 
-            @Transactional(readOnly = true)
-            private void check(APICreatePortForwardingRuleMsg msg, Map<String, QuotaPair> pairs) {
-                long pfNum = pairs.get(PortForwardingConstant.QUOTA_PF_NUM).getValue();
+            @Override
+            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
+                Quota.QuotaUsage usage = new Quota.QuotaUsage();
+                usage.setName(PortForwardingConstant.QUOTA_PF_NUM);
+                usage.setUsed(getUsedPf(accountUuid));
+                return list(usage);
+            }
 
+            @Transactional(readOnly = true)
+            private long getUsedPf(String accountUuid) {
                 String sql = "select count(pf) from PortForwardingRuleVO pf, AccountResourceRefVO ref where pf.uuid = ref.resourceUuid" +
                         " and ref.accountUuid = :auuid and ref.resourceType = :rtype";
                 TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", msg.getSession().getAccountUuid());
+                q.setParameter("auuid", accountUuid);
                 q.setParameter("rtype", PortForwardingRuleVO.class.getSimpleName());
                 Long pfn = q.getSingleResult();
                 pfn = pfn == null ? 0 : pfn;
+                return pfn;
+            }
+
+            private void check(APICreatePortForwardingRuleMsg msg, Map<String, QuotaPair> pairs) {
+                long pfNum = pairs.get(PortForwardingConstant.QUOTA_PF_NUM).getValue();
+                long pfn = getUsedPf(msg.getSession().getAccountUuid());
 
                 if (pfn + 1 > pfNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
@@ -800,7 +812,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         };
 
         Quota quota = new Quota();
-        quota.setChecker(checker);
+        quota.setOperator(checker);
         quota.setMessageNeedValidation(APICreatePortForwardingRuleMsg.class);
 
         QuotaPair p = new QuotaPair();

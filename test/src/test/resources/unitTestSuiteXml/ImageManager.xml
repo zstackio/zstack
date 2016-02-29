@@ -4,6 +4,7 @@
     <TestCase class="org.zstack.test.image.TestAddImage1"/>
     <TestCase class="org.zstack.test.image.TestAddImage2"/>
     <TestCase class="org.zstack.test.image.TestAddImage3"/>
+    <TestCase class="org.zstack.test.image.TestAddImage4"/>
 	<TestCase class="org.zstack.test.image.TestDeleteImage"/>
     <TestCase class="org.zstack.test.image.TestDeleteImage2"/>
     <TestCase class="org.zstack.test.image.TestChangeImageState"/>
@@ -21,4 +22,5 @@
     <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeFailure5"/>
     <TestCase class="org.zstack.test.image.TestUpdateImage"/>
     <TestCase class="org.zstack.test.image.TestPolicyForImage"/>
+    <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeTimeoutManagement"/>
 </UnitTestSuiteConfig>

@@ -31,6 +31,8 @@ public interface TagManager {
 
     void copySystemTag(String srcResourceUuid, String srcResourceType, String dstResourceUuid, String dstResourceType);
 
+    SystemTagInventory updateSystemTag(String tagUuid, String newTag);
+
     List<String> findSystemTags(String resourceUuid);
 
     List<String> findUserTags(String resourceUuid);

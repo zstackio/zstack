@@ -15,4 +15,6 @@ public interface BackupStorageConstant {
         SPEC,
         CANDIDATES,
     }
+
+    public static final String ACTION_CATEGORY = "backupStorage";
 }

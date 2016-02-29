@@ -8,6 +8,7 @@ import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.configuration.ConfigurationConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -42,6 +43,8 @@ public class SftpBackupStorage extends BackupStorageBase {
     private GlobalConfigFacade gcf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ApiTimeoutManager timeoutManager;
 
     private String agentPackageName = SftpBackupStorageGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -94,7 +97,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             cmd.setUuid(uuid);
             cmd.setUrlScheme(scheme);
             cmd.setInstallPath(installPath);
-            cmd.setTimeout(SftpBackupStorageGlobalProperty.DOWNLOAD_CMD_TIMEOUT);
+            cmd.setTimeout(timeoutManager.getTimeout(cmd.getClass(), "3h"));
 
             restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH), cmd, new JsonAsyncRESTCallback<DownloadResponse>() {
                 @Override
@@ -121,7 +124,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                 public Class<DownloadResponse> getReturnClass() {
                     return DownloadResponse.class;
                 }
-            }, TimeUnit.SECONDS, SftpBackupStorageGlobalProperty.DOWNLOAD_CMD_TIMEOUT);
+            });
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(e);
         }

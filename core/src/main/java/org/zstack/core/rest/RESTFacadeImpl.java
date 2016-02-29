@@ -9,14 +9,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.validation.ValidationFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.*;
 import org.zstack.utils.DebugUtils;
@@ -28,7 +29,10 @@ import org.zstack.utils.logging.CLogger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,6 +44,8 @@ public class RESTFacadeImpl implements RESTFacade {
     private ThreadFacade thdf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ApiTimeoutManager timeoutMgr;
     @Autowired
     private ValidationFacade vf;
 
@@ -53,6 +59,7 @@ public class RESTFacadeImpl implements RESTFacade {
 
     private Map<String, HttpCallStatistic> statistics = new ConcurrentHashMap<String, HttpCallStatistic>();
     private Map<String, HttpCallHandlerWrapper> httpCallhandlers = new ConcurrentHashMap<String, HttpCallHandlerWrapper>();
+    private List<BeforeAsyncJsonPostInterceptor> interceptors = new ArrayList<BeforeAsyncJsonPostInterceptor>();
 
     private interface AsyncHttpWrapper {
         void fail(ErrorCode err);
@@ -179,12 +186,20 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void asyncJsonPost(String url, Object body, AsyncRESTCallback callback, TimeUnit unit, long timeout) {
+        for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
+            ic.beforeAsyncJsonPost(url, body, unit, timeout);
+        }
+
         String bodyStr = JSONObjectUtil.toJsonString(body);
         asyncJsonPost(url, bodyStr, callback, unit, timeout);
     }
 
     @Override
     public void asyncJsonPost(final String url, final String body, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
+        for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
+            ic.beforeAsyncJsonPost(url, body, unit, timeout);
+        }
+
         long stime = 0;
         if (CoreGlobalProperty.PROFILER_HTTP_CALL) {
             stime = System.currentTimeMillis();
@@ -294,13 +309,13 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void asyncJsonPost(String url, Object body, AsyncRESTCallback callback) {
-        asyncJsonPost(url, body, callback, TimeUnit.SECONDS, 300);
+        Long timeout = timeoutMgr.getTimeout(body.getClass());
+        asyncJsonPost(url, body, callback, TimeUnit.MILLISECONDS, timeout == null ? 300000 : timeout);
     }
 
     @Override
     public void asyncJsonPost(String url, String body, AsyncRESTCallback callback) {
         asyncJsonPost(url, body, callback, TimeUnit.SECONDS, 300);
-
     }
 
     @Override
@@ -459,5 +474,10 @@ public class RESTFacadeImpl implements RESTFacade {
     @Override
     public String getSendCommandUrl() {
         return sendCommandUrl;
+    }
+
+    @Override
+    public void installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor) {
+        interceptors.add(interceptor);
     }
 }
