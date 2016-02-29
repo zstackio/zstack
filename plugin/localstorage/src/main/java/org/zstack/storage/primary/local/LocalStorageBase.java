@@ -939,7 +939,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         if (avail < 0) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity[current: %s bytes, needed: %s]",
-                            hostUuid, self.getUuid(), size, ref.getAvailableCapacity())
+                            hostUuid, self.getUuid(), ref.getAvailableCapacity(), size)
             ));
         }
 
