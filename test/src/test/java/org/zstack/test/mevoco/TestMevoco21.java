@@ -9,6 +9,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.identity.*;
+import org.zstack.header.query.QueryOp;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -157,5 +158,10 @@ public class TestMevoco21 {
         validate(ps, "SECURITY-GROUP.REMOVE-NIC", "securityGroup:APIDeleteVmNicFromSecurityGroupMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "SECURITY-GROUP.ADD-RULE", "securityGroup:APIAddSecurityGroupRuleMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "SECURITY-GROUP.REMOVE-RULE", "securityGroup:APIDeleteSecurityGroupRuleMsg", AccountConstant.StatementEffect.Allow);
+
+        APIQueryPolicyMsg qmsg = new APIQueryPolicyMsg();
+        qmsg.addQueryCondition("accountUuid", QueryOp.EQ, test.getUuid());
+        APIQueryPolicyReply r = api.query(qmsg, APIQueryPolicyReply.class, creator.getAccountSession());
+        Assert.assertFalse(r.getInventories().isEmpty());
     }
 }

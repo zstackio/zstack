@@ -44,6 +44,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
 import java.lang.reflect.Field;
+import java.security.Policy;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -359,6 +360,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         bus.reply(msg, reply);
     }
 
+    @Transactional
     private void handle(APICreateAccountMsg msg) {
         AccountVO vo = new AccountVO();
         if (msg.getResourceUuid() != null) {
@@ -370,9 +372,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         vo.setDescription(msg.getDescription());
         vo.setPassword(msg.getPassword());
         vo.setType(msg.getType() != null ? AccountType.valueOf(msg.getType()) : AccountType.Normal);
-        vo = dbf.persistAndRefresh(vo);
+        dbf.getEntityManager().persist(vo);
 
-        List<PolicyVO> ps = new ArrayList<PolicyVO>();
         PolicyVO p = new PolicyVO();
         p.setUuid(Platform.getUuid());
         p.setAccountUuid(vo.getUuid());
@@ -382,7 +383,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         s.setEffect(StatementEffect.Allow);
         s.addAction(".*:read");
         p.setData(JSONObjectUtil.toJsonString(list(s)));
-        ps.add(p);
+        dbf.getEntityManager().persist(p);
+        dbf.getEntityManager().persist(AccountResourceRefVO.newOwn(vo.getUuid(), p.getUuid(), PolicyVO.class));
+
 
         p = new PolicyVO();
         p.setUuid(Platform.getUuid());
@@ -393,16 +396,14 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         s.setEffect(StatementEffect.Allow);
         s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
         p.setData(JSONObjectUtil.toJsonString(list(s)));
-        ps.add(p);
-
-        dbf.persistCollection(ps);
+        dbf.getEntityManager().persist(p);
+        dbf.getEntityManager().persist(AccountResourceRefVO.newOwn(vo.getUuid(), p.getUuid(), PolicyVO.class));
 
         SimpleQuery<GlobalConfigVO> q = dbf.createQuery(GlobalConfigVO.class);
         q.select(GlobalConfigVO_.name, GlobalConfigVO_.value);
         q.add(GlobalConfigVO_.category, Op.EQ, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY);
         List<Tuple> ts = q.listTuple();
 
-        List<QuotaVO> quotas = new ArrayList<QuotaVO>();
         for (Tuple t : ts) {
             String rtype = t.get(0, String.class);
             long quota = Long.valueOf(t.get(1, String.class));
@@ -412,10 +413,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             qvo.setIdentityUuid(vo.getUuid());
             qvo.setName(rtype);
             qvo.setValue(quota);
-            quotas.add(qvo);
+            dbf.getEntityManager().persist(qvo);
+            dbf.getEntityManager().persist(AccountResourceRefVO.newOwn(vo.getUuid(), qvo.getId().toString(), QuotaVO.class));
         }
-
-        dbf.persistCollection(quotas);
 
         final AccountInventory inv = AccountInventory.valueOf(vo);
 

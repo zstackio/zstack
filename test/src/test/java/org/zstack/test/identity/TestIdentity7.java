@@ -91,7 +91,7 @@ public class TestIdentity7 {
 
         APIQueryPolicyMsg msg = new APIQueryPolicyMsg();
         msg.addQueryCondition("group.uuid", QueryOp.EQ, g.getUuid());
-        APIQueryPolicyReply reply = api.query(msg, APIQueryPolicyReply.class);
+        APIQueryPolicyReply reply = api.query(msg, APIQueryPolicyReply.class, creator.getAccountSession());
         Assert.assertEquals(1, reply.getInventories().size());
         PolicyInventory retp = reply.getInventories().get(0);
         Assert.assertEquals("policy", retp.getName());
