@@ -163,5 +163,12 @@ public class TestMevoco21 {
         qmsg.addQueryCondition("accountUuid", QueryOp.EQ, test.getUuid());
         APIQueryPolicyReply r = api.query(qmsg, APIQueryPolicyReply.class, creator.getAccountSession());
         Assert.assertFalse(r.getInventories().isEmpty());
+
+        UserInventory user = creator.createUser("user", "password");
+        qmsg = new APIQueryPolicyMsg();
+        qmsg.addQueryCondition("user.uuid", QueryOp.EQ, user.getUuid());
+        qmsg.addQueryCondition("name", QueryOp.EQ, "DEFAULT-READ");
+        r = api.query(qmsg, APIQueryPolicyReply.class, creator.getAccountSession());
+        Assert.assertEquals(1, r.getInventories().size());
     }
 }

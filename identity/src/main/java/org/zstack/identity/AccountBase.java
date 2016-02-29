@@ -9,6 +9,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -23,7 +24,9 @@ import org.zstack.header.identity.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import javax.persistence.Query;
@@ -47,6 +50,8 @@ public class AccountBase extends AbstractAccount {
     private AccountManager acntMgr;
     @Autowired
     private CascadeFacade casf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private AccountVO vo;
 
@@ -579,7 +584,15 @@ public class AccountBase extends AbstractAccount {
 
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), uvo.getUuid(), UserVO.class);
 
-        UserInventory inv = UserInventory.valueOf(uvo);
+        final UserInventory inv = UserInventory.valueOf(uvo);
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterCreateUserExtensionPoint.class), new ForEachFunction<AfterCreateUserExtensionPoint>() {
+            @Override
+            public void run(AfterCreateUserExtensionPoint arg) {
+                arg.afterCreateUser(inv);
+            }
+        });
+
         evt.setInventory(inv);
         bus.publish(evt);
     }

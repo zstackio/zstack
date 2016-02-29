@@ -386,7 +386,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         dbf.getEntityManager().persist(p);
         dbf.getEntityManager().persist(AccountResourceRefVO.newOwn(vo.getUuid(), p.getUuid(), PolicyVO.class));
 
-
         p = new PolicyVO();
         p.setUuid(Platform.getUuid());
         p.setAccountUuid(vo.getUuid());
