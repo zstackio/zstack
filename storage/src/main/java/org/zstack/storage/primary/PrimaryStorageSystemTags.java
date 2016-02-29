@@ -15,4 +15,7 @@ public class PrimaryStorageSystemTags {
     public static PatternedSystemTag PRIMARY_STORAGE_ALLOCATOR_UUID_TAG = new PatternedSystemTag(String.format("primaryStorage::allocator::uuid::{%s}", PRIMARY_STORAGE_ALLOCATOR_UUID_TAG_TOKEN), PrimaryStorageVO.class);
     public static PatternedSystemTag PRIMARY_STORAGE_ALLOCATOR_USERTAG_TAG = new PatternedSystemTag("primaryStorage::allocator::userTag::{tag}", PrimaryStorageVO.class);
     public static PatternedSystemTag PRIMARY_STORAGE_ALLOCATOR_USERTAG_TAG_MANDATORY = new PatternedSystemTag("primaryStorage::allocator::userTag::{tag}::required", PrimaryStorageVO.class);
+
+    public static final String CAPABILITY_HYPERVISOR_SNAPSHOT_TOKEN= "hypervisorType";
+    public static PatternedSystemTag CAPABILITY_HYPERVISOR_SNAPSHOT = new PatternedSystemTag(String.format("capability::snapshot::hypervisor::{%s}", CAPABILITY_HYPERVISOR_SNAPSHOT_TOKEN), PrimaryStorageVO.class);
 }

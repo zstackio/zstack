@@ -15,6 +15,11 @@ public class ApiMessageInterceptionException extends RuntimeException {
         this.error = err;
     }
 
+    @Override
+    public String getMessage() {
+        return error.toString();
+    }
+
     public ErrorCode getError() {
         return error;
     }

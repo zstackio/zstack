@@ -13,11 +13,11 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.VolumeSnapshotTag;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.header.storage.primary.PrimaryStorageManager;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.path.PathUtil;
@@ -28,6 +28,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component {
     @Autowired
@@ -61,8 +64,9 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 	    vo.setMountPath(mountPath);
 		vo = dbf.persistAndRefresh(vo);
 
-        tagMgr.createSysTag(vo.getUuid(), VolumeSnapshotTag.CAPABILITY_HYPERVISOR_SNAPSHOT.completeTag(KVMConstant.KVM_HYPERVISOR_TYPE),
-                PrimaryStorageVO.class.getSimpleName());
+        PrimaryStorageSystemTags.CAPABILITY_HYPERVISOR_SNAPSHOT.createTag(vo.getUuid(), map(
+                e(PrimaryStorageSystemTags.CAPABILITY_HYPERVISOR_SNAPSHOT_TOKEN, KVMConstant.KVM_HYPERVISOR_TYPE)
+        ));
         return PrimaryStorageInventory.valueOf(vo);
 	}
 
