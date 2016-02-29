@@ -709,8 +709,19 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.dnsDomain = arg.getDnsDomain();
                 info.gateway = arg.getGateway();
                 info.hostname = arg.getHostname();
-                info.ip = arg.getIp();
                 info.isDefaultL3Network = arg.isDefaultL3Network();
+
+                if (info.isDefaultL3Network) {
+                    if (info.hostname == null) {
+                        info.hostname = arg.getIp().replaceAll("\\.", "-");
+                    }
+
+                    if (info.dnsDomain != null) {
+                        info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
+                    }
+                }
+
+                info.ip = arg.getIp();
                 info.netmask = arg.getNetmask();
                 info.mac = arg.getMac();
                 info.dns = arg.getL3Network().getDns();
