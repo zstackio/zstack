@@ -15,4 +15,5 @@
     <TestCase class="org.zstack.test.storage.backup.sftp.TestSftpBackupStorageReconnect"/>
 	<TestCase class="org.zstack.test.storage.backup.sftp.TestUpdateSftpBackupStorage"/>
 	<TestCase class="org.zstack.test.storage.backup.sftp.TestSftpBackupStorageExpungeImage"/>
+	<TestCase class="org.zstack.test.storage.backup.sftp.TestSftpBackupStorageAddImageTimeoutManagement"/>
 </UnitTestSuiteConfig>

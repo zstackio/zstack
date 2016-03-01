@@ -21,4 +21,5 @@
     <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeFailure5"/>
     <TestCase class="org.zstack.test.image.TestUpdateImage"/>
     <TestCase class="org.zstack.test.image.TestPolicyForImage"/>
+    <TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolumeTimeoutManagement"/>
 </UnitTestSuiteConfig>

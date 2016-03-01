@@ -191,11 +191,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         return String.format("ceph://%s/%s", getSelf().getPoolName(), imageUuid);
     }
 
-    private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, Class<T> retClass, final ReturnValueCompletion<T> callback) {
-        httpCall(path, cmd, retClass, callback, 5, TimeUnit.MINUTES);
-    }
-
-    private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, final long timeout, final TimeUnit timeUnit) {
+    private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
         cmd.setFsid(getSelf().getFsid());
         cmd.setUuid(self.getUuid());
 
@@ -253,7 +249,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     public Class<T> getReturnClass() {
                         return retClass;
                     }
-                }, timeUnit, timeout);
+                });
             }
         }
 
@@ -299,7 +295,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 reply.setMd5sum("not calculated");
                 bus.reply(msg, reply);
             }
-        }, CephGlobalConfig.BACKUP_STORAGE_DOWNLOAD_IMAGE_TIMEOUT.value(Long.class), TimeUnit.SECONDS);
+        });
     }
 
     @Override
@@ -323,7 +319,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 reply.setMd5sum("not calculated");
                 bus.reply(msg, reply);
             }
-        }, CephGlobalConfig.BACKUP_STORAGE_DOWNLOAD_IMAGE_TIMEOUT.value(Long.class), TimeUnit.SECONDS);
+        });
     }
 
     @Transactional(readOnly = true)

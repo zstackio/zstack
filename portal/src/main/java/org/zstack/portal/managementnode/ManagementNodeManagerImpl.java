@@ -26,6 +26,7 @@ import org.zstack.header.managementnode.ManagementNodeExitMsg.Reason;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.portal.apimediator.ApiMediator;
+import org.zstack.utils.BootErrorLog;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
@@ -396,12 +397,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             }).error(new FlowErrorHandler() {
                 @Override
                 public void handle(ErrorCode errCode, Map data) {
-                    String bootErrorPath = PathUtil.join(PathUtil.getZStackHomeFolder(), "bootError.log");
-                    try {
-                        FileUtils.writeStringToFile(new File(bootErrorPath), errCode.toString());
-                    } catch (IOException e) {
-                        logger.warn(String.format("unable to write error to %s", bootErrorPath));
-                    }
+                    new BootErrorLog().write(errCode.toString());
                     ret.success = false;
                 }
             }).start();

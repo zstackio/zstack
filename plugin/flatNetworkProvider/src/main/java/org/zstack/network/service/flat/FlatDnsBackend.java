@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -39,6 +40,8 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
     private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ApiTimeoutManager timeoutMgr;
 
     public static final String SET_DNS_PATH = "/flatnetworkprovider/dns/set";
 
@@ -63,6 +66,7 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(host.getUuid());
         msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(SET_DNS_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         MessageReply reply = bus.call(msg);
@@ -126,6 +130,7 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                 msg.setPath(SET_DNS_PATH);
                 msg.setHostUuid(huuid);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);

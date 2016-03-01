@@ -9,6 +9,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterVO;
@@ -72,6 +73,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private RESTFacade restf;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private ApiTimeoutManager timeoutMgr;
 
 
     public static class AgentCommand {
@@ -1490,7 +1493,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     public Class<T> getReturnClass() {
                         return retClass;
                     }
-                }, timeUnit, timeout);
+                });
             }
         }
 
@@ -2012,6 +2015,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 msg.setPath(KVM_CREATE_SECRET_PATH);
                 msg.setHostUuid(huuid);
                 msg.setNoStatusCheck(true);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
                 return msg;
             }

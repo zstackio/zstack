@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
@@ -33,6 +34,8 @@ public class IscsiIsoStoreManagerImpl implements IscsiIsoStoreManager, Component
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private ApiTimeoutManager timeoutMgr;
 
     @Override
     public boolean start() {
@@ -112,6 +115,7 @@ public class IscsiIsoStoreManagerImpl implements IscsiIsoStoreManager, Component
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
             msg.setPath(KVMConstant.KVM_LOGOUT_ISCSI_PATH);
             msg.setCommand(cmd);
+            msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
             msg.setHostUuid(hostUuid);
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
             MessageReply reply = bus.call(msg);
