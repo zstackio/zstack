@@ -56,6 +56,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
