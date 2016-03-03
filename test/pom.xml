@@ -266,6 +266,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>target/test-classes</outputDirectory>
+                            <includeEmptyDirs>true</includeEmptyDirs>
                             <resources>
                                 <resource>
                                     <directory>../conf</directory>
@@ -283,6 +284,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>target/test-classes</outputDirectory>
+                            <includeEmptyDirs>true</includeEmptyDirs>
                             <resources>
                                 <resource>
                                     <directory>../premium/conf</directory>
