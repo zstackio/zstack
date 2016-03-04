@@ -99,7 +99,7 @@ show_menu(){
 
     tput bold
     tput cup 14 13
-    read -p "Enter your action[1-5]: " user_selection
+    read -p "Enter your state[1-5]: " user_selection
 
     tput clear
     tput sgr0

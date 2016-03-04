@@ -5,31 +5,23 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.host.RecalculateHostCapacityMsg;
-import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
-import org.zstack.header.message.Message;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.vm.VmTracerCanonicalEvents;
-import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
 import org.zstack.simulator.SimulatorController;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**

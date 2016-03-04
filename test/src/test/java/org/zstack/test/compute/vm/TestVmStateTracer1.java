@@ -19,7 +19,6 @@ import org.zstack.header.host.RecalculateHostCapacityMsg;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
 import org.zstack.simulator.SimulatorController;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -36,12 +35,12 @@ import java.util.concurrent.TimeUnit;
  *
  * confirm the vm becomes Unknown
  * confirm the host capacity not changed
- * confirm VmStateChangedData issued
+ * confirm VmStateChangedOnHostData issued
  *
  * 4. reconnect the host
  *
  * confirm the vm becomes running
- * confirm VmStateChangedData issued
+ * confirm VmStateChangedOnHostData issued
  * confirm the RecalculateHostCapacityMsg message sent
  *
  */
@@ -86,7 +85,7 @@ public class TestVmStateTracer1 {
         evtf.on(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, new EventCallback() {
             @Override
             public void run(Map tokens, Object data) {
-                VmStateChangedData d = (VmStateChangedData) data;
+                VmTracerCanonicalEvents.VmStateChangedOnHostData d = (VmTracerCanonicalEvents.VmStateChangedOnHostData) data;
                 if (d.getVmUuid().equals(vmUuid) && d.getTo() == VmInstanceState.Unknown
                         && d.getOriginalHostUuid().equals(hostUuid) && d.getCurrentHostUuid().equals(hostUuid)) {
                     success1 = true;

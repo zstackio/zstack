@@ -10,12 +10,10 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
+import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedOnHostData;
 import org.zstack.simulator.SimulatorController;
 import org.zstack.simulator.SimulatorVmSyncPingTask;
 import org.zstack.test.Api;
@@ -32,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  *
  * confirm the vm changed to the new host
  * confirm the capacity of the old host returned and of hte new host allocated
- * confirm the VmStateChangedData issued
+ * confirm the VmStateChangedOnHostData issued
  */
 public class TestVmStateTracer4 {
     Deployer deployer;
@@ -73,7 +71,7 @@ public class TestVmStateTracer4 {
         evtf.on(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, new EventCallback() {
             @Override
             public void run(Map tokens, Object data) {
-                VmStateChangedData d = (VmStateChangedData) data;
+                VmStateChangedOnHostData d = (VmTracerCanonicalEvents.VmStateChangedOnHostData) data;
                 if (d.getVmUuid().equals(vmUuid) && d.getTo() == VmInstanceState.Running
                         && d.getCurrentHostUuid().equals(host2.getUuid())) {
                     success1 = true;

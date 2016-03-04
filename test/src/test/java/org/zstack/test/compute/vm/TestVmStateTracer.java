@@ -17,7 +17,7 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmTracerCanonicalEvents;
-import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
+import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedOnHostData;
 import org.zstack.simulator.SimulatorController;
 import org.zstack.test.Api;
 import org.zstack.test.DBUtil;
@@ -31,12 +31,12 @@ import java.util.concurrent.TimeUnit;
  * 2. make the vm abnormally stopped
  *
  * confirm the host capacity returned
- * confirm VmStateChangedData issued
+ * confirm VmStateChangedOnHostData issued
  *
  * 3. make the vm abnormally started
  *
  * confirm the host capacity allocated
- * confirm VmStateChangedData issued
+ * confirm VmStateChangedOnHostData issued
  */
 public class TestVmStateTracer {
     Deployer deployer;
@@ -79,7 +79,7 @@ public class TestVmStateTracer {
         evtf.on(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, new EventCallback() {
             @Override
             public void run(Map tokens, Object data) {
-                VmStateChangedData d = (VmStateChangedData) data;
+                VmStateChangedOnHostData d = (VmTracerCanonicalEvents.VmStateChangedOnHostData) data;
                 if (d.getVmUuid().equals(vmUuid) && d.getTo() == VmInstanceState.Stopped
                         && d.getOriginalHostUuid().equals(hostUuid) && d.getCurrentHostUuid() == null) {
                     // abnormally stopped

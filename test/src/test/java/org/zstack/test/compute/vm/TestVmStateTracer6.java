@@ -10,12 +10,10 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmTracerCanonicalEvents;
-import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
 import org.zstack.simulator.SimulatorController;
 import org.zstack.simulator.SimulatorVmSyncPingTask;
 import org.zstack.test.Api;
@@ -32,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * 3. remove the vm from the host
  *
  * confirm the vm stopped
- * confirm no VmStateChangedData issued
+ * confirm no VmStateChangedOnHostData issued
  *
  */
 public class TestVmStateTracer6 {

@@ -50,7 +50,7 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
-import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedData;
+import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedOnHostData;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.*;
@@ -246,6 +246,15 @@ public class VmInstanceBase extends AbstractVmInstance {
         self = dbf.updateAndRefresh(self);
         if (bs != state) {
             logger.debug(String.format("vm[uuid:%s] changed state from %s to %s", self.getUuid(), bs, self.getState()));
+
+            VmCanonicalEvents.VmStateChangedData data = new VmCanonicalEvents.VmStateChangedData();
+            data.setVmUuid(self.getUuid());
+            data.setOldState(bs.toString());
+            data.setNewState(state.toString());
+            data.setVmInventory(getSelfInventory());
+            evtf.fire(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, data);
+
+            //TODO: remove this
             notfiyEmitter.notifyVmStateChange(VmInstanceInventory.valueOf(self), bs, state);
         }
         return self;
@@ -640,7 +649,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         final Runnable fireEvent = new Runnable() {
             @Override
             public void run() {
-                VmStateChangedData data = new VmStateChangedData();
+                VmTracerCanonicalEvents.VmStateChangedOnHostData data = new VmTracerCanonicalEvents.VmStateChangedOnHostData();
                 data.setVmUuid(self.getUuid());
                 data.setFrom(originalState);
                 data.setTo(self.getState());
