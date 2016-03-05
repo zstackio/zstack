@@ -21,6 +21,10 @@ public enum SizeUnit {
         public long toTeraByte(long s) {
             return (s / (t / b));
         }
+
+        public long convert(long s, SizeUnit src) {
+            return src.toByte(s);
+        }
     },
     KILOBYTE {
         public long toByte(long s) {
@@ -41,6 +45,10 @@ public enum SizeUnit {
 
         public long toTeraByte(long s) {
             return (s / (t / k));
+        }
+
+        public long convert(long s, SizeUnit src) {
+            return src.toKiloByte(s);
         }
     },
     MEGABYTE {
@@ -63,6 +71,10 @@ public enum SizeUnit {
         public long toTeraByte(long s) {
             return (s / (t / m));
         }
+
+        public long convert(long s, SizeUnit src) {
+            return src.toMegaByte(s);
+        }
     },
     GIGABYTE {
         public long toByte(long s) {
@@ -83,6 +95,10 @@ public enum SizeUnit {
 
         public long toTeraByte(long s) {
             return (s / (t / g));
+        }
+
+        public long convert(long s, SizeUnit src) {
+            return src.toGigaByte(s);
         }
     },
     TERABYTE {
@@ -105,6 +121,10 @@ public enum SizeUnit {
         public long toTeraByte(long s) {
             return s;
         }
+
+        public long convert(long s, SizeUnit src) {
+            return src.toTeraByte(s);
+        }
     };
 
     private static final long b = 1;
@@ -126,6 +146,9 @@ public enum SizeUnit {
         throw new AbstractMethodError();
     }
     public long toTeraByte(long s) {
+        throw new AbstractMethodError();
+    }
+    public long convert(long s, SizeUnit src) {
         throw new AbstractMethodError();
     }
 }
