@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.APIListApplianceVmMsg;
 import org.zstack.appliancevm.APIListApplianceVmReply;
 import org.zstack.appliancevm.ApplianceVmInventory;
+import org.zstack.billing.APICalculateAccountSpendingMsg;
+import org.zstack.billing.APICalculateAccountSpendingReply;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
@@ -3823,5 +3825,15 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APIDeleteVmStaticIpEvent.class);
+    }
+
+    public APICalculateAccountSpendingReply calculateSpending(String accountUuid, SessionInventory session) throws ApiSenderException {
+        APICalculateAccountSpendingMsg msg = new APICalculateAccountSpendingMsg();
+        msg.setAccountUuid(accountUuid);
+        msg.setSession(session == null ?  adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICalculateAccountSpendingReply reply = sender.call(msg, APICalculateAccountSpendingReply.class);
+        return reply;
     }
 }

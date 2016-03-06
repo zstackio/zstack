@@ -42,6 +42,8 @@
 
         <Logger name="org.zstack.identity" level="TRACE" />
 
+        <Logger name="org.zstack.cassandra" level="TRACE" />
+
         <Logger name="org.zstack.core.cloudbus" level="TRACE" />
 
         <Logger name="org.springframework" level="WARN" />

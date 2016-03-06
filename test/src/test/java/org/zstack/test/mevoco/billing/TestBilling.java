@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -72,9 +73,6 @@ public class TestBilling {
     
 	@Test
 	public void test() throws ApiSenderException {
-        VmInstanceInventory vm = deployer.vms.get("TestVm");
-        api.stopVmInstance(vm.getUuid());
-        api.startVmInstance(vm.getUuid());
-        api.destroyVmInstance(vm.getUuid());
+        api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
     }
 }
