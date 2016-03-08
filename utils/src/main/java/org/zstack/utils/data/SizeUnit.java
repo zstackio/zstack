@@ -127,6 +127,22 @@ public enum SizeUnit {
         }
     };
 
+    public static SizeUnit fromString(String s) {
+        if ("b".equalsIgnoreCase(s)) {
+            return BYTE;
+        } else if ("k".equalsIgnoreCase(s)) {
+            return KILOBYTE;
+        } else if ("m".equalsIgnoreCase(s)) {
+            return MEGABYTE;
+        } else if ("g".equalsIgnoreCase(s)) {
+            return GIGABYTE;
+        } else if ("t".equalsIgnoreCase(s)) {
+            return TERABYTE;
+        } else {
+            throw new IllegalArgumentException(String.format("unknown size unit[%s]", s));
+        }
+    }
+
     private static final long b = 1;
     private static final long k = b * 1024;
     private static final long m = k * 1024;

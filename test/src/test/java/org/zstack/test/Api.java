@@ -6,8 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.APIListApplianceVmMsg;
 import org.zstack.appliancevm.APIListApplianceVmReply;
 import org.zstack.appliancevm.ApplianceVmInventory;
-import org.zstack.billing.APICalculateAccountSpendingMsg;
-import org.zstack.billing.APICalculateAccountSpendingReply;
+import org.zstack.billing.*;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
@@ -3835,5 +3834,13 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APICalculateAccountSpendingReply reply = sender.call(msg, APICalculateAccountSpendingReply.class);
         return reply;
+    }
+
+    public PriceInventory createPrice(APICreateResourcePriceMsg msg) throws ApiSenderException {
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICreateResourcePriceEvent evt = sender.send(msg, APICreateResourcePriceEvent.class);
+        return evt.getInventory();
     }
 }

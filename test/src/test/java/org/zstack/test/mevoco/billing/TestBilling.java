@@ -1,7 +1,14 @@
 package org.zstack.test.mevoco.billing;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.billing.APICreateResourcePriceMsg;
+import org.zstack.billing.BillingConstants;
+import org.zstack.billing.PriceCO;
+import org.zstack.cassandra.CassandraFacade;
+import org.zstack.cassandra.CassandraOperator;
+import org.zstack.cassandra.CqlQuery;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -40,6 +47,8 @@ public class TestBilling {
     PrimaryStorageOverProvisioningManager psRatioMgr;
     HostCapacityOverProvisioningManager hostRatioMgr;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
+    CassandraFacade cassf;
+    CassandraOperator ops;
 
     @Before
     public void setUp() throws Exception {
@@ -59,6 +68,8 @@ public class TestBilling {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         psRatioMgr = loader.getComponent(PrimaryStorageOverProvisioningManager.class);
         hostRatioMgr = loader.getComponent(HostCapacityOverProvisioningManager.class);
+        cassf = loader.getComponent(CassandraFacade.class);
+        ops = cassf.getOperator(BillingConstants.CASSANDRA_KEYSPACE);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -73,6 +84,23 @@ public class TestBilling {
     
 	@Test
 	public void test() throws ApiSenderException {
+        APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
+        msg.setTimeUnit("ms");
+        msg.setPrice(1000.199f);
+        msg.setResourceName(BillingConstants.SPENDING_CPU);
+        api.createPrice(msg);
+        CqlQuery cql = new CqlQuery("select * from <table> where resourceName = :name limit 1");
+        cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_CPU);
+        PriceCO co = ops.selectOne(cql.build(), PriceCO.class);
+        Assert.assertNotNull(co);
+
+        msg = new APICreateResourcePriceMsg();
+        msg.setTimeUnit("ms");
+        msg.setPrice(999.199f);
+        msg.setResourceName(BillingConstants.SPENDING_MEMORY);
+        msg.setResourceUnit("b");
+        api.createPrice(msg);
+
         api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
     }
 }
