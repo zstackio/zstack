@@ -30,6 +30,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.concurrent.TimeUnit;
+
 /**
 
  */
@@ -83,7 +85,10 @@ public class TestBilling {
     }
     
 	@Test
-	public void test() throws ApiSenderException {
+	public void test() throws ApiSenderException, InterruptedException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        api.stopVmInstance(vm.getUuid());
+
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("ms");
         msg.setPrice(1000.199f);
@@ -100,6 +105,10 @@ public class TestBilling {
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
         msg.setResourceUnit("b");
         api.createPrice(msg);
+
+        api.startVmInstance(vm.getUuid());
+        TimeUnit.SECONDS.sleep(2);
+        api.stopVmInstance(vm.getUuid());
 
         api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
     }
