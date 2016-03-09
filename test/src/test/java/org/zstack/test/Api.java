@@ -3826,14 +3826,20 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIDeleteVmStaticIpEvent.class);
     }
 
-    public APICalculateAccountSpendingReply calculateSpending(String accountUuid, SessionInventory session) throws ApiSenderException {
+    public APICalculateAccountSpendingReply calculateSpending(String accountUuid, Long start, Long end, SessionInventory session) throws ApiSenderException {
         APICalculateAccountSpendingMsg msg = new APICalculateAccountSpendingMsg();
         msg.setAccountUuid(accountUuid);
         msg.setSession(session == null ?  adminSession : session);
+        msg.setDateStart(start);
+        msg.setDateEnd(end);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICalculateAccountSpendingReply reply = sender.call(msg, APICalculateAccountSpendingReply.class);
         return reply;
+    }
+
+    public APICalculateAccountSpendingReply calculateSpending(String accountUuid, SessionInventory session) throws ApiSenderException {
+        return calculateSpending(accountUuid, null, null, session);
     }
 
     public PriceInventory createPrice(APICreateResourcePriceMsg msg) throws ApiSenderException {

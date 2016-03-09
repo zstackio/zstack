@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <backupStorages>
+        <sftpBackupStorage name="sftp" description="Test"
+            url="nfs://test" />
+    </backupStorages>
+
+    <images>
+        <image name="TestImage" description="Test" size="10G">
+            <backupStorageRef>sftp</backupStorageRef>
+        </image>
+    </images>
+
+    <diskOffering name="TestRootDiskOffering" description="Test"
+                  diskSize="50G" />
+
+    <instanceOfferings>
+        <convergedOffering name="TestInstanceOffering"
+            description="Test" memoryCapacity="4G" cpuNum="1" cpuSpeed="3000">
+            <networkOutboundBandwidth>1000</networkOutboundBandwidth>
+            <volumeTotalBandwidth>2000</volumeTotalBandwidth>
+            <volumeTotalIops>10000</volumeTotalIops>
+        </convergedOffering>
+
+        <convergedOffering name="small"
+                           description="Test" memoryCapacity="17M" cpuNum="1" cpuSpeed="1">
+        </convergedOffering>
+    </instanceOfferings>
+
+    <vm>
+        <userVm name="TestVm" description="Test">
+            <imageRef>TestImage</imageRef>
+            <instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
+            <l3NetworkRef>TestL3Network1</l3NetworkRef>
+        </userVm>
+
+        <userVm name="TestVm1" description="Test">
+            <imageRef>TestImage</imageRef>
+            <instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
+            <l3NetworkRef>TestL3Network1</l3NetworkRef>
+        </userVm>
+    </vm>
+
+    <zones>
+        <zone name="Zone1" description="Test">
+            <clusters>
+                <cluster name="Cluster1" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host1" description="Test" managementIp="localhost"
+                            memoryCapacity="80G" cpuNum="20" cpuSpeed="2600" />
+                    </hosts>
+                    <primaryStorageRef>local</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network</l2NetworkRef>
+                </cluster>
+            </clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="TestL2Network" description="Test"
+                    physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network1" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+
+                            <dns>1.1.1.1</dns>
+                            <networkService provider="Flat">
+                                <serviceType>DHCP</serviceType>
+                                <serviceType>Userdata</serviceType>
+                            </networkService>
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+
+            <backupStorageRef>sftp</backupStorageRef>
+            <primaryStorages>
+                <localPrimaryStorage name="local" description="Test"
+                                     url="/test" />
+            </primaryStorages>
+        </zone>
+    </zones>
+</deployerConfig>
