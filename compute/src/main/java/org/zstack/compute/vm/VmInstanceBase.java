@@ -2883,13 +2883,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        if (self.getVmNics().isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("unable to start the vm[uuid:%s]. It doesn't have any nic, please attach a nic and try again",
-                            self.getUuid())
-            ));
-        }
-
         applyPendingCapacityChangeIfNeed();
 
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
@@ -2905,6 +2898,13 @@ public class VmInstanceBase extends AbstractVmInstance {
         extEmitter.beforeStartVm(VmInstanceInventory.valueOf(self));
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Start);
         spec.setMessage(msg);
+
+        if (spec.getDestNics().isEmpty()) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("unable to start the vm[uuid:%s]. It doesn't have any nic, please attach a nic and try again",
+                            self.getUuid())
+            ));
+        }
 
         FlowChain chain = getStartVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
