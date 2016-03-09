@@ -70,19 +70,19 @@ public class DBUtil {
             throw new RuntimeException(String.format("cannot find %s", cqlbin));
         }
 
-        ShellResult res = ShellUtils.runAndReturn(String.format("%s -e \"describe keyspaces\"", cqlsh));
+        ShellResult res = ShellUtils.runAndReturn(String.format("%s -e \"describe keyspaces\"", cqlsh), false);
         if (!res.isReturnCode(0)) {
-            ShellUtils.run(String.format("bash -c %s &", cqlbin));
+            ShellUtils.run(String.format("bash -c %s &", cqlbin), false);
             TimeUtils.loopExecuteUntilTimeoutIgnoreException(120, 1, TimeUnit.SECONDS, new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    ShellResult res = ShellUtils.runAndReturn(String.format("%s -e \"describe keyspaces\"", cqlsh));
+                    ShellResult res = ShellUtils.runAndReturn(String.format("%s -e \"describe keyspaces\"", cqlsh), false);
                     return res.isReturnCode(0);
                 }
             });
         }
 
-        ShellUtils.run(String.format("%s -e \"drop keyspace %s\"", cqlsh, keyspace));
+        ShellUtils.run(String.format("%s -e \"drop keyspace %s\"", cqlsh, keyspace), false);
     }
 }
 
