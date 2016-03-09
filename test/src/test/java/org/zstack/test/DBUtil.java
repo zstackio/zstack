@@ -1,11 +1,17 @@
 package org.zstack.test;
 
+import org.zstack.core.Platform;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
+import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import java.util.Properties;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 public class DBUtil {
     private static final CLogger logger = Utils.getLogger(DBUtil.class);
@@ -40,6 +46,43 @@ public class DBUtil {
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to deploy zstack database for testing", e);
         }
+    }
+
+    public static void reDeployCassandra(String keyspace) {
+        // initializing platform causes zstack.properties to be load
+        Platform.getUuid();
+        logger.info("Redeploying cassandra");
+        final String cqlsh = System.getProperty("Cassandra.cqlsh");
+        if (cqlsh == null) {
+            throw new RuntimeException("please set Cassandra.cqlsh in zstack.properties");
+        }
+
+        if (!PathUtil.exists(cqlsh)) {
+            throw new RuntimeException(String.format("cannot find %s", cqlsh));
+        }
+
+        String cqlbin = System.getProperty("Cassandra.bin");
+        if (cqlbin == null) {
+            throw new RuntimeException("please set Cassandra.bin in zstack.properties");
+        }
+
+        if (!PathUtil.exists(cqlbin)) {
+            throw new RuntimeException(String.format("cannot find %s", cqlbin));
+        }
+
+        ShellResult res = ShellUtils.runAndReturn(String.format("%s -e \"describe keyspaces\"", cqlsh));
+        if (!res.isReturnCode(0)) {
+            ShellUtils.run(String.format("bash -c %s &", cqlbin));
+            TimeUtils.loopExecuteUntilTimeoutIgnoreException(120, 1, TimeUnit.SECONDS, new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    ShellResult res = ShellUtils.runAndReturn(String.format("%s -e \"describe keyspaces\"", cqlsh));
+                    return res.isReturnCode(0);
+                }
+            });
+        }
+
+        ShellUtils.run(String.format("%s -e \"drop keyspace %s\"", cqlsh, keyspace));
     }
 }
 

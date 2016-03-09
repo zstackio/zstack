@@ -3,9 +3,7 @@ package org.zstack.test.mevoco.billing;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.billing.APICreateResourcePriceMsg;
-import org.zstack.billing.BillingConstants;
-import org.zstack.billing.PriceCO;
+import org.zstack.billing.*;
 import org.zstack.cassandra.CassandraFacade;
 import org.zstack.cassandra.CassandraOperator;
 import org.zstack.cassandra.CqlQuery;
@@ -26,8 +24,10 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
@@ -55,6 +55,7 @@ public class TestBilling {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
+        DBUtil.reDeployCassandra(BillingConstants.CASSANDRA_KEYSPACE);
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
@@ -88,10 +89,9 @@ public class TestBilling {
 	public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
-
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
-        msg.setTimeUnit("ms");
-        msg.setPrice(1000.199f);
+        msg.setTimeUnit("s");
+        msg.setPrice(100f);
         msg.setResourceName(BillingConstants.SPENDING_CPU);
         api.createPrice(msg);
         CqlQuery cql = new CqlQuery("select * from <table> where resourceName = :name limit 1");
@@ -100,8 +100,8 @@ public class TestBilling {
         Assert.assertNotNull(co);
 
         msg = new APICreateResourcePriceMsg();
-        msg.setTimeUnit("ms");
-        msg.setPrice(999.199f);
+        msg.setTimeUnit("s");
+        msg.setPrice(10f);
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
         msg.setResourceUnit("b");
         api.createPrice(msg);
@@ -110,6 +110,36 @@ public class TestBilling {
         TimeUnit.SECONDS.sleep(2);
         api.stopVmInstance(vm.getUuid());
 
-        api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
+        final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
+
+        float cpuPrice = vm.getCpuNum() * 100f * 2;
+        float memPrice = vm.getMemorySize() * 10f * 2;
+        Assert.assertEquals(reply.getTotal(), cpuPrice + memPrice, 0.02);
+
+        Spending spending = CollectionUtils.find(reply.getSpending(), new Function<Spending, Spending>() {
+            @Override
+            public Spending call(Spending arg) {
+                return BillingConstants.SPENDING_TYPE_VM.equals(arg.getSpendingType()) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(spending);
+
+        SpendingDetails cpudetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
+            @Override
+            public SpendingDetails call(SpendingDetails arg) {
+                return BillingConstants.SPENDING_CPU.equals(arg.type) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(cpudetails);
+        Assert.assertEquals(cpuPrice, cpudetails.spending, 0.02);
+
+        SpendingDetails memdetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
+            @Override
+            public SpendingDetails call(SpendingDetails arg) {
+                return BillingConstants.SPENDING_MEMORY.equals(arg.type) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(memdetails);
+        Assert.assertEquals(memPrice, memdetails.spending, 0.02);
     }
 }

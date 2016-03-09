@@ -46,6 +46,8 @@
 
         <Logger name="org.zstack.core.cloudbus" level="TRACE" />
 
+        <Logger name="org.zstack.billing" level="TRACE" />
+
         <Logger name="org.springframework" level="WARN" />
 
         <Logger name="org.zstack.core.defer" level="TRACE" />
