@@ -1288,6 +1288,15 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                             user.getName(), user.getUuid(), msg.getSession().getAccountUuid())
             ));
         }
+
+        SimpleQuery<UserPolicyRefVO> q = dbf.createQuery(UserPolicyRefVO.class);
+        q.add(UserPolicyRefVO_.policyUuid, Op.EQ, msg.getPolicyUuid());
+        q.add(UserPolicyRefVO_.userUuid, Op.EQ, msg.getUserUuid());
+        if (q.isExists()) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the policy[uuid:%s] is already attached to the user[uuid:%s]", msg.getPolicyUuid(), msg.getUserUuid())
+            ));
+        }
     }
 
     private void validate(APIAttachPolicyToUserGroupMsg msg) {
