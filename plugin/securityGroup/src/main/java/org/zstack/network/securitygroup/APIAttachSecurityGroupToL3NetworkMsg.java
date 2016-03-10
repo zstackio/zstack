@@ -47,7 +47,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
 public class APIAttachSecurityGroupToL3NetworkMsg extends APIMessage {
     @APIParam(resourceType=SecurityGroupVO.class, checkAccount = true, operationTarget = true)
     private String securityGroupUuid;
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L3NetworkVO.class)
     private String l3NetworkUuid;
     public String getSecurityGroupUuid() {
         return securityGroupUuid;
