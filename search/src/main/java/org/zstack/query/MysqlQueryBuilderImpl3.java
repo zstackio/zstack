@@ -711,7 +711,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                         }
                         selector = StringUtils.join(ss, ",");
                     } else {
-                        selector = "*";
+                        selector = entityName;
                     }
 
                     if (where.isEmpty()) {
@@ -1028,9 +1028,8 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 validateFields();
             }
 
-            EntityInfo info = entityInfos.get(inventoryClass);
             String jpql = build(false);
-            Query q = msg.isFieldQuery() ? dbf.getEntityManager().createNativeQuery(jpql, Tuple.class) : dbf.getEntityManager().createNativeQuery(jpql, info.entityClass);
+            Query q = msg.isFieldQuery() ? dbf.getEntityManager().createQuery(jpql, Tuple.class) : dbf.getEntityManager().createQuery(jpql);
 
             if (logger.isTraceEnabled()) {
                 org.hibernate.Query hq = q.unwrap(org.hibernate.Query.class);
