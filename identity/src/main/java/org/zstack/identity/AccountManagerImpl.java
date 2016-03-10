@@ -219,9 +219,14 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APILogOutMsg) msg);
         } else if (msg instanceof APIValidateSessionMsg) {
             handle((APIValidateSessionMsg) msg);
+        } else if (msg instanceof APICheckApiPermissionMsg) {
+            handle((APICheckApiPermissionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APICheckApiPermissionMsg msg) {
     }
 
 
@@ -664,6 +669,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 ma.accountCheckFields.add(af);
             }
 
+            ma.actions.add(String.format("%s:%s", ma.category, clz.getName()));
             ma.actions.add(String.format("%s:%s", ma.category, clz.getSimpleName()));
             actions.put(clz, ma);
         }
