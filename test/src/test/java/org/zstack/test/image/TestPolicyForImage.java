@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyInventory.Statement;
@@ -26,6 +27,7 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 1. create a user
@@ -192,6 +194,13 @@ public class TestPolicyForImage {
             }
         }
         Assert.assertTrue(success);
+
+        // make all image shared to public
+        SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
+        imgq.select(ImageVO_.uuid);
+        List<String> uuids = imgq.listValue();
+
+        api.shareResource(uuids, null, true);
 
         APIQueryImageMsg qmsg = new APIQueryImageMsg();
         qmsg.setConditions(new ArrayList<QueryCondition>());
