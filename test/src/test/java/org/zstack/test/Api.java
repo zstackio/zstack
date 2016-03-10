@@ -3824,4 +3824,15 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         sender.send(msg, APIDeleteVmStaticIpEvent.class);
     }
+
+    public Map<String, String> checkUserPolicy(List<String> apiNames, String userUuid, SessionInventory session) throws ApiSenderException {
+        APICheckApiPermissionMsg msg = new APICheckApiPermissionMsg();
+        msg.setUserUuid(userUuid);
+        msg.setApiNames(apiNames);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICheckApiPermissionReply reply = sender.call(msg, APICheckApiPermissionReply.class);
+        return reply.getInventory();
+    }
 }

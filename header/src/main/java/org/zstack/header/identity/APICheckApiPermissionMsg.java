@@ -8,21 +8,12 @@ import java.util.List;
 /**
  * Created by xing5 on 2016/3/10.
  */
+@Action(category = AccountConstant.ACTION_CATEGORY, names = {"read"})
 public class APICheckApiPermissionMsg extends APISyncCallMessage {
-    @APIParam(required = false, resourceType = AccountVO.class)
-    private String accountUuid;
     @APIParam(required = false, resourceType = UserVO.class)
     private String userUuid;
     @APIParam(nonempty = true)
     private List<String> apiNames;
-
-    public String getAccountUuid() {
-        return accountUuid;
-    }
-
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
-    }
 
     public String getUserUuid() {
         return userUuid;

@@ -227,6 +227,52 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void handle(APICheckApiPermissionMsg msg) {
+        if (msg.getUserUuid() != null) {
+            SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+            q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
+            q.add(AccountVO_.type, Op.EQ, AccountType.SystemAdmin);
+            if (!q.isExists()) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        "only system admin can check a user's policy by specifying userUuid"
+                ));
+            }
+        }
+
+        Map<String, String> ret = new HashMap<String, String>();
+
+        SessionInventory session  = new SessionInventory();
+        if (msg.getUserUuid() != null) {
+            UserVO user = dbf.findByUuid(msg.getUserUuid(), UserVO.class);
+            session.setAccountUuid(user.getAccountUuid());
+            session.setUserUuid(user.getUuid());
+        } else {
+            session = msg.getSession();
+        }
+
+        for (String apiName : msg.getApiNames()) {
+            try {
+                Class apiClass = Class.forName(apiName);
+                APIMessage api = (APIMessage) apiClass.newInstance();
+                api.setSession(session);
+
+                try {
+                    new Auth().check(api);
+                    ret.put(apiName, StatementEffect.Allow.toString());
+                } catch (ApiMessageInterceptionException e) {
+                    ret.put(apiName, StatementEffect.Deny.toString());
+                }
+            } catch (ClassNotFoundException e) {
+                throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                        String.format("%s is not an API", apiName)
+                ));
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+
+        APICheckApiPermissionReply reply = new APICheckApiPermissionReply();
+        reply.setInventory(ret);
+        bus.reply(msg, reply);
     }
 
 
@@ -836,6 +882,19 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             policyCheck();
 
             msg.setSession(session);
+        }
+
+        void check(APIMessage msg) {
+            this.msg = msg;
+            if (msg.getClass().isAnnotationPresent(SuppressCredentialCheck.class)) {
+                return;
+            }
+
+            DebugUtils.Assert(msg.getSession() != null, "session cannot be null");
+            session = msg.getSession();
+
+            action = actions.get(msg.getClass());
+            policyCheck();
         }
 
         private void accountFieldCheck() throws IllegalAccessException {
