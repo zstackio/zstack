@@ -12,6 +12,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.query.QueryCondition;
+import org.zstack.header.query.QueryOp;
 import org.zstack.header.simulator.storage.backup.SimulatorBackupStorageDetails;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -194,6 +195,19 @@ public class TestPolicyForImage {
 
         APIQueryImageMsg qmsg = new APIQueryImageMsg();
         qmsg.setConditions(new ArrayList<QueryCondition>());
-        api.query(qmsg, APIQueryImageReply.class, session);
+        APIQueryImageReply r = api.query(qmsg, APIQueryImageReply.class, session);
+        ImageInventory imginv = r.getInventories().get(0);
+        imginv.setName("xxx");
+        imginv.setFormat(null);
+        api.updateImage(imginv);
+
+        // test condition query works with normal account query,
+        // there was a bug caused by AccountSubQueryExtension
+        qmsg = new APIQueryImageMsg();
+        qmsg.addQueryCondition("name", QueryOp.LIKE, "%xx%");
+        r = api.query(qmsg, APIQueryImageReply.class, session);
+        Assert.assertEquals(1, r.getInventories().size());
+        ImageInventory imginv1 = r.getInventories().get(0);
+        Assert.assertEquals(imginv.getUuid(), imginv1.getUuid());
     }
 }
