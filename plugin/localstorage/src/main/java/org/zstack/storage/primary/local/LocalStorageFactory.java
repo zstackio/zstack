@@ -587,7 +587,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuid", rootVolUuid);
         q.setParameter("pstype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-        String psuuid = q.getSingleResult();
+        String psuuid = dbf.find(q);
         if (psuuid == null) {
             return;
         }

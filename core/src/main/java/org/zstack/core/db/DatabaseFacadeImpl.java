@@ -500,6 +500,16 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     @Override
+    @Transactional
+    public <T> T find(Query q) {
+        List<T> ret = q.getResultList();
+        if (ret.size() > 1) {
+            throw new CloudRuntimeException("more than one result found");
+        }
+        return ret.isEmpty() ? null : ret.get(0);
+    }
+
+    @Override
     @DeadlockAutoRestart
     public void removeByPrimaryKey(Object primaryKey, Class<?> entityClass) {
         getEntityInfo(entityClass).removeByPrimaryKey(primaryKey);
