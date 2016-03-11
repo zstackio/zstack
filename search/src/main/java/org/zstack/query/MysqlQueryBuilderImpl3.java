@@ -32,7 +32,6 @@ import javax.persistence.metamodel.StaticMetamodel;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.Map.Entry;
@@ -698,9 +697,9 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 String condition = StringUtils.join(where, " and ").trim();
                 if (isCount) {
                     if (where.isEmpty()) {
-                        return String.format("select count(*) from %s %s", entity, entityName);
+                        return String.format("select count(%s) from %s %s", entityName, entity, entityName);
                     } else {
-                        return String.format("select count(*) from %s %s where %s", entity, entityName, condition);
+                        return String.format("select count(%s) from %s %s where %s", entityName, entity, entityName, condition);
                     }
                 } else {
                     String ret = null;
@@ -712,7 +711,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                         }
                         selector = StringUtils.join(ss, ",");
                     } else {
-                        selector = String.format("%s", info.primaryKey);
+                        selector = entityName;
                     }
 
                     if (where.isEmpty()) {
@@ -881,12 +880,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
 
                 Object val = mcond.normalizeValue();
                 if (val != null) {
-                    // native query doesn't recognize Enum
-                    if (val instanceof Enum) {
-                        q.setParameter(mcond.attrValueName, val.toString());
-                    } else {
-                        q.setParameter(mcond.attrValueName, val);
-                    }
+                    q.setParameter(mcond.attrValueName, val);
                 }
             }
             for (QueryObject child : qobj.children) {
@@ -1005,23 +999,26 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
 
             EntityInfo info = entityInfos.get(inventoryClass);
             List ret = new ArrayList(fieldTuple.size());
-
-            Object inv = info.objectInstantiator.newInstance();
-            for (int i=0; i<msg.getFields().size(); i++) {
-                String fname = msg.getFields().get(i);
-                Object value = fieldTuple.get(i);
-                Field f = info.allFieldsMap.get(fname);
-                try {
-                    if (value != null && String.class.isAssignableFrom(f.getType())) {
-                        value = value.toString();
+            for (Object t : fieldTuple) {
+                Tuple tuple = (Tuple)t;
+                Object inv = info.objectInstantiator.newInstance();
+                for (int i=0; i<msg.getFields().size(); i++) {
+                    String fname = msg.getFields().get(i);
+                    Object value = tuple.get(i);
+                    Field f = info.allFieldsMap.get(fname);
+                    try {
+                        if (value != null && String.class.isAssignableFrom(f.getType())) {
+                            value = value.toString();
+                        }
+                        f.set(inv, value);
+                    } catch (IllegalAccessException e) {
+                        throw new CloudRuntimeException(e);
                     }
-                    f.set(inv, value);
-                } catch (IllegalAccessException e) {
-                    throw new CloudRuntimeException(e);
                 }
+
+                ret.add(inv);
             }
 
-            ret.add(inv);
             return ret;
         }
 
@@ -1032,13 +1029,12 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             }
 
             String jpql = build(false);
-            Query q = msg.isFieldQuery() ? dbf.getEntityManager().createNativeQuery(jpql) : dbf.getEntityManager().createNativeQuery(jpql);
+            Query q = msg.isFieldQuery() ? dbf.getEntityManager().createQuery(jpql, Tuple.class) : dbf.getEntityManager().createQuery(jpql);
 
             if (logger.isTraceEnabled()) {
                 org.hibernate.Query hq = q.unwrap(org.hibernate.Query.class);
                 logger.trace(hq.getQueryString());
             }
-
             setQueryValue(q, root);
             if (msg.getLimit() != null) {
                 q.setMaxResults(msg.getLimit());
@@ -1052,27 +1048,6 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             if (msg.isFieldQuery()) {
                 return convertFieldsTOPartialInventories(vos);
             } else {
-                if (vos.isEmpty()) {
-                    return new ArrayList();
-                }
-
-                String alias = inventoryClass.getSimpleName().toLowerCase();
-                EntityInfo info = entityInfos.get(inventoryClass);
-                Query q1 = dbf.getEntityManager().createQuery(String.format("select %s from %s %s where %s.%s in (:uuids)",
-                        alias, info.entityClass.getSimpleName(), alias, alias, info.primaryKey));
-
-                // for entities whose primary key is Long type
-                if (long.class.isAssignableFrom(info.entityPrimaryKeyField.getType()) || Long.class.isAssignableFrom(info.entityPrimaryKeyField.getType())) {
-                    vos = CollectionUtils.transformToList(vos, new Function<Long, Object>() {
-                        @Override
-                        public Long call(Object arg) {
-                            return Long.valueOf(arg.toString());
-                        }
-                    });
-                }
-
-                q1.setParameter("uuids", vos);
-                vos = q1.getResultList();
                 return convertVOsToInventories(vos);
             }
         }
@@ -1080,14 +1055,13 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
         @Transactional(readOnly = true)
         long count() {
             String jpql = build(true);
-            Query q = dbf.getEntityManager().createNativeQuery(jpql);
+            Query q = dbf.getEntityManager().createQuery(jpql);
             if (logger.isTraceEnabled()) {
                 org.hibernate.Query hq = q.unwrap(org.hibernate.Query.class);
                 logger.trace(hq.getQueryString());
             }
             setQueryValue(q, root);
-            BigInteger big = (BigInteger) q.getSingleResult();
-            return big.longValue();
+            return (Long)q.getSingleResult();
         }
     }
 
