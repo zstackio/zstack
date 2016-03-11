@@ -91,10 +91,7 @@ public class TestVmStaticIp3 {
 
         api.stopVmInstance(vm.getUuid());
         String l3Ip2 = "10.10.1.102";
-        api.createSystemTag(vm.getUuid(), VmSystemTags.STATIC_IP.instantiateTag(map(
-                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l31.getUuid()),
-                e(VmSystemTags.STATIC_IP_TOKEN, l3Ip2)
-        )), VmInstanceVO.class);
+        api.setStaticIp(vm.getUuid(), l31.getUuid(), l3Ip2);
 
         vm = api.startVmInstance(vm.getUuid());
 
@@ -107,12 +104,9 @@ public class TestVmStaticIp3 {
         Assert.assertFalse(q.isExists());
 
         api.stopVmInstance(vm.getUuid());
-        tag = VmSystemTags.STATIC_IP.getTagInventory(vm.getUuid());
         String l3Ip3 = "10.10.1.103";
-        api.updateSystemTag(tag.getUuid(), VmSystemTags.STATIC_IP.instantiateTag(map(
-                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l31.getUuid()),
-                e(VmSystemTags.STATIC_IP_TOKEN, l3Ip3)
-        )), null);
+
+        api.setStaticIp(vm.getUuid(), l31.getUuid(), l3Ip3);
 
         vm = api.startVmInstance(vm.getUuid());
 
@@ -135,10 +129,13 @@ public class TestVmStaticIp3 {
         api.stopVmInstance(vm.getUuid());
         String wrongIp = "129.12.19.1";
         try {
+            api.setStaticIp(vm.getUuid(), l31.getUuid(), l3Ip3);
+            /*
             api.createSystemTag(vm.getUuid(), VmSystemTags.STATIC_IP.instantiateTag(map(
                     e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l31.getUuid()),
                     e(VmSystemTags.STATIC_IP_TOKEN, l3Ip3)
             )), VmInstanceVO.class);
+            */
         } catch (ApiSenderException e) {
             s = true;
         }
@@ -150,19 +147,12 @@ public class TestVmStaticIp3 {
         vm = api.stopVmInstance(vm.getUuid());
         nic = vm.findNic(l31.getUuid());
         l3Ip3 = "10.10.1.102";
-        api.createSystemTag(vm.getUuid(), VmSystemTags.STATIC_IP.instantiateTag(map(
-                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l31.getUuid()),
-                e(VmSystemTags.STATIC_IP_TOKEN, l3Ip3)
-        )), VmInstanceVO.class);
+        api.setStaticIp(vm.getUuid(), l31.getUuid(), l3Ip3);
         // check the old IP is returned
         Assert.assertTrue(api.checkIpAvailability(nic.getL3NetworkUuid(), nic.getIp()));
 
         try {
-            tag = VmSystemTags.STATIC_IP.getTagInventory(vm.getUuid());
-            api.updateSystemTag(tag.getUuid(), VmSystemTags.STATIC_IP.instantiateTag(map(
-                    e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l31.getUuid()),
-                    e(VmSystemTags.STATIC_IP_TOKEN, wrongIp)
-            )), null);
+            api.setStaticIp(vm.getUuid(), l31.getUuid(), wrongIp);
         } catch (ApiSenderException e) {
             // pass
         }

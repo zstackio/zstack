@@ -16,7 +16,7 @@ import java.util.List;
 public class SharedResourceInventory {
     private String ownerAccountUuid;
     private String receiverAccountUuid;
-    private boolean toPublic;
+    private Boolean toPublic;
     private String resourceType;
     private String resourceUuid;
     private Timestamp lastOpDate;
