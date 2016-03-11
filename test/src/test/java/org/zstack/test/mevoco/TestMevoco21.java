@@ -162,7 +162,7 @@ public class TestMevoco21 {
         validate(ps, "VM.DESTROY", "instance:APIDestroyVmInstanceMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.RECOVER", "instance:APIRecoverVmInstanceMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.EXPUNGE", "instance:APIExpungeVmInstanceMsg", AccountConstant.StatementEffect.Allow);
-        validate(ps, "VM.CONSOLE", "instance:APIRequestConsoleAccessMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.CONSOLE", "console:APIRequestConsoleAccessMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.ISO.ADD", "instance:APIAttachIsoToVmInstanceMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.ISO.REMOVE", "instance:APIDetachIsoFromVmInstanceMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.MIGRATE", "instance:APIMigrateVmMsg", AccountConstant.StatementEffect.Allow);

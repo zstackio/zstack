@@ -228,7 +228,7 @@ public class TestVirtualRouterLb13 {
         final String ns7 = LoadBalancerSystemTags.BALANCER_ALGORITHM.instantiateTag(
                 map(e(LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, BALANCER_ALGORITHM))
         );
-        String HEALTH_TARGET = "TCP:5000";
+        String HEALTH_TARGET = "tcp:5000";
         final String ns8 = LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(
                 map(e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, HEALTH_TARGET))
         );

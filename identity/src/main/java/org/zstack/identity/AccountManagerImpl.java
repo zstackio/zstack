@@ -467,6 +467,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             dbf.getEntityManager().persist(AccountResourceRefVO.newOwn(vo.getUuid(), qvo.getId().toString(), QuotaVO.class));
         }
 
+        dbf.getEntityManager().refresh(vo);
         final AccountInventory inv = AccountInventory.valueOf(vo);
 
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterCreateAccountExtensionPoint.class), new ForEachFunction<AfterCreateAccountExtensionPoint>() {
