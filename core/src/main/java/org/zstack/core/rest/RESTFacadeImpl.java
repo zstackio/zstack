@@ -376,6 +376,11 @@ public class RESTFacadeImpl implements RESTFacade {
         }
         
         if (rsp.getBody() != null && returnClass != Void.class) {
+
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
+            }
+
             return JSONObjectUtil.toObject(rsp.getBody(), returnClass);
         } else {
             return null;
