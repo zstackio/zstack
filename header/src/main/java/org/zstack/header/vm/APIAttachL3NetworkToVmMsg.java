@@ -56,7 +56,7 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     /**
      * @desc uuid of L3Network where the nic will be created
      */
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
     private String l3NetworkUuid;
 
     @Override
