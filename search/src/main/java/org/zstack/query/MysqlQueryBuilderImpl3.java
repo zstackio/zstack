@@ -1060,6 +1060,17 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 EntityInfo info = entityInfos.get(inventoryClass);
                 Query q1 = dbf.getEntityManager().createQuery(String.format("select %s from %s %s where %s.%s in (:uuids)",
                         alias, info.entityClass.getSimpleName(), alias, alias, info.primaryKey));
+
+                // for entities whose primary key is Long type
+                if (long.class.isAssignableFrom(info.entityPrimaryKeyField.getType()) || Long.class.isAssignableFrom(info.entityPrimaryKeyField.getType())) {
+                    vos = CollectionUtils.transformToList(vos, new Function<Long, Object>() {
+                        @Override
+                        public Long call(Object arg) {
+                            return Long.valueOf(arg.toString());
+                        }
+                    });
+                }
+
                 q1.setParameter("uuids", vos);
                 vos = q1.getResultList();
                 return convertVOsToInventories(vos);
