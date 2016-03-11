@@ -10,6 +10,9 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.console.*;
 import org.zstack.header.core.FutureCompletion;
@@ -44,6 +47,8 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     private DatabaseFacade dbf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private ThreadFacade thdf;
 
     private Map<String, ConsoleBackend> consoleBackends = new HashMap<String, ConsoleBackend>();
     private Map<String, ConsoleHypervisorBackend> consoleHypervisorBackends = new HashMap<String, ConsoleHypervisorBackend>();
@@ -71,26 +76,43 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
         }
     }
 
-    private void handle(APIRequestConsoleAccessMsg msg) {
+    private void handle(final APIRequestConsoleAccessMsg msg) {
         final APIRequestConsoleAccessEvent evt = new APIRequestConsoleAccessEvent(msg.getId());
 
-        VmInstanceVO vmvo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
-        ConsoleBackend bkd = getBackend();
-        bkd.grantConsoleAccess(msg.getSession(), VmInstanceInventory.valueOf(vmvo), new ReturnValueCompletion<ConsoleInventory>() {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success(ConsoleInventory returnValue) {
-                if (!"0.0.0.0".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)) {
-                    returnValue.setHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
-                }
-                evt.setInventory(returnValue);
-                bus.publish(evt);
+            public String getSyncSignature() {
+                return String.format("request-console-for-vm-%s", msg.getVmInstanceUuid());
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
-                evt.setSuccess(false);
-                bus.publish(evt);
+            public void run(final SyncTaskChain chain) {
+                VmInstanceVO vmvo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+                ConsoleBackend bkd = getBackend();
+                bkd.grantConsoleAccess(msg.getSession(), VmInstanceInventory.valueOf(vmvo), new ReturnValueCompletion<ConsoleInventory>(chain) {
+                    @Override
+                    public void success(ConsoleInventory returnValue) {
+                        if (!"0.0.0.0".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)) {
+                            returnValue.setHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
+                        }
+                        evt.setInventory(returnValue);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setErrorCode(errorCode);
+                        evt.setSuccess(false);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
             }
         });
     }

@@ -50,6 +50,6 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
                     String.format("Console is only available when the VM[uuid:%s] is Running, but the current state is %s", msg.getVmInstanceUuid(), state)
             ));
         }
-        bus.makeTargetServiceIdByResourceUuid(msg, ConsoleConstants.SERVICE_ID, ((APIRequestConsoleAccessMsg) msg).getVmInstanceUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, ConsoleConstants.SERVICE_ID, msg.getVmInstanceUuid());
     }
 }
