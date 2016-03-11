@@ -9,7 +9,7 @@ import org.zstack.header.storage.backup.BackupStorageConstant;
 /**
  * Created by frank on 8/6/2015.
  */
-@Action(category = BackupStorageConstant.ACTION_CATEGORY)
+@Action(category = BackupStorageConstant.ACTION_CATEGORY, names = {"read"})
 @AutoQuery(replyClass = APIQueryBackupStorageReply.class, inventoryClass = CephBackupStorageInventory.class)
 public class APIQueryCephBackupStorageMsg extends APIQueryMessage {
 }
