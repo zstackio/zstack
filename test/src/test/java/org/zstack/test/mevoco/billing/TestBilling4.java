@@ -33,10 +33,10 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
-
+ * set multiple prices
  */
-public class TestBilling {
-    CLogger logger = Utils.getLogger(TestBilling.class);
+public class TestBilling4 {
+    CLogger logger = Utils.getLogger(TestBilling4.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -94,10 +94,13 @@ public class TestBilling {
         msg.setPrice(100f);
         msg.setResourceName(BillingConstants.SPENDING_CPU);
         api.createPrice(msg);
+
         Cql cql = new Cql("select * from <table> where resourceName = :name limit 1");
         cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_CPU);
         PriceCO co = ops.selectOne(cql.build(), PriceCO.class);
         Assert.assertNotNull(co);
+        co.setPrice(111111);
+        ops.update(co);
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");

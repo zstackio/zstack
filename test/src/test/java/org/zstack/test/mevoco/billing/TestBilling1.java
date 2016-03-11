@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.zstack.billing.*;
 import org.zstack.cassandra.CassandraFacade;
 import org.zstack.cassandra.CassandraOperator;
-import org.zstack.cassandra.CqlQuery;
+import org.zstack.cassandra.Cql;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -16,7 +16,6 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
-import org.zstack.identity.Account;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
@@ -102,7 +101,7 @@ public class TestBilling1 {
         msg.setPrice(cprice);
         msg.setResourceName(BillingConstants.SPENDING_CPU);
         api.createPrice(msg);
-        CqlQuery cql = new CqlQuery("select * from <table> where resourceName = :name limit 1");
+        Cql cql = new Cql("select * from <table> where resourceName = :name limit 1");
         cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_CPU);
         PriceCO cpupco = ops.selectOne(cql.build(), PriceCO.class);
         Assert.assertNotNull(cpupco);
@@ -118,7 +117,7 @@ public class TestBilling1 {
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
         msg.setResourceUnit("b");
         api.createPrice(msg);
-        cql = new CqlQuery("select * from <table> where resourceName = :name limit 1");
+        cql = new Cql("select * from <table> where resourceName = :name limit 1");
         cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_MEMORY);
         PriceCO mempco = ops.selectOne(cql.build(), PriceCO.class);
         Assert.assertNotNull(mempco);
@@ -128,7 +127,7 @@ public class TestBilling1 {
         mudf.setTimeUnit(mempco.getTimeUnit());
         mudf.setResourceUnit(mempco.getResourceUnit());
 
-        cql = new CqlQuery("delete from <table> where accountUuid = :uuid");
+        cql = new Cql("delete from <table> where accountUuid = :uuid");
         cql.setTable(VmUsageCO.class.getSimpleName()).setParameter("uuid", AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
         ops.execute(cql.build());
 
