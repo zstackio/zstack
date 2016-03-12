@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.zstack.billing.*;
 import org.zstack.cassandra.CassandraFacade;
 import org.zstack.cassandra.CassandraOperator;
-import org.zstack.cassandra.Cql;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -33,7 +32,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
- * set multiple prices
+ * test multiple prices
  */
 public class TestBilling4 {
     CLogger logger = Utils.getLogger(TestBilling4.class);
@@ -93,31 +92,55 @@ public class TestBilling4 {
         msg.setTimeUnit("s");
         msg.setPrice(100f);
         msg.setResourceName(BillingConstants.SPENDING_CPU);
-        api.createPrice(msg);
-
-        Cql cql = new Cql("select * from <table> where resourceName = :name limit 1");
-        cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_CPU);
-        PriceCO co = ops.selectOne(cql.build(), PriceCO.class);
-        Assert.assertNotNull(co);
-        co.setPrice(111111);
-        ops.update(co);
+        PriceInventory pc1 = api.createPrice(msg);
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
         msg.setPrice(10f);
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
         msg.setResourceUnit("b");
-        api.createPrice(msg);
+        PriceInventory pm1 = api.createPrice(msg);
 
-        api.startVmInstance(vm.getUuid());
-        TimeUnit.SECONDS.sleep(2);
-        api.stopVmInstance(vm.getUuid());
+        int during = 2;
+        vm = api.startVmInstance(vm.getUuid());
+
+        TimeUnit.SECONDS.sleep(during);
+
+        msg = new APICreateResourcePriceMsg();
+        msg.setTimeUnit("s");
+        msg.setPrice(80f);
+        msg.setResourceName(BillingConstants.SPENDING_CPU);
+        msg.setResourceUnit("s");
+        PriceInventory pc2 = api.createPrice(msg);
+
+        msg = new APICreateResourcePriceMsg();
+        msg.setTimeUnit("s");
+        msg.setPrice(120f);
+        msg.setResourceName(BillingConstants.SPENDING_MEMORY);
+        msg.setResourceUnit("b");
+        PriceInventory pm2 = api.createPrice(msg);
+
+        vm = api.stopVmInstance(vm.getUuid());
+        float cpuPrice1 = vm.getCpuNum() * pc1.getPrice() * during;
+        float memPrice1 = vm.getMemorySize() * pm1.getPrice() * during;
+
+        logger.debug(String.format("phase1: cpu price: %s, memory price: %s, during: %s s", cpuPrice1, memPrice1, during));
+
+        vm = api.startVmInstance(vm.getUuid());
+
+        TimeUnit.SECONDS.sleep(during);
+        api.destroyVmInstance(vm.getUuid());
+
+        float cpuPrice2 = vm.getCpuNum() * pc2.getPrice() * during;
+        float memPrice2 = vm.getMemorySize() * pm2.getPrice() * during;
+
+        logger.debug(String.format("phase2: cpu price: %s, memory price: %s, during: %s s", cpuPrice2, memPrice2, during));
 
         final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
 
-        float cpuPrice = vm.getCpuNum() * 100f * 2;
-        float memPrice = vm.getMemorySize() * 10f * 2;
-        Assert.assertEquals(reply.getTotal(), cpuPrice + memPrice, 0.02);
+        float cpuPrice = cpuPrice1 + cpuPrice2;
+        float memPrice = memPrice1 + memPrice2;
+        Assert.assertEquals(cpuPrice + memPrice, reply.getTotal(), 0.02);
 
         Spending spending = CollectionUtils.find(reply.getSpending(), new Function<Spending, Spending>() {
             @Override
