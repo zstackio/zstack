@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
 
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class DatabaseFacadeImpl implements DatabaseFacade, Component {
@@ -57,6 +58,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         Field eoSoftDeleteColumn;
         Class eoClass;
         Class voClass;
+        Map<EntityEvent, EntityLifeCycleCallback> listeners = new HashMap<EntityEvent, EntityLifeCycleCallback>();
 
         EntityInfo(Class voClazz) {
             voClass = voClazz;
@@ -420,6 +422,17 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             Long count = q.getSingleResult();
             return count > 0;
         }
+
+        void installLifeCycleCallback(EntityEvent evt, EntityLifeCycleCallback l) {
+            listeners.put(evt, l);
+        }
+
+        void fireLifeCycleEvent(EntityEvent evt, Object o) {
+            EntityLifeCycleCallback cb = listeners.get(evt);
+            if (cb != null) {
+                cb.entityLifeCycleEvent(evt, o);
+            }
+        }
     }
 
     void init() {
@@ -747,7 +760,24 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     @Override
+    public void installEntityLifeCycleCallback(Class clz, EntityEvent evt, EntityLifeCycleCallback cb) {
+        EntityInfo info = entityInfoMap.get(clz);
+        DebugUtils.Assert(info != null, String.format("cannot find EntityInfo for the class[%s]", clz));
+        info.installLifeCycleCallback(evt, cb);
+    }
+
+    @Override
     public boolean stop() {
         return true;
+    }
+
+    void entityEvent(EntityEvent evt, Object entity) {
+        EntityInfo info = entityInfoMap.get(entity.getClass());
+        if (info == null) {
+            logger.warn(String.format("cannot find EntityInfo for the class[%s], not entity events will be fired", entity.getClass()));
+            return;
+        }
+
+        info.fireLifeCycleEvent(evt, entity);
     }
 }

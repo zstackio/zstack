@@ -106,7 +106,7 @@ public class VmInstanceHostMessageHandlerExtension implements HostMessageHandler
             // add vm on new simulator host to emulate migration
             ChangeVmStateOnSimulatorHostMsg cmsg = new ChangeVmStateOnSimulatorHostMsg();
             cmsg.setHostUuid(msg.getDestHostInventory().getUuid());
-            cmsg.setVmUuid(msg.getVmInventory().getUuid());
+            cmsg.setVmUuid(msg.getInventory().getUuid());
             cmsg.setVmState(VmInstanceState.Running.toString());
             bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, cmsg.getHostUuid());
             bus.send(cmsg);

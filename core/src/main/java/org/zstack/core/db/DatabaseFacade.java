@@ -68,4 +68,6 @@ public interface DatabaseFacade {
     DataSource getExtraDataSource();
 
     Timestamp getCurrentSqlTime();
+
+    void installEntityLifeCycleCallback(Class entityClass, EntityEvent evt, EntityLifeCycleCallback cb);
 }

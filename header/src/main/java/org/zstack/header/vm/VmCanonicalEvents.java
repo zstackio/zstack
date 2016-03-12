@@ -74,15 +74,15 @@ public class VmCanonicalEvents {
         private String vmUuid;
         private String oldState;
         private String newState;
-        private VmInstanceInventory vmInventory;
+        private VmInstanceInventory inventory;
         private Date date = new Date();
 
-        public VmInstanceInventory getVmInventory() {
-            return vmInventory;
+        public VmInstanceInventory getInventory() {
+            return inventory;
         }
 
-        public void setVmInventory(VmInstanceInventory vmInventory) {
-            this.vmInventory = vmInventory;
+        public void setInventory(VmInstanceInventory inventory) {
+            this.inventory = inventory;
         }
 
         public Date getDate() {

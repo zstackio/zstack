@@ -97,12 +97,17 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                 if (reply.isSuccess()) {
                     InstantiateVolumeReply r = (InstantiateVolumeReply) reply;
                     VolumeVO vo = dbf.findByUuid(r.getVolume().getUuid(), VolumeVO.class);
+
+                    VolumeStatus oldStatus = vo.getStatus();
+
                     vo.setInstallPath(r.getVolume().getInstallPath());
                     vo.setStatus(VolumeStatus.Ready);
                     if (vo.getType() == VolumeType.Data) {
                         vo.setDeviceId(getNextDeviceId());
                     }
                     vo = dbf.updateAndRefresh(vo);
+
+                    new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, VolumeInventory.valueOf(vo));
 
                     VolumeInventory vinv = VolumeInventory.valueOf(vo);
                     if (spec.getDestRootVolume().getUuid().equals(vinv.getUuid())) {
