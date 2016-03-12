@@ -89,6 +89,9 @@ public class TestBilling {
 	public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
+
+        TimeUnit.SECONDS.sleep(1);
+
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
         msg.setPrice(100f);
@@ -106,15 +109,24 @@ public class TestBilling {
         msg.setResourceUnit("b");
         api.createPrice(msg);
 
+        long during = 5;
         api.startVmInstance(vm.getUuid());
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(during);
         api.stopVmInstance(vm.getUuid());
+
+        TimeUnit.SECONDS.sleep(2);
 
         final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
 
-        float cpuPrice = vm.getCpuNum() * 100f * 2;
-        float memPrice = vm.getMemorySize() * 10f * 2;
-        Assert.assertEquals(reply.getTotal(), cpuPrice + memPrice, 0.02);
+        float cpuPrice = vm.getCpuNum() * 100f * during;
+        float memPrice = vm.getMemorySize() * 10f * during;
+
+        // for 2s error margin
+        float cpuPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
+        float memPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
+        float errorMargin = cpuPriceErrorMargin + memPriceErrorMargin;
+
+        Assert.assertEquals(cpuPrice + memPrice, reply.getTotal(), errorMargin);
 
         Spending spending = CollectionUtils.find(reply.getSpending(), new Function<Spending, Spending>() {
             @Override
@@ -131,7 +143,7 @@ public class TestBilling {
             }
         });
         Assert.assertNotNull(cpudetails);
-        Assert.assertEquals(cpuPrice, cpudetails.spending, 0.02);
+        Assert.assertEquals(cpuPrice, cpudetails.spending, cpuPriceErrorMargin);
 
         SpendingDetails memdetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
             @Override
@@ -140,6 +152,6 @@ public class TestBilling {
             }
         });
         Assert.assertNotNull(memdetails);
-        Assert.assertEquals(memPrice, memdetails.spending, 0.02);
+        Assert.assertEquals(memPrice, memdetails.spending, memPriceErrorMargin);
     }
 }
