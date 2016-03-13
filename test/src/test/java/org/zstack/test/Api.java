@@ -3835,6 +3835,7 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APICheckApiPermissionReply reply = sender.call(msg, APICheckApiPermissionReply.class);
         return reply.getInventory();
+    }
 
     public APICalculateAccountSpendingReply calculateSpending(String accountUuid, Long start, Long end, SessionInventory session) throws ApiSenderException {
         APICalculateAccountSpendingMsg msg = new APICalculateAccountSpendingMsg();
