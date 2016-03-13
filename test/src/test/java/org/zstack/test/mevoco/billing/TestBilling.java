@@ -15,6 +15,7 @@ import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
@@ -90,6 +91,8 @@ public class TestBilling {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 
+        VolumeInventory rootVolume = vm.getRootVolume();
+
         TimeUnit.SECONDS.sleep(1);
 
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
@@ -109,6 +112,13 @@ public class TestBilling {
         msg.setResourceUnit("b");
         api.createPrice(msg);
 
+        msg = new APICreateResourcePriceMsg();
+        msg.setTimeUnit("s");
+        msg.setPrice(9f);
+        msg.setResourceName(BillingConstants.SPENDING_ROOT_VOLUME);
+        msg.setResourceUnit("b");
+        api.createPrice(msg);
+
         long during = 5;
         api.startVmInstance(vm.getUuid());
         TimeUnit.SECONDS.sleep(during);
@@ -120,13 +130,15 @@ public class TestBilling {
 
         float cpuPrice = vm.getCpuNum() * 100f * during;
         float memPrice = vm.getMemorySize() * 10f * during;
+        float volPrice = rootVolume.getSize() * 9f * during;
 
         // for 2s error margin
         float cpuPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
-        float memPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
-        float errorMargin = cpuPriceErrorMargin + memPriceErrorMargin;
+        float memPriceErrorMargin = vm.getMemorySize() * 100f  * 2;
+        float volPriceErrorMargin = rootVolume.getSize() * 9f * 2;
+        float errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
 
-        Assert.assertEquals(cpuPrice + memPrice, reply.getTotal(), errorMargin);
+        Assert.assertEquals(cpuPrice + memPrice + volPrice, reply.getTotal(), errorMargin);
 
         Spending spending = CollectionUtils.find(reply.getSpending(), new Function<Spending, Spending>() {
             @Override
@@ -153,5 +165,14 @@ public class TestBilling {
         });
         Assert.assertNotNull(memdetails);
         Assert.assertEquals(memPrice, memdetails.spending, memPriceErrorMargin);
+
+        SpendingDetails volDetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
+            @Override
+            public SpendingDetails call(SpendingDetails arg) {
+                return BillingConstants.SPENDING_ROOT_VOLUME.equals(arg.type) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(volDetails);
+        Assert.assertEquals(volPrice, volDetails.spending, volPriceErrorMargin);
     }
 }
