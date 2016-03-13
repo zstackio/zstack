@@ -11,11 +11,13 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
+import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
@@ -34,10 +36,10 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
-
+ * 1. test data volume billing
  */
-public class TestBilling {
-    CLogger logger = Utils.getLogger(TestBilling.class);
+public class TestBilling5 {
+    CLogger logger = Utils.getLogger(TestBilling5.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -58,7 +60,7 @@ public class TestBilling {
         DBUtil.reDeployDB();
         DBUtil.reDeployCassandra(BillingConstants.CASSANDRA_KEYSPACE);
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
+        deployer = new Deployer("deployerXml/billing/TestBilling5.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
         deployer.addSpringConfig("cassandra.xml");
         deployer.addSpringConfig("billing.xml");
@@ -88,91 +90,49 @@ public class TestBilling {
     
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
-        VmInstanceInventory vm = deployer.vms.get("TestVm");
-        api.stopVmInstance(vm.getUuid());
-
-        VolumeInventory rootVolume = vm.getRootVolume();
-
-        TimeUnit.SECONDS.sleep(1);
+        DiskOfferingInventory doffering = deployer.diskOfferings.get("DataDiskOffering");
+        VolumeInventory vol = api.createDataVolume("data", doffering.getUuid());
 
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
-        msg.setPrice(100f);
-        msg.setResourceName(BillingConstants.SPENDING_CPU);
-        api.createPrice(msg);
-        Cql cql = new Cql("select * from <table> where resourceName = :name limit 1");
-        cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_CPU);
-        PriceCO co = ops.selectOne(cql.build(), PriceCO.class);
-        Assert.assertNotNull(co);
-
-        msg = new APICreateResourcePriceMsg();
-        msg.setTimeUnit("s");
         msg.setPrice(10f);
-        msg.setResourceName(BillingConstants.SPENDING_MEMORY);
+        msg.setResourceName(BillingConstants.SPENDING_TYPE_DATA_VOLUME);
         msg.setResourceUnit("b");
         api.createPrice(msg);
 
-        msg = new APICreateResourcePriceMsg();
-        msg.setTimeUnit("s");
-        msg.setPrice(9f);
-        msg.setResourceName(BillingConstants.SPENDING_ROOT_VOLUME);
-        msg.setResourceUnit("b");
-        api.createPrice(msg);
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
 
-        long during = 5;
-        api.startVmInstance(vm.getUuid());
-        TimeUnit.SECONDS.sleep(during);
-        api.stopVmInstance(vm.getUuid());
+        vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
 
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(5);
+
+        api.deleteDataVolume(vol.getUuid());
+        VolumeVO volvo  = dbf.findByUuid(vol.getUuid(), VolumeVO.class);
+        long during = TimeUnit.MILLISECONDS.toSeconds(volvo.getLastOpDate().getTime() - vol.getLastOpDate().getTime());
+
+        logger.debug(String.format("duration: %s s", during));
+
+        float price = 10 * vol.getSize() * during;
+
+        float errorMargin = 10 * vol.getSize() * 2; // the error margin of duration is 2s
 
         final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
-
-        float cpuPrice = vm.getCpuNum() * 100f * during;
-        float memPrice = vm.getMemorySize() * 10f * during;
-        float volPrice = rootVolume.getSize() * 9f * during;
-
-        // for 2s error margin
-        float cpuPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
-        float memPriceErrorMargin = vm.getMemorySize() * 100f  * 2;
-        float volPriceErrorMargin = rootVolume.getSize() * 9f * 2;
-        float errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
-
-        Assert.assertEquals(cpuPrice + memPrice + volPrice, reply.getTotal(), errorMargin);
 
         Spending spending = CollectionUtils.find(reply.getSpending(), new Function<Spending, Spending>() {
             @Override
             public Spending call(Spending arg) {
-                return BillingConstants.SPENDING_TYPE_VM.equals(arg.getSpendingType()) ? arg : null;
+                return BillingConstants.SPENDING_TYPE_DATA_VOLUME.equals(arg.getSpendingType()) ? arg : null;
             }
         });
         Assert.assertNotNull(spending);
 
-        SpendingDetails cpudetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
+        SpendingDetails details = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
             @Override
             public SpendingDetails call(SpendingDetails arg) {
-                return BillingConstants.SPENDING_CPU.equals(arg.type) ? arg : null;
+                return BillingConstants.SPENDING_TYPE_DATA_VOLUME.equals(arg.type) ? arg : null;
             }
         });
-        Assert.assertNotNull(cpudetails);
-        Assert.assertEquals(cpuPrice, cpudetails.spending, cpuPriceErrorMargin);
-
-        SpendingDetails memdetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
-            @Override
-            public SpendingDetails call(SpendingDetails arg) {
-                return BillingConstants.SPENDING_MEMORY.equals(arg.type) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(memdetails);
-        Assert.assertEquals(memPrice, memdetails.spending, memPriceErrorMargin);
-
-        SpendingDetails volDetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
-            @Override
-            public SpendingDetails call(SpendingDetails arg) {
-                return BillingConstants.SPENDING_ROOT_VOLUME.equals(arg.type) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(volDetails);
-        Assert.assertEquals(volPrice, volDetails.spending, volPriceErrorMargin);
+        Assert.assertNotNull(details);
+        Assert.assertEquals(price, details.spending, errorMargin);
     }
 }

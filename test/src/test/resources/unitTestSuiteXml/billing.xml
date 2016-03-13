@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+    <TestCase class="org.zstack.test.mevoco.billing.TestBilling"/>
+    <TestCase class="org.zstack.test.mevoco.billing.TestBilling1"/>
+    <TestCase class="org.zstack.test.mevoco.billing.TestBilling2"/>
+    <TestCase class="org.zstack.test.mevoco.billing.TestBilling3"/>
+    <TestCase class="org.zstack.test.mevoco.billing.TestBilling4"/>
+</UnitTestSuiteConfig>

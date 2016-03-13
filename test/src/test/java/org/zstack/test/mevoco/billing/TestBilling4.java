@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.zstack.billing.*;
 import org.zstack.cassandra.CassandraFacade;
 import org.zstack.cassandra.CassandraOperator;
-import org.zstack.cassandra.Cql;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -15,7 +14,6 @@ import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
@@ -34,10 +32,10 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
-
+ * test multiple prices
  */
-public class TestBilling {
-    CLogger logger = Utils.getLogger(TestBilling.class);
+public class TestBilling4 {
+    CLogger logger = Utils.getLogger(TestBilling4.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -90,55 +88,59 @@ public class TestBilling {
 	public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
-
-        VolumeInventory rootVolume = vm.getRootVolume();
-
-        TimeUnit.SECONDS.sleep(1);
-
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
         msg.setPrice(100f);
         msg.setResourceName(BillingConstants.SPENDING_CPU);
-        api.createPrice(msg);
-        Cql cql = new Cql("select * from <table> where resourceName = :name limit 1");
-        cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_CPU);
-        PriceCO co = ops.selectOne(cql.build(), PriceCO.class);
-        Assert.assertNotNull(co);
+        PriceInventory pc1 = api.createPrice(msg);
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
         msg.setPrice(10f);
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
         msg.setResourceUnit("b");
-        api.createPrice(msg);
+        PriceInventory pm1 = api.createPrice(msg);
+
+        int during = 2;
+        vm = api.startVmInstance(vm.getUuid());
+
+        TimeUnit.SECONDS.sleep(during);
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
-        msg.setPrice(9f);
-        msg.setResourceName(BillingConstants.SPENDING_ROOT_VOLUME);
+        msg.setPrice(80f);
+        msg.setResourceName(BillingConstants.SPENDING_CPU);
+        msg.setResourceUnit("s");
+        PriceInventory pc2 = api.createPrice(msg);
+
+        msg = new APICreateResourcePriceMsg();
+        msg.setTimeUnit("s");
+        msg.setPrice(120f);
+        msg.setResourceName(BillingConstants.SPENDING_MEMORY);
         msg.setResourceUnit("b");
-        api.createPrice(msg);
+        PriceInventory pm2 = api.createPrice(msg);
 
-        long during = 5;
-        api.startVmInstance(vm.getUuid());
+        vm = api.stopVmInstance(vm.getUuid());
+        float cpuPrice1 = vm.getCpuNum() * pc1.getPrice() * during;
+        float memPrice1 = vm.getMemorySize() * pm1.getPrice() * during;
+
+        logger.debug(String.format("phase1: cpu price: %s, memory price: %s, during: %s s", cpuPrice1, memPrice1, during));
+
+        vm = api.startVmInstance(vm.getUuid());
+
         TimeUnit.SECONDS.sleep(during);
-        api.stopVmInstance(vm.getUuid());
+        api.destroyVmInstance(vm.getUuid());
 
-        TimeUnit.SECONDS.sleep(2);
+        float cpuPrice2 = vm.getCpuNum() * pc2.getPrice() * during;
+        float memPrice2 = vm.getMemorySize() * pm2.getPrice() * during;
+
+        logger.debug(String.format("phase2: cpu price: %s, memory price: %s, during: %s s", cpuPrice2, memPrice2, during));
 
         final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
 
-        float cpuPrice = vm.getCpuNum() * 100f * during;
-        float memPrice = vm.getMemorySize() * 10f * during;
-        float volPrice = rootVolume.getSize() * 9f * during;
-
-        // for 2s error margin
-        float cpuPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
-        float memPriceErrorMargin = vm.getMemorySize() * 100f  * 2;
-        float volPriceErrorMargin = rootVolume.getSize() * 9f * 2;
-        float errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
-
-        Assert.assertEquals(cpuPrice + memPrice + volPrice, reply.getTotal(), errorMargin);
+        float cpuPrice = cpuPrice1 + cpuPrice2;
+        float memPrice = memPrice1 + memPrice2;
+        Assert.assertEquals(cpuPrice + memPrice, reply.getTotal(), 0.02);
 
         Spending spending = CollectionUtils.find(reply.getSpending(), new Function<Spending, Spending>() {
             @Override
@@ -155,7 +157,7 @@ public class TestBilling {
             }
         });
         Assert.assertNotNull(cpudetails);
-        Assert.assertEquals(cpuPrice, cpudetails.spending, cpuPriceErrorMargin);
+        Assert.assertEquals(cpuPrice, cpudetails.spending, 0.02);
 
         SpendingDetails memdetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
             @Override
@@ -164,15 +166,6 @@ public class TestBilling {
             }
         });
         Assert.assertNotNull(memdetails);
-        Assert.assertEquals(memPrice, memdetails.spending, memPriceErrorMargin);
-
-        SpendingDetails volDetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
-            @Override
-            public SpendingDetails call(SpendingDetails arg) {
-                return BillingConstants.SPENDING_ROOT_VOLUME.equals(arg.type) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(volDetails);
-        Assert.assertEquals(volPrice, volDetails.spending, volPriceErrorMargin);
+        Assert.assertEquals(memPrice, memdetails.spending, 0.02);
     }
 }

@@ -3,17 +3,13 @@ package org.zstack.storage.volume;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -23,6 +19,7 @@ import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
@@ -50,8 +47,10 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -76,6 +75,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     private ResourceDestinationMaker destMaker;
     @Autowired
     private VolumeDeletionPolicyManager deletionPolicyMgr;
+    @Autowired
+    private EventFacade evtf;
 
     private Future<Void> volumeExpungeTask;
 
@@ -146,6 +147,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VolumeVO.class);
         
         vo = dbf.persistAndRefresh(vo);
+
+        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
+
         VolumeInventory inv = VolumeInventory.valueOf(vo);
         logger.debug(String.format("successfully created volume[uuid:%s, name:%s, type:%s, vm uuid:%s",
                 inv.getUuid(), inv.getName(), inv.getType(), inv.getVmInstanceUuid()));
@@ -174,7 +178,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setStatus(VolumeStatus.Creating);
         vo.setType(VolumeType.Data);
         vo.setSize(0);
-        dbf.persist(vo);
+        VolumeVO vvo = dbf.persistAndRefresh(vo);
+
+        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
 
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VolumeVO.class);
         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), VolumeVO.class.getSimpleName());
@@ -206,6 +212,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     vo.setPrimaryStorageUuid(inv.getPrimaryStorageUuid());
                     vo.setFormat(inv.getFormat());
                     VolumeVO vvo = dbf.updateAndRefresh(vo);
+
+                    new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vvo));
+
                     evt.setInventory(VolumeInventory.valueOf(vvo));
                 } else {
                     evt.setErrorCode(reply.getError());
@@ -262,10 +271,12 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setState(VolumeState.Enabled);
         vol.setType(VolumeType.Data);
         vol.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        dbf.persist(vol);
+        VolumeVO vvo = dbf.persistAndRefresh(vol);
 
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vol.getUuid(), VolumeVO.class);
         tagMgr.createTagsFromAPICreateMessage(msg, vol.getUuid(), VolumeVO.class.getSimpleName());
+
+        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-data-volume-from-template-%s", template.getUuid()));
@@ -413,6 +424,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                             vol.setFormat(volumeFormat);
                         }
                         VolumeVO vo = dbf.updateAndRefresh(vol);
+
+                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vo));
+
                         evt.setInventory(VolumeInventory.valueOf(vo));
                         bus.publish(evt);
                     }
@@ -480,6 +494,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), VolumeVO.class.getSimpleName());
 		
 		vo = dbf.persistAndRefresh(vo);
+
+        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
+
 		VolumeInventory inv = VolumeInventory.valueOf(vo);
 		evt.setInventory(inv);
         logger.debug(String.format("Successfully created data volume[name:%s, uuid:%s, size:%s]", inv.getName(), inv.getUuid(), inv.getSize()));
@@ -513,10 +530,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 startExpungeTask();
             }
         });
+
 		return true;
 	}
 
-	@Override
+    @Override
 	public boolean stop() {
 		return true;
 	}

@@ -42,11 +42,21 @@
 
         <Logger name="org.zstack.identity" level="TRACE" />
 
+        <Logger name="org.zstack.cassandra" level="TRACE" />
+
         <Logger name="org.zstack.core.cloudbus" level="TRACE" />
+
+        <Logger name="org.zstack.billing" level="TRACE" />
 
         <Logger name="org.springframework" level="WARN" />
 
         <Logger name="org.zstack.core.defer" level="TRACE" />
+
+        <!--
+        <Logger name="com.datastax.driver.core" level="TRACE" />
+        -->
+
+        <Logger name="org.springframework.data.cassandra.core" level="TRACE" />
 
         <Logger name="org.hibernate" level="WARN">
             <AppenderRef ref="RollingFile" />

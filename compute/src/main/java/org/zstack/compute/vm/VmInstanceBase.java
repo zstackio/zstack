@@ -50,7 +50,6 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
-import org.zstack.header.vm.VmTracerCanonicalEvents.VmStateChangedOnHostData;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.*;
@@ -251,7 +250,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             data.setVmUuid(self.getUuid());
             data.setOldState(bs.toString());
             data.setNewState(state.toString());
-            data.setVmInventory(getSelfInventory());
+            data.setInventory(getSelfInventory());
             evtf.fire(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, data);
 
             //TODO: remove this

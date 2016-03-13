@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.APIListApplianceVmMsg;
 import org.zstack.appliancevm.APIListApplianceVmReply;
 import org.zstack.appliancevm.ApplianceVmInventory;
+import org.zstack.billing.*;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
@@ -3834,5 +3835,28 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APICheckApiPermissionReply reply = sender.call(msg, APICheckApiPermissionReply.class);
         return reply.getInventory();
+
+    public APICalculateAccountSpendingReply calculateSpending(String accountUuid, Long start, Long end, SessionInventory session) throws ApiSenderException {
+        APICalculateAccountSpendingMsg msg = new APICalculateAccountSpendingMsg();
+        msg.setAccountUuid(accountUuid);
+        msg.setSession(session == null ?  adminSession : session);
+        msg.setDateStart(start);
+        msg.setDateEnd(end);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICalculateAccountSpendingReply reply = sender.call(msg, APICalculateAccountSpendingReply.class);
+        return reply;
+    }
+
+    public APICalculateAccountSpendingReply calculateSpending(String accountUuid, SessionInventory session) throws ApiSenderException {
+        return calculateSpending(accountUuid, null, null, session);
+    }
+
+    public PriceInventory createPrice(APICreateResourcePriceMsg msg) throws ApiSenderException {
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICreateResourcePriceEvent evt = sender.send(msg, APICreateResourcePriceEvent.class);
+        return evt.getInventory();
     }
 }

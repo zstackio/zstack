@@ -15,7 +15,7 @@ import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
@@ -29,15 +29,17 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 /**
-
+ * usage state: S -> R -> R -> R -> S
  */
-public class TestBilling {
-    CLogger logger = Utils.getLogger(TestBilling.class);
+public class TestBilling1 {
+    CLogger logger = Utils.getLogger(TestBilling1.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -88,57 +90,88 @@ public class TestBilling {
     
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
-        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        final VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 
-        VolumeInventory rootVolume = vm.getRootVolume();
-
-        TimeUnit.SECONDS.sleep(1);
+        float cprice = 100.01f;
+        float mprice = 10.03f;
 
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
-        msg.setPrice(100f);
+        msg.setPrice(cprice);
         msg.setResourceName(BillingConstants.SPENDING_CPU);
         api.createPrice(msg);
         Cql cql = new Cql("select * from <table> where resourceName = :name limit 1");
         cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_CPU);
-        PriceCO co = ops.selectOne(cql.build(), PriceCO.class);
-        Assert.assertNotNull(co);
+        PriceCO cpupco = ops.selectOne(cql.build(), PriceCO.class);
+        Assert.assertNotNull(cpupco);
+
+        final PriceUDF pudf = new PriceUDF();
+        pudf.setPrice(cpupco.getPrice());
+        pudf.setTimeUnit(cpupco.getTimeUnit());
+        pudf.setResourceUnit(cpupco.getResourceUnit());
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
-        msg.setPrice(10f);
+        msg.setPrice(mprice);
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
         msg.setResourceUnit("b");
         api.createPrice(msg);
+        cql = new Cql("select * from <table> where resourceName = :name limit 1");
+        cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_MEMORY);
+        PriceCO mempco = ops.selectOne(cql.build(), PriceCO.class);
+        Assert.assertNotNull(mempco);
 
-        msg = new APICreateResourcePriceMsg();
-        msg.setTimeUnit("s");
-        msg.setPrice(9f);
-        msg.setResourceName(BillingConstants.SPENDING_ROOT_VOLUME);
-        msg.setResourceUnit("b");
-        api.createPrice(msg);
+        final PriceUDF mudf = new PriceUDF();
+        mudf.setPrice(mempco.getPrice());
+        mudf.setTimeUnit(mempco.getTimeUnit());
+        mudf.setResourceUnit(mempco.getResourceUnit());
 
-        long during = 5;
-        api.startVmInstance(vm.getUuid());
-        TimeUnit.SECONDS.sleep(during);
-        api.stopVmInstance(vm.getUuid());
+        cql = new Cql("delete from <table> where accountUuid = :uuid");
+        cql.setTable(VmUsageCO.class.getSimpleName()).setParameter("uuid", AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+        ops.execute(cql.build());
 
-        TimeUnit.SECONDS.sleep(2);
+        class CreatePrice {
+            void create(VmInstanceState state, Date date) {
+                VmUsageCO u = new VmUsageCO();
+                u.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+                u.setVmUuid(vm.getUuid());
+                u.setCpuNum(vm.getCpuNum());
+                u.setMemorySize(vm.getMemorySize());
+                u.setCpuPrice(pudf);
+                u.setMemoryPrice(mudf);
+                u.setInventory(JSONObjectUtil.toJsonString(vm));
+                u.setDateInLong(date.getTime());
+                u.setName(vm.getName());
+                u.setDate();
+                u.setState(state.toString());
+                ops.insert(u);
+            }
+        }
+
+        Date baseDate = new Date();
+        CreatePrice cp = new CreatePrice();
+        Date date1 = new Date(baseDate.getTime() + TimeUnit.DAYS.toMillis(1));
+        cp.create(VmInstanceState.Stopped, date1);
+        Date date2 = new Date(date1.getTime() + TimeUnit.DAYS.toMillis(2));
+        cp.create(VmInstanceState.Running, date2);
+        Date date3 = new Date(date2.getTime() + TimeUnit.DAYS.toMillis(6));
+        cp.create(VmInstanceState.Running, date3);
+        Date date4 = new Date(date3.getTime() + TimeUnit.DAYS.toMillis(2));
+        cp.create(VmInstanceState.Running, date4);
+        Date date5 = new Date(date4.getTime() + TimeUnit.DAYS.toMillis(10));
+        cp.create(VmInstanceState.Stopped, date5);
+
+        long during = date5.getTime() - date2.getTime();
+        long duringInSeconds = TimeUnit.MILLISECONDS.toSeconds(during);
+
+        logger.debug(String.format("expected seconds[%s]", duringInSeconds));
 
         final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
 
-        float cpuPrice = vm.getCpuNum() * 100f * during;
-        float memPrice = vm.getMemorySize() * 10f * during;
-        float volPrice = rootVolume.getSize() * 9f * during;
-
-        // for 2s error margin
-        float cpuPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
-        float memPriceErrorMargin = vm.getMemorySize() * 100f  * 2;
-        float volPriceErrorMargin = rootVolume.getSize() * 9f * 2;
-        float errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
-
-        Assert.assertEquals(cpuPrice + memPrice + volPrice, reply.getTotal(), errorMargin);
+        float cpuPrice = vm.getCpuNum() * cprice * duringInSeconds;
+        float memPrice = vm.getMemorySize() * mprice * duringInSeconds;
+        Assert.assertEquals(reply.getTotal(), cpuPrice + memPrice, 0.02);
 
         Spending spending = CollectionUtils.find(reply.getSpending(), new Function<Spending, Spending>() {
             @Override
@@ -155,7 +188,7 @@ public class TestBilling {
             }
         });
         Assert.assertNotNull(cpudetails);
-        Assert.assertEquals(cpuPrice, cpudetails.spending, cpuPriceErrorMargin);
+        Assert.assertEquals(cpuPrice, cpudetails.spending, 0.02);
 
         SpendingDetails memdetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
             @Override
@@ -164,15 +197,6 @@ public class TestBilling {
             }
         });
         Assert.assertNotNull(memdetails);
-        Assert.assertEquals(memPrice, memdetails.spending, memPriceErrorMargin);
-
-        SpendingDetails volDetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
-            @Override
-            public SpendingDetails call(SpendingDetails arg) {
-                return BillingConstants.SPENDING_ROOT_VOLUME.equals(arg.type) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(volDetails);
-        Assert.assertEquals(volPrice, volDetails.spending, volPriceErrorMargin);
+        Assert.assertEquals(memPrice, memdetails.spending, 0.02);
     }
 }
