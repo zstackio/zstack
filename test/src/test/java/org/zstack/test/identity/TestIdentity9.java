@@ -21,29 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 1. create a user
- * 2. create a policy
- * 3. attach the policy to the user
- * 4. delete the user
- *
- * confirm the policy is detached
- *
- * 5. create another user
- * 6. attach the policy to the user
- * 7. delete the policy
- *
- * confirm the policy is detached
- *
- * 8. create a group and a policy
- * 9. attach the policy to the group
- * 10. delete the group
- *
- * confirm the policy is detached
- *
- * 11. create another group and attach the policy
- * 12. delete the policy
- *
- * confirm the policy is detached
+ * test batch operation of attach/detach polices to user/group
  *
  */
 public class TestIdentity9 {

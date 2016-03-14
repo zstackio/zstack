@@ -662,11 +662,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 VmQuota quota = new VmQuota();
 
                 String sql = "select count(vm), sum(vm.cpuNum), sum(vm.memorySize) from VmInstanceVO vm, AccountResourceRefVO ref where" +
-                        " vm.uuid = ref.resourceUuid and ref.accountUuid = :auuid and ref.resourceType = :rtype and vm.state != :vstate";
+                        " vm.uuid = ref.resourceUuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("auuid", accountUUid);
                 q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
-                q.setParameter("vstate", VmInstanceState.Destroyed);
                 Tuple t = q.getSingleResult();
                 Long vnum = t.get(0, Long.class);
                 quota.vmNum = vnum == null ? 0 : vnum;
@@ -680,12 +679,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             @Transactional(readOnly = true)
             private long getUsedVolume(String accountUuid) {
                 String sql = "select count(vol) from VolumeVO vol, AccountResourceRefVO ref where vol.type = :vtype and ref.resourceUuid = vol.uuid" +
-                        " and ref.accountUuid = :auuid and ref.resourceType = :rtype and vol.status != :vstatus";
+                        " and ref.accountUuid = :auuid and ref.resourceType = :rtype";
                 TypedQuery<Tuple> volq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 volq.setParameter("auuid", accountUuid);
                 volq.setParameter("rtype", VolumeVO.class.getSimpleName());
                 volq.setParameter("vtype", VolumeType.Data);
-                volq.setParameter("vstatus", VolumeStatus.Deleted);
                 Long n = volq.getSingleResult().get(0, Long.class);
                 n = n == null ? 0 : n;
                 return n;
@@ -694,12 +692,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             @Transactional(readOnly = true)
             private long getUsedVolumeSize(String accountUuid) {
                 String sql = "select sum(vol.size) from VolumeVO vol, AccountResourceRefVO ref where" +
-                        " ref.resourceUuid = vol.uuid and ref.accountUuid = :auuid and ref.resourceType = :rtype" +
-                        " and vol.status != :vstatus";
+                        " ref.resourceUuid = vol.uuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
                 TypedQuery<Long> vq = dbf.getEntityManager().createQuery(sql, Long.class);
                 vq.setParameter("auuid", accountUuid);
                 vq.setParameter("rtype", VolumeVO.class.getSimpleName());
-                vq.setParameter("vstatus", VolumeStatus.Deleted);
                 Long vsize = vq.getSingleResult();
                 vsize = vsize == null ? 0 : vsize;
                 return vsize;
