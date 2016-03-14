@@ -12,4 +12,9 @@
         <name>org.zstack.kvm.APIUpdateKVMHostMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.kvm.APIKvmRunShellMsg</name>
+        <serviceId>kvm</serviceId>
+    </message>
+
 </service>

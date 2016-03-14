@@ -7,6 +7,8 @@ import org.zstack.header.volume.VolumeFormat;
 
 @PythonClass
 public interface KVMConstant {
+    public static final String SERVICE_ID = "kvm";
+
     @PythonClass
     public static final String KVM_HYPERVISOR_TYPE = "KVM";
     

@@ -69,8 +69,6 @@ public class KVMHost extends HostBase implements Host {
     private KVMExtensionEmitter extEmitter;
     @Autowired
     private ErrorFacade errf;
-    @Autowired
-    private TagManager tagMgr;
 
     private KVMHostContext context;
 
@@ -231,9 +229,34 @@ public class KVMHost extends HostBase implements Host {
             handle((CheckVmStateOnHypervisorMsg) msg);
         } else if (msg instanceof GetVmConsoleAddressFromHostMsg) {
             handle((GetVmConsoleAddressFromHostMsg) msg);
+        } else if (msg instanceof KvmRunShellMsg) {
+            handle((KvmRunShellMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(KvmRunShellMsg msg) {
+        Ssh ssh = new Ssh();
+        ssh.setHostname(self.getManagementIp());
+        ssh.setPort(22);
+        ssh.setUsername(getSelf().getUsername());
+        ssh.setPassword(getSelf().getPassword());
+        ssh.shell(msg.getScript());
+        SshResult result = ssh.runAndClose();
+
+        KvmRunShellReply reply = new KvmRunShellReply();
+        if (result.isSshFailure()) {
+            reply.setError(errf.stringToOperationError(
+                    String.format("unable to connect to KVM[ip:%s, username:%s] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), result.getExitErrorMessage())
+            ));
+        } else {
+            reply.setStdout(result.getStdout());
+            reply.setStderr(result.getStderr());
+            reply.setReturnCode(result.getReturnCode());
+        }
+
+        bus.reply(msg, reply);
     }
 
     private void handle(final GetVmConsoleAddressFromHostMsg msg) {

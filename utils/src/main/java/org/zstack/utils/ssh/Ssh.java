@@ -74,20 +74,55 @@ public class Ssh {
                 String srcScript = String.format("zstack-script-%s", UUID.randomUUID().toString());
                 scriptFile = new File(PathUtil.join(PathUtil.getFolderUnderZStackHomeFolder("temp-scripts"), srcScript));
                 scriptContent = s(contents).formatByMap(token);
+
                 String remoteScript = ln(
                         "/bin/bash << EOF",
                         "cat << EOF1 > {remotePath}",
                         "{scriptContent}",
                         "EOF1",
-                        "/bin/bash {remotePath} {parameters}",
+                        "/bin/bash {remotePath} {parameters} 1>{stdout} 2>{stderr}",
+                        "ret=$?",
+                        "test -f {stdout} && cat {stdout}",
+                        "test -f {stderr} && cat {stderr} 1>&2",
                         "rm -f {remotePath}",
+                        "rm -f {stdout}",
+                        "rm -f {stderr}",
+                        "exit $ret",
                         "EOF"
                 ).formatByMap(map(e("remotePath", String.format("/tmp/%s", UUID.randomUUID().toString())),
-                        e("scriptContent", scriptContent), e("parameters", parameters)));
+                        e("scriptContent", scriptContent),
+                        e("parameters", parameters),
+                        e("stdout", String.format("/tmp/%s", UUID.randomUUID().toString())),
+                        e("stderr", String.format("/tmp/%s", UUID.randomUUID().toString()))
+                ));
+
                 scriptCommand = createCommand(remoteScript);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        ScriptRunner(String script) {
+            String remoteScript = ln(
+                    "/bin/bash << EOF",
+                    "cat << EOF1 > {remotePath}",
+                    "{scriptContent}",
+                    "EOF1",
+                    "/bin/bash {remotePath} 1>{stdout} 2>{stderr}",
+                    "ret=$?",
+                    "test -f {stdout} && cat {stdout}",
+                    "test -f {stderr} && cat {stderr} 1>&2",
+                    "rm -f {remotePath}",
+                    "rm -f {stdout}",
+                    "rm -f {stderr}",
+                    "exit $ret",
+                    "EOF"
+            ).formatByMap(map(e("remotePath", String.format("/tmp/%s", UUID.randomUUID().toString())),
+                    e("scriptContent", script),
+                    e("stdout", String.format("/tmp/%s", UUID.randomUUID().toString())),
+                    e("stderr", String.format("/tmp/%s", UUID.randomUUID().toString()))
+            ));
+            scriptCommand = createCommand(remoteScript);
         }
 
         SshResult run() {
@@ -95,7 +130,9 @@ public class Ssh {
         }
 
         void cleanup() {
-            scriptFile.delete();
+            if (scriptFile != null) {
+                scriptFile.delete();
+            }
         }
     }
 
@@ -264,6 +301,12 @@ public class Ssh {
         String tool = StringUtils.join(Arrays.asList(toolNames), " ");
         String cmdstr = s("EXIT (){ echo \"$1\"; exit 1;}; cmds=\"{0}\"; for cmd in $cmds; do which $cmd >/dev/null 2>&1 || EXIT \"Not find command: $cmd\";  done").format(tool);
         return command(cmdstr);
+    }
+
+    public Ssh shell(String script) {
+        DebugUtils.Assert(this.script==null, String.format("every Ssh object can only specify one script"));
+        this.script = new ScriptRunner(script);
+        return this;
     }
 
     public Ssh script(String scriptName, String parameters, Map token) {
