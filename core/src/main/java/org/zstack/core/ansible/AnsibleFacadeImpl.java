@@ -111,7 +111,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             }
 
             placePip703();
-            deployModule("ansible/zstacklib", "zstacklib.yaml");
+            deployModule("ansible/zstacklib", "zstacklib.py");
         } catch (IOException e) {
             throw new CloudRuntimeException(e);
         }
@@ -160,16 +160,16 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 try {
                     String output;
                     if (AnsibleGlobalProperty.DEBUG_MODE2) {
-                        output = ShellUtils.run(String.format("%s %s -i %s -vvvv --private-key %s -e '%s' | tee -a %s",
-                                        AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments), AnsibleConstant.LOG_PATH),
+                        output = ShellUtils.run(String.format("PYTHONPATH=%s %s %s -i %s -vvvv --private-key %s -e '%s' | tee -a %s",
+                                        AnsibleGlobalProperty.ZSTACKLIB_ROOT, AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments), AnsibleConstant.LOG_PATH),
                                 AnsibleConstant.ROOT_DIR);
                     } else if (AnsibleGlobalProperty.DEBUG_MODE) {
-                        output = ShellUtils.run(String.format("%s %s -i %s -vvvv --private-key %s -e '%s'",
-                                        AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
+                        output = ShellUtils.run(String.format("PYTHONPATH=%s %s %s -i %s -vvvv --private-key %s -e '%s'",
+                                        AnsibleGlobalProperty.ZSTACKLIB_ROOT, AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     } else {
-                        output = ShellUtils.run(String.format("%s %s -i %s --private-key %s -e '%s'",
-                                        AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
+                        output = ShellUtils.run(String.format("PYTHONPATH=%s %s %s -i %s --private-key %s -e '%s'",
+                                        AnsibleGlobalProperty.ZSTACKLIB_ROOT, AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     }
 
@@ -352,7 +352,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
 
     @Override
     public boolean isModuleChanged(String playbookName) {
-        String moduleName = StringDSL.stripEnd(playbookName, ".yaml");
+        String moduleName = StringDSL.stripEnd(playbookName, ".py");
         Boolean ret = moduleChanges.get(moduleName);
         DebugUtils.Assert(ret != null, String.format("cannot find ansible module name[%s]", moduleName));
         if (ret) {

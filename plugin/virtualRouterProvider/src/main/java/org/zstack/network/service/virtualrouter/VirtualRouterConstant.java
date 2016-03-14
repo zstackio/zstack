@@ -20,7 +20,7 @@ public interface VirtualRouterConstant {
 	public static final String VR_PORT_FORWARDING_RULE = "PortForwardingRule";
 
 	public static final String SERVICE_ID = "virtualRouter";
-	
+
 	public static final String VR_ECHO_PATH = "/echo";
 	public static final String VR_CONFIGURE_NIC_PATH = "/configurenic";
 	public static final String VR_ADD_DHCP_PATH = "/adddhcp";
@@ -41,14 +41,14 @@ public interface VirtualRouterConstant {
 
 	public static final String VR_CREATE_VIP = "/createvip";
 	public static final String VR_REMOVE_VIP = "/removevip";
-	
+
 	public static final String VR_KVM_CREATE_BOOTSTRAP_ISO_PATH = "/virtualrouter/createbootstrapiso";
 	public static final String VR_KVM_DELETE_BOOTSTRAP_ISO_PATH = "/virtualrouter/deletebootstrapiso";
-	
+
 	public static final String VR_VIP = "VirtualRouterVip";
     public static final String VR_VIP_L3NETWORK = "VirtualRouterVipL3Network";
 
-    public static final String ANSIBLE_PLAYBOOK_NAME = "virtualrouter.yaml";
+    public static final String ANSIBLE_PLAYBOOK_NAME = "virtualrouter.py";
     public static final String ANSIBLE_MODULE_PATH = "ansible/virtualrouter";
 
     public static enum Param {

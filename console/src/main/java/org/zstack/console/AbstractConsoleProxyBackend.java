@@ -42,7 +42,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     @Autowired
     protected ErrorFacade errf;
 
-    protected static final String ANSIBLE_PLAYBOOK_NAME = "consoleproxy.yaml";
+    protected static final String ANSIBLE_PLAYBOOK_NAME = "consoleproxy.py";
 
     protected abstract ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo);
     protected abstract ConsoleProxy getConsoleProxy(SessionInventory session, VmInstanceInventory vm);
