@@ -29,11 +29,11 @@ check_status() {
 }
 
 stop_zstack(){
-    ZSTACK_HOME=$zstack_app zstack-ctl stop_node
+    ZSTACK_HOME=$zstack_app zstack-ctl stop
 }
 
 start_zstack(){
-    ZSTACK_HOME=$zstack_app zstack-ctl start_node
+    ZSTACK_HOME=$zstack_app zstack-ctl start
 }
 
 
