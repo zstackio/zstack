@@ -1862,6 +1862,16 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIAttachPolicyToUserEvent.class);
     }
 
+    public void attachPolicesToUser(String userUuid, List<String> puuids, SessionInventory session) throws ApiSenderException {
+        APIAttachPoliciesToUserMsg msg = new APIAttachPoliciesToUserMsg();
+        msg.setSession(session);
+        msg.setUserUuid(userUuid);
+        msg.setPolicyUuids(puuids);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIAttachPoliciesToUserEvent.class);
+    }
+
     public void detachPolicyFromUser(String userUuid, String policyUuid, SessionInventory session) throws ApiSenderException {
         APIDetachPolicyFromUserMsg msg = new APIDetachPolicyFromUserMsg();
         msg.setSession(session);
@@ -1880,6 +1890,16 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APIAttachPolicyToUserEvent.class);
+    }
+
+    public void detachPoliciesFromUser(String userUuid, List<String> puuids, SessionInventory session) throws ApiSenderException {
+        APIDetachPolicesFromUserMsg msg = new APIDetachPolicesFromUserMsg();
+        msg.setSession(session);
+        msg.setUserUuid(userUuid);
+        msg.setPolicyUuids(puuids);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDetachPolicesFromUserEvent.class);
     }
 
     public UserGroupInventory createGroup(String accountUuid, String name, SessionInventory session) throws ApiSenderException {

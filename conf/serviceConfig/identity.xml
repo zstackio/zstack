@@ -149,4 +149,12 @@
     <message>
         <name>org.zstack.header.identity.APICheckApiPermissionMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIDetachPolicesFromUserMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIAttachPoliciesToUserMsg</name>
+    </message>
 </service>

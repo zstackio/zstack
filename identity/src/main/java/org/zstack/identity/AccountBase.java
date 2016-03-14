@@ -31,6 +31,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -262,9 +263,45 @@ public class AccountBase extends AbstractAccount {
             handle((APIDeleteAccountMsg) msg);
         } else if (msg instanceof APIGetAccountQuotaUsageMsg) {
             handle((APIGetAccountQuotaUsageMsg) msg);
+        } else if (msg instanceof APIAttachPoliciesToUserMsg) {
+            handle((APIAttachPoliciesToUserMsg) msg);
+        } else if (msg instanceof APIDetachPolicesFromUserMsg) {
+            handle((APIDetachPolicesFromUserMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    @Transactional
+    private void handle(APIDetachPolicesFromUserMsg msg) {
+        String sql = "delete from UserPolicyRefVO ref where ref.policyUuid in (:puuids) and ref.userUuid = :userUuid";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("puuids", msg.getPolicyUuids());
+        q.setParameter("userUuid", msg.getUserUuid());
+        q.executeUpdate();
+
+        APIDetachPolicesFromUserEvent evt = new APIDetachPolicesFromUserEvent(msg.getId());
+        bus.publish(evt);
+    }
+
+    @Transactional
+    private void handle(APIAttachPoliciesToUserMsg msg) {
+        String sql = "select p.uuid from PolicyVO p where p.uuid in (:uuids) and p.uuid not in (select ref.policyUuid from UserPolicyRefVO ref" +
+                " where ref.userUuid = :userUuid)";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("uuids", msg.getPolicyUuids());
+        q.setParameter("userUuid", msg.getUserUuid());
+        List<String> puuids = q.getResultList();
+
+        for (String puuid : puuids) {
+            UserPolicyRefVO ref = new UserPolicyRefVO();
+            ref.setUserUuid(msg.getUserUuid());
+            ref.setPolicyUuid(puuid);
+            dbf.getEntityManager().persist(ref);
+        }
+
+        APIAttachPoliciesToUserEvent evt = new APIAttachPoliciesToUserEvent(msg.getId());
+        bus.publish(evt);
     }
 
     private void handle(APIGetAccountQuotaUsageMsg msg) {
