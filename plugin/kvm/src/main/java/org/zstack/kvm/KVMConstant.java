@@ -11,7 +11,7 @@ public interface KVMConstant {
 
     @PythonClass
     public static final String KVM_HYPERVISOR_TYPE = "KVM";
-    
+
     public static final String KVM_CONNECT_PATH = "/host/connect";
     public static final String KVM_PING_PATH = "/host/ping";
     public static final String KVM_ECHO_PATH = "/host/echo";
@@ -41,7 +41,7 @@ public interface KVMConstant {
     public static final String KVM_LOGOUT_ISCSI_PATH = "/iscsi/target/logout";
     public static final String KVM_LOGIN_ISCSI_PATH = "/iscsi/target/login";
     public static final String ISO_TO = "kvm.isoto";
-    public static final String ANSIBLE_PLAYBOOK_NAME = "kvm.yaml";
+    public static final String ANSIBLE_PLAYBOOK_NAME = "kvm.python";
     public static final String ANSIBLE_MODULE_PATH = "ansible/kvm";
 
     public static final String MIN_LIBVIRT_LIVESNAPSHOT_VERSION = "1.0.0";
@@ -61,7 +61,7 @@ public interface KVMConstant {
     	Shutdown,
     	Crashed,
     	Suspended;
-    	
+
     	public VmInstanceState toVmInstanceState() {
     		if (this == Running) {
     			return VmInstanceState.Running;
