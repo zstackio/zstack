@@ -18,10 +18,7 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
-import org.zstack.header.host.RecalculateHostCapacityMsg;
+import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
@@ -295,19 +292,28 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             @Transactional(readOnly = true)
             public Tuple call() {
                 if (msg.getHostUuids() != null && !msg.getHostUuids().isEmpty()) {
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory) from HostCapacityVO hc where hc.uuid in (:hostUuids)";
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory) from HostCapacityVO hc, HostVO host where hc.uuid in (:hostUuids)" +
+                            " and hc.uuid = host.uuid and host.state = :hstate and host.status = :hstatus";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("hostUuids", msg.getHostUuids());
+                    q.setParameter("hstate", HostState.Enabled);
+                    q.setParameter("hstatus", HostStatus.Connected);
                     return q.getSingleResult();
                 }  else if (msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty()) {
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory) from HostCapacityVO hc, HostVO host where hc.uuid = host.uuid and host.clusterUuid in (:clusterUuids)";
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory) from " +
+                            "HostCapacityVO hc, HostVO host where hc.uuid = host.uuid and host.clusterUuid in (:clusterUuids) and host.state = :hstate and host.status = :hstatus";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("clusterUuids", msg.getClusterUuids());
+                    q.setParameter("hstate", HostState.Enabled);
+                    q.setParameter("hstatus", HostStatus.Connected);
                     return q.getSingleResult();
                 } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory) from HostCapacityVO hc, HostVO host where hc.uuid = host.uuid and host.zoneUuid in (:zoneUuids)";
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory) from HostCapacityVO hc, HostVO host" +
+                            " where hc.uuid = host.uuid and host.zoneUuid in (:zoneUuids) and host.state = :hstate and host.status = :hstatus";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("zoneUuids", msg.getZoneUuids());
+                    q.setParameter("hstate", HostState.Enabled);
+                    q.setParameter("hstatus", HostStatus.Connected);
                     return q.getSingleResult();
                 }
 
