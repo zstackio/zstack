@@ -12,6 +12,7 @@
     <TestCase class="org.zstack.test.network.TestAddIpRangeByCidr"/>
 	<TestCase class="org.zstack.test.network.TestDeleteIpRange"/>
 	<TestCase class="org.zstack.test.network.TestAcquireIp"/>
+	<TestCase class="org.zstack.test.network.TestAcquireIp1"/>
 	<TestCase class="org.zstack.test.network.TestReleaseIp"/>
 	<TestCase class="org.zstack.test.network.TestListIpRange"/>
 	<TestCase class="org.zstack.test.network.TestFirstAvailableIpAllocatorStrategy1"/>
