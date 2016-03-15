@@ -13,7 +13,7 @@ CREATE TABLE  `zstack`.`ConsoleProxyAgentVO` (
     `type` varchar(255) NOT NULL,
     `status` varchar(64) NOT NULL,
     `state` varchar(64) NOT NULL,
-    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP COMMENT 'last operation date',
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
