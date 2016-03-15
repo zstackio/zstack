@@ -7,6 +7,7 @@ import org.zstack.utils.path.PathUtil;
 public interface AnsibleConstant {
     public static String SERVICE_ID = "ansible";
     public static String ROOT_DIR = PathUtil.getFolderUnderZStackHomeFolder("ansible");
+    public static String ZSTACKLIB_ROOT = PathUtil.getFolderUnderZStackHomeFolder("ansible/files/zstacklib/");
     public static String INVENTORY_FILE = PathUtil.getFilePathUnderZStackHomeFolder("ansible/hosts");
     public static String CONFIGURATION_FILE = PathUtil.getFilePathUnderZStackHomeFolder("ansible/ansible.cfg");
     public static String LOG_PATH = PathUtil.getFilePathUnderZStackHomeFolder("ansible/log");
