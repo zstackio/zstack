@@ -1,14 +1,17 @@
 package org.zstack.storage.primary.local;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeVO;
 
 /**
  * Created by frank on 11/18/2015.
  */
+@Action(category = VolumeConstant.ACTION_CATEGORY, names = {"read"})
 public class APILocalStorageGetVolumeMigratableHostsMsg extends APISyncCallMessage implements PrimaryStorageMessage {
     @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
     private String volumeUuid;
