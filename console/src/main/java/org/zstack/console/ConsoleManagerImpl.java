@@ -57,11 +57,17 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
-        if (msg instanceof APIMessage) {
+        if (msg instanceof ConsoleProxyAgentMessage) {
+            passThrough(msg);
+        } else if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage)msg);
         } else {
             handleLocalMessage(msg);
         }
+    }
+
+    private void passThrough(Message msg) {
+        getBackend().handleMessage(msg);
     }
 
     private void handleLocalMessage(Message msg) {
@@ -70,7 +76,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
 
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIRequestConsoleAccessMsg) {
-            handle((APIRequestConsoleAccessMsg)msg);
+            handle((APIRequestConsoleAccessMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }

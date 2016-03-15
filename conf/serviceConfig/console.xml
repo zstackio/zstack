@@ -6,4 +6,13 @@
         <name>org.zstack.header.console.APIRequestConsoleAccessMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.header.console.APIReconnectConsoleProxyAgentMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.console.APIQueryConsoleProxyAgentMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
 </service>

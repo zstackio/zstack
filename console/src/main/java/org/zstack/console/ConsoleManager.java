@@ -1,6 +1,5 @@
 package org.zstack.console;
 
-import org.zstack.header.Service;
 import org.zstack.header.console.ConsoleHypervisorBackend;
 import org.zstack.header.host.HypervisorType;
 
@@ -11,5 +10,5 @@ import org.zstack.header.host.HypervisorType;
  * To change this template use File | Settings | File Templates.
  */
 public interface ConsoleManager {
-    public ConsoleHypervisorBackend getHypervisorConsoleBackend(HypervisorType type);
+    ConsoleHypervisorBackend getHypervisorConsoleBackend(HypervisorType type);
 }
