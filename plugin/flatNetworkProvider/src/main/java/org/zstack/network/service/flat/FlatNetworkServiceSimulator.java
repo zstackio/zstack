@@ -94,4 +94,13 @@ public class FlatNetworkServiceSimulator {
         reply(entity, rsp);
         return null;
     }
+
+    @RequestMapping(value = FlatDhcpBackend.DHCP_CONNECT_PATH, method = RequestMethod.POST)
+    public @ResponseBody String connect(HttpEntity<String> entity) {
+        ConnectCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ConnectCmd.class);
+        config.connectCmds.add(cmd);
+        ConnectRsp rsp = new ConnectRsp();
+        reply(entity, rsp);
+        return null;
+    }
 }

@@ -73,6 +73,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public static final String APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/apply";
     public static final String PREPARE_DHCP_PATH = "/flatnetworkprovider/dhcp/prepare";
     public static final String RELEASE_DHCP_PATH = "/flatnetworkprovider/dhcp/release";
+    public static final String DHCP_CONNECT_PATH = "/flatnetworkprovider/dhcp/connect";
 
     private Map<String, UsedIpInventory> l3NetworkDhcpServerIp = new ConcurrentHashMap<String, UsedIpInventory>();
 
@@ -184,11 +185,26 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         return dhcpInfoList;
     }
 
+
     @Override
     public void kvmHostConnected(KVMHostConnectedContext context) throws KVMHostConnectException {
         List<DhcpInfo> dhcpInfoList = getDhcpInfoForConnectedKvmHost(context);
         if (dhcpInfoList == null) {
             return;
+        }
+
+        // to flush ebtables
+        ConnectCmd cmd = new ConnectCmd();
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(context.getInventory().getUuid());
+        msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+        msg.setNoStatusCheck(true);
+        msg.setPath(DHCP_CONNECT_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, context.getInventory().getUuid());
+        MessageReply reply = bus.call(msg);
+        if (!reply.isSuccess()) {
+            throw new OperationFailureException(reply.getError());
         }
 
         FutureCompletion completion = new FutureCompletion();
@@ -690,6 +706,13 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     public static class PrepareDhcpRsp extends KVMAgentCommands.AgentResponse {
+    }
+
+    public static class ConnectCmd extends KVMAgentCommands.AgentCommand {
+    }
+
+    public static class ConnectRsp extends KVMAgentCommands.AgentResponse {
+
     }
 
     public NetworkServiceProviderType getProviderType() {

@@ -139,6 +139,7 @@ public class TestMevoco20 {
 
         fconfig.applyDhcpCmdList.clear();
 
+        fconfig.connectCmds.clear();
         HostInventory host = deployer.hosts.get("host1");
         api.reconnectHost(host.getUuid());
 
@@ -167,5 +168,7 @@ public class TestMevoco20 {
         Assert.assertEquals(dhcpServerIp, cmd.dhcpServerIp);
         Assert.assertEquals(dhcp.bridgeName, cmd.bridgeName);
         Assert.assertEquals(ipvo.getNetmask(), cmd.dhcpNetmask);
+
+        Assert.assertEquals(1, fconfig.connectCmds.size());
     }
 }
