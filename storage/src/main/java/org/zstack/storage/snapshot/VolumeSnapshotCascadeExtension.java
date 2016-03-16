@@ -1,18 +1,18 @@
 package org.zstack.storage.snapshot;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.cascade.*;
+import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
+import org.zstack.core.cascade.CascadeAction;
+import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.volume.VolumeDeletionPolicyManager;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.utils.CollectionUtils;
@@ -33,6 +33,8 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private VolumeDeletionPolicyManager volumeDeletionPolicyMgr;
 
     private static final String NAME = VolumeSnapshotVO.class.getSimpleName();
 
@@ -80,11 +82,6 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
             for (VolumeInventory vol : vols) {
                 msgs.addAll(handleVolumeDeletion(vol.getUuid()));
             }
-        } else if (VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<VmInstanceInventory> vms = action.getParentIssuerContext();
-            for (VmInstanceInventory vm : vms) {
-               msgs.addAll(handleVmDeletion(vm));
-            }
         } else if (VolumeSnapshotVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<VolumeSnapshotInventory> sinvs = action.getParentIssuerContext();
             for (VolumeSnapshotInventory sinv : sinvs) {
@@ -118,11 +115,11 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
         return makeMsg(sinv.getUuid(), false);
     }
 
-    private List<VolumeSnapshotDeletionMsg> handleVmDeletion(VmInstanceInventory vm) {
-        return handleVolumeDeletion(vm.getRootVolumeUuid());
-    }
-
     private List<VolumeSnapshotDeletionMsg> handleVolumeDeletion(String volUuid) {
+        if (volumeDeletionPolicyMgr.getDeletionPolicy(volUuid) != VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct) {
+            return new ArrayList<VolumeSnapshotDeletionMsg>();
+        }
+
         List<VolumeSnapshotDeletionMsg> ret = new ArrayList<VolumeSnapshotDeletionMsg>();
         SimpleQuery<VolumeSnapshotTreeVO> cq = dbf.createQuery(VolumeSnapshotTreeVO.class);
         cq.select(VolumeSnapshotTreeVO_.uuid);
@@ -179,25 +176,6 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
 
             SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
             q.add(VolumeSnapshotVO_.volumeUuid, Op.IN, volUuids);
-            List<VolumeSnapshotVO> vos = q.list();
-            if (!vos.isEmpty()) {
-                ret = VolumeSnapshotInventory.valueOf(vos);
-            }
-        } if (VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> rootVolUuids = new ArrayList<String>();
-            List<VmInstanceInventory> vms = action.getParentIssuerContext();
-            for (VmInstanceInventory vm : vms) {
-                if (vm.getRootVolumeUuid() != null) {
-                    rootVolUuids.add(vm.getRootVolumeUuid());
-                }
-            }
-
-            if (rootVolUuids.isEmpty()) {
-                return null;
-            }
-
-            SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-            q.add(VolumeSnapshotVO_.volumeUuid, Op.IN, rootVolUuids);
             List<VolumeSnapshotVO> vos = q.list();
             if (!vos.isEmpty()) {
                 ret = VolumeSnapshotInventory.valueOf(vos);
