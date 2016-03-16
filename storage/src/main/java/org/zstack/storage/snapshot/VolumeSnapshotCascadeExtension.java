@@ -154,7 +154,7 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(VolumeVO.class.getSimpleName(), VmInstanceVO.class.getSimpleName());
+        return Arrays.asList(VolumeVO.class.getSimpleName());
     }
 
     @Override
