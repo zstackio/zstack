@@ -52,9 +52,14 @@ public class DBUtil {
         // initializing platform causes zstack.properties to be load
         Platform.getUuid();
         logger.info("Redeploying cassandra");
-        final String cqlsh = System.getProperty("Cassandra.cqlsh");
+        String cqlsh = System.getProperty("Cassandra.cqlsh");
         if (cqlsh == null) {
             throw new RuntimeException("please set Cassandra.cqlsh in zstack.properties");
+        }
+
+        if (cqlsh.startsWith("~")) {
+            String userHome = System.getProperty("user.home");
+            cqlsh = cqlsh.replaceAll("~", userHome);
         }
 
         if (!PathUtil.exists(cqlsh)) {
@@ -66,6 +71,11 @@ public class DBUtil {
             throw new RuntimeException("please set Cassandra.bin in zstack.properties");
         }
 
+        if (cqlbin.startsWith("~")) {
+            String userHome = System.getProperty("user.home");
+            cqlbin = cqlbin.replaceAll("~", userHome);
+        }
+
         if (!PathUtil.exists(cqlbin)) {
             throw new RuntimeException(String.format("cannot find %s", cqlbin));
         }
@@ -73,10 +83,11 @@ public class DBUtil {
         ShellResult res = ShellUtils.runAndReturn(String.format("%s -e \"describe keyspaces\"", cqlsh), false);
         if (!res.isReturnCode(0)) {
             ShellUtils.run(String.format("bash -c %s &", cqlbin), false);
+            final String finalCqlsh = cqlsh;
             TimeUtils.loopExecuteUntilTimeoutIgnoreException(120, 1, TimeUnit.SECONDS, new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    ShellResult res = ShellUtils.runAndReturn(String.format("%s -e \"describe keyspaces\"", cqlsh), false);
+                    ShellResult res = ShellUtils.runAndReturn(String.format("%s -e \"describe keyspaces\"", finalCqlsh), false);
                     return res.isReturnCode(0);
                 }
             });
