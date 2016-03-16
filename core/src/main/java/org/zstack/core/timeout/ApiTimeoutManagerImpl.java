@@ -169,11 +169,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
 
     @Override
     public Long getTimeout(Class clz) {
-        Long t = timeouts.get(clz);
-        if (t == null) {
-            throw new CloudRuntimeException(String.format("cannot find timeout for class[%s]", clz));
-        }
-        return t;
+        return timeouts.get(clz);
     }
 
     @Override
