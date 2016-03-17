@@ -9,6 +9,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import java.io.File;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -93,7 +94,12 @@ public class DBUtil {
             });
         }
 
-        ShellUtils.run(String.format("%s -e \"drop keyspace %s\"", cqlsh, keyspace), false);
+        ShellUtils.run(String.format("%s -e \"drop keyspace if exists %s\"", cqlsh, keyspace), false);
+
+        File schemaFolder = PathUtil.findFolderOnClassPath("mevoco/cassandra/db", true);
+        File deployer = PathUtil.findFileOnClassPath("deploy_cassandra_db.py", true);
+        ShellUtils.run(String.format("python %s --schema-folder %s --cqlsh %s --ip 127.0.0.1",
+                deployer.getAbsolutePath(), schemaFolder.getAbsolutePath(), cqlsh));
     }
 }
 
