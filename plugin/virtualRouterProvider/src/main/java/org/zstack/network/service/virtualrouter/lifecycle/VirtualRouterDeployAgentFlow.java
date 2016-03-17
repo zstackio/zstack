@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.appliancevm.ApplianceVmSpec;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
@@ -39,7 +40,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
     private static final CLogger logger = Utils.getLogger(VirtualRouterDeployAgentFlow.class);
 
 	@Autowired
-	private GlobalConfigFacade gcf;
+	private AnsibleFacade asf;
 	@Autowired
 	private VirtualRouterManager vrMgr;
 	@Autowired
@@ -157,8 +158,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
         }
 
         final String username = "root";
-        final String privKey = gcf.getConfigValue(ConfigurationConstant.GlobalConfig.privateKey.getCategory(),
-                ConfigurationConstant.GlobalConfig.privateKey.toString(), String.class);
+        final String privKey = asf.getPrivateKey();
         final String mgmtIp = mgmtNic.getIp();
 
         SshFileMd5Checker checker = new SshFileMd5Checker();

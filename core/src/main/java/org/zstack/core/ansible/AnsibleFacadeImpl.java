@@ -46,6 +46,9 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     @Autowired
     private ThreadFacade thdf;
 
+    private String publicKey;
+    private String privateKey;
+
     private void placePip703() {
         File pip = PathUtil.findFileOnClassPath("tools/pip-7.0.3.tar.gz");
         if (pip == null) {
@@ -62,14 +65,19 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
 
     void init() {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
-            logger.debug(String.format("skip AnsibleFacade init as it's unittest"));
+            logger.debug("skip AnsibleFacade init as it's unittest");
             return;
         }
 
         File privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY, true);
         ShellUtils.run(String.format("chmod 600 %s", privKeyFile.getAbsolutePath()));
 
+        File pubKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PUBLIC_KEY);
+
         try {
+            publicKey = FileUtils.readFileToString(pubKeyFile);
+            privateKey = FileUtils.readFileToString(privKeyFile);
+
             File invFile = new File(AnsibleConstant.CONFIGURATION_FILE);
             File invDir = new File(invFile.getParent());
             if (!invDir.exists()) {
@@ -357,5 +365,15 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     @Override
     public Map<String, String> getVariables() {
         return variables;
+    }
+
+    @Override
+    public String getPublicKey() {
+        return publicKey;
+    }
+
+    @Override
+    public String getPrivateKey() {
+        return privateKey;
     }
 }

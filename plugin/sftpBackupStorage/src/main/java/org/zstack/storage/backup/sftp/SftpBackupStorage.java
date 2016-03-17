@@ -3,6 +3,7 @@ package org.zstack.storage.backup.sftp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
@@ -40,7 +41,7 @@ public class SftpBackupStorage extends BackupStorageBase {
     @Autowired
     private RESTFacade restf;
     @Autowired
-    private GlobalConfigFacade gcf;
+    private AnsibleFacade asf;
     @Autowired
     private ErrorFacade errf;
     @Autowired
@@ -345,7 +346,7 @@ public class SftpBackupStorage extends BackupStorageBase {
     private void handle(final GetSftpBackupStorageDownloadCredentialMsg msg) {
         final GetSftpBackupStorageDownloadCredentialReply reply = new GetSftpBackupStorageDownloadCredentialReply();
 
-        String key = gcf.getConfigValue(ConfigurationConstant.GlobalConfig.privateKey.getCategory(), ConfigurationConstant.GlobalConfig.privateKey.toString(), String.class);
+        String key = asf.getPrivateKey();
         reply.setHostname(getSelf().getHostname());
         reply.setSshKey(key);
         bus.reply(msg, reply);

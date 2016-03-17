@@ -292,8 +292,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             deviceId ++;
         }
 
-        String publicKey = gcf.getConfigValue(ConfigurationConstant.GlobalConfig.publicKey.getCategory(),
-                ConfigurationConstant.GlobalConfig.publicKey.toString(), String.class);
+        String publicKey = asf.getPublicKey();
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
 
         return ret;

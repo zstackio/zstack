@@ -10,4 +10,8 @@ public interface AnsibleFacade {
     boolean isModuleChanged(String playbookName);
 
     Map<String, String> getVariables();
+
+    String getPublicKey();
+
+    String getPrivateKey();
 }

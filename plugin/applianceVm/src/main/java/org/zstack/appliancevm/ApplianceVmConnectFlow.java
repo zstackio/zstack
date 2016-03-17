@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -38,11 +39,11 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
     @Autowired
     private ThreadFacade thdf;
     @Autowired
-    private GlobalConfigFacade gcf;
-    @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private AnsibleFacade asf;
 
     private static final String ERROR_LOG_PATH = "/var/lib/zstack/error.log";
 
@@ -71,8 +72,7 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
 
         final int connectTimeout = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
         final String username = "root";
-        final String privKey = gcf.getConfigValue(ConfigurationConstant.GlobalConfig.privateKey.getCategory(),
-                ConfigurationConstant.GlobalConfig.privateKey.toString(), String.class);
+        final String privKey = asf.getPrivateKey();
         final int sshPort = 22;
         final boolean connectVerbose = ApplianceVmGlobalProperty.CONNECT_VERBOSE;
 

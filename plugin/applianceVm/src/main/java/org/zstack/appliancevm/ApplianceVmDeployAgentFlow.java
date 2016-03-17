@@ -7,6 +7,7 @@ import org.zstack.appliancevm.ApplianceVmCommands.InitCmd;
 import org.zstack.appliancevm.ApplianceVmCommands.InitRsp;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
@@ -41,8 +42,6 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
-    private GlobalConfigFacade gcf;
-    @Autowired
     private RESTFacade restf;
     @Autowired
     private CloudBus bus;
@@ -50,6 +49,8 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
     private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    private AnsibleFacade asf;
 
     private void continueConnect(final String echoUrl, final String apvmUuid, final FlowTrigger outerTrigger) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -170,8 +171,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         }
 
         final String username = "root";
-        final String privKey = gcf.getConfigValue(ConfigurationConstant.GlobalConfig.privateKey.getCategory(),
-                ConfigurationConstant.GlobalConfig.privateKey.toString(), String.class);
+        final String privKey = asf.getPrivateKey();
 
         SshFileMd5Checker checker = new SshFileMd5Checker();
         checker.setTargetIp(mgmtIp);
