@@ -11,7 +11,16 @@ public class RunAnsibleMsg extends NeedReplyMessage {
     private String targetIp;
     private String privateKeyFile;
     private String playBookPath;
+    private String ansibleExecutable;
     private Map<String, Object> arguments = new HashMap<String, Object>();
+
+    public String getAnsibleExecutable() {
+        return ansibleExecutable;
+    }
+
+    public void setAnsibleExecutable(String ansibleExecutable) {
+        this.ansibleExecutable = ansibleExecutable;
+    }
 
     public String getTargetIp() {
         return targetIp;

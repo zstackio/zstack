@@ -59,6 +59,15 @@ public class AnsibleRunner {
     private boolean localPublicKey;
     private boolean runOnLocal;
     private AnsibleNeedRun ansibleNeedRun;
+    private String ansibleExecutable;
+
+    public String getAnsibleExecutable() {
+        return ansibleExecutable;
+    }
+
+    public void setAnsibleExecutable(String ansibleExecutable) {
+        this.ansibleExecutable = ansibleExecutable;
+    }
 
     public String getPlayBookPath() {
         return playBookPath;
@@ -190,6 +199,7 @@ public class AnsibleRunner {
         msg.setTargetIp(targetIp);
         msg.setPrivateKeyFile(privKeyFile);
         msg.setArguments(arguments);
+        msg.setAnsibleExecutable(ansibleExecutable);
 
         if (playBookPath != null) {
             msg.setPlayBookPath(playBookPath);

@@ -157,19 +157,20 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 arguments.put("pkg_zstacklib", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME);
                 arguments.putAll(getVariables());
                 String playBookPath = msg.getPlayBookPath();
+                String executable = msg.getAnsibleExecutable() == null ? AnsibleGlobalProperty.EXECUTABLE : msg.getAnsibleExecutable();
                 try {
                     String output;
                     if (AnsibleGlobalProperty.DEBUG_MODE2) {
                         output = ShellUtils.run(String.format("PYTHONPATH=%s %s %s -i %s -vvvv --private-key %s -e '%s' | tee -a %s",
-                                        AnsibleConstant.ZSTACKLIB_ROOT, AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments), AnsibleConstant.LOG_PATH),
+                                        AnsibleConstant.ZSTACKLIB_ROOT, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments), AnsibleConstant.LOG_PATH),
                                 AnsibleConstant.ROOT_DIR);
                     } else if (AnsibleGlobalProperty.DEBUG_MODE) {
                         output = ShellUtils.run(String.format("PYTHONPATH=%s %s %s -i %s -vvvv --private-key %s -e '%s'",
-                                        AnsibleConstant.ZSTACKLIB_ROOT, AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
+                                        AnsibleConstant.ZSTACKLIB_ROOT, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     } else {
                         output = ShellUtils.run(String.format("PYTHONPATH=%s %s %s -i %s --private-key %s -e '%s'",
-                                        AnsibleConstant.ZSTACKLIB_ROOT, AnsibleGlobalProperty.EXECUTABLE, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
+                                        AnsibleConstant.ZSTACKLIB_ROOT, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     }
 
