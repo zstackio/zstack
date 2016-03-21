@@ -3,12 +3,18 @@ package org.zstack.network.service.flat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
@@ -26,6 +32,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -54,9 +61,10 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
         return q.getResultList();
     }
 
-    private void setDnsOnHost(HostInventory host) {
+    private void setDnsOnHost(HostInventory host, final Completion completion) {
         List<String> dns = getDnsByClusterUuid(host.getClusterUuid());
         if (dns.isEmpty()) {
+            completion.success();
             return;
         }
 
@@ -69,21 +77,36 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
         msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(SET_DNS_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
-        MessageReply reply = bus.call(msg);
-        if (reply.isSuccess()) {
-            throw new OperationFailureException(reply.getError());
-        }
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
 
-        KVMHostAsyncHttpCallReply re = (KVMHostAsyncHttpCallReply)reply;
-        SetDnsRsp rsp = re.castReply();
-        if (!rsp.isSuccess()) {
-            throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
-        }
+                KVMHostAsyncHttpCallReply re = (KVMHostAsyncHttpCallReply)reply;
+                SetDnsRsp rsp = re.castReply();
+                if (!rsp.isSuccess()) {
+                    completion.fail(errf.stringToOperationError(rsp.getError()));
+                }
+            }
+        });
     }
 
     @Override
     public void connectionReestablished(HostInventory inv) throws HostException {
-        setDnsOnHost(inv);
+        setDnsOnHost(inv, new Completion() {
+            @Override
+            public void success() {
+                // ignore
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(errorCode.toString());
+            }
+        });
     }
 
     @Override
@@ -92,8 +115,25 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
     }
 
     @Override
-    public void kvmHostConnected(KVMHostConnectedContext context) throws KVMHostConnectException {
-        setDnsOnHost(context.getInventory());
+    public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        return new NoRollbackFlow() {
+            String __name__ = "prepare-flat-dns";
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                setDnsOnHost(context.getInventory(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        };
     }
 
 

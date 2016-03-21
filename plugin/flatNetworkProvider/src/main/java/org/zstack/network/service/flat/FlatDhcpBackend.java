@@ -187,35 +187,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
 
     @Override
-    public void kvmHostConnected(KVMHostConnectedContext context) throws KVMHostConnectException {
-        List<DhcpInfo> dhcpInfoList = getDhcpInfoForConnectedKvmHost(context);
-        if (dhcpInfoList == null) {
-            return;
-        }
-
-        // to flush ebtables
-        ConnectCmd cmd = new ConnectCmd();
-        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-        msg.setHostUuid(context.getInventory().getUuid());
-        msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
-        msg.setNoStatusCheck(true);
-        msg.setPath(DHCP_CONNECT_PATH);
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, context.getInventory().getUuid());
-        MessageReply reply = bus.call(msg);
-        if (!reply.isSuccess()) {
-            throw new OperationFailureException(reply.getError());
-        }
-
-        FutureCompletion completion = new FutureCompletion();
-        applyDhcpToHosts(dhcpInfoList, context.getInventory().getUuid(), true, completion);
-        completion.await();
-        if (!completion.isSuccess()) {
-            throw new OperationFailureException(completion.getErrorCode());
-        }
-    }
-
-    @Override
     @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof FlatDhcpAcquireDhcpServerIpMsg) {
@@ -669,6 +640,52 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     @Override
     public void failedToDeleteIpRange(IpRangeInventory ipRange, ErrorCode errorCode) {
 
+    }
+
+    @Override
+    public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        return new NoRollbackFlow() {
+            String __name__ = "prepare-flat-dhcp";
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                final List<DhcpInfo> dhcpInfoList = getDhcpInfoForConnectedKvmHost(context);
+                if (dhcpInfoList == null) {
+                    trigger.next();
+                    return;
+                }
+
+                // to flush ebtables
+                ConnectCmd cmd = new ConnectCmd();
+                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                msg.setHostUuid(context.getInventory().getUuid());
+                msg.setCommand(cmd);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+                msg.setNoStatusCheck(true);
+                msg.setPath(DHCP_CONNECT_PATH);
+                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, context.getInventory().getUuid());
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                        } else {
+                            applyDhcpToHosts(dhcpInfoList, context.getInventory().getUuid(), true, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        };
     }
 
     public static class DhcpInfo {

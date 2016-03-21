@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConnectionReestablishExtensionPoint;
 import org.zstack.header.host.HostException;
@@ -18,6 +21,7 @@ import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
+import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -80,7 +84,16 @@ public class CephKvmExternsion implements KVMHostConnectExtensionPoint, HostConn
     }
 
     @Override
-    public void kvmHostConnected(KVMHostConnectedContext context) throws KVMHostConnectException {
-        createSecret(context.getInventory().getUuid(), context.getInventory().getClusterUuid());
+    public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        return new NoRollbackFlow() {
+            String __name__ = "prepare-ceph-primary-storage";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                //TODO: change to async
+                createSecret(context.getInventory().getUuid(), context.getInventory().getClusterUuid());
+                trigger.next();
+            }
+        };
     }
 }

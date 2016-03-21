@@ -1,5 +1,7 @@
 package org.zstack.kvm;
 
+import org.zstack.header.core.workflow.Flow;
+
 public interface KVMHostConnectExtensionPoint {
-    void kvmHostConnected(KVMHostConnectedContext context) throws KVMHostConnectException;
+    Flow createKvmHostConnectingFlow(KVMHostConnectedContext context);
 }

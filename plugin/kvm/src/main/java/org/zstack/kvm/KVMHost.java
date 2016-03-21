@@ -1793,23 +1793,29 @@ public class KVMHost extends HostBase implements Host {
             throw new OperationFailureException(errCode);
         }
 
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("continue-connecting-kvm-host-%s-%s", self.getManagementIp(), self.getUuid()));
         for (KVMHostConnectExtensionPoint extp : factory.getConnectExtensions()) {
-            try {
-                KVMHostConnectedContext ctx = new KVMHostConnectedContext();
-                ctx.setInventory((KVMHostInventory) getSelfInventory());
-                ctx.setNewAddedHost(newAdded);
-                extp.kvmHostConnected(ctx);
-            } catch (OperationFailureException oe) {
-                throw new OperationFailureException(errf.instantiateErrorCode(HostErrors.CONNECTION_ERROR, oe.getErrorCode()));
-            } catch (Exception e) {
-                String err = String.format("connection error for KVM host[uuid:%s, ip:%s] when calling %s, because %s", self.getUuid(),
-                        self.getManagementIp(), extp.getClass().getName(), e.getMessage());
-                logger.warn(err, e);
-                throw new OperationFailureException(errf.instantiateErrorCode(HostErrors.CONNECTION_ERROR, err));
-            }
+            KVMHostConnectedContext ctx = new KVMHostConnectedContext();
+            ctx.setInventory((KVMHostInventory) getSelfInventory());
+            ctx.setNewAddedHost(newAdded);
+
+            chain.then(extp.createKvmHostConnectingFlow(ctx));
         }
 
-        completion.success();
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                String err = String.format("connection error for KVM host[uuid:%s, ip:%s]", self.getUuid(),
+                        self.getManagementIp());
+                completion.fail(errf.instantiateErrorCode(HostErrors.CONNECTION_ERROR, err, errCode));
+            }
+        }).start();
     }
 
     private void createHostVersionSystemTags(String distro, String release, String version) {

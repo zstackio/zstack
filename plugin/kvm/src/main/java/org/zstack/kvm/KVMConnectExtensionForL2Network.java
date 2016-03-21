@@ -136,21 +136,6 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
         }).start();
     }
 
-    @Override
-    public void kvmHostConnected(KVMHostConnectedContext context) throws KVMHostConnectException {
-        //TODO: make connect async
-        List<L2NetworkInventory> l2s = getL2Networks(context.getInventory().getClusterUuid());
-        if (l2s.isEmpty()) {
-            return;
-        }
-
-        FutureCompletion completion = new FutureCompletion();
-        prepareNetwork(l2s.iterator(), context.getInventory().getUuid(), completion);
-        completion.await(TimeUnit.SECONDS.toMillis(600));
-        if (!completion.isSuccess()) {
-            throw new OperationFailureException(completion.getErrorCode());
-        }
-    }
 
     @Override
     public void connectionReestablished(HostInventory inv) throws HostException {
@@ -171,5 +156,33 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
     @Override
     public HypervisorType getHypervisorTypeForReestablishExtensionPoint() {
         return new HypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
+    }
+
+    @Override
+    public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        return new NoRollbackFlow() {
+            String __name__ = "prepare-l2-network";
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                List<L2NetworkInventory> l2s = getL2Networks(context.getInventory().getClusterUuid());
+                if (l2s.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                prepareNetwork(l2s.iterator(), context.getInventory().getUuid(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        };
     }
 }

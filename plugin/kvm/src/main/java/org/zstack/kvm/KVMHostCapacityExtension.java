@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
@@ -12,6 +15,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityCmd;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityResponse;
+
+import java.util.Map;
 
 public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
     @Autowired
@@ -46,10 +51,6 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
         bus.send(rmsg);
     }
 
-    @Override
-    public void kvmHostConnected(KVMHostConnectedContext host) {
-        reportCapacity(host.getInventory());
-    }
 
     @Override
     public void connectionReestablished(HostInventory inv) throws HostException {
@@ -59,5 +60,18 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
     @Override
     public HypervisorType getHypervisorTypeForReestablishExtensionPoint() {
         return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
+    }
+
+    @Override
+    public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        return new NoRollbackFlow() {
+            String __name__ = "sync-host-capacity";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                reportCapacity(context.getInventory());
+                trigger.next();
+            }
+        };
     }
 }

@@ -319,42 +319,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         return pss;
     }
 
-    @Override
-    public void kvmHostConnected(KVMHostConnectedContext context) throws KVMHostConnectException {
-        List<PrimaryStorageInventory> invs = getPrimaryStorageForHost(context.getInventory().getClusterUuid());
-        if (context.isNewAddedHost() && !CoreGlobalProperty.UNIT_TEST_ON && !invs.isEmpty()) {
-            checkQemuImgVersionInOtherClusters(context, invs);
-        }
-
-        for (PrimaryStorageInventory inv : invs) {
-            MountCmd cmd = new MountCmd();
-            cmd.setUrl(inv.getUrl());
-            cmd.setMountPath(inv.getMountPath());
-            cmd.setUuid(inv.getUuid());
-
-            KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
-            msg.setCommand(cmd);
-            msg.setNoStatusCheck(true);
-            msg.setPath(MOUNT_PRIMARY_STORAGE_PATH);
-            msg.setHostUuid(context.getInventory().getUuid());
-            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-            MessageReply reply = bus.call(msg);
-            if (!reply.isSuccess()) {
-                throw new OperationFailureException(reply.getError());
-            }
-
-            KVMHostSyncHttpCallReply r = reply.castReply();
-            MountAgentResponse rsp = r.toResponse(MountAgentResponse.class);
-
-            if (!rsp.isSuccess()) {
-                throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
-            }
-
-            new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
-                    rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
-            );
-        }
-    }
 
     private void checkQemuImgVersionInOtherClusters(KVMHostConnectedContext context, List<PrimaryStorageInventory> invs) {
         String mine = KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(context.getInventory().getUuid(), KVMSystemTags.QEMU_IMG_VERSION_TOKEN);
@@ -948,5 +912,52 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             }
         }).start();
 
+    }
+
+    @Override
+    public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        return new NoRollbackFlow() {
+            String __name__ = "prepare-nfs-pirmary-storage";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                //TODO: change to async
+                List<PrimaryStorageInventory> invs = getPrimaryStorageForHost(context.getInventory().getClusterUuid());
+                if (context.isNewAddedHost() && !CoreGlobalProperty.UNIT_TEST_ON && !invs.isEmpty()) {
+                    checkQemuImgVersionInOtherClusters(context, invs);
+                }
+
+                for (PrimaryStorageInventory inv : invs) {
+                    MountCmd cmd = new MountCmd();
+                    cmd.setUrl(inv.getUrl());
+                    cmd.setMountPath(inv.getMountPath());
+                    cmd.setUuid(inv.getUuid());
+
+                    KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
+                    msg.setCommand(cmd);
+                    msg.setNoStatusCheck(true);
+                    msg.setPath(MOUNT_PRIMARY_STORAGE_PATH);
+                    msg.setHostUuid(context.getInventory().getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+                    MessageReply reply = bus.call(msg);
+                    if (!reply.isSuccess()) {
+                        throw new OperationFailureException(reply.getError());
+                    }
+
+                    KVMHostSyncHttpCallReply r = reply.castReply();
+                    MountAgentResponse rsp = r.toResponse(MountAgentResponse.class);
+
+                    if (!rsp.isSuccess()) {
+                        throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
+                    }
+
+                    new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
+                            rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
+                    );
+                }
+
+                trigger.next();
+            }
+        };
     }
 }

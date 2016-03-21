@@ -16,6 +16,9 @@ import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
@@ -104,15 +107,6 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
         return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
     }
 
-    @Override
-    public void kvmHostConnected(KVMHostConnectedContext context) throws KVMHostConnectException {
-        FutureCompletion completion = new FutureCompletion();
-        syncVm(context.getInventory(), completion);
-        completion.await();
-        if (completion.getErrorCode() != null) {
-            throw new OperationFailureException(completion.getErrorCode());
-        }
-    }
 
     @Override
     public void connectionReestablished(HostInventory inv) throws HostException {
@@ -222,5 +216,27 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
                 }
             });
         }
+    }
+
+    @Override
+    public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        return new NoRollbackFlow() {
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                syncVm(context.getInventory(), new Completion(trigger) {
+                    String __name__ = "sync-vm-state";
+
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        };
     }
 }
