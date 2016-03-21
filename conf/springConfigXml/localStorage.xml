@@ -56,6 +56,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.storage.primary.local.LocalStorageHypervisorFactory" />
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.FailToAddHostExtensionPoint" />
         </zstack:plugin>
     </bean>
 

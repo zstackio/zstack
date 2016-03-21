@@ -5,8 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
+import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -110,15 +112,20 @@ public class LocalStorageCapacityRecalculator {
         List<Tuple> ts = q.getResultList();
         if (!ts.isEmpty()) {
             Tuple t = ts.get(0);
-            long total = t.get(0, Long.class);
-            long tp = t.get(1, Long.class);
-            long pa = t.get(2, Long.class);
+            final long total = t.get(0, Long.class);
+            final long tp = t.get(1, Long.class);
+            final long pa = t.get(2, Long.class);
 
-            PrimaryStorageCapacityVO pcap = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, psUuid);
-            pcap.setTotalCapacity(total);
-            pcap.setTotalPhysicalCapacity(tp);
-            pcap.setAvailablePhysicalCapacity(pa);
-            dbf.getEntityManager().merge(pcap);
+            PrimaryStorageCapacityUpdater pupdater = new PrimaryStorageCapacityUpdater(psUuid);
+            pupdater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+                @Override
+                public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                    cap.setTotalCapacity(total);
+                    cap.setTotalPhysicalCapacity(tp);
+                    cap.setAvailablePhysicalCapacity(pa);
+                    return null;
+                }
+            });
         }
 
         return this;

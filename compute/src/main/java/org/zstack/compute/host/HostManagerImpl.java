@@ -31,9 +31,8 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.Bucket;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -157,7 +156,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     }
 
     @Deferred
-    private void handle(APIAddHostMsg msg) {
+    private void handle(final APIAddHostMsg msg) {
         final APIAddHostEvent evt = new APIAddHostEvent(msg.getId());
 
         final ClusterVO cluster = findClusterByUuid(msg.getClusterUuid());
@@ -299,7 +298,18 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             public void handle(ErrorCode errCode, Map data) {
                 evt.setErrorCode(errf.instantiateErrorCode(HostErrors.UNABLE_TO_ADD_HOST, errCode));
                 bus.publish(evt);
+
+                // delete host totally through the database, so other tables
+                // refer to the host table will clean up themselves
                 dbf.remove(vo);
+                dbf.eoCleanup(HostVO.class);
+
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(FailToAddHostExtensionPoint.class), new ForEachFunction<FailToAddHostExtensionPoint>() {
+                    @Override
+                    public void run(FailToAddHostExtensionPoint ext) {
+                        ext.failedToAddHost(inv, msg);
+                    }
+                });
             }
         }).start();
     }

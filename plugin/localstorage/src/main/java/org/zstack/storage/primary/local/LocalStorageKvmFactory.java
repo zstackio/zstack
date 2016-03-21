@@ -7,17 +7,16 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.APIAddHostMsg;
+import org.zstack.header.host.FailToAddHostExtensionPoint;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityMsg;
-import org.zstack.header.tag.TagResourceType;
 import org.zstack.kvm.KVMConstant;
-import org.zstack.kvm.KVMHostConnectException;
 import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.utils.Utils;
@@ -30,7 +29,8 @@ import java.util.Map;
 /**
  * Created by frank on 6/30/2015.
  */
-public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KVMHostConnectExtensionPoint {
+public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KVMHostConnectExtensionPoint,
+        FailToAddHostExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LocalStorageKvmFactory.class);
 
     @Autowired
@@ -62,7 +62,7 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
 
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
-        return new Flow() {
+        return new NoRollbackFlow() {
             String __name__ = "init-local-storage";
 
             @Override
@@ -91,30 +91,27 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
                     }
                 });
             }
-
-            @Override
-            public void rollback(final FlowRollback trigger, Map data) {
-                final String priUuid = findLocalStorageUuidByHostUuid(context.getInventory().getClusterUuid());
-                if (priUuid == null) {
-                    trigger.rollback();
-                    return;
-                }
-
-                RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
-                msg.setPrimaryStorageUuid(priUuid);
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUuid);
-                bus.send(msg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            //TODO:
-                            logger.warn(String.format("failed to sync primary storage[uuid:%s] capacity, %s", priUuid, reply.getError()));
-                        }
-
-                        trigger.rollback();
-                    }
-                });
-            }
         };
+    }
+
+    @Override
+    public void failedToAddHost(HostInventory host, APIAddHostMsg amsg) {
+        final String priUuid = findLocalStorageUuidByHostUuid(host.getClusterUuid());
+        if (priUuid == null) {
+            return;
+        }
+
+        RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
+        msg.setPrimaryStorageUuid(priUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUuid);
+        bus.send(msg, new CloudBusCallBack() {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    //TODO:
+                    logger.warn(String.format("failed to sync primary storage[uuid:%s] capacity, %s", priUuid, reply.getError()));
+                }
+            }
+        });
     }
 }
