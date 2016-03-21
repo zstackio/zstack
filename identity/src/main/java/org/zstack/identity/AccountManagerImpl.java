@@ -7,6 +7,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.*;
@@ -24,6 +26,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
@@ -71,6 +74,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private ThreadFacade thdf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private EventFacade evtf;
 
     private List<String> resourceTypeForAccountRef;
     private List<Class> resourceTypes;
@@ -503,6 +508,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             startExpiredSessionCollector();
             collectDefaultQuota();
             configureGlobalConfig();
+            setupCanonicalEvents();
 
             for (ReportApiAccountControlExtensionPoint ext : pluginRgty.getExtensionList(ReportApiAccountControlExtensionPoint.class)) {
                 List<Class> apis = ext.reportApiAccountControl();
@@ -514,6 +520,32 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             throw new CloudRuntimeException(e);
         }
         return true;
+    }
+
+    private void setupCanonicalEvents() {
+        evtf.on(IdentityCanonicalEvents.ACCOUNT_DELETED_PATH, new EventCallback() {
+            @Override
+            public void run(Map tokens, Object data) {
+                AccountDeletedData d = (AccountDeletedData) data;
+
+                List<String> sessionToDelete = new ArrayList<String>();
+                for (Map.Entry<String, SessionInventory> e : sessions.entrySet()) {
+                    SessionInventory session = e.getValue();
+                    if (d.getAccountUuid().equals(session.getAccountUuid())) {
+                        sessionToDelete.add(e.getKey());
+                    }
+                }
+
+                for (String suuid : sessionToDelete) {
+                    sessions.remove(suuid);
+                }
+
+                if (!sessionToDelete.isEmpty()) {
+                    logger.debug(String.format("successfully removed %s sessions for the deleted account[%s]", sessionToDelete.size(),
+                            d.getAccountUuid()));
+                }
+            }
+        });
     }
 
     private void configureGlobalConfig() {

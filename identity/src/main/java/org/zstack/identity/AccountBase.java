@@ -8,6 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -21,6 +22,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
+import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -53,6 +55,8 @@ public class AccountBase extends AbstractAccount {
     private CascadeFacade casf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private EventFacade evtf;
 
     private AccountVO vo;
 
@@ -175,6 +179,11 @@ public class AccountBase extends AbstractAccount {
                     public void handle(Map data) {
                         dbf.remove(vo);
                         bus.publish(evt);
+
+                        AccountDeletedData evtData = new AccountDeletedData();
+                        evtData.setAccountUuid(vo.getUuid());
+                        evtData.setInventory(AccountInventory.valueOf(vo));
+                        evtf.fire(IdentityCanonicalEvents.ACCOUNT_DELETED_PATH, evtData);
                     }
                 });
 
