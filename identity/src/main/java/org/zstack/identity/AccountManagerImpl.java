@@ -1466,13 +1466,14 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             msg.setUuid(msg.getSession().getAccountUuid());
         }
 
-        if (a.getType() == AccountType.SystemAdmin && msg.getName() != null) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    "the name of admin account cannot be updated"
-            ));
-        }
 
         if (a.getType() == AccountType.SystemAdmin) {
+            if (msg.getName() != null && (msg.getAccountUuid() == null || msg.getAccountUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID))) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        "the name of admin account cannot be updated"
+                ));
+            }
+
             return;
         }
 
