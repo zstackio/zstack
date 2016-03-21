@@ -49,7 +49,6 @@ import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
@@ -621,7 +620,9 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
                 if (msg instanceof APICreateVmInstanceMsg) {
                     check((APICreateVmInstanceMsg) msg, pairs);
-                } 
+                }  else if (msg instanceof APIRecoverVmInstanceMsg) {
+                    check((APIRecoverVmInstanceMsg) msg, pairs);
+                }
             }
 
             @Override
@@ -662,10 +663,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 VmQuota quota = new VmQuota();
 
                 String sql = "select count(vm), sum(vm.cpuNum), sum(vm.memorySize) from VmInstanceVO vm, AccountResourceRefVO ref where" +
-                        " vm.uuid = ref.resourceUuid and ref.accountUuid = :auuid and ref.resourceType = :rtype";
+                        " vm.uuid = ref.resourceUuid and ref.accountUuid = :auuid and ref.resourceType = :rtype and vm.state not in (:states)";
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("auuid", accountUUid);
                 q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
+                q.setParameter("states", list(VmInstanceState.Destroying, VmInstanceState.Destroyed));
                 Tuple t = q.getSingleResult();
                 Long vnum = t.get(0, Long.class);
                 quota.vmNum = vnum == null ? 0 : vnum;
@@ -699,6 +701,39 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 Long vsize = vq.getSingleResult();
                 vsize = vsize == null ? 0 : vsize;
                 return vsize;
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APIRecoverVmInstanceMsg msg, Map<String, QuotaPair> pairs) {
+                long vmNum = pairs.get(VmInstanceConstant.QUOTA_VM_NUM).getValue();
+                long cpuNum = pairs.get(VmInstanceConstant.QUOTA_CPU_NUM).getValue();
+                long memory = pairs.get(VmInstanceConstant.QUOTA_VM_MEMORY).getValue();
+
+                VmQuota vmQuota = getUsedVmCpuMemory(msg.getSession().getAccountUuid());
+
+                if (vmQuota.vmNum + 1 > vmNum) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_VM_NUM, vmNum)
+                    ));
+                }
+
+                VmInstanceVO vm = dbf.getEntityManager().find(VmInstanceVO.class, msg.getUuid());
+                int cpuNumAsked = vm.getCpuNum();
+                long memoryAsked = vm.getMemorySize();
+                if (vmQuota.cpuNum + cpuNumAsked > cpuNum) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_CPU_NUM, cpuNum)
+                    ));
+                }
+
+                if (vmQuota.memorySize + memoryAsked > memory) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_VM_MEMORY, memory)
+                    ));
+                }
             }
 
             @Transactional(readOnly = true)
@@ -814,7 +849,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         p.setValue(SizeUnit.TERABYTE.toByte(10));
         quota.addPair(p);
 
-        quota.setMessageNeedValidation(APICreateVmInstanceMsg.class);
+        quota.addMessageNeedValidation(APICreateVmInstanceMsg.class);
+        quota.addMessageNeedValidation(APIRecoverVmInstanceMsg.class);
         quota.setOperator(checker);
 
         return list(quota);

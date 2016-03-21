@@ -659,7 +659,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         };
 
         Quota quota = new Quota();
-        quota.setMessageNeedValidation(APICreateEipMsg.class);
+        quota.addMessageNeedValidation(APICreateEipMsg.class);
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();

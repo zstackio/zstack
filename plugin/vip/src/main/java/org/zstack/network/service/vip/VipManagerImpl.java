@@ -630,7 +630,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         };
 
         Quota quota = new Quota();
-        quota.setMessageNeedValidation(APICreateVipMsg.class);
+        quota.addMessageNeedValidation(APICreateVipMsg.class);
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();

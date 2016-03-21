@@ -429,7 +429,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
         Quota quota = new Quota();
         quota.setOperator(checker);
-        quota.setMessageNeedValidation(APICreateL3NetworkMsg.class);
+        quota.addMessageNeedValidation(APICreateL3NetworkMsg.class);
 
         QuotaPair p = new QuotaPair();
         p.setName(L3NetworkConstant.QUOTA_L3_NUM);

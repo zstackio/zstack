@@ -129,7 +129,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         Quota quota = new Quota();
         quota.setOperator(checker);
-        quota.setMessageNeedValidation(APICreateSecurityGroupMsg.class);
+        quota.addMessageNeedValidation(APICreateSecurityGroupMsg.class);
 
         QuotaPair p = new QuotaPair();
         p.setName(SecurityGroupConstant.QUOTA_SG_NUM);
