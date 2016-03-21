@@ -1,26 +1,38 @@
 package org.zstack.console;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Component;
 import org.zstack.header.console.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import javax.persistence.TypedQuery;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -91,7 +103,24 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         q.add(ConsoleProxyVO_.vmInstanceUuid, SimpleQuery.Op.EQ, vm.getUuid());
         q.add(ConsoleProxyVO_.status, SimpleQuery.Op.EQ, ConsoleProxyStatus.Active);
         final ConsoleProxyVO vo = q.find();
-        if (vo != null) {
+
+        if (vo == null) {
+            // new console proxy
+            ConsoleProxy proxy = getConsoleProxy(session, vm);
+            establishNewProxy(proxy, session, vm, complete);
+            return;
+        }
+
+
+        String hostIp = getHostIp(vm);
+        if (hostIp == null) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("cannot find host IP of the vm[uuid:%s], is the vm running???", vm.getUuid())
+            ));
+        }
+
+        if (vo.getTargetHostname().equals(hostIp)) {
+            // vm is on the same host
             final ConsoleProxy proxy = getConsoleProxy(vm, vo);
             proxy.checkAvailability(new ReturnValueCompletion<Boolean>() {
                 @Override
@@ -101,8 +130,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
                         complete.success(retInv);
                     } else {
                         //TODO: run cleanup on agent side
-                        vo.setStatus(ConsoleProxyStatus.Inactive);
-                        dbf.update(vo);
+                        dbf.remove(vo);
 
                         establishNewProxy(proxy, session, vm, complete);
                     }
@@ -113,26 +141,106 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
                     complete.fail(errorCode);
                 }
             });
+        } else {
+            // vm is on another host
+            FlowChain chain = FlowChainBuilder.newShareFlowChain();
+            chain.setName(String.format("recreate-console-for-vm-%s", vm.getUuid()));
+            chain.then(new ShareFlow() {
+                ConsoleInventory ret;
 
-            return;
+                @Override
+                public void setup() {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "delete-old-console";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            deleteConsoleSession(vm, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "create-new-console";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            ConsoleProxy proxy = getConsoleProxy(session, vm);
+                            establishNewProxy(proxy, session, vm, new ReturnValueCompletion<ConsoleInventory>(trigger) {
+                                @Override
+                                public void success(ConsoleInventory returnValue) {
+                                    ret = returnValue;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+
+                    done(new FlowDoneHandler(complete) {
+                        @Override
+                        public void handle(Map data) {
+                            complete.success(ret);
+                        }
+                    });
+
+                    error(new FlowErrorHandler(complete) {
+                        @Override
+                        public void handle(ErrorCode errCode, Map data) {
+                            complete.fail(errCode);
+                        }
+                    });
+                }
+            }).start();
         }
+    }
 
-        ConsoleProxy proxy = getConsoleProxy(session, vm);
-        establishNewProxy(proxy, session, vm, complete);
+    @Transactional(readOnly = true)
+    protected String getHostIp(VmInstanceInventory vm) {
+        String sql = "select h.managementIp from HostVO h, VmInstanceVO vm where h.uuid = vm.hostUuid and vm.uuid = :uuid";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("uuid", vm.getUuid());
+        List<String> ret = q.getResultList();
+        return ret.isEmpty() ? null : ret.get(0);
     }
 
     @Override
-    public void deleteConsoleSession(VmInstanceInventory vm, Completion completion) {
+    public void deleteConsoleSession(final VmInstanceInventory vm, final Completion completion) {
         SimpleQuery<ConsoleProxyVO> q = dbf.createQuery(ConsoleProxyVO.class);
         q.add(ConsoleProxyVO_.vmInstanceUuid, SimpleQuery.Op.EQ, vm.getUuid());
         q.add(ConsoleProxyVO_.status, SimpleQuery.Op.EQ, ConsoleProxyStatus.Active);
         final ConsoleProxyVO vo = q.find();
         if (vo != null) {
             ConsoleProxy proxy = getConsoleProxy(vm, vo);
-            proxy.deleteProxy(vm, completion);
-            dbf.remove(vo);
-            logger.debug(String.format("deleted a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s",
-                    vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort()));
+            proxy.deleteProxy(vm, new Completion(completion) {
+                @Override
+                public void success() {
+                    dbf.remove(vo);
+                    logger.debug(String.format("deleted a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s",
+                            vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort()));
+                    completion.success();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
+                }
+            });
+        } else {
+            completion.success();
         }
     }
 
