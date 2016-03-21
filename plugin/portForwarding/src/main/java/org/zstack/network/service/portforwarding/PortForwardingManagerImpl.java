@@ -813,7 +813,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
         Quota quota = new Quota();
         quota.setOperator(checker);
-        quota.setMessageNeedValidation(APICreatePortForwardingRuleMsg.class);
+        quota.addMessageNeedValidation(APICreatePortForwardingRuleMsg.class);
 
         QuotaPair p = new QuotaPair();
         p.setName(PortForwardingConstant.QUOTA_PF_NUM);

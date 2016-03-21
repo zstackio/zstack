@@ -47,7 +47,6 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
 import java.lang.reflect.Field;
-import java.security.Policy;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -623,8 +622,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     defaultQuota.put(p.getName(), p.getValue());
                 }
 
-                DebugUtils.Assert(quota.getMessageNeedValidation()!= null, String.format("%s reports a quota containing a null messagesNeedValidation", ext.getClass()));
-                messageQuotaMap.put(quota.getMessageNeedValidation(), quota);
+                for (Class clz : quota.getMessagesNeedValidation()) {
+                    messageQuotaMap.put(clz, quota);
+                }
             }
         }
 

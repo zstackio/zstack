@@ -448,7 +448,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         };
 
         Quota quota = new Quota();
-        quota.setMessageNeedValidation(APICreateLoadBalancerMsg.class);
+        quota.addMessageNeedValidation(APICreateLoadBalancerMsg.class);
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();

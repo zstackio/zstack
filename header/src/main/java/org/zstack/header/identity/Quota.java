@@ -68,7 +68,7 @@ public class Quota {
     }
 
     private List<QuotaPair> quotaPairs;
-    private Class<APIMessage> messageNeedValidation;
+    private List<Class<? extends APIMessage>> messagesNeedValidation = new ArrayList<Class<? extends APIMessage>>();
     private QuotaOperator operator;
 
     public void addPair(QuotaPair p) {
@@ -86,12 +86,12 @@ public class Quota {
         this.quotaPairs = quotaPairs;
     }
 
-    public Class<APIMessage> getMessageNeedValidation() {
-        return messageNeedValidation;
+    public void addMessageNeedValidation(Class<? extends APIMessage> msgClass) {
+        messagesNeedValidation.add(msgClass);
     }
 
-    public void setMessageNeedValidation(Class messageNeedValidation) {
-        this.messageNeedValidation = messageNeedValidation;
+    public List<Class<? extends APIMessage>> getMessagesNeedValidation() {
+        return messagesNeedValidation;
     }
 
     public QuotaOperator getOperator() {
