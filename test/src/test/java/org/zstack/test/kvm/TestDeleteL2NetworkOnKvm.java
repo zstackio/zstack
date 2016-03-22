@@ -1,4 +1,4 @@
-package org.zstack.test.storage.snapshot;
+package org.zstack.test.kvm;
 
 import junit.framework.Assert;
 import org.junit.Before;
@@ -10,12 +10,14 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotPrimaryStorageDeletionMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
-import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -25,21 +27,21 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 /**
- * 1. take a snapshot
- * 2. delete the l2 network
+ * 1. make detaching nic fail
+ * 2. delete the L2 network
  *
- * confirm the snapshot is not deleted.
- * This is to test a bug which causes snapshots deleted after the l2 network is deleted
+ * confirm the L2 network deleted successfully
+ * confirm the VM is still running and the nic is still there
  */
-public class TestSnapshotOnKvm48 {
-    CLogger logger = Utils.getLogger(TestSnapshotOnKvm48.class);
+public class TestDeleteL2NetworkOnKvm {
+    CLogger logger = Utils.getLogger(TestDeleteL2NetworkOnKvm.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
     SessionInventory session;
-    VolumeSnapshotKvmSimulator snapshotKvmSimulator;
+    KVMSimulatorConfig kconfig;
     boolean success = true;
 
     @Before
@@ -53,7 +55,7 @@ public class TestSnapshotOnKvm48 {
         loader = deployer.getComponentLoader();
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
-        snapshotKvmSimulator = loader.getComponent(VolumeSnapshotKvmSimulator.class);
+        kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
     
@@ -61,19 +63,11 @@ public class TestSnapshotOnKvm48 {
 	public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
-        String volUuid = vm.getRootVolumeUuid();
-        VolumeSnapshotInventory inv = api.createSnapshot(volUuid);
 
-        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
-            @Override
-            public void intercept(Message msg) {
-                success = false;
-            }
-        }, VolumeSnapshotPrimaryStorageDeletionMsg.class);
-
+        kconfig.detachNicSuccess = false;
         api.deleteL2Network(l2.getUuid());
-        VolumeSnapshotVO sp = dbf.findByUuid(inv.getUuid(), VolumeSnapshotVO.class);
-        Assert.assertNotNull(sp);
-        Assert.assertTrue(success);
+        VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
+        Assert.assertEquals(vm.getVmNics().size(), vmvo.getVmNics().size());
+        Assert.assertEquals(VmInstanceState.Running, vmvo.getState());
     }
 }
