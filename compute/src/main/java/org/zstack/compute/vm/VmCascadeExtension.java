@@ -59,6 +59,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
     protected VmInstanceExtensionPointEmitter extEmitter;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private VmInstanceDeletionPolicyManager deletionPolicyManager;
 
     private static final String NAME = VmInstanceVO.class.getSimpleName();
 
@@ -261,7 +263,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
-        final List<VmInstanceInventory> vminvs = vmFromDeleteAction(action);
+        final List<VmDeletionStruct> vminvs = vmFromDeleteAction(action);
         if (vminvs == null) {
             completion.success();
             return;
@@ -269,10 +271,10 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
         if (op == OP_STOP) {
             List<StopVmInstanceMsg> msgs = new ArrayList<StopVmInstanceMsg>();
-            for (VmInstanceInventory inv : vminvs) {
+            for (VmDeletionStruct inv : vminvs) {
                 StopVmInstanceMsg msg = new StopVmInstanceMsg();
-                msg.setVmInstanceUuid(inv.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());
+                msg.setVmInstanceUuid(inv.getInventory().getUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getInventory().getUuid());
                 msgs.add(msg);
             }
 
@@ -293,11 +295,11 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             });
         } else if (op == OP_DELETION) {
             List<VmInstanceDeletionMsg> msgs = new ArrayList<VmInstanceDeletionMsg>();
-            for (VmInstanceInventory inv : vminvs) {
+            for (VmDeletionStruct inv : vminvs) {
                 VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
                 msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
-                msg.setVmInstanceUuid(inv.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());
+                msg.setVmInstanceUuid(inv.getInventory().getUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getInventory().getUuid());
                 msgs.add(msg);
             }
 
@@ -319,17 +321,17 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         } else if (op == OP_DETACH_NIC) {
             List<DetachNicFromVmMsg> msgs = new ArrayList<DetachNicFromVmMsg>();
             List<L3NetworkInventory> l3s = action.getParentIssuerContext();
-            for (VmInstanceInventory vm : vminvs) {
+            for (VmDeletionStruct vm : vminvs) {
                 for (L3NetworkInventory l3 : l3s) {
-                    VmNicInventory nic = vm.findNic(l3.getUuid());
+                    VmNicInventory nic = vm.getInventory().findNic(l3.getUuid());
                     if (nic == null) {
                         continue;
                     }
 
                     DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
-                    msg.setVmInstanceUuid(vm.getUuid());
+                    msg.setVmInstanceUuid(vm.getInventory().getUuid());
                     msg.setVmNicUuid(nic.getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getInventory().getUuid());
                     msgs.add(msg);
                 }
             }
@@ -359,14 +361,14 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
-        List<VmInstanceInventory> vminvs = vmFromDeleteAction(action);
+        List<VmDeletionStruct> vminvs = vmFromDeleteAction(action);
         if (vminvs == null) {
             completion.success();
             return;
         }
 
-        for (VmInstanceInventory inv : vminvs) {
-            ErrorCode err = extEmitter.preDestroyVm(inv);
+        for (VmDeletionStruct inv : vminvs) {
+            ErrorCode err = extEmitter.preDestroyVm(inv.getInventory());
             if (err != null) {
                 completion.fail(err);
                 return;
@@ -388,8 +390,19 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         return NAME;
     }
 
-    private List<VmInstanceInventory> vmFromDeleteAction(CascadeAction action) {
-        List<VmInstanceInventory> ret = null;
+    private List<VmDeletionStruct> toVmDeletionStruct(Collection<VmInstanceVO> vos) {
+        List<VmDeletionStruct> structs = new ArrayList<VmDeletionStruct>();
+        for (VmInstanceVO vo : vos) {
+            VmDeletionStruct s = new VmDeletionStruct();
+            s.setInventory(VmInstanceInventory.valueOf(vo));
+            s.setDeletionPolicy(deletionPolicyManager.getDeletionPolicy(vo.getUuid()));
+            structs.add(s);
+        }
+        return structs;
+    }
+
+    private List<VmDeletionStruct> vmFromDeleteAction(CascadeAction action) {
+        List<VmDeletionStruct> ret = null;
         if (HostVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<HostInventory> hosts = action.getParentIssuerContext();
             List<String> huuids = CollectionUtils.transformToList(hosts, new Function<String, HostInventory>() {
@@ -441,7 +454,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             }
 
             if (!vmvos.isEmpty()) {
-                ret = VmInstanceInventory.valueOf(vmvos.values());
+                ret = toVmDeletionStruct(vmvos.values());
             }
         } else if (NAME.equals(action.getParentIssuer())) {
             return action.getParentIssuerContext();
@@ -469,7 +482,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             }.call();
 
             if (!vmvos.isEmpty()) {
-                ret = VmInstanceInventory.valueOf(vmvos);
+                ret = toVmDeletionStruct(vmvos);
             }
         } else if (L3NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
             final List<String> l3uuids = CollectionUtils.transformToList((List<L3NetworkInventory>)action.getParentIssuerContext(), new Function<String, L3NetworkInventory>() {
@@ -494,7 +507,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             }.call();
 
             if (!vmvos.isEmpty()) {
-                ret = VmInstanceInventory.valueOf(vmvos);
+                ret = toVmDeletionStruct(vmvos);
             }
         } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
             final List<String> ipruuids = CollectionUtils.transformToList((List<IpRangeInventory>)action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
@@ -519,7 +532,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             }.call();
 
             if (!vmvos.isEmpty()) {
-                ret = VmInstanceInventory.valueOf(vmvos);
+                ret = toVmDeletionStruct(vmvos);
             }
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
             final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
@@ -543,7 +556,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             }.call();
 
             if (!vmvos.isEmpty()) {
-                ret = VmInstanceInventory.valueOf(vmvos);
+                ret = toVmDeletionStruct(vmvos);
             }
         }
 
@@ -558,7 +571,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 return null;
             }
 
-            List<VmInstanceInventory> vms = vmFromDeleteAction(action);
+            List<VmDeletionStruct> vms = vmFromDeleteAction(action);
             if (vms == null) {
                 return null;
             }

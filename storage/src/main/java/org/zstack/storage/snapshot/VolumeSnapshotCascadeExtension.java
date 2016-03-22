@@ -13,6 +13,8 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.volume.VolumeDeletionPolicyManager;
+import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
+import org.zstack.header.volume.VolumeDeletionStruct;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.utils.CollectionUtils;
@@ -33,8 +35,6 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private VolumeDeletionPolicyManager volumeDeletionPolicyMgr;
 
     private static final String NAME = VolumeSnapshotVO.class.getSimpleName();
 
@@ -78,9 +78,9 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
     private void handleDeletion(final CascadeAction action, final Completion completion) {
         final List<VolumeSnapshotDeletionMsg> msgs = new ArrayList<VolumeSnapshotDeletionMsg>();
         if (VolumeVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<VolumeInventory> vols = action.getParentIssuerContext();
-            for (VolumeInventory vol : vols) {
-                msgs.addAll(handleVolumeDeletion(vol.getUuid()));
+            List<VolumeDeletionStruct> vols = action.getParentIssuerContext();
+            for (VolumeDeletionStruct vol : vols) {
+                msgs.addAll(handleVolumeDeletion(vol));
             }
         } else if (VolumeSnapshotVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<VolumeSnapshotInventory> sinvs = action.getParentIssuerContext();
@@ -115,15 +115,15 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
         return makeMsg(sinv.getUuid(), false);
     }
 
-    private List<VolumeSnapshotDeletionMsg> handleVolumeDeletion(String volUuid) {
-        if (volumeDeletionPolicyMgr.getDeletionPolicy(volUuid) != VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct) {
+    private List<VolumeSnapshotDeletionMsg> handleVolumeDeletion(VolumeDeletionStruct vol) {
+        if (!VolumeDeletionPolicy.Direct.toString().equals(vol.getDeletionPolicy())) {
             return new ArrayList<VolumeSnapshotDeletionMsg>();
         }
 
         List<VolumeSnapshotDeletionMsg> ret = new ArrayList<VolumeSnapshotDeletionMsg>();
         SimpleQuery<VolumeSnapshotTreeVO> cq = dbf.createQuery(VolumeSnapshotTreeVO.class);
         cq.select(VolumeSnapshotTreeVO_.uuid);
-        cq.add(VolumeSnapshotTreeVO_.volumeUuid, Op.EQ, volUuid);
+        cq.add(VolumeSnapshotTreeVO_.volumeUuid, Op.EQ, vol.getInventory().getUuid());
         List<String> cuuids = cq.listValue();
         for (String cuuid : cuuids) {
             // deleting full snapshot of chain will cause whole chain to be deleted
@@ -162,11 +162,11 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
     private List<VolumeSnapshotInventory> fromAction(CascadeAction action) {
         List<VolumeSnapshotInventory> ret = null;
         if (VolumeVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<VolumeInventory> vols = action.getParentIssuerContext();
-            List<String> volUuids = CollectionUtils.transformToList(vols, new Function<String, VolumeInventory>() {
+            List<VolumeDeletionStruct> vols = action.getParentIssuerContext();
+            List<String> volUuids = CollectionUtils.transformToList(vols, new Function<String, VolumeDeletionStruct>() {
                 @Override
-                public String call(VolumeInventory arg) {
-                    return arg.getUuid();
+                public String call(VolumeDeletionStruct arg) {
+                    return arg.getInventory().getUuid();
                 }
             });
 

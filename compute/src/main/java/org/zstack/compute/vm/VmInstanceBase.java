@@ -3046,7 +3046,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void destroyVm(APIDestroyVmInstanceMsg msg, final Completion completion) {
         final String issuer = VmInstanceVO.class.getSimpleName();
-        final List<VmInstanceInventory> ctx = VmInstanceInventory.valueOf(Arrays.asList(self));
+        final List<VmDeletionStruct> ctx = new ArrayList<VmDeletionStruct>();
+        VmDeletionStruct s = new VmDeletionStruct();
+        s.setInventory(getSelfInventory());
+        s.setDeletionPolicy(deletionPolicyMgr.getDeletionPolicy(self.getUuid()));
+        ctx.add(s);
+
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-vm-%s", msg.getUuid()));
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {

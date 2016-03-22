@@ -3,9 +3,10 @@ package org.zstack.header.volume;
 /**
  * Created by frank on 4/20/2015.
  */
-public class VolumeDeletionStruct extends VolumeInventory {
+public class VolumeDeletionStruct {
     private boolean detachBeforeDeleting;
     private String deletionPolicy;
+    private VolumeInventory inventory;
 
     public VolumeDeletionStruct() {
     }
@@ -18,8 +19,12 @@ public class VolumeDeletionStruct extends VolumeInventory {
         this.deletionPolicy = deletionPolicy;
     }
 
-    public VolumeDeletionStruct(VolumeInventory other) {
-        super(other);
+    public VolumeInventory getInventory() {
+        return inventory;
+    }
+
+    public void setInventory(VolumeInventory inventory) {
+        this.inventory = inventory;
     }
 
     public boolean isDetachBeforeDeleting() {

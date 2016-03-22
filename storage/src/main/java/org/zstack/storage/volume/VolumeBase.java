@@ -631,11 +631,13 @@ public class VolumeBase implements Volume {
 
     private void delete(boolean forceDelete, boolean detachBeforeDeleting, final Completion completion) {
         final String issuer = VolumeVO.class.getSimpleName();
-        VolumeDeletionStruct struct = new VolumeDeletionStruct(getSelfInventory());
+        VolumeDeletionStruct struct = new VolumeDeletionStruct();
+        struct.setInventory(getSelfInventory());
         struct.setDetachBeforeDeleting(detachBeforeDeleting);
+        struct.setDeletionPolicy(deletionPolicyMgr.getDeletionPolicy(self.getUuid()).toString());
         final List<VolumeDeletionStruct> ctx = list(struct);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("delete-data-volume"));
+        chain.setName("delete-data-volume");
         if (!forceDelete) {
             chain.then(new NoRollbackFlow() {
                 @Override

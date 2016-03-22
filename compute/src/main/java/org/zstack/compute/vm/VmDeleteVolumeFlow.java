@@ -58,7 +58,8 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
                     return null;
                 }
 
-                VolumeDeletionStruct s = new VolumeDeletionStruct(arg);
+                VolumeDeletionStruct s = new VolumeDeletionStruct();
+                s.setInventory(arg);
                 if (VolumeType.Root.toString().equals(arg.getType())) {
                     s.setDeletionPolicy(deletionPolicy.toString());
                 }
