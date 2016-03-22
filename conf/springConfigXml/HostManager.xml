@@ -46,12 +46,6 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="HostNotifyPointEmitter" class="org.zstack.compute.host.HostNotifyPointEmitter">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
-        </zstack:plugin>
-    </bean>
-
     <bean id="HostCascadeExtension" class="org.zstack.compute.host.HostCascadeExtension">
         <zstack:plugin>
 			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />

@@ -26,9 +26,9 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostCanonicalEvents;
+import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
 import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostStatusChangeNotifyPoint;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.Quota.QuotaOperator;
@@ -45,7 +45,9 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.search.SearchOp;
-import org.zstack.header.tag.*;
+import org.zstack.header.tag.SystemTagCreateMessageValidator;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.VolumeConstant;
@@ -71,11 +73,9 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
-public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager, HostStatusChangeNotifyPoint,
+public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager,
         ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<String, VmInstanceFactory>());
@@ -128,6 +128,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private ThreadFacade thdf;
     @Autowired
     private VmInstanceDeletionPolicyManager deletionPolicyMgr;
+    @Autowired
+    private EventFacade evtf;
 
     @Override
     @MessageSafe
@@ -325,10 +327,29 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             populateExtensions();
             installSystemTagValidator();
             installGlobalConfigUpdater();
+            setupCanonicalEvents();
             return true;
         } catch (Exception e) {
             throw new CloudConfigureFailException(VmInstanceManagerImpl.class, e.getMessage(), e);
         }
+    }
+
+    private void setupCanonicalEvents() {
+        evtf.on(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new EventCallback() {
+            @Override
+            public void run(Map tokens, Object data) {
+                HostStatusChangedData d = (HostStatusChangedData) data;
+                if (!HostStatus.Disconnected.toString().equals(d.getNewStatus())) {
+                    return;
+                }
+
+                if (!destMaker.isManagedByUs(d.getHostUuid())) {
+                    return;
+                }
+
+                putVmToUnknownState(d.getHostUuid());
+            }
+        });
     }
 
     private void installGlobalConfigUpdater() {
@@ -506,13 +527,6 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             }
         });
         bus.send(msgs);
-    }
-
-    @Override
-    public void notifyHostConnectionStateChange(HostInventory host, HostStatus previousState, HostStatus currentState) {
-        if (currentState == HostStatus.Disconnected) {
-            putVmToUnknownState(host.getUuid());
-        }
     }
 
     @Override
