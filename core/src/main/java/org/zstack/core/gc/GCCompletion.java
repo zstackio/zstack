@@ -1,14 +1,18 @@
 package org.zstack.core.gc;
 
-import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.core.AsyncBackup;
+import org.zstack.header.core.Completion;
 
 /**
  * Created by frank on 8/5/2015.
  */
-public interface GCCompletion {
-    void success();
+public abstract class GCCompletion extends Completion {
+    public GCCompletion(AsyncBackup... backup) {
+        super(backup);
+    }
 
-    void fail(ErrorCode errorCode);
+    public GCCompletion() {
+    }
 
-    void cancel();
+    public abstract void cancel();
 }

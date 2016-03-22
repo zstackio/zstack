@@ -1,5 +1,6 @@
 package org.zstack.test.kvm;
 
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.compute.vm.VmGlobalConfig;
@@ -12,7 +13,11 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
+import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
+import org.zstack.storage.primary.nfs.NfsPrimaryStorageGlobalProperty;
+import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.DeleteCmd;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -21,6 +26,8 @@ import org.zstack.test.deployer.Deployer;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * 1. stop the vm
@@ -38,6 +45,7 @@ public class TestDestroyVmOnKvm1 {
     DatabaseFacade dbf;
     SessionInventory session;
     KVMSimulatorConfig config;
+    NfsPrimaryStorageSimulatorConfig nconfig;
 
     @Before
     public void setUp() throws Exception {
@@ -51,12 +59,14 @@ public class TestDestroyVmOnKvm1 {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(KVMSimulatorConfig.class);
+        nconfig = loader.getComponent(NfsPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
     
 	@Test
-	public void test() throws ApiSenderException {
+	public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
+        NfsPrimaryStorageGlobalProperty.BITS_DELETION_GC_INTERVAL = 1;
 	    VmInstanceInventory vm = deployer.vms.get("TestVm");
         HostInventory host = deployer.hosts.get("host1");
         api.stopVmInstance(vm.getUuid());
@@ -66,5 +76,16 @@ public class TestDestroyVmOnKvm1 {
         dbf.update(hvo);
 
 	    api.destroyVmInstance(vm.getUuid());
+
+        Assert.assertEquals(0, nconfig.deleteCmds.size());
+        hvo.setStatus(HostStatus.Connected);
+        dbf.update(hvo);
+
+        TimeUnit.SECONDS.sleep(2);
+
+        VolumeInventory root = vm.getRootVolume();
+        Assert.assertEquals(1, nconfig.deleteCmds.size());
+        DeleteCmd cmd = nconfig.deleteCmds.get(0);
+        Assert.assertEquals(root.getInstallPath(), cmd.getInstallPath());
 	}
 }

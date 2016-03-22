@@ -7,6 +7,8 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.gc.GCFacade;
+import org.zstack.core.gc.GCPersistentContext;
 import org.zstack.core.workflow.*;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
@@ -52,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class NfsPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorage.class);
@@ -62,6 +65,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private ErrorFacade errf;
     @Autowired
     private NfsPrimaryStorageManager nfsMgr;
+    @Autowired
+    private GCFacade gcf;
 
     public NfsPrimaryStorage(PrimaryStorageVO vo) {
         super(vo);
@@ -464,8 +469,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     private void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
         final DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
-        VolumeSnapshotInventory sinv = msg.getSnapshot();
-        NfsPrimaryStorageBackend bkd = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(sinv.getFormat(), self.getUuid()));
+        final VolumeSnapshotInventory sinv = msg.getSnapshot();
+        final NfsPrimaryStorageBackend bkd = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(sinv.getFormat(), self.getUuid()));
 
         bkd.delete(getSelfInventory(), sinv.getPrimaryStorageInstallPath(), new Completion(msg) {
             @Override
@@ -475,8 +480,22 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                //TODO: clean up
-                reply.setError(errorCode);
+                GCBitsDeletionContext c = new GCBitsDeletionContext();
+                c.setPrimaryStorageUuid(self.getUuid());
+                c.setSnapshot(sinv);
+                c.setHypervisorType(bkd.getHypervisorType().toString());
+
+                GCPersistentContext<GCBitsDeletionContext> ctx = new GCPersistentContext();
+                ctx.setContextClass(GCBitsDeletionContext.class);
+                ctx.setRunnerClass(GCBitsDeletionRunner.class);
+                ctx.setContext(c);
+                ctx.setInterval(NfsPrimaryStorageGlobalProperty.BITS_DELETION_GC_INTERVAL);
+                ctx.setName(String.format("nfs-gc-volume-snapshot-%s-%s", self.getUuid(), sinv.getUuid()));
+                gcf.schedule(ctx);
+
+                //TODO: alarm
+                logger.warn(String.format("failed to delete the volume snapshot[uuid:%s], %s. GC job is submitted",
+                        sinv.getUuid(), errorCode));
                 bus.reply(msg, reply);
             }
         });
@@ -754,7 +773,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     protected void handle(final DeleteVolumeOnPrimaryStorageMsg msg) {
         final DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
         final VolumeInventory vol = msg.getVolume();
-        NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(vol.getFormat(), self.getUuid()));
+        final NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(vol.getFormat(), self.getUuid()));
         String volumeFolder = PathUtil.parentFolder(vol.getInstallPath());
         backend.deleteFolder(getSelfInventory(), volumeFolder, new Completion(msg) {
             @Override
@@ -766,9 +785,23 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                //TODO: cleanup
-                logger.warn(errorCode.toString());
-                reply.setError(errorCode);
+                GCBitsDeletionContext c = new GCBitsDeletionContext();
+                c.setPrimaryStorageUuid(self.getUuid());
+                c.setVolume(vol);
+                c.setHypervisorType(backend.getHypervisorType().toString());
+
+                GCPersistentContext<GCBitsDeletionContext> ctx = new GCPersistentContext<GCBitsDeletionContext>();
+                ctx.setContext(c);
+                ctx.setRunnerClass(GCBitsDeletionRunner.class);
+                ctx.setContextClass(GCBitsDeletionContext.class);
+                ctx.setName(String.format("nfs-gc-volume-%s-%s", self.getUuid(), vol.getUuid()));
+                ctx.setInterval(NfsPrimaryStorageGlobalProperty.BITS_DELETION_GC_INTERVAL);
+                gcf.schedule(ctx);
+
+                //TODO: send alarm
+                logger.warn(String.format("failed to delete the volume[uuid:%s] on the nfs primary storage[uuid:%s], a GC job is submitted",
+                        vol.getUuid(), self.getUuid()));
+
                 bus.reply(msg, reply);
             }
         });
