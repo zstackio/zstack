@@ -274,22 +274,22 @@ public class AccountBase extends AbstractAccount {
             handle((APIGetAccountQuotaUsageMsg) msg);
         } else if (msg instanceof APIAttachPoliciesToUserMsg) {
             handle((APIAttachPoliciesToUserMsg) msg);
-        } else if (msg instanceof APIDetachPolicesFromUserMsg) {
-            handle((APIDetachPolicesFromUserMsg) msg);
+        } else if (msg instanceof APIDetachPoliciesFromUserMsg) {
+            handle((APIDetachPoliciesFromUserMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
     @Transactional
-    private void handle(APIDetachPolicesFromUserMsg msg) {
+    private void handle(APIDetachPoliciesFromUserMsg msg) {
         String sql = "delete from UserPolicyRefVO ref where ref.policyUuid in (:puuids) and ref.userUuid = :userUuid";
         Query q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("puuids", msg.getPolicyUuids());
         q.setParameter("userUuid", msg.getUserUuid());
         q.executeUpdate();
 
-        APIDetachPolicesFromUserEvent evt = new APIDetachPolicesFromUserEvent(msg.getId());
+        APIDetachPoliciesFromUserEvent evt = new APIDetachPoliciesFromUserEvent(msg.getId());
         bus.publish(evt);
     }
 

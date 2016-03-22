@@ -5,11 +5,11 @@ import org.zstack.header.message.APIEvent;
 /**
  * Created by xing5 on 2016/3/14.
  */
-public class APIDetachPolicesFromUserEvent extends APIEvent {
-    public APIDetachPolicesFromUserEvent() {
+public class APIDetachPoliciesFromUserEvent extends APIEvent {
+    public APIDetachPoliciesFromUserEvent() {
     }
 
-    public APIDetachPolicesFromUserEvent(String apiId) {
+    public APIDetachPoliciesFromUserEvent(String apiId) {
         super(apiId);
     }
 }

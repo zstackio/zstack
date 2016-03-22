@@ -9,7 +9,7 @@ import java.util.List;
  * Created by xing5 on 2016/3/14.
  */
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
-public class APIDetachPolicesFromUserMsg extends APIMessage implements AccountMessage {
+public class APIDetachPoliciesFromUserMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = PolicyVO.class, checkAccount = true, operationTarget = true)
     private List<String> policyUuids;
     @APIParam(resourceType = UserVO.class, checkAccount = true, operationTarget = true)
