@@ -319,7 +319,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             });
         } else if (op == OP_DETACH_NIC) {
-            List<DetachNicFromVmMsg> msgs = new ArrayList<DetachNicFromVmMsg>();
+            final List<DetachNicFromVmMsg> msgs = new ArrayList<DetachNicFromVmMsg>();
             List<L3NetworkInventory> l3s = action.getParentIssuerContext();
             for (VmDeletionStruct vm : vminvs) {
                 for (L3NetworkInventory l3 : l3s) {
@@ -339,12 +339,13 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             bus.send(msgs, new CloudBusListCallBack(completion) {
                 @Override
                 public void run(List<MessageReply> replies) {
-                    if (!action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
-                        for (MessageReply r : replies) {
-                            if (!r.isSuccess()) {
-                                completion.fail(r.getError());
-                                return;
-                            }
+                    for (MessageReply r : replies) {
+                        if (!r.isSuccess()) {
+                            DetachNicFromVmMsg msg = msgs.get(replies.indexOf(r));
+
+                            //TODO: send alarm
+                            logger.warn(String.format("failed to detach nic[uuid:%s] from the vm[uuid:%s], %s",
+                                    msg.getVmNicUuid(), msg.getVmInstanceUuid(), r.getError()));
                         }
                     }
 
