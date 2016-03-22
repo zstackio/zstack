@@ -10,11 +10,13 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.DestroyVmOnHypervisorMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -22,16 +24,14 @@ import java.util.Map;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VmDestroyOnHypervisorFlow implements Flow {
+public class VmDestroyOnHypervisorFlow extends NoRollbackFlow {
     private static final CLogger logger = Utils.getLogger(VmDestroyOnHypervisorFlow.class);
 
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
     protected CloudBus bus;
-    @Autowired
-    private ErrorFacade errf;
-    
+
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
@@ -40,6 +40,11 @@ public class VmDestroyOnHypervisorFlow implements Flow {
         if (spec.getVmInventory().getClusterUuid() == null || hostUuid == null) {
             // the vm failed to start because no host available at that time
             // no need to send DestroyVmOnHypervisorMsg
+            chain.next();
+            return;
+        }
+
+        if (VmInstanceState.Stopped.toString().equals(spec.getVmInventory().getState())) {
             chain.next();
             return;
         }
@@ -59,10 +64,5 @@ public class VmDestroyOnHypervisorFlow implements Flow {
                 }
             }
         });
-    }
-
-    @Override
-    public void rollback(FlowRollback chain, Map data) {
-        chain.rollback();
     }
 }
