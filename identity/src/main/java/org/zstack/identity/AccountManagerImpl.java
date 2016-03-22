@@ -235,10 +235,19 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
             q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
             q.add(AccountVO_.type, Op.EQ, AccountType.SystemAdmin);
-            if (!q.isExists()) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        "only system admin can check a user's policy by specifying userUuid"
-                ));
+            boolean isAdmin = q.isExists();
+
+            SimpleQuery<UserVO> uq = dbf.createQuery(UserVO.class);
+            uq.add(UserVO_.accountUuid, Op.EQ, msg.getSession().getAccountUuid());
+            uq.add(UserVO_.uuid, Op.EQ, msg.getUserUuid());
+            boolean isMine = uq.isExists();
+
+            if (!isAdmin && !isMine) {
+                throw new OperationFailureException(errf.stringToOperationError(String.format(
+                        "the user specified by the userUuid[%s] does not belong to the current account, and the" +
+                                " current account is not an admin account, so it has no permission to check the user's" +
+                                "permissions", msg.getUserUuid()
+                )));
             }
         }
 
