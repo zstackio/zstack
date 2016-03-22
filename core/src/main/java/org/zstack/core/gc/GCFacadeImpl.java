@@ -176,10 +176,11 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
 
     @Transactional
     private void setJobsToIdle(String mgmtUuid) {
-        String sql = "update GarbageCollectorVO vo set vo.managementNodeUuid = null, vo.status = :status where vo.managementNodeUuid = :uuid";
+        String sql = "update GarbageCollectorVO vo set vo.managementNodeUuid = null, vo.status = :status where vo.managementNodeUuid = :uuid and vo.status != :done";
         Query q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("uuid", mgmtUuid);
         q.setParameter("status", GCStatus.Idle);
+        q.setParameter("done", GCStatus.Done);
         q.executeUpdate();
     }
 
