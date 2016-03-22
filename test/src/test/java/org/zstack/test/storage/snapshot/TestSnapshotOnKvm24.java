@@ -3,6 +3,7 @@ package org.zstack.test.storage.snapshot;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -10,6 +11,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
@@ -96,6 +98,7 @@ public class TestSnapshotOnKvm24 {
 
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         BackupStorageInventory bs = deployer.backupStorages.get("sftp1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();

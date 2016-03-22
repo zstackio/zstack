@@ -87,6 +87,7 @@ public class TestAddImage4 {
         iinv = api.addImage(iinv, session, sftp.getUuid());
         Assert.assertEquals(1, iinv.getBackupStorageRefs().size());
 
+        /*
         IdentityGlobalConfig.ACCOUNT_API_CONTROL.updateValue("");
         boolean s = false;
         try {
@@ -101,5 +102,6 @@ public class TestAddImage4 {
 
         IdentityGlobalConfig.ACCOUNT_API_CONTROL.updateValue(APIQueryBackupStorageMsg.class.getName());
         api.query(qmsg, APIQueryBackupStorageReply.class, session);
+        */
     }
 }

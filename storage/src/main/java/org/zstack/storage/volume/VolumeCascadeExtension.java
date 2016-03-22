@@ -39,6 +39,8 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private VolumeDeletionPolicyManager deletionPolicyManager;
 
     private static final String NAME = VolumeVO.class.getSimpleName();
 
@@ -74,11 +76,11 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
         throw new CloudRuntimeException(String.format("unknown edge [%s]", action.getParentIssuer()));
     }
 
-    private String actionToDeletionPolicy(CascadeAction action) {
+    private String actionToDeletionPolicy(CascadeAction action, String volUuid) {
         if (action.getParentIssuer().equals(PrimaryStorageVO.class.getSimpleName())) {
             return VolumeDeletionPolicy.Never.toString();
         } else {
-            return null;
+            return deletionPolicyManager.getDeletionPolicy(volUuid).toString();
         }
     }
 
@@ -87,7 +89,18 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
         completion.success();
     }
 
-    private List<VolumeInventory> volumesFromAction(CascadeAction action) {
+    private List<VolumeDeletionStruct> toVolumeDeletionStruct(CascadeAction action, List<VolumeVO> vos) {
+        List<VolumeDeletionStruct> structs = new ArrayList<VolumeDeletionStruct>();
+        for (VolumeVO vo : vos) {
+            VolumeDeletionStruct s = new VolumeDeletionStruct();
+            s.setInventory(VolumeInventory.valueOf(vo));
+            s.setDeletionPolicy(actionToDeletionPolicy(action, vo.getUuid()));
+            structs.add(s);
+        }
+        return structs;
+    }
+
+    private List<VolumeDeletionStruct> volumesFromAction(CascadeAction action) {
         if (CascadeConstant.DELETION_CODES.contains(action.getActionCode())) {
             if (NAME.equals(action.getParentIssuer())) {
                 return action.getParentIssuerContext();
@@ -104,7 +117,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                 q.add(VolumeVO_.type, Op.EQ, VolumeType.Data);
                 q.add(VolumeVO_.primaryStorageUuid, Op.IN, psUuids);
                 List<VolumeVO> vos = q.list();
-                return VolumeInventory.valueOf(vos);
+                return toVolumeDeletionStruct(action, vos);
             } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
                 final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
                     @Override
@@ -128,7 +141,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                 }.call();
 
                 if (!vos.isEmpty()) {
-                    return VolumeInventory.valueOf(vos);
+                    return toVolumeDeletionStruct(action, vos);
                 }
             }
         }
@@ -168,31 +181,20 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     private void deleteVolume(final CascadeAction action, final Completion completion) {
-        final List<VolumeInventory> volumes = volumesFromAction(action);
+        final List<VolumeDeletionStruct> volumes = volumesFromAction(action);
         if (volumes == null || volumes.isEmpty()) {
             completion.success();
             return;
         }
 
         List<VolumeDeletionMsg> msgs = new ArrayList<VolumeDeletionMsg>();
-        for (VolumeInventory vol : volumes) {
+        for (VolumeDeletionStruct vol : volumes) {
             VolumeDeletionMsg msg = new VolumeDeletionMsg();
-            msg.setDetachBeforeDeleting(!(vol instanceof VolumeDeletionStruct) || ((VolumeDeletionStruct) vol).isDetachBeforeDeleting());
+            msg.setDetachBeforeDeleting(vol.isDetachBeforeDeleting());
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
-            msg.setVolumeUuid(vol.getUuid());
-
-            if (vol instanceof VolumeDeletionStruct) {
-                VolumeDeletionStruct s = (VolumeDeletionStruct) vol;
-                if (s.getDeletionPolicy() != null) {
-                    msg.setDeletionPolicy(VolumeDeletionPolicy.valueOf(s.getDeletionPolicy()).toString());
-                }
-            }
-
-            if (msg.getDeletionPolicy() == null) {
-                msg.setDeletionPolicy(actionToDeletionPolicy(action));
-            }
-
-            bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, vol.getUuid());
+            msg.setVolumeUuid(vol.getInventory().getUuid());
+            msg.setDeletionPolicy(vol.getDeletionPolicy());
+            bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, vol.getInventory().getUuid());
             msgs.add(msg);
         }
 
@@ -233,7 +235,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
         int op = actionToOpCode(action);
 
         if (op == OP_DELETE_VOLUME) {
-            List<VolumeInventory> invs = volumesFromAction(action);
+            List<VolumeDeletionStruct> invs = volumesFromAction(action);
             if (invs != null) {
                 return action.copy().setParentIssuer(NAME).setParentIssuerContext(invs);
             }

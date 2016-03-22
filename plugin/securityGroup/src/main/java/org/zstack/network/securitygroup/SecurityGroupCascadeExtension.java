@@ -9,6 +9,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.vm.VmDeletionStruct;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
@@ -28,8 +29,6 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private ErrorFacade errf;
 
     private static String NAME = VmNicSecurityGroupRefVO.class.getSimpleName();
 
@@ -107,10 +106,10 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
     }
 
     private List<VmNicSecurityGroupRefInventory> refFromAction(CascadeAction action) {
-        List<VmInstanceInventory> vms = action.getParentIssuerContext();
+        List<VmDeletionStruct> vms = action.getParentIssuerContext();
         List<String> nicUuids = new ArrayList<String>();
-        for (VmInstanceInventory vm : vms) {
-            nicUuids.addAll(CollectionUtils.transformToList(vm.getVmNics(), new Function<String, VmNicInventory>() {
+        for (VmDeletionStruct vm : vms) {
+            nicUuids.addAll(CollectionUtils.transformToList(vm.getInventory().getVmNics(), new Function<String, VmNicInventory>() {
                 @Override
                 public String call(VmNicInventory arg) {
                     return arg.getUuid();

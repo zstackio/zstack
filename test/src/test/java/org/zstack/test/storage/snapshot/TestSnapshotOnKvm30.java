@@ -3,6 +3,7 @@ package org.zstack.test.storage.snapshot;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -10,10 +11,13 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.storage.volume.VolumeGlobalConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -91,6 +95,8 @@ public class TestSnapshotOnKvm30 {
 
 	@Test
 	public void test() throws ApiSenderException {
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
+        VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Direct.toString());
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VolumeInventory dataVol = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
             @Override
