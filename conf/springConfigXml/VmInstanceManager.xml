@@ -93,7 +93,6 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
-            <zstack:extension interface="org.zstack.header.host.HostStatusChangeNotifyPoint" />
             <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint" />
