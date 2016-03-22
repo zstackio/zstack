@@ -151,7 +151,7 @@
     </message>
 
     <message>
-        <name>org.zstack.header.identity.APIDetachPolicesFromUserMsg</name>
+        <name>org.zstack.header.identity.APIDetachPoliciesFromUserMsg</name>
     </message>
 
     <message>

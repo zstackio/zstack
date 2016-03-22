@@ -1893,13 +1893,13 @@ public class Api implements CloudBusEventListener {
     }
 
     public void detachPoliciesFromUser(String userUuid, List<String> puuids, SessionInventory session) throws ApiSenderException {
-        APIDetachPolicesFromUserMsg msg = new APIDetachPolicesFromUserMsg();
+        APIDetachPoliciesFromUserMsg msg = new APIDetachPoliciesFromUserMsg();
         msg.setSession(session);
         msg.setUserUuid(userUuid);
         msg.setPolicyUuids(puuids);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        sender.send(msg, APIDetachPolicesFromUserEvent.class);
+        sender.send(msg, APIDetachPoliciesFromUserEvent.class);
     }
 
     public UserGroupInventory createGroup(String accountUuid, String name, SessionInventory session) throws ApiSenderException {
