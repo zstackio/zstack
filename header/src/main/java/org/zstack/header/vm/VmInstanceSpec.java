@@ -154,7 +154,6 @@ public class VmInstanceSpec implements Serializable {
         }
     }
 
-
 	private VmInstanceInventory vmInventory;
     private List<L3NetworkInventory> l3Networks;
     private List<DiskOfferingInventory> dataDiskOfferings;
@@ -162,7 +161,6 @@ public class VmInstanceSpec implements Serializable {
     private String hostAllocatorStrategy;
     private String ipAllocatorStrategy;
     private Message message;
-    private InstanceOfferingInventory instanceOffering;
     private ImageSpec imageSpec = new ImageSpec();
     private List<VolumeSpec> volumeSpecs = new ArrayList<VolumeSpec>();
 

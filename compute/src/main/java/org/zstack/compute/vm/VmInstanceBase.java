@@ -139,9 +139,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        self = changeVmStateInDb(VmInstanceStateEvent.destroying);
         final VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Destroy);
+
+        self = changeVmStateInDb(VmInstanceStateEvent.destroying);
 
         FlowChain chain = getDestroyVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
@@ -2775,11 +2776,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             ext.preVmMigration(pinv);
         }
 
+        VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Migrate);
+
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.migrating);
-        VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-
-        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Migrate);
         spec.setMessage(msg);
         FlowChain chain = getMigrateVmWorkFlowChain(inv);
 
@@ -2891,12 +2892,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Start);
+        spec.setMessage(msg);
+
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.starting);
 
         extEmitter.beforeStartVm(VmInstanceInventory.valueOf(self));
-        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Start);
-        spec.setMessage(msg);
 
         if (spec.getDestNics().isEmpty()) {
             throw new OperationFailureException(errf.stringToOperationError(
@@ -3227,11 +3229,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Reboot);
+
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.rebooting);
 
         extEmitter.beforeRebootVm(VmInstanceInventory.valueOf(self));
-        final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Reboot);
         spec.setMessage(msg);
         FlowChain chain = getRebootVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
@@ -3348,12 +3351,14 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        final VmInstanceSpec spec = buildSpecFromInventory(inv,VmOperation.Stop);
+        spec.setMessage(msg);
+
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.stopping);
 
         extEmitter.beforeStopVm(VmInstanceInventory.valueOf(self));
-        final VmInstanceSpec spec = buildSpecFromInventory(inv,VmOperation.Stop);
-        spec.setMessage(msg);
+
         FlowChain chain = getStopVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
 
