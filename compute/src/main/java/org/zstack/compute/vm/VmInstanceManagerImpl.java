@@ -913,7 +913,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         }
 
         for (final String uuid : unknownVmUuids) {
-            GCEphemeralContext<Void> context = new GCEphemeralContext<Void>();
+            TimeBasedGCEphemeralContext<Void> context = new TimeBasedGCEphemeralContext<Void>();
             context.setInterval(5);
             context.setTimeUnit(TimeUnit.SECONDS);
             context.setRunner(new GCRunner() {

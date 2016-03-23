@@ -28,4 +28,6 @@ public class CoreGlobalProperty {
     public static boolean EXIT_JVM_ON_STOP;
     @GlobalProperty(name="locale", defaultValue = "zh_cn")
     public static String LOCALE;
+    @GlobalProperty(name="user.home")
+    public static String USER_HOME;
 }
