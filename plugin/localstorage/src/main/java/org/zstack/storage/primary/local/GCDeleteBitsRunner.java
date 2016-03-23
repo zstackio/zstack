@@ -47,7 +47,7 @@ public class GCDeleteBitsRunner implements GCRunner {
 
         SimpleQuery<HostVO> hq = dbf.createQuery(HostVO.class);
         hq.add(HostVO_.uuid, Op.EQ, ctx.getHostUuid());
-        if (!q.isExists()) {
+        if (!hq.isExists()) {
             // ths host is deleted
             completion.success();
             return;

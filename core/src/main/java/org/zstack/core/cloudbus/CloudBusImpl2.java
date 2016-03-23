@@ -524,6 +524,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             for (Map.Entry<String, List<String>> e : schema.entrySet()) {
                 String rawClassName = e.getKey();
                 List<String> paths = e.getValue();
+
                 for (String path : paths) {
                     Serializable exp = getMVELExpression(msg, path, "msg:get");
                     Object obj = MVEL.executeExpression(exp, msg);

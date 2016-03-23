@@ -7,15 +7,16 @@ import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.gc.GCStatus;
+import org.zstack.core.gc.GarbageCollectorVO;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -23,10 +24,9 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.data.SizeUnit;
-import org.zstack.utils.function.Function;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,11 +38,11 @@ import java.util.concurrent.TimeUnit;
  *
  * confirm the vm destroyed successfully
  *
- * 4. reconnect the host
+ * 4. deleted the primary storage
  *
- * confirm the volume and snapshot deleted
+ * confirm the GC job done
  */
-public class TestDestroyVmOnKvm2 {
+public class TestDestroyVmOnKvm4 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -81,11 +81,12 @@ public class TestDestroyVmOnKvm2 {
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         HostInventory host = deployer.hosts.get("host1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
-        final VolumeInventory root = vm.getRootVolume();
+        VolumeInventory root = vm.getRootVolume();
+        api.createSnapshot(root.getUuid());
 
-        final VolumeSnapshotInventory sp = api.createSnapshot(root.getUuid());
         api.stopVmInstance(vm.getUuid());
 
         HostVO hvo = dbf.findByUuid(host.getUuid(), HostVO.class);
@@ -95,25 +96,13 @@ public class TestDestroyVmOnKvm2 {
         api.destroyVmInstance(vm.getUuid());
         Assert.assertEquals(0, config.deleteBitsCmds.size());
 
-        api.reconnectHost(host.getUuid());
-
+        api.deletePrimaryStorage(local.getUuid());
         TimeUnit.SECONDS.sleep(2);
 
-        Assert.assertEquals(2, config.deleteBitsCmds.size());
-        DeleteBitsCmd cmd = CollectionUtils.find(config.deleteBitsCmds, new Function<DeleteBitsCmd, DeleteBitsCmd>() {
-            @Override
-            public DeleteBitsCmd call(DeleteBitsCmd arg) {
-                return root.getInstallPath().equals(arg.getPath()) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(cmd);
-
-        cmd = CollectionUtils.find(config.deleteBitsCmds, new Function<DeleteBitsCmd, DeleteBitsCmd>() {
-            @Override
-            public DeleteBitsCmd call(DeleteBitsCmd arg) {
-                return sp.getPrimaryStorageInstallPath().equals(arg.getPath()) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(cmd);
+        List<GarbageCollectorVO> vos = dbf.listAll(GarbageCollectorVO.class);
+        Assert.assertEquals(2, vos.size());
+        for (GarbageCollectorVO vo : vos) {
+            org.junit.Assert.assertEquals(GCStatus.Done, vo.getStatus());
+        }
     }
 }

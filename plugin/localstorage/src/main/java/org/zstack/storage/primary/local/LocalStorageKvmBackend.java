@@ -1082,7 +1082,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 "import org.zstack.storage.primary.local.GCDeleteBitsContext",
                 "HostStatusChangedData d = (HostStatusChangedData) data",
                 "GCDeleteBitsContext ctx = (GCDeleteBitsContext) context",
-                "return d.hostUuid = ctx.hostUuid && d.newStatus == \"Connected\""
+                "return d.hostUuid == ctx.hostUuid && d.newStatus == \"Connected\""
         ).toString();
         trigger.setCode(code);
         ctx.addTrigger(trigger);
@@ -1092,11 +1092,26 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         trigger.setCodeName("local-storage-delete-bits-on-host-deleted");
         code = ln(
                 "import org.zstack.header.host.HostCanonicalEvents.HostDeletedData",
+                "import org.zstack.storage.primary.local.GCDeleteBitsContext",
                 "HostDeletedData d = (HostDeletedData) data",
                 "GCDeleteBitsContext ctx = (GCDeleteBitsContext) context",
-                "return d.hostUuid = ctx.hostUuid"
+                "return d.hostUuid == ctx.hostUuid"
         ).toString();
         trigger.setCode(code);
+        ctx.addTrigger(trigger);
+
+        trigger = new GCEventTrigger();
+        trigger.setEventPath(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_DELETED_PATH);
+        trigger.setCodeName("local-storage-delete-bit-on-primary-storage-deleted");
+        code = ln(
+                "import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData",
+                "import org.zstack.storage.primary.local.GCDeleteBitsContext",
+                "PrimaryStorageDeletedData d = (PrimaryStorageDeletedData) data",
+                "GCDeleteBitsContext ctx = (GCDeleteBitsContext) context",
+                "return d.primaryStorageUuid == ctx.primaryStorageUuid"
+        ).toString();
+        trigger.setCode(code);
+        ctx.addTrigger(trigger);
 
         gcf.schedule(ctx);
     }

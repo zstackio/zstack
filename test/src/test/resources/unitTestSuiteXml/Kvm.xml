@@ -35,6 +35,9 @@
   <TestCase class="org.zstack.test.kvm.TestRebootVmOnKvmExtensionPoint"/>
   <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvm"/>
   <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvm1"/>
+  <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvm2"/>
+  <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvm3"/>
+  <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvm4"/>
   <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvmFailure"/>
   <TestCase class="org.zstack.test.kvm.TestDestroyVmOnKvmExtensionPoint"/>
   <TestCase class="org.zstack.test.kvm.TestCreateVmOnKvmFromIso"/>
