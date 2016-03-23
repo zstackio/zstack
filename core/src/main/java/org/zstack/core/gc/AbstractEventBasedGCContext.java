@@ -1,44 +1,31 @@
 package org.zstack.core.gc;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by xing5 on 2016/3/22.
  */
 public abstract class AbstractEventBasedGCContext<T> extends AbstractGCContext<T> {
-    protected String eventPath;
-    protected String code;
-    protected String codeName;
+    protected List<GCEventTrigger> triggers = new ArrayList<GCEventTrigger>();
 
     public AbstractEventBasedGCContext() {
     }
 
     public AbstractEventBasedGCContext(AbstractEventBasedGCContext other) {
         super(other);
-        this.eventPath = other.eventPath;
-        this.code = other.code;
-        this.codeName = other.codeName;
+        triggers = other.triggers;
     }
 
-    public String getCodeName() {
-        return codeName;
+    public void addTrigger(GCEventTrigger t) {
+        triggers.add(t);
     }
 
-    public void setCodeName(String codeName) {
-        this.codeName = codeName;
+    public List<GCEventTrigger> getTriggers() {
+        return triggers;
     }
 
-    public String getEventPath() {
-        return eventPath;
-    }
-
-    public void setEventPath(String eventPath) {
-        this.eventPath = eventPath;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
+    public void setTriggers(List<GCEventTrigger> triggers) {
+        this.triggers = triggers;
     }
 }

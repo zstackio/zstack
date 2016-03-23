@@ -47,8 +47,7 @@ public class EventBasedGCPersistentContext<T> extends AbstractEventBasedGCContex
             i.context = JSONObjectUtil.rehashObject(map(e("context", context)), LinkedHashMap.class);
         }
         i.runnerClassName = runnerClass.getName();
-        i.code = code;
-        i.eventPath = eventPath;
+        i.triggers  = triggers;
         return i;
     }
 }

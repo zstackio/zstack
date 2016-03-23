@@ -55,12 +55,14 @@ public class TestGC6 {
     public void test() throws InterruptedException {
         String eventPath = "/test/gc";
         EventBasedGCPersistentContext<String> ctx = new EventBasedGCPersistentContext<String>();
-        ctx.setEventPath(eventPath);
         ctx.setContextClass(String.class);
         ctx.setRunnerClass(TRunner.class);
         ctx.setName("test-gc");
-        ctx.setCodeName("test-gc-code");
         ctx.setContext("I am running");
+
+        GCEventTrigger trigger = new GCEventTrigger();
+        trigger.setEventPath(eventPath);
+        trigger.setCodeName("test-gc-code");
 
         String code = "if (data == \"hello\") {" +
                 "   return true;" +
@@ -68,7 +70,9 @@ public class TestGC6 {
                 "   return false;" +
                 "}";
 
-        ctx.setCode(code);
+        trigger.setCode(code);
+        ctx.addTrigger(trigger);
+
         gcf.schedule(ctx);
 
         evtf.fire(eventPath, "not run");

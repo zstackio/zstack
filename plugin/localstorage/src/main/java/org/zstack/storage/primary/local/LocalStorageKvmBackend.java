@@ -7,6 +7,9 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.gc.EventBasedGCPersistentContext;
+import org.zstack.core.gc.GCEventTrigger;
+import org.zstack.core.gc.GCFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -58,7 +61,10 @@ import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
 
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.StringDSL.ln;
 
 /**
  * Created by frank on 6/30/2015.
@@ -72,6 +78,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     private LocalStorageFactory localStorageFactory;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private GCFacade gcf;
 
     public static class AgentCommand {
     }
@@ -1029,7 +1037,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    public void deleteBits(String path, String hostUuid, final Completion completion) {
+    public void deleteBits(final String path, final String hostUuid, final Completion completion) {
         DeleteBitsCmd cmd = new DeleteBitsCmd();
         cmd.setPath(path);
         cmd.setHostUuid(hostUuid);
@@ -1042,18 +1050,64 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+                if (!HostErrors.HOST_IS_DISCONNECTED.toString().equals(errorCode.getCode()) &&
+                        !SysErrors.HTTP_ERROR.toString().equals(errorCode.getCode())) {
+                    completion.fail(errorCode);
+                    return;
+                }
+
+                GCDeleteBitsContext c = new GCDeleteBitsContext();
+                c.setPrimaryStorageUuid(self.getUuid());
+                c.setHostUuid(hostUuid);
+                c.setInstallPath(path);
+
+                submitDeleteBitsGCJob(c);
+                completion.success();
             }
         });
     }
 
+    private void submitDeleteBitsGCJob(GCDeleteBitsContext c) {
+        EventBasedGCPersistentContext<GCDeleteBitsContext> ctx = new EventBasedGCPersistentContext<GCDeleteBitsContext>();
+        ctx.setContextClass(GCDeleteBitsContext.class);
+        ctx.setRunnerClass(GCDeleteBitsRunner.class);
+        ctx.setName(String.format("local-storage-delete-%s-%s", self.getUuid(), c.getInstallPath()));
+        ctx.setContext(c);
+
+        GCEventTrigger trigger = new GCEventTrigger();
+        trigger.setCodeName("local-storage-delete-bits");
+        trigger.setEventPath(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH);
+        String code = ln(
+                "import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData",
+                "import org.zstack.storage.primary.local.GCDeleteBitsContext",
+                "HostStatusChangedData d = (HostStatusChangedData) data",
+                "GCDeleteBitsContext ctx = (GCDeleteBitsContext) context",
+                "return d.hostUuid = ctx.hostUuid && d.newStatus == \"Connected\""
+        ).toString();
+        trigger.setCode(code);
+        ctx.addTrigger(trigger);
+
+        trigger = new GCEventTrigger();
+        trigger.setEventPath(HostCanonicalEvents.HOST_DELETED_PATH);
+        trigger.setCodeName("local-storage-delete-bits-on-host-deleted");
+        code = ln(
+                "import org.zstack.header.host.HostCanonicalEvents.HostDeletedData",
+                "HostDeletedData d = (HostDeletedData) data",
+                "GCDeleteBitsContext ctx = (GCDeleteBitsContext) context",
+                "return d.hostUuid = ctx.hostUuid"
+        ).toString();
+        trigger.setCode(code);
+
+        gcf.schedule(ctx);
+    }
+
     @Override
-    void handle(DeleteVolumeOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply> completion) {
-        String hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName());
+    void handle(final DeleteVolumeOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply> completion) {
+        final DeleteVolumeOnPrimaryStorageReply dreply = new DeleteVolumeOnPrimaryStorageReply();
+        final String hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName());
         deleteBits(msg.getVolume().getInstallPath(), hostUuid, new Completion(completion) {
             @Override
             public void success() {
-                DeleteVolumeOnPrimaryStorageReply dreply = new DeleteVolumeOnPrimaryStorageReply();
                 completion.success(dreply);
             }
 
@@ -1199,11 +1253,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    void handle(DeleteSnapshotOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<DeleteSnapshotOnPrimaryStorageReply> completion) {
+    void handle(final DeleteSnapshotOnPrimaryStorageMsg msg, final String hostUuid, final ReturnValueCompletion<DeleteSnapshotOnPrimaryStorageReply> completion) {
+        final DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
         deleteBits(msg.getSnapshot().getPrimaryStorageInstallPath(), hostUuid, new Completion(completion) {
             @Override
             public void success() {
-                DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
                 completion.success(reply);
             }
 

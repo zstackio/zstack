@@ -50,5 +50,10 @@
         <id>1009</id>
         <description>Failed to migrate vm on hypervisor</description>
     </code>
+
+    <code>
+        <id>1010</id>
+        <description>Ths host is disconnected, cannot perform the required operation</description>
+    </code>
 </error>
 

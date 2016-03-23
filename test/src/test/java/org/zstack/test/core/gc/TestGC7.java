@@ -15,6 +15,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.utils.StringDSL.ln;
+
 /**
  * test event based GC
  */
@@ -24,7 +26,7 @@ public class TestGC7 {
     DatabaseFacade dbf;
     EventFacadeImpl evtf;
     CloudBusImpl2 bus;
-    static boolean success;
+    static int success;
 
     @Before
     public void setUp() throws Exception {
@@ -44,7 +46,7 @@ public class TestGC7 {
         @Override
         public void run(GCContext context, GCCompletion completion) {
             logger.debug((String)context.getContext());
-            success = true;
+            success ++;
             completion.success();
         }
     }
@@ -53,27 +55,37 @@ public class TestGC7 {
     public void test() throws InterruptedException {
         String eventPath = "/test/gc";
         EventBasedGCEphemeralContext<String> ctx = new EventBasedGCEphemeralContext<String>();
-        ctx.setEventPath(eventPath);
         ctx.setName("test-gc");
-        ctx.setCodeName("test-gc-code");
         ctx.setContext("I am running");
         ctx.setRunner(new TRunner());
 
-        String code = "if (data == \"hello\") {" +
-                "   return true;" +
-                "} else {" +
-                "   return false;" +
-                "}";
+        GCEventTrigger trigger = new GCEventTrigger();
+        trigger.setEventPath(eventPath);
+        trigger.setCodeName("test-gc-code");
 
-        ctx.setCode(code);
+        String code = ln(
+                "println tokens.toString()",
+                "println context.toString()",
+                "println data.toString()",
+                "return data == \"hello\" || data == \"world\""
+        ).toString();
+
+        trigger.setCode(code);
+        ctx.addTrigger(trigger);
         gcf.schedule(ctx);
 
         evtf.fire(eventPath, "not run");
         TimeUnit.SECONDS.sleep(1);
-        Assert.assertFalse(success);
+        Assert.assertEquals(0, success);
 
         evtf.fire(eventPath, "hello");
         TimeUnit.SECONDS.sleep(1);
-        Assert.assertTrue(success);
+        Assert.assertEquals(1, success);
+
+        evtf.fire(eventPath, "hello");
+        evtf.fire(eventPath, "hello");
+        evtf.fire(eventPath, "world");
+        TimeUnit.SECONDS.sleep(1);
+        Assert.assertEquals(1, success);
     }
 }

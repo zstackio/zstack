@@ -4,6 +4,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -13,8 +14,7 @@ class EventBasedGCPersistentContextInternal {
     String runnerClassName;
     String contextClassName;
     LinkedHashMap context;
-    String code;
-    String eventPath;
+    List<GCEventTrigger> triggers;
 
     String toJson() {
         return JSONObjectUtil.toJsonString(this);
@@ -28,7 +28,7 @@ class EventBasedGCPersistentContextInternal {
         runnerClassName = i.runnerClassName;
         contextClassName = i.contextClassName;
         context = i.context;
-        code = i.code;
+        triggers = i.triggers;
     }
 
     public EventBasedGCPersistentContext toGCContext() {
@@ -41,8 +41,7 @@ class EventBasedGCPersistentContextInternal {
                 ctx.setContext(JSONObjectUtil.rehashObject(context.get("context"), ctx.getContextClass()));
             }
             ctx.setRunnerClass(Class.forName(runnerClassName));
-            ctx.setCode(code);
-            ctx.setEventPath(eventPath);
+            ctx.setTriggers(triggers);
             return ctx;
         } catch (Exception e) {
             throw new CloudRuntimeException(e);

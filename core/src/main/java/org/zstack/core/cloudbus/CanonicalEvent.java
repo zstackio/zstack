@@ -12,6 +12,15 @@ import org.zstack.utils.JsonWrapper;
 public class CanonicalEvent extends LocalEvent {
     private String path;
     private Object content;
+    private String managementNodeId;
+
+    public String getManagementNodeId() {
+        return managementNodeId;
+    }
+
+    public void setManagementNodeId(String managementNodeId) {
+        this.managementNodeId = managementNodeId;
+    }
 
     @Override
     public String getSubCategory() {
