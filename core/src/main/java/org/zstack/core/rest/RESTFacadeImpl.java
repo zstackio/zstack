@@ -299,7 +299,7 @@ public class RESTFacadeImpl implements RESTFacade {
             if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
                 String err = String.format("http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody());
                 logger.warn(err);
-                wrapper.fail(errf.stringToOperationError(err));
+                wrapper.fail(errf.instantiateErrorCode(SysErrors.HTTP_ERROR, err));
             }
         } catch (Throwable e) {
             logger.warn(String.format("Unable to post to %s", url), e);

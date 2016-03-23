@@ -28,6 +28,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
+import org.zstack.header.host.HostCanonicalEvents.HostDeletedData;
 import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
 import org.zstack.header.host.HostMaintenancePolicyExtensionPoint.HostMaintenancePolicy;
 import org.zstack.header.message.APIDeleteMessage;
@@ -89,7 +90,7 @@ public abstract class HostBase extends AbstractHost {
 
     protected void checkStatus() {
         if (HostStatus.Connected != self.getStatus()) {
-            throw new OperationFailureException(errf.stringToOperationError(String.format("host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getStatus())));
+            throw new OperationFailureException(errf.instantiateErrorCode(HostErrors.HOST_IS_DISCONNECTED, String.format("host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getStatus())));
         }
     }
 
@@ -380,6 +381,11 @@ public abstract class HostBase extends AbstractHost {
             public void handle(Map data) {
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
                 bus.publish(evt);
+
+                HostDeletedData d = new HostDeletedData();
+                d.setHostUuid(self.getUuid());
+                d.setInventory(getSelfInventory());
+                evtf.fire(HostCanonicalEvents.HOST_DELETED_PATH, d);
             }
         }).error(new FlowErrorHandler(msg) {
             @Override

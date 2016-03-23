@@ -1172,8 +1172,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 });
             }
         }).start();
-
-
     }
 
     @Override

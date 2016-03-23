@@ -7,6 +7,7 @@ import org.zstack.header.message.NeedJsonSchema;
  */
 public class HostCanonicalEvents {
     public static final String HOST_STATUS_CHANGED_PATH = "/host/status/change";
+    public static final String HOST_DELETED_PATH = "/host/delete";
 
     @NeedJsonSchema
     public static class HostStatusChangedData {
@@ -37,6 +38,28 @@ public class HostCanonicalEvents {
 
         public void setNewStatus(String newStatus) {
             this.newStatus = newStatus;
+        }
+
+        public HostInventory getInventory() {
+            return inventory;
+        }
+
+        public void setInventory(HostInventory inventory) {
+            this.inventory = inventory;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostDeletedData {
+        private String hostUuid;
+        private HostInventory inventory;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
         }
 
         public HostInventory getInventory() {
