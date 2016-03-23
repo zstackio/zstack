@@ -8,6 +8,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -32,6 +33,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageReply;
@@ -73,6 +75,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected ThreadFacade thdf;
     @Autowired
     protected PrimaryStorageOverProvisioningManager ratioMgr;
+    @Autowired
+    protected EventFacade evtf;
 
     public static class PhysicalCapacityUsage {
         public long totalPhysicalSize;
@@ -670,6 +674,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             public void handle(Map data) {
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
                 bus.publish(evt);
+
+                PrimaryStorageDeletedData d = new PrimaryStorageDeletedData();
+                d.setPrimaryStorageUuid(self.getUuid());
+                d.setInventory(getSelfInventory());
+                evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_DELETED_PATH, d);
             }
         }).error(new FlowErrorHandler(msg) {
             @Override

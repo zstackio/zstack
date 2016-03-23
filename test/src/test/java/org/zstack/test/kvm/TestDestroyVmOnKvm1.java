@@ -39,6 +39,10 @@ import java.util.concurrent.TimeUnit;
  * 3. destroy the vm
  *
  * confirm the vm destroyed successfully
+ *
+ * 4. change the host to connected
+ *
+ * confirm the volume and snapshot deleted
  */
 public class TestDestroyVmOnKvm1 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);

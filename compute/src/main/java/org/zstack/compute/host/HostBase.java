@@ -383,8 +383,8 @@ public abstract class HostBase extends AbstractHost {
                 bus.publish(evt);
 
                 HostDeletedData d = new HostDeletedData();
+                d.setInventory(HostInventory.valueOf(self));
                 d.setHostUuid(self.getUuid());
-                d.setInventory(getSelfInventory());
                 evtf.fire(HostCanonicalEvents.HOST_DELETED_PATH, d);
             }
         }).error(new FlowErrorHandler(msg) {
