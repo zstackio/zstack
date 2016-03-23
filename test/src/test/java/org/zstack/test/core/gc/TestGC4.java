@@ -52,7 +52,7 @@ public class TestGC4 {
 
     @Test
     public void test() {
-        GCPersistentContext<String> context = new GCPersistentContext<String>();
+        TimeBasedGCPersistentContext<String> context = new TimeBasedGCPersistentContext<String>();
         context.setRunnerClass(TRunner.class);
         context.setInterval(1);
         context.setTimeUnit(TimeUnit.MILLISECONDS);

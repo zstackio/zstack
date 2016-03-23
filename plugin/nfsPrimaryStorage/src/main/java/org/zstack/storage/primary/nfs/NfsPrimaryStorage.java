@@ -8,7 +8,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.gc.GCFacade;
-import org.zstack.core.gc.GCPersistentContext;
+import org.zstack.core.gc.TimeBasedGCPersistentContext;
 import org.zstack.core.workflow.*;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
@@ -54,7 +54,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class NfsPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorage.class);
@@ -485,7 +484,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 c.setSnapshot(sinv);
                 c.setHypervisorType(bkd.getHypervisorType().toString());
 
-                GCPersistentContext<GCBitsDeletionContext> ctx = new GCPersistentContext();
+                TimeBasedGCPersistentContext<GCBitsDeletionContext> ctx = new TimeBasedGCPersistentContext();
                 ctx.setContextClass(GCBitsDeletionContext.class);
                 ctx.setRunnerClass(GCBitsDeletionRunner.class);
                 ctx.setContext(c);
@@ -790,7 +789,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 c.setVolume(vol);
                 c.setHypervisorType(backend.getHypervisorType().toString());
 
-                GCPersistentContext<GCBitsDeletionContext> ctx = new GCPersistentContext<GCBitsDeletionContext>();
+                TimeBasedGCPersistentContext<GCBitsDeletionContext> ctx = new TimeBasedGCPersistentContext<GCBitsDeletionContext>();
                 ctx.setContext(c);
                 ctx.setRunnerClass(GCBitsDeletionRunner.class);
                 ctx.setContextClass(GCBitsDeletionContext.class);

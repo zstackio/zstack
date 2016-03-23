@@ -1,13 +1,9 @@
 package org.zstack.core.gc;
 
-import java.util.concurrent.TimeUnit;
-
 /**
- * Created by frank on 11/10/2015.
+ * Created by xing5 on 2016/3/22.
  */
-public class AbstractGCContext<T> implements GCContext {
-    protected TimeUnit timeUnit = TimeUnit.SECONDS;
-    protected long interval;
+public abstract class AbstractGCContext<T> implements GCContext<T> {
     protected T context;
     protected String name;
     protected long executedTimes;
@@ -16,30 +12,12 @@ public class AbstractGCContext<T> implements GCContext {
     }
 
     public AbstractGCContext(AbstractGCContext<T> other) {
-        this.timeUnit = other.timeUnit;
-        this.interval = other.interval;
         this.context = other.context;
         this.name = other.name;
         this.executedTimes = other.executedTimes;
     }
 
-
-    public TimeUnit getTimeUnit() {
-        return timeUnit;
-    }
-
-    public void setTimeUnit(TimeUnit timeUnit) {
-        this.timeUnit = timeUnit;
-    }
-
-    public long getInterval() {
-        return interval;
-    }
-
-    public void setInterval(long interval) {
-        this.interval = interval;
-    }
-
+    @Override
     public T getContext() {
         return context;
     }
@@ -48,6 +26,7 @@ public class AbstractGCContext<T> implements GCContext {
         this.context = context;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -56,6 +35,7 @@ public class AbstractGCContext<T> implements GCContext {
         this.name = name;
     }
 
+    @Override
     public long getExecutedTimes() {
         return executedTimes;
     }

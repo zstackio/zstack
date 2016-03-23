@@ -9,41 +9,40 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by frank on 8/5/2015.
  */
-class GCPersistentContextInternal {
+class EventBasedGCPersistentContextInternal {
     String runnerClassName;
     String contextClassName;
     LinkedHashMap context;
-    TimeUnit timeUnit;
-    long interval;
+    String code;
+    String eventPath;
 
     String toJson() {
         return JSONObjectUtil.toJsonString(this);
     }
 
-    public GCPersistentContextInternal() {
+    public EventBasedGCPersistentContextInternal() {
     }
 
-    public GCPersistentContextInternal(GarbageCollectorVO vo) {
-        GCPersistentContextInternal i = JSONObjectUtil.toObject(vo.getContext(), GCPersistentContextInternal.class);
+    public EventBasedGCPersistentContextInternal(GarbageCollectorVO vo) {
+        EventBasedGCPersistentContextInternal i = JSONObjectUtil.toObject(vo.getContext(), EventBasedGCPersistentContextInternal.class);
         runnerClassName = i.runnerClassName;
         contextClassName = i.contextClassName;
         context = i.context;
-        timeUnit = i.timeUnit;
-        interval = i.interval;
+        code = i.code;
     }
 
-    public GCPersistentContext toGCContext() {
+    public EventBasedGCPersistentContext toGCContext() {
         try {
-            GCPersistentContext ctx = new GCPersistentContext();
+            EventBasedGCPersistentContext ctx = new EventBasedGCPersistentContext();
             if (contextClassName != null) {
                 ctx.setContextClass(Class.forName(contextClassName));
             }
             if (context != null) {
                 ctx.setContext(JSONObjectUtil.rehashObject(context.get("context"), ctx.getContextClass()));
             }
-            ctx.setInterval(interval);
-            ctx.setTimeUnit(timeUnit);
             ctx.setRunnerClass(Class.forName(runnerClassName));
+            ctx.setCode(code);
+            ctx.setEventPath(eventPath);
             return ctx;
         } catch (Exception e) {
             throw new CloudRuntimeException(e);

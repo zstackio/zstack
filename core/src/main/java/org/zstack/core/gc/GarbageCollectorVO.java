@@ -28,10 +28,21 @@ public class GarbageCollectorVO {
     private String managementNodeUuid;
 
     @Column
+    private String type;
+
+    @Column
     private Timestamp createDate;
 
     @Column
     private Timestamp lastOpDate;
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 
     public long getId() {
         return id;

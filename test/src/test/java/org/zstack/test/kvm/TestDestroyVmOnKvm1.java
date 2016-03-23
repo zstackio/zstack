@@ -11,6 +11,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
@@ -18,13 +19,16 @@ import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageGlobalProperty;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.DeleteCmd;
+import org.zstack.storage.snapshot.VolumeSnapshot;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
@@ -68,6 +72,10 @@ public class TestDestroyVmOnKvm1 {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         NfsPrimaryStorageGlobalProperty.BITS_DELETION_GC_INTERVAL = 1;
 	    VmInstanceInventory vm = deployer.vms.get("TestVm");
+        final VolumeInventory root = vm.getRootVolume();
+
+        final VolumeSnapshotInventory sp = api.createSnapshot(root.getUuid());
+
         HostInventory host = deployer.hosts.get("host1");
         api.stopVmInstance(vm.getUuid());
 
@@ -83,9 +91,21 @@ public class TestDestroyVmOnKvm1 {
 
         TimeUnit.SECONDS.sleep(2);
 
-        VolumeInventory root = vm.getRootVolume();
-        Assert.assertEquals(1, nconfig.deleteCmds.size());
-        DeleteCmd cmd = nconfig.deleteCmds.get(0);
-        Assert.assertEquals(root.getInstallPath(), cmd.getInstallPath());
+        Assert.assertEquals(2, nconfig.deleteCmds.size());
+        DeleteCmd cmd = CollectionUtils.find(nconfig.deleteCmds, new Function<DeleteCmd, DeleteCmd>() {
+            @Override
+            public DeleteCmd call(DeleteCmd arg) {
+                return root.getInstallPath().equals(arg.getInstallPath()) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(cmd);
+
+        cmd = CollectionUtils.find(nconfig.deleteCmds, new Function<DeleteCmd, DeleteCmd>() {
+            @Override
+            public DeleteCmd call(DeleteCmd arg) {
+                return sp.getPrimaryStorageInstallPath().equals(arg.getInstallPath()) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(cmd);
 	}
 }

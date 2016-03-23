@@ -10,14 +10,14 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * Created by frank on 8/5/2015.
  */
-public class GCPersistentContext<T> extends AbstractGCContext<T> {
+public class TimeBasedGCPersistentContext<T> extends AbstractTimeBasedGCContext<T> {
     private Class runnerClass;
     private Class<T> contextClass;
 
-    public GCPersistentContext() {
+    public TimeBasedGCPersistentContext() {
     }
 
-    public GCPersistentContext(GCPersistentContext other) {
+    public TimeBasedGCPersistentContext(TimeBasedGCPersistentContext other) {
         this.runnerClass = other.runnerClass;
         this.contextClass = other.contextClass;
     }
@@ -38,8 +38,8 @@ public class GCPersistentContext<T> extends AbstractGCContext<T> {
         this.contextClass = contextClass;
     }
 
-    GCPersistentContextInternal toInternal() {
-        GCPersistentContextInternal i = new GCPersistentContextInternal();
+    TimeBasedGCPersistentContextInternal toInternal() {
+        TimeBasedGCPersistentContextInternal i = new TimeBasedGCPersistentContextInternal();
         if (contextClass != null) {
             i.contextClassName = contextClass.getName();
         }
