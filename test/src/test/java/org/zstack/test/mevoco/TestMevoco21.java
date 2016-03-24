@@ -9,6 +9,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.console.APIRequestConsoleAccessMsg;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
@@ -50,8 +51,10 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -61,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform._;
+import static org.zstack.utils.CollectionDSL.list;
 
 
 /**
@@ -202,5 +206,21 @@ public class TestMevoco21 {
         qmsg.addQueryCondition("name", QueryOp.EQ, "DEFAULT-READ");
         r = api.query(qmsg, APIQueryPolicyReply.class, creator.getAccountSession());
         Assert.assertEquals(1, r.getInventories().size());
+
+        PolicyVO consolePolicy = CollectionUtils.find(ps, new Function<PolicyVO, PolicyVO>() {
+            @Override
+            public PolicyVO call(PolicyVO arg) {
+                return "VM.CONSOLE".equals(arg.getName()) ? arg : null;
+            }
+        });
+
+        Assert.assertNotNull(consolePolicy);
+
+        api.attachPolicesToUser(user.getUuid(), list(consolePolicy.getUuid()), creator.getAccountSession());
+
+        Map<String, String> pret = api.checkUserPolicy(list(APIRequestConsoleAccessMsg.class.getName()), user.getUuid(), creator.getAccountSession());
+        Assert.assertEquals(1, pret.size());
+        String decision = pret.get(APIRequestConsoleAccessMsg.class.getName());
+        Assert.assertEquals("Allow", decision);
     }
 }
