@@ -1453,7 +1453,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(final SyncTaskChain taskChain) {
                 final DestroyVmInstanceReply reply = new DestroyVmInstanceReply();
                 final String issuer = VmInstanceVO.class.getSimpleName();
-                final List<VmInstanceInventory> ctx = VmInstanceInventory.valueOf(Arrays.asList(self));
+
+                VmDeletionStruct s = new VmDeletionStruct();
+                s.setDeletionPolicy(deletionPolicyMgr.getDeletionPolicy(self.getUuid()));
+                s.setInventory(getSelfInventory());
+                final List<VmDeletionStruct> ctx = list(s);
+
                 final FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
                 chain.setName(String.format("destory-vm-%s", self.getUuid()));
                 chain.then(new NoRollbackFlow() {
