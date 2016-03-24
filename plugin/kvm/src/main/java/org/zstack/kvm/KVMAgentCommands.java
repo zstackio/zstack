@@ -854,6 +854,15 @@ public class KVMAgentCommands {
         private String vmUuid;
         private String destHostIp;
         private String storageMigrationPolicy;
+        private String srcHostIp;
+
+        public String getSrcHostIp() {
+            return srcHostIp;
+        }
+
+        public void setSrcHostIp(String srcHostIp) {
+            this.srcHostIp = srcHostIp;
+        }
 
         public String getStorageMigrationPolicy() {
             return storageMigrationPolicy;

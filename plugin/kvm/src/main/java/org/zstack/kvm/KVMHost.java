@@ -887,6 +887,7 @@ public class KVMHost extends HostBase implements Host {
 
         MigrateVmCmd cmd = new MigrateVmCmd();
         cmd.setDestHostIp(hostIp);
+        cmd.setSrcHostIp(self.getManagementIp());
         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
         cmd.setVmUuid(vmUuid);
         final String fvmuuid = vmUuid;
