@@ -79,7 +79,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private boolean trackerClose = false;
     private Map<String, MessageStatistic> statistics = new HashMap<String, MessageStatistic>();
 
-    private Map<Class, Map<String, Serializable>> mvelExpressions = Collections.synchronizedMap(new HashMap<Class, Map<String,Serializable>>());
+    private Map<Class, Map<String, Serializable>> mvelExpressions = new ConcurrentHashMap<Class, Map<String, Serializable>>();
     private Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
 
     private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
@@ -500,7 +500,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         private Serializable getMVELExpression(Message msg, String express, String prefix) {
             Map<String, Serializable> exps = mvelExpressions.get(msg.getClass());
             if (exps == null) {
-                exps = new HashMap<String, Serializable>();
+                exps = new ConcurrentHashMap<String, Serializable>();
                 mvelExpressions.put(msg.getClass(), exps);
             }
 
