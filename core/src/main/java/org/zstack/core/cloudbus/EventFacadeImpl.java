@@ -8,6 +8,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Event;
 import org.zstack.header.message.NeedJsonSchema;
 import org.zstack.utils.TypeUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

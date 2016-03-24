@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -127,6 +128,18 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
         }
     }
 
+    class RunningOnce {
+        final AtomicBoolean isRunning = new AtomicBoolean(false);
+
+        boolean setToRun() {
+            return isRunning.compareAndSet(false, true);
+        }
+
+        void setNotRun() {
+            isRunning.set(false);
+        }
+    }
+
     interface CancelEventCallback {
         void cancel();
     }
@@ -177,7 +190,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
                             binding.setVariable("context", context.getContext());
                             boolean ret = (Boolean) gse.run(finalScriptName, binding);
                             if (ret) {
-                                logger.debug(String.format("[GC] code[%s] triggered a GC job[%s]", trigger.getCodeName(), context.getName()));
+                                logger.debug(String.format("[GC] code[%s], event[%s] triggered a GC job[%s]",
+                                        trigger.getCodeName(), trigger.getEventPath(), context.getName()));
                                 runner.run();
                             }
                         } catch (Exception e) {
@@ -212,6 +226,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
     private void scheduleTask(final EventBasedGCPersistentContext context, final GarbageCollectorVO vo, final boolean updateDb) {
         final EventCanceller canceller = new EventCanceller();
 
+        final RunningOnce once = new RunningOnce();
+
         final GCCompletion completion = new GCCompletion() {
             @Override
             public void success() {
@@ -223,12 +239,16 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
                 }
 
                 logger.debug(String.format("GC job[id:%s, name: %s, runner class:%s] is done", vo.getId(), context.getName(), vo.getRunnerClass()));
+
+                once.setNotRun();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.debug(String.format("GC job[id:%s, name:%s, runner class:%s] failed, %s. Reschedule it", vo.getId(), context.getName(), vo.getRunnerClass(), errorCode));
                 // already scheduled, no need to schedule again
+
+                once.setNotRun();
             }
 
             @Override
@@ -236,6 +256,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
                 vo.setStatus(GCStatus.Idle);
                 dbf.update(vo);
                 logger.debug(String.format("GC job[id:%s, name: %s, runner class:%s] is cancelled by the runner, set it to idle", vo.getId(), context.getName(), vo.getRunnerClass()));
+
+                once.setNotRun();
             }
         };
 
@@ -243,6 +265,10 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
         final Runnable r = new Runnable() {
             @Override
             public void run() {
+                if (!once.setToRun()) {
+                    return;
+                }
+
                 context.increaseExecutedTime();
 
                 if (updateDb) {
@@ -260,18 +286,24 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
     }
 
     private void scheduleTask(final TimeBasedGCPersistentContext context, final GarbageCollectorVO vo, boolean instant, final boolean updateDb) {
+        final RunningOnce once = new RunningOnce();
+
         final GCCompletion completion = new GCCompletion() {
             @Override
             public void success() {
                 vo.setStatus(GCStatus.Done);
                 dbf.update(vo);
                 logger.debug(String.format("GC job[id:%s, name: %s, runner class:%s] is done", vo.getId(), context.getName(), vo.getRunnerClass()));
+
+                once.setNotRun();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.debug(String.format("GC job[id:%s, name:%s, runner class:%s] failed, %s. Reschedule it", vo.getId(), context.getName(), vo.getRunnerClass(), errorCode));
                 scheduleTask(context, vo, false, false);
+
+                once.setNotRun();
             }
 
             @Override
@@ -279,6 +311,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
                 vo.setStatus(GCStatus.Idle);
                 dbf.update(vo);
                 logger.debug(String.format("GC job[id:%s, name: %s, runner class:%s] is cancelled by the runner, set it to idle", vo.getId(), context.getName(), vo.getRunnerClass()));
+
+                once.setNotRun();
             }
         };
 
@@ -286,6 +320,10 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
         Runnable r = new Runnable() {
             @Override
             public void run() {
+                if (!once.setToRun()) {
+                    return;
+                }
+
                 context.increaseExecutedTime();
 
                 if (updateDb) {
@@ -332,6 +370,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
 
         final EventCanceller canceller = new EventCanceller();
 
+        final RunningOnce once = new RunningOnce();
+
         final GCCompletion completion = new GCCompletion() {
             @Override
             public void success() {
@@ -340,17 +380,27 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
                 if (canceller.canceller != null) {
                     canceller.canceller.cancel();
                 }
+
+                once.setNotRun();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.warn(String.format("GC ephemeral job[name:%s] failed, %s. Reschedule it", context.getName(), errorCode));
                 // the job is scheduled, no need to schedule again
+
+                once.setNotRun();
             }
 
             @Override
             public void cancel() {
                 logger.debug(String.format("GC ephemeral job[name:%s] is cancelled by the runner", context.getName()));
+
+                if (canceller.canceller != null) {
+                    canceller.canceller.cancel();
+                }
+
+                once.setNotRun();
             }
         };
 
@@ -358,6 +408,11 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
         Runnable r = new Runnable() {
             @Override
             public void run() {
+                if (!once.setToRun()) {
+                    // is already running
+                    return;
+                }
+
                 context.increaseExecutedTime();
                 logger.debug(String.format("start running GC ephemeral job[name:%s], already executed %s times",
                         context.getName(), context.getExecutedTimes()));
@@ -369,21 +424,26 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
     }
 
     private void scheduleTask(final TimeBasedGCEphemeralContext context, boolean instant) {
+        final RunningOnce once = new RunningOnce();
+
         final GCCompletion completion = new GCCompletion() {
             @Override
             public void success() {
                 logger.debug(String.format("GC ephemeral job[name:%s] is done", context.getName()));
+                once.setNotRun();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.debug(String.format("GC ephemeral job[name:%s] failed, %s. Reschedule it", context.getName(), errorCode));
                 scheduleTask(context, false);
+                once.setNotRun();
             }
 
             @Override
             public void cancel() {
                 logger.debug(String.format("GC ephemeral job[name:%s] is cancelled by the runner", context.getName()));
+                once.setNotRun();
             }
         };
 
@@ -391,6 +451,10 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
         Runnable r = new Runnable() {
             @Override
             public void run() {
+                if (!once.setToRun()) {
+                    return;
+                }
+
                 context.increaseExecutedTime();
                 logger.debug(String.format("start running GC ephemeral job[name:%s], already executed %s times",
                         context.getName(), context.getExecutedTimes()));

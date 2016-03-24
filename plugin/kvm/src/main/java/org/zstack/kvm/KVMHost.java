@@ -231,9 +231,66 @@ public class KVMHost extends HostBase implements Host {
             handle((GetVmConsoleAddressFromHostMsg) msg);
         } else if (msg instanceof KvmRunShellMsg) {
             handle((KvmRunShellMsg) msg);
+        } else if (msg instanceof VmDirectlyDestroyOnHypervisorMsg) {
+            handle((VmDirectlyDestroyOnHypervisorMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void directlyDestroy(final VmDirectlyDestroyOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        checkStatus();
+
+        final VmDirectlyDestroyOnHypervisorReply reply = new VmDirectlyDestroyOnHypervisorReply();
+        DestroyVmCmd cmd = new DestroyVmCmd();
+        cmd.setUuid(msg.getVmUuid());
+        restf.asyncJsonPost(destroyVmPath, cmd, new JsonAsyncRESTCallback<DestroyVmResponse>(msg, completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void success(DestroyVmResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_DESTROY_VM_ON_HYPERVISOR, ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public Class<DestroyVmResponse> getReturnClass() {
+                return DestroyVmResponse.class;
+            }
+        });
+    }
+
+    private void handle(final VmDirectlyDestroyOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return id;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                directlyDestroy(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("directly-delete-vm-%s-msg-on-kvm-%s", msg.getVmUuid(), self.getUuid());
+            }
+        });
     }
 
     private void handle(KvmRunShellMsg msg) {
