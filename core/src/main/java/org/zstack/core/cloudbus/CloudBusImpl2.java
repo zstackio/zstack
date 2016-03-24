@@ -3,6 +3,7 @@ package org.zstack.core.cloudbus;
 import com.google.gson.*;
 import com.rabbitmq.client.*;
 import org.apache.commons.lang.StringUtils;
+import org.json.JSONObject;
 import org.mvel2.MVEL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
@@ -507,7 +508,16 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             String key = String.format("%s:%s", express, prefix);
             Serializable exp = exps.get(key);
             if (exp == null) {
-                exp = MVEL.compileExpression(express);
+                if (prefix.equals("msg:get")) {
+                    exp = MVEL.compileGetExpression(express);
+                } else if (prefix.equals("raw:get")) {
+                    exp = MVEL.compileGetExpression(express);
+                } else if (prefix.equals("msg:set")) {
+                    exp = MVEL.compileSetExpression(express);
+                } else {
+                    throw new CloudRuntimeException(String.format("unknown prefix[%s]", prefix));
+                }
+
                 exps.put(key, exp);
             }
             return exp;
@@ -536,15 +546,12 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                     Object rawData = MVEL.executeExpression(exp, raw);
                     Class rawClass = Class.forName(rawClassName);
                     Object newValue = JSONObjectUtil.rehashObject(rawData, rawClass);
-                    String setExpress = String.format("CONTEXT_OBJECT.%s = newValue", path);
-                    exp = getMVELExpression(msg, setExpress, "msg:set");
-                    Map vars = map(e("newValue", newValue));
+                    exp = getMVELExpression(msg, path, "msg:set");
                     // Note MVEL context is
                     // not meant for write but rather for read. Use a Map context to
                     // force MVEL to assign newValue on msg, not to create a new variable
                     // in vars map
-                    Map context = map(e("CONTEXT_OBJECT", msg));
-                    MVEL.executeExpression(exp, context, vars);
+                    MVEL.executeSetExpression(exp, msg, newValue);
                 }
             }
         }

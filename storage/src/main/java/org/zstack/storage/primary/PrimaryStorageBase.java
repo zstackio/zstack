@@ -677,7 +677,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
                 PrimaryStorageDeletedData d = new PrimaryStorageDeletedData();
                 d.setPrimaryStorageUuid(self.getUuid());
-                d.setInventory(getSelfInventory());
+                d.setInventory(PrimaryStorageInventory.valueOf(self));
                 evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_DELETED_PATH, d);
             }
         }).error(new FlowErrorHandler(msg) {
