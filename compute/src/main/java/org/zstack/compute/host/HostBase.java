@@ -742,7 +742,7 @@ public abstract class HostBase extends AbstractHost {
         data.setHostUuid(self.getUuid());
         data.setNewStatus(next.toString());
         data.setOldStatus(before.toString());
-        data.setInventory(getSelfInventory());
+        data.setInventory(HostInventory.valueOf(self));
         evtf.fire(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, data);
 	}
 
