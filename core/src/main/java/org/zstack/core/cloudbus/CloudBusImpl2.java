@@ -1088,6 +1088,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 return Address.parseAddress(arg);
             }
         });
+        connFactory.setAutomaticRecoveryEnabled(true);
         logger.info(String.format("use RabbitMQ server IPs: %s", serverIps));
 
         try {
@@ -1097,7 +1098,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             }
             if (CloudBusGlobalProperty.RABBITMQ_PASSWORD != null) {
                 connFactory.setPassword(CloudBusGlobalProperty.RABBITMQ_PASSWORD);
-                logger.info(String.format("use RabbitMQ password: ******"));
+                logger.info("use RabbitMQ password: ******");
             }
             if (CloudBusGlobalProperty.RABBITMQ_VIRTUAL_HOST != null) {
                 connFactory.setVirtualHost(CloudBusGlobalProperty.RABBITMQ_VIRTUAL_HOST);
