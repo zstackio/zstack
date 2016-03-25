@@ -9,6 +9,7 @@
 	<TestCase class="org.zstack.test.identity.TestIdentity7"/>
 	<TestCase class="org.zstack.test.identity.TestIdentity8"/>
 	<TestCase class="org.zstack.test.identity.TestIdentity9"/>
+	<TestCase class="org.zstack.test.identity.TestIdentity10"/>
 	<TestCase class="org.zstack.test.identity.TestLogin"/>
 	<TestCase class="org.zstack.test.identity.TestLogout"/>
 	<TestCase class="org.zstack.test.identity.TestMaxSession"/>

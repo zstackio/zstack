@@ -3880,4 +3880,42 @@ public class Api implements CloudBusEventListener {
         APICreateResourcePriceEvent evt = sender.send(msg, APICreateResourcePriceEvent.class);
         return evt.getInventory();
     }
+
+    public AccountInventory updateAccount(AccountInventory acnt, String password, SessionInventory session) throws ApiSenderException {
+        APIUpdateAccountMsg msg = new APIUpdateAccountMsg();
+        msg.setName(acnt.getName());
+        msg.setPassword(password);
+        msg.setDescription(acnt.getDescription());
+        msg.setUuid(acnt.getUuid());
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateAccountEvent evt = sender.send(msg, APIUpdateAccountEvent.class);
+        return evt.getInventory();
+    }
+
+    public UserGroupInventory updateUserGroup(UserGroupInventory group, SessionInventory session) throws ApiSenderException {
+        APIUpdateUserGroupMsg msg = new APIUpdateUserGroupMsg();
+        msg.setUuid(group.getUuid());
+        msg.setName(group.getName());
+        msg.setDescription(group.getDescription());
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateUserGroupEvent evt = sender.send(msg, APIUpdateUserGroupEvent.class);
+        return evt.getInventory();
+    }
+
+    public UserInventory updateUser(UserInventory user, String password, SessionInventory session) throws ApiSenderException {
+        APIUpdateUserMsg msg  = new APIUpdateUserMsg();
+        msg.setUuid(user.getUuid());
+        msg.setPassword(password);
+        msg.setName(user.getName());
+        msg.setDescription(user.getDescription());
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateUserEvent evt = sender.send(msg, APIUpdateUserEvent.class);
+        return evt.getInventory();
+    }
 }

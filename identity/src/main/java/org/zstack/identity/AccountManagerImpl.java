@@ -1311,8 +1311,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void validate(APIUpdateUserMsg msg) {
         if (msg.getUuid() == null && msg.getSession().isAccountSession()) {
             throw new ApiMessageInterceptionException (errf.stringToInvalidArgumentError(
-                    "the current session is an account session. You need to specify the field 'uuid'" +
-                            " to the user you want to reset the password"
+                    "the current session is an account session. You need to specify the field 'uuid' of the user" +
+                            " you want to update"
             ));
         }
 
@@ -1322,8 +1322,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         if (msg.getUuid() != null && !msg.getSession().getUserUuid().equals(msg.getUuid())) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("cannot change the password, you are not the owner user of user[uuid:%s]",
-                            msg.getUuid())
+                    String.format("your are login as a user, you cannot another user[uuid:%s]", msg.getUuid())
             ));
         }
 
@@ -1477,7 +1476,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
 
         if (a.getType() == AccountType.SystemAdmin) {
-            if (msg.getName() != null && (msg.getAccountUuid() == null || msg.getAccountUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID))) {
+            if (msg.getName() != null && (msg.getUuid() == null || msg.getUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID))) {
                 throw new OperationFailureException(errf.stringToOperationError(
                         "the name of admin account cannot be updated"
                 ));
