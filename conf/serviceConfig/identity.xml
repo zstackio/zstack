@@ -157,4 +157,8 @@
     <message>
         <name>org.zstack.header.identity.APIAttachPoliciesToUserMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIUpdateUserGroupMsg</name>
+    </message>
 </service>

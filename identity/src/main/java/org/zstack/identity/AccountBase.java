@@ -276,9 +276,40 @@ public class AccountBase extends AbstractAccount {
             handle((APIAttachPoliciesToUserMsg) msg);
         } else if (msg instanceof APIDetachPoliciesFromUserMsg) {
             handle((APIDetachPoliciesFromUserMsg) msg);
+        } else if (msg instanceof APIUpdateUserGroupMsg) {
+            handle((APIUpdateUserGroupMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateUserGroupMsg msg) {
+        UserGroupVO group = dbf.findByUuid(msg.getUuid(), UserGroupVO.class);
+
+        if (!AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getAccountUuid()) &&
+                !group.getAccountUuid().equals(msg.getAccountUuid())) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                    String.format("the user group[uuid:%s] does not belong to the account[uuid:%s]", group.getUuid(), msg.getAccountUuid())
+            ));
+        }
+
+        boolean update = false;
+        if (msg.getName() != null) {
+            group.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            group.setDescription(msg.getDescription());
+            update = true;
+        }
+
+        if (update) {
+            group = dbf.updateAndRefresh(group);
+        }
+
+        APIUpdateUserGroupEvent evt = new APIUpdateUserGroupEvent(msg.getId());
+        evt.setInventory(UserGroupInventory.valueOf(group));
+        bus.publish(evt);
     }
 
     @Transactional
@@ -457,18 +488,31 @@ public class AccountBase extends AbstractAccount {
 
     private void handle(APIUpdateUserMsg msg) {
         UserVO user = dbf.findByUuid(msg.getUuid(), UserVO.class);
+
+        if (!AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getAccountUuid()) && !user.getAccountUuid().equals(msg.getAccountUuid())) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError(String.format("the user[uuid:%s] does not belong to the" +
+                    " account[uuid:%s]", user.getUuid(), msg.getAccountUuid())));
+        }
+
+        boolean update = false;
         if (msg.getName() != null) {
             user.setName(msg.getName());
+            update = true;
         }
         if (msg.getDescription() != null) {
             user.setDescription(msg.getDescription());
+            update = true;
         }
         if (msg.getPassword() != null) {
             user.setPassword(msg.getPassword());
+            update = true;
         }
-        dbf.update(user);
+        if (update) {
+            user = dbf.updateAndRefresh(user);
+        }
 
         APIUpdateUserEvent evt = new APIUpdateUserEvent(msg.getId());
+        evt.setInventory(UserInventory.valueOf(user));
         bus.publish(evt);
     }
 
