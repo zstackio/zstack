@@ -3,6 +3,7 @@ package org.zstack.core.ansible;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.DirectoryWalker;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.ini4j.Wini;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
@@ -76,7 +77,11 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
 
         try {
             publicKey = FileUtils.readFileToString(pubKeyFile);
+            publicKey = publicKey.trim();
+            publicKey = StringDSL.stripEnd(publicKey, "\n");
             privateKey = FileUtils.readFileToString(privKeyFile);
+            privateKey = privateKey.trim();
+            privateKey = StringDSL.stripEnd(privateKey, "\n");
 
             File invFile = new File(AnsibleConstant.CONFIGURATION_FILE);
             File invDir = new File(invFile.getParent());
