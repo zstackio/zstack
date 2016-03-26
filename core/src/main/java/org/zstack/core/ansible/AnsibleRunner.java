@@ -225,18 +225,17 @@ public class AnsibleRunner {
         ssh.setHostname(targetIp);
         ssh.setPassword(password);
         ssh.setPort(sshPort);
-        ssh.setPrivateKeyFile(privateKey);
         ssh.setUsername(username);
 
         if (privateKey != null) {
             try {
                 final File tempKeyFile = File.createTempFile("zstack", "tmp");
-                FileUtils.writeStringToFile(tempKeyFile, password);
+                FileUtils.writeStringToFile(tempKeyFile, privateKey);
 
                 Defer.defer(new Runnable() {
                     @Override
                     public void run() {
-                        tempKeyFile.delete();
+                        //tempKeyFile.delete();
                     }
                 });
 
