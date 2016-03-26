@@ -993,6 +993,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "create-template-from-cache";
+
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         installPath = makeRootVolumeInstallUrl(volume);

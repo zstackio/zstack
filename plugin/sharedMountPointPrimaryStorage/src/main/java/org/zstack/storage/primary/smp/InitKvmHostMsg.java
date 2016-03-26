@@ -6,7 +6,7 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
 /**
  * Created by xing5 on 2016/3/26.
  */
-public class SMPPrimaryStorageInitKvmHostMsg extends NeedReplyMessage implements PrimaryStorageMessage, SMPPrimaryStorageHypervisorSpecificMessage {
+public class InitKvmHostMsg extends NeedReplyMessage implements PrimaryStorageMessage, SMPPrimaryStorageHypervisorSpecificMessage {
     private String primaryStorageUuid;
     private String hostUuid;
 

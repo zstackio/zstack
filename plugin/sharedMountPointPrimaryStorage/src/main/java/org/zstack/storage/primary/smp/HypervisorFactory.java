@@ -5,8 +5,8 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 /**
  * Created by frank on 6/30/2015.
  */
-public interface SMPPrimaryStorageHypervisorFactory {
+public interface HypervisorFactory {
     String getHypervisorType();
 
-    SMPPrimaryStorageHypervisorBackend getHypervisorBackend(PrimaryStorageVO vo);
+    HypervisorBackend getHypervisorBackend(PrimaryStorageVO vo);
 }

@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * Created by xing5 on 2016/3/26.
  */
-public class SMPPrimaryStorageKvmFactory implements SMPPrimaryStorageHypervisorFactory, KVMHostConnectExtensionPoint {
+public class KvmFactory implements HypervisorFactory, KVMHostConnectExtensionPoint {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -34,8 +34,8 @@ public class SMPPrimaryStorageKvmFactory implements SMPPrimaryStorageHypervisorF
     }
 
     @Override
-    public SMPPrimaryStorageHypervisorBackend getHypervisorBackend(PrimaryStorageVO vo) {
-        return new SMPPrimaryStorageKvmBackend(vo);
+    public HypervisorBackend getHypervisorBackend(PrimaryStorageVO vo) {
+        return new KvmBackend(vo);
     }
 
 
@@ -62,7 +62,7 @@ public class SMPPrimaryStorageKvmFactory implements SMPPrimaryStorageHypervisorF
                     return;
                 }
 
-                SMPPrimaryStorageInitKvmHostMsg msg = new SMPPrimaryStorageInitKvmHostMsg();
+                InitKvmHostMsg msg = new InitKvmHostMsg();
                 msg.setHostUuid(context.getInventory().getUuid());
                 msg.setPrimaryStorageUuid(psUuid);
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
