@@ -189,8 +189,16 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected VmInstanceVO refreshVO() {
+        return refreshVO(false);
+    }
+
+    protected VmInstanceVO refreshVO(boolean noException) {
         VmInstanceVO vo = self;
         self = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
+        if (self == null && noException) {
+            return null;
+        }
+
         if (self == null) {
             throw new OperationFailureException(errf.stringToOperationError(String.format("vm[uuid:%s, name:%s] has been deleted", vo.getUuid(), vo.getName())));
         }
@@ -2672,12 +2680,18 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void detachVolume(final DetachDataVolumeFromVmMsg msg, final NoErrorCompletion completion) {
         final DetachDataVolumeFromVmReply reply = new DetachDataVolumeFromVmReply();
-        refreshVO();
+        refreshVO(true);
+
+        if (self == null || VmInstanceState.Destroyed == self.getState()) {
+            // the vm is destroyed, the data volume must have been detached
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
+
         ErrorCode allowed = validateOperationByState(msg, self.getState(), VmErrors.DETACH_VOLUME_ERROR);
         if (allowed != null) {
-            reply.setError(allowed);
-            bus.reply(msg, reply);
-            return;
+            throw new OperationFailureException(allowed);
         }
 
         final VolumeInventory volume = msg.getVolume();
