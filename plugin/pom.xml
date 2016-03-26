@@ -24,6 +24,7 @@
         <module>ceph</module>
         <module>loadBalancer</module>
         <module>flatNetworkProvider</module>
+        <module>sharedMountPointPrimaryStorage</module>
     </modules>
     <dependencies>
         <dependency>
