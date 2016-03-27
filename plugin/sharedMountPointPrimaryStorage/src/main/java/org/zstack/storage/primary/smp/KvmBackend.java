@@ -94,7 +94,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
 
-    private static class CreateVolumeFromCacheCmd extends AgentCmd {
+    public static class CreateVolumeFromCacheCmd extends AgentCmd {
         public String templatePathInCache;
         public String installPath;
         public String volumeUuid;
@@ -168,7 +168,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/sharedmountpointpirmarystorage/createtemplatefromvolume";
     public static final String UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointpirmarystorage/sftp/upload";
     public static final String DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointpirmarystorage/sftp/download";
-    public static final String REMOVE_VOLUME_FROM_SNAPSHOT_PATH = "/sharedmountpointpirmarystorage/volume/revertfromsnapshot";
+    public static final String REVERT_VOLUME_FROM_SNAPSHOT_PATH = "/sharedmountpointpirmarystorage/volume/revertfromsnapshot";
     public static final String MERGE_SNAPSHOT_PATH = "/sharedmountpointpirmarystorage/snapshot/merge";
     public static final String OFFLINE_MERGE_SNAPSHOT_PATH = "/sharedmountpointpirmarystorage/snapshot/offlinemerge";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/sharedmountpointpirmarystorage/volume/createempty";
@@ -221,14 +221,29 @@ public class KvmBackend extends HypervisorBackend {
                 }
 
                 KVMHostAsyncHttpCallReply r = reply.castReply();
-                T rsp = r.toResponse(rspType);
+                final T rsp = r.toResponse(rspType);
                 if (!rsp.success) {
                     completion.fail(errf.stringToOperationError(rsp.error));
                     return;
                 }
 
                 if (rsp.totalCapacity != null && rsp.availableCapacity != null) {
-                    new PrimaryStorageCapacityUpdater(self.getUuid()).update(null, null, rsp.totalCapacity, rsp.availableCapacity);
+                    new PrimaryStorageCapacityUpdater(self.getUuid()).run(new PrimaryStorageCapacityUpdaterRunnable() {
+                        @Override
+                        public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                            if (cap.getTotalCapacity() == 0) {
+                                cap.setTotalCapacity(rsp.totalCapacity);
+                            }
+                            if (cap.getAvailableCapacity() == 0) {
+                                cap.setAvailableCapacity(rsp.availableCapacity);
+                            }
+
+                            cap.setTotalPhysicalCapacity(rsp.totalCapacity);
+                            cap.setAvailablePhysicalCapacity(rsp.availableCapacity);
+
+                            return cap;
+                        }
+                    });
                 }
 
                 completion.success(rsp);
@@ -437,7 +452,7 @@ public class KvmBackend extends HypervisorBackend {
                     CheckBitsCmd cmd = new CheckBitsCmd();
                     cmd.path = primaryStorageInstallPath;
 
-                    new Do().go(CHECK_BITS_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion, chain) {
+                    new Do().go(CHECK_BITS_PATH, cmd, CheckBitsRsp.class, new ReturnValueCompletion<AgentRsp>(completion, chain) {
                         @Override
                         public void success(AgentRsp returnValue) {
                             CheckBitsRsp rsp = (CheckBitsRsp) returnValue;
@@ -600,7 +615,7 @@ public class KvmBackend extends HypervisorBackend {
                 " ref.primaryStorageUuid = :psUuid and h.status = :status and h.hypervisorType = :htype";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("psUuid", self.getUuid());
-        q.setParameter("status", HostStatus.Connected.toString());
+        q.setParameter("status", HostStatus.Connected);
         q.setParameter("htype", KVMConstant.KVM_HYPERVISOR_TYPE);
         q.setMaxResults(num);
         List<String> hostUuids = q.getResultList();
@@ -637,10 +652,14 @@ public class KvmBackend extends HypervisorBackend {
         }
 
         void go(String path, AgentCmd cmd, ReturnValueCompletion<AgentRsp> completion) {
-            doCommand(hostUuids.iterator(), path, cmd, completion);
+            go(path, cmd, AgentRsp.class, completion);
         }
 
-        private void doCommand(final Iterator<String> it, final String path, final AgentCmd cmd, final ReturnValueCompletion<AgentRsp> completion) {
+        void go(String path, AgentCmd cmd, Class rspType, ReturnValueCompletion<AgentRsp> completion) {
+            doCommand(hostUuids.iterator(), path, cmd, rspType, completion);
+        }
+
+        private void doCommand(final Iterator<String> it, final String path, final AgentCmd cmd, final Class rspType, final ReturnValueCompletion<AgentRsp> completion) {
             if (!it.hasNext()) {
                 completion.fail(errf.stringToOperationError(
                         String.format("the operation failed on all hosts, errors are %s", errors)
@@ -649,7 +668,7 @@ public class KvmBackend extends HypervisorBackend {
             }
 
             final String hostUuid = it.next();
-            httpCall(path, hostUuid, cmd, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            httpCall(path, hostUuid, cmd, rspType, new ReturnValueCompletion<AgentRsp>(completion) {
                 @Override
                 public void success(AgentRsp rsp) {
                     completion.success(rsp);
@@ -665,7 +684,7 @@ public class KvmBackend extends HypervisorBackend {
 
                     logger.warn(String.format("failed to do the command[%s] on the kvm host[uuid:%s], %s, try next one",
                             cmd.getClass(), hostUuid, errorCode));
-                    doCommand(it, path, cmd, completion);
+                    doCommand(it, path, cmd, rspType, completion);
                 }
             });
         }
@@ -818,7 +837,7 @@ public class KvmBackend extends HypervisorBackend {
         RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
         cmd.snapshotInstallPath = sp.getPrimaryStorageInstallPath();
 
-        new Do().go(REMOVE_VOLUME_FROM_SNAPSHOT_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
+        new Do().go(REVERT_VOLUME_FROM_SNAPSHOT_PATH, cmd, RevertVolumeFromSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
             public void success(AgentRsp returnValue) {
                 RevertVolumeFromSnapshotRsp rsp = (RevertVolumeFromSnapshotRsp) returnValue;
@@ -877,7 +896,7 @@ public class KvmBackend extends HypervisorBackend {
                         cmd.snapshotInstallPath = latest.getPrimaryStorageInstallPath();
                         cmd.workspaceInstallPath = workSpaceInstallPath;
 
-                        doCmd.go(MERGE_SNAPSHOT_PATH, cmd, new ReturnValueCompletion<AgentRsp>(trigger) {
+                        doCmd.go(MERGE_SNAPSHOT_PATH, cmd, MergeSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
                             @Override
                             public void success(AgentRsp returnValue) {
                                 MergeSnapshotRsp rsp = (MergeSnapshotRsp) returnValue;
@@ -939,7 +958,7 @@ public class KvmBackend extends HypervisorBackend {
                     }
 
                     private void upload(final Iterator<BackupStorageInventory> it, final Completion completion) {
-                        if (it.hasNext()) {
+                        if (!it.hasNext()) {
                             completion.success();
                             return;
                         }
@@ -958,7 +977,7 @@ public class KvmBackend extends HypervisorBackend {
                         }
 
                         final String backupStorageInstallPath = ((BackupStorageAskInstallPathReply) br).getInstallPath();
-                        BackupStorageKvmUploader uploader = getBackupStorageKvmUploader(bs.getType());
+                        BackupStorageKvmUploader uploader = getBackupStorageKvmUploader(bs.getUuid());
                         uploader.uploadBits(backupStorageInstallPath, workSpaceInstallPath, new Completion(completion) {
                             @Override
                             public void success() {
@@ -1042,7 +1061,7 @@ public class KvmBackend extends HypervisorBackend {
         cmd.snapshotInstallPath = latest.getPrimaryStorageInstallPath();
         cmd.workspaceInstallPath = installPath;
 
-        new Do().go(MERGE_SNAPSHOT_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
+        new Do().go(MERGE_SNAPSHOT_PATH, cmd, MergeSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
             public void success(AgentRsp returnValue) {
                 MergeSnapshotRsp rsp = (MergeSnapshotRsp) returnValue;
@@ -1418,11 +1437,16 @@ public class KvmBackend extends HypervisorBackend {
         }
     }
 
+
     private BackupStorageKvmUploader getBackupStorageKvmUploader(String backupStorageUuid) {
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
         q.select(BackupStorageVO_.type);
         q.add(BackupStorageVO_.uuid, Op.EQ, backupStorageUuid);
         String bsType = q.findValue();
+
+        if (bsType == null) {
+            throw new OperationFailureException(errf.stringToOperationError(String.format("cannot find backup storage[uuid:%s]", backupStorageUuid)));
+        }
 
         if (SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE.equals(bsType)) {
             return new SftpBackupStorageKvmUploader(backupStorageUuid);

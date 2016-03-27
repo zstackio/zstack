@@ -24,6 +24,8 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory {
 
     @Override
     public PrimaryStorageInventory createPrimaryStorage(PrimaryStorageVO vo, APIAddPrimaryStorageMsg msg) {
+        vo.setMountPath(vo.getUrl());
+        vo.setType(SMPConstants.SMP_TYPE);
         vo = dbf.persistAndRefresh(vo);
         return PrimaryStorageInventory.valueOf(vo);
     }

@@ -79,4 +79,5 @@
     <import resource="springConfigXml/ceph.xml" />
     <import resource="springConfigXml/lb.xml" />
     <import resource="springConfigXml/flatNetworkProvider.xml" />
+    <import resource="springConfigXml/sharedMountPointPrimaryStorage.xml" />
 </beans>

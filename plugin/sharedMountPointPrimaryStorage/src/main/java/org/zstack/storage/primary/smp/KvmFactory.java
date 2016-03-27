@@ -63,6 +63,7 @@ public class KvmFactory implements HypervisorFactory, KVMHostConnectExtensionPoi
                 }
 
                 InitKvmHostMsg msg = new InitKvmHostMsg();
+                msg.setHypervisorType(context.getInventory().getHypervisorType());
                 msg.setHostUuid(context.getInventory().getUuid());
                 msg.setPrimaryStorageUuid(psUuid);
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);

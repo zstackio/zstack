@@ -13,13 +13,19 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
+import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
 
 import java.util.ArrayList;
@@ -271,5 +277,158 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void syncPhysicalCapacity(ReturnValueCompletion<PhysicalCapacityUsage> completion) {
         completion.fail(errf.stringToOperationError("no supported operation"));
+    }
+
+    @Override
+    protected void handleLocalMessage(Message msg) {
+        if (msg instanceof TakeSnapshotMsg) {
+            handle((TakeSnapshotMsg) msg);
+        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
+            handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
+            handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
+            handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
+        } else if (msg instanceof CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof SMPPrimaryStorageHypervisorSpecificMessage) {
+            handle((SMPPrimaryStorageHypervisorSpecificMessage) msg);
+        } else {
+            super.handleLocalMessage(msg);
+        }
+    }
+
+    private void handle(SMPPrimaryStorageHypervisorSpecificMessage msg) {
+        HypervisorFactory f = getHypervisorFactoryByHypervisorType(msg.getHypervisorType());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handleHypervisorSpecificMessage(msg);
+    }
+
+    private void handle(final MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getTo().getUuid());
+        bkd.handle(msg, new ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(MergeVolumeSnapshotOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        SnapshotDownloadInfo info = msg.getSnapshots().get(0);
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(info.getSnapshot().getVolumeUuid());
+        bkd.handle(msg, new ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        SnapshotDownloadInfo info = msg.getSnapshotsDownloadInfo().get(0);
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(info.getSnapshot().getVolumeUuid());
+        bkd.handle(msg, new ReturnValueCompletion<CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg) {
+        throw new OperationFailureException(errf.stringToOperationError("not supported operation"));
+    }
+
+    private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolume().getUuid());
+        bkd.handle(msg, new ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(RevertVolumeFromSnapshotOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getSnapshot().getVolumeUuid());
+        bkd.handle(msg, new ReturnValueCompletion<DeleteSnapshotOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(DeleteSnapshotOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private HypervisorBackend getHypervisorBackendByVolumeUuid(String volUuid) {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.format);
+        q.add(VolumeVO_.uuid, Op.EQ, volUuid);
+        String format = q.findValue();
+
+        if (format == null) {
+            throw new CloudRuntimeException(String.format("cannot find the volume[uuid:%s]", volUuid));
+        }
+
+        HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(format);
+        HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());
+        return f.getHypervisorBackend(self);
+    }
+
+    private void handle(final TakeSnapshotMsg msg) {
+        final VolumeSnapshotInventory sp = msg.getStruct().getCurrent();
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(sp.getVolumeUuid());
+        bkd.handle(msg, new ReturnValueCompletion<TakeSnapshotReply>(msg) {
+            @Override
+            public void success(TakeSnapshotReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                TakeSnapshotReply reply = new TakeSnapshotReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 }

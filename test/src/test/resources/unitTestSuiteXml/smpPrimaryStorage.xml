@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="180">
+    <TestCase class="org.zstack.test.storage.primary.smp.TestSmpPrimaryStorage1"/>
+    <TestCase class="org.zstack.test.storage.primary.smp.TestSmpPrimaryStorage2"/>
+    <TestCase class="org.zstack.test.storage.primary.smp.TestSmpPrimaryStorage3"/>
+    <TestCase class="org.zstack.test.storage.primary.smp.TestSmpPrimaryStorage4"/>
+</UnitTestSuiteConfig>

@@ -1,14 +1,9 @@
 package org.zstack.storage.primary.smp;
 
-import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.*;
-import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
-
-import java.util.List;
 
 /**
  * Created by frank on 6/30/2015.
