@@ -3,6 +3,7 @@ package org.zstack.storage.primary.smp;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -15,6 +16,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
@@ -28,7 +30,9 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
 
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -68,6 +72,75 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         String hvType = q.findValue();
 
         return getHypervisorFactoryByHypervisorType(hvType);
+    }
+
+    @Transactional(readOnly = true)
+    private List<String> findClustersHavingHosts() {
+        String sql = "select ref.clusterUuid from PrimaryStorageClusterRefVO ref, HostVO host where ref.clusterUuid = host.clusterUuid" +
+                " and ref.primaryStorageUuid = :psUuid and host.status = :hstatus";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("psUuid", self.getUuid());
+        q.setParameter("hstatus", HostStatus.Connected);
+        return q.getResultList();
+    }
+
+    @Override
+    public void handle(APIReconnectPrimaryStorageMsg msg) {
+        final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
+        List<String> cuuids = findClustersHavingHosts();
+
+        if (cuuids.isEmpty()) {
+            evt.setInventory(getSelfInventory());
+            bus.publish(evt);
+            return;
+        }
+
+        final Iterator<String> it = cuuids.iterator();
+
+        class Connect {
+            private List<ErrorCode> errors = new ArrayList<ErrorCode>();
+
+            void connect(final Completion completion) {
+                if (!it.hasNext()) {
+                    completion.fail(errf.stringToOperationError(
+                            String.format("failed to reconnect the shared mount point primary storage[name:%s, uuid:%s], operations failed" +
+                                    " in all attached clusters; errors are %s", self.getName(), self.getUuid(), errors)
+                    ));
+                    return;
+                }
+
+                String cuuid = it.next();
+                HypervisorFactory f = getHypervisorFactoryByClusterUuid(cuuid);
+                HypervisorBackend bkd = f.getHypervisorBackend(self);
+                bkd.connectByClusterUuid(cuuid, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        errors.add(errorCode);
+                        connect(completion);
+                    }
+                });
+            }
+        }
+
+        new Connect().connect(new Completion(msg) {
+            @Override
+            public void success() {
+                self = dbf.reload(self);
+                evt.setInventory(getSelfInventory());
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     @Override

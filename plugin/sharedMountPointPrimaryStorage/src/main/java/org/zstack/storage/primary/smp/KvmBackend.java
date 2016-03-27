@@ -183,17 +183,21 @@ public class KvmBackend extends HypervisorBackend {
         return findConnectedHostByClusterUuid(clusterUuid, true);
     }
 
-    private String findConnectedHostByClusterUuid(String clusterUuid, boolean excptionOnNotFound) {
+    private String findConnectedHostByClusterUuid(String clusterUuid, boolean exceptionOnNotFound) {
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.uuid);
         q.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
         q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
         q.setLimit(200);
         List<String> hostUuids = q.listValue();
-        if (hostUuids.isEmpty() && excptionOnNotFound) {
+        if (hostUuids.isEmpty() && exceptionOnNotFound) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("no connected host found in the cluster[uuid:%s]", clusterUuid)
             ));
+        }
+
+        if (hostUuids.isEmpty()) {
+            return null;
         }
 
         Collections.shuffle(hostUuids);
@@ -231,13 +235,11 @@ public class KvmBackend extends HypervisorBackend {
                     new PrimaryStorageCapacityUpdater(self.getUuid()).run(new PrimaryStorageCapacityUpdaterRunnable() {
                         @Override
                         public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                            if (cap.getTotalCapacity() == 0) {
-                                cap.setTotalCapacity(rsp.totalCapacity);
-                            }
                             if (cap.getAvailableCapacity() == 0) {
                                 cap.setAvailableCapacity(rsp.availableCapacity);
                             }
 
+                            cap.setTotalCapacity(rsp.totalCapacity);
                             cap.setTotalPhysicalCapacity(rsp.totalCapacity);
                             cap.setAvailablePhysicalCapacity(rsp.availableCapacity);
 
@@ -271,7 +273,13 @@ public class KvmBackend extends HypervisorBackend {
 
     @Override
     public void attachHook(String clusterUuid, final Completion completion) {
-        String huuid = findConnectedHostByClusterUuid(clusterUuid);
+        String huuid = findConnectedHostByClusterUuid(clusterUuid, false);
+        if (huuid == null) {
+            // no host in the cluster
+            completion.success();
+            return;
+        }
+
         connect(huuid, completion);
     }
 
