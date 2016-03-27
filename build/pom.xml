@@ -401,5 +401,10 @@
             <artifactId>virtualRouterProvider</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>sharedMountPointPrimaryStorage</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>
