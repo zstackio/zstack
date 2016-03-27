@@ -810,7 +810,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(KVMConstant.KVM_HYPERVISOR_TYPE, backupStorage.getType());
                                     m.downloadBits(getSelfInventory(), backupStorage,
                                             backupStorageInstallPath, primaryStorageInstallPath,
-                                            hostUuid, new Completion(completion, chain) {
+                                            hostUuid, new Completion(trigger) {
                                                 @Override
                                                 public void success() {
                                                     trigger.next();

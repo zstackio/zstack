@@ -9,4 +9,6 @@ public interface BackupStorageKvmFactory {
     String getBackupStorageType();
 
     BackupStorageKvmUploader createUploader(PrimaryStorageInventory ps, String bsUuid);
+
+    BackupStorageKvmDownloader createDownloader(PrimaryStorageInventory ps, String bsUuid);
 }
