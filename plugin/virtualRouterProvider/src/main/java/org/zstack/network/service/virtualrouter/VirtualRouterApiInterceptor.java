@@ -11,6 +11,7 @@ import org.zstack.header.identity.AccountType;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.identity.AccountVO_;
 import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
@@ -23,6 +24,7 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
 
+import javax.persistence.Tuple;
 import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -58,6 +60,28 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             if (type != AccountType.SystemAdmin) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
                         "cannot change the default field of a virtual router offering; only admin can do the operation"
+                ));
+            }
+        }
+
+        if (msg.getImageUuid() != null) {
+            SimpleQuery<ImageVO> q = dbf.createQuery(ImageVO.class);
+            q.select(ImageVO_.mediaType, ImageVO_.format);
+            q.add(ImageVO_.uuid, Op.EQ, msg.getImageUuid());
+            Tuple t = q.findTuple();
+            ImageMediaType type = t.get(0, ImageMediaType.class);
+            String format = t.get(1, String.class);
+
+            if (type != ImageMediaType.RootVolumeTemplate) {
+                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                        String.format("image[uuid:%s]'s mediaType is %s, the mediaType of a virtual router image must be %s",
+                                msg.getImageUuid(), type, ImageMediaType.RootVolumeTemplate)
+                ));
+            }
+
+            if (ImageConstant.ISO_FORMAT_STRING.equals(format)) {
+                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                        String.format("image[uuid:%s] is of format %s, cannot be used for virtual router", msg.getImageUuid(), format)
                 ));
             }
         }
@@ -104,12 +128,22 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         }
 
         SimpleQuery<ImageVO> imq = dbf.createQuery(ImageVO.class);
-        imq.select(ImageVO_.mediaType);
+        imq.select(ImageVO_.mediaType, ImageVO_.format);
         imq.add(ImageVO_.uuid, Op.EQ, msg.getImageUuid());
-        ImageMediaType type = imq.findValue();
+        Tuple t = imq.findTuple();
+
+        ImageMediaType type = t.get(0, ImageMediaType.class);
         if (type != ImageMediaType.RootVolumeTemplate) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("image[uuid:%s] is not a RootVolumeTemplate, it's %s", msg.getImageUuid(), type)
+                    String.format("image[uuid:%s]'s mediaType is %s, the mediaType of a virtual router image must be %s",
+                            msg.getImageUuid(), type, ImageMediaType.RootVolumeTemplate)
+            ));
+        }
+
+        String format = t.get(1, String.class);
+        if (ImageConstant.ISO_FORMAT_STRING.equals(format)) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("image[uuid:%s] is of format %s, cannot be used for virtual router", msg.getImageUuid(), format)
             ));
         }
 

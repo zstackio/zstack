@@ -24,6 +24,7 @@ import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeState;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.utils.StringDSL;
 
 import java.util.List;
 
@@ -119,6 +120,12 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIAddImageMsg msg) {
         if (ImageMediaType.ISO.toString().equals(msg.getMediaType())) {
             msg.setFormat(ImageConstant.ISO_FORMAT_STRING);
+        }
+
+        if (msg.isSystem() && (ImageMediaType.ISO.toString().equals(msg.getMediaType()) || ImageConstant.ISO_FORMAT_STRING.equals(msg.getFormat()))) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    "ISO cannot be used as system image"
+            ));
         }
 
         if (!VolumeFormat.hasType(msg.getFormat())) {
