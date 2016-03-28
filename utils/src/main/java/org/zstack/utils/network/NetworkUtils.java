@@ -1,6 +1,7 @@
 package org.zstack.utils.network;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.Pair;
 import org.zstack.utils.logging.CLogger;
@@ -14,6 +15,45 @@ import java.util.regex.Pattern;
 
 public class NetworkUtils {
     private static final CLogger logger = Utils.getLogger(NetworkUtils.class);
+
+    private static final Set<String> validNetmasks = new HashSet<String>();
+
+
+    static {
+        validNetmasks.add("255.255.255.255");
+        validNetmasks.add("255.255.255.254");
+        validNetmasks.add("255.255.255.252");
+        validNetmasks.add("255.255.255.248");
+        validNetmasks.add("255.255.255.240");
+        validNetmasks.add("255.255.255.224");
+        validNetmasks.add("255.255.255.192");
+        validNetmasks.add("255.255.255.128");
+        validNetmasks.add("255.255.255.0");
+        validNetmasks.add("255.255.254.0");
+        validNetmasks.add("255.255.252.0");
+        validNetmasks.add("255.255.248.0");
+        validNetmasks.add("255.255.240.0");
+        validNetmasks.add("255.255.224.0");
+        validNetmasks.add("255.255.192.0");
+        validNetmasks.add("255.255.128.0");
+        validNetmasks.add("255.255.0.0");
+        validNetmasks.add("255.254.0.0");
+        validNetmasks.add("255.252.0.0");
+        validNetmasks.add("255.248.0.0");
+        validNetmasks.add("255.240.0.0");
+        validNetmasks.add("255.224.0.0");
+        validNetmasks.add("255.192.0.0");
+        validNetmasks.add("255.128.0.0");
+        validNetmasks.add("255.0.0.0");
+        validNetmasks.add("254.0.0.0");
+        validNetmasks.add("252.0.0.0");
+        validNetmasks.add("248.0.0.0");
+        validNetmasks.add("240.0.0.0");
+        validNetmasks.add("224.0.0.0");
+        validNetmasks.add("192.0.0.0");
+        validNetmasks.add("128.0.0.0");
+        validNetmasks.add("0.0.0.0");
+    }
 
     public static boolean isHostname(String hostname) {
         String PATTERN = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
@@ -31,6 +71,14 @@ public class NetworkUtils {
         Pattern pattern = Pattern.compile(PATTERN);
         Matcher matcher = pattern.matcher(ip);
         return matcher.matches();
+    }
+
+    public static boolean isNetmask(String netmask) {
+        return validNetmasks.contains(netmask);
+    }
+
+    public static boolean isNetmaskExcept(String netmask, String except) {
+        return validNetmasks.contains(netmask) && !netmask.equals(except);
     }
 
     public static boolean isCidr(String cidr) {

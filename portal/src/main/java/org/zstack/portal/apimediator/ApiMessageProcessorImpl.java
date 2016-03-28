@@ -254,6 +254,10 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                 f.setAccessible(true);
                 Object value = f.get(msg);
 
+                if (value != null && (value instanceof String) && !at.noTrim()) {
+                    value = ((String) value).trim();
+                }
+
                 if (value != null && at.maxLength() != Integer.MIN_VALUE && (value instanceof String)) {
                     String str = (String) value;
                     if (str.length() > at.maxLength()) {

@@ -16,4 +16,5 @@ public @interface APIParam {
     boolean emptyString() default true;
     long[] numberRange() default {};
     boolean checkAccount() default false;
+    boolean noTrim() default false;
 }
