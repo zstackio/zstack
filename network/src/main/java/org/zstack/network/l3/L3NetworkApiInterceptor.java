@@ -212,9 +212,9 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
-        if (!NetworkUtils.isIpv4Address(ipr.getNetmask())) {
+        if (!NetworkUtils.isNetmaskExcept(ipr.getNetmask(), "0.0.0.0")) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("netmask[%s] is not a IPv4 address", ipr.getNetmask())
+                    String.format("netmask[%s] is not a netmask, and the IP range netmask cannot be 0.0.0.0", ipr.getNetmask())
             ));
         }
 
