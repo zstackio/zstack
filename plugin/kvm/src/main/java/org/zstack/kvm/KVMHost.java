@@ -1766,6 +1766,7 @@ public class KVMHost extends HostBase implements Host {
 
     protected void pingHook(final Completion completion) {
         PingCmd cmd = new PingCmd();
+        cmd.hostUuid = self.getUuid();
         restf.asyncJsonPost(pingPath, cmd, new JsonAsyncRESTCallback<PingResponse>(completion) {
             @Override
             public void fail(ErrorCode err) {

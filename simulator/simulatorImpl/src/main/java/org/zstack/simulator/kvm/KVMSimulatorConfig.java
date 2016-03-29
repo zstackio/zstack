@@ -17,6 +17,7 @@ public class KVMSimulatorConfig {
     public volatile String simulatorHostUuid;
     public volatile boolean connectException = false;
     public volatile boolean pingSuccess = true;
+    public volatile Map<String, Boolean> pingSuccessMap = new HashMap<String, Boolean>();
     public volatile boolean mountSuccess = true;
     public volatile boolean mountException = false;
     public volatile long totalDiskCapacity = SizeUnit.TERABYTE.toByte(100);

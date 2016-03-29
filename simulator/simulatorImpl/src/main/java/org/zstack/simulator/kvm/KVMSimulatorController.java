@@ -21,6 +21,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.swing.text.StyledEditorKit.BoldAction;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -164,13 +165,16 @@ public class KVMSimulatorController {
     private void ping(HttpEntity<String> entity) {
         PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), PingCmd.class);
         PingResponse rsp = new PingResponse();
-        if (config.pingSuccess) {
-            rsp.setHostUuid(config.simulatorHostUuid);
-        } else {
-            rsp.setError("fail on purpose");
-            rsp.setSuccess(false);
+        if (!config.pingSuccess) {
+            throw new CloudRuntimeException("on purpose");
         }
 
+        Boolean s = config.pingSuccessMap.get(cmd.hostUuid);
+        if (s != null && !s) {
+            throw new CloudRuntimeException("on purpose");
+        }
+
+        rsp.setHostUuid(config.simulatorHostUuid);
         replyer.reply(entity, rsp);
     }
 

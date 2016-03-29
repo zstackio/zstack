@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * @author frank
  * 
  * @condition
- * 1. change host ping interval to 1s
+ * 1. change host check interval to 1s
  * 2. create a kvm host
  * 3. change host uuid on kvm simulator to mock a kvmagent restart
  * 4. wait for 3s

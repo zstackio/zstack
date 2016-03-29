@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * 2. destroy the virtual router
  *
  * @test
- * confirm no ping command after the virtual router gets destroyed
+ * confirm no check command after the virtual router gets destroyed
  */
 public class TestVirtualRouterPing2 {
     Deployer deployer;
