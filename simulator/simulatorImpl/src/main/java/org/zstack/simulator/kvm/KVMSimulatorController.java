@@ -166,15 +166,17 @@ public class KVMSimulatorController {
         PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), PingCmd.class);
         PingResponse rsp = new PingResponse();
         if (!config.pingSuccess) {
-            throw new CloudRuntimeException("on purpose");
+            rsp.setSuccess(false);
+            rsp.setError("on purpose");
         }
 
         Boolean s = config.pingSuccessMap.get(cmd.hostUuid);
         if (s != null && !s) {
-            throw new CloudRuntimeException("on purpose");
+            rsp.setSuccess(false);
+            rsp.setError("on purpose");
         }
 
-        rsp.setHostUuid(config.simulatorHostUuid);
+        rsp.setHostUuid(config.connectHostUuids.get(cmd.hostUuid));
         replyer.reply(entity, rsp);
     }
 
@@ -182,7 +184,7 @@ public class KVMSimulatorController {
     public @ResponseBody String connect(@RequestBody String body) {
         ConnectCmd cmd = JSONObjectUtil.toObject(body, ConnectCmd.class);
         
-        config.simulatorHostUuid = cmd.getHostUuid();
+        config.connectHostUuids.put(cmd.getHostUuid(), cmd.getHostUuid());
         
         if (config.connectException) {
             throw new CloudRuntimeException("connect exception on purpose");

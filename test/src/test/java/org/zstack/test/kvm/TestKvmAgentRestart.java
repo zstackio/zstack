@@ -61,10 +61,10 @@ public class TestKvmAgentRestart {
     
 	@Test
 	public void test() throws InterruptedException {
-	    config.simulatorHostUuid = "wrong_host_uuid";
+        HostInventory host = deployer.hosts.get("host1");
+	    config.connectHostUuids.put(host.getUuid(), "wrong_host_uuid");
 	    TimeUnit.SECONDS.sleep(3);
-	    HostInventory host = deployer.hosts.get("host1");
-	    Assert.assertEquals(host.getUuid(), config.simulatorHostUuid);
+	    Assert.assertEquals(host.getUuid(), config.connectHostUuids.get(host.getUuid()));
 	}
 
 }

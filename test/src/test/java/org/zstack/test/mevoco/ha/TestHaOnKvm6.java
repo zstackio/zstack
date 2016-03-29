@@ -26,13 +26,15 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 1. make the host where the VM runs down
+ * 1. set HA level to the VM
+ * 2. delete the HA level from the VM
+ * 3. make the host where the VM runs down
  *
- * confirm the VM is HA started on another host
+ * confirm the VM is not HA started
  */
 
-public class TestHaOnKvm1 {
-    CLogger logger = Utils.getLogger(TestHaOnKvm1.class);
+public class TestHaOnKvm6 {
+    CLogger logger = Utils.getLogger(TestHaOnKvm6.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -77,19 +79,15 @@ public class TestHaOnKvm1 {
         api.setVmHaLevel(vm.getUuid(), VmHaLevel.OnHostFailure, null);
         String level = HaSystemTags.HA.getTokenByResourceUuid(vm.getUuid(), HaSystemTags.HA_TOKEN);
         Assert.assertEquals(VmHaLevel.OnHostFailure.toString(), level);
+        api.deleteVmHaLevel(vm.getUuid(), null);
+        level = HaSystemTags.HA.getTokenByResourceUuid(vm.getUuid(), HaSystemTags.HA_TOKEN);
+        Assert.assertNull(level);
 
-        hconfig.scanResult = HaKvmHostSiblingChecker.RET_FAILURE;
         config.pingSuccessMap.put(host1.getUuid(), false);
-        TimeUnit.SECONDS.sleep(5);
+        TimeUnit.SECONDS.sleep(3);
 
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-        Assert.assertEquals(VmInstanceState.Running, vmvo.getState());
-        Assert.assertEquals(host2.getUuid(), vmvo.getHostUuid());
-        Assert.assertEquals(1, hconfig.scanCmds.size());
-        ScanCmd cmd = hconfig.scanCmds.get(0);
-        Assert.assertEquals(HaGlobalConfig.HOST_CHECK_INTERVAL.value(Long.class).longValue(), cmd.interval);
-        Assert.assertEquals(HaGlobalConfig.HOST_CHECK_MAX_ATTEMPTS.value(Integer.class).intValue(), cmd.times);
-        Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_INTERVAL.value(Long.class).longValue(), cmd.successInterval);
-        Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_TIMES.value(Integer.class).intValue(), cmd.times);
+        Assert.assertEquals(VmInstanceState.Unknown, vmvo.getState());
+        Assert.assertEquals(0, hconfig.scanCmds.size());
 	}
 }

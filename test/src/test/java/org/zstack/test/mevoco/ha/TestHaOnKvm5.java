@@ -26,13 +26,14 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 1. make the host where the VM runs down
+ * 1. set the vm HA level to NeverStop
+ * 2. stop the vm
  *
- * confirm the VM is HA started on another host
+ * confirm the VM is HA started
  */
 
-public class TestHaOnKvm1 {
-    CLogger logger = Utils.getLogger(TestHaOnKvm1.class);
+public class TestHaOnKvm5 {
+    CLogger logger = Utils.getLogger(TestHaOnKvm5.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -74,22 +75,14 @@ public class TestHaOnKvm1 {
         HostInventory host2 = deployer.hosts.get("host2");
 
 	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
-        api.setVmHaLevel(vm.getUuid(), VmHaLevel.OnHostFailure, null);
+        api.setVmHaLevel(vm.getUuid(), VmHaLevel.NeverStop, null);
         String level = HaSystemTags.HA.getTokenByResourceUuid(vm.getUuid(), HaSystemTags.HA_TOKEN);
-        Assert.assertEquals(VmHaLevel.OnHostFailure.toString(), level);
+        Assert.assertEquals(VmHaLevel.NeverStop.toString(), level);
 
-        hconfig.scanResult = HaKvmHostSiblingChecker.RET_FAILURE;
-        config.pingSuccessMap.put(host1.getUuid(), false);
-        TimeUnit.SECONDS.sleep(5);
+        api.stopVmInstance(vm.getUuid());
+        TimeUnit.SECONDS.sleep(3);
 
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Running, vmvo.getState());
-        Assert.assertEquals(host2.getUuid(), vmvo.getHostUuid());
-        Assert.assertEquals(1, hconfig.scanCmds.size());
-        ScanCmd cmd = hconfig.scanCmds.get(0);
-        Assert.assertEquals(HaGlobalConfig.HOST_CHECK_INTERVAL.value(Long.class).longValue(), cmd.interval);
-        Assert.assertEquals(HaGlobalConfig.HOST_CHECK_MAX_ATTEMPTS.value(Integer.class).intValue(), cmd.times);
-        Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_INTERVAL.value(Long.class).longValue(), cmd.successInterval);
-        Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_TIMES.value(Integer.class).intValue(), cmd.times);
 	}
 }

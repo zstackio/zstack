@@ -25,6 +25,10 @@ public abstract class ShareFlow implements Flow {
         chain.error(handler);
     }
 
+    protected void Finally(FlowFinallyHandler handler) {
+        chain.Finally(handler);
+    }
+
     @Override
     public final void run(FlowTrigger trigger, Map data) {
         trigger.next();

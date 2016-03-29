@@ -45,6 +45,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain {
     private ErrorCode errorCode;
     private FlowErrorHandler errorHandler;
     private FlowDoneHandler doneHandler;
+    private FlowFinallyHandler finallyHandler;
     private String name;
     private boolean skipRestRollbacks;
     private boolean allowEmptyFlow;
@@ -141,6 +142,12 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain {
     }
 
     @Override
+    public FlowChain Finally(FlowFinallyHandler handler) {
+        finallyHandler = handler;
+        return this;
+    }
+
+    @Override
     public FlowChain setData(Map data) {
         this.data = data;
         return  this;
@@ -212,13 +219,22 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain {
     }
 
     private void callErrorHandler(boolean info) {
-        // NOTE: don't wrap the code with try ... catch
-        // the throwable is handled by AsyncBackupAspect.aj
         if (info) {
             logger.debug(String.format("[FlowChain: %s] rolled back all flows because error%s", name, errorCode));
         }
+
+        // NOTE: don't wrap the code with try ... catch
+        // the throwable is handled by AsyncBackupAspect.aj
         if (errorHandler != null) {
             errorHandler.handle(errorCode, this.data);
+        }
+
+        if (finallyHandler != null) {
+            try {
+                finallyHandler.Finally();
+            } catch (Throwable t) {
+                logger.warn(String.format("unhandled exception when calling %s", finallyHandler.getClass()), t);
+            }
         }
     }
 
@@ -312,6 +328,14 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain {
             doneHandler.handle(this.data);
         }
         logger.debug(String.format("[FlowChain: %s] successfully completed", name));
+
+        if (finallyHandler != null) {
+            try {
+                finallyHandler.Finally();
+            } catch (Throwable t) {
+                logger.warn(String.format("unhandled exception when calling %s", finallyHandler.getClass()), t);
+            }
+        }
     }
 
     @Override

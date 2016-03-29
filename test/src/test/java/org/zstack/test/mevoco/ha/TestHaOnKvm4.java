@@ -26,13 +26,14 @@ import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 1. make the host where the VM runs down
+ * 1. set the vm HA level to NeverStop
+ * 2. make the host where the VM runs down
  *
  * confirm the VM is HA started on another host
  */
 
-public class TestHaOnKvm1 {
-    CLogger logger = Utils.getLogger(TestHaOnKvm1.class);
+public class TestHaOnKvm4 {
+    CLogger logger = Utils.getLogger(TestHaOnKvm4.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -74,9 +75,9 @@ public class TestHaOnKvm1 {
         HostInventory host2 = deployer.hosts.get("host2");
 
 	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
-        api.setVmHaLevel(vm.getUuid(), VmHaLevel.OnHostFailure, null);
+        api.setVmHaLevel(vm.getUuid(), VmHaLevel.NeverStop, null);
         String level = HaSystemTags.HA.getTokenByResourceUuid(vm.getUuid(), HaSystemTags.HA_TOKEN);
-        Assert.assertEquals(VmHaLevel.OnHostFailure.toString(), level);
+        Assert.assertEquals(VmHaLevel.NeverStop.toString(), level);
 
         hconfig.scanResult = HaKvmHostSiblingChecker.RET_FAILURE;
         config.pingSuccessMap.put(host1.getUuid(), false);

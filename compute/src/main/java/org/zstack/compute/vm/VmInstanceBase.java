@@ -344,6 +344,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
+                logger.debug(String.format("HaStartVmJudger[%s] says the VM[uuid:%s, name:%s] is qualified for HA start, now we are starting it",
+                        judger.getClass(), self.getUuid(), self.getName()));
                 self.setState(VmInstanceState.Stopped);
                 dbf.update(self);
                 startVm(msg, new Completion(msg, chain) {

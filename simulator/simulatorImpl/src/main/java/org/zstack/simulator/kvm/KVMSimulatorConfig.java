@@ -15,6 +15,7 @@ public class KVMSimulatorConfig {
     public volatile boolean connectSuccess = true;
     public List<ConnectCmd> connectCmds = new ArrayList<ConnectCmd>();
     public volatile String simulatorHostUuid;
+    public Map<String, String> connectHostUuids = new HashMap<String, String>();
     public volatile boolean connectException = false;
     public volatile boolean pingSuccess = true;
     public volatile Map<String, Boolean> pingSuccessMap = new HashMap<String, Boolean>();
