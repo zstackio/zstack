@@ -50,11 +50,48 @@ elif [ $tool = 'zstack-ctl' ]; then
     chmod +x /usr/bin/zstack-ctl
 elif [ $tool = 'zstack-dashboard' ]; then
     UI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstack-dashboard
-    rm -rf $UI_VIRENV_PATH && virtualenv $UI_VIRENV_PATH
+    if [ ! -d "$UI_VIRENV_PATH" ]; then
+        virtualenv $UI_VIRENV_PATH
+    fi
     . $UI_VIRENV_PATH/bin/activate
     cd $cwd
-    pip install -i $pypi_path --trusted-host localhost versiontools|| exit 1
-    pip install -i $pypi_path --trusted-host localhost zstack_dashboard-*.tar.gz || exit 1
+    pip show versiontools
+    if [ $? -ne 0 ]; then
+        # fresh install versiontools
+        echo "Installing versiontools..."
+        pip install -i $pypi_path --trusted-host localhost versiontools
+        if [ $? -ne 0 ]; then
+            rm -rf $UI_VIRENV_PATH
+            exit 1
+        fi
+    else
+        # upgrade versiontools
+        echo "Upgrading versiontools..."
+        pip install -U -i $pypi_path --trusted-host localhost versiontools
+        if [ $? -ne 0 ]; then
+            rm -rf $UI_VIRENV_PATH
+            exit 1
+        fi
+    fi
+    pip show zstack-dashboard
+    if [ $? -ne 0 ]; then
+        #fresh install zstack_dashboard
+        echo "Installing zstack_dashboard..."
+        pip install -i $pypi_path --trusted-host localhost zstack_dashboard-*.tar.gz
+        if [ $? -ne 0 ]; then
+            rm -rf $UI_VIRENV_PATH
+            exit 1
+        fi
+    else
+        #upgrae zstack_dashboard
+        echo "Upgrading zstack_dashboard..."
+        pip install -U -i $pypi_path --trusted-host localhost zstack_dashboard-*.tar.gz
+        if [ $? -ne 0 ]; then
+            rm -rf $UI_VIRENV_PATH
+            exit 1
+        fi
+    fi
+
     chmod +x /etc/init.d/zstack-dashboard
 else
     usage
