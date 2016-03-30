@@ -15,6 +15,10 @@ import org.zstack.core.config.*;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.ha.APIDeleteVmInstanceHaLevelMsg;
+import org.zstack.ha.APISetVmInstanceHaLevelEvent;
+import org.zstack.ha.APISetVmInstanceHaLevelMsg;
+import org.zstack.ha.VmHaLevel;
 import org.zstack.header.allocator.APIGetCpuMemoryCapacityMsg;
 import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply;
 import org.zstack.header.allocator.APIGetHostAllocatorStrategiesMsg;
@@ -3917,5 +3921,26 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIUpdateUserEvent evt = sender.send(msg, APIUpdateUserEvent.class);
         return evt.getInventory();
+    }
+
+    public void setVmHaLevel(String vmUuid, VmHaLevel level, SessionInventory session) throws ApiSenderException {
+        APISetVmInstanceHaLevelMsg msg = new APISetVmInstanceHaLevelMsg();
+        msg.setUuid(vmUuid);
+        msg.setLevel(level.toString());
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APISetVmInstanceHaLevelEvent.class);
+        return;
+    }
+
+    public void deleteVmHaLevel(String vmUuid, SessionInventory session) throws ApiSenderException {
+        APIDeleteVmInstanceHaLevelMsg msg = new APIDeleteVmInstanceHaLevelMsg();
+        msg.setUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteVmHostnameEvent.class);
+        return;
     }
 }

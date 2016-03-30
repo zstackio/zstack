@@ -319,9 +319,64 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((VmCheckOwnStateMsg) msg);
         } else if (msg instanceof ExpungeVmMsg) {
             handle((ExpungeVmMsg) msg);
+        } else if (msg instanceof HaStartVmInstanceMsg) {
+            handle((HaStartVmInstanceMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final HaStartVmInstanceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                refreshVO();
+
+                HaStartVmJudger judger;
+                try {
+                    Class clz = Class.forName(msg.getJudgerClassName());
+                    judger = (HaStartVmJudger) clz.newInstance();
+                } catch (Exception e) {
+                    throw new CloudRuntimeException(e);
+                }
+
+                final HaStartVmInstanceReply reply = new HaStartVmInstanceReply();
+                if (!judger.whetherStartVm(getSelfInventory())) {
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                logger.debug(String.format("HaStartVmJudger[%s] says the VM[uuid:%s, name:%s] is qualified for HA start, now we are starting it",
+                        judger.getClass(), self.getUuid(), self.getName()));
+                self.setState(VmInstanceState.Stopped);
+                dbf.update(self);
+                startVm(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "ha-start-vm";
+            }
+        });
     }
 
     private void changeVmIp(final String l3Uuid, final String ip, final Completion completion) {

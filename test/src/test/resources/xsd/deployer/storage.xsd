@@ -11,6 +11,7 @@
             <xsd:element name="iscsiBtrfsPrimaryStorage" type="IscsiFileSystemPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
             <xsd:element name="localPrimaryStorage" type="LocalPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
             <xsd:element name="cephPrimaryStorage" type="CephPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
+            <xsd:element name="sharedMountPointPrimaryStorage" type="SharedMountPointPrimaryStorageConfig" maxOccurs="unbounded" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
 
@@ -39,6 +40,14 @@
     </xsd:complexType>
 
     <xsd:complexType name="NfsPrimaryStorageConfig">
+        <xsd:complexContent>
+            <xsd:extension base="PrimaryStorageConfigBase">
+                <xsd:attribute name="placeHolder" type="xsd:string"></xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="SharedMountPointPrimaryStorageConfig">
         <xsd:complexContent>
             <xsd:extension base="PrimaryStorageConfigBase">
                 <xsd:attribute name="placeHolder" type="xsd:string"></xsd:attribute>

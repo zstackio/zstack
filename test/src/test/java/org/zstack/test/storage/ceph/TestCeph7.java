@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
  * confirm the kvm secret created
  *
  * 4. make the kvm host disconnected
- * 5. change ping interval to 1s
+ * 5. change check interval to 1s
  * 6. wait 3s
  *
  * confirm the kvm secret created

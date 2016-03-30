@@ -149,6 +149,7 @@ public class KVMAgentCommands {
     }
     
     public static class PingCmd extends AgentCommand {
+        public String hostUuid;
     }
     
     public static class PingResponse extends AgentResponse {

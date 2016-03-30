@@ -49,6 +49,11 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     
 	private static final PrimaryStorageType type = new PrimaryStorageType(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE);
 
+    static {
+        type.setSupportHeartbeatFile(true);
+        type.setSupportPingStorageGateway(true);
+    }
+
 	@Override
 	public PrimaryStorageType getPrimaryStorageType() {
 		return type;

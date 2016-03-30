@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="180">
+    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm1"/>
+    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm2"/>
+    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm3"/>
+    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm4"/>
+    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm5"/>
+    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm6"/>
+</UnitTestSuiteConfig>

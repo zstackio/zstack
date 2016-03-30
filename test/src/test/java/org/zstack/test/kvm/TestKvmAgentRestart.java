@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * @author frank
  * 
  * @condition
- * 1. change host ping interval to 1s
+ * 1. change host check interval to 1s
  * 2. create a kvm host
  * 3. change host uuid on kvm simulator to mock a kvmagent restart
  * 4. wait for 3s
@@ -61,10 +61,10 @@ public class TestKvmAgentRestart {
     
 	@Test
 	public void test() throws InterruptedException {
-	    config.simulatorHostUuid = "wrong_host_uuid";
+        HostInventory host = deployer.hosts.get("host1");
+	    config.connectHostUuids.put(host.getUuid(), "wrong_host_uuid");
 	    TimeUnit.SECONDS.sleep(3);
-	    HostInventory host = deployer.hosts.get("host1");
-	    Assert.assertEquals(host.getUuid(), config.simulatorHostUuid);
+	    Assert.assertEquals(host.getUuid(), config.connectHostUuids.get(host.getUuid()));
 	}
 
 }

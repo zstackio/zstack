@@ -32,6 +32,8 @@
 	<Import resource="unitTestSuiteXml/mevoco.xml"/>
 	<Import resource="unitTestSuiteXml/billing.xml"/>
 	<Import resource="unitTestSuiteXml/userdata.xml"/>
+	<Import resource="unitTestSuiteXml/smpPrimaryStorage.xml"/>
+	<Import resource="unitTestSuiteXml/ha.xml"/>
 
 	<!--
     <Import resource="unitTestSuiteXml/MultiNodes.xml"/>

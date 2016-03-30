@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @test
  * confirm uuid is set on the agent
- * confirm ping command is issued by the interval
+ * confirm check command is issued by the interval
  */
 public class TestVirtualRouterPing {
     Deployer deployer;
