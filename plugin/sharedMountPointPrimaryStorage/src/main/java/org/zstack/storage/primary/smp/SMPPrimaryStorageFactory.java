@@ -14,6 +14,11 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory {
 
     public static final PrimaryStorageType type = new PrimaryStorageType(SMPConstants.SMP_TYPE);
 
+    static {
+        type.setSupportPingStorageGateway(true);
+        type.setSupportHeartbeatFile(true);
+    }
+
     @Autowired
     private DatabaseFacade dbf;
 

@@ -9,8 +9,10 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.ha.*;
 import org.zstack.ha.HaKvmHostSiblingChecker.ScanCmd;
+import org.zstack.ha.SelfFencerKvmBackend.SetupSelfFencerCmd;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -91,5 +93,13 @@ public class TestHaOnKvm1 {
         Assert.assertEquals(HaGlobalConfig.HOST_CHECK_MAX_ATTEMPTS.value(Integer.class).intValue(), cmd.times);
         Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_INTERVAL.value(Long.class).longValue(), cmd.successInterval);
         Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_TIMES.value(Integer.class).intValue(), cmd.times);
+
+        Assert.assertEquals(2, hconfig.setupSelfFencerCmds.size());
+        SetupSelfFencerCmd fcmd = hconfig.setupSelfFencerCmds.get(0);
+        Assert.assertEquals(HaGlobalConfig.HOST_SELF_FENCER_ATTEMPTS.value(Integer.class).intValue(), fcmd.maxAttempts);
+        Assert.assertEquals(HaGlobalConfig.HOST_SELF_FENCER_INTERVAL.value(Long.class).intValue(), fcmd.interval);
+
+        PrimaryStorageInventory nfs = deployer.primaryStorages.get("nfs");
+        Assert.assertTrue(fcmd.mountPoints.contains(nfs.getMountPath()));
 	}
 }
