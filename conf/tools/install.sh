@@ -36,22 +36,56 @@ cd /tmp
 
 if [ $tool = 'zstack-cli' ]; then
     CLI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackcli
-    rm -rf $CLI_VIRENV_PATH && virtualenv $CLI_VIRENV_PATH
+    if [ ! -d "$CLI_VIRENV_PATH" ]; then
+        virtualenv $CLI_VIRENV_PATH
+        if [ $? -ne 0 ]; then
+            rm -rf $CLI_VIRENV_PATH
+            exit 1
+        fi
+    fi
     . $CLI_VIRENV_PATH/bin/activate
     cd $cwd
-    pip install -i $pypi_path --trusted-host localhost --ignore-installed zstacklib-*.tar.gz apibinding-*.tar.gz zstackcli-*.tar.gz || exit 1
+    pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackcli-*.tar.gz apibinding-*.tar.gz
+    if [ $? -ne 0 ]; then
+        rm -rf $CLI_VIRENV_PATH
+        exit 1
+    fi
+    pip show zstacklib
+    if [ $? -ne 0 ]; then
+        # fresh install zstacklib
+        echo "Installing zstacklib..."
+        pip install -i $pypi_path --trusted-host localhost --ignore-installed zstacklib-*.tar.gz
+        if [ $? -ne 0 ]; then
+            rm -rf $CLI_VIRENV_PATH
+            exit 1
+        fi
+    else
+        # upgrade zstacklib
+        echo "Upgrading zstacklib..."
+        pip install -U -i $pypi_path --trusted-host localhost zstacklib-*.tar.gz
+        if [ $? -ne 0 ]; then
+            rm -rf $CLI_VIRENV_PATH
+            exit 1
+        fi
+    fi
     chmod +x /usr/bin/zstack-cli
+
 elif [ $tool = 'zstack-ctl' ]; then
     CTL_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackctl
-    rm -rf $CTL_VIRENV_PATH && virtualenv $CTL_VIRENV_PATH
+    rm -rf $CTL_VIRENV_PATH && virtualenv $CTL_VIRENV_PATH || exit 1
     . $CTL_VIRENV_PATH/bin/activate
     cd $cwd
     pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
     chmod +x /usr/bin/zstack-ctl
+
 elif [ $tool = 'zstack-dashboard' ]; then
     UI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstack-dashboard
     if [ ! -d "$UI_VIRENV_PATH" ]; then
         virtualenv $UI_VIRENV_PATH
+        if [ $? -ne 0 ]; then
+            rm -rf $UI_VIRENV_PATH
+            exit 1
+        fi
     fi
     . $UI_VIRENV_PATH/bin/activate
     cd $cwd
