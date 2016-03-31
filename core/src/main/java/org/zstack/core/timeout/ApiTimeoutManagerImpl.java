@@ -1,5 +1,6 @@
 package org.zstack.core.timeout;
 
+import org.zstack.core.Platform;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
@@ -62,7 +63,8 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
     }
 
     private void collectTimeout() {
-        for (final String key: System.getProperties().stringPropertyNames()) {
+        for (final Map.Entry<String, String> e : Platform.getGlobalProperties().entrySet()) {
+            String key = e.getKey();
             if (!key.startsWith("ApiTimeout.")) {
                 continue;
             }
@@ -73,12 +75,12 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
                     "   ApiTimeout.full_api_class_name = full_sub_message_names_or_commands; timeout(e.g. 60s, 1m, 1h)";
             try {
                 apiClz = Class.forName(apiName);
-            } catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException ex) {
                 throw new CloudRuntimeException(String.format("Invalid API timeout configuration[invalid key: %s], %s. %s",
-                        key, e.getMessage(), ERROR_INFO));
+                        key, ex.getMessage(), ERROR_INFO));
             }
 
-            String value = System.getProperty(key);
+            String value = e.getValue();
             if (!value.contains(";")) {
                 throw new CloudRuntimeException(String.format("Invalid API timeout configuration[%s=%s], no ';' found. %s",
                         key, value, ERROR_INFO));
@@ -96,15 +98,15 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
             ApiTimeout at = new ApiTimeout();
             try {
                 at.relatives = parseRelatives(relativeNames);
-            } catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException ex) {
                 throw new CloudRuntimeException(String.format("Invalid API timeout configuration[%s=%s], class %s not found. %s", key, value,
-                        e.getMessage(), ERROR_INFO));
+                        ex.getMessage(), ERROR_INFO));
             }
             try {
                 at.timeout = parseTimeout(timeout.trim());
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException ex) {
                 throw new CloudRuntimeException(String.format("Invalid API timeout configuration[%s=%s], %s. %s", key, value,
-                        String.format("%s is not a valid time number", timeout), ERROR_INFO), e);
+                        String.format("%s is not a valid time number", timeout), ERROR_INFO), ex);
             }
 
             apiTimeouts.put(apiClz, at);
