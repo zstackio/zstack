@@ -17,8 +17,6 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 
-/**
- */
 public aspect AsyncBackupAspect {
     private final CLogger logger = Utils.getLogger(AsyncBackupAspect.class);
 
@@ -93,7 +91,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.Completion+.fail(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.Completion+.fail(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -101,7 +99,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.ReturnValueCompletion+.success(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.ReturnValueCompletion+.success(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -109,7 +107,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.ReturnValueCompletion+.fail(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.ReturnValueCompletion+.fail(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -133,7 +131,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.NopeCompletion+.fail(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.NopeCompletion+.fail(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -141,7 +139,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.core.cloudbus.CloudBusCallBack+.run(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.core.cloudbus.CloudBusCallBack+.run(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -149,7 +147,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.core.cloudbus.CloudBusListCallBack+.run(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.core.cloudbus.CloudBusListCallBack+.run(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -157,7 +155,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.core.thread.ChainTask+.run(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.core.thread.ChainTask+.run(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -165,7 +163,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.rest.AsyncRESTCallback+.timeout(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.rest.AsyncRESTCallback+.timeout(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -173,7 +171,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.rest.AsyncRESTCallback+.success(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.rest.AsyncRESTCallback+.success(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -181,7 +179,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.rest.AsyncRESTCallback+.fail(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.rest.AsyncRESTCallback+.fail(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -189,7 +187,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.workflow.FlowDoneHandler+.handle(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.workflow.FlowDoneHandler+.handle(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {
@@ -197,7 +195,7 @@ public aspect AsyncBackupAspect {
         }
     }
 
-    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.workflow.FlowErrorHandler+.handle(*)) {
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.workflow.FlowErrorHandler+.handle(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {

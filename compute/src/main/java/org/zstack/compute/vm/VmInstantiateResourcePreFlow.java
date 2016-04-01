@@ -88,7 +88,7 @@ public class VmInstantiateResourcePreFlow implements Flow {
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.warn(errorCode.toString());
-                chain.rollback();
+                rollbackExtensions(it, spec, chain);
             }
         });
     }

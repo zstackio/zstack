@@ -112,6 +112,7 @@
     <TestCase class="org.zstack.test.aop.TestAsyncBackup7" />
     <TestCase class="org.zstack.test.aop.TestAsyncBackup8" />
     <TestCase class="org.zstack.test.aop.TestAsyncBackup9" />
+    <TestCase class="org.zstack.test.aop.TestAsyncBackup10" />
     <TestCase class="org.zstack.test.aop.TestWith" />
     <TestCase class="org.zstack.test.aop.TestWith1" />
     <TestCase class="org.zstack.test.aop.TestCompletionCallOnce" />

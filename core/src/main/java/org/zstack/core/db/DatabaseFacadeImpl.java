@@ -286,6 +286,11 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         private void softDelete(Object entity) {
             try {
                 Object idval = getEOPrimaryKeyValue(entity);
+                if (idval == null) {
+                    // the entity is physically deleted
+                    return;
+                }
+
                 Object eo = getEntityManager().find(eoClass, idval);
                 eoSoftDeleteColumn.set(eo, new Timestamp(new Date().getTime()).toString());
                 getEntityManager().merge(eo);

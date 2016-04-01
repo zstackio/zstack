@@ -14,8 +14,6 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- */
 public class TestAsyncBackup {
     CLogger logger = Utils.getLogger(TestAsyncBackup.class);
     boolean success;
@@ -29,24 +27,9 @@ public class TestAsyncBackup {
         bus = loader.getComponent(CloudBus.class);
     }
 
-    private void testMethod(final Completion completion) {
-        new Completion(completion) {
-            @Override
-            @AsyncThread
-            public void success() {
-                throw new RuntimeException("on purpose");
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-
-            }
-        }.success();
-    }
-
     @Test
     public void test() throws InterruptedException {
-        testMethod(new Completion() {
+        Completion completion = new Completion() {
             @Override
             public void success() {
             }
@@ -56,7 +39,25 @@ public class TestAsyncBackup {
                 success = true;
                 logger.debug(errorCode.toString());
             }
-        });
+        };
+
+        try {
+            new Completion(completion) {
+                @Override
+                @AsyncThread
+                public void success() {
+                    throw new RuntimeException("on purpose");
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+
+                }
+            }.success();
+        } catch (RuntimeException e) {
+            //pass
+        }
+
 
         TimeUnit.SECONDS.sleep(1);
         Assert.assertTrue(success);
