@@ -17,7 +17,6 @@ import org.zstack.network.service.flat.FlatEipBackend.ApplyEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.DeleteEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.EipTO;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
-import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
@@ -98,7 +97,7 @@ public class TestFlatNetworkEip1 {
         Assert.assertEquals(nicvo.getIp(), to.nicIp);
         Assert.assertEquals(nicvo.getVmInstanceUuid(), to.vmUuid);
         Assert.assertEquals(nicvo.getMac(), to.nicMac);
-        Assert.assertEquals(nicvo.getInternalName(), to.nicInternalName);
+        Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
         Assert.assertEquals(getBridgeName(vip.getL3NetworkUuid()), to.publicBridgeName);
 
@@ -112,7 +111,7 @@ public class TestFlatNetworkEip1 {
         Assert.assertEquals(nicvo.getIp(), to.nicIp);
         Assert.assertEquals(nicvo.getVmInstanceUuid(), to.vmUuid);
         Assert.assertEquals(nicvo.getMac(), to.nicMac);
-        Assert.assertEquals(nicvo.getInternalName(), to.nicInternalName);
+        Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
         Assert.assertEquals(getBridgeName(vip.getL3NetworkUuid()), to.publicBridgeName);
 
@@ -126,7 +125,7 @@ public class TestFlatNetworkEip1 {
         Assert.assertEquals(nicvo.getIp(), to.nicIp);
         Assert.assertEquals(nicvo.getVmInstanceUuid(), to.vmUuid);
         Assert.assertEquals(nicvo.getMac(), to.nicMac);
-        Assert.assertEquals(nicvo.getInternalName(), to.nicInternalName);
+        Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
         Assert.assertEquals(getBridgeName(vip.getL3NetworkUuid()), to.publicBridgeName);
 
@@ -139,7 +138,7 @@ public class TestFlatNetworkEip1 {
         Assert.assertEquals(nicvo.getIp(), to.nicIp);
         Assert.assertEquals(nicvo.getVmInstanceUuid(), to.vmUuid);
         Assert.assertEquals(nicvo.getMac(), to.nicMac);
-        Assert.assertEquals(nicvo.getInternalName(), to.nicInternalName);
+        Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
         Assert.assertEquals(getBridgeName(vip.getL3NetworkUuid()), to.publicBridgeName);
     }

@@ -86,7 +86,7 @@ public class TestFlatNetworkEip3 {
         Assert.assertEquals(nicvo.getIp(), to.nicIp);
         Assert.assertEquals(nicvo.getVmInstanceUuid(), to.vmUuid);
         Assert.assertEquals(nicvo.getMac(), to.nicMac);
-        Assert.assertEquals(nicvo.getInternalName(), to.nicInternalName);
+        Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
         Assert.assertEquals(getBridgeName(vipvo.getL3NetworkUuid()), to.publicBridgeName);
     }

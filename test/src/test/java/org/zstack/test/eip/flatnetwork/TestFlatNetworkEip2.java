@@ -98,7 +98,7 @@ public class TestFlatNetworkEip2 {
         Assert.assertEquals(nicvo.getIp(), to.nicIp);
         Assert.assertEquals(nicvo.getVmInstanceUuid(), to.vmUuid);
         Assert.assertEquals(nicvo.getMac(), to.nicMac);
-        Assert.assertEquals(nicvo.getInternalName(), to.nicInternalName);
+        Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
 
         // start vm
@@ -111,7 +111,7 @@ public class TestFlatNetworkEip2 {
         Assert.assertEquals(nicvo.getIp(), to.nicIp);
         Assert.assertEquals(nicvo.getVmInstanceUuid(), to.vmUuid);
         Assert.assertEquals(nicvo.getMac(), to.nicMac);
-        Assert.assertEquals(nicvo.getInternalName(), to.nicInternalName);
+        Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
 
         // delete vm
@@ -124,7 +124,7 @@ public class TestFlatNetworkEip2 {
         Assert.assertEquals(nicvo.getIp(), to.nicIp);
         Assert.assertEquals(nicvo.getVmInstanceUuid(), to.vmUuid);
         Assert.assertEquals(nicvo.getMac(), to.nicMac);
-        Assert.assertEquals(nicvo.getInternalName(), to.nicInternalName);
+        Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
     }
 }
