@@ -11,6 +11,8 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.IpRangeInventory;
+import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.utils.CollectionUtils;
@@ -88,7 +90,7 @@ public class VipCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(L3NetworkVO.class.getSimpleName());
+        return Arrays.asList(L3NetworkVO.class.getSimpleName(), IpRangeVO.class.getSimpleName());
     }
 
     @Override
@@ -109,7 +111,7 @@ public class VipCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private List<VipInventory> vipFromAction(CascadeAction action) {
         if (L3NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> l3Uuids = CollectionUtils.transformToList((List<L3NetworkInventory>)action.getParentIssuerContext(), new Function<String, L3NetworkInventory>() {
+            List<String> l3Uuids = CollectionUtils.transformToList((List<L3NetworkInventory>) action.getParentIssuerContext(), new Function<String, L3NetworkInventory>() {
                 @Override
                 public String call(L3NetworkInventory arg) {
                     return arg.getUuid();
@@ -121,6 +123,19 @@ public class VipCascadeExtension extends AbstractAsyncCascadeExtension {
 
             SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
             q.add(VipVO_.l3NetworkUuid, Op.IN, l3Uuids);
+            List<VipVO> vipVOs = q.list();
+
+            return VipInventory.valueOf(vipVOs);
+        } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            List<String> iprUuids = CollectionUtils.transformToList((List<IpRangeInventory>) action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
+                @Override
+                public String call(IpRangeInventory arg) {
+                    return arg.getUuid();
+                }
+            });
+
+            SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
+            q.add(VipVO_.ipRangeUuid, Op.IN, iprUuids);
             List<VipVO> vipVOs = q.list();
 
             return VipInventory.valueOf(vipVOs);

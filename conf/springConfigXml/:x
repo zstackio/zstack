@@ -48,9 +48,6 @@
     <bean id="FlatEipBackend" class="org.zstack.network.service.flat.FlatEipBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.service.eip.EipBackend" />
-            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" order="-1"/>
-            <zstack:extension interface="org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint" order="-1"/>
-            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
         </zstack:plugin>
     </bean>
 

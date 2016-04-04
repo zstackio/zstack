@@ -15,6 +15,7 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowChainProcessor;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.errorcode.ErrorCode;
@@ -37,7 +38,9 @@ import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -447,12 +450,20 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     }
 
 
-    private void detachEip(EipStruct struct, String providerType, final boolean updateDb, final Completion completion) {
+    private void detachEip(final EipStruct struct, final String providerType, final boolean updateDb, final Completion completion) {
         VipInventory vip = struct.getVip();
         VmNicInventory nic = struct.getNic();
         final EipInventory eip = struct.getEip();
 
         FlowChain chain = detachEipFlowBuilder.build();
+
+        chain.setProcessors(CollectionUtils.transformToList(pluginRgty.getExtensionList(DetachEipFlowChainExtensionPoint.class), new Function<FlowChainProcessor, DetachEipFlowChainExtensionPoint>() {
+            @Override
+            public FlowChainProcessor call(DetachEipFlowChainExtensionPoint ext) {
+                return ext.createDetachEipFlowChainProcessor(struct, providerType);
+            }
+        }));
+
         chain.setName(String.format("detach-eip-%s-vmNic-%s", eip.getUuid(), nic.getUuid()));
         chain.getData().put(EipConstant.Params.EIP_STRUCT.toString(), struct);
         chain.getData().put(EipConstant.Params.NETWORK_SERVICE_PROVIDER_TYPE.toString(), providerType);
@@ -488,7 +499,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     }
 
     @Override
-    public void attachEip(EipStruct struct, String providerType, final Completion completion) {
+    public void attachEip(final EipStruct struct, final String providerType, final Completion completion) {
         final EipInventory eip = struct.getEip();
         final VmNicInventory nic = struct.getNic();
         VipInventory vip = struct.getVip();
@@ -497,6 +508,14 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         L3NetworkInventory l3inv = L3NetworkInventory.valueOf(l3vo);
 
         FlowChain chain = attachEipFlowBuilder.build();
+
+        chain.setProcessors(CollectionUtils.transformToList(pluginRgty.getExtensionList(AttachEipFlowChainExtensionPoint.class), new Function<FlowChainProcessor, AttachEipFlowChainExtensionPoint>() {
+            @Override
+            public FlowChainProcessor call(AttachEipFlowChainExtensionPoint ext) {
+                return ext.createAttachEipFlowChainProcessor(struct, providerType);
+            }
+        }));
+
         chain.setName(String.format("attach-eip-%s-vmNic-%s", eip.getUuid(), nic.getUuid()));
         chain.getData().put(EipConstant.Params.NETWORK_SERVICE_PROVIDER_TYPE.toString(), providerType);
         chain.getData().put(EipConstant.Params.EIP_STRUCT.toString(), struct);

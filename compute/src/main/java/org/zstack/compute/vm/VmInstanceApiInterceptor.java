@@ -168,12 +168,19 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
-        l3q.select(L3NetworkVO_.state);
+        l3q.select(L3NetworkVO_.state, L3NetworkVO_.system);
         l3q.add(L3NetworkVO_.uuid, Op.EQ, msg.getL3NetworkUuid());
-        L3NetworkState l3state = l3q.findValue();
+        t = l3q.findTuple();
+        L3NetworkState l3state = t.get(0, L3NetworkState.class);
+        boolean system = t.get(1, Boolean.class);
         if (l3state == L3NetworkState.Disabled) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
                     String.format("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid())
+            ));
+        }
+        if (system) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("unable to attach a L3 network. The L3 network[uuid:%s] is a system network", msg.getL3NetworkUuid())
             ));
         }
     }

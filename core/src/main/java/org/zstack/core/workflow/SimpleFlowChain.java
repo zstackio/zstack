@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * To change this template use File | Settings | File Templates.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain {
+public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, FlowChainMutable {
     private static final CLogger logger = Utils.getLogger(SimpleFlowChain.class);
 
     private List<Flow> flows = new ArrayList<Flow>();
@@ -50,6 +50,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain {
     private boolean skipRestRollbacks;
     private boolean allowEmptyFlow;
     private FlowMarshaller flowMarshaller;
+    private List<FlowChainProcessor> processers;
 
     private boolean isFailCalled;
 
@@ -113,6 +114,61 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain {
     }
 
     @Override
+    public void setFlows(List<Flow> flows) {
+        this.flows = flows;
+    }
+
+    @Override
+    public FlowDoneHandler getFlowDoneHandler() {
+        return doneHandler;
+    }
+
+    @Override
+    public void setFlowDoneHandler(FlowDoneHandler handler) {
+        done(handler);
+    }
+
+    @Override
+    public FlowErrorHandler getFlowErrorHandler() {
+        return errorHandler;
+    }
+
+    @Override
+    public void setFlowErrorHandler(FlowErrorHandler handler) {
+        error(handler);
+    }
+
+    @Override
+    public FlowFinallyHandler getFlowFinallyHandler() {
+        return finallyHandler;
+    }
+
+    @Override
+    public void setFlowFinallyHandler(FlowFinallyHandler handler) {
+        Finally(handler);
+    }
+
+    @Override
+    public String getChainName() {
+        return name;
+    }
+
+    @Override
+    public void setChainName(String name) {
+        setName(name);
+    }
+
+    @Override
+    public Map getChainData() {
+        return data;
+    }
+
+    @Override
+    public void setChainData(Map data) {
+        setData(data);
+    }
+
+    @Override
     public FlowChain insert(Flow flow) {
         flows.add(0, flow);
         return this;
@@ -157,6 +213,11 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain {
     public FlowChain setName(String name) {
         this.name = name;
         return this;
+    }
+
+    @Override
+    public void setProcessors(List<FlowChainProcessor> processors) {
+        this.processers = processors;
     }
 
     @Override
@@ -380,6 +441,12 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain {
 
     @Override
     public void start() {
+        if (processers != null) {
+            for (FlowChainProcessor p : processers) {
+                p.processFlowChain(this);
+            }
+        }
+
         if (flows.isEmpty() && allowEmptyFlow) {
             callDoneHandler();
             return;

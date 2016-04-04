@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip1"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip2"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip3"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip4"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip5"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip6"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip7"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip8"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip9"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip10"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip11"/>
+</UnitTestSuiteConfig>

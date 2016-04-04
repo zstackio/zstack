@@ -11,7 +11,9 @@ import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkCreateExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.service.*;
+import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.userdata.UserdataConstant;
+import org.zstack.network.service.vip.VipConstant;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -58,6 +60,7 @@ public class FlatProviderFactory implements NetworkServiceProviderFactory, Prepa
         rpvo.setDescription("Flat Network Service Provider");
         rpvo.getNetworkServiceTypes().add(NetworkServiceType.DHCP.toString());
         rpvo.getNetworkServiceTypes().add(UserdataConstant.USERDATA_TYPE_STRING);
+        rpvo.getNetworkServiceTypes().add(EipConstant.EIP_NETWORK_SERVICE_TYPE);
         //rpvo.getNetworkServiceTypes().add(NetworkServiceType.DNS.toString());
         rpvo.setType(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
         rpvo = dbf.persistAndRefresh(rpvo);

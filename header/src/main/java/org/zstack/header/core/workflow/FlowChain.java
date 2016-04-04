@@ -26,6 +26,8 @@ public interface FlowChain {
 
     FlowChain setName(String name);
 
+    void setProcessors(List<FlowChainProcessor> processors);
+
     Map getData();
 
     void start();

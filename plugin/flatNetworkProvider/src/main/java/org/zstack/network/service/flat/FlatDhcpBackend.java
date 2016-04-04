@@ -541,7 +541,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
             private void vmRunningFromUnknownStateHostChanged(final FlowTrigger trigger) {
                 releaseDhcpService(info, vm.getUuid(), struct.getOriginalHostUuid(), new NopeNoErrorCompletion());
-                applyHostUuidForRollback = struct.getOriginalHostUuid();
+                applyHostUuidForRollback = struct.getCurrentHostUuid();
                 applyDhcpToHosts(info, struct.getCurrentHostUuid(), false, new Completion(trigger) {
                     @Override
                     public void success() {
