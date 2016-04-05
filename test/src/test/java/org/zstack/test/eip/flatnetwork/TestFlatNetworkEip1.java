@@ -100,6 +100,10 @@ public class TestFlatNetworkEip1 {
         Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
         Assert.assertEquals(getBridgeName(vip.getL3NetworkUuid()), to.publicBridgeName);
+        Assert.assertEquals(nicvo.getGateway(), to.nicGateway);
+        Assert.assertEquals(nicvo.getNetmask(), to.nicNetmask);
+        Assert.assertEquals(vip.getNetmask(), to.vipNetmask);
+        Assert.assertEquals(vip.getGateway(), to.vipGateway);
 
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.detachEip(eip.getUuid());
@@ -114,6 +118,10 @@ public class TestFlatNetworkEip1 {
         Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
         Assert.assertEquals(getBridgeName(vip.getL3NetworkUuid()), to.publicBridgeName);
+        Assert.assertEquals(nicvo.getGateway(), to.nicGateway);
+        Assert.assertEquals(nicvo.getNetmask(), to.nicNetmask);
+        Assert.assertEquals(vip.getNetmask(), to.vipNetmask);
+        Assert.assertEquals(vip.getGateway(), to.vipGateway);
 
         // attach eip
         fconfig.applyEipCmds.clear();

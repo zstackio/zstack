@@ -29,6 +29,7 @@ import org.zstack.network.service.eip.EipStruct;
 import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -61,8 +62,12 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         public String vmUuid;
         public String nicUuid;
         public String vip;
+        public String vipNetmask;
+        public String vipGateway;
         public String nicIp;
         public String nicMac;
+        public String nicGateway;
+        public String nicNetmask;
         public String nicName;
         public String vmBridgeName;
         public String publicBridgeName;
@@ -292,6 +297,21 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             return null;
         }
 
+        List<String> vipUuids = CollectionUtils.transformToList(eips, new Function<String, EipVO>() {
+            @Override
+            public String call(EipVO arg) {
+                return arg.getVipUuid();
+            }
+        });
+        sql = "select vip from VipVO vip where vip.uuid in (:uuids)";
+        TypedQuery<VipVO> vq = dbf.getEntityManager().createQuery(sql, VipVO.class);
+        vq.setParameter("uuids", vipUuids);
+        List<VipVO> vips = vq.getResultList();
+        final Map<String, VipVO> vipMap = new HashMap<String, VipVO>();
+        for (VipVO v : vips) {
+            vipMap.put(v.getUuid(), v);
+        }
+
         List<String> l3Uuids = CollectionUtils.transformToList(vmNics, new Function<String, VmNicVO>() {
             @Override
             public String call(VmNicVO arg) {
@@ -304,13 +324,6 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             nicMap.put(nic.getUuid(), nic);
         }
         final Map<String, String> bridgeNames = new BridgeNameFinder().findByL3Uuids(l3Uuids);
-
-        List<String> vipUuids = CollectionUtils.transformToList(eips, new Function<String, EipVO>() {
-            @Override
-            public String call(EipVO arg) {
-                return arg.getVipUuid();
-            }
-        });
         final Map<String, String> pubBridgeNames = getPublicL3BridgeNamesByVipUuids(vipUuids);
 
         return CollectionUtils.transformToList(eips, new Function<EipTO, EipVO>() {
@@ -318,12 +331,17 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             public EipTO call(EipVO eip) {
                 EipTO to = new EipTO();
                 VmNicVO nic = nicMap.get(eip.getVmNicUuid());
+                VipVO vip = vipMap.get(eip.getVipUuid());
                 to.vmUuid = nic.getVmInstanceUuid();
                 to.nicName = nic.getInternalName();
+                to.nicGateway = nic.getGateway();
+                to.nicNetmask = nic.getNetmask();
                 to.nicIp = nic.getIp();
                 to.nicMac = nic.getMac();
                 to.nicUuid = nic.getUuid();
                 to.vip = eip.getVipIp();
+                to.vipGateway = vip.getGateway();
+                to.vipNetmask = vip.getNetmask();
                 to.vmBridgeName = bridgeNames.get(nic.getL3NetworkUuid());
                 to.publicBridgeName = pubBridgeNames.get(eip.getVipUuid());
                 return to;
@@ -469,7 +487,11 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         to.nicName = struct.getNic().getInternalName();
         to.nicIp = struct.getNic().getIp();
         to.nicMac = struct.getNic().getMac();
+        to.nicNetmask = struct.getNic().getNetmask();
+        to.nicGateway = struct.getNic().getGateway();
         to.vip = struct.getVip().getIp();
+        to.vipGateway = struct.getVip().getGateway();
+        to.vipNetmask = struct.getVip().getNetmask();
         to.vmBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getNic().getL3NetworkUuid());
         to.publicBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getVip().getL3NetworkUuid());
         return to;

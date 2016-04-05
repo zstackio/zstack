@@ -115,6 +115,10 @@ public class TestFlatNetworkEip5 {
         Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
         Assert.assertEquals(getBridgeName(vipvo.getL3NetworkUuid()), to.publicBridgeName);
+        Assert.assertEquals(nicvo.getGateway(), to.nicGateway);
+        Assert.assertEquals(nicvo.getNetmask(), to.nicNetmask);
+        Assert.assertEquals(vipvo.getNetmask(), to.vipNetmask);
+        Assert.assertEquals(vipvo.getGateway(), to.vipGateway);
     }
 
     private void checkDeleteCmd() {
@@ -133,6 +137,10 @@ public class TestFlatNetworkEip5 {
         Assert.assertEquals(nicvo.getInternalName(), to.nicName);
         Assert.assertEquals(getBridgeName(nicvo.getL3NetworkUuid()), to.vmBridgeName);
         Assert.assertEquals(getBridgeName(vipvo.getL3NetworkUuid()), to.publicBridgeName);
+        Assert.assertEquals(nicvo.getGateway(), to.nicGateway);
+        Assert.assertEquals(nicvo.getNetmask(), to.nicNetmask);
+        Assert.assertEquals(vipvo.getNetmask(), to.vipNetmask);
+        Assert.assertEquals(vipvo.getGateway(), to.vipGateway);
     }
 
     @Test
