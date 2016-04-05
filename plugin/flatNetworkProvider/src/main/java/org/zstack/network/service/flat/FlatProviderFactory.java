@@ -17,6 +17,10 @@ import org.zstack.network.service.vip.VipConstant;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Created by frank on 9/15/2015.
  */
@@ -51,6 +55,35 @@ public class FlatProviderFactory implements NetworkServiceProviderFactory, Prepa
         NetworkServiceProviderVO rpvo = query.find();
         if (rpvo != null) {
             flatProvider = NetworkServiceProviderInventory.valueOf(rpvo);
+
+            // check if any network service type missing, if any, complement them
+            SimpleQuery<NetworkServiceTypeVO> q = dbf.createQuery(NetworkServiceTypeVO.class);
+            q.add(NetworkServiceTypeVO_.networkServiceProviderUuid, Op.EQ, flatProvider.getUuid());
+            List<NetworkServiceTypeVO> refs = q.list();
+            Set<String> types = new HashSet<String>();
+            for (NetworkServiceTypeVO ref : refs) {
+                types.add(ref.getType());
+            }
+
+            if (!types.contains(NetworkServiceType.DHCP.toString())) {
+                NetworkServiceTypeVO ref = new NetworkServiceTypeVO();
+                ref.setNetworkServiceProviderUuid(flatProvider.getUuid());
+                ref.setType(NetworkServiceType.DHCP.toString());
+                dbf.persist(ref);
+            }
+            if (!types.contains(UserdataConstant.USERDATA_TYPE_STRING)) {
+                NetworkServiceTypeVO ref = new NetworkServiceTypeVO();
+                ref.setNetworkServiceProviderUuid(flatProvider.getUuid());
+                ref.setType(UserdataConstant.USERDATA_TYPE_STRING);
+                dbf.persist(ref);
+            }
+            if (!types.contains(EipConstant.EIP_NETWORK_SERVICE_TYPE)) {
+                NetworkServiceTypeVO ref = new NetworkServiceTypeVO();
+                ref.setNetworkServiceProviderUuid(flatProvider.getUuid());
+                ref.setType(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                dbf.persist(ref);
+            }
+
             return;
         }
 
