@@ -6,6 +6,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.gc.EventBasedGCPersistentContext;
+import org.zstack.core.gc.GCEventTrigger;
+import org.zstack.core.gc.GCFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -15,8 +18,12 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
@@ -42,6 +49,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.StringDSL.ln;
+
 /**
  * Created by xing5 on 2016/4/4.
  */
@@ -57,6 +67,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     private ApiTimeoutManager timeoutMgr;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private GCFacade gcf;
 
     public static class EipTO {
         public String vmUuid;
@@ -376,7 +388,48 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         batchDeleteEips(eips, hostUuid, false, completion);
     }
 
-    private void batchDeleteEips(List<EipTO> eips, String hostUuid, boolean noHostStatusCheck, final Completion completion) {
+    private void setupGC(List<EipTO> eips, String hostUuid) {
+        GCDeleteEipContext c = new GCDeleteEipContext();
+        c.setEips(eips);
+        c.setHostUuid(hostUuid);
+        c.setTriggerHostStatus(HostStatus.Connected.toString());
+
+        EventBasedGCPersistentContext<GCDeleteEipContext> ctx = new EventBasedGCPersistentContext<GCDeleteEipContext>();
+        ctx.setRunnerClass(GCDeleteEipRunner.class);
+        ctx.setContextClass(GCDeleteEipContext.class);
+        ctx.setName(String.format("delete-eips-on-host-%s", hostUuid));
+        ctx.setContext(c);
+
+        GCEventTrigger trigger = new GCEventTrigger();
+        trigger.setCodeName("gc-delete-eips-on-host-connected");
+        trigger.setEventPath(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH);
+        String code = ln(
+                "import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData",
+                "import org.zstack.network.service.flat.GCDeleteEipContext",
+                "HostStatusChangedData d = (HostStatusChangedData) data",
+                "GCDeleteEipContext c = (GCDeleteEipContext) context",
+                "return c.hostUuid == d.hostUuid && d.newStatus == c.triggerHostStatus"
+        ).toString();
+        trigger.setCode(code);
+        ctx.addTrigger(trigger);
+
+        trigger = new GCEventTrigger();
+        trigger.setCodeName("gc-delete-vm-on-host-deleted");
+        trigger.setEventPath(HostCanonicalEvents.HOST_DELETED_PATH);
+        code = ln(
+                "import org.zstack.header.host.HostCanonicalEvents.HostDeletedData",
+                "import org.zstack.network.service.flat.GCDeleteEipContext",
+                "HostDeletedData d = (HostDeletedData) data",
+                "GCDeleteEipContext c = (GCDeleteEipContext) context",
+                "return c.hostUuid == d.hostUuid"
+        ).toString();
+        trigger.setCode(code);
+        ctx.addTrigger(trigger);
+
+        gcf.schedule(ctx);
+    }
+
+    private void batchDeleteEips(final List<EipTO> eips, final String hostUuid, boolean noHostStatusCheck, final Completion completion) {
         BatchDeleteEipCmd cmd = new BatchDeleteEipCmd();
         cmd.eips = eips;
 
@@ -391,7 +444,15 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
+
+                    ErrorCode err = reply.getError();
+                    if (SysErrors.HTTP_ERROR.toString().equals(err.getCode()) || HostErrors.HOST_IS_DISCONNECTED.toString().equals(err.getCode())) {
+                        setupGC(eips, hostUuid);
+                        completion.success();
+                    } else {
+                        completion.fail(reply.getError());
+                    }
+
                     return;
                 }
 
@@ -553,10 +614,10 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
     @Override
     public void revokeEip(EipStruct struct, final Completion completion) {
-        DeleteEipCmd cmd = new DeleteEipCmd();
+        final DeleteEipCmd cmd = new DeleteEipCmd();
         cmd.eip = eipStructToEipTO(struct);
 
-        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        final KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
         msg.setHostUuid(getHostUuidByVmUuid(cmd.eip.vmUuid));
         msg.setPath(DELETE_EIP_PATH);
@@ -566,7 +627,15 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
+
+                    ErrorCode err = reply.getError();
+                    if (SysErrors.HTTP_ERROR.toString().equals(err.getCode()) || HostErrors.HOST_IS_DISCONNECTED.toString().equals(err.getCode())) {
+                        setupGC(list(cmd.eip), msg.getHostUuid());
+                        completion.success();
+                    } else {
+                        completion.fail(reply.getError());
+                    }
+
                     return;
                 }
 

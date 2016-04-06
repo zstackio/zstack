@@ -573,7 +573,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         q.select(VmInstanceVO_.state);
         q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, nicvo.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
-        if (VmInstanceState.Running != state) {
+        if (VmInstanceState.Stopped == state) {
             dbf.remove(vo);
             completion.success();
             return;
