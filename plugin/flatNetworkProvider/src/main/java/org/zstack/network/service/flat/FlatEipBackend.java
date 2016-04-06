@@ -252,7 +252,30 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
+                if (eips == null) {
+                    trigger.rollback();
+                    return;
+                }
 
+                if (releaseHostUuidForRollback != null) {
+                    batchDeleteEips(eips, releaseHostUuidForRollback, new NopeCompletion());
+                }
+                if (applyHostUuidForRollback != null) {
+                    batchApplyEips(eips, applyHostUuidForRollback, new Completion() {
+                        @Override
+                        public void success() {
+                            // pass
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            //TODO
+                            logger.warn(errorCode.toString());
+                        }
+                    });
+                }
+
+                trigger.rollback();
             }
         };
     }

@@ -600,6 +600,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                         @Override
                         public void fail(ErrorCode errorCode) {
+                            //TODO
                             logger.warn(String.format("failed to re-apply DHCP info of the vm[uuid:%s] to the host[uuid:%s], %s",
                                     vm.getUuid(), applyHostUuidForRollback, errorCode));
                         }
