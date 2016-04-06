@@ -3035,6 +3035,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 StartVmInstanceReply reply = new StartVmInstanceReply();
                 reply.setInventory(inv);
                 bus.reply(msg, reply);
+                taskChain.next();
             }
 
             @Override
