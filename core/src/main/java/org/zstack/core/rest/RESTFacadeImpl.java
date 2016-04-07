@@ -3,6 +3,7 @@ package org.zstack.core.rest;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -103,7 +104,10 @@ public class RESTFacadeImpl implements RESTFacade {
         sendCommandUrl = ub.build().toUriString();
 
         logger.debug(String.format("RESTFacade built callback url: %s", callbackUrl));
-        template = new RestTemplate();
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+        factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT);
+        factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
+        template = new RestTemplate(factory);
     }
 
     void notifyCallback(HttpServletRequest req, HttpServletResponse rsp) {
