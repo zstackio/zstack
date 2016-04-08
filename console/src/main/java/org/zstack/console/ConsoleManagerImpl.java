@@ -181,6 +181,11 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     }
 
     @Override
+    public ConsoleBackend getConsoleBackend() {
+        return getBackend();
+    }
+
+    @Override
     public String preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
         return null;
     }

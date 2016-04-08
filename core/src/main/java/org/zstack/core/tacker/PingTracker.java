@@ -90,7 +90,7 @@ public abstract class PingTracker implements Component {
                     });
                 }
             } catch (Throwable t) {
-                logger.warn(String.format("unhandled throwable"), t);
+                logger.warn("unhandled throwable", t);
             }
         }
     }

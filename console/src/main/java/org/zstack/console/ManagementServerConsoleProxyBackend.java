@@ -31,6 +31,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ShellUtils;
+import org.zstack.utils.URLBuilder;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -58,6 +59,8 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
 
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private ConsoleProxyAgentTracker tracker;
 
     protected ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo) {
         return new ConsoleProxyBase(vo, getAgentPort());
@@ -190,6 +193,11 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     }
 
     @Override
+    public String returnServiceIdForConsoleAgentMsg(ConsoleProxyAgentMessage msg, String agentUuid) {
+        return bus.makeServiceIdByManagementNodeId(ConsoleConstants.SERVICE_ID, Platform.getManagementServerId());
+    }
+
+    @Override
     @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
@@ -203,9 +211,48 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     private void handleLocalMessage(Message msg) {
         if (msg instanceof ReconnectConsoleProxyMsg) {
             handle((ReconnectConsoleProxyMsg) msg);
+        } else if (msg instanceof PingConsoleProxyAgentMsg) {
+            handle((PingConsoleProxyAgentMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(PingConsoleProxyAgentMsg msg) {
+        ConsoleProxyCommands.PingCmd cmd = new ConsoleProxyCommands.PingCmd();
+        String url = URLBuilder.buildHttpUrl("127.0.0.1", agentPort, ConsoleConstants.CONSOLE_PROXY_PING_PATH);
+        ConsoleProxyAgentVO vo = dbf.findByUuid(Platform.getManagementServerId(), ConsoleProxyAgentVO.class);
+
+        boolean success;
+        boolean reconnect = false;
+        try {
+            restf.syncJsonPost(url, cmd, ConsoleProxyCommands.PingRsp.class);
+            success = true;
+            if (vo != null) {
+                reconnect = vo.getStatus() == ConsoleProxyAgentStatus.Disconnected;
+
+                if (vo.getStatus() != ConsoleProxyAgentStatus.Connected) {
+                    vo.setStatus(ConsoleProxyAgentStatus.Connected);
+                    dbf.update(vo);
+                }
+            } else {
+                reconnect = true;
+            }
+
+        } catch (Exception e) {
+            logger.warn(String.format("cannot ping console proxy agent, %s", e.getMessage()), e);
+
+            if (vo != null) {
+                vo.setStatus(ConsoleProxyAgentStatus.Disconnected);
+                dbf.update(vo);
+            }
+            success = false;
+        }
+
+        PingConsoleProxyAgentReply reply = new PingConsoleProxyAgentReply();
+        reply.setConnected(success);
+        reply.setDoReconnect(reconnect);
+        bus.reply(msg, reply);
     }
 
     private void handle(final ReconnectConsoleProxyMsg msg) {
@@ -287,6 +334,12 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                 bus.publish(evt);
             }
         });
+    }
+
+    @Override
+    public boolean start() {
+        tracker.track(Platform.getManagementServerId());
+        return super.start();
     }
 
 

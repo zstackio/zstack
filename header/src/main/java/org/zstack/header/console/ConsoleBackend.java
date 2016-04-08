@@ -19,5 +19,7 @@ public interface ConsoleBackend {
 
     void deleteConsoleSession(VmInstanceInventory vm, Completion completion);
 
+    String returnServiceIdForConsoleAgentMsg(ConsoleProxyAgentMessage msg, String agentUuid);
+
     void handleMessage(Message msg);
 }

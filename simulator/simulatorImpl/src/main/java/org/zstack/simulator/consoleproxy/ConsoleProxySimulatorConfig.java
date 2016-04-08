@@ -1,5 +1,6 @@
 package org.zstack.simulator.consoleproxy;
 
+import org.zstack.header.console.ConsoleProxyCommands;
 import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyCmd;
 
 import java.util.ArrayList;
@@ -17,4 +18,6 @@ public class ConsoleProxySimulatorConfig {
     public volatile Integer proxyPort = 5900;
     public volatile boolean proxySuccess = true;
     public List<DeleteProxyCmd> deleteProxyCmdList = new ArrayList<DeleteProxyCmd>();
+    public List<ConsoleProxyCommands.PingCmd> pingCmdList = new ArrayList<ConsoleProxyCommands.PingCmd>();
+    public volatile boolean pingSuccess = true;
 }

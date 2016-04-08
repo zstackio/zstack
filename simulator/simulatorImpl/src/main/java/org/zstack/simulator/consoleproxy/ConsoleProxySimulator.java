@@ -11,6 +11,7 @@ import org.zstack.header.console.ConsoleConstants;
 import org.zstack.header.console.ConsoleProxyCommands;
 import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyCmd;
 import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyRsp;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.simulator.AsyncRESTReplyer;
 import org.zstack.utils.Utils;
@@ -29,6 +30,19 @@ public class ConsoleProxySimulator {
     private RESTFacade restf;
     
     private AsyncRESTReplyer replyer = new AsyncRESTReplyer();
+
+    @RequestMapping(value= ConsoleConstants.CONSOLE_PROXY_PING_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String ping(HttpEntity<String> entity) {
+        ConsoleProxyCommands.PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ConsoleProxyCommands.PingCmd.class);
+        ConsoleProxyCommands.PingRsp rsp = new ConsoleProxyCommands.PingRsp();
+        if (!config.pingSuccess) {
+            throw new CloudRuntimeException("on purpose");
+        } else {
+            config.pingCmdList.add(cmd);
+        }
+        return JSONObjectUtil.toJsonString(rsp);
+    }
 
     @AsyncThread
     private void doCheck(HttpEntity<String> entity) {

@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.console.*;
 import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyCmd;
@@ -22,7 +21,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.net.URI;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created with IntelliJ IDEA.

@@ -10,7 +10,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.*;
-import org.zstack.kvm.KVMAgentCommands.MergeSnapshotCmd;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.kvm.KVMSecurityGroupBackend;
@@ -21,7 +20,6 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.swing.text.StyledEditorKit.BoldAction;
 import java.util.HashMap;
 import java.util.Map;
 

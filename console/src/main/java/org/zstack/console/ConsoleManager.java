@@ -1,5 +1,6 @@
 package org.zstack.console;
 
+import org.zstack.header.console.ConsoleBackend;
 import org.zstack.header.console.ConsoleHypervisorBackend;
 import org.zstack.header.host.HypervisorType;
 
@@ -11,4 +12,6 @@ import org.zstack.header.host.HypervisorType;
  */
 public interface ConsoleManager {
     ConsoleHypervisorBackend getHypervisorConsoleBackend(HypervisorType type);
+
+    ConsoleBackend getConsoleBackend();
 }

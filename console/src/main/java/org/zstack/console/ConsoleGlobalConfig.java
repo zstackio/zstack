@@ -12,4 +12,7 @@ public class ConsoleGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig PROXY_IDLE_TIMEOUT = new GlobalConfig(CATEGORY, "proxy.idleTimeout");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig PING_INTERVAL = new GlobalConfig(CATEGORY, "agent.ping.interval");
 }

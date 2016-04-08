@@ -242,4 +242,10 @@ public interface ConsoleProxyCommands {
             this.proxyPort = proxyPort;
         }
     }
+
+    public static class PingCmd extends AgentCommand {
+    }
+
+    public static class PingRsp extends AgentResponse {
+    }
 }

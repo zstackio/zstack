@@ -30,6 +30,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ConsoleProxyAgentTracker" class="org.zstack.console.ConsoleProxyAgentTracker">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="ManagementServerConsoleProxyBackend" class="org.zstack.console.ManagementServerConsoleProxyBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />

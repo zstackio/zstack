@@ -3,7 +3,6 @@ package org.zstack.core.cloudbus;
 import com.google.gson.*;
 import com.rabbitmq.client.*;
 import org.apache.commons.lang.StringUtils;
-import org.json.JSONObject;
 import org.mvel2.MVEL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
@@ -1897,12 +1896,13 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                                 logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
                                             }
                                         }
+
+                                        serv.handleMessage(msg);
                                     } catch (Throwable t) {
                                         logExceptionWithMessageDump(msg, t);
                                         replyErrorByMessageType(msg, errf.stringToInternalError(t.getMessage()));
                                     }
 
-                                    serv.handleMessage(msg);
                                     return null;
                                 }
                             };
