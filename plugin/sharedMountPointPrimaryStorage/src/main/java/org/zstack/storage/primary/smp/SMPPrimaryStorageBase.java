@@ -131,6 +131,8 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success() {
                 self = dbf.reload(self);
+                self.setStatus(PrimaryStorageStatus.Connected);
+                self = dbf.updateAndRefresh(self);
                 evt.setInventory(getSelfInventory());
                 bus.publish(evt);
             }
