@@ -161,4 +161,8 @@
     <message>
         <name>org.zstack.header.identity.APIUpdateUserGroupMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIGetResourceAccountMsg</name>
+    </message>
 </service>

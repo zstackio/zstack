@@ -225,9 +225,38 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIValidateSessionMsg) msg);
         } else if (msg instanceof APICheckApiPermissionMsg) {
             handle((APICheckApiPermissionMsg) msg);
+        } else if (msg instanceof APIGetResourceAccountMsg) {
+            handle((APIGetResourceAccountMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    @Transactional(readOnly = true)
+    private void handle(APIGetResourceAccountMsg msg) {
+        String sql = "select a, ref.resourceUuid from AccountResourceRefVO ref, AccountVO a where" +
+                " a.uuid = ref.accountUuid and ref.resourceUuid in (:uuids)";
+        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        q.setParameter("uuids", msg.getResourceUuids());
+        List<Tuple> tuples = q.getResultList();
+        Map<String, AccountInventory> ret = new HashMap<String, AccountInventory>();
+        for (Tuple t : tuples) {
+            String resUuid = t.get(1, String.class);
+            AccountVO vo = t.get(0, AccountVO.class);
+            ret.put(resUuid, AccountInventory.valueOf(vo));
+        }
+
+        AccountVO admin = dbf.findByUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, AccountVO.class);
+        AccountInventory adminInv = AccountInventory.valueOf(admin);
+        for (String resUuid : msg.getResourceUuids()) {
+            if (!ret.containsKey(resUuid)) {
+                ret.put(resUuid, adminInv);
+            }
+        }
+
+        APIGetResourceAccountReply reply = new APIGetResourceAccountReply();
+        reply.setInventories(ret);
+        bus.reply(msg, reply);
     }
 
     private void handle(APICheckApiPermissionMsg msg) {

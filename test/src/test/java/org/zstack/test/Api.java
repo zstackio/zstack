@@ -1690,6 +1690,7 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+
     public SessionInventory loginAsAdmin() throws ApiSenderException {
         return loginByAccount(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME, AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
     }
@@ -3952,5 +3953,15 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         sender.send(msg, APIDeleteVmHostnameEvent.class);
         return;
+    }
+
+    public Map<String, AccountInventory> getResourceAccount(List<String> resUuids) throws ApiSenderException {
+        APIGetResourceAccountMsg msg = new APIGetResourceAccountMsg();
+        msg.setResourceUuids(resUuids);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetResourceAccountReply reply = sender.call(msg, APIGetResourceAccountReply.class);
+        return reply.getInventories();
     }
 }
