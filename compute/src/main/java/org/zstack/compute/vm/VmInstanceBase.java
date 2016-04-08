@@ -1832,9 +1832,18 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmStaticIpMsg) msg);
         } else if (msg instanceof APIDeleteVmStaticIpMsg) {
             handle((APIDeleteVmStaticIpMsg) msg);
+        } else if (msg instanceof APIGetVmHostnameMsg) {
+            handle((APIGetVmHostnameMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetVmHostnameMsg msg) {
+        String hostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(self.getUuid(), VmSystemTags.HOSTNAME_TOKEN);
+        APIGetVmHostnameReply reply = new APIGetVmHostnameReply();
+        reply.setHostname(hostname);
+        bus.reply(msg, reply);
     }
 
     private void handle(final APIDeleteVmStaticIpMsg msg) {

@@ -39,12 +39,17 @@ public class TestVmHostname {
         String hostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.HOSTNAME_TOKEN);
         Assert.assertEquals("vm1", hostname);
 
+        String hostname1 = api.getHostname(vm.getUuid(), null);
+        Assert.assertEquals(hostname1, hostname);
+
         api.setHostname(vm.getUuid(), "vm2", null);
         hostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.HOSTNAME_TOKEN);
         Assert.assertEquals("vm2", hostname);
 
         api.deleteHostname(vm.getUuid(), null);
         Assert.assertFalse(VmSystemTags.HOSTNAME.hasTag(vm.getUuid()));
+        hostname1 = api.getHostname(vm.getUuid(), null);
+        Assert.assertNull(hostname1);
 
         api.deleteHostname(vm.getUuid(), null);
         Assert.assertFalse(VmSystemTags.HOSTNAME.hasTag(vm.getUuid()));

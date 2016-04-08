@@ -3820,6 +3820,16 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APISetVmHostnameEvent.class);
     }
 
+    public String getHostname(String uuid, SessionInventory session) throws ApiSenderException {
+        APIGetVmHostnameMsg msg = new APIGetVmHostnameMsg();
+        msg.setUuid(uuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVmHostnameReply reply = sender.call(msg, APIGetVmHostnameReply.class);
+        return reply.getHostname();
+    }
+
     public void deleteHostname(String uuid, SessionInventory session) throws ApiSenderException {
         APIDeleteVmHostnameMsg msg = new APIDeleteVmHostnameMsg();
         msg.setUuid(uuid);
