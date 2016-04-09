@@ -88,7 +88,7 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(final APIAttachEipMsg msg) {
-        isVmNicUsed(msg.getVmNicUuid());
+        //isVmNicUsed(msg.getVmNicUuid());
 
         SimpleQuery<EipVO> q = dbf.createQuery(EipVO.class);
         q.select(EipVO_.state, EipVO_.vmNicUuid);
@@ -164,9 +164,11 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateEipMsg msg) {
+        /*
         if (msg.getVmNicUuid() != null) {
             isVmNicUsed(msg.getVmNicUuid());
         }
+        */
 
         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
         q.select(VipVO_.useFor, VipVO_.state);

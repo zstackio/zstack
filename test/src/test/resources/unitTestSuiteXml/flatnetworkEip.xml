@@ -13,4 +13,6 @@
     <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip11"/>
     <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip12"/>
     <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip13"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip14"/>
+    <TestCase class="org.zstack.test.eip.flatnetwork.TestFlatNetworkEip15"/>
 </UnitTestSuiteConfig>
