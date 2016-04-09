@@ -5,17 +5,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.core.workflow.*;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageInventory;
@@ -80,6 +79,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String REVERT_VOLUME_FROM_SNAPSHOT_PATH = "/nfsprimarystorage/revertvolumefromsnapshot";
     public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/nfsprimarystorage/sftp/createtemplatefromvolume";
     public static final String OFFLINE_SNAPSHOT_MERGE = "/nfsprimarystorage/offlinesnapshotmerge";
+    public static final String REMOUNT_PATH = "/nfsprimarystorage/remount";
 
     //////////////// For unit test //////////////////////////
     private boolean syncGetCapacity = false;
@@ -734,6 +734,77 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         }
     }
 
+    @Override
+    public void remount(final PrimaryStorageInventory pinv, String clusterUuid, final NoErrorCompletion completion) {
+        SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
+        q.select(HostVO_.uuid);
+        q.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
+        q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
+        final List<String> huuids = q.listValue();
+        if (huuids.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(huuids, new Function<KVMHostAsyncHttpCallMsg, String>() {
+            @Override
+            public KVMHostAsyncHttpCallMsg call(String arg) {
+                RemountCmd cmd = new RemountCmd();
+                cmd.url = pinv.getUrl();
+                cmd.mountPath = pinv.getMountPath();
+
+                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                msg.setCommand(cmd);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+                msg.setHostUuid(arg);
+                msg.setPath(REMOUNT_PATH);
+                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, arg);
+                return msg;
+            }
+        });
+
+        bus.send(msgs, new CloudBusListCallBack(completion) {
+            private void reconnectHost(String huuid, ErrorCode error) {
+                logger.warn(String.format("failed to remount NFS primary storage[uuid:%s, name:%s] on the KVM host[uuid:%s]," +
+                        "%s. Start a reconnect to fix the problem", pinv.getUuid(), pinv.getName(), huuid, error));
+
+                ReconnectHostMsg rmsg = new ReconnectHostMsg();
+                rmsg.setHostUuid(huuid);
+                bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, huuid);
+                bus.send(rmsg);
+            }
+
+            @Override
+            public void run(List<MessageReply> replies) {
+                boolean reported = false;
+                for (MessageReply re : replies) {
+                    String huuid = huuids.get(replies.indexOf(re));
+
+                    if (!re.isSuccess()) {
+                        reconnectHost(huuid, re.getError());
+                        continue;
+                    }
+
+                    KVMHostAsyncHttpCallReply ar = re.castReply();
+                    NfsPrimaryStorageAgentResponse rsp = ar.toResponse(NfsPrimaryStorageAgentResponse.class);
+                    if (!rsp.isSuccess()) {
+                        reconnectHost(huuid, errf.stringToOperationError(rsp.getError()));
+                        continue;
+                    }
+
+                    if (!reported) {
+                        new PrimaryStorageCapacityUpdater(pinv.getUuid()).update(
+                                rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
+                        );
+                        reported = true;
+                    }
+                }
+
+                completion.done();
+            }
+        });
+    }
+
     private void downloadAndCreateBitsFromVolumeSnapshots(final PrimaryStorageInventory pinv,
                                                           final List<SnapshotDownloadInfo> snapshots,
                                                           final String bitsName,
@@ -917,46 +988,61 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
         return new NoRollbackFlow() {
-            String __name__ = "prepare-nfs-pirmary-storage";
+            String __name__ = "remount-nfs-primary-storage";
+
+            List<PrimaryStorageInventory> invs = getPrimaryStorageForHost(context.getInventory().getClusterUuid());
 
             @Override
-            public void run(FlowTrigger trigger, Map data) {
-                //TODO: change to async
-                List<PrimaryStorageInventory> invs = getPrimaryStorageForHost(context.getInventory().getClusterUuid());
+            public void run(final FlowTrigger trigger, Map data) {
+                if (invs.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
                 if (context.isNewAddedHost() && !CoreGlobalProperty.UNIT_TEST_ON && !invs.isEmpty()) {
                     checkQemuImgVersionInOtherClusters(context, invs);
                 }
 
+                List<KVMHostAsyncHttpCallMsg> msgs = new ArrayList<KVMHostAsyncHttpCallMsg>();
                 for (PrimaryStorageInventory inv : invs) {
-                    MountCmd cmd = new MountCmd();
-                    cmd.setUrl(inv.getUrl());
-                    cmd.setMountPath(inv.getMountPath());
+                    RemountCmd cmd = new RemountCmd();
+                    cmd.mountPath = inv.getMountPath();
+                    cmd.url = inv.getUrl();
                     cmd.setUuid(inv.getUuid());
 
-                    KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
+                    KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                     msg.setCommand(cmd);
                     msg.setNoStatusCheck(true);
-                    msg.setPath(MOUNT_PRIMARY_STORAGE_PATH);
+                    msg.setPath(REMOUNT_PATH);
                     msg.setHostUuid(context.getInventory().getUuid());
                     bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-                    MessageReply reply = bus.call(msg);
-                    if (!reply.isSuccess()) {
-                        throw new OperationFailureException(reply.getError());
-                    }
-
-                    KVMHostSyncHttpCallReply r = reply.castReply();
-                    MountAgentResponse rsp = r.toResponse(MountAgentResponse.class);
-
-                    if (!rsp.isSuccess()) {
-                        throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
-                    }
-
-                    new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
-                            rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
-                    );
+                    msgs.add(msg);
                 }
 
-                trigger.next();
+                bus.send(msgs, new CloudBusListCallBack(trigger) {
+                    @Override
+                    public void run(List<MessageReply> replies) {
+                        for (MessageReply reply : replies) {
+                            if (!reply.isSuccess()) {
+                                throw new OperationFailureException(reply.getError());
+                            }
+
+                            KVMHostSyncHttpCallReply r = reply.castReply();
+                            NfsPrimaryStorageAgentResponse rsp = r.toResponse(NfsPrimaryStorageAgentResponse.class);
+
+                            if (!rsp.isSuccess()) {
+                                throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
+                            }
+
+                            PrimaryStorageInventory inv = invs.get(replies.indexOf(reply));
+                            new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
+                                    rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
+                            );
+                        }
+
+                        trigger.next();
+                    }
+                });
             }
         };
     }

@@ -38,4 +38,6 @@ public class NfsPrimaryStorageSimulatorConfig {
     public volatile boolean moveBitsSuccess = true;
     public volatile boolean offlineMergeSnapshotSuccess = true;
     public volatile List<OfflineMergeSnapshotCmd> offlineMergeSnapshotCmds = new ArrayList<OfflineMergeSnapshotCmd>();
+    public volatile List<RemountCmd> remountCmds = new ArrayList<RemountCmd>();
+    public volatile boolean remountSuccess = true;
 }

@@ -368,8 +368,25 @@ public class NfsPrimaryStorageSimulator {
             rsp.setError("failed on purpose");
             rsp.setSuccess(false);
         } else {
-            logger.debug(String.format("create empty volume[uuid:%s,  path:%s, size:%s]", cmd.getUuid(), cmd.getInstallUrl(), cmd.getSize()));
+            logger.debug(String.format("create empty volume[uuid:%s,  mountPath:%s, size:%s]", cmd.getUuid(), cmd.getInstallUrl(), cmd.getSize()));
         }
         reply(entity, rsp);
+    }
+
+    @RequestMapping(value=NfsPrimaryStorageKVMBackend.REMOUNT_PATH, method=RequestMethod.POST)
+    private @ResponseBody String remount(HttpServletRequest req) throws InterruptedException {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        RemountCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RemountCmd.class);
+        NfsPrimaryStorageAgentResponse rsp = new NfsPrimaryStorageAgentResponse();
+        if (!config.remountSuccess) {
+            rsp.setError("on purpose");
+            rsp.setSuccess(false);
+        } else {
+            rsp.setTotalCapacity(config.totalCapacity);
+            rsp.setAvailableCapacity(config.availableCapacity);
+            config.remountCmds.add(cmd);
+        }
+        reply(entity, rsp);
+        return null;
     }
 }

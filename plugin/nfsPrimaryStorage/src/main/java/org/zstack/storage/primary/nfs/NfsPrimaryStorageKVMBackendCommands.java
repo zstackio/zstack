@@ -495,5 +495,10 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class OfflineMergeSnapshotRsp extends NfsPrimaryStorageAgentResponse {
     }
 
+    public static class RemountCmd extends NfsPrimaryStorageAgentCommand {
+        public String url;
+        public String mountPath;
+    }
+
     public static final String UNABLE_TO_FIND_IMAGE_IN_CACHE = "UNABLE_TO_FIND_IMAGE_IN_CACHE";
 }
