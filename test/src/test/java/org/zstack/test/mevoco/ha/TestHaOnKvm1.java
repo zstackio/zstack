@@ -98,6 +98,7 @@ public class TestHaOnKvm1 {
         SetupSelfFencerCmd fcmd = hconfig.setupSelfFencerCmds.get(0);
         Assert.assertEquals(HaGlobalConfig.HOST_SELF_FENCER_ATTEMPTS.value(Integer.class).intValue(), fcmd.maxAttempts);
         Assert.assertEquals(HaGlobalConfig.HOST_SELF_FENCER_INTERVAL.value(Long.class).intValue(), fcmd.interval);
+        Assert.assertEquals(HaGlobalConfig.STORAGE_CHECKER_TIMEOUT.value(Long.class).intValue(), fcmd.storageCheckerTimeout);
 
         PrimaryStorageInventory nfs = deployer.primaryStorages.get("nfs");
         Assert.assertTrue(fcmd.mountPoints.contains(nfs.getMountPath()));
