@@ -7,10 +7,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.TransactionalCallback;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
@@ -26,6 +29,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -192,25 +196,43 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     }
 
     private void handle(final ConnectBackupStorageMsg msg) {
-        final ConnectBackupStorageReply reply = new ConnectBackupStorageReply();
-        connectHook(new Completion(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                self = dbf.reload(self);
-                changeStatus(BackupStorageStatus.Connected);
-                tracker.track(self.getUuid());
-                bus.reply(msg, reply);
+            public String getSyncSignature() {
+                return String.format("connect-backup-storage-%s", self.getUuid());
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                if (!msg.isNewAdd()) {
-                    changeStatus(BackupStorageStatus.Disconnected);
-                }
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void run(final SyncTaskChain chain) {
+                final ConnectBackupStorageReply reply = new ConnectBackupStorageReply();
+                connectHook(new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        self = dbf.reload(self);
+                        changeStatus(BackupStorageStatus.Connected);
+                        tracker.track(self.getUuid());
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        if (!msg.isNewAdd()) {
+                            changeStatus(BackupStorageStatus.Disconnected);
+                        }
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
             }
         });
+
     }
 
     protected void changeStatus(final BackupStorageStatus status, final NoErrorCompletion completion) {
@@ -296,6 +318,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                 handle((APIScanBackupStorageMsg) msg);
             } else if (msg instanceof APIUpdateBackupStorageMsg) {
                 handle((APIUpdateBackupStorageMsg) msg);
+            } else if (msg instanceof APIReconnectBackupStorageMsg) {
+                handle((APIReconnectBackupStorageMsg) msg);
 			} else {
 				bus.dealWithUnknownMessage(msg);
 			}
@@ -304,6 +328,26 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 			bus.replyErrorByMessageType(msg, e);
 		}
 	}
+
+    private void handle(APIReconnectBackupStorageMsg msg) {
+        final APIReconnectBackupStorageEvent evt = new APIReconnectBackupStorageEvent(msg.getId());
+        ConnectBackupStorageMsg cmsg = new ConnectBackupStorageMsg();
+        cmsg.setBackupStorageUuid(self.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, self.getUuid());
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setErrorCode(reply.getError());
+                } else {
+                    self = dbf.reload(self);
+                    evt.setInventory(getSelfInventory());
+                }
+
+                bus.publish(evt);
+            }
+        });
+    }
 
     protected BackupStorageVO updateBackupStorage(APIUpdateBackupStorageMsg msg) {
         boolean update = false;

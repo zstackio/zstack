@@ -2399,6 +2399,17 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIReconnectHostEvent.class);
     }
 
+    public BackupStorageInventory reconnectBackupStorage(String bsUuid) throws ApiSenderException {
+        APIReconnectBackupStorageMsg msg = new APIReconnectBackupStorageMsg();
+        msg.setSession(adminSession);
+        msg.setUuid(bsUuid);
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIReconnectBackupStorageEvent evt = sender.send(msg, APIReconnectBackupStorageEvent.class);
+        return evt.getInventory();
+    }
+
     public SftpBackupStorageInventory reconnectSftpBackupStorage(String bsUuid) throws ApiSenderException {
         APIReconnectSftpBackupStorageMsg msg = new APIReconnectSftpBackupStorageMsg();
         msg.setSession(adminSession);

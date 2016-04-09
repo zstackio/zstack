@@ -4,7 +4,6 @@ import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
-import org.zstack.header.vm.VmInstanceInventory;
 
 import javax.persistence.JoinColumn;
 import java.sql.Timestamp;
