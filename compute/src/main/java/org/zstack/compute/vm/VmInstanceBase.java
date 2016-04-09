@@ -2978,17 +2978,17 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Start);
         spec.setMessage(msg);
 
-        final VmInstanceState originState = self.getState();
-        changeVmStateInDb(VmInstanceStateEvent.starting);
-
-        extEmitter.beforeStartVm(VmInstanceInventory.valueOf(self));
-
         if (spec.getDestNics().isEmpty()) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("unable to start the vm[uuid:%s]. It doesn't have any nic, please attach a nic and try again",
                             self.getUuid())
             ));
         }
+
+        final VmInstanceState originState = self.getState();
+        changeVmStateInDb(VmInstanceStateEvent.starting);
+
+        extEmitter.beforeStartVm(VmInstanceInventory.valueOf(self));
 
         FlowChain chain = getStartVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
