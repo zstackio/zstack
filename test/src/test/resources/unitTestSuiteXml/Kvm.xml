@@ -123,4 +123,5 @@
   <TestCase class="org.zstack.test.kvm.TestKvmReconnectHost"/>
   <TestCase class="org.zstack.test.kvm.TestKvmExtendCpuMemory"/>
   <TestCase class="org.zstack.test.kvm.TestDeleteL2NetworkOnKvm"/>
+  <TestCase class="org.zstack.test.kvm.TestKvmVolumeCacheMode1"/>
 </UnitTestSuiteConfig>

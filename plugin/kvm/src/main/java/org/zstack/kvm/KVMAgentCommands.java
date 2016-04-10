@@ -402,7 +402,7 @@ public class KVMAgentCommands {
         private String deviceType = FILE;
         private String volumeUuid;
         private boolean useVirtio;
-        private int cacheMode;
+        private String cacheMode = "none";
 
         public VolumeTO() {
         }
@@ -452,10 +452,12 @@ public class KVMAgentCommands {
         public void setDeviceId(int deviceId) {
             this.deviceId = deviceId;
         }
-        public int getCacheMode() {
+
+        public String getCacheMode() {
             return cacheMode;
         }
-        public void setCacheMode(int cacheMode) {
+
+        public void setCacheMode(String cacheMode) {
             this.cacheMode = cacheMode;
         }
     }

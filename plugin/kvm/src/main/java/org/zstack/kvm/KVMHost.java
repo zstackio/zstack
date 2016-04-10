@@ -1171,6 +1171,7 @@ public class KVMHost extends HostBase implements Host {
         // so for Windows, use virtio as well
         to.setUseVirtio(ImagePlatform.Windows.toString().equals(vm.getPlatform()) ||
                 ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization());
+        to.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
 
         final AttachVolumeToVmOnHypervisorReply reply = new AttachVolumeToVmOnHypervisorReply();
         final AttachDataVolumeCmd cmd = new AttachDataVolumeCmd();
@@ -1528,7 +1529,6 @@ public class KVMHost extends HostBase implements Host {
         boolean virtio;
         String consoleMode;
         String nestedVirtualization;
-        int cacheMode;
         String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
                 spec.getVmInventory().getPlatform();
 
@@ -1569,14 +1569,13 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUseVirtio(virtio);
         VolumeTO rootVolume = new VolumeTO();
         consoleMode = KVMGlobalConfig.VM_CONSOLE_MODE.value(String.class);
-        cacheMode = KVMGlobalConfig.LIBVIRT_CACHE_MODE.value(Integer.class);
         nestedVirtualization = KVMGlobalConfig.NESTED_VIRTUALIZATION.value(String.class);
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
         rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
         rootVolume.setUseVirtio(virtio);
-        rootVolume.setCacheMode(cacheMode);
+        rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
         cmd.setConsoleMode(consoleMode);
         cmd.setNestedVirtualization(nestedVirtualization);
         cmd.setRootVolume(rootVolume);
@@ -1589,7 +1588,7 @@ public class KVMHost extends HostBase implements Host {
             v.setDeviceType(getVolumeTOType(data));
             v.setVolumeUuid(data.getUuid());
             v.setUseVirtio(virtio);
-            v.setCacheMode(cacheMode);
+            v.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
             dataVolumes.add(v);
         }
         cmd.setDataVolumes(dataVolumes);

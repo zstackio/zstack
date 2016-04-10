@@ -56,9 +56,8 @@
     <config>
         <category>kvm</category>
         <name>vm.cacheMode</name>
-        <description>libvirt cache optoin. 0=none, 1=writethrough, 2=writeback</description>
-        <type>java.lang.Integer</type>
-        <defaultValue>0</defaultValue>
+        <description>disk cache optoin:none,writethrough,writeback</description>
+        <defaultValue>none</defaultValue>
      </config>
 
     <config>
