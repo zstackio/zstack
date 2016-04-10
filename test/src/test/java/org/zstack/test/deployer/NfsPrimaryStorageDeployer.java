@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.zone.ZoneInventory;
+import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.storage.primary.nfs.APIAddNfsPrimaryStorageMsg;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageConstant;
 import org.zstack.test.Api;
@@ -13,8 +14,6 @@ import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.deployer.schema.DeployerConfig;
 import org.zstack.test.deployer.schema.NfsPrimaryStorageConfig;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 
 import java.util.List;
 
@@ -41,6 +40,9 @@ public class NfsPrimaryStorageDeployer implements PrimaryStorageDeployer<NfsPrim
             msg.setType(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE);
             msg.setSession(api.getAdminSession());
             msg.setZoneUuid(zone.getUuid());
+            if (nc.getOptions() != null) {
+                msg.addSystemTag(nc.getOptions());
+            }
             ApiSender sender = api.getApiSender();
             APIAddPrimaryStorageEvent evt = sender.send(msg, APIAddPrimaryStorageEvent.class);
             PrimaryStorageInventory inv = evt.getInventory(); 

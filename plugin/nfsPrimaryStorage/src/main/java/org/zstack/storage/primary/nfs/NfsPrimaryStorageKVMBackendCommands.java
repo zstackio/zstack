@@ -43,7 +43,16 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class MountCmd extends NfsPrimaryStorageAgentCommand {
         private String url;
         private String mountPath;
-        
+        private String options;
+
+        public String getOptions() {
+            return options;
+        }
+
+        public void setOptions(String options) {
+            this.options = options;
+        }
+
         public String getUrl() {
             return url;
         }
@@ -498,6 +507,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class RemountCmd extends NfsPrimaryStorageAgentCommand {
         public String url;
         public String mountPath;
+        public String options;
     }
 
     public static final String UNABLE_TO_FIND_IMAGE_IN_CACHE = "UNABLE_TO_FIND_IMAGE_IN_CACHE";

@@ -93,6 +93,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setUrl(inv.getUrl());
         cmd.setMountPath(inv.getMountPath());
         cmd.setUuid(inv.getUuid());
+        cmd.setOptions(NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(inv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN));
 
         KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -750,8 +751,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public KVMHostAsyncHttpCallMsg call(String arg) {
                 RemountCmd cmd = new RemountCmd();
+                cmd.setUuid(pinv.getUuid());
                 cmd.url = pinv.getUrl();
                 cmd.mountPath = pinv.getMountPath();
+                cmd.options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(pinv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);
@@ -1020,6 +1023,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     cmd.mountPath = inv.getMountPath();
                     cmd.url = inv.getUrl();
                     cmd.setUuid(inv.getUuid());
+                    cmd.options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(inv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
 
                     KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                     msg.setCommand(cmd);

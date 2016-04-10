@@ -1,6 +1,9 @@
 package org.zstack.storage.primary.nfs;
 
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.tag.TagResourceType;
+
 /**
  * @api
  *
@@ -46,6 +49,7 @@ import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
  *
  * see :ref:`APIAddNfsPrimaryStorageEvent`
  */
+@TagResourceType(PrimaryStorageVO.class)
 public class APIAddNfsPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     public APIAddNfsPrimaryStorageMsg() {
         this.setType(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE);

@@ -43,6 +43,7 @@
         <xsd:complexContent>
             <xsd:extension base="PrimaryStorageConfigBase">
                 <xsd:attribute name="placeHolder" type="xsd:string"></xsd:attribute>
+                <xsd:attribute name="options" type="xsd:string"></xsd:attribute>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
