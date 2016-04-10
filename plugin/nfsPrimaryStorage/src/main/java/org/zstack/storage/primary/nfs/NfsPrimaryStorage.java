@@ -11,7 +11,8 @@ import org.zstack.core.gc.GCFacade;
 import org.zstack.core.gc.TimeBasedGCPersistentContext;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
@@ -116,11 +117,24 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     return;
                 }
 
+                class Result {
+                    List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                    boolean success;
+                }
+
+                final Result ret = new Result();
+
                 final AsyncLatch latch = new AsyncLatch(cuuids.size(), new NoErrorCompletion(msg, chain) {
                     @Override
                     public void done() {
-                        self = dbf.reload(self);
-                        evt.setInventory(getSelfInventory());
+                        if (ret.success) {
+                            self = dbf.reload(self);
+                            evt.setInventory(getSelfInventory());
+                        } else {
+                            evt.setErrorCode(errf.stringToOperationError(String.format("unable to connect the NFS primary storage," +
+                                    "errors are %s", ret.errors)));
+                        }
+
                         bus.publish(evt);
                         chain.next();
                     }
@@ -129,9 +143,16 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 PrimaryStorageInventory inv = getSelfInventory();
                 for (String cuuid : cuuids) {
                     NfsPrimaryStorageBackend bkd = getBackendByClusterUuid(cuuid);
-                    bkd.remount(inv, cuuid, new NoErrorCompletion(latch) {
+                    bkd.remount(inv, cuuid, new Completion(latch) {
                         @Override
-                        public void done() {
+                        public void success() {
+                            ret.success = true;
+                            latch.ack();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            ret.errors.add(errorCode);
                             latch.ack();
                         }
                     });

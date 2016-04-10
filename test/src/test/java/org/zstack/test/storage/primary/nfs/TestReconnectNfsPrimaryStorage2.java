@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
@@ -23,12 +24,12 @@ import org.zstack.utils.logging.CLogger;
 
 /**
  * 1. resize the nfs primary storage
- * 2. reconnect the nfs primary storage
+ * 2. reconnect the host in the cluster attached to the nfs
  *
  * confirm the remount command is sent
  * confirm the nfs capacity is extended
  */
-public class TestReconnectNfsPrimaryStorage1 {
+public class TestReconnectNfsPrimaryStorage2 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;
     Api api;
@@ -58,7 +59,9 @@ public class TestReconnectNfsPrimaryStorage1 {
         PrimaryStorageInventory ps = deployer.primaryStorages.get("nfs");
         config.totalCapacity = SizeUnit.TERABYTE.toByte(2);
         config.availableCapacity = SizeUnit.GIGABYTE.toByte(10);
-        api.reconnectPrimaryStorage(ps.getUuid());
+
+        HostInventory host = deployer.hosts.get("host1");
+        api.reconnectHost(host.getUuid());
 
         Assert.assertEquals(1, config.remountCmds.size());
         RemountCmd cmd = config.remountCmds.get(0);

@@ -735,14 +735,14 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
-    public void remount(final PrimaryStorageInventory pinv, String clusterUuid, final NoErrorCompletion completion) {
+    public void remount(final PrimaryStorageInventory pinv, String clusterUuid, final Completion completion) {
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.uuid);
         q.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
         q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
         final List<String> huuids = q.listValue();
         if (huuids.isEmpty()) {
-            completion.done();
+            completion.success();
             return;
         }
 
@@ -777,10 +777,14 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public void run(List<MessageReply> replies) {
                 boolean reported = false;
+                List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                boolean success = false;
+
                 for (MessageReply re : replies) {
                     String huuid = huuids.get(replies.indexOf(re));
 
                     if (!re.isSuccess()) {
+                        errors.add(re.getError());
                         reconnectHost(huuid, re.getError());
                         continue;
                     }
@@ -788,10 +792,13 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     KVMHostAsyncHttpCallReply ar = re.castReply();
                     NfsPrimaryStorageAgentResponse rsp = ar.toResponse(NfsPrimaryStorageAgentResponse.class);
                     if (!rsp.isSuccess()) {
-                        reconnectHost(huuid, errf.stringToOperationError(rsp.getError()));
+                        ErrorCode err = errf.stringToOperationError(rsp.getError());
+                        errors.add(err);
+                        reconnectHost(huuid, err);
                         continue;
                     }
 
+                    success = true;
                     if (!reported) {
                         new PrimaryStorageCapacityUpdater(pinv.getUuid()).update(
                                 rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
@@ -800,7 +807,11 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     }
                 }
 
-                completion.done();
+                if (success) {
+                    completion.success();
+                } else {
+                    completion.fail(errf.stringToOperationError(String.format("%s", errors)));
+                }
             }
         });
     }
@@ -1015,6 +1026,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     msg.setNoStatusCheck(true);
                     msg.setPath(REMOUNT_PATH);
                     msg.setHostUuid(context.getInventory().getUuid());
+                    msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                     bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
                     msgs.add(msg);
                 }
@@ -1027,7 +1039,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                                 throw new OperationFailureException(reply.getError());
                             }
 
-                            KVMHostSyncHttpCallReply r = reply.castReply();
+                            KVMHostAsyncHttpCallReply r = reply.castReply();
                             NfsPrimaryStorageAgentResponse rsp = r.toResponse(NfsPrimaryStorageAgentResponse.class);
 
                             if (!rsp.isSuccess()) {

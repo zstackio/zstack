@@ -1,7 +1,6 @@
 package org.zstack.storage.primary.nfs;
 
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HypervisorType;
@@ -69,5 +68,5 @@ public interface NfsPrimaryStorageBackend {
 
     void mergeSnapshotToVolume(PrimaryStorageInventory pinv, VolumeSnapshotInventory snapshot, VolumeInventory volume, boolean fullRebase, Completion completion);
 
-    void remount(PrimaryStorageInventory pinv, String clusterUuid, NoErrorCompletion completion);
+    void remount(PrimaryStorageInventory pinv, String clusterUuid, Completion completion);
 }
