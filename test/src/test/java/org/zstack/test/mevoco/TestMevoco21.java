@@ -6,38 +6,9 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
-import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.console.APIRequestConsoleAccessMsg;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l3.IpRangeInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
-import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
-import org.zstack.kvm.KVMSystemTags;
-import org.zstack.mevoco.KVMAddOns.NicQos;
-import org.zstack.mevoco.KVMAddOns.VolumeQos;
-import org.zstack.mevoco.MevocoConstants;
-import org.zstack.mevoco.MevocoSystemTags;
-import org.zstack.network.service.flat.FlatDhcpBackend.ApplyDhcpCmd;
-import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo;
-import org.zstack.network.service.flat.FlatDhcpBackend.PrepareDhcpCmd;
-import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
-import org.zstack.network.service.flat.FlatNetworkSystemTags;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
+import org.zstack.header.console.APIRequestConsoleAccessMsg;
 import org.zstack.header.identity.*;
 import org.zstack.header.query.QueryOp;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
@@ -57,13 +28,11 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.NetworkUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.zstack.core.Platform._;
 import static org.zstack.utils.CollectionDSL.list;
 
 
@@ -173,6 +142,12 @@ public class TestMevoco21 {
         validate(ps, "VM.L3.ATTACH", "instance:APIAttachL3NetworkToVmMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.L3.DETACH", "instance:APIDetachL3NetworkFromVmMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.INSTANCE-OFFERING.CHANGE", "instance:APIChangeInstanceOfferingMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.STATIC-IP.SET", "instance:APISetVmStaticIpMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.STATIC-IP.DELETE", "instance:APIDeleteVmStaticIpMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.HOSTNAME.SET", "instance:APISetVmHostnameMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.HOSTNAME.DELETE", "instance:APIDeleteVmHostnameMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.HA-LEVEL.SET", "instance:APISetVmInstanceHaLevelMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.HA-LEVEL.DELETE", "instance:APIDeleteVmInstanceHaLevelMsg", AccountConstant.StatementEffect.Allow);
 
         validate(ps, "VOLUME.CREATE", "volume:APICreateDataVolumeMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.UPDATE", "volume:APIUpdateVolumeMsg", AccountConstant.StatementEffect.Allow);
@@ -194,6 +169,12 @@ public class TestMevoco21 {
         validate(ps, "SECURITY-GROUP.REMOVE-NIC", "securityGroup:APIDeleteVmNicFromSecurityGroupMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "SECURITY-GROUP.ADD-RULE", "securityGroup:APIAddSecurityGroupRuleMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "SECURITY-GROUP.REMOVE-RULE", "securityGroup:APIDeleteSecurityGroupRuleMsg", AccountConstant.StatementEffect.Allow);
+
+        validate(ps, "IMAGE.ADD", "image:APIAddImageMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "IMAGE.EXPUNGE", "image:APIExpungeImageMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "IMAGE.DELETE", "image:APIDeleteImageMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "IMAGE.RECOVER", "image:APIRecoverImageMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "IMAGE.CHANGE-STATE", "image:APIChangeImageStateMsg", AccountConstant.StatementEffect.Allow);
 
         APIQueryPolicyMsg qmsg = new APIQueryPolicyMsg();
         qmsg.addQueryCondition("accountUuid", QueryOp.EQ, test.getUuid());
