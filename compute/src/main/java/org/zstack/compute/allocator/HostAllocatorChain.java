@@ -3,9 +3,7 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.*;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -19,7 +17,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.LockModeType;
 import java.util.*;
 
 /**
@@ -232,6 +229,18 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             }
             logger.trace(sb.toString());
         }
+
+        if (it.hasNext()) {
+            runFlow(it.next());
+            return;
+        }
+
+        done();
+    }
+
+    @Override
+    public void skip() {
+        logger.debug(String.format("[Host Allocation]: flow[%s] asks to skip itself, we are running to the next flow", lastFlow.getClass()));
 
         if (it.hasNext()) {
             runFlow(it.next());

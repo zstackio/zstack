@@ -1,12 +1,10 @@
 package org.zstack.header.allocator;
 
 import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeFormat;
-import org.zstack.utils.DebugUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +26,15 @@ public class HostAllocatorSpec {
     private String vmOperation;
     private List<DiskOfferingInventory> diskOfferings = new ArrayList<DiskOfferingInventory>();
     private Map<Object, Object> extraData = new HashMap<Object, Object>();
+    private boolean allowNoL3Networks;
+
+    public boolean isAllowNoL3Networks() {
+        return allowNoL3Networks;
+    }
+
+    public void setAllowNoL3Networks(boolean allowNoL3Networks) {
+        this.allowNoL3Networks = allowNoL3Networks;
+    }
 
     public List<DiskOfferingInventory> getDiskOfferings() {
         return diskOfferings;
@@ -154,6 +161,7 @@ public class HostAllocatorSpec {
         spec.setImage(msg.getImage());
         spec.setVmOperation(msg.getVmOperation());
         spec.setDiskOfferings(msg.getDiskOfferings());
+        spec.setAllowNoL3Networks(msg.isAllowNoL3Networks());
         return spec;
     }
 }

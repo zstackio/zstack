@@ -6,14 +6,11 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -93,8 +90,8 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
     @Override
     public void allocate() {
         if (spec.getL3NetworkUuids().isEmpty()) {
-            if (CoreGlobalProperty.UNIT_TEST_ON) {
-                next(candidates);
+            if (CoreGlobalProperty.UNIT_TEST_ON || spec.isAllowNoL3Networks()) {
+                skip();
                 return;
             } else {
                 throw new CloudRuntimeException("l3Network uuids can not be empty AttachedL2NetworkAllocatorFlow");

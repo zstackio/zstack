@@ -1011,6 +1011,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }));
         amsg.setDryRun(true);
+        amsg.setAllowNoL3Networks(true);
 
         bus.send(amsg, new CloudBusCallBack(completion) {
             @Override

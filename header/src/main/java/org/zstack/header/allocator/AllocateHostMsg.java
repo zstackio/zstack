@@ -1,7 +1,6 @@
 package org.zstack.header.allocator;
 
 import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -21,6 +20,15 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private String vmOperation;
     private boolean isDryRun;
     private List<DiskOfferingInventory> diskOfferings;
+    private boolean allowNoL3Networks;
+
+    public boolean isAllowNoL3Networks() {
+        return allowNoL3Networks;
+    }
+
+    public void setAllowNoL3Networks(boolean allowNoL3Networks) {
+        this.allowNoL3Networks = allowNoL3Networks;
+    }
 
     public List<DiskOfferingInventory> getDiskOfferings() {
         return diskOfferings;
