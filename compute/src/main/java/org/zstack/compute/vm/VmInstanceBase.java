@@ -2602,6 +2602,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(SyncTaskChain chain) {
+                refreshVO();
+
                 boolean update = false;
                 if (msg.getName() != null) {
                     self.setName(msg.getName());
