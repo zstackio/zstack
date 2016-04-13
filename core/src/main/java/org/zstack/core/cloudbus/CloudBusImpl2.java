@@ -239,7 +239,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         public void construct() {
             try {
                 nrouteChan = conn.createChannel();
-                nrouteChan.queueDeclare(nrouteName, true, false, true, null);
+                nrouteChan.queueDeclare(nrouteName, false, false, true, null);
                 nrouteChan.queueBind(nrouteName, BusExchange.NO_ROUTE.toString(), "");
                 nrouteChan.basicConsume(nrouteName, true, this);
             } catch (IOException e) {
@@ -639,7 +639,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         public void construct() {
             try {
                 eventChan = conn.createChannel();
-                eventChan.queueDeclare(queueName, true, false, false, queueArguments());
+                eventChan.queueDeclare(queueName, false, false, true, queueArguments());
                 eventChan.basicConsume(queueName, true, this);
             } catch (IOException e) {
                 throw new CloudRuntimeException(e);
@@ -838,7 +838,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
             Channel chan = channelPool.acquire();
             try {
-                chan.queueDeclare(name, true, false, true, null);
+                chan.queueDeclare(name, false, false, true, null);
                 chan.basicConsume(name, true, tracker);
                 chan.queueBind(name, BusExchange.BROADCAST.toString(), "#");
             } finally {
@@ -1109,7 +1109,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             createExchanges();
             outboundQueue = new BusQueue(makeMessageQueueName(SERVICE_ID), BusExchange.P2P);
             Channel chan = channelPool.acquire();
-            chan.queueDeclare(outboundQueue.getName(), true, false, false, queueArguments());
+            chan.queueDeclare(outboundQueue.getName(), false, false, true, queueArguments());
             chan.basicConsume(outboundQueue.getName(), true, consumer);
             chan.queueBind(outboundQueue.getName(), outboundQueue.getBusExchange().toString(), outboundQueue.getBindingKey());
             channelPool.returnChannel(chan);
@@ -1923,12 +1923,12 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             public void active() {
                 try {
                     echan = conn.createChannel();
-                    echan.queueDeclare(baseName, true, false, true, null);
+                    echan.queueDeclare(baseName, false, false, true, null);
                     echan.basicConsume(baseName, true, handler);
                     echan.queueBind(baseName, BusExchange.P2P.toString(), baseName);
 
                     for (String aliasName : aliasNames) {
-                        echan.queueDeclare(aliasName, true, false, true, null);
+                        echan.queueDeclare(aliasName, false, false, true, null);
                         echan.basicConsume(aliasName, true, handler);
                         echan.queueBind(aliasName, BusExchange.P2P.toString(), aliasName);
                     }
