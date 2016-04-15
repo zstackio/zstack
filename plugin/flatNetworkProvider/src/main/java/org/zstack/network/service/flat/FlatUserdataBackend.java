@@ -23,6 +23,7 @@ import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMSystemTags;
 import org.zstack.network.service.userdata.UserdataBackend;
+import org.zstack.network.service.userdata.UserdataGlobalProperty;
 import org.zstack.network.service.userdata.UserdataStruct;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TagUtils;
@@ -58,6 +59,7 @@ public class FlatUserdataBackend implements UserdataBackend {
         public String vmIp;
         public String dhcpServerIp;
         public String bridgeName;
+        public int port;
     }
 
     public static class ApplyUserdataRsp extends KVMAgentCommands.AgentResponse {
@@ -128,6 +130,7 @@ public class FlatUserdataBackend implements UserdataBackend {
                             }
                         });
                         cmd.bridgeName = getBridgeNameFromL3NetworkUuid(struct.getL3NetworkUuid());
+                        cmd.port = UserdataGlobalProperty.HOST_PORT;
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setHostUuid(struct.getVmSpec().getDestHost().getUuid());
