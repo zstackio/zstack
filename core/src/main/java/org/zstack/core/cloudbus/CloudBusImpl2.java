@@ -37,6 +37,7 @@ import javax.management.MXBean;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Type;
+import java.net.Socket;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.*;
@@ -1088,8 +1089,14 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             }
         });
         connFactory.setAutomaticRecoveryEnabled(true);
-        connFactory.setRequestedHeartbeat(CloudBusGlobalProperty.RABBITMQ_HEART_BEAT_TIMEOUT);
+        //connFactory.setRequestedHeartbeat(CloudBusGlobalProperty.RABBITMQ_HEART_BEAT_TIMEOUT);
         connFactory.setNetworkRecoveryInterval((int) TimeUnit.SECONDS.toMillis(CloudBusGlobalProperty.RABBITMQ_NETWORK_RECOVER_INTERVAL));
+        connFactory.setSocketConfigurator(new SocketConfigurator() {
+            @Override
+            public void configure(Socket socket) throws IOException {
+                socket.setSoTimeout(CloudBusGlobalProperty.RABBITMQ_READ_TIMEOUT);
+            }
+        });
         logger.info(String.format("use RabbitMQ server IPs: %s", serverIps));
 
         try {
