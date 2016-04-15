@@ -219,7 +219,7 @@ public class Platform {
 
             if (getGlobalProperty("DbFacadeDataSource.jdbcUrl") == null) {
                 String url;
-                if (dbUrl.contains("jdbc:mysql:loadbalance")) {
+                if (dbUrl.contains("{database}")) {
                     url = ln(dbUrl).formatByMap(
                             map(e("database", "zstack"))
                     );
@@ -232,7 +232,7 @@ public class Platform {
             }
             if (getGlobalProperty("RESTApiDataSource.jdbcUrl") == null) {
                 String url;
-                if (dbUrl.contains("jdbc:mysql:loadbalance")) {
+                if (dbUrl.contains("{database}")) {
                     url = ln(dbUrl).formatByMap(
                             map(e("database", "zstack_rest"))
                     );
