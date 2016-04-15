@@ -27,6 +27,8 @@ public class CloudBusGlobalProperty {
     public static String RABBITMQ_VIRTUAL_HOST;
     @GlobalProperty(name="CloudBus.rabbitmqHeartbeatTimeout", defaultValue = "60")
     public static int RABBITMQ_HEART_BEAT_TIMEOUT;
+    @GlobalProperty(name="CloudBus.rabbitmqNetworkRecoveryInterval", defaultValue = "1")
+    public static int RABBITMQ_NETWORK_RECOVER_INTERVAL;
     @GlobalProperty(name="CloudBus.compressNonApiMessage", defaultValue = "false")
     public static boolean COMPRESS_NON_API_MESSAGE;
     @GlobalProperty(name="CloudBus.channelPoolSize", defaultValue = "100")

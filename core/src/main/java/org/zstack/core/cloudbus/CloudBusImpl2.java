@@ -1089,6 +1089,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         });
         connFactory.setAutomaticRecoveryEnabled(true);
         connFactory.setRequestedHeartbeat(CloudBusGlobalProperty.RABBITMQ_HEART_BEAT_TIMEOUT);
+        connFactory.setNetworkRecoveryInterval((int) TimeUnit.SECONDS.toMillis(CloudBusGlobalProperty.RABBITMQ_NETWORK_RECOVER_INTERVAL));
         logger.info(String.format("use RabbitMQ server IPs: %s", serverIps));
 
         try {
