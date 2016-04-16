@@ -176,6 +176,12 @@ public class TestMevoco21 {
         validate(ps, "IMAGE.RECOVER", "image:APIRecoverImageMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "IMAGE.CHANGE-STATE", "image:APIChangeImageStateMsg", AccountConstant.StatementEffect.Allow);
 
+        validate(ps, "VIP.CREATE", "vip:APICreateVipMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VIP.DELETE", "vip:APIDeleteVipMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "EIP.CREATE", "eip:APICreateEipMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "EIP.DELETE", "eip:APIDeleteEipMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "EIP.UPDATE", "eip:APIUpdateEipMsg", AccountConstant.StatementEffect.Allow);
+
         APIQueryPolicyMsg qmsg = new APIQueryPolicyMsg();
         qmsg.addQueryCondition("accountUuid", QueryOp.EQ, test.getUuid());
         APIQueryPolicyReply r = api.query(qmsg, APIQueryPolicyReply.class, creator.getAccountSession());

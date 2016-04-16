@@ -2,7 +2,6 @@ package org.zstack.network.service.eip;
 
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**

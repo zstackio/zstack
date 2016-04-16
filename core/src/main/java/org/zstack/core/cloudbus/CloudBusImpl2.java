@@ -2,6 +2,8 @@ package org.zstack.core.cloudbus;
 
 import com.google.gson.*;
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
+import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnection;
 import org.apache.commons.lang.StringUtils;
 import org.mvel2.MVEL;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.management.MXBean;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.sql.Timestamp;
 import java.util.*;
@@ -342,6 +345,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
     };
 
+
     private class Wire implements GsonTypeCoder<Message> {
         private List<String> filterMsgNames = new ArrayList<String>();
 
@@ -367,6 +371,89 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                     }
                 }
         }).create();
+
+        private class RecoverableSend {
+            Channel chan;
+            byte[] data;
+            String serviceId;
+            Message msg;
+            BusExchange exchange;
+
+            RecoverableSend(Channel chan, Message msg, String serviceId, BusExchange exchange) throws IOException {
+                data = compressMessageIfNeeded(msg);
+                this.chan = chan;
+                this.serviceId = serviceId;
+                this.msg = msg;
+                this.exchange = exchange;
+            }
+
+            void send() throws IOException {
+                try {
+                    chan.basicPublish(exchange.toString(), serviceId,
+                            true, msg.getAMQPProperties(), data);
+                } catch (ShutdownSignalException e) {
+                    if (!(conn instanceof AutorecoveringConnection) || serverIps.size() <= 1 || !Platform.IS_RUNNING) {
+                        // the connection is not recoverable
+                        throw e;
+                    }
+
+                    logger.warn(String.format("failed to send a message because %s; as the connection is recoverable," +
+                            "we are doing recoverable send right now", e.getMessage()));
+
+                    if (!recoverSend()) {
+                        throw e;
+                    }
+                }
+            }
+
+            private byte[] compressMessageIfNeeded(Message msg) throws IOException {
+                if (!CloudBusGlobalProperty.COMPRESS_NON_API_MESSAGE || msg instanceof APIEvent || msg instanceof APIMessage) {
+                    return gson.toJson(msg, Message.class).getBytes();
+                }
+
+                msg.getAMQPHeaders().put(AMQP_PROPERTY_HEADER__COMPRESSED, "true");
+                return Compresser.deflate(gson.toJson(msg, Message.class).getBytes());
+            }
+
+            private boolean recoverSend() throws IOException {
+                int interval = conn.getHeartbeat() / 2;
+                interval = interval > 0 ? interval : 1;
+                int count = 0;
+
+                // as the connection is lost, there is no need to wait heart beat missing 8 times
+                // so we use reflection to fast the process
+                RecoveryAwareAMQConnection delegate = FieldUtils.getFieldValue("delegate", conn);
+                DebugUtils.Assert(delegate != null, "cannot get RecoveryAwareAMQConnection");
+                Field _missedHeartbeats = FieldUtils.getField("_missedHeartbeats", RecoveryAwareAMQConnection.class);
+                DebugUtils.Assert(_missedHeartbeats!=null, "cannot find _missedHeartbeats");
+                _missedHeartbeats.setAccessible(true);
+                try {
+                    _missedHeartbeats.set(delegate, 100);
+                } catch (IllegalAccessException e) {
+                    throw new CloudRuntimeException(e);
+                }
+
+                while (count < CloudBusGlobalProperty.RABBITMQ_RECOVERABLE_SEND_TIMES) {
+                    try {
+                        TimeUnit.SECONDS.sleep(interval);
+                    } catch (InterruptedException e1) {
+                        logger.warn(e1.getMessage());
+                    }
+
+                    try {
+                        chan.basicPublish(exchange.toString(), serviceId,
+                                true, msg.getAMQPProperties(), data);
+                        return true;
+                    } catch (ShutdownSignalException e) {
+                        logger.warn(String.format("recoverable send fails %s times, will continue to retry %s times; %s",
+                                count, CloudBusGlobalProperty.RABBITMQ_RECOVERABLE_SEND_TIMES-count, e.getMessage()));
+                        count ++;
+                    }
+                }
+
+                return false;
+            }
+        }
 
         @Override
         public Message deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
@@ -424,16 +511,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             msg.putHeaderEntry("schema", MessageJsonSchemaBuilder.buildSchema(msg));
         }
 
-        private byte[] compressMessageIfNeeded(Message msg) throws IOException {
-            if (!CloudBusGlobalProperty.COMPRESS_NON_API_MESSAGE || msg instanceof APIEvent || msg instanceof APIMessage) {
-                return gson.toJson(msg, Message.class).getBytes();
-            }
-
-            msg.getAMQPHeaders().put(AMQP_PROPERTY_HEADER__COMPRESSED, "true");
-            return Compresser.deflate(gson.toJson(msg, Message.class).getBytes());
-        }
-
-        public void send(Message msg, boolean makeQueueName) {
+        public void send(final Message msg, boolean makeQueueName) {
             /*
             StopWatch watch = new StopWatch();
             watch.start();
@@ -449,21 +527,17 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 logger.trace(String.format("[msg send]: %s", wire.dumpMessage(msg)));
             }
 
+            Channel chan = channelPool.acquire();
             try {
-                byte[] data = compressMessageIfNeeded(msg);
-                Channel chan = channelPool.acquire();
-                try {
-                    chan.basicPublish(outboundQueue.getBusExchange().toString(), serviceId,
-                            true, msg.getAMQPProperties(), data);
-                } finally {
-                    channelPool.returnChannel(chan);
-                }
+                new RecoverableSend(chan, msg, serviceId, outboundQueue.getBusExchange()).send();
                 /*
                 watch.stop();
                 logger.debug(String.mediaType("sending %s cost %sms", msg.getClass().getName(), watch.getTime()));
                 */
             } catch (IOException e) {
                 throw new CloudRuntimeException(e);
+            } finally {
+                channelPool.returnChannel(chan);
             }
         }
 
@@ -479,21 +553,17 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 logger.trace(String.format("[event publish]: %s", wire.dumpMessage(evt)));
             }
 
+            Channel chan = channelPool.acquire();
             try {
-                byte[] data = compressMessageIfNeeded(evt);
-                Channel chan = channelPool.acquire();
-                try {
-                    chan.basicPublish(BusExchange.BROADCAST.toString(), evt.getType().toString(),
-                            true, evt.getAMQPProperties(), data);
-                } finally {
-                    channelPool.returnChannel(chan);
-                }
+                new RecoverableSend(chan, evt, evt.getType().toString(), BusExchange.BROADCAST).send();
                 /*
                 watch.stop();
                 logger.debug(String.mediaType("sending %s cost %sms", evt.getClass().getName(), watch.getTime()));
                 */
             } catch (IOException e) {
                 throw new CloudRuntimeException(e);
+            } finally {
+                channelPool.returnChannel(chan);
             }
         }
 
@@ -1072,7 +1142,6 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
     }
 
-
     private MessageTracker tracker;
 
     void init() {
@@ -1090,14 +1159,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         connFactory.setAutomaticRecoveryEnabled(true);
         connFactory.setRequestedHeartbeat(CloudBusGlobalProperty.RABBITMQ_HEART_BEAT_TIMEOUT);
         connFactory.setNetworkRecoveryInterval((int) TimeUnit.SECONDS.toMillis(CloudBusGlobalProperty.RABBITMQ_NETWORK_RECOVER_INTERVAL));
-        /*
-        connFactory.setSocketConfigurator(new SocketConfigurator() {
-            @Override
-            public void configure(Socket socket) throws IOException {
-                socket.setSoTimeout(CloudBusGlobalProperty.RABBITMQ_READ_TIMEOUT);
-            }
-        });
-        */
+        connFactory.setConnectionTimeout((int) TimeUnit.SECONDS.toMillis(CloudBusGlobalProperty.RABBITMQ_CONNECTION_TIMEOUT));
+
         logger.info(String.format("use RabbitMQ server IPs: %s", serverIps));
 
         try {
@@ -1115,6 +1178,15 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             }
 
             conn = connFactory.newConnection(addresses.toArray(new Address[]{}));
+            logger.debug(String.format("rabbitmq connection is established on %s", conn.getAddress()));
+
+            ((Recoverable)conn).addRecoveryListener(new RecoveryListener() {
+                @Override
+                public void handleRecovery(Recoverable recoverable) {
+                    logger.info(String.format("rabbitmq connection is recovering on %s", conn.getAddress().toString()));
+                }
+            });
+
             channelPool = new ChannelPool(CloudBusGlobalProperty.CHANNEL_POOL_SIZE, conn);
             createExchanges();
             outboundQueue = new BusQueue(makeMessageQueueName(SERVICE_ID), BusExchange.P2P);

@@ -27,8 +27,10 @@ public class CloudBusGlobalProperty {
     public static String RABBITMQ_VIRTUAL_HOST;
     @GlobalProperty(name="CloudBus.rabbitmqHeartbeatTimeout", defaultValue = "60")
     public static int RABBITMQ_HEART_BEAT_TIMEOUT;
-    @GlobalProperty(name="CloudBus.rabbitmqReadTimeout", defaultValue = "2")
-    public static int RABBITMQ_READ_TIMEOUT;
+    @GlobalProperty(name="CloudBus.rabbitmqConnectionTimeout", defaultValue = "10")
+    public static int RABBITMQ_CONNECTION_TIMEOUT;
+    @GlobalProperty(name="CloudBus.rabbitmqRecoverableSendTimes", defaultValue = "5")
+    public static int RABBITMQ_RECOVERABLE_SEND_TIMES;
     @GlobalProperty(name="CloudBus.rabbitmqNetworkRecoveryInterval", defaultValue = "1")
     public static int RABBITMQ_NETWORK_RECOVER_INTERVAL;
     @GlobalProperty(name="CloudBus.compressNonApiMessage", defaultValue = "false")

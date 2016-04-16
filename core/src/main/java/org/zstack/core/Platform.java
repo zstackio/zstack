@@ -51,6 +51,8 @@ public class Platform {
 
     private static Locale locale;
 
+    public static volatile boolean IS_RUNNING = true;
+
     private static Map<String, String> linkGlobalPropertyMap(String prefix) {
         Map<String, String> ret = new HashMap<String, String>();
         Map<String, String> map = getGlobalPropertiesStartWith(prefix);

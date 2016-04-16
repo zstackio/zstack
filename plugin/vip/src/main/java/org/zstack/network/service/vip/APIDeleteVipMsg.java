@@ -2,7 +2,6 @@ package org.zstack.network.service.vip;
 
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkMessage;
 import org.zstack.header.rest.APINoSee;
