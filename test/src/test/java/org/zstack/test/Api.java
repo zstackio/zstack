@@ -3975,4 +3975,15 @@ public class Api implements CloudBusEventListener {
         APIGetResourceAccountReply reply = sender.call(msg, APIGetResourceAccountReply.class);
         return reply.getInventories();
     }
+
+    public AccountResourceRefInventory changeResourceOwner(String resourceUuid, String accountUuid) throws ApiSenderException {
+        APIChangeResourceOwnerMsg msg = new APIChangeResourceOwnerMsg();
+        msg.setResourceUuid(resourceUuid);
+        msg.setAccountUuid(accountUuid);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIChangeResourceOwnerEvent evt = sender.send(msg, APIChangeResourceOwnerEvent.class);
+        return evt.getInventory();
+    }
 }

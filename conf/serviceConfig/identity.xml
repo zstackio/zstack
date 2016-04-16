@@ -165,4 +165,8 @@
     <message>
         <name>org.zstack.header.identity.APIGetResourceAccountMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.identity.APIChangeResourceOwnerMsg</name>
+    </message>
 </service>

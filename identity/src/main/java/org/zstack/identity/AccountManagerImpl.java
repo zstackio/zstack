@@ -227,9 +227,30 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APICheckApiPermissionMsg) msg);
         } else if (msg instanceof APIGetResourceAccountMsg) {
             handle((APIGetResourceAccountMsg) msg);
+        } else if (msg instanceof APIChangeResourceOwnerMsg) {
+            handle((APIChangeResourceOwnerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIChangeResourceOwnerMsg msg) {
+        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
+        q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
+        AccountResourceRefVO ref = q.find();
+        if (ref == null) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                    String.format("cannot find the resource[uuid:%s]; wrong resourceUuid or the resource is admin resource", msg.getResourceUuid())
+            ));
+        }
+
+        ref.setAccountUuid(msg.getAccountUuid());
+        ref.setOwnerAccountUuid(msg.getAccountUuid());
+        ref = dbf.updateAndRefresh(ref);
+
+        APIChangeResourceOwnerEvent evt = new APIChangeResourceOwnerEvent(msg.getId());
+        evt.setInventory(AccountResourceRefInventory.valueOf(ref));
+        bus.publish(evt);
     }
 
     @Transactional(readOnly = true)
