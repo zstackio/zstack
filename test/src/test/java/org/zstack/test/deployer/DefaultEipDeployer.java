@@ -9,8 +9,6 @@ import org.zstack.network.service.vip.VipInventory;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.deployer.schema.DeployerConfig;
 import org.zstack.test.deployer.schema.EipConfig;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
 import java.util.List;
 
@@ -22,11 +20,12 @@ public class DefaultEipDeployer implements EipDeployer<EipConfig> {
         for (EipConfig eip : eips) {
             L3NetworkInventory publ3 = deployer.l3Networks.get(eip.getPublicL3NetworkRef());
             assert publ3 != null;
-            final L3NetworkInventory privl3 = deployer.l3Networks.get(eip.getPrivateL3NetworkRef());
-            assert privl3 != null;
 
             String nicUuid = null;
             if (eip.getVmRef() != null) {
+                final L3NetworkInventory privl3 = deployer.l3Networks.get(eip.getPrivateL3NetworkRef());
+                assert privl3 != null;
+
                 VmInstanceInventory vm = deployer.vms.get(eip.getVmRef());
                 assert vm != null;
                 VmNicInventory nic = vm.findNic(privl3.getUuid());
