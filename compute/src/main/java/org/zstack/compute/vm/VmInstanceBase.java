@@ -1186,8 +1186,21 @@ public class VmInstanceBase extends AbstractVmInstance {
                 final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
                 spec.setVmInventory(VmInstanceInventory.valueOf(self));
                 L3NetworkVO l3vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
-                spec.setL3Networks(list(L3NetworkInventory.valueOf(l3vo)));
+                final L3NetworkInventory l3 = L3NetworkInventory.valueOf(l3vo);
+                final VmInstanceInventory vm = getSelfInventory();
+                for (VmPreAttachL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(VmPreAttachL3NetworkExtensionPoint.class)) {
+                    ext.vmPreAttachL3Network(vm, l3);
+                }
+
+                spec.setL3Networks(list(l3));
                 spec.setDestNics(new ArrayList<VmNicInventory>());
+
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeAttachL3NetworkExtensionPoint.class), new ForEachFunction<VmBeforeAttachL3NetworkExtensionPoint>() {
+                    @Override
+                    public void run(VmBeforeAttachL3NetworkExtensionPoint arg) {
+                        arg.vmBeforeAttachL3Network(vm, l3);
+                    }
+                });
 
                 FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
                 setFlowMarshaller(flowChain);
@@ -1203,13 +1216,25 @@ public class VmInstanceBase extends AbstractVmInstance {
                 flowChain.done(new FlowDoneHandler(chain) {
                     @Override
                     public void handle(Map data) {
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmAfterAttachL3NetworkExtensionPoint.class), new ForEachFunction<VmAfterAttachL3NetworkExtensionPoint>() {
+                            @Override
+                            public void run(VmAfterAttachL3NetworkExtensionPoint arg) {
+                                arg.vmAfterAttachL3Network(vm, l3);
+                            }
+                        });
                         VmNicInventory nic = spec.getDestNics().get(0);
                         completion.success(nic);
                         chain.next();
                     }
                 }).error(new FlowErrorHandler(chain) {
                     @Override
-                    public void handle(ErrorCode errCode, Map data) {
+                    public void handle(final ErrorCode errCode, Map data) {
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmFailToAttachL3NetworkExtensionPoint.class), new ForEachFunction<VmFailToAttachL3NetworkExtensionPoint>() {
+                            @Override
+                            public void run(VmFailToAttachL3NetworkExtensionPoint arg) {
+                                arg.vmFailToAttachL3Network(vm, l3, errCode);
+                            }
+                        });
                         setDefaultL3Network.rollback();
                         completion.fail(errCode);
                         chain.next();

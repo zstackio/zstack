@@ -19,6 +19,7 @@ import org.zstack.header.core.workflow.FlowChainProcessor;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
@@ -52,7 +53,7 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  */
 public class EipManagerImpl extends AbstractService implements EipManager, VipReleaseExtensionPoint,
-        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
+        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VmPreAttachL3NetworkExtensionPoint {
     private static final CLogger logger = Utils.getLogger(EipManagerImpl.class);
 
     @Autowired
@@ -687,5 +688,38 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         quota.addPair(p);
 
         return list(quota);
+    }
+
+    @Override
+    public void vmPreAttachL3Network(final VmInstanceInventory vm, final L3NetworkInventory l3) {
+        final List<String> nicUuids = CollectionUtils.transformToList(vm.getVmNics(), new Function<String, VmNicInventory>() {
+            @Override
+            public String call(VmNicInventory arg) {
+                return arg.getUuid();
+            }
+        });
+
+        if (nicUuids.isEmpty()) {
+            return;
+        }
+
+        new Runnable() {
+            @Override
+            @Transactional(readOnly = true)
+            public void run() {
+                String sql = "select count(*) from EipVO eip, VipVO vip where eip.vipUuid = vip.uuid and vip.l3NetworkUuid = :l3Uuid" +
+                        " and eip.vmNicUuid in (:nicUuids)";
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("l3Uuid", l3.getUuid());
+                q.setParameter("nicUuids", nicUuids);
+                Long count = q.getSingleResult();
+                if (count > 0) {
+                    throw new OperationFailureException(errf.stringToOperationError(
+                            String.format("unable to attach the L3 network[uuid:%s, name:%s] to the vm[uuid:%s, name:%s], because the L3" +
+                                    " network is providing EIP to one of the vm's nic", l3.getUuid(), l3.getName(), vm.getUuid(), vm.getName())
+                    ));
+                }
+            }
+        }.run();
     }
 }
