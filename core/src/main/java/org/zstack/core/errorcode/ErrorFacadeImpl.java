@@ -2,6 +2,7 @@ package org.zstack.core.errorcode;
 
 import org.zstack.core.errorcode.schema.Error;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.DebugUtils;
@@ -60,7 +61,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
         if (details != null && details.length() > 4096) {
             details = details.substring(0, Math.min(details.length(), 4096));
         }
-        ErrorCode err = info.code.copy();
+        ErrorCodeList err = (ErrorCodeList) info.code.copy();
         err.setDetails(details);
 
         if (dumpOnError) {
@@ -101,6 +102,33 @@ public class ErrorFacadeImpl implements ErrorFacade {
     }
 
     @Override
+    public ErrorCodeList instantiateErrorCode(Enum code, List<ErrorCode> causes) {
+        return instantiateErrorCode(code.toString(), causes);
+    }
+
+    @Override
+    public ErrorCodeList instantiateErrorCode(String code, List<ErrorCode> causes) {
+        return instantiateErrorCode(code, null, causes);
+    }
+
+    @Override
+    public ErrorCodeList instantiateErrorCode(Enum code, String details, List<ErrorCode> causes) {
+        return instantiateErrorCode(code.toString(), details, causes);
+    }
+
+    @Override
+    public ErrorCodeList instantiateErrorCode(String code, String details, List<ErrorCode> causes) {
+        ErrorCodeList err = (ErrorCodeList) instantiateErrorCode(code, details);
+        err.setCauses(causes);
+        return err;
+    }
+
+    @Override
+    public ErrorCodeList stringToOperationError(String details, List<ErrorCode> causes) {
+        return instantiateErrorCode(SysErrors.OPERATION_ERROR, details, causes);
+    }
+
+    @Override
     public ErrorCode throwableToOperationError(Throwable t) {
         return instantiateErrorCode(SysErrors.OPERATION_ERROR, t.getMessage());
     }
@@ -128,7 +156,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
                 throw new CloudRuntimeException(String.format("duplicate definition of ErrorCode[%s], file[%s] and file[%s] both define it", codeId, info.path, path));
             }
 
-            ErrorCode errorCode = new ErrorCode();
+            ErrorCodeList errorCode = new ErrorCodeList();
             errorCode.setCode(codeId);
             errorCode.setDescription(code.getDescription());
             errorCode.setElaboration(code.getElaboration());

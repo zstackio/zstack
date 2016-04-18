@@ -1,6 +1,9 @@
 package org.zstack.core.errorcode;
 
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
+
+import java.util.List;
 
 /**
  */
@@ -12,6 +15,18 @@ public interface ErrorFacade {
     ErrorCode instantiateErrorCode(Enum code, String details, ErrorCode cause);
 
     ErrorCode instantiateErrorCode(String code, String details, ErrorCode cause);
+
+    ErrorCode stringToOperationError(String details, ErrorCode cause);
+
+    ErrorCodeList instantiateErrorCode(Enum code, List<ErrorCode> causes);
+
+    ErrorCodeList instantiateErrorCode(String code, List<ErrorCode> causes);
+
+    ErrorCodeList instantiateErrorCode(Enum code, String details, List<ErrorCode> causes);
+
+    ErrorCodeList instantiateErrorCode(String code, String details, List<ErrorCode> causes);
+
+    ErrorCodeList stringToOperationError(String details, List<ErrorCode> causes);
 
     ErrorCode instantiateErrorCode(Enum code, String details);
 
@@ -26,8 +41,6 @@ public interface ErrorFacade {
     ErrorCode throwableToTimeoutError(Throwable t);
 
     ErrorCode stringToOperationError(String details);
-
-    ErrorCode stringToOperationError(String details, ErrorCode cause);
 
     ErrorCode throwableToOperationError(Throwable t);
 

@@ -193,7 +193,7 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
 
     private Map<String, List<PortForwardingStruct>> workoutPortForwarding(VmInstanceSpec spec) {
         Map<String, List<PortForwardingStruct>> map = new HashMap<String, List<PortForwardingStruct>>();
-        Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.PortForwarding, spec);
+        Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.PortForwarding, spec.getL3Networks());
 
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : providerMap.entrySet()) {
             NetworkServiceProviderType ptype = e.getKey();

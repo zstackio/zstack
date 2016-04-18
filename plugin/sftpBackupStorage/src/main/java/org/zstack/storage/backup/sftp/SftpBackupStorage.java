@@ -7,10 +7,8 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
-import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
-import org.zstack.header.configuration.ConfigurationConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -33,7 +31,6 @@ import org.zstack.utils.path.PathUtil;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class SftpBackupStorage extends BackupStorageBase {
     private static final CLogger logger = Utils.getLogger(SftpBackupStorage.class);

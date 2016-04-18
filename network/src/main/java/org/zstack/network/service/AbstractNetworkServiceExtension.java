@@ -5,10 +5,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.*;
-import org.zstack.header.vm.VmInstanceSpec;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,9 +50,9 @@ public abstract class AbstractNetworkServiceExtension implements NetworkServiceE
     }
 
 
-    protected Map<NetworkServiceProviderType, List<L3NetworkInventory>> getNetworkServiceProviderMap(NetworkServiceType type, VmInstanceSpec spec) {
+    protected Map<NetworkServiceProviderType, List<L3NetworkInventory>> getNetworkServiceProviderMap(NetworkServiceType type, List<L3NetworkInventory> l3Networks) {
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> ret = new HashMap<NetworkServiceProviderType, List<L3NetworkInventory>>();
-        for (L3NetworkInventory l3 : spec.getL3Networks()) {
+        for (L3NetworkInventory l3 : l3Networks) {
             for (NetworkServiceL3NetworkRefInventory ref : l3.getNetworkServices()) {
                 if (!type.toString().equals(ref.getNetworkServiceType())) {
                     continue;

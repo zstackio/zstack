@@ -64,6 +64,14 @@ public class FlatNetworkServiceSimulator {
         return null;
     }
 
+    @RequestMapping(value = FlatDhcpBackend.RESET_DEFAULT_GATEWAY_PATH, method = RequestMethod.POST)
+    public @ResponseBody String resetDefaultGateway(HttpEntity<String> entity) {
+        ResetDefaultGatewayCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ResetDefaultGatewayCmd.class);
+        config.resetDefaultGatewayCmds.add(cmd);
+        reply(entity, new ResetDefaultGatewayRsp());
+        return null;
+    }
+
     @RequestMapping(value = FlatDhcpBackend.RELEASE_DHCP_PATH, method = RequestMethod.POST)
     public @ResponseBody String releaseDhcp(HttpEntity<String> entity) {
         ReleaseDhcpCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ReleaseDhcpCmd.class);

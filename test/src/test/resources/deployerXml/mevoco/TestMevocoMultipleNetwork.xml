@@ -33,6 +33,7 @@
             <instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
             <l3NetworkRef>TestL3Network1</l3NetworkRef>
             <l3NetworkRef>TestL3Network2</l3NetworkRef>
+            <defaultL3NetworkRef>TestL3Network1</defaultL3NetworkRef>
         </userVm>
     </vm>
 
