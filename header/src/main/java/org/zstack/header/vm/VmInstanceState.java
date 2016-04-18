@@ -34,7 +34,8 @@ public enum VmInstanceState {
 
         Created.transactions(
                 new Transaction(VmInstanceStateEvent.starting, VmInstanceState.Starting),
-                new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying)
+                new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),
+                new Transaction(VmInstanceStateEvent.destroyed, VmInstanceState.Destroyed)
         );
         Starting.transactions(
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
