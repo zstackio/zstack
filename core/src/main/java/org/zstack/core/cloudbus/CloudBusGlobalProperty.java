@@ -29,6 +29,8 @@ public class CloudBusGlobalProperty {
     public static int RABBITMQ_HEART_BEAT_TIMEOUT;
     @GlobalProperty(name="CloudBus.rabbitmqConnectionTimeout", defaultValue = "10")
     public static int RABBITMQ_CONNECTION_TIMEOUT;
+    @GlobalProperty(name="CloudBus.rabbitmqRetryDelayOnReturn", defaultValue = "5")
+    public static int RABBITMQ_RETRY_DELAY_ON_RETURN;
     @GlobalProperty(name="CloudBus.rabbitmqRecoverableSendTimes", defaultValue = "5")
     public static int RABBITMQ_RECOVERABLE_SEND_TIMES;
     @GlobalProperty(name="CloudBus.rabbitmqNetworkRecoveryInterval", defaultValue = "1")

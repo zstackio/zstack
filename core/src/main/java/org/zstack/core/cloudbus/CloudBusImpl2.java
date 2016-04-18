@@ -147,6 +147,21 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private class ChannelPool {
         BlockingQueue<Channel> pool;
 
+        @AsyncThread
+        private void retry(Message msg) {
+            try {
+                TimeUnit.SECONDS.sleep(CloudBusGlobalProperty.RABBITMQ_RETRY_DELAY_ON_RETURN);
+            } catch (InterruptedException e) {
+                logger.warn(e.getMessage(), e);
+            }
+
+            if (msg instanceof Event) {
+                publish((Event) msg);
+            } else {
+                send(msg);
+            }
+        }
+
         ChannelPool(int size, Connection connection) {
             try {
                 pool = new ArrayBlockingQueue<Channel>(size);
@@ -161,6 +176,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                 if (msg instanceof NeedReplyMessage) {
                                     Envelope e = envelopes.get(msg.getId());
                                     if (e == null) {
+                                        retry(msg);
                                         logger.warn(String.format("unable to deliver the message; the destination service[%s] is dead; please use rabbitmqctl to check if the queue is existing and if there is any consumers on that queue; message dump:\n%s",
                                                 msg.getServiceId(), wire.dumpMessage(msg)));
                                     } else {
@@ -170,8 +186,9 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                         e.ack(reply);
                                     }
                                 } else {
-                                    logger.warn(String.format("unable to deliver the message; the destination service[%s] is dead; please use rabbitmqctl to check if the queue is existing and if there is any consumers on that queue; message dump:\n%s",
-                                            msg.getServiceId(), wire.dumpMessage(msg)));
+                                    retry(msg);
+                                    logger.warn(String.format("unable to deliver an event; please use rabbitmqctl to check if the queue is existing and if there is any consumers on that queue; message dump:\n%s",
+                                            wire.dumpMessage(msg)));
                                 }
                             } catch (Throwable t) {
                                 logger.warn("unhandled throwable", t);
