@@ -61,7 +61,8 @@ public class ErrorCode implements Serializable, Cloneable {
     
     @Override
     public String toString() {
-        return String.format("ErrorCode [code = %s, description = %s, details = %s]", this.getCode(), this.getDescription(), this.getDetails());
+        return cause == null ? String.format("ErrorCode [code = %s, description = %s, details = %s]", this.getCode(), this.getDescription(), this.getDetails()) :
+                String.format("ErrorCode [code = %s, description = %s, details = %s, cause = %s]", this.getCode(), this.getDescription(), this.getDetails(), cause.toString());
     }
     
     public static ErrorCode fromString(String err) {

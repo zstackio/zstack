@@ -37,7 +37,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
 
     @Override
     public void applyNetworkService(VmInstanceSpec servedVm, Map<String, Object> data, final Completion completion) {
-        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(SecurityGroupProviderFactory.networkServiceType, servedVm);
+        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(SecurityGroupProviderFactory.networkServiceType, servedVm.getL3Networks());
         if (map.isEmpty()) {
             completion.success();
             return;

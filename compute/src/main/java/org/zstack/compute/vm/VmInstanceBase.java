@@ -2629,6 +2629,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(SyncTaskChain chain) {
                 refreshVO();
 
+                List<Runnable> extensions = new ArrayList<Runnable>();
+                final VmInstanceInventory vm = getSelfInventory();
+
                 boolean update = false;
                 if (msg.getName() != null) {
                     self.setName(msg.getName());
@@ -2641,10 +2644,36 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (msg.getState() != null) {
                     self.setState(VmInstanceState.valueOf(msg.getState()));
                     update = true;
+                    if (!vm.getState().equals(msg.getState())) {
+                        extensions.add(new Runnable() {
+                            @Override
+                            public void run() {
+                                logger.debug(String.format("vm[uuid:%s] changed state from %s to %s", self.getUuid(),
+                                        vm.getState(), msg.getState()));
+
+                                VmCanonicalEvents.VmStateChangedData data = new VmCanonicalEvents.VmStateChangedData();
+                                data.setVmUuid(self.getUuid());
+                                data.setOldState(vm.getState());
+                                data.setNewState(msg.getState());
+                                data.setInventory(getSelfInventory());
+                                evtf.fire(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, data);
+                            }
+                        });
+                    }
                 }
                 if (msg.getDefaultL3NetworkUuid() != null) {
                     self.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
                     update = true;
+                    if (!msg.getDefaultL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid())) {
+                        extensions.add(new Runnable() {
+                            @Override
+                            public void run() {
+                                for (VmDefaultL3NetworkChangedExtensionPoint ext : pluginRgty.getExtensionList(VmDefaultL3NetworkChangedExtensionPoint.class)) {
+                                    ext.vmDefaultL3NetworkChanged(vm, vm.getDefaultL3NetworkUuid(), msg.getDefaultL3NetworkUuid());
+                                }
+                            }
+                        });
+                    }
                 }
                 if (msg.getPlatform() != null) {
                     self.setPlatform(msg.getPlatform());
@@ -2653,6 +2682,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (update) {
                     self = dbf.updateAndRefresh(self);
                 }
+
+                CollectionUtils.safeForEach(extensions, new ForEachFunction<Runnable>() {
+                    @Override
+                    public void run(Runnable arg) {
+                        arg.run();
+                    }
+                });
 
                 APIUpdateVmInstanceEvent evt = new APIUpdateVmInstanceEvent(msg.getId());
                 evt.setInventory(getSelfInventory());

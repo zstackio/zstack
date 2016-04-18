@@ -9,11 +9,13 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.DhcpStruct;
 import org.zstack.header.network.service.NetworkServiceDhcpBackend;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.*;
@@ -197,5 +199,10 @@ public class VirtualRouterDhcpBackend implements NetworkServiceDhcpBackend {
         }
 
         releaseDhcp(dhcpStructList.iterator(), spec, completion);
+    }
+
+    @Override
+    public void vmDefaultL3NetworkChanged(VmInstanceInventory vm, String previousL3, String nowL3, Completion completion) {
+        throw new CloudRuntimeException("not supported yet");
     }
 }

@@ -108,7 +108,7 @@ public class DnsExtension extends AbstractNetworkServiceExtension implements Com
 
     private Map<NetworkServiceDnsBackend, List<DnsStruct>> workoutDns(VmInstanceSpec spec) {
         Map<NetworkServiceDnsBackend, List<DnsStruct>> map = new HashMap<NetworkServiceDnsBackend, List<DnsStruct>>();
-        Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.DNS, spec);
+        Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.DNS, spec.getL3Networks());
 
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : providerMap.entrySet()) {
             NetworkServiceProviderType ptype = e.getKey();

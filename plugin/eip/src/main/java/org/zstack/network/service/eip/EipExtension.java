@@ -72,7 +72,7 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
     }
 
     private Map<String, List<EipStruct>> workOutEipStruct(VmInstanceSpec spec) {
-        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(EipConstant.EIP_TYPE, spec);
+        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(EipConstant.EIP_TYPE, spec.getL3Networks());
         Map<String, List<EipStruct>> ret = new HashMap<String, List<EipStruct>>();
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : map.entrySet()) {
             List<EipStruct> structs = new ArrayList<EipStruct>();

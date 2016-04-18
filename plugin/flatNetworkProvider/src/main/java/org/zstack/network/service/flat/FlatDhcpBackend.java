@@ -14,10 +14,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeNoErrorCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -74,6 +71,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public static final String PREPARE_DHCP_PATH = "/flatnetworkprovider/dhcp/prepare";
     public static final String RELEASE_DHCP_PATH = "/flatnetworkprovider/dhcp/release";
     public static final String DHCP_CONNECT_PATH = "/flatnetworkprovider/dhcp/connect";
+    public static final String RESET_DEFAULT_GATEWAY_PATH = "/flatnetworkprovider/dhcp/resetDefaultGateway";
 
     private Map<String, UsedIpInventory> l3NetworkDhcpServerIp = new ConcurrentHashMap<String, UsedIpInventory>();
 
@@ -750,7 +748,16 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     public static class ConnectRsp extends KVMAgentCommands.AgentResponse {
+    }
 
+    public static class ResetDefaultGatewayCmd extends KVMAgentCommands.AgentCommand {
+        public String gatewayToRemove;
+        public String macOfGatewayToRemove;
+        public String gatewayToAdd;
+        public String macOfGatewayToAdd;
+    }
+
+    public static class ResetDefaultGatewayRsp extends KVMAgentCommands.AgentResponse {
     }
 
     public NetworkServiceProviderType getProviderType() {
@@ -1006,5 +1013,50 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         releaseDhcpService(toDhcpInfo(dhcpStructsList), spec.getVmInventory().getUuid(), spec.getDestHost().getUuid(), completion);
+    }
+
+    @Override
+    public void vmDefaultL3NetworkChanged(VmInstanceInventory vm, String previousL3, String nowL3, final Completion completion) {
+        if (!VmInstanceState.Running.toString().equals(vm.getState())) {
+            return;
+        }
+
+        VmNicInventory pnic = null;
+        VmNicInventory nnic = null;
+        for (VmNicInventory nic : vm.getVmNics()) {
+            if (nic.getL3NetworkUuid().equals(previousL3)) {
+                pnic = nic;
+            } else if (nic.getL3NetworkUuid().equals(nowL3)) {
+                nnic = nic;
+            }
+        }
+
+        DebugUtils.Assert(pnic != null, String.format("cannot find nic for L3 network[uuid:%s] of the vm[uuid:%s, name:%s]", previousL3, vm.getUuid() ,vm.getName()));
+        DebugUtils.Assert(nnic != null, String.format("cannot find nic for L3 network[uuid:%s] of the vm[uuid:%s, name:%s]", nowL3, vm.getUuid() ,vm.getName()));
+
+        ResetDefaultGatewayCmd cmd = new ResetDefaultGatewayCmd();
+        cmd.gatewayToAdd = nnic.getGateway();
+        cmd.macOfGatewayToAdd = nnic.getMac();
+        cmd.gatewayToRemove = pnic.getGateway();
+        cmd.macOfGatewayToRemove = pnic.getMac();
+
+        KvmCommandSender sender = new KvmCommandSender(vm.getHostUuid());
+        sender.send(cmd, RESET_DEFAULT_GATEWAY_PATH, new KvmCommandFailureChecker() {
+            @Override
+            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                ResetDefaultGatewayRsp rsp = wrapper.getResponse(ResetDefaultGatewayRsp.class);
+                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+            }
+        }, new ReturnValueCompletion<Object>(completion) {
+            @Override
+            public void success(Object returnValue) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 }
