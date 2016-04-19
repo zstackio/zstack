@@ -41,7 +41,7 @@ public class BridgeNameFinder {
         return brName;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Map<String, String> findByL3Uuids(Collection<String> l3Uuids) {
         String sql = "select t.tag, l3.uuid from SystemTagVO t, L3NetworkVO l3 where t.resourceType = :ttype and t.tag like :tag" +
                 " and t.resourceUuid = l3.l2NetworkUuid and l3.uuid in (:l3Uuids) group by l3.uuid";
