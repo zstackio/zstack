@@ -34,7 +34,11 @@
         </property>
         <property name="rebootVmWorkFlowElements">
             <list>
-                <value>org.zstack.compute.vm.VmRebootOnHypervisorFlow</value>
+                <value>org.zstack.compute.vm.VmStopOnHypervisorFlow</value>
+                <value>org.zstack.compute.vm.VmReleaseResourceFlow</value>
+                <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
+                <value>org.zstack.compute.vm.VmStartOnHypervisorFlow</value>
+                <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
             </list>
         </property>
         <property name="startVmWorkFlowElements">

@@ -5,11 +5,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.securitygroup.SecurityGroupInventory;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
+import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO;
+import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO_;
 import org.zstack.simulator.SimulatorSecurityGroupBackend;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -79,7 +83,7 @@ public class TestSecurityGroupOnMultipleNetworks12 {
         TimeUnit.MILLISECONDS.sleep(500);
         api.detachSecurityGroupFromL3Network(scinv.getUuid(), l3nw1.getUuid());
         TimeUnit.MILLISECONDS.sleep(500);
-        
+
         SecurityGroupRuleTO vm1Nic1TO = sbkd.getRulesOnHost(vm1.getHostUuid(), vm1Nic1.getInternalName());
         Assert.assertEquals(0, vm1Nic1TO.getRules().size());
         SecurityGroupRuleTO vm2Nic1TO = sbkd.getRulesOnHost(vm2.getHostUuid(), vm2Nic1.getInternalName());
@@ -88,5 +92,11 @@ public class TestSecurityGroupOnMultipleNetworks12 {
         SecurityGroupRuleTO vm2Nic2TO = sbkd.getRulesOnHost(vm2.getHostUuid(), vm2Nic2.getInternalName());
         SecurityGroupTestValidator.validateInternalIpIn(vm1Nic2TO, vm2Nic2.getIp(), scinv.getRules());
         SecurityGroupTestValidator.validateInternalIpIn(vm2Nic2TO, vm1Nic2.getIp(), scinv.getRules());
+
+        api.detachSecurityGroupFromL3Network(scinv.getUuid(), l3nw2.getUuid());
+        SimpleQuery<VmNicSecurityGroupRefVO> q = dbf.createQuery(VmNicSecurityGroupRefVO.class);
+        q.add(VmNicSecurityGroupRefVO_.securityGroupUuid, Op.EQ, scinv.getUuid());
+        long count = q.count();
+        Assert.assertEquals(0, count);
     }
 }
