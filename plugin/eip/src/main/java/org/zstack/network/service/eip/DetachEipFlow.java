@@ -33,6 +33,7 @@ public class DetachEipFlow extends NoRollbackFlow {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                //TODO
                 logger.warn(String.format("failed to detach eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider will garbage collect. %s",
                         struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getUuid(), providerType, errorCode));
                 trigger.next();

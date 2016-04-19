@@ -847,7 +847,17 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (self.getState() == VmInstanceState.Destroyed) {
                     // the cascade framework may send this message when
                     // the vm has been destroyed
-                    logger.debug(String.format("ignore detaching nic as the VM[uuid:%s] is deleted", self.getUuid()));
+                    VmNicVO nic = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
+                        @Override
+                        public VmNicVO call(VmNicVO arg) {
+                            return msg.getVmNicUuid().equals(arg.getUuid()) ? arg : null;
+                        }
+                    });
+
+                    if (nic != null) {
+                        dbf.remove(nic);
+                    }
+
                     bus.reply(msg, reply);
                     chain.next();
                     return;
