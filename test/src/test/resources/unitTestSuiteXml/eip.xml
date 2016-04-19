@@ -26,6 +26,11 @@
     <TestCase class="org.zstack.test.eip.TestVirtualRouterEip23"/>
     <TestCase class="org.zstack.test.eip.TestVirtualRouterEip24"/>
     <TestCase class="org.zstack.test.eip.TestVirtualRouterEip25"/>
+    <TestCase class="org.zstack.test.eip.TestVirtualRouterEip26"/>
+    <TestCase class="org.zstack.test.eip.TestVirtualRouterEip27"/>
+    <TestCase class="org.zstack.test.eip.TestVirtualRouterEip28"/>
+    <TestCase class="org.zstack.test.eip.TestVirtualRouterEip29"/>
+    <TestCase class="org.zstack.test.eip.TestVirtualRouterEip30"/>
     <TestCase class="org.zstack.test.eip.TestQueryEip1"/>
     <TestCase class="org.zstack.test.eip.TestEipPortForwardingAttachableNic"/>
     <TestCase class="org.zstack.test.eip.TestUpdateVirtualRouterEip"/>
