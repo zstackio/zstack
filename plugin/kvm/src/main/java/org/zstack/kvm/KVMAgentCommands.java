@@ -730,7 +730,7 @@ public class KVMAgentCommands {
     }
     public static class GetVncPortResponse extends AgentResponse {
     	private int port;
-
+        private String protocol;
 		public int getPort() {
 			return port;
 		}
@@ -738,6 +738,14 @@ public class KVMAgentCommands {
 		public void setPort(int port) {
 			this.port = port;
 		}
+		
+		public String getProtocol() {
+                        return protocol;
+                }
+
+                public void setProtocol(String protocol) {
+                        this.protocol = protocol;
+                }
     }
     
     public static class StopVmCmd extends AgentCommand {
