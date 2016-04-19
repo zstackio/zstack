@@ -1019,12 +1019,15 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Override
     public void vmDefaultL3NetworkChanged(VmInstanceInventory vm, String previousL3, String nowL3, final Completion completion) {
+        DebugUtils.Assert(previousL3 != null || nowL3 != null, "why I get two NULL L3 networks!!!!");
+
         if (!VmInstanceState.Running.toString().equals(vm.getState())) {
             return;
         }
 
         VmNicInventory pnic = null;
         VmNicInventory nnic = null;
+
         for (VmNicInventory nic : vm.getVmNics()) {
             if (nic.getL3NetworkUuid().equals(previousL3)) {
                 pnic = nic;
@@ -1033,17 +1036,17 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             }
         }
 
-        DebugUtils.Assert(pnic != null, String.format("cannot find nic for L3 network[uuid:%s] of the vm[uuid:%s, name:%s]", previousL3, vm.getUuid() ,vm.getName()));
-        DebugUtils.Assert(nnic != null, String.format("cannot find nic for L3 network[uuid:%s] of the vm[uuid:%s, name:%s]", nowL3, vm.getUuid() ,vm.getName()));
-
         ResetDefaultGatewayCmd cmd = new ResetDefaultGatewayCmd();
-        cmd.gatewayToAdd = nnic.getGateway();
-        cmd.macOfGatewayToAdd = nnic.getMac();
-        cmd.gatewayToRemove = pnic.getGateway();
-        cmd.macOfGatewayToRemove = pnic.getMac();
-        Map<String, String> bridgeNames = new BridgeNameFinder().findByL3Uuids(list(previousL3, nowL3));
-        cmd.bridgeNameOfGatewayToRemove = bridgeNames.get(previousL3);
-        cmd.bridgeNameOfGatewayToAdd = bridgeNames.get(nowL3);
+        if (pnic != null) {
+            cmd.gatewayToRemove = pnic.getGateway();
+            cmd.macOfGatewayToRemove = pnic.getMac();
+            cmd.bridgeNameOfGatewayToRemove = new BridgeNameFinder().findByL3Uuid(previousL3);
+        }
+        if (nnic != null) {
+            cmd.gatewayToAdd = nnic.getGateway();
+            cmd.macOfGatewayToAdd = nnic.getMac();
+            cmd.bridgeNameOfGatewayToAdd = new BridgeNameFinder().findByL3Uuid(nowL3);
+        }
 
         KvmCommandSender sender = new KvmCommandSender(vm.getHostUuid());
         sender.send(cmd, RESET_DEFAULT_GATEWAY_PATH, new KvmCommandFailureChecker() {

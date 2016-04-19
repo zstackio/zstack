@@ -80,5 +80,6 @@ public class TestVirtualRouterEip4 {
 
         EipVO evo = dbf.findByUuid(eip.getUuid(), EipVO.class);
         Assert.assertNull(evo.getVmNicUuid());
+        Assert.assertNull(evo.getGuestIp());
     }
 }
