@@ -17,7 +17,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
-import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
