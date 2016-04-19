@@ -1,4 +1,4 @@
-package org.zstack.test.mevoco;
+package org.zstack.test.mevoco.ha;
 
 import junit.framework.Assert;
 import org.junit.Before;
@@ -33,13 +33,13 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. create a vm with 2 flat L3 networks
- * 2. change the vm's default L3 network from one to another
+ * 2. delete the default L3 network
  *
  * confirm the ResetDefaultGatewayCmd sent to the backend
  *
  */
-public class TestMevocoMultipleNetwork1 {
-    CLogger logger = Utils.getLogger(TestMevocoMultipleNetwork1.class);
+public class TestMevocoMultipleNetwork3 {
+    CLogger logger = Utils.getLogger(TestMevocoMultipleNetwork3.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -86,6 +86,9 @@ public class TestMevocoMultipleNetwork1 {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         final L3NetworkInventory l31 = deployer.l3Networks.get("TestL3Network1");
         final L3NetworkInventory l32 = deployer.l3Networks.get("TestL3Network2");
+        String l31BridgeName = new BridgeNameFinder().findByL3Uuid(l31.getUuid());
+        String l32BridgeName = new BridgeNameFinder().findByL3Uuid(l32.getUuid());
+
 
         VmNicInventory nic1 = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
             @Override
@@ -100,19 +103,16 @@ public class TestMevocoMultipleNetwork1 {
             }
         });
 
-        VmInstanceInventory update = new VmInstanceInventory();
-        update.setUuid(vm.getUuid());
-        update.setDefaultL3NetworkUuid(l32.getUuid());
-        api.updateVm(update);
+        api.deleteL3Network(nic1.getL3NetworkUuid());
         TimeUnit.SECONDS.sleep(2);
         Assert.assertEquals(1, fconfig.resetDefaultGatewayCmds.size());
         ResetDefaultGatewayCmd cmd = fconfig.resetDefaultGatewayCmds.get(0);
         Assert.assertEquals(nic1.getMac(), cmd.macOfGatewayToRemove);
         Assert.assertEquals(nic1.getGateway(), cmd.gatewayToRemove);
-        Assert.assertEquals(new BridgeNameFinder().findByL3Uuid(l31.getUuid()), cmd.bridgeNameOfGatewayToRemove);
+        Assert.assertEquals(l31BridgeName, cmd.bridgeNameOfGatewayToRemove);
 
         Assert.assertEquals(nic2.getMac(), cmd.macOfGatewayToAdd);
         Assert.assertEquals(nic2.getGateway(), cmd.gatewayToAdd);
-        Assert.assertEquals(new BridgeNameFinder().findByL3Uuid(l32.getUuid()), cmd.bridgeNameOfGatewayToAdd);
+        Assert.assertEquals(l32BridgeName, cmd.bridgeNameOfGatewayToAdd);
     }
 }

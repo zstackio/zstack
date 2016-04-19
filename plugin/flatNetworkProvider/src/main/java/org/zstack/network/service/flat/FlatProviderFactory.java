@@ -13,7 +13,6 @@ import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.service.*;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.userdata.UserdataConstant;
-import org.zstack.network.service.vip.VipConstant;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

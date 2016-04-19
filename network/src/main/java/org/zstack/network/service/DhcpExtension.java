@@ -26,8 +26,6 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 
-import static org.zstack.utils.CollectionDSL.list;
-
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -183,8 +181,16 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     @Override
     public void vmDefaultL3NetworkChanged(VmInstanceInventory vm, String previousL3, String nowL3) {
+        List<String> l3Uuids = new ArrayList<String>();
+        if (previousL3 != null) {
+            l3Uuids.add(previousL3);
+        }
+        if (nowL3 != null) {
+            l3Uuids.add(nowL3);
+        }
+
         SimpleQuery<L3NetworkVO> q = dbf.createQuery(L3NetworkVO.class);
-        q.add(L3NetworkVO_.uuid, Op.IN, list(previousL3, nowL3));
+        q.add(L3NetworkVO_.uuid, Op.IN, l3Uuids);
         List<L3NetworkVO> vos = q.list();
         List<L3NetworkInventory> invs = L3NetworkInventory.valueOf(vos);
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.DHCP, invs);
