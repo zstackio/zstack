@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. create a vm with 2 flat L3 networks
- * 2. delete the L2 network of the vm's default L3 network
+ * 2. delete the vm's default L3 network
  *
  * confirm the ResetDefaultGatewayCmd sent to the backend
  *
@@ -103,7 +103,7 @@ public class TestMevocoMultipleNetwork4 {
             }
         });
 
-        api.deleteL2Network(l31.getL2NetworkUuid());
+        api.deleteL3Network(l31.getUuid());
         TimeUnit.SECONDS.sleep(2);
         Assert.assertEquals(1, fconfig.resetDefaultGatewayCmds.size());
         ResetDefaultGatewayCmd cmd = fconfig.resetDefaultGatewayCmds.get(0);
