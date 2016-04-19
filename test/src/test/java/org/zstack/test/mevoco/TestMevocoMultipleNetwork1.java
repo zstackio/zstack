@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. create a vm with 2 flat L3 networks
- * 2. detach the nic which connects to VM's default L3 network
+ * 2. change the vm's default L3 network from one to another
  *
  * confirm the ResetDefaultGatewayCmd sent to the backend
  *
