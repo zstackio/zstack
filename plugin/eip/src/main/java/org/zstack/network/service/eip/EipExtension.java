@@ -247,6 +247,7 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
             return;
         }
 
-        releaseNetworkService(map.entrySet().iterator(), spec.getCurrentVmOperation() == VmOperation.Destroy, completion);
+        boolean updateDb = spec.getCurrentVmOperation() == VmOperation.Destroy || spec.getCurrentVmOperation() == VmOperation.DetachNic;
+        releaseNetworkService(map.entrySet().iterator(), updateDb, completion);
     }
 }
