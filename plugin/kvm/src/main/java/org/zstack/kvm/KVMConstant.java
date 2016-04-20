@@ -1,9 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.header.configuration.PythonClass;
-import org.zstack.header.host.HypervisorType;
 import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.volume.VolumeFormat;
 
 @PythonClass
 public interface KVMConstant {
@@ -40,6 +38,7 @@ public interface KVMConstant {
     public static final String KVM_MERGE_SNAPSHOT_PATH = "/vm/volume/mergesnapshot";
     public static final String KVM_LOGOUT_ISCSI_PATH = "/iscsi/target/logout";
     public static final String KVM_LOGIN_ISCSI_PATH = "/iscsi/target/login";
+    public static final String KVM_HARDEN_CONSOLE_PATH = "/vm/console/harden";
     public static final String ISO_TO = "kvm.isoto";
     public static final String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
     public static final String ANSIBLE_MODULE_PATH = "ansible/kvm";

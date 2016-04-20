@@ -77,4 +77,5 @@ public class KVMSimulatorConfig {
     public volatile List<CheckVmStateCmd> checkVmStateCmds = new ArrayList<CheckVmStateCmd>();
     public volatile Map<String, Map<String, String>> checkVmStatesConfig = new HashMap<String, Map<String, String>>();
     public volatile boolean vmSyncSuccess = true;
+    public List<HardenVmConsoleCmd> hardenVmConsoleCmds = new ArrayList<HardenVmConsoleCmd>();
 }

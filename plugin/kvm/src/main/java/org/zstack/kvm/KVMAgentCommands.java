@@ -548,6 +548,10 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class HardenVmConsoleCmd extends AgentCommand {
+        public String vmUuid;
+    }
+
     public static class StartVmCmd extends AgentCommand {
     	private String vmInstanceUuid;
     	private long vmInternalId;

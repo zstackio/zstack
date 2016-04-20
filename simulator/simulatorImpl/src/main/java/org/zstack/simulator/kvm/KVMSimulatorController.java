@@ -43,6 +43,15 @@ public class KVMSimulatorController {
 
     private AsyncRESTReplyer replyer = new AsyncRESTReplyer();
 
+    @RequestMapping(value=KVMConstant.KVM_HARDEN_CONSOLE_PATH, method=RequestMethod.POST)
+    public @ResponseBody String hardenVmConsole(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        HardenVmConsoleCmd cmd = JSONObjectUtil.toObject(entity.getBody(), HardenVmConsoleCmd.class);
+        config.hardenVmConsoleCmds.add(cmd);
+        replyer.reply(entity, new AgentResponse());
+        return null;
+    }
+
     @RequestMapping(value=KVMConstant.KVM_VM_CHECK_STATE, method=RequestMethod.POST)
     public @ResponseBody String checkVmState(HttpServletRequest req) {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
