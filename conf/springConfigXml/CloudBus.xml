@@ -26,11 +26,7 @@
 		</zstack:plugin>
     </bean>
     
-    <bean id="ResourceDestinationMaker" class="org.zstack.core.cloudbus.ResourceDestinationMakerImpl" >
-    	<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" order="9999"/>
-		</zstack:plugin>
-    </bean>
+    <bean id="ResourceDestinationMaker" class="org.zstack.core.cloudbus.ResourceDestinationMakerImpl" />
     
     <bean id="MessageIntegrityChecker" class="org.zstack.core.cloudbus.MessageIntegrityChecker">
     	<zstack:plugin>

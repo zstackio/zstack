@@ -6,6 +6,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusIN;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -68,6 +69,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 	private PluginRegistry pluginRgty;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private ResourceDestinationMaker destinationMaker;
 
     private List<ManagementNodeChangeListener> lifeCycleExtension = new ArrayList<ManagementNodeChangeListener>();
 
@@ -511,7 +514,15 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 	}
 
 	@Override
-	public void nodeJoin(final String nodeId) {
+	public synchronized void nodeJoin(final String nodeId) {
+        if (destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
+            logger.debug(String.format("the management node[uuid:%s] is already in our hash ring, ignore this node-join call", nodeId));
+            return;
+        }
+
+        ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
+        l.nodeJoin(nodeId);
+
         CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
             @Override
             public void run(ManagementNodeChangeListener arg) {
@@ -521,7 +532,15 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 	}
 
 	@Override
-	public void nodeLeft(final String nodeId) {
+	public synchronized void nodeLeft(final String nodeId) {
+        if (!destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
+            logger.debug(String.format("the management node[uuid:%s] is not in our hash ring, ignore this node-left call", nodeId));
+            return;
+        }
+
+        ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
+        l.nodeLeft(nodeId);
+
         CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
             @Override
             public void run(ManagementNodeChangeListener arg) {
@@ -532,6 +551,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
 	@Override
 	public void iAmDead(final String nodeId) {
+        ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
+        l.iAmDead(nodeId);
+
         CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
             @Override
             public void run(ManagementNodeChangeListener arg) {
@@ -542,6 +564,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
 	@Override
 	public void iJoin(final String nodeId) {
+        ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
+        l.iJoin(nodeId);
+
         CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
             @Override
             public void run(ManagementNodeChangeListener arg) {

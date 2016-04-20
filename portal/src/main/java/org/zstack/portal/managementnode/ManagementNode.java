@@ -14,6 +14,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.cloudbus.CloudBusIN;
 import org.zstack.core.cloudbus.EventSubscriberReceipt;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
@@ -21,6 +22,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.defer.Defer;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -49,6 +51,8 @@ public class ManagementNode implements CloudBusEventListener {
     private ThreadFacade thdf;
     @Autowired
     private CloudBusIN bus;
+    @Autowired
+    private ResourceDestinationMaker destinationMaker;
 
     private static final CLogger logger = Utils.getLogger(ManagementNode.class);
     private Event[] myEvents;
@@ -132,6 +136,15 @@ public class ManagementNode implements CloudBusEventListener {
                 return jdbc.update(sql, uuid);
             }
 
+            @AsyncThread
+            private void nodeDie(String nodeUuid) {
+                ManagementNodeLeftEvent evt = new ManagementNodeLeftEvent(nodeUuid, node.getUuid(), true);
+                bus.publish(evt);
+                logger.debug("Node " + nodeUuid + " has gone");
+
+                notifyNodeLeft(nodeUuid);
+            }
+
             private void fenceSuspects() {
                 for (ManagementNodeVO vo : suspects) {
                     ManagementNodeVO n =  getNode(vo.getUuid());
@@ -146,9 +159,7 @@ public class ManagementNode implements CloudBusEventListener {
 
                     int ret = deleteNode(n.getUuid());
                     if (ret > 0) {
-                        ManagementNodeLeftEvent evt = new ManagementNodeLeftEvent(n.getUuid(), node.getUuid(), true);
-                        bus.publish(evt);
-                        logger.debug("Node " + n.getUuid() + " has gone");
+                        nodeDie(n.getUuid());
                     }
                 }
             }
@@ -164,7 +175,11 @@ public class ManagementNode implements CloudBusEventListener {
                 String sql = "select * from ManagementNodeVO where state = 'RUNNING'";
                 List<ManagementNodeVO> all = jdbc.query(sql, new BeanPropertyRowMapper(ManagementNodeVO.class));
                 suspects.clear();
+
+                List<String> nodesInDb = new ArrayList<String>();
                 for (ManagementNodeVO vo : all) {
+                    nodesInDb.add(vo.getUuid());
+
                     if (vo.getUuid().equals(node.getUuid())) {
                         continue;
                     }
@@ -176,6 +191,16 @@ public class ManagementNode implements CloudBusEventListener {
                         suspects.add(vo);
                         logger.warn(String.format("management node[uuid:%s, hostname: %s]'s heart beat has stopped for %s secs, add it in suspicious list",
                                 vo.getUuid(), vo.getHostName(), TimeUnit.MILLISECONDS.toSeconds(curr.getTime() - lastHeartbeat.getTime())));
+                    }
+                }
+
+                // When a node is dying, we may not receive the the dead notification because the message bus may be also dead
+                // at that moment. By checking if the node UUID is still in our hash ring, we know what nodes should be kicked out
+                for (String ourNode : destinationMaker.getManagementNodesInHashRing()) {
+                    if (!nodesInDb.contains(ourNode)) {
+                        logger.warn(String.format("found that a management node[uuid:%s] had no heartbeat in database but still in our hash ring," +
+                                "notify that it's dead", ourNode));
+                        nodeDie(ourNode);
                     }
                 }
             }
@@ -358,7 +383,9 @@ public class ManagementNode implements CloudBusEventListener {
                 bus.send(msg);
             }
         } else {
-            notifyNodeLeft(evt.getLeftNodeId());
+            if (!evt.getSponsorNodeId().equals(node.getUuid())) {
+                notifyNodeLeft(evt.getLeftNodeId());
+            }
         }
     }
 

@@ -586,7 +586,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     @Override
     public void nodeJoin(String nodeId) {
-        logger.debug(String.format("management node[uuid:%s] left, node[uuid:%s] starts taking over primary storage...", nodeId, Platform.getManagementServerId()));
+        logger.debug(String.format("management node[uuid:%s] join, node[uuid:%s] starts taking over primary storage...", nodeId, Platform.getManagementServerId()));
         loadPrimaryStorage();
     }
 

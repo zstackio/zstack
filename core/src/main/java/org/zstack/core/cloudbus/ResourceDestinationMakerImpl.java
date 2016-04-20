@@ -12,6 +12,7 @@ import org.zstack.utils.hash.ApacheHash;
 import org.zstack.utils.hash.ConsistentHash;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -65,6 +66,11 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
     public boolean isManagedByUs(String resourceUuid) {
         String nodeUuid = makeDestination(resourceUuid);
         return nodeUuid.equals(Platform.getManagementServerId());
+    }
+
+    @Override
+    public Collection<String> getManagementNodesInHashRing() {
+        return nodeHash.getNodes();
     }
 
     public boolean isNodeInCircle(String nodeId) {
