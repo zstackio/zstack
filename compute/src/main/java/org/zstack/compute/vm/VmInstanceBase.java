@@ -393,6 +393,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             ));
         }
 
+        final UsedIpInventory oldIp = new UsedIpInventory();
+        oldIp.setIp(targetNic.getIp());
+        oldIp.setGateway(targetNic.getGateway());
+        oldIp.setNetmask(targetNic.getNetmask());
+        oldIp.setL3NetworkUuid(targetNic.getL3NetworkUuid());
+        oldIp.setUuid(targetNic.getUsedIpUuid());
+
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("change-vm-ip-to-%s-l3-%s-vm-%s", ip, l3Uuid, self.getUuid()));
         chain.then(new ShareFlow() {
@@ -469,6 +476,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
+                        final VmInstanceInventory vm = getSelfInventory();
+                        final VmNicInventory nic = VmNicInventory.valueOf(targetNic);
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmIpChangedExtensionPoint.class), new ForEachFunction<VmIpChangedExtensionPoint>() {
+                            @Override
+                            public void run(VmIpChangedExtensionPoint ext) {
+                                ext.vmIpChanged(vm, nic, oldIp, newIp);
+                            }
+                        });
+
                         completion.success();
                     }
                 });

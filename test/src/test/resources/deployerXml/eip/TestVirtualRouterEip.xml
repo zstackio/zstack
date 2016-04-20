@@ -64,7 +64,7 @@
 						</l3BasicNetwork>
 						
 						<l3BasicNetwork name="GuestNetwork" description="Test">
-							<ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
+							<ipRange name="GuestIpRange" description="Test" startIp="10.10.2.100"
 								endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
 
 							<networkService provider="VirtualRouter">
