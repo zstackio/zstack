@@ -30,6 +30,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
@@ -53,7 +54,7 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  */
 public class EipManagerImpl extends AbstractService implements EipManager, VipReleaseExtensionPoint,
-        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VmPreAttachL3NetworkExtensionPoint {
+        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VmPreAttachL3NetworkExtensionPoint, VmIpChangedExtensionPoint {
     private static final CLogger logger = Utils.getLogger(EipManagerImpl.class);
 
     @Autowired
@@ -721,5 +722,22 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 }
             }
         }.run();
+    }
+
+    @Override
+    public void vmIpChanged(VmInstanceInventory vm, VmNicInventory nic, UsedIpInventory oldIp, UsedIpInventory newIp) {
+        SimpleQuery<EipVO> q = dbf.createQuery(EipVO.class);
+        q.add(EipVO_.vmNicUuid, Op.EQ, nic.getUuid());
+        EipVO eip = q.find();
+
+        if (eip == null) {
+            return;
+        }
+
+        eip.setGuestIp(newIp.getIp());
+        dbf.update(eip);
+
+        logger.debug(String.format("update the EIP[uuid:%s, name:%s]'s guest IP from %s to %s for the nic[uuid:%s]",
+                eip.getUuid(), eip.getName(), oldIp.getIp(), newIp.getIp(), nic.getUuid()));
     }
 }
