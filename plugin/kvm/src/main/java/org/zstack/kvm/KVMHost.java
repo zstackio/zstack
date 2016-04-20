@@ -92,7 +92,6 @@ public class KVMHost extends HostBase implements Host {
     private String detachIsoPath;
     private String checkVmStatePath;
     private String getConsolePortPath;
-    private String hardenConsolePath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -181,10 +180,6 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_GET_VNC_PORT_PATH);
         getConsolePortPath = ub.build().toString();
-
-        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-        ub.path(KVMConstant.KVM_HARDEN_CONSOLE_PATH);
-        hardenConsolePath = ub.build().toString();
     }
 
     @Override
@@ -944,7 +939,14 @@ public class KVMHost extends HostBase implements Host {
                         HardenVmConsoleCmd cmd = new HardenVmConsoleCmd();
                         cmd.vmUuid = vmUuid;
 
-                        restf.asyncJsonPost(hardenConsolePath, cmd, new JsonAsyncRESTCallback<AgentResponse>(trigger) {
+                        UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
+                        ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
+                        ub.host(hostIp);
+                        ub.port(KVMGlobalProperty.AGENT_PORT);
+                        ub.path(KVMConstant.KVM_HARDEN_CONSOLE_PATH);
+                        String url = ub.build().toString();
+
+                        restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<AgentResponse>(trigger) {
                             @Override
                             public void fail(ErrorCode err) {
                                 //TODO
