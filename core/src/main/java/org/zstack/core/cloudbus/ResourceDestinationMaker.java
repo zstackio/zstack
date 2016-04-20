@@ -1,5 +1,7 @@
 package org.zstack.core.cloudbus;
 
+import java.util.Collection;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -10,4 +12,6 @@ public interface ResourceDestinationMaker {
     String makeDestination(String resourceUuid);
 
     boolean isManagedByUs(String resourceUuid);
+
+    Collection<String> getManagementNodesInHashRing();
 }

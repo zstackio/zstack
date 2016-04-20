@@ -3,15 +3,14 @@ package org.zstack.utils.hash;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Collection;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 public class ConsistentHash<T> {
     private final CLogger logger = Utils.getLogger(ConsistentHash.class);
     private final HashFunction hashFunction;
     private final int numberOfReplicas;
     private final SortedMap<Integer, T> circle = new TreeMap<Integer, T>();
+    private final Set<T> nodes = new HashSet<T>();
 
     public ConsistentHash(HashFunction hashFunction, int numberOfReplicas,
                           Collection<T> nodes) {
@@ -23,26 +22,37 @@ public class ConsistentHash<T> {
         }
     }
 
+    public Set<T> getNodes() {
+        return nodes;
+    }
+
     public void add(T node) {
+        nodes.add(node);
+
         for (int i = 0; i < numberOfReplicas; i++) {
             String nodeName = node.toString() + i;
             circle.put(hashFunction.hash(nodeName), node);
         }
-        logger.debug(String.format("after adding, consistent hash circle has %s virtual nodes now", circle.size()));
+        logger.debug(String.format("after adding, consistent hash circle has management nodes%s, %s virtual nodes now",
+                nodes, circle.size()));
     }
 
     public void remove(T node) {
+        nodes.remove(node);
+        logger.debug(String.format("the consistent hash ring currently has nodes%s", nodes));
+
         for (int i = 0; i < numberOfReplicas; i++) {
             String nodeName = node.toString() + i;
             circle.remove(hashFunction.hash(nodeName));
         }
-        logger.debug(String.format("after removing, consistent hash circle has %s virtual nodes now", circle.size()));
+        logger.debug(String.format("after removing, consistent hash circle has management nodes%s, %s virtual nodes now",
+                nodes, circle.size()));
     }
 
     public boolean hasNode(T node) {
         for (int i = 0; i < numberOfReplicas; i++) {
             String nodeName = node.toString() + i;
-            if (circle.containsKey(hashFunction.hash(node))) {
+            if (circle.containsKey(hashFunction.hash(nodeName))) {
                 return true;
             }
         }
