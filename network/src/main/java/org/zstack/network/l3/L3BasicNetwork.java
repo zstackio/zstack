@@ -147,8 +147,15 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(IpRangeDeletionMsg msg) {
+        IpRangeDeletionReply reply = new IpRangeDeletionReply();
+
         List<IpRangeDeletionExtensionPoint> exts = pluginRgty.getExtensionList(IpRangeDeletionExtensionPoint.class);
         IpRangeVO iprvo = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
+        if (iprvo == null) {
+            bus.reply(msg, reply);
+            return;
+        }
+
         final IpRangeInventory inv = IpRangeInventory.valueOf(iprvo);
 
         for (IpRangeDeletionExtensionPoint ext : exts) {
@@ -162,7 +169,6 @@ public class L3BasicNetwork implements L3Network {
             }
         });
 
-        IpRangeDeletionReply reply = new IpRangeDeletionReply();
 
         dbf.remove(iprvo);
 
