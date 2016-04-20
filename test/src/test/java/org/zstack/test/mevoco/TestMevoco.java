@@ -124,6 +124,7 @@ public class TestMevoco {
         Assert.assertNotNull(m);
         NicQos nqos = JSONObjectUtil.rehashObject(m.get(nic.getUuid()), NicQos.class);
         Assert.assertEquals(Long.valueOf(1000), nqos.outboundBandwidth);
+        Assert.assertEquals(Long.valueOf(1100), nqos.inboundBandwidth);
 
         m = (Map) scmd.getAddons().get(MevocoConstants.KVM_VOLUME_QOS);
         VolumeQos vqos = JSONObjectUtil.rehashObject(m.get(root.getUuid()), VolumeQos.class);
