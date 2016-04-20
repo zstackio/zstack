@@ -92,6 +92,7 @@ public class KVMHost extends HostBase implements Host {
     private String detachIsoPath;
     private String checkVmStatePath;
     private String getConsolePortPath;
+    private String hardenConsolePath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -180,6 +181,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_GET_VNC_PORT_PATH);
         getConsolePortPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HARDEN_CONSOLE_PATH);
+        hardenConsolePath = ub.build().toString();
     }
 
     @Override
@@ -868,9 +873,9 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void migrateVm(final Iterator<MigrateStruct> it, final Completion completion) {
-        String hostIp;
-        String vmUuid;
-        StorageMigrationPolicy storageMigrationPolicy;
+        final String hostIp;
+        final String vmUuid;
+        final StorageMigrationPolicy storageMigrationPolicy;
         synchronized (it) {
             if (!it.hasNext()) {
                 completion.success();
@@ -883,40 +888,107 @@ public class KVMHost extends HostBase implements Host {
             storageMigrationPolicy = s.storageMigrationPolicy;
         }
 
-        MigrateVmCmd cmd = new MigrateVmCmd();
-        cmd.setDestHostIp(hostIp);
-        cmd.setSrcHostIp(self.getManagementIp());
-        cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
-        cmd.setVmUuid(vmUuid);
-        final String fvmuuid = vmUuid;
-        final String destIp = hostIp;
-        restf.asyncJsonPost(migrateVmPath, cmd, new JsonAsyncRESTCallback<MigrateVmResponse>(completion) {
-            @Override
-            public void fail(ErrorCode err) {
-                completion.fail(err);
-            }
 
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("migrate-vm-%s-on-kvm-host-%s", vmUuid, self.getUuid()));
+        chain.then(new ShareFlow() {
             @Override
-            public void success(MigrateVmResponse ret) {
-                if (!ret.isSuccess()) {
-                    ErrorCode err = errf.instantiateErrorCode(HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
-                            String.format("failed to migrate vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s], %s",
-                                    fvmuuid, self.getUuid(), self.getManagementIp(), destIp, ret.getError())
-                    );
-                    completion.fail(err);
-                } else {
-                    String info = String.format("successfully migrated vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s]",
-                            fvmuuid, self.getUuid(), self.getManagementIp(), destIp);
-                    logger.debug(info);
-                    migrateVm(it, completion);
-                }
-            }
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "migrate-vm";
 
-            @Override
-            public Class<MigrateVmResponse> getReturnClass() {
-                return MigrateVmResponse.class;
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        MigrateVmCmd cmd = new MigrateVmCmd();
+                        cmd.setDestHostIp(hostIp);
+                        cmd.setSrcHostIp(self.getManagementIp());
+                        cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
+                        cmd.setVmUuid(vmUuid);
+                        restf.asyncJsonPost(migrateVmPath, cmd, new JsonAsyncRESTCallback<MigrateVmResponse>(trigger) {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                completion.fail(err);
+                            }
+
+                            @Override
+                            public void success(MigrateVmResponse ret) {
+                                if (!ret.isSuccess()) {
+                                    ErrorCode err = errf.instantiateErrorCode(HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
+                                            String.format("failed to migrate vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s], %s",
+                                                    vmUuid, self.getUuid(), self.getManagementIp(), hostIp, ret.getError())
+                                    );
+
+                                    trigger.fail(err);
+                                } else {
+                                    String info = String.format("successfully migrated vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s]",
+                                            vmUuid, self.getUuid(), self.getManagementIp(), hostIp);
+                                    logger.debug(info);
+
+                                    trigger.next();
+                                }
+                            }
+
+                            @Override
+                            public Class<MigrateVmResponse> getReturnClass() {
+                                return MigrateVmResponse.class;
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "harden-vm-console";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        HardenVmConsoleCmd cmd = new HardenVmConsoleCmd();
+                        cmd.vmUuid = vmUuid;
+
+                        restf.asyncJsonPost(hardenConsolePath, cmd, new JsonAsyncRESTCallback<AgentResponse>(trigger) {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                //TODO
+                                logger.warn(String.format("failed to harden VM[uuid:%s]'s console, %s", vmUuid, err));
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void success(AgentResponse ret) {
+                                if (!ret.isSuccess()) {
+                                    //TODO
+                                    logger.warn(String.format("failed to harden VM[uuid:%s]'s console, %s", vmUuid, ret.getError()));
+                                }
+
+                                trigger.next();
+                            }
+
+                            @Override
+                            public Class<AgentResponse> getReturnClass() {
+                                return AgentResponse.class;
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        String info = String.format("successfully migrated vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s]",
+                                vmUuid, self.getUuid(), self.getManagementIp(), hostIp);
+                        logger.debug(info);
+
+                        migrateVm(it, completion);
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     private void handle(final MigrateVmOnHypervisorMsg msg) {

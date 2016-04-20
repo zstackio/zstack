@@ -13,13 +13,11 @@ import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.utils.BeanUtils;
-import org.zstack.utils.Linux;
-import org.zstack.utils.StringDSL;
-import org.zstack.utils.TypeUtils;
+import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
+import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
@@ -44,6 +42,7 @@ public class Platform {
     private static String msId;
     private static String codeVersion;
     private static String managementServerIp;
+    private static String managementCidr;
 
     public static final String COMPONENT_CLASSPATH_HOME = "componentsHome";
 
@@ -436,6 +435,20 @@ public class Platform {
 
     public static String getUuid() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    public static String getManagementCidr() {
+        if (managementCidr != null) {
+            return managementCidr;
+        }
+
+        String mgmtIp = getManagementServerIp();
+        managementCidr = ShellUtils.run(String.format("ip addr | grep -w %s | awk '{print $2}'", mgmtIp));
+        managementCidr = StringDSL.stripEnd(managementCidr, "\n");
+        if (!NetworkUtils.isCidr(managementCidr)) {
+            throw new CloudRuntimeException(String.format("got an invalid management CIDR[%s]", managementCidr));
+        }
+        return managementCidr;
     }
 
     public static String getManagementServerIp() {

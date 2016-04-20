@@ -11,6 +11,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.kvm.KVMAgentCommands.HardenVmConsoleCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -70,5 +71,9 @@ public class TestMigrateVmOnKvm {
         HostCapacityVO cvo = dbf.findByUuid(lastHostUuid, HostCapacityVO.class);
         Assert.assertEquals(0, cvo.getUsedCpu());
         Assert.assertEquals(0, cvo.getUsedMemory());
+
+        Assert.assertEquals(1, config.hardenVmConsoleCmds.size());
+        HardenVmConsoleCmd cmd = config.hardenVmConsoleCmds.get(0);
+        Assert.assertEquals(vm.getUuid(), cmd.vmUuid);
 	}
 }
