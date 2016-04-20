@@ -22,6 +22,7 @@
             <xsd:extension base="InstanceOfferingConfig">
                 <xsd:sequence>
                     <xsd:element name="networkOutboundBandwidth" type="xsd:unsignedInt" minOccurs="0" maxOccurs="1"/>
+                    <xsd:element name="networkInboundBandwidth" type="xsd:unsignedInt" minOccurs="0" maxOccurs="1"/>
                     <xsd:element name="volumeTotalBandwidth" type="xsd:unsignedInt" minOccurs="0" maxOccurs="1"/>
                     <xsd:element name="volumeTotalIops" type="xsd:unsignedInt" minOccurs="0" maxOccurs="1"/>
                 </xsd:sequence>

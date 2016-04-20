@@ -5,7 +5,6 @@ import org.zstack.header.configuration.APICreateInstanceOfferingMsg;
 import org.zstack.header.configuration.ConfigurationConstant;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.mevoco.MevocoConstants;
 import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.deployer.schema.ConvergedOfferingConfig;
@@ -36,6 +35,9 @@ public class ConvergedOfferingDeployer implements InstanceOfferingDeployer<Conve
             List<String> systemTags = new ArrayList<String>();
             if (ic.getNetworkOutboundBandwidth() != null) {
                 systemTags.add(String.format("networkOutboundBandwidth::%s", ic.getNetworkOutboundBandwidth()));
+            }
+            if (ic.getNetworkInboundBandwidth() != null) {
+                systemTags.add(String.format("networkInboundBandwidth::%s", ic.getNetworkInboundBandwidth()));
             }
             if (ic.getVolumeTotalBandwidth() != null) {
                 systemTags.add(String.format("volumeTotalBandwidth::%s", ic.getVolumeTotalBandwidth()));
