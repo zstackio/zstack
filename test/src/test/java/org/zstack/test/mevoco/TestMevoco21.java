@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.ha.APISetVmInstanceHaLevelMsg;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.console.APIRequestConsoleAccessMsg;
 import org.zstack.header.identity.*;
@@ -146,8 +147,8 @@ public class TestMevoco21 {
         validate(ps, "VM.STATIC-IP.DELETE", "instance:APIDeleteVmStaticIpMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.HOSTNAME.SET", "instance:APISetVmHostnameMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VM.HOSTNAME.DELETE", "instance:APIDeleteVmHostnameMsg", AccountConstant.StatementEffect.Allow);
-        validate(ps, "VM.HA-LEVEL.SET", "instance:APISetVmInstanceHaLevelMsg", AccountConstant.StatementEffect.Allow);
-        validate(ps, "VM.HA-LEVEL.DELETE", "instance:APIDeleteVmInstanceHaLevelMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.HA-LEVEL.SET", "ha:APISetVmInstanceHaLevelMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.HA-LEVEL.DELETE", "ha:APIDeleteVmInstanceHaLevelMsg", AccountConstant.StatementEffect.Allow);
 
         validate(ps, "VOLUME.CREATE", "volume:APICreateDataVolumeMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VOLUME.UPDATE", "volume:APIUpdateVolumeMsg", AccountConstant.StatementEffect.Allow);
@@ -206,8 +207,21 @@ public class TestMevoco21 {
         api.attachPolicesToUser(user.getUuid(), list(consolePolicy.getUuid()), creator.getAccountSession());
 
         Map<String, String> pret = api.checkUserPolicy(list(APIRequestConsoleAccessMsg.class.getName()), user.getUuid(), creator.getAccountSession());
+
         Assert.assertEquals(1, pret.size());
         String decision = pret.get(APIRequestConsoleAccessMsg.class.getName());
+        Assert.assertEquals("Allow", decision);
+
+        PolicyVO setHa = CollectionUtils.find(ps, new Function<PolicyVO, PolicyVO>() {
+            @Override
+            public PolicyVO call(PolicyVO arg) {
+                return "VM.HA-LEVEL.SET".equals(arg.getName()) ? arg : null;
+            }
+        });
+
+        api.attachPolicesToUser(user.getUuid(), list(setHa.getUuid()), api.getAdminSession());
+        pret = api.checkUserPolicy(list(APISetVmInstanceHaLevelMsg.class.getName()), user.getUuid(), creator.getAccountSession());
+        decision = pret.values().iterator().next();
         Assert.assertEquals("Allow", decision);
     }
 }
