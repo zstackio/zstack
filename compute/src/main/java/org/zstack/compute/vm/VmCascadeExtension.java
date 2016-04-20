@@ -10,7 +10,6 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
@@ -22,7 +21,6 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2Network;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkDetachStruct;
 import org.zstack.header.network.l2.L2NetworkVO;
@@ -501,7 +499,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                             " and nic.l3NetworkUuid = l3.uuid and l3.uuid in (:uuids) group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-                    q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Running));
+                    q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Running, VmInstanceState.Destroyed));
                     q.setParameter("uuids", l3uuids);
                     return q.getResultList();
                 }
