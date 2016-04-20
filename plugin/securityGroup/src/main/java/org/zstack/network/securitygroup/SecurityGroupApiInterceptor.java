@@ -1,6 +1,7 @@
 package org.zstack.network.securitygroup;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
@@ -17,6 +18,8 @@ import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroup
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.network.NetworkUtils;
 
+import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -124,7 +127,33 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                     ));
         }
 
+        checkIfVmNicFromAttachedL3Networks(msg.getSecurityGroupUuid(), uuids);
+
         msg.setVmNicUuids(uuids);
+    }
+
+    @Transactional(readOnly = true)
+    private void checkIfVmNicFromAttachedL3Networks(String securityGroupUuid, List<String> uuids) {
+        String sql = "select nic.uuid from SecurityGroupL3NetworkRefVO ref, VmNicVO nic where ref.l3NetworkUuid = nic.l3NetworkUuid" +
+                " and ref.securityGroupUuid = :sgUuid and nic.uuid in (:nicUuids)";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("nicUuids", uuids);
+        q.setParameter("sgUuid", securityGroupUuid);
+        List<String> nicUuids = q.getResultList();
+
+        List<String> wrongUuids = new ArrayList<String>();
+        for (String uuid : uuids) {
+            if (!nicUuids.contains(uuid)) {
+                wrongUuids.add(uuid);
+            }
+        }
+
+        if (!wrongUuids.isEmpty()) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
+                            wrongUuids, securityGroupUuid)
+            ));
+        }
     }
 
     private void validate(APIAddSecurityGroupRuleMsg msg) {
