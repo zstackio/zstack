@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -65,6 +66,8 @@ public class TestMigrateVmOnKvm {
         });
 
         String lastHostUuid = vm.getHostUuid();
+        HostVO lastHost = dbf.findByUuid(lastHostUuid, HostVO.class);
+
         VmInstanceInventory vminv = api.migrateVmInstance(vm.getUuid(), target.getUuid());
         Assert.assertFalse(config.migrateVmCmds.isEmpty());
         Assert.assertEquals(target.getUuid(), vminv.getHostUuid());
@@ -80,10 +83,12 @@ public class TestMigrateVmOnKvm {
         HardenVmConsoleCmd cmd = config.hardenVmConsoleCmds.get(0);
         Assert.assertEquals(vmvo.getInternalId(), cmd.vmInternalId.longValue());
         Assert.assertEquals(vmvo.getUuid(), cmd.vmUuid);
+        Assert.assertEquals(target.getManagementIp(), cmd.hostManagementIp);
 
         Assert.assertEquals(1, config.deleteVmConsoleFirewallCmds.size());
         DeleteVmConsoleFirewallCmd dcmd = config.deleteVmConsoleFirewallCmds.get(0);
         Assert.assertEquals(vmvo.getInternalId(), dcmd.vmInternalId.longValue());
         Assert.assertEquals(vmvo.getUuid(), dcmd.vmUuid);
+        Assert.assertEquals(lastHost.getManagementIp(), dcmd.hostManagementIp);
 	}
 }

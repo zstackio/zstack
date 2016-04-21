@@ -949,6 +949,7 @@ public class KVMHost extends HostBase implements Host {
                         HardenVmConsoleCmd cmd = new HardenVmConsoleCmd();
                         cmd.vmInternalId = vmInternalId;
                         cmd.vmUuid = vmUuid;
+                        cmd.hostManagementIp = hostIp;
 
                         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
                         ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
@@ -991,6 +992,7 @@ public class KVMHost extends HostBase implements Host {
                         DeleteVmConsoleFirewallCmd cmd = new DeleteVmConsoleFirewallCmd();
                         cmd.vmInternalId = vmInternalId;
                         cmd.vmUuid = vmUuid;
+                        cmd.hostManagementIp = self.getManagementIp();
 
                         restf.asyncJsonPost(deleteConsoleFirewall, cmd, new JsonAsyncRESTCallback<AgentResponse>(trigger) {
                             @Override
