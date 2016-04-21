@@ -9,7 +9,7 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -19,7 +19,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.network.*;
+import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -30,7 +30,6 @@ import org.zstack.header.vm.*;
 import org.zstack.query.QueryFacade;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -279,6 +278,13 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             return;
         }
 
+        // we run into this situation when VM nics are all detached and the
+        // VM is being rebooted
+        if (spec.getDestNics().isEmpty()) {
+            completion.success();
+            return;
+        }
+
         List<String> nsTypes = spec.getRequiredNetworkServiceTypes();
 
         FlowChain schain = FlowChainBuilder.newSimpleFlowChain().setName(String.format("apply-network-service-to-vm-%s", spec.getVmInventory().getUuid()));
@@ -395,6 +401,13 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
         }
 
         if (nsExts.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        // we run into this situation when VM nics are all detached and the
+        // VM is being rebooted
+        if (spec.getDestNics().isEmpty()) {
             completion.done();
             return;
         }
