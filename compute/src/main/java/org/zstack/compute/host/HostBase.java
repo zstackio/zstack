@@ -181,13 +181,26 @@ public abstract class HostBase extends AbstractHost {
                         public void run(final FlowTrigger trigger, Map data) {
                             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
                             q.select(VmInstanceVO_.uuid);
-                            q.add(VmInstanceVO_.hostUuid, SimpleQuery.Op.EQ, self.getUuid());
+                            q.add(VmInstanceVO_.hostUuid, Op.EQ, self.getUuid());
                             q.add(VmInstanceVO_.state, Op.NOT_EQ, VmInstanceState.Unknown);
                             List<String> vmUuids = q.listValue();
 
                             if (vmUuids.isEmpty()) {
                                 trigger.next();
                                 return;
+                            }
+
+                            int migrateQuantity = quantity;
+                            HostInventory host = getSelfInventory();
+                            for (OrderVmBeforeMigrationDuringHostMaintenanceExtensionPoint ext : pluginRgty.getExtensionList(OrderVmBeforeMigrationDuringHostMaintenanceExtensionPoint.class)) {
+                                List<String> ordered = ext.orderVmBeforeMigrationDuringHostMaintenance(host, vmUuids);
+                                if (ordered != null) {
+                                    vmUuids = ordered;
+
+                                    logger.debug(String.format("%s ordered VMs for host maintenance, to keep the order, we will migrate VMs one by one",
+                                            ext.getClass()));
+                                    migrateQuantity = 1;
+                                }
                             }
 
                             final List<MigrateVmMsg> msgs = new ArrayList<MigrateVmMsg>();
@@ -198,7 +211,7 @@ public abstract class HostBase extends AbstractHost {
                                 msgs.add(msg);
                             }
 
-                            bus.send(msgs, quantity, new CloudBusListCallBack(trigger) {
+                            bus.send(msgs, migrateQuantity, new CloudBusListCallBack(trigger) {
                                 @Override
                                 public void run(List<MessageReply> replies) {
                                     for (MessageReply reply : replies) {
@@ -220,7 +233,7 @@ public abstract class HostBase extends AbstractHost {
                     // put all vms in vmFailedToMigrate so the next flow will stop all of them
                     SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
                     q.select(VmInstanceVO_.uuid);
-                    q.add(VmInstanceVO_.hostUuid, SimpleQuery.Op.EQ, self.getUuid());
+                    q.add(VmInstanceVO_.hostUuid, Op.EQ, self.getUuid());
                     q.add(VmInstanceVO_.state, Op.NOT_EQ, VmInstanceState.Unknown);
                     List<String> vmUuids = q.listValue();
                     vmFailedToMigrate.addAll(vmUuids);
@@ -233,8 +246,8 @@ public abstract class HostBase extends AbstractHost {
                     public void run(FlowTrigger trigger, Map data) {
                         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
                         q.select(VmInstanceVO_.uuid);
-                        q.add(VmInstanceVO_.hostUuid, SimpleQuery.Op.EQ, self.getUuid());
-                        q.add(VmInstanceVO_.state, SimpleQuery.Op.EQ, VmInstanceState.Unknown);
+                        q.add(VmInstanceVO_.hostUuid, Op.EQ, self.getUuid());
+                        q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
                         List<String> vmUuids = q.listValue();
                         vmUuids.addAll(vmFailedToMigrate);
                         vmUuids = CollectionUtils.removeDuplicateFromList(vmUuids);

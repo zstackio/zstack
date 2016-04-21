@@ -3,8 +3,6 @@ package org.zstack.tag;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -13,7 +11,6 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
 import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.HashMap;
