@@ -52,7 +52,7 @@ public class APICreateL2VlanNetworkMsg extends APICreateL2NetworkMsg {
     /**
      * @desc vlan id
      */
-    @APIParam(numberRange = {0, 4095})
+    @APIParam(numberRange = {0, 4094})
     private Integer vlan;
 
     public int getVlan() {
