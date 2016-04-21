@@ -11,6 +11,8 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.kvm.KVMAgentCommands.DeleteVmConsoleFirewallCmd;
 import org.zstack.kvm.KVMAgentCommands.HardenVmConsoleCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
@@ -72,8 +74,16 @@ public class TestMigrateVmOnKvm {
         Assert.assertEquals(0, cvo.getUsedCpu());
         Assert.assertEquals(0, cvo.getUsedMemory());
 
+        VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
+
         Assert.assertEquals(1, config.hardenVmConsoleCmds.size());
         HardenVmConsoleCmd cmd = config.hardenVmConsoleCmds.get(0);
-        Assert.assertEquals(vm.getUuid(), cmd.vmUuid);
+        Assert.assertEquals(vmvo.getInternalId(), cmd.vmInternalId.longValue());
+        Assert.assertEquals(vmvo.getUuid(), cmd.vmUuid);
+
+        Assert.assertEquals(1, config.deleteVmConsoleFirewallCmds.size());
+        DeleteVmConsoleFirewallCmd dcmd = config.deleteVmConsoleFirewallCmds.get(0);
+        Assert.assertEquals(vmvo.getInternalId(), dcmd.vmInternalId.longValue());
+        Assert.assertEquals(vmvo.getUuid(), dcmd.vmUuid);
 	}
 }
