@@ -6,7 +6,6 @@ import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageForAttachingDiskFlow;
 import org.zstack.compute.vm.VmMigrateOnHypervisorFlow;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -312,18 +311,15 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             msg.setPrimaryStorageUuid(priUuid);
             msg.setHostUuid(inventory.getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUuid);
-            bus.send(msg, new CloudBusCallBack() {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(String.format("failed to remove host[uuid:%s] from local primary storage[uuid:%s], %s",
-                                inventory.getUuid(), priUuid, reply.getError()));
-                    } else {
-                        logger.debug(String.format("removed host[uuid:%s] from local primary storage[uuid:%s]",
-                                inventory.getUuid(), priUuid));
-                    }
-                }
-            });
+            MessageReply reply = bus.call(msg);
+            if (!reply.isSuccess()) {
+                //TODO
+                logger.warn(String.format("failed to remove host[uuid:%s] from local primary storage[uuid:%s], %s",
+                        inventory.getUuid(), priUuid, reply.getError()));
+            } else {
+                logger.debug(String.format("removed host[uuid:%s] from local primary storage[uuid:%s]",
+                        inventory.getUuid(), priUuid));
+            }
         }
     }
 
