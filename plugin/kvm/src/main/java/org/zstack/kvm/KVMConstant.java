@@ -39,6 +39,7 @@ public interface KVMConstant {
     public static final String KVM_LOGOUT_ISCSI_PATH = "/iscsi/target/logout";
     public static final String KVM_LOGIN_ISCSI_PATH = "/iscsi/target/login";
     public static final String KVM_HARDEN_CONSOLE_PATH = "/vm/console/harden";
+    public static final String KVM_DELETE_CONSOLE_FIREWALL_PATH = "/vm/console/deletefirewall";
     public static final String ISO_TO = "kvm.isoto";
     public static final String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
     public static final String ANSIBLE_MODULE_PATH = "ansible/kvm";

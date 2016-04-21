@@ -550,6 +550,12 @@ public class KVMAgentCommands {
 
     public static class HardenVmConsoleCmd extends AgentCommand {
         public String vmUuid;
+        public Long vmInternalId;
+    }
+
+    public static class DeleteVmConsoleFirewallCmd extends AgentCommand {
+        public String vmUuid;
+        public Long vmInternalId;
     }
 
     public static class StartVmCmd extends AgentCommand {

@@ -52,6 +52,15 @@ public class KVMSimulatorController {
         return null;
     }
 
+    @RequestMapping(value=KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH, method=RequestMethod.POST)
+    public @ResponseBody String deleteVmConsole(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        DeleteVmConsoleFirewallCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteVmConsoleFirewallCmd.class);
+        config.deleteVmConsoleFirewallCmds.add(cmd);
+        replyer.reply(entity, new AgentResponse());
+        return null;
+    }
+
     @RequestMapping(value=KVMConstant.KVM_VM_CHECK_STATE, method=RequestMethod.POST)
     public @ResponseBody String checkVmState(HttpServletRequest req) {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);

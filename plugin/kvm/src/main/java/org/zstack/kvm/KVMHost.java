@@ -92,6 +92,7 @@ public class KVMHost extends HostBase implements Host {
     private String detachIsoPath;
     private String checkVmStatePath;
     private String getConsolePortPath;
+    private String deleteConsoleFirewall;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -180,6 +181,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_GET_VNC_PORT_PATH);
         getConsolePortPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
+        deleteConsoleFirewall = ub.build().toString();
     }
 
     @Override
@@ -884,6 +889,11 @@ public class KVMHost extends HostBase implements Host {
         }
 
 
+        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+        q.select(VmInstanceVO_.internalId);
+        q.add(VmInstanceVO_.uuid, Op.EQ, vmUuid);
+        final Long vmInternalId = q.findValue();
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-vm-%s-on-kvm-host-%s", vmUuid, self.getUuid()));
         chain.then(new ShareFlow() {
@@ -932,11 +942,12 @@ public class KVMHost extends HostBase implements Host {
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "harden-vm-console";
+                    String __name__ = "harden-vm-console-on-dst-host";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         HardenVmConsoleCmd cmd = new HardenVmConsoleCmd();
+                        cmd.vmInternalId = vmInternalId;
                         cmd.vmUuid = vmUuid;
 
                         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
@@ -959,6 +970,42 @@ public class KVMHost extends HostBase implements Host {
                                 if (!ret.isSuccess()) {
                                     //TODO
                                     logger.warn(String.format("failed to harden VM[uuid:%s]'s console, %s", vmUuid, ret.getError()));
+                                }
+
+                                trigger.next();
+                            }
+
+                            @Override
+                            public Class<AgentResponse> getReturnClass() {
+                                return AgentResponse.class;
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-vm-console-firewall-on-source-host";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        DeleteVmConsoleFirewallCmd cmd = new DeleteVmConsoleFirewallCmd();
+                        cmd.vmInternalId = vmInternalId;
+                        cmd.vmUuid = vmUuid;
+
+                        restf.asyncJsonPost(deleteConsoleFirewall, cmd, new JsonAsyncRESTCallback<AgentResponse>(trigger) {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                //TODO
+                                logger.warn(String.format("failed to delete console firewall rule for the vm[uuid:%s] on" +
+                                        " the source host[uuid:%s, ip:%s], %s", vmUuid, self.getUuid(), self.getManagementIp(), err));
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void success(AgentResponse ret) {
+                                if (!ret.isSuccess()) {
+                                    logger.warn(String.format("failed to delete console firewall rule for the vm[uuid:%s] on" +
+                                            " the source host[uuid:%s, ip:%s], %s", vmUuid, self.getUuid(), self.getManagementIp(), ret.getError()));
                                 }
 
                                 trigger.next();
