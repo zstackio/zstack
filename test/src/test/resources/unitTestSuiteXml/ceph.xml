@@ -9,4 +9,6 @@
     <TestCase class="org.zstack.test.storage.ceph.TestCeph6"/>
     <TestCase class="org.zstack.test.storage.ceph.TestCeph7"/>
     <TestCase class="org.zstack.test.storage.ceph.TestCeph8"/>
+    <TestCase class="org.zstack.test.storage.ceph.TestCeph9"/>
+    <TestCase class="org.zstack.test.storage.ceph.TestCeph10"/>
 </UnitTestSuiteConfig>

@@ -172,7 +172,7 @@ public class SftpBackupStorage extends BackupStorageBase {
     }
 
     @Override
-    protected void connectHook(Completion completion) {
+    protected void connectHook(boolean newAdded, Completion completion) {
         connect(completion);
     }
 

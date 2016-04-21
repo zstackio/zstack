@@ -17,6 +17,7 @@ public class CephPrimaryStorageSimulatorConfig {
         public String fsid;
     }
 
+    public volatile boolean monInitSuccess = true;
     public Map<String, CephPrimaryStorageConfig> config = new HashMap<String, CephPrimaryStorageConfig>();
     public List<CreateEmptyVolumeCmd> createEmptyVolumeCmds = new ArrayList<CreateEmptyVolumeCmd>();
     public List<DeleteCmd> deleteCmds = new ArrayList<DeleteCmd>();

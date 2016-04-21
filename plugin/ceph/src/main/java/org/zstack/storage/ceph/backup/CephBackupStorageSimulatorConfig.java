@@ -21,6 +21,7 @@ public class CephBackupStorageSimulatorConfig {
         public String name;
     }
 
+    public volatile boolean monInitSuccess = true;
     public List<InitCmd> initCmds = new ArrayList<InitCmd>();
     public Map<String, CephBackupStorageConfig> config = new HashMap<String, CephBackupStorageConfig>();
     public List<DownloadCmd> downloadCmds = new ArrayList<DownloadCmd>();

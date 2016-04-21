@@ -82,10 +82,16 @@ public class CephPrimaryStorageSimulator {
         CephPrimaryStorageConfig cpc = getConfig(cmd);
 
         InitRsp rsp = new InitRsp();
-        rsp.fsid = cpc.fsid;
-        rsp.userKey = Platform.getUuid();
-        rsp.totalCapacity = cpc.totalCapacity;
-        rsp.availableCapacity = cpc.availCapacity;
+        if (!config.monInitSuccess) {
+            rsp.error = "on purpose";
+            rsp.success = false;
+        } else {
+            rsp.fsid = cpc.fsid;
+            rsp.userKey = Platform.getUuid();
+            rsp.totalCapacity = cpc.totalCapacity;
+            rsp.availableCapacity = cpc.availCapacity;
+        }
+
         reply(entity, rsp);
         return null;
     }
