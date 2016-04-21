@@ -11,8 +11,8 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.console.*;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -33,7 +33,7 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public class ConsoleManagerImpl extends AbstractService implements ConsoleManager, VmInstanceMigrateExtensionPoint,
-        VmInstanceStopExtensionPoint, VmInstanceDestroyExtensionPoint{
+        VmReleaseResourceExtensionPoint {
     private static CLogger logger = Utils.getLogger(ConsoleManagerImpl.class);
 
     @Autowired
@@ -210,44 +210,20 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     }
 
     @Override
-    public String preDestroyVm(VmInstanceInventory inv) {
-        return null;
-    }
-
-    @Override
-    public void beforeDestroyVm(VmInstanceInventory inv) {
-
-    }
-
-    @Override
-    public void afterDestroyVm(VmInstanceInventory inv) {
+    public void releaseVmResource(VmInstanceSpec spec, final Completion completion) {
         ConsoleBackend bkd = getBackend();
-        bkd.deleteConsoleSession(inv, new NopeCompletion());
-    }
+        bkd.deleteConsoleSession(spec.getVmInventory(), new Completion(completion) {
+            @Override
+            public void success() {
+                completion.success();
+            }
 
-    @Override
-    public void failedToDestroyVm(VmInstanceInventory inv, ErrorCode reason) {
-
-    }
-
-    @Override
-    public String preStopVm(VmInstanceInventory inv) {
-        return null;
-    }
-
-    @Override
-    public void beforeStopVm(VmInstanceInventory inv) {
-
-    }
-
-    @Override
-    public void afterStopVm(VmInstanceInventory inv) {
-        ConsoleBackend bkd = getBackend();
-        bkd.deleteConsoleSession(inv, new NopeCompletion());
-    }
-
-    @Override
-    public void failedToStopVm(VmInstanceInventory inv, ErrorCode reason) {
-
+            @Override
+            public void fail(ErrorCode errorCode) {
+                //TODO
+                logger.warn(errorCode.toString());
+                completion.success();
+            }
+        });
     }
 }
