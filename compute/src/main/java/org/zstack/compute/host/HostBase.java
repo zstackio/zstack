@@ -446,8 +446,6 @@ public abstract class HostBase extends AbstractHost {
                         public void success() {
                             changeState(HostStateEvent.maintain);
                             evt.setInventory(HostInventory.valueOf(self));
-                            // stop tracking host in maintenance mode, so no command will be sent to it
-                            tracker.untrackHost(self.getUuid());
                             bus.publish(evt);
                             done(chain);
                         }
