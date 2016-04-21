@@ -76,9 +76,16 @@ public class CephBackupStorageSimulator {
         DebugUtils.Assert(cbc.fsid != null, String.format("fsid for ceph backup storage[%s] is null", cbc.name));
 
         InitRsp rsp = new InitRsp();
-        rsp.fsid = cbc.fsid;
-        rsp.totalCapacity = cbc.totalCapacity;
-        rsp.availableCapacity = cbc.availCapacity;
+
+        if (!config.monInitSuccess) {
+            rsp.error = "on purpose";
+            rsp.success = false;
+        } else {
+            rsp.fsid = cbc.fsid;
+            rsp.totalCapacity = cbc.totalCapacity;
+            rsp.availableCapacity = cbc.availCapacity;
+        }
+
         reply(entity, rsp);
         return null;
     }

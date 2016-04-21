@@ -76,7 +76,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     abstract protected void handle(BackupStorageAskInstallPathMsg msg);
 
-    abstract protected void connectHook(Completion completion);
+    abstract protected void connectHook(boolean newAdd, Completion completion);
 
 	public BackupStorageBase(BackupStorageVO self) {
 		this.self = self;
@@ -205,7 +205,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             @Override
             public void run(final SyncTaskChain chain) {
                 final ConnectBackupStorageReply reply = new ConnectBackupStorageReply();
-                connectHook(new Completion(msg, chain) {
+                connectHook(msg.isNewAdd(), new Completion(msg, chain) {
                     @Override
                     public void success() {
                         self = dbf.reload(self);

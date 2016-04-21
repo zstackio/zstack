@@ -1496,7 +1496,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    private void connect(final Completion completion) {
+    private void connect(final boolean newAdded, final Completion completion) {
         final List<CephPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
             @Override
             public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
@@ -1609,6 +1609,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        if (newAdded) {
+                            dbf.removeCollection(getSelf().getMons(), CephPrimaryStorageMonVO.class);
+                        }
+
                         completion.fail(errCode);
                     }
                 });
@@ -1618,7 +1622,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void connectHook(ConnectPrimaryStorageMsg msg, final Completion completion) {
-        connect(completion);
+        connect(msg.isNewAdded(), completion);
     }
 
     @Override
@@ -1635,7 +1639,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
         self.setStatus(PrimaryStorageStatus.Connecting);
         dbf.update(self);
-        connect(new Completion(msg) {
+        connect(false, new Completion(msg) {
             @Override
             public void success() {
                 self = dbf.reload(self);

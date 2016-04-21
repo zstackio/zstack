@@ -29,7 +29,6 @@ import org.zstack.utils.gson.JSONObjectUtil;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -386,7 +385,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     @Override
-    protected void connectHook(final Completion completion) {
+    protected void connectHook(final boolean newAdded, final Completion completion) {
         final List<CephBackupStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephBackupStorageMonBase, CephBackupStorageMonVO>() {
             @Override
             public CephBackupStorageMonBase call(CephBackupStorageMonVO arg) {
@@ -483,6 +482,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        if (newAdded) {
+                            dbf.removeCollection(getSelf().getMons(), CephBackupStorageMonVO.class);
+                        }
+
                         completion.fail(errCode);
                     }
                 });
