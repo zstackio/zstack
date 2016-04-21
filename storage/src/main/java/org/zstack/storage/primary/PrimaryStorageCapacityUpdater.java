@@ -118,11 +118,10 @@ public class PrimaryStorageCapacityUpdater {
     private void merge() {
         capacityVO = dbf.getEntityManager().merge(capacityVO);
         logCapacityChange();
-        checkResize();
     }
 
     @Transactional
-    public boolean updateAvailablePhysicalCapacity(long avail) {
+    private boolean _updateAvailablePhysicalCapacity(long avail) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
             return false;
@@ -133,8 +132,15 @@ public class PrimaryStorageCapacityUpdater {
         return true;
     }
 
+
+    public boolean updateAvailablePhysicalCapacity(long avail) {
+        boolean ret = _updateAvailablePhysicalCapacity(avail);
+        checkResize();
+        return ret;
+    }
+
     @Transactional
-    public boolean increaseAvailableCapacity(long size) {
+    private boolean _increaseAvailableCapacity(long size) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
             return false;
@@ -151,8 +157,14 @@ public class PrimaryStorageCapacityUpdater {
         return true;
     }
 
+    public boolean increaseAvailableCapacity(long size) {
+        boolean ret = _increaseAvailableCapacity(size);
+        checkResize();
+        return ret;
+    }
+
     @Transactional
-    public boolean decreaseAvailableCapacity(long size) {
+    private boolean _decreaseAvailableCapacity(long size) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
             return false;
@@ -163,8 +175,14 @@ public class PrimaryStorageCapacityUpdater {
         return true;
     }
 
+    public boolean decreaseAvailableCapacity(long size) {
+        boolean ret = _decreaseAvailableCapacity(size);
+        checkResize();
+        return ret;
+    }
+
     @Transactional
-    public boolean update(Long total, Long avail, Long physicalTotal, Long physicalAvail) {
+    private boolean _update(Long total, Long avail, Long physicalTotal, Long physicalAvail) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
             return false;
@@ -191,9 +209,14 @@ public class PrimaryStorageCapacityUpdater {
         return true;
     }
 
+    public boolean update(Long total, Long avail, Long physicalTotal, Long physicalAvail) {
+        boolean ret = _update(total, avail, physicalTotal, physicalAvail);
+        checkResize();
+        return ret;
+    }
 
     @Transactional
-    public boolean run(PrimaryStorageCapacityUpdaterRunnable runnable) {
+    private boolean _run(PrimaryStorageCapacityUpdaterRunnable runnable) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
             return false;
@@ -206,5 +229,11 @@ public class PrimaryStorageCapacityUpdater {
             return true;
         }
         return false;
+    }
+
+    public boolean run(PrimaryStorageCapacityUpdaterRunnable runnable) {
+        boolean ret = _run(runnable);
+        checkResize();
+        return ret;
     }
 }
