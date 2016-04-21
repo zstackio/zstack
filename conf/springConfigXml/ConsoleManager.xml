@@ -17,8 +17,7 @@
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.vm.VmInstanceStopExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.vm.VmInstanceDestroyExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmReleaseResourceExtensionPoint" />
         </zstack:plugin>
 
         <property name="useBackend" value="ManagementServerConsoleProxyBackend" />
