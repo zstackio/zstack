@@ -119,6 +119,10 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     @Override
     public void afterMigrateVm(final VmInstanceInventory inv, String srcHostUuid) {
         List<EipTO> eips = getEipsByVmUuid(inv.getUuid());
+        if (eips == null || eips.isEmpty()) {
+            return;
+        }
+
         batchDeleteEips(eips, srcHostUuid, new NopeCompletion());
         batchApplyEips(eips, inv.getHostUuid(), new Completion() {
             @Override
