@@ -51,7 +51,7 @@ public class TestUserdata2 {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/userdata/TestUserdata1.xml", con);
+        deployer = new Deployer("deployerXml/userdata/TestUserdata2.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
         deployer.load();
 

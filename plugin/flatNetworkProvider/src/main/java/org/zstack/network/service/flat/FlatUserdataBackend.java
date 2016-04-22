@@ -215,12 +215,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     }
 
     public static class ApplyUserdataCmd extends KVMAgentCommands.AgentCommand {
-        public MetadataTO metadata;
-        public String userdata;
-        public String vmIp;
-        public String dhcpServerIp;
-        public String bridgeName;
-        public int port;
+        public UserdataTO userdata;
     }
 
     public static class ApplyUserdataRsp extends KVMAgentCommands.AgentResponse {
@@ -277,21 +272,23 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        ApplyUserdataCmd cmd = new ApplyUserdataCmd();
+
                         MetadataTO to = new MetadataTO();
                         to.vmUuid = struct.getVmSpec().getVmInventory().getUuid();
-
-                        ApplyUserdataCmd cmd = new ApplyUserdataCmd();
-                        cmd.metadata = to;
-                        cmd.userdata = struct.getUserdata();
-                        cmd.dhcpServerIp = dhcpServerIp;
-                        cmd.vmIp = CollectionUtils.find(struct.getVmSpec().getDestNics(), new Function<String, VmNicInventory>() {
+                        UserdataTO uto = new UserdataTO();
+                        uto.metadata = to;
+                        uto.userdata = struct.getUserdata();
+                        uto.dhcpServerIp = dhcpServerIp;
+                        uto.vmIp = CollectionUtils.find(struct.getVmSpec().getDestNics(), new Function<String, VmNicInventory>() {
                             @Override
                             public String call(VmNicInventory arg) {
                                 return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null;
                             }
                         });
-                        cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
-                        cmd.port = UserdataGlobalProperty.HOST_PORT;
+                        uto.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
+                        uto.port = UserdataGlobalProperty.HOST_PORT;
+                        cmd.userdata = uto;
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setHostUuid(struct.getVmSpec().getDestHost().getUuid());
