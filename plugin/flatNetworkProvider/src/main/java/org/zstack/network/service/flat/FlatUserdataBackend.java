@@ -2,6 +2,7 @@ package org.zstack.network.service.flat;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.UserdataBuilder;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -10,33 +11,33 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.kvm.KVMAgentCommands;
-import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
-import org.zstack.kvm.KVMHostAsyncHttpCallReply;
-import org.zstack.kvm.KVMSystemTags;
+import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands.AgentResponse;
+import org.zstack.network.service.NetworkServiceFilter;
 import org.zstack.network.service.userdata.UserdataBackend;
+import org.zstack.network.service.userdata.UserdataConstant;
 import org.zstack.network.service.userdata.UserdataGlobalProperty;
 import org.zstack.network.service.userdata.UserdataStruct;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.TagUtils;
 import org.zstack.utils.function.Function;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by frank on 10/13/2015.
  */
-public class FlatUserdataBackend implements UserdataBackend {
+public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExtensionPoint {
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -47,10 +48,170 @@ public class FlatUserdataBackend implements UserdataBackend {
     private ApiTimeoutManager timeoutMgr;
 
     public static final String APPLY_USER_DATA = "/flatnetworkprovider/userdata/apply";
+    public static final String BATCH_APPLY_USER_DATA = "/flatnetworkprovider/userdata/batchapply";
     public static final String RELEASE_USER_DATA = "/flatnetworkprovider/userdata/release";
+
+    @Override
+    public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
+        return new NoRollbackFlow() {
+            String __name__ = "prepare-userdata";
+
+            @Transactional(readOnly = true)
+            private List<String> getVmsNeedUserdataOnHost() {
+                String sql = "select vm.uuid from VmInstanceVO vm where vm.hostUuid = :huuid and vm.state = :state";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                q.setParameter("state", VmInstanceState.Running);
+                q.setParameter("huuid", context.getInventory().getUuid());
+                List<String> vmUuids = q.getResultList();
+                if (vmUuids.isEmpty()) {
+                    return null;
+                }
+
+                vmUuids = new NetworkServiceFilter().filterVmByServiceTypeAndProviderType(vmUuids, UserdataConstant.USERDATA_TYPE_STRING, FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
+                if (vmUuids.isEmpty()) {
+                    return null;
+                }
+
+                return vmUuids;
+            }
+
+            class VmIpL3Uuid {
+                String vmIp;
+                String l3Uuid;
+                String dhcpServerIp;
+            }
+
+            @Transactional(readOnly = true)
+            private Map<String, VmIpL3Uuid> getVmIpL3Uuid(List<String> vmUuids) {
+                String sql = "select vm.uuid, nic.ip, nic.l3NetworkUuid from VmInstanceVO vm, VmNicVO nic" +
+                        " where vm.uuid = nic.vmInstanceUuid and vm.uuid in (:uuids) and nic.l3NetworkUuid = vm.defaultL3NetworkUuid";
+                TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("uuids", vmUuids);
+                List<Tuple> ts = q.getResultList();
+
+                Map<String, VmIpL3Uuid> ret = new HashMap<String, VmIpL3Uuid>();
+                for (Tuple t : ts) {
+                    String vmUuid = t.get(0, String.class);
+                    VmIpL3Uuid v = new VmIpL3Uuid();
+                    v.vmIp = t.get(1, String.class);
+                    v.l3Uuid = t.get(2, String.class);
+                    ret.put(vmUuid, v);
+                }
+
+                return ret;
+            }
+
+            private List<UserdataTO> getUserData() {
+                List<String> vmUuids = getVmsNeedUserdataOnHost();
+                if (vmUuids == null) {
+                    return null;
+                }
+
+                Map<String, String> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
+                Map<String, VmIpL3Uuid> vmipl3 = getVmIpL3Uuid(vmUuids);
+                Set<String> l3Uuids = new HashSet<String>();
+                for (VmIpL3Uuid l : vmipl3.values()) {
+                    l3Uuids.add(l.l3Uuid);
+                }
+
+                List<FlatDhcpAcquireDhcpServerIpMsg> msgs = CollectionUtils.transformToList(l3Uuids, new Function<FlatDhcpAcquireDhcpServerIpMsg, String>() {
+                    @Override
+                    public FlatDhcpAcquireDhcpServerIpMsg call(String l3uuid) {
+                        FlatDhcpAcquireDhcpServerIpMsg msg = new FlatDhcpAcquireDhcpServerIpMsg();
+                        msg.setL3NetworkUuid(l3uuid);
+                        bus.makeTargetServiceIdByResourceUuid(msg, FlatNetworkServiceConstant.SERVICE_ID, l3uuid);
+                        return msg;
+                    }
+                });
+
+                List<MessageReply> replies = bus.call(msgs);
+                for (MessageReply reply : replies) {
+                    FlatDhcpAcquireDhcpServerIpMsg msg = msgs.get(replies.indexOf(reply));
+                    String l3uuid = msg.getL3NetworkUuid();
+
+                    if (!reply.isSuccess()) {
+                        throw new OperationFailureException(errf.stringToOperationError(
+                                String.format("cannot get DHCP server IP of the L3 network[uuid:%s], %s", l3uuid, reply.getError())
+                        ));
+                    }
+
+                    FlatDhcpAcquireDhcpServerIpReply r = reply.castReply();
+
+                    for (VmIpL3Uuid l : vmipl3.values()) {
+                        if (l.l3Uuid.equals(l3uuid)) {
+                            l.dhcpServerIp = r.getIp();
+                        }
+                    }
+                }
+
+                Map<String, String> bridgeNames = new BridgeNameFinder().findByL3Uuids(l3Uuids);
+
+                List<UserdataTO> tos = new ArrayList<UserdataTO>();
+                for (String vmuuid : vmUuids) {
+                    UserdataTO to = new UserdataTO();
+                    MetadataTO mto = new MetadataTO();
+                    mto.vmUuid = vmuuid;
+                    to.metadata = mto;
+
+                    VmIpL3Uuid l = vmipl3.get(vmuuid);
+                    to.dhcpServerIp = l.dhcpServerIp;
+                    to.vmIp = l.vmIp;
+                    to.bridgeName = bridgeNames.get(l.l3Uuid);
+                    to.userdata = userdata.get(vmuuid);
+                    to.port = UserdataGlobalProperty.HOST_PORT;
+                    tos.add(to);
+                }
+
+                return tos;
+            }
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                List<UserdataTO> tos = getUserData();
+                if (tos == null) {
+                    trigger.next();
+                    return;
+                }
+
+                BatchApplyUserdataCmd cmd = new BatchApplyUserdataCmd();
+                cmd.userdata = tos;
+
+                new KvmCommandSender(context.getInventory().getUuid(), true).send(cmd, BATCH_APPLY_USER_DATA, new KvmCommandFailureChecker() {
+                    @Override
+                    public ErrorCode getError(KvmResponseWrapper wrapper) {
+                        AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
+                        return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                    }
+                }, new ReturnValueCompletion<Object>(trigger) {
+                    @Override
+                    public void success(Object returnValue) {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        };
+    }
+
+    public static class UserdataTO {
+        public MetadataTO metadata;
+        public String userdata;
+        public String vmIp;
+        public String dhcpServerIp;
+        public String bridgeName;
+        public int port;
+    }
 
     public static class MetadataTO {
         public String vmUuid;
+    }
+
+    public static class BatchApplyUserdataCmd extends KVMAgentCommands.AgentCommand {
+        public List<UserdataTO> userdata;
     }
 
     public static class ApplyUserdataCmd extends KVMAgentCommands.AgentCommand {
@@ -129,7 +290,7 @@ public class FlatUserdataBackend implements UserdataBackend {
                                 return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null;
                             }
                         });
-                        cmd.bridgeName = getBridgeNameFromL3NetworkUuid(struct.getL3NetworkUuid());
+                        cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
                         cmd.port = UserdataGlobalProperty.HOST_PORT;
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -176,21 +337,6 @@ public class FlatUserdataBackend implements UserdataBackend {
         }).start();
     }
 
-    @Transactional(readOnly = true)
-    private String getBridgeNameFromL3NetworkUuid(String l3Uuid) {
-        String sql = "select t.tag from SystemTagVO t, L3NetworkVO l3 where t.resourceType = :ttype and t.tag like :tag" +
-                " and t.resourceUuid = l3.l2NetworkUuid and l3.uuid = :l3Uuid";
-        TypedQuery<String> tq = dbf.getEntityManager().createQuery(sql, String.class);
-        tq.setParameter("tag", TagUtils.tagPatternToSqlPattern(KVMSystemTags.L2_BRIDGE_NAME.getTagFormat()));
-        tq.setParameter("l3Uuid", l3Uuid);
-        tq.setParameter("ttype", L2NetworkVO.class.getSimpleName());
-        List<String> lst = tq.getResultList();
-        if (lst.isEmpty()) {
-            throw new CloudRuntimeException(String.format("cannot find the bridge name for l3 network[uuid:%s]", l3Uuid));
-        }
-        String tag = lst.get(0);
-        return KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(tag, KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
-    }
 
     @Override
     public void releaseUserdata(final UserdataStruct struct, final Completion completion) {
@@ -205,7 +351,7 @@ public class FlatUserdataBackend implements UserdataBackend {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         ReleaseUserdataCmd cmd = new ReleaseUserdataCmd();
-                        cmd.bridgeName = getBridgeNameFromL3NetworkUuid(struct.getL3NetworkUuid());
+                        cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
                         cmd.vmIp = CollectionUtils.find(struct.getVmSpec().getDestNics(), new Function<String, VmNicInventory>() {
                             @Override
                             public String call(VmNicInventory arg) {

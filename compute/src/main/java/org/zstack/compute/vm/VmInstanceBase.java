@@ -820,31 +820,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private String buildUserdata() {
-        String userdata = VmSystemTags.USERDATA.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USERDATA_TOKEN);
-        if (userdata != null) {
-            return userdata;
-        }
-
-        String sshKey = VmSystemTags.SSHKEY.getTokenByResourceUuid(self.getUuid(), VmSystemTags.SSHKEY_TOKEN);
-        String rootPassword = VmSystemTags.ROOT_PASSWORD.getTokenByResourceUuid(self.getUuid(), VmSystemTags.ROOT_PASSWORD_TOKEN);
-        if (sshKey == null && rootPassword == null) {
-            return null;
-        }
-
-        StringBuilder sb = new StringBuilder("#cloud-config");
-        if (sshKey != null) {
-            sb.append("\nssh_authorized_keys:");
-            sb.append(String.format("\n  - %s", sshKey));
-            sb.append("\ndisable_root: false");
-        }
-        if (rootPassword != null) {
-            sb.append("\nchpasswd:");
-            sb.append("\n  list: |");
-            sb.append(String.format("\n    root:%s", rootPassword));
-            sb.append("\n  expire: False");
-        }
-
-        return sb.toString();
+        return new UserdataBuilder().buildByVmUuid(self.getUuid());
     }
 
     private void handle(final DetachNicFromVmMsg msg) {

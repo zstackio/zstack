@@ -35,14 +35,24 @@ public class KvmCommandSender {
     private List<String> hostUuids;
     private Iterator<String> it;
     private List<ErrorCode> errors = new ArrayList<ErrorCode>();
+    private boolean noStatusCheck;
 
-    public KvmCommandSender(List<String> hostUuids) {
+    public KvmCommandSender(List<String> hostUuids, boolean noStatusCheck) {
         this.hostUuids = hostUuids;
         it = hostUuids.iterator();
+        this.noStatusCheck = noStatusCheck;
+    }
+
+    public KvmCommandSender(List<String> hostUuids) {
+        this(hostUuids, false);
     }
 
     public KvmCommandSender(String hostUuid) {
-        this(list(hostUuid));
+        this(hostUuid, false);
+    }
+
+    public KvmCommandSender(String hostUuid, boolean noStatusCheck) {
+        this(list(hostUuid), noStatusCheck);
         DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
     }
 
@@ -64,6 +74,7 @@ public class KvmCommandSender {
         msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), defaulTimeout));
         msg.setHostUuid(huuid);
         msg.setPath(path);
+        msg.setNoStatusCheck(noStatusCheck);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
