@@ -1,5 +1,6 @@
 package org.zstack.test.userdata;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.compute.vm.VmSystemTags;
@@ -12,28 +13,29 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.flat.BridgeNameFinder;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
+import org.zstack.network.service.flat.FlatNetworkSystemTags;
+import org.zstack.network.service.flat.FlatUserdataBackend.BatchApplyUserdataCmd;
+import org.zstack.network.service.flat.FlatUserdataBackend.UserdataTO;
+import org.zstack.network.service.userdata.UserdataGlobalProperty;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.data.SizeUnit;
-import org.zstack.utils.function.Function;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * 1. create a vm with user data
- * 2. attach a new l3 network
+ * 2. reconnect the vm's host
  *
- * confirm the user data applied on the new l3 network
- *
- * bug: https://github.com/zxwing/premium/issues/113
+ * confirm the userdata synced on the host
  *
  */
-public class TestUserdata1 {
+public class TestUserdata2 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -86,17 +88,20 @@ public class TestUserdata1 {
         creator.addL3Network(l3.getUuid());
         VmInstanceInventory vm = creator.create();
 
-        fconfig.applyUserdataCmds.clear();
-        final L3NetworkInventory l32 = deployer.l3Networks.get("TestL3Network2");
-        vm =  api.attachNic(vm.getUuid(), l32.getUuid());
+        VmNicInventory nic = vm.getVmNics().get(0);
 
-        VmNicInventory nic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(l32.getUuid()) ? arg : null;
-            }
-        });
+        api.reconnectHost(vm.getHostUuid());
+        Assert.assertEquals(1, fconfig.batchApplyUserdataCmds.size());
+        BatchApplyUserdataCmd cmd = fconfig.batchApplyUserdataCmds.get(0);
+        Assert.assertEquals(1, cmd.userdata.size());
+        UserdataTO to = cmd.userdata.get(0);
 
-        api.detachNic(nic.getUuid());
+        Assert.assertEquals(vm.getUuid(), to.metadata.vmUuid);
+        Assert.assertEquals(nic.getIp(), to.vmIp);
+        String brName = new BridgeNameFinder().findByL3Uuid(nic.getL3NetworkUuid());
+        Assert.assertEquals(brName, to.bridgeName);
+        String dhcpIp = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokenByResourceUuid(nic.getL3NetworkUuid(), FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
+        Assert.assertEquals(dhcpIp, to.dhcpServerIp);
+        Assert.assertEquals(UserdataGlobalProperty.HOST_PORT, to.port);
     }
 }

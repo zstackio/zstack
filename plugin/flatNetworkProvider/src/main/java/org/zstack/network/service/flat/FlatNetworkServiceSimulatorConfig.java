@@ -10,6 +10,7 @@ import org.zstack.network.service.flat.FlatEipBackend.BatchApplyEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.BatchDeleteEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.DeleteEipCmd;
 import org.zstack.network.service.flat.FlatUserdataBackend.ApplyUserdataCmd;
+import org.zstack.network.service.flat.FlatUserdataBackend.BatchApplyUserdataCmd;
 import org.zstack.network.service.flat.FlatUserdataBackend.ReleaseUserdataCmd;
 
 import java.util.ArrayList;
@@ -31,4 +32,5 @@ public class FlatNetworkServiceSimulatorConfig {
     public List<BatchApplyEipCmd> batchApplyEipCmds = new ArrayList<BatchApplyEipCmd>();
     public List<BatchDeleteEipCmd> batchDeleteEipCmds = new ArrayList<BatchDeleteEipCmd>();
     public List<ResetDefaultGatewayCmd> resetDefaultGatewayCmds = new ArrayList<ResetDefaultGatewayCmd>();
+    public List<BatchApplyUserdataCmd> batchApplyUserdataCmds = new ArrayList<BatchApplyUserdataCmd>();
 }

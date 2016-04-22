@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.network.service.flat.FlatDhcpBackend.*;
 import org.zstack.network.service.flat.FlatDnsBackend.SetDnsCmd;
 import org.zstack.network.service.flat.FlatDnsBackend.SetDnsRsp;
@@ -19,10 +20,7 @@ import org.zstack.network.service.flat.FlatEipBackend.BatchApplyEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.BatchDeleteEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.DeleteEipCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
-import org.zstack.network.service.flat.FlatUserdataBackend.ApplyUserdataCmd;
-import org.zstack.network.service.flat.FlatUserdataBackend.ApplyUserdataRsp;
-import org.zstack.network.service.flat.FlatUserdataBackend.ReleaseUserdataCmd;
-import org.zstack.network.service.flat.FlatUserdataBackend.ReleaseUserdataRsp;
+import org.zstack.network.service.flat.FlatUserdataBackend.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 /**
@@ -95,6 +93,15 @@ public class FlatNetworkServiceSimulator {
         ApplyUserdataCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ApplyUserdataCmd.class);
         config.applyUserdataCmds.add(cmd);
         ApplyUserdataRsp rsp = new ApplyUserdataRsp();
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value = FlatUserdataBackend.BATCH_APPLY_USER_DATA, method = RequestMethod.POST)
+    public @ResponseBody String batchApplyUserdata(HttpEntity<String> entity) {
+        BatchApplyUserdataCmd cmd = JSONObjectUtil.toObject(entity.getBody(), BatchApplyUserdataCmd.class);
+        config.batchApplyUserdataCmds.add(cmd);
+        AgentResponse rsp = new AgentResponse();
         reply(entity, rsp);
         return null;
     }

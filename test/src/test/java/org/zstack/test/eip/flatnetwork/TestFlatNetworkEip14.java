@@ -31,6 +31,7 @@ import org.zstack.utils.function.Function;
  * confirm the eips are created
  *
  */
+@Deprecated
 public class TestFlatNetworkEip14 {
     Deployer deployer;
     Api api;

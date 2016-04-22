@@ -37,6 +37,7 @@ import org.zstack.utils.function.Function;
  * confirm the another eip is still there
  *
  */
+@Deprecated
 public class TestFlatNetworkEip15 {
     Deployer deployer;
     Api api;

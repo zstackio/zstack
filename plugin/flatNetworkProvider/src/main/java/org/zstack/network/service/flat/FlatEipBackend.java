@@ -31,7 +31,9 @@ import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
+import org.zstack.network.service.NetworkServiceFilter;
 import org.zstack.network.service.eip.EipBackend;
+import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.EipStruct;
 import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentCmd;
@@ -319,7 +321,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         return vipBr;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     private List<EipTO> getEipsByNics(List<VmNicVO> vmNics) {
         List<String> nicUuids = CollectionUtils.transformToList(vmNics, new Function<String, VmNicVO>() {
             @Override
@@ -327,6 +329,11 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 return arg.getUuid();
             }
         });
+
+        nicUuids = new NetworkServiceFilter().filterNicByServiceTypeAndProviderType(nicUuids, EipConstant.EIP_NETWORK_SERVICE_TYPE, FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
+        if (nicUuids.isEmpty()) {
+            return null;
+        }
 
         String sql = "select eip from EipVO eip where eip.vmNicUuid in (:nicUuids)";
         TypedQuery<EipVO> q = dbf.getEntityManager().createQuery(sql, EipVO.class);
