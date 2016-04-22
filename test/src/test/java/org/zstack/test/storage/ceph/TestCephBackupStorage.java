@@ -10,12 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.image.ImageGlobalConfig;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
-import org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageMsg;
-import org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageReply;
-import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
@@ -24,10 +19,8 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.search.QueryTestValidator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 /**
