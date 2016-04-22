@@ -7,25 +7,14 @@ import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkDnsVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
 import org.zstack.kvm.KVMSystemTags;
-import org.zstack.network.service.flat.FlatDhcpBackend.ApplyDhcpCmd;
-import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.network.service.flat.FlatNetworkSystemTags;
 import org.zstack.network.service.flat.FlatUserdataBackend.ApplyUserdataCmd;
@@ -34,19 +23,11 @@ import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.data.SizeUnit;
-import org.zstack.utils.function.Function;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * 1. create a vm with user data
@@ -113,6 +94,7 @@ public class TestMevoco4 {
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
         ImageInventory img = deployer.images.get("TestImage");
+        fconfig.applyUserdataCmds.clear();
 
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("small");
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
@@ -133,11 +115,11 @@ public class TestMevoco4 {
         String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
         Assert.assertFalse(fconfig.applyUserdataCmds.isEmpty());
         ApplyUserdataCmd cmd = fconfig.applyUserdataCmds.get(0);
-        Assert.assertEquals(vm.getUuid(), cmd.metadata.vmUuid);
-        Assert.assertEquals(dhcpServerIp, cmd.dhcpServerIp);
-        Assert.assertEquals(nic.getIp(), cmd.vmIp);
-        Assert.assertEquals(userdata, cmd.userdata);
-        Assert.assertEquals(bridgeName, cmd.bridgeName);
+        Assert.assertEquals(vm.getUuid(), cmd.userdata.metadata.vmUuid);
+        Assert.assertEquals(dhcpServerIp, cmd.userdata.dhcpServerIp);
+        Assert.assertEquals(nic.getIp(), cmd.userdata.vmIp);
+        Assert.assertEquals(userdata, cmd.userdata.userdata);
+        Assert.assertEquals(bridgeName, cmd.userdata.bridgeName);
 
         vm = api.stopVmInstance(vm.getUuid());
         Assert.assertFalse(fconfig.releaseUserdataCmds.isEmpty());
@@ -149,11 +131,11 @@ public class TestMevoco4 {
         vm = api.startVmInstance(vm.getUuid());
         Assert.assertFalse(fconfig.applyUserdataCmds.isEmpty());
         cmd = fconfig.applyUserdataCmds.get(0);
-        Assert.assertEquals(vm.getUuid(), cmd.metadata.vmUuid);
-        Assert.assertEquals(dhcpServerIp, cmd.dhcpServerIp);
-        Assert.assertEquals(nic.getIp(), cmd.vmIp);
-        Assert.assertEquals(userdata, cmd.userdata);
-        Assert.assertEquals(bridgeName, cmd.bridgeName);
+        Assert.assertEquals(vm.getUuid(), cmd.userdata.metadata.vmUuid);
+        Assert.assertEquals(dhcpServerIp, cmd.userdata.dhcpServerIp);
+        Assert.assertEquals(nic.getIp(), cmd.userdata.vmIp);
+        Assert.assertEquals(userdata, cmd.userdata.userdata);
+        Assert.assertEquals(bridgeName, cmd.userdata.bridgeName);
 
         vm = api.stopVmInstance(vm.getUuid());
 
@@ -180,8 +162,8 @@ public class TestMevoco4 {
         fconfig.applyUserdataCmds.clear();
         vm = creator.create();
         cmd = fconfig.applyUserdataCmds.get(0);
-        Assert.assertTrue(cmd.userdata.contains(sshkey));
-        Assert.assertTrue(cmd.userdata.contains(rootPassword));
+        Assert.assertTrue(cmd.userdata.userdata.contains(sshkey));
+        Assert.assertTrue(cmd.userdata.userdata.contains(rootPassword));
 
         creator.systemTags = list(
                 VmSystemTags.USERDATA.instantiateTag(map(e(VmSystemTags.USERDATA_TOKEN, "xxx"))),
@@ -191,7 +173,7 @@ public class TestMevoco4 {
         fconfig.applyUserdataCmds.clear();
         vm = creator.create();
         cmd = fconfig.applyUserdataCmds.get(0);
-        Assert.assertFalse(cmd.userdata.contains(sshkey));
-        Assert.assertFalse(cmd.userdata.contains(rootPassword));
+        Assert.assertFalse(cmd.userdata.userdata.contains(sshkey));
+        Assert.assertFalse(cmd.userdata.userdata.contains(rootPassword));
     }
 }
