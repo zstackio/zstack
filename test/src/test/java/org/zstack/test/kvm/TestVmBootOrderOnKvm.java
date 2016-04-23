@@ -7,21 +7,17 @@ import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.BootDev;
-import org.zstack.kvm.KVMAgentCommands.RebootVmCmd;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -72,10 +68,9 @@ public class TestVmBootOrderOnKvm {
         vm = api.setVmBootOrder(vm.getUuid(), list(VmBootDevice.CdRom.toString(), VmBootDevice.HardDisk.toString()), null);
         Assert.assertTrue(VmSystemTags.BOOT_ORDER.hasTag(vm.getUuid()));
         vm = api.rebootVmInstance(vm.getUuid());
-        RebootVmCmd rcmd = config.rebootVmCmds.get(0);
-        Assert.assertEquals(2, rcmd.getBootDev().size());
-        Assert.assertTrue(rcmd.getBootDev().contains(BootDev.cdrom.toString()));
-        Assert.assertTrue(rcmd.getBootDev().contains(BootDev.hd.toString()));
+        scmd = config.startVmCmd;
+        Assert.assertTrue(scmd.getBootDev().contains(BootDev.cdrom.toString()));
+        Assert.assertTrue(scmd.getBootDev().contains(BootDev.hd.toString()));
 
         order = api.getVmBootOrder(vm.getUuid(), null);
         Assert.assertEquals(2, order.size());
@@ -95,9 +90,8 @@ public class TestVmBootOrderOnKvm {
         Assert.assertEquals(1, order.size());
         Assert.assertEquals(VmBootDevice.HardDisk.toString(), order.get(0));
         api.rebootVmInstance(vm.getUuid());
-        rcmd = config.rebootVmCmds.get(0);
-        Assert.assertEquals(1, rcmd.getBootDev().size());
-        Assert.assertTrue(rcmd.getBootDev().contains(BootDev.hd.toString()));
+        scmd = config.startVmCmd;
+        Assert.assertTrue(scmd.getBootDev().contains(BootDev.hd.toString()));
 
         api.stopVmInstance(vm.getUuid());
         api.startVmInstance(vm.getUuid());
