@@ -61,9 +61,7 @@ import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
 
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.ln;
 
 /**

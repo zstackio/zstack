@@ -2,7 +2,6 @@ package org.zstack.header.volume;
 
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 
