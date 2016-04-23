@@ -7,6 +7,15 @@ import org.zstack.header.volume.VolumeInventory;
  */
 public class CreateDataVolumeFromVolumeSnapshotReply extends MessageReply {
     private VolumeInventory inventory;
+    private long actualSize;
+
+    public long getActualSize() {
+        return actualSize;
+    }
+
+    public void setActualSize(long actualSize) {
+        this.actualSize = actualSize;
+    }
 
     public VolumeInventory getInventory() {
         return inventory;

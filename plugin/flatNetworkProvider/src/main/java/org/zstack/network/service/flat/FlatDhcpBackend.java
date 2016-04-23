@@ -1055,9 +1055,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 ResetDefaultGatewayRsp rsp = wrapper.getResponse(ResetDefaultGatewayRsp.class);
                 return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
             }
-        }, new ReturnValueCompletion<Object>(completion) {
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
-            public void success(Object returnValue) {
+            public void success(KvmResponseWrapper returnValue) {
                 completion.success();
             }
 

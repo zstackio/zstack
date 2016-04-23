@@ -3,7 +3,9 @@ package org.zstack.storage.primary.smp;
 import org.zstack.storage.primary.smp.KvmBackend.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by xing5 on 2016/3/27.
@@ -22,4 +24,8 @@ public class SMPPrimaryStorageSimulatorConfig {
     public List<OfflineMergeSnapshotCmd> offlineMergeSnapshotCmds = new ArrayList<OfflineMergeSnapshotCmd>();
     public List<CreateEmptyVolumeCmd> createEmptyVolumeCmds = new ArrayList<CreateEmptyVolumeCmd>();
     public List<CheckBitsCmd> checkBitsCmds = new ArrayList<CheckBitsCmd>();
+    public Map<String, Long> mergeSnapshotCmdSize = new HashMap<String, Long>();
+    public Map<String, Long> mergeSnapshotCmdActualSize = new HashMap<String, Long>();
+    public List<GetVolumeActualSizeCmd> getVolumeActualSizeCmds = new ArrayList<GetVolumeActualSizeCmd>();
+    public Map<String, Long> getVolumeActualSizeCmdSize = new HashMap<String, Long>();
 }

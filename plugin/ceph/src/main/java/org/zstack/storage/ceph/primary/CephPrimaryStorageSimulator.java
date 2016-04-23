@@ -109,7 +109,7 @@ public class CephPrimaryStorageSimulator {
         config.createEmptyVolumeCmds.add(cmd);
 
         CreateEmptyVolumeRsp rsp = new CreateEmptyVolumeRsp();
-        setCapacity(cmd, rsp, -cmd.getSize());
+        //setCapacity(cmd, rsp, -cmd.getSize());
         bitSizeMap.put(cmd.getInstallPath(), cmd.getSize());
         reply(entity, rsp);
         return null;
@@ -144,7 +144,11 @@ public class CephPrimaryStorageSimulator {
         CreateSnapshotCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateSnapshotCmd.class);
         config.createSnapshotCmds.add(cmd);
 
-        reply(entity, new CreateSnapshotRsp());
+        CreateSnapshotRsp rsp = new CreateSnapshotRsp();
+        Long size = config.createSnapshotCmdSize.get(cmd.getVolumeUuid());
+        rsp.setSize(size == null ? 0 : size);
+
+        reply(entity, rsp);
         return null;
     }
 
@@ -202,10 +206,43 @@ public class CephPrimaryStorageSimulator {
     @RequestMapping(value= CephPrimaryStorageBase.CP_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String cp(HttpEntity<String> entity) {
+        CpRsp rsp = new CpRsp();
         CpCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CpCmd.class);
         config.cpCmds.add(cmd);
 
-        reply(entity, new CpRsp());
+        Long size = config.cpCmdSize.get(cmd.resourceUuid);
+        rsp.size = size == null ? 0 : size;
+        Long asize = config.cpCmdActualSize.get(cmd.resourceUuid);
+        rsp.actualSize = asize == null ? 0 : asize;
+
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value= CephPrimaryStorageBase.GET_VOLUME_ACTUAL_SIZE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getVoluemActualSize(HttpEntity<String> entity) {
+        GetVolumeActualSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeActualSizeCmd.class);
+        config.getVolumeActualSizeCmds.add(cmd);
+        Long asize = config.getVolumeActualSizeCmdSize.get(cmd.volumeUuid);
+        GetVolumeActualSizeRsp rsp = new GetVolumeActualSizeRsp();
+        rsp.actualSize = asize == null ? 0 : asize;
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value= CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getVolumeSize(HttpEntity<String> entity) {
+        GetVolumeSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeSizeCmd.class);
+        config.getVolumeSizeCmds.add(cmd);
+
+        Long asize = config.getVolumeSizeCmdActualSize.get(cmd.volumeUuid);
+        GetVolumeSizeRsp rsp = new GetVolumeSizeRsp();
+        rsp.actualSize = asize == null ? 0 : asize;
+        Long size = config.getVolumeSizeCmdSize.get(cmd.volumeUuid);
+        rsp.size = size == null ? 0 : size;
+        reply(entity, rsp);
         return null;
     }
 

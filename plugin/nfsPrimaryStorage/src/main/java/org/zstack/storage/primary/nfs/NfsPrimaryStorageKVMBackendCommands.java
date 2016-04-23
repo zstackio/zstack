@@ -382,8 +382,17 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class MergeSnapshotCmd extends NfsPrimaryStorageAgentCommand {
+        private String volumeUuid;
         private String snapshotInstallPath;
         private String workspaceInstallPath;
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
 
         public String getSnapshotInstallPath() {
             return snapshotInstallPath;
@@ -404,6 +413,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class MergeSnapshotResponse extends NfsPrimaryStorageAgentResponse {
         private long size;
+        private long actualSize;
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
 
         public long getSize() {
             return size;
@@ -415,8 +433,17 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class RebaseAndMergeSnapshotsCmd extends NfsPrimaryStorageAgentCommand {
+        private String volumeUuid;
         private List<String> snapshotInstallPaths;
         private String workspaceInstallPath;
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
 
         public List<String> getSnapshotInstallPaths() {
             return snapshotInstallPaths;
@@ -437,6 +464,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class RebaseAndMergeSnapshotsResponse extends NfsPrimaryStorageAgentResponse {
         private long size;
+        private long actualSize;
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
 
         public long getSize() {
             return size;
@@ -508,6 +544,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String url;
         public String mountPath;
         public String options;
+    }
+
+    public static class GetVolumeActualSizeCmd extends NfsPrimaryStorageAgentCommand {
+        public String volumeUuid;
+        public String installPath;
+    }
+
+    public static class GetVolumeActualSizeRsp extends NfsPrimaryStorageAgentResponse {
+        public long actualSize;
     }
 
     public static final String UNABLE_TO_FIND_IMAGE_IN_CACHE = "UNABLE_TO_FIND_IMAGE_IN_CACHE";

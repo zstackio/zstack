@@ -12,23 +12,23 @@
 		on SIGHUP by logrotate FIXME make the paths configurable using the build 
 		system -->
 	<appender name="FILE" class="org.apache.log4j.rolling.RollingFileAppender">
-		<param name="Append" value="true" />
-		<param name="Threshold" value="TRACE" />
+		<paramIn name="Append" value="true" />
+		<paramIn name="Threshold" value="TRACE" />
 		<rollingPolicy name="FILE"
 			class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-			<param name="FileNamePattern" value="management-server.%d{yyyy-MM-dd}.gz" />
-            <param name="ActiveFileName" value="/var/log/zstack/management-server.log" />
+			<paramIn name="FileNamePattern" value="management-server.%d{yyyy-MM-dd}.gz" />
+            <paramIn name="ActiveFileName" value="/var/log/zstack/management-server.log" />
 		</rollingPolicy>
 		<layout class="org.apache.log4j.EnhancedPatternLayout">
-			<param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t) %m%n" />
+			<paramIn name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t) %m%n" />
 		</layout>
 	</appender>
 
 	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-		<param name="Threshold" value="TRACE" />
-		<param name="Target" value="System.out" />
+		<paramIn name="Threshold" value="TRACE" />
+		<paramIn name="Target" value="System.out" />
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="%-5p [%c{3}] (%t) %m%n" />
+			<paramIn name="ConversionPattern" value="%-5p [%c{3}] (%t) %m%n" />
 		</layout>
 	</appender>
 

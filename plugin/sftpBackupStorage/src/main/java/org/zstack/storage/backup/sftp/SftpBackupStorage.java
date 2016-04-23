@@ -15,6 +15,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -24,7 +25,9 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.backup.BackupStoragePathMaker;
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands.*;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -78,6 +81,7 @@ public class SftpBackupStorage extends BackupStorageBase {
     private class DownloadResult {
         String md5sum;
         long size;
+        long acutalSize;
     }
 
     private void download(String url, String installPath, String uuid, final ReturnValueCompletion<DownloadResult> completion) {
@@ -109,6 +113,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                         DownloadResult res = new DownloadResult();
                         res.md5sum = ret.getMd5Sum();
                         res.size = ret.getSize();
+                        res.acutalSize = ret.getActualSize();
 
                         updateCapacity(ret.getTotalCapacity(), ret.getAvailableCapacity());
 
@@ -138,6 +143,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             public void success(DownloadResult res) {
                 reply.setInstallPath(installPath);
                 reply.setSize(res.size);
+                reply.setActualSize(res.acutalSize);
                 reply.setMd5sum(res.md5sum);
                 bus.reply(msg, reply);
             }
@@ -338,6 +344,53 @@ public class SftpBackupStorage extends BackupStorageBase {
         String installPath = PathUtil.join(self.getUrl(), BackupStoragePathMaker.makeImageInstallPath(msg.getImageUuid(), msg.getImageMediaType()));
         reply.setInstallPath(installPath);
         bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(final SyncImageSizeOnBackupStorageMsg msg) {
+        final SyncImageSizeOnBackupStorageReply reply = new SyncImageSizeOnBackupStorageReply();
+
+        ImageInventory image = msg.getImage();
+        GetImageSizeCmd cmd = new GetImageSizeCmd();
+        cmd.imageUuid = image.getUuid();
+
+        ImageBackupStorageRefInventory ref = CollectionUtils.find(image.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
+            @Override
+            public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
+                return arg.getBackupStorageUuid().equals(self.getUuid()) ? arg : null;
+            }
+        });
+
+        if (ref == null) {
+            throw new CloudRuntimeException(String.format("cannot find ImageBackupStorageRefInventory of image[uuid:%s] for the backup storage[uuid:%s]",
+                    image.getUuid(), self.getUuid()));
+        }
+
+        cmd.installPath = ref.getInstallPath();
+        restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.GET_IMAGE_SIZE), cmd, new JsonAsyncRESTCallback<GetImageSizeRsp>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(GetImageSizeRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(rsp.getError()));
+                } else {
+                    reply.setActualSize(rsp.actualSize);
+                    reply.setSize(rsp.size);
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<GetImageSizeRsp> getReturnClass() {
+                return GetImageSizeRsp.class;
+            }
+        });
     }
 
     private void handle(final GetSftpBackupStorageDownloadCredentialMsg msg) {

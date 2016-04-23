@@ -3,13 +3,13 @@ package org.zstack.header.volume;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.query.*;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 
-import javax.persistence.JoinColumn;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -122,6 +122,8 @@ public class VolumeInventory implements Serializable{
      * @desc volume size in bytes
      */
     private Long size;
+
+    private Long actualSize;
     /**
      * @desc the order volume attaches to vm. For root volume, deviceId is always zero. For data volume, deviceId could be used
      * for detecting disk label in operating system. For example, volume having deviceId = 1 may be represented as hdb/sdb/vdb in Linux.
@@ -169,6 +171,7 @@ public class VolumeInventory implements Serializable{
         this.type = other.type;
         this.format = other.format;
         this.size = other.size;
+        this.actualSize = other.actualSize;
         this.deviceId = other.deviceId;
         this.state = other.state;
         this.status = other.status;
@@ -186,6 +189,7 @@ public class VolumeInventory implements Serializable{
     	inv.setName(vo.getName());
     	inv.setPrimaryStorageUuid(vo.getPrimaryStorageUuid());
     	inv.setSize(vo.getSize());
+        inv.setActualSize(vo.getActualSize());
     	inv.setState(vo.getState().toString());
     	inv.setUuid(vo.getUuid());
     	inv.setVmInstanceUuid(vo.getVmInstanceUuid());
@@ -205,6 +209,14 @@ public class VolumeInventory implements Serializable{
             invs.add(VolumeInventory.valueOf(vo));
         }
         return invs;
+    }
+
+    public Long getActualSize() {
+        return actualSize;
+    }
+
+    public void setActualSize(Long actualSize) {
+        this.actualSize = actualSize;
     }
 
     public String getFormat() {

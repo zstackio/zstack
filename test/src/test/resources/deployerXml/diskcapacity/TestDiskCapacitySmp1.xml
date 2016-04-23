@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+    <account name="test" password="password"></account>
+
+    <backupStorages>
+        <sftpBackupStorage name="sftp" description="Test"
+            url="nfs://test" />
+    </backupStorages>
+
+    <instanceOfferings>
+        <instanceOffering name="TestInstanceOffering"
+            description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000">
+            <accountRef>test</accountRef>
+        </instanceOffering>
+    </instanceOfferings>
+
+    <diskOffering name="DataOffering" description="Test"
+                  diskSize="20G" />
+
+    <zones>
+        <zone name="Zone1" description="Test">
+            <clusters>
+                <cluster name="Cluster1" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host1" description="Test" managementIp="localhost"
+                            memoryCapacity="800T" cpuNum="10000" cpuSpeed="2600" />
+                    </hosts>
+                    <primaryStorageRef>smp</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network</l2NetworkRef>
+                </cluster>
+            </clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="TestL2Network" description="Test"
+                    physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network1" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                            <accountRef>test</accountRef>
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+
+            <backupStorageRef>sftp</backupStorageRef>
+            <primaryStorages>
+                <sharedMountPointPrimaryStorage name="smp" description="Test"
+                    totalCapacity="1T" availableCapacity="1T" url="/smp/folder" />
+            </primaryStorages>
+        </zone>
+    </zones>
+</deployerConfig>

@@ -85,7 +85,7 @@ public class NfsDownloadImageToCacheJob implements Job {
                     public void run(final FlowTrigger trigger, Map data) {
                         AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                         amsg.setRequiredPrimaryStorageUuid(primaryStorage.getUuid());
-                        amsg.setSize(image.getInventory().getSize());
+                        amsg.setSize(image.getInventory().getActualSize());
                         amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
                         amsg.setNoOverProvisioning(true);
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
@@ -106,7 +106,7 @@ public class NfsDownloadImageToCacheJob implements Job {
                     public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
                             ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                            rmsg.setDiskSize(image.getInventory().getSize());
+                            rmsg.setDiskSize(image.getInventory().getActualSize());
                             rmsg.setNoOverProvisioning(true);
                             rmsg.setPrimaryStorageUuid(primaryStorage.getUuid());
                             bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
@@ -144,7 +144,7 @@ public class NfsDownloadImageToCacheJob implements Job {
                         cvo.setInstallUrl(cacheInstallPath);
                         cvo.setMd5sum("no md5");
                         cvo.setPrimaryStorageUuid(primaryStorage.getUuid());
-                        cvo.setSize(image.getInventory().getSize());
+                        cvo.setSize(image.getInventory().getActualSize());
                         cvo.setMediaType(ImageMediaType.valueOf(image.getInventory().getMediaType()));
                         cvo = dbf.persistAndRefresh(cvo);
                         logger.debug(String.format("successfully downloaded image[uuid:%s] in image cache[id:%s, path:%s]",

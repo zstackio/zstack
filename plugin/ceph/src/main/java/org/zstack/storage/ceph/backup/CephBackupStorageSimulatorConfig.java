@@ -27,4 +27,6 @@ public class CephBackupStorageSimulatorConfig {
     public List<DownloadCmd> downloadCmds = new ArrayList<DownloadCmd>();
     public List<DeleteCmd> deleteCmds = new ArrayList<DeleteCmd>();
     public List<PingCmd> pingCmds = new ArrayList<PingCmd>();
+    public Map<String, Long> imageSize = new HashMap<String, Long>();
+    public Map<String, Long> imageActualSize = new HashMap<String, Long>();
 }

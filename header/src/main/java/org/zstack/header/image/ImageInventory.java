@@ -29,6 +29,7 @@ public class ImageInventory implements Serializable{
 	private String state;
     private String status;
 	private Long size;
+    private Long actualSize;
 	private String md5Sum;
 	private String url;
 	private String mediaType;
@@ -53,6 +54,7 @@ public class ImageInventory implements Serializable{
 		inv.setMd5Sum(vo.getMd5Sum());
 		inv.setName(vo.getName());
 		inv.setSize(vo.getSize());
+        inv.setActualSize(vo.getActualSize());
         inv.setStatus(vo.getStatus().toString());
 		inv.setState(vo.getState().toString());
 		inv.setUrl(vo.getUrl());
@@ -76,6 +78,7 @@ public class ImageInventory implements Serializable{
         inv.setMd5Sum(vo.getMd5Sum());
         inv.setName(vo.getName());
         inv.setSize(vo.getSize());
+        inv.setActualSize(vo.getActualSize());
         inv.setStatus(vo.getStatus().toString());
         inv.setState(vo.getState().toString());
         inv.setUrl(vo.getUrl());
@@ -101,6 +104,14 @@ public class ImageInventory implements Serializable{
 	    }
 	    return invs;
 	}
+
+    public Long getActualSize() {
+        return actualSize;
+    }
+
+    public void setActualSize(Long actualSize) {
+        this.actualSize = actualSize;
+    }
 
     public boolean isSystem() {
         return system;

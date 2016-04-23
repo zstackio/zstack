@@ -18,10 +18,13 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import java.lang.reflect.Field;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -51,6 +54,9 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private boolean allowEmptyFlow;
     private FlowMarshaller flowMarshaller;
     private List<FlowChainProcessor> processers;
+    private List<Runnable> afterDone = new ArrayList<Runnable>();
+    private List<Runnable> afterError = new ArrayList<Runnable>();
+    private List<Runnable> afterFinal = new ArrayList<Runnable>();
 
     private boolean isFailCalled;
 
@@ -205,8 +211,16 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     @Override
     public FlowChain setData(Map data) {
-        this.data = data;
-        return  this;
+        this.data.putAll(data);
+        return this;
+    }
+
+    @Override
+    public FlowChain putData(Entry...es) {
+        for (Map.Entry e : es) {
+            data.put(e.getKey(), e.getValue());
+        }
+        return this;
     }
 
     @Override
@@ -232,6 +246,32 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         return this;
     }
 
+    private void collectAfterRunnable(Flow flow) {
+        List<Field> ad = FieldUtils.getAnnotatedFieldsOnThisClass(AfterDone.class, flow.getClass());
+        for (Field f : ad) {
+            List lst = FieldUtils.getFieldValue(f.getName(), flow);
+            if (lst != null) {
+                afterDone.addAll(lst);
+            }
+        }
+
+        ad = FieldUtils.getAnnotatedFieldsOnThisClass(AfterError.class, flow.getClass());
+        for (Field f : ad) {
+            List lst = FieldUtils.getFieldValue(f.getName(), flow);
+            if (lst != null) {
+                afterError.addAll(lst);
+            }
+        }
+
+        ad = FieldUtils.getAnnotatedFieldsOnThisClass(AfterFinal.class, flow.getClass());
+        for (Field f : ad) {
+            List lst = FieldUtils.getFieldValue(f.getName(), flow);
+            if (lst != null) {
+                afterFinal.addAll(lst);
+            }
+        }
+    }
+
     private void runFlow(Flow flow) {
         try {
             Flow toRun = null;
@@ -254,6 +294,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
             String info = String.format("[FlowChain: %s] start executing flow[%s]", name, getFlowName(currentFlow));
             logger.debug(info);
+            collectAfterRunnable(toRun);
             toRun.run(this, data);
         } catch (OperationFailureException oe) {
             String errInfo = oe.getErrorCode() != null ? oe.getErrorCode().toString() : "";
@@ -292,13 +333,21 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             }
         }
 
-        if (finallyHandler != null) {
-            try {
-                finallyHandler.Finally();
-            } catch (Throwable t) {
-                logger.warn(String.format("unhandled exception when calling %s", finallyHandler.getClass()), t);
-            }
+        if (!afterError.isEmpty()) {
+            Collections.reverse(afterError);
+
+            CollectionUtils.safeForEach(afterError, new ForEachFunction<Runnable>() {
+                @Override
+                public void run(Runnable arg) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("call after error handler %s", arg.getClass()));
+                    }
+                    arg.run();
+                }
+            });
         }
+
+        callFinallyHandler();
     }
 
     private String getFlowName(Flow flow) {
@@ -380,6 +429,30 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         setErrorCode(error);
     }
 
+    private void callFinallyHandler() {
+        if (finallyHandler != null) {
+            try {
+                finallyHandler.Finally();
+            } catch (Throwable t) {
+                logger.warn(String.format("unhandled exception when calling %s", finallyHandler.getClass()), t);
+            }
+        }
+
+        if (!afterFinal.isEmpty()) {
+            Collections.reverse(afterFinal);
+
+            CollectionUtils.safeForEach(afterFinal, new ForEachFunction<Runnable>() {
+                @Override
+                public void run(Runnable arg) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("call after final handler %s", arg.getClass()));
+                    }
+                    arg.run();
+                }
+            });
+        }
+    }
+
     private void callDoneHandler() {
         if (CoreGlobalProperty.PROFILER_WORKFLOW) {
             stopWath.stop();
@@ -395,13 +468,21 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
         logger.debug(String.format("[FlowChain: %s] successfully completed", name));
 
-        if (finallyHandler != null) {
-            try {
-                finallyHandler.Finally();
-            } catch (Throwable t) {
-                logger.warn(String.format("unhandled exception when calling %s", finallyHandler.getClass()), t);
-            }
+        if (!afterDone.isEmpty()) {
+            Collections.reverse(afterDone);
+
+            CollectionUtils.safeForEach(afterDone, new ForEachFunction<Runnable>() {
+                @Override
+                public void run(Runnable arg) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("call after done handler %s", arg.getClass()));
+                    }
+                    arg.run();
+                }
+            });
         }
+
+        callFinallyHandler();
     }
 
     @Override

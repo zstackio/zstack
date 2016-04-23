@@ -93,10 +93,15 @@ public class CephBackupStorageSimulator {
     @RequestMapping(value=CephBackupStorageBase.DOWNLOAD_IMAGE_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String download(HttpEntity<String> entity) {
+        DownloadRsp rsp = new DownloadRsp();
         DownloadCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DownloadCmd.class);
         config.downloadCmds.add(cmd);
 
-        DownloadRsp rsp = new DownloadRsp();
+        Long size = config.imageSize.get(cmd.imageUuid);
+        rsp.setSize(size == null ? 0 : size);
+        Long asize = config.imageActualSize.get(cmd.imageUuid);
+        rsp.setActualSize(asize == null ? 0 : asize);
+
         reply(entity, rsp);
         return null;
     }

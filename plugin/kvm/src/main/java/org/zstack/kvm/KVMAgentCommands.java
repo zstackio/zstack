@@ -968,10 +968,19 @@ public class KVMAgentCommands {
 
     public static class TakeSnapshotCmd extends AgentCommand {
         private String vmUuid;
+        private String volumeUuid;
         private int deviceId;
         private String installPath;
         private boolean fullSnapshot;
         private String volumeInstallPath;
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
 
         public String getVolumeInstallPath() {
             return volumeInstallPath;

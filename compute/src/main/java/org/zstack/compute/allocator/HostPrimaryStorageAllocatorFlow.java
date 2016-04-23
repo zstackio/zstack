@@ -5,17 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.storage.primary.PrimaryStorageState;
 import org.zstack.header.storage.primary.PrimaryStorageStatus;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -76,7 +72,7 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             } else {
                 // the primary storage doesn't have the image in cache
                 // so we need to add the image size
-                cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, cap) + spec.getImage().getSize();
+                cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, cap) + spec.getImage().getActualSize();
             }
 
             if (cap > spec.getDiskSize()) {

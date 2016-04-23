@@ -14,6 +14,7 @@
     <bean id="SMPPrimaryStorageFactory" class="org.zstack.storage.primary.smp.SMPPrimaryStorageFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageFactory" />
+            <zstack:extension interface="org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint" />
         </zstack:plugin>
     </bean>
 

@@ -14,9 +14,11 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.backup.APIAddBackupStorageEvent;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.volume.VolumeConstant;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
-import org.zstack.storage.backup.sftp.*;
+import org.zstack.storage.backup.sftp.APIAddSftpBackupStorageMsg;
+import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
+import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
+import org.zstack.storage.backup.sftp.SftpBackupStorageVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
@@ -65,9 +67,12 @@ public class SftpBackupStorageTestHelper {
 
         long size = SizeUnit.GIGABYTE.toByte(8);
         config.imageSizes.put(iinv.getUuid(), size);
+        long asize = SizeUnit.GIGABYTE.toByte(4);
+        config.imageActualSizes.put(iinv.getUuid(), asize);
 
         iinv = api.addImage(iinv, sinv.getUuid());
         Assert.assertEquals(size, iinv.getSize());
+        Assert.assertEquals(asize, iinv.getActualSize().longValue());
         Assert.assertEquals(config.imageMd5sum, iinv.getMd5Sum());
         for (ImageBackupStorageRefInventory ref : iinv.getBackupStorageRefs()) {
             Assert.assertNotNull(ref.getInstallPath());

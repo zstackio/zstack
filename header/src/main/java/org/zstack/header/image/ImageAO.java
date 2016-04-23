@@ -29,7 +29,10 @@ public class ImageAO {
     
     @Column
     private long size;
-    
+
+    @Column
+    private long actualSize;
+
     @Column
     private String md5Sum;
 
@@ -65,6 +68,14 @@ public class ImageAO {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    public long getActualSize() {
+        return actualSize;
+    }
+
+    public void setActualSize(long actualSize) {
+        this.actualSize = actualSize;
     }
 
     public boolean isSystem() {

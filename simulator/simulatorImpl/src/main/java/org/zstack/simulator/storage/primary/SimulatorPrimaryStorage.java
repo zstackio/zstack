@@ -2,7 +2,6 @@ package org.zstack.simulator.storage.primary;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.volume.VolumeInventory;
@@ -117,6 +116,13 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
         capability.setArrangementType(VolumeSnapshotArrangementType.CHAIN);
         capability.setSupport(true);
         reply.setCapability(capability);
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(SyncVolumeActualSizeOnPrimaryStorageMsg msg) {
+        SyncVolumeActualSizeOnPrimaryStorageReply reply = new SyncVolumeActualSizeOnPrimaryStorageReply();
+        reply.setActualSize(0);
         bus.reply(msg, reply);
     }
 

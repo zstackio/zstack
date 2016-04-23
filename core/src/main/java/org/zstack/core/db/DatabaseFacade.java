@@ -72,5 +72,7 @@ public interface DatabaseFacade {
 
     Timestamp getCurrentSqlTime();
 
+    String getDbVersion();
+
     void installEntityLifeCycleCallback(Class entityClass, EntityEvent evt, EntityLifeCycleCallback cb);
 }

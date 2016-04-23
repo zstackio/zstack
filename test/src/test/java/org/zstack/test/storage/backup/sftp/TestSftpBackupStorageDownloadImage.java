@@ -14,7 +14,6 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.volume.VolumeConstant;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
 import org.zstack.test.Api;
@@ -72,8 +71,12 @@ public class TestSftpBackupStorageDownloadImage {
 
         config.imageSizes.put(iinv.getUuid(), size);
 
+        long asize = SizeUnit.GIGABYTE.toByte(1);
+        config.imageActualSizes.put(iinv.getUuid(), asize);
+
         iinv = api.addImage(iinv, sinv.getUuid());
         Assert.assertEquals(size, iinv.getSize());
+        Assert.assertEquals(asize, iinv.getActualSize().longValue());
         Assert.assertEquals(config.imageMd5sum, iinv.getMd5Sum());
         Assert.assertNotNull(iinv.getBackupStorageRefs().get(0).getInstallPath());
         ImageVO vo = dbf.findByUuid(iinv.getUuid(), ImageVO.class);

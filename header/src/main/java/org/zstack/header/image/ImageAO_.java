@@ -14,6 +14,7 @@ public class ImageAO_ {
 	public static volatile SingularAttribute<ImageAO, ImageStatus> status;
     public static volatile SingularAttribute<ImageAO, ImageState> state;
 	public static volatile SingularAttribute<ImageAO, Long> size;
+	public static volatile SingularAttribute<ImageAO, Long> actualSize;
 	public static volatile SingularAttribute<ImageAO, String> md5Sum;
 	public static volatile SingularAttribute<ImageAO, String> type;
 	public static volatile SingularAttribute<ImageAO, String> url;

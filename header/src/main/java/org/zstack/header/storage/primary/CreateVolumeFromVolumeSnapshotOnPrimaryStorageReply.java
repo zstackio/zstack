@@ -7,6 +7,15 @@ import org.zstack.header.message.MessageReply;
 public class CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply extends MessageReply {
     private String installPath;
     private long size;
+    private long actualSize;
+
+    public long getActualSize() {
+        return actualSize;
+    }
+
+    public void setActualSize(long actualSize) {
+        this.actualSize = actualSize;
+    }
 
     public String getInstallPath() {
         return installPath;

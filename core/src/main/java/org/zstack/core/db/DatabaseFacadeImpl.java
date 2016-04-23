@@ -16,7 +16,10 @@ import org.zstack.header.message.APIListMessage;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
-import org.zstack.utils.*;
+import org.zstack.utils.BeanUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.FieldUtils;
+import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
@@ -27,7 +30,6 @@ import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
 
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class DatabaseFacadeImpl implements DatabaseFacade, Component {
@@ -51,6 +53,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     private Map<Class, List<HardDeleteEntityExtensionPoint>> hardDeleteExtensions = new HashMap<Class, List<HardDeleteEntityExtensionPoint>>();
     private List<HardDeleteEntityExtensionPoint> hardDeleteForAllExtensions = new ArrayList<HardDeleteEntityExtensionPoint>();
     private Map<Class, EntityInfo> entityInfoMap = new HashMap<Class, EntityInfo>();
+    private String dbVersion;
 
     private class EntityInfo {
         Field voPrimaryKeyField;
@@ -440,8 +443,16 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
     }
 
+    @Transactional(readOnly = true)
+    private void getDbVersionOnInit() {
+        String sql = "select version from schema_version order by version desc limit 1";
+        Query q = getEntityManager().createNativeQuery(sql);
+        dbVersion = (String) q.getSingleResult();
+    }
+
     void init() {
         buildEntityInfo();
+        getDbVersionOnInit();
     }
 
     @Override
@@ -772,6 +783,11 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     public Timestamp getCurrentSqlTime() {
         Query query = getEntityManager().createNativeQuery("select current_timestamp()");
         return (Timestamp) query.getSingleResult();
+    }
+
+    @Override
+    public String getDbVersion() {
+        return dbVersion;
     }
 
     @Override

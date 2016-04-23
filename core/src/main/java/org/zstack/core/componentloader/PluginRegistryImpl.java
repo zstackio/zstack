@@ -4,6 +4,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginDSL.ExtensionDefinition;
 import org.zstack.core.componentloader.PluginDSL.PluginDefinition;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
@@ -15,6 +16,7 @@ public class PluginRegistryImpl implements PluginRegistryIN {
     private Map<String, List<PluginExtension>> extensions = new HashMap<String, List<PluginExtension>>();
     private Map<String, List<PluginExtension>> extensionsByInterfaceName = new HashMap<String, List<PluginExtension>>();
     private Map<Class, List> extensionsByInterfaceClass = new HashMap<Class, List>();
+    private Map<Class, Map<Object, Object>> extensionAsMap = new HashMap<Class, Map<Object, Object>>();
 
     private void sortPlugins() {
         for (List<PluginExtension> exts : extensionsByInterfaceName.values()) {
@@ -127,20 +129,32 @@ public class PluginRegistryImpl implements PluginRegistryIN {
 
 
     @Override
-    public void processExtensions(List<PluginExtension> exts, ExtensionProcessor processor, Object[] args) {
-        for (PluginExtension ext : exts) {
-            try {
-                processor.process(ext, args);
-            } catch (Exception e) {
-                logger.warn("Unhandled exception happened while " + processor.getClass().getCanonicalName() + " process extesnion " + ext.getReferenceInterface() + " implemented by:" + ext.getInstance().getClass().getCanonicalName(), e);
-            }
-        }
-    }
-
-    @Override
     public <T> List<T> getExtensionList(Class<T> clazz) {
         List<T> exts = extensionsByInterfaceClass.get(clazz);
         return exts == null ? new ArrayList<T>() : exts;
+    }
+
+    @Override
+    public <T, K> void saveExtensionAsMap(Class<T> clazz, Function<K, T> func) {
+        List<T> exts = getExtensionList(clazz);
+        Map<Object, Object> m = new HashMap<Object, Object>();
+        for (T ext : exts) {
+            K key = func.call(ext);
+            if (key != null) {
+                m.put(key, ext);
+            }
+        }
+        extensionAsMap.put(clazz, m);
+    }
+
+    @Override
+    public <T> T getExtensionFromMap(Object key, Class<T> clazz) {
+        Map<Object, Object> m = extensionAsMap.get(clazz);
+        if (m == null) {
+            return null;
+        }
+
+        return (T) m.get(key);
     }
 
     @Override
@@ -151,12 +165,6 @@ public class PluginRegistryImpl implements PluginRegistryIN {
 		}
 		
 	    return exts;
-    }
-
-	@Override
-    public void processExtensionByInterfaceName(String interfaceName, ExtensionProcessor processor, Object[] args) {
-		List<PluginExtension>  exts = getExtensionByInterfaceName(interfaceName);
-		processExtensions(exts, processor, args);
     }
 
 	public void setExtensions(Map<String, List<PluginExtension>> extensions) {

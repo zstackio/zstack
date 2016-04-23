@@ -55,4 +55,8 @@
     <message>
         <name>org.zstack.header.image.APIRecoverImageMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.image.APISyncImageSizeMsg</name>
+    </message>
 </service>

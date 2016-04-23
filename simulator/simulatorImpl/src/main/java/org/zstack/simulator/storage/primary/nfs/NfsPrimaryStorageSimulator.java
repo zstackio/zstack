@@ -11,13 +11,12 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
+import org.zstack.simulator.AsyncRESTReplyer;
+import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
 import org.zstack.storage.primary.nfs.NfsPrimaryToSftpBackupKVMBackend;
-import org.zstack.simulator.AsyncRESTReplyer;
-import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -319,11 +318,27 @@ public class NfsPrimaryStorageSimulator {
             rsp.setError("on purpose");
             rsp.setSuccess(false);
         } else {
-            rsp.setSize(SizeUnit.MEGABYTE.toByte(500));
+            Long size = config.rebaseAndMergeSnapshotsCmdSize.get(cmd.getVolumeUuid());
+            rsp.setSize(size == null ? 0 : size);
+            Long aszie = config.rebaseAndMergeSnapshotsCmdActualSize.get(cmd.getVolumeUuid());
+            rsp.setActualSize(aszie == null ? 0 : aszie);
             config.rebaseAndMergeSnapshotsCmds.add(cmd);
         }
 
         reply(entity, rsp);
+    }
+
+    @RequestMapping(value=NfsPrimaryStorageKVMBackend.GET_ACTUAL_SIZE_PATH, method=RequestMethod.POST)
+    private @ResponseBody String getVolumeActualSize(HttpServletRequest req) throws InterruptedException {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        GetVolumeActualSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeActualSizeCmd.class);
+        config.getVolumeActualSizeCmds.add(cmd);
+
+        GetVolumeActualSizeRsp rsp = new GetVolumeActualSizeRsp();
+        Long asize = config.getVolumeActualSizeCmdSize.get(cmd.volumeUuid);
+        rsp.actualSize = asize == null ? 0 : asize;
+        reply(entity, rsp);
+        return null;
     }
 
     @RequestMapping(value=NfsPrimaryStorageKVMBackend.MERGE_SNAPSHOT_PATH, method=RequestMethod.POST)
@@ -341,7 +356,10 @@ public class NfsPrimaryStorageSimulator {
             rsp.setError("on purpose");
             rsp.setSuccess(false);
         } else {
-            rsp.setSize(SizeUnit.MEGABYTE.toByte(500));
+            Long size = config.mergeSnapshotCmdSize.get(cmd.getVolumeUuid());
+            rsp.setSize(size == null ? 0 : size);
+            Long asize = config.mergeSnapshotCmdActualSize.get(cmd.getVolumeUuid());
+            rsp.setActualSize(asize == null ? 0 : asize);
             config.mergeSnapshotCmds.add(cmd);
         }
         reply(entity, rsp);

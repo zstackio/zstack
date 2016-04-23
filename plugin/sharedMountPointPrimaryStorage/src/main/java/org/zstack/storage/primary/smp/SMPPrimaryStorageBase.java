@@ -22,7 +22,6 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeFormat;
@@ -300,6 +299,31 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(final SyncVolumeActualSizeOnPrimaryStorageMsg msg) {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.format);
+        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
+        String format = q.findValue();
+
+        HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(format);
+        HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<SyncVolumeActualSizeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(SyncVolumeActualSizeOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                SyncVolumeActualSizeOnPrimaryStorageReply reply = new SyncVolumeActualSizeOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
     protected void connectHook(ConnectPrimaryStorageMsg msg, final Completion completion) {
         SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
         q.select(PrimaryStorageClusterRefVO_.clusterUuid);
@@ -364,17 +388,55 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
             handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
-        } else if (msg instanceof CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
             handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof SMPPrimaryStorageHypervisorSpecificMessage) {
             handle((SMPPrimaryStorageHypervisorSpecificMessage) msg);
+        } else if (msg instanceof UploadBitsToBackupStorageMsg) {
+            handle((UploadBitsToBackupStorageMsg) msg);
+        } else if (msg instanceof CreateTemporaryVolumeFromSnapshotMsg) {
+            handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final CreateTemporaryVolumeFromSnapshotMsg msg) {
+        HypervisorFactory f = getHypervisorFactoryByHypervisorType(msg.getHypervisorType());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<CreateTemporaryVolumeFromSnapshotReply>(msg) {
+            @Override
+            public void success(CreateTemporaryVolumeFromSnapshotReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                CreateTemporaryVolumeFromSnapshotReply reply = new CreateTemporaryVolumeFromSnapshotReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final UploadBitsToBackupStorageMsg msg) {
+        HypervisorFactory f = getHypervisorFactoryByHypervisorType(msg.getHypervisorType());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<UploadBitsToBackupStorageReply>(msg) {
+            @Override
+            public void success(UploadBitsToBackupStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(SMPPrimaryStorageHypervisorSpecificMessage msg) {
@@ -401,8 +463,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
-        SnapshotDownloadInfo info = msg.getSnapshots().get(0);
-        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(info.getSnapshot().getVolumeUuid());
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getSnapshot().getVolumeUuid());
         bkd.handle(msg, new ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply>(msg) {
             @Override
             public void success(CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply returnValue) {
@@ -412,24 +473,6 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    private void handle(final CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg msg) {
-        SnapshotDownloadInfo info = msg.getSnapshotsDownloadInfo().get(0);
-        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(info.getSnapshot().getVolumeUuid());
-        bkd.handle(msg, new ReturnValueCompletion<CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply>(msg) {
-            @Override
-            public void success(CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply returnValue) {
-                bus.reply(msg, returnValue);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

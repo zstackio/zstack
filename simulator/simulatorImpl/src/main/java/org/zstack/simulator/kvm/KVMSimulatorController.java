@@ -162,6 +162,9 @@ public class KVMSimulatorController {
         if (config.snapshotSuccess) {
             config.snapshotCmds.add(cmd);
             rsp = snapshotKvmSimulator.takeSnapshot(cmd);
+
+            Long size = config.takeSnapshotCmdSize.get(cmd.getVolumeUuid());
+            rsp.setSize(size == null ? 0 : size);
         } else  {
             rsp.setError("on purpose");
             rsp.setSuccess(false);

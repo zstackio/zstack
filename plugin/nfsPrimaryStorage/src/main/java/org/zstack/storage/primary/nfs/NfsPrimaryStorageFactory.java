@@ -2,37 +2,41 @@ package org.zstack.storage.primary.nfs;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.storage.backup.BackupStorageType;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.kvm.KVMConstant;
+import org.zstack.storage.backup.BackupStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
-import org.zstack.header.storage.primary.PrimaryStorageManager;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.TypedQuery;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
-public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component {
+public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -43,6 +47,8 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     private PrimaryStorageManager psMgr;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private CloudBus bus;
 
     private Map<String, NfsPrimaryStorageBackend> backends = new HashMap<String, NfsPrimaryStorageBackend>();
     private Map<BackupStorageType, Map<HypervisorType, NfsPrimaryToBackupStorageMediator>> mediators = new HashMap<BackupStorageType, Map<HypervisorType, NfsPrimaryToBackupStorageMediator>>();
@@ -207,5 +213,192 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         throw new OperationFailureException(errf.stringToOperationError(
                 String.format("cannot find proper hypervisorType for primary storage[uuid:%s] to handle image format or volume format[%s]", psUuid, imageFormat)
         ));
+    }
+
+    @Override
+    public WorkflowTemplate createTemplateFromVolumeSnapshot(final ParamIn paramIn) {
+        WorkflowTemplate template = new WorkflowTemplate();
+
+        final HypervisorType hvtype = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(paramIn.getSnapshot().getFormat());
+
+        class Context {
+            String tempInstallPath;
+        }
+
+        final Context ctx = new Context();
+
+        template.setCreateTemporaryTemplate(new Flow() {
+            String __name__ = "create-temporary-template";
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                final ParamOut out = (ParamOut) data.get(ParamOut.class);
+
+                CreateTemporaryVolumeFromSnapshotMsg msg = new CreateTemporaryVolumeFromSnapshotMsg();
+                msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                msg.setSnapshot(paramIn.getSnapshot());
+                msg.setTemporaryVolumeUuid(paramIn.getImage().getUuid());
+                msg.setHypervisorType(hvtype.toString());
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                        } else {
+                            CreateTemporaryVolumeFromSnapshotReply r = reply.castReply();
+                            ctx.tempInstallPath = r.getInstallPath();
+                            out.setActualSize(r.getActualSize());
+                            out.setSize(r.getSize());
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                if (ctx.tempInstallPath != null) {
+                    DeleteBitsOnPrimaryStorageMsg msg = new DeleteBitsOnPrimaryStorageMsg();
+                    msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                    msg.setInstallPath(ctx.tempInstallPath);
+                    msg.setHypervisorType(hvtype.toString());
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                    bus.send(msg);
+                }
+
+                trigger.rollback();
+            }
+        });
+
+        template.setUploadToBackupStorage(new Flow() {
+            String __name__ = "upload-to-backup-storage";
+
+            @AfterDone
+            List<Runnable> returnCapacityToBackupStorage = new ArrayList<Runnable>();
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                final ParamOut out = (ParamOut) data.get(ParamOut.class);
+                final List<String> bsUuids = paramIn.getSelectedBackupStorageUuids();
+                List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                final List<UploadBitsToBackupStorageMsg> msgs = new ArrayList<UploadBitsToBackupStorageMsg>();
+
+                for (final String bsUuid : bsUuids) {
+                    BackupStorageAskInstallPathMsg ask = new BackupStorageAskInstallPathMsg();
+                    ask.setImageUuid(paramIn.getImage().getUuid());
+                    ask.setBackupStorageUuid(bsUuid);
+                    ask.setImageMediaType(paramIn.getImage().getMediaType());
+                    bus.makeTargetServiceIdByResourceUuid(ask, BackupStorageConstant.SERVICE_ID, bsUuid);
+                    MessageReply ar = bus.call(ask);
+                    if (!ar.isSuccess()) {
+                        errors.add(ar.getError());
+
+                        returnCapacityToBackupStorage.add(new Runnable() {
+                            @Override
+                            public void run() {
+                                BackupStorageCapacityUpdater updater = new BackupStorageCapacityUpdater(bsUuid);
+                                updater.increaseAvailableCapacity(out.getActualSize());
+                            }
+                        });
+
+                        continue;
+                    }
+
+                    String bsInstallPath = ((BackupStorageAskInstallPathReply)ar).getInstallPath();
+
+                    UploadBitsToBackupStorageMsg msg = new UploadBitsToBackupStorageMsg();
+                    msg.setHypervisorType(hvtype.toString());
+                    msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                    msg.setPrimaryStorageInstallPath(ctx.tempInstallPath);
+                    msg.setBackupStorageUuid(bsUuid);
+                    msg.setBackupStorageInstallPath(bsInstallPath);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                    msgs.add(msg);
+                }
+
+                if (msgs.isEmpty()) {
+                    trigger.fail(errf.stringToOperationError(
+                            String.format("failed to get install path on all backup storage%s", bsUuids), errors
+                    ));
+                    return;
+                }
+
+                bus.send(msgs, new CloudBusListCallBack(trigger) {
+                    @Override
+                    public void run(List<MessageReply> replies) {
+                        List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                        for (MessageReply reply : replies) {
+                            final UploadBitsToBackupStorageMsg msg = msgs.get(replies.indexOf(reply));
+                            if (!reply.isSuccess()) {
+                                errors.add(reply.getError());
+
+                                returnCapacityToBackupStorage.add(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        BackupStorageCapacityUpdater updater = new BackupStorageCapacityUpdater(msg.getBackupStorageUuid());
+                                        updater.increaseAvailableCapacity(out.getActualSize());
+                                    }
+                                });
+
+                                continue;
+                            }
+
+                            BackupStorageResult res = new BackupStorageResult();
+                            res.setBackupStorageUuid(msg.getBackupStorageUuid());
+                            res.setInstallPath(msg.getBackupStorageInstallPath());
+                            out.getBackupStorageResult().add(res);
+                        }
+
+                        if (out.getBackupStorageResult().isEmpty()) {
+                            trigger.fail(errf.stringToOperationError(
+                                    String.format("failed to upload to all backup storage%s", bsUuids), errors
+                            ));
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                final ParamOut out = (ParamOut) data.get(ParamOut.class);
+                if (!out.getBackupStorageResult().isEmpty()) {
+                    for (BackupStorageResult res : out.getBackupStorageResult()) {
+                        DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
+                        msg.setInstallPath(res.getInstallPath());
+                        msg.setBackupStorageUuid(res.getBackupStorageUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, res.getBackupStorageUuid());
+                        bus.send(msg);
+                    }
+                }
+
+                trigger.rollback();
+            }
+        });
+
+        template.setDeleteTemporaryTemplate(new NoRollbackFlow() {
+            String __name__ = "delete-temporary-template";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                DeleteBitsOnPrimaryStorageMsg msg = new DeleteBitsOnPrimaryStorageMsg();
+                msg.setHypervisorType(hvtype.toString());
+                msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                msg.setInstallPath(ctx.tempInstallPath);
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                bus.send(msg);
+
+                trigger.next();
+            }
+        });
+
+        return template;
+    }
+
+    @Override
+    public String createTemplateFromVolumeSnapshotPrimaryStorageType() {
+        return NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE;
     }
 }
