@@ -18,6 +18,7 @@ import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+@Deprecated
 public class TestRebootVmOnKvmExtensionPoint {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;

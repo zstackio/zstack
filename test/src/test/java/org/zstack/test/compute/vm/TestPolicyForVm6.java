@@ -6,26 +6,17 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
-import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.UserInventory;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.query.QueryCondition;
 import org.zstack.header.vm.*;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
-import org.zstack.test.VmCreator;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -103,14 +94,11 @@ public class TestPolicyForVm6 {
         Assert.assertEquals(StatementEffect.Deny.toString(), ret.get(APIRebootVmInstanceMsg.class.getName()));
         Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APIStartVmInstanceMsg.class.getName()));
 
-        boolean success = false;
-        try {
-            api.checkUserPolicy(apiNames, user.getUuid(), session);
-        } catch (ApiSenderException e) {
-            if (e.getError().getCode().equals(SysErrors.OPERATION_ERROR.toString())) {
-                success = true;
-            }
-        }
-        Assert.assertTrue(success);
+        // user can test own permissions
+        ret = api.checkUserPolicy(apiNames, user.getUuid(), session);
+        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APICreateVmInstanceMsg.class.getName()));
+        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APIDestroyVmInstanceMsg.class.getName()));
+        Assert.assertEquals(StatementEffect.Deny.toString(), ret.get(APIRebootVmInstanceMsg.class.getName()));
+        Assert.assertEquals(StatementEffect.Allow.toString(), ret.get(APIStartVmInstanceMsg.class.getName()));
     }
 }
