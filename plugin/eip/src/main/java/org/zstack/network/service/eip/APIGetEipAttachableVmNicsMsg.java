@@ -7,7 +7,7 @@ import org.zstack.network.service.vip.VipVO;
 
 /**
  */
-@Action(category = EipConstant.ACTION_CATEGORY)
+@Action(category = EipConstant.ACTION_CATEGORY, names = {"read"})
 public class APIGetEipAttachableVmNicsMsg extends APISyncCallMessage {
     @APIParam(required = false, resourceType = EipVO.class)
     private String eipUuid;
