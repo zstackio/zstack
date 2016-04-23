@@ -1128,6 +1128,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 RuleCalculator cal = new RuleCalculator();
                 cal.hostUuids = Arrays.asList(vo.getHostUuid());
                 List<HostRuleTO> htos = cal.calculate();
+                if (htos.isEmpty()) {
+                    continue;
+                }
+
                 final HostRuleTO hto = htos.get(0);
                 hto.setRefreshHost(true);
                 SecurityGroupHypervisorBackend bd = getHypervisorBackend(hto.getHypervisorType());
