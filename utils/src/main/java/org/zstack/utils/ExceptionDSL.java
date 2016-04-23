@@ -168,4 +168,11 @@ public class ExceptionDSL {
         return self.exceptionSafeSuppress(runnable, eclazz);
     }
 
+    public static Throwable getRootThrowable(Throwable t) {
+        Throwable ret = t;
+        while (t.getCause() != null) {
+            t = ret = t.getCause();
+        }
+        return ret;
+    }
 }
