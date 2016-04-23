@@ -313,7 +313,13 @@ public class Platform {
             locale = new Locale(CoreGlobalProperty.LOCALE);
         } catch (Throwable e) {
             logger.warn(String.format("unhandled exception when in Platform's static block, %s", e.getMessage()), e);
-            throw new RuntimeException(e);
+            new BootErrorLog().write(e.getMessage());
+            if (CoreGlobalProperty.EXIT_JVM_ON_BOOT_FAILURE) {
+                System.exit(1);
+            } else {
+                throw new RuntimeException(e);
+            }
+
         }
     }
 
