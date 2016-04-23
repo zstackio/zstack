@@ -64,6 +64,20 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         ShellUtils.run(String.format("yes | cp %s %s", pip.getAbsolutePath(), filesDir));
     }
 
+    private void placeAnsible182() {
+        File ansible = PathUtil.findFileOnClassPath("tools/ansible-1.8.2.tar.gz");
+        if (ansible == null) {
+            throw new CloudRuntimeException(String.format("cannot find tools/ansible-1.8.2.tar.gz on classpath"));
+        }
+
+        File root = new File(filesDir);
+        if (!root.exists()) {
+            root.mkdirs();
+        }
+
+        ShellUtils.run(String.format("yes | cp %s %s", ansible.getAbsolutePath(), filesDir));
+    }
+
     void init() {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             logger.debug("skip AnsibleFacade init as it's unittest");
@@ -116,6 +130,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             }
 
             placePip703();
+            placeAnsible182();
             deployModule("ansible/zstacklib", "zstacklib.py");
         } catch (IOException e) {
             throw new CloudRuntimeException(e);
