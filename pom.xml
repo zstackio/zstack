@@ -14,7 +14,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.zstack</groupId>
     <artifactId>zstack</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <packaging>pom</packaging>
     <name>zstack</name>
     <modules>
@@ -298,7 +298,7 @@
             <dependency>
                 <groupId>com.googlecode.gentyref</groupId>
                 <artifactId>gentyref</artifactId>
-                <version>1.1.0</version>
+                <version>1.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
