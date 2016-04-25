@@ -176,6 +176,7 @@ public class TestMevoco21 {
         validate(ps, "IMAGE.DELETE", "image:APIDeleteImageMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "IMAGE.RECOVER", "image:APIRecoverImageMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "IMAGE.CHANGE-STATE", "image:APIChangeImageStateMsg", AccountConstant.StatementEffect.Allow);
+        validate(ps, "IMAGE.CREATE-FROM-ROOT-VOLUME", "image:APICreateRootVolumeTemplateFromRootVolumeMsg", AccountConstant.StatementEffect.Allow);
 
         validate(ps, "VIP.CREATE", "vip:APICreateVipMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "VIP.DELETE", "vip:APIDeleteVipMsg", AccountConstant.StatementEffect.Allow);
