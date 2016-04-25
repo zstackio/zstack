@@ -236,13 +236,13 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     public boolean start() {
         ShellUtils.run(String.format("if ! ansible --version | grep 1.8.2; then " +
                 "if grep -i -s centos /etc/system-release; then " +
-                "yum remove -y ansible; " +
+                "sudo yum remove -y ansible; " +
                 "elif grep -i -s ubuntu /etc/issue; then " +
-                "apt-get --assume-yes remove ansible; " +
+                "sudo apt-get --assume-yes remove ansible; " +
                 "else echo \"Warning: can't remove ansible from unknown platform\"; " +
                 "fi; " +
-                "pip install -I %s/ansible-1.8.2.tar.gz; " +
-                "fi", filesDir));
+                "sudo pip install -I %s/ansible-1.8.2.tar.gz; " +
+                "fi", filesDir), False);
         return true;
     }
 
