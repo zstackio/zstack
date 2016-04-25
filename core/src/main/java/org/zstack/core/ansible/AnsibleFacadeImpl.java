@@ -242,7 +242,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 "else echo \"Warning: can't remove ansible from unknown platform\"; " +
                 "fi; " +
                 "sudo pip install -I %s/ansible-1.8.2.tar.gz; " +
-                "fi", filesDir), False);
+                "fi", filesDir), false);
         return true;
     }
 
