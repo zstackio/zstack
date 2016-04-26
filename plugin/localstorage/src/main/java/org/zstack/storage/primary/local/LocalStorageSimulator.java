@@ -2,6 +2,7 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.RebaseSnapshotBackingFilesCmd;
@@ -47,6 +48,7 @@ public class LocalStorageSimulator {
     @Autowired
     private DatabaseFacade dbf;
 
+    @AsyncThread
     public void reply(HttpEntity<String> entity, Object rsp) {
         String taskUuid = entity.getHeaders().getFirst(RESTConstant.TASK_UUID);
         String callbackUrl = entity.getHeaders().getFirst(RESTConstant.CALLBACK_URL);
