@@ -14,7 +14,6 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.kvm.KVMAgentCommands.CheckVmStateCmd;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -101,7 +100,7 @@ public class TestKvmFailureCheckState {
         s = false;
         m.put(vm.getUuid(), KvmVmState.Running.toString());
         config.checkVmStateCmds.clear();
-        config.rebootVmSuccess = false;
+        config.stopVmSuccess = false;
         try {
             api.rebootVmInstance(vm.getUuid());
         } catch (ApiSenderException e) {

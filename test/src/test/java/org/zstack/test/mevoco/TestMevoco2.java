@@ -7,11 +7,8 @@ import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
@@ -21,18 +18,12 @@ import org.zstack.header.network.l3.L3NetworkDnsVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.ImageCacheVO_;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
-import org.zstack.kvm.APIAddKVMHostMsg;
 import org.zstack.network.service.flat.FlatDhcpBackend.ApplyDhcpCmd;
 import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
-import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
@@ -43,7 +34,6 @@ import org.zstack.utils.function.Function;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -66,7 +56,7 @@ public class TestMevoco2 {
     LocalStorageSimulatorConfig config;
     FlatNetworkServiceSimulatorConfig fconfig;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
-    int num = 50;
+    int num = 10;
     CountDownLatch latch = new CountDownLatch(num);
     final List<VmInstanceInventory> vms = new ArrayList<VmInstanceInventory>();
 

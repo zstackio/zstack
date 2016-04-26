@@ -3427,7 +3427,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 extEmitter.failedToRebootVm(VmInstanceInventory.valueOf(self), errCode);
-                if (HostErrors.FAILED_TO_REBOOT_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
+                if (HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR.isEqual(errCode.getCode())
+                        || HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
                     checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
                         @Override
                         public void done() {
