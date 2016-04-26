@@ -46,7 +46,7 @@ import static org.zstack.utils.CollectionDSL.*;
  * 5. delete the userdata
  * 6. start the vm
  *
- * confirm the user data removed
+ * confirm the metadata set
  *
  * 7. create another vm with user data
  * 8. delete the vm
@@ -142,7 +142,7 @@ public class TestMevoco4 {
         fconfig.applyUserdataCmds.clear();
         VmSystemTags.USERDATA.delete(vm.getUuid());
         api.startVmInstance(vm.getUuid());
-        Assert.assertTrue(fconfig.applyUserdataCmds.isEmpty());
+        Assert.assertFalse(fconfig.applyUserdataCmds.isEmpty());
 
         vm = creator.create();
         nic = vm.getVmNics().get(0);
