@@ -194,6 +194,14 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(IpRangeInventory ipr) {
+        SubnetUtils sub = new SubnetUtils(ipr.getStartIp(), ipr.getNetmask());
+        SubnetInfo info = sub.getInfo();
+        if (!info.isInRange(ipr.getGateway())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the gateway[%s] is not in the subnet %s/%s", ipr.getGateway(), ipr.getStartIp(), ipr.getNetmask())
+            ));
+        }
+
         if (!NetworkUtils.isIpv4Address(ipr.getStartIp())) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                     String.format("start ip[%s] is not a IPv4 address", ipr.getStartIp())

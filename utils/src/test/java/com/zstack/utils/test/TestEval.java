@@ -28,6 +28,9 @@ public class TestEval {
         System.out.println(NetworkUtils.isNetmaskExcept("0.0.0.0", "0.0.0.0"));
 
         SubnetUtils sub = new SubnetUtils("192.168.0.10/16");
-        System.out.println(sub.getInfo().isInRange("192.168.0.3"));
+        System.out.println(String.format("11111 %s", sub.getInfo().isInRange("192.168.0.1")));
+
+        sub = new SubnetUtils("192.168.55.10/24");
+        System.out.println(String.format("22222 %s", sub.getInfo().isInRange("192.168.0.1")));
     }
 }

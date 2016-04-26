@@ -48,6 +48,16 @@ public class TestAddIpRange {
         IpRangeInventory ipInv = api.addIpRange(l3inv.getUuid(), "10.223.110.10", "10.223.110.20", "10.223.110.1", "255.255.255.0");
         IpRangeVO ipvo = dbf.findByUuid(ipInv.getUuid(), IpRangeVO.class);
         Assert.assertNotNull(ipvo);
+
+        boolean s = false;
+        try {
+            // gateway not in the CIDR
+            api.addIpRange(l3inv.getUuid(), "192.168.100.10", "192.168.100.100", "192.168.0.1", "255.255.255.0");
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+
+        Assert.assertTrue(s);
     }
 
 }
