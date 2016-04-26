@@ -1,7 +1,6 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
@@ -175,6 +174,15 @@ public class VmInstanceSpec implements Serializable {
     private IsoSpec destIso;
     private String userdata;
     private List<String> bootOrders;
+    private boolean gcOnStopFailure;
+
+    public boolean isGcOnStopFailure() {
+        return gcOnStopFailure;
+    }
+
+    public void setGcOnStopFailure(boolean gcOnStopFailure) {
+        this.gcOnStopFailure = gcOnStopFailure;
+    }
 
     public List<String> getBootOrders() {
         return bootOrders;

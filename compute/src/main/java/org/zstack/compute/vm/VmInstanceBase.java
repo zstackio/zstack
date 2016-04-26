@@ -10,6 +10,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -1600,14 +1602,24 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
 
             @Override
+            @Deferred
             public void run(SyncTaskChain chain) {
                 refreshVO();
+
+                Defer.defer(new Runnable() {
+                    @Override
+                    public void run() {
+                        ChangeVmStateReply reply = new ChangeVmStateReply();
+                        bus.reply(msg, reply);
+                    }
+                });
+
                 if (self == null) {
                     // vm has been deleted by previous request
                     // this happens when delete vm request queued before
                     // change state request from vm tracer.
                     // in this case, ignore change state request
-                    logger.debug(String.format(String.format("vm[uuid:%s] has been deleted, ignore change vm state request from vm tracer", msg.getVmInstanceUuid())));
+                    logger.debug(String.format("vm[uuid:%s] has been deleted, ignore change vm state request from vm tracer", msg.getVmInstanceUuid()));
                     chain.next();
                     return;
                 }
@@ -3514,6 +3526,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final VmInstanceSpec spec = buildSpecFromInventory(inv,VmOperation.Stop);
         spec.setMessage(msg);
+        if (msg instanceof StopVmInstanceMsg) {
+            spec.setGcOnStopFailure(((StopVmInstanceMsg)msg).isGcOnFailure());
+        }
 
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.stopping);

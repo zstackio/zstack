@@ -10,6 +10,15 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
     private String vmInstanceUuid;
+    private boolean gcOnFailure;
+
+    public boolean isGcOnFailure() {
+        return gcOnFailure;
+    }
+
+    public void setGcOnFailure(boolean gcOnFailure) {
+        this.gcOnFailure = gcOnFailure;
+    }
 
     @Override
     public String getVmInstanceUuid() {
