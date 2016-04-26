@@ -10,14 +10,12 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStateEvent;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.deployer.schema.NfsPrimaryStorageConfig;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -68,6 +66,6 @@ public class TestKvmMaintenanceModeAttachPrimaryStorage {
         api.changeHostState(host1.getUuid(), HostStateEvent.enable);
         // wait for host reconnect
         TimeUnit.SECONDS.sleep(5);
-        Assert.assertEquals(1, config.mountCmds.size());
+        Assert.assertEquals(1, config.remountCmds.size());
 	}
 }

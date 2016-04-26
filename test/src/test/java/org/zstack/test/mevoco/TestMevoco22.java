@@ -10,26 +10,19 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.kvm.KVMSystemTags;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
-import org.zstack.network.service.flat.FlatNetworkSystemTags;
 import org.zstack.network.service.flat.FlatUserdataBackend.ApplyUserdataCmd;
-import org.zstack.network.service.flat.FlatUserdataBackend.ReleaseUserdataCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
 
-import java.util.Map;
-
-import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * 1. create a vm with user data
@@ -100,6 +93,6 @@ public class TestMevoco22 {
         Assert.assertNotNull(vo.getUuid());
         Assert.assertEquals(1, fconfig.applyUserdataCmds.size());
         ApplyUserdataCmd cmd = fconfig.applyUserdataCmds.get(0);
-        Assert.assertEquals(userdata, cmd.userdata);
+        Assert.assertEquals(userdata, cmd.userdata.userdata);
     }
 }

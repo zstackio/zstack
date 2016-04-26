@@ -9,11 +9,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.eip.EipInventory;
 import org.zstack.network.service.eip.EipVO;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -29,7 +26,6 @@ import org.zstack.test.deployer.Deployer;
  * 1. create a vm with an eip
  * 2. delete the guest L3 network
  *
- * confirm eip deleted
  * confirm the vmNicUuid and guestIp set to null on the eip
  */
 public class TestVirtualRouterEip30 {
@@ -67,17 +63,11 @@ public class TestVirtualRouterEip30 {
         Assert.assertEquals(1, vconfig.eips.size());
 
         EipInventory eip = deployer.eips.get("eip");
-        VipVO vipvo = dbf.findByUuid(eip.getVipUuid(), VipVO.class);
-        VmNicVO nicvo = dbf.findByUuid(eip.getVmNicUuid(), VmNicVO.class);
 
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmNicInventory nic = vm.getVmNics().get(0);
         api.deleteL3Network(nic.getL3NetworkUuid());
 
-        Assert.assertEquals(1, vconfig.removedEips.size());
-        EipTO to = vconfig.removedEips.get(0);
-        Assert.assertEquals(vipvo.getIp(), to.getVipIp());
-        Assert.assertEquals(nicvo.getIp(), to.getGuestIp());
 
         EipVO eipvo = dbf.findByUuid(eip.getUuid(), EipVO.class);
         Assert.assertNull(eipvo.getVmNicUuid());
