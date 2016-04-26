@@ -13,6 +13,7 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmDirectlyDestroyOnHypervisorMsg;
+import org.zstack.header.vm.VmInstanceVO;
 
 /**
  * Created by xing5 on 2016/3/24.
@@ -30,6 +31,13 @@ public class GCDeleteVmRunner implements GCRunner {
 
         if (!dbf.isExist(ctx.getHostUuid(), HostVO.class)) {
             // the host is deleted
+            completion.success();
+            return;
+        }
+
+
+        if (!dbf.isExist(ctx.getVmUuid(), VmInstanceVO.class)) {
+            // this vm is deleted
             completion.success();
             return;
         }

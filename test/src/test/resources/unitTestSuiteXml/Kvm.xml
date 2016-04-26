@@ -126,4 +126,8 @@
   <TestCase class="org.zstack.test.kvm.TestKvmExtendCpuMemory"/>
   <TestCase class="org.zstack.test.kvm.TestDeleteL2NetworkOnKvm"/>
   <TestCase class="org.zstack.test.kvm.TestKvmVolumeCacheMode1"/>
+
+  <TestCase class="org.zstack.test.kvm.TestDeleteIpRangeOnKvm"/>
+  <TestCase class="org.zstack.test.kvm.TestDeleteIpRangeOnKvm1"/>
+  <TestCase class="org.zstack.test.kvm.TestDeleteIpRangeOnKvm2"/>
 </UnitTestSuiteConfig>

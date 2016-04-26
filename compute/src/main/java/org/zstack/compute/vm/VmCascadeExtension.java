@@ -272,6 +272,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             for (VmDeletionStruct inv : vminvs) {
                 StopVmInstanceMsg msg = new StopVmInstanceMsg();
                 msg.setVmInstanceUuid(inv.getInventory().getUuid());
+                msg.setGcOnFailure(true);
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getInventory().getUuid());
                 msgs.add(msg);
             }
