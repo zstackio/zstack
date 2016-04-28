@@ -251,8 +251,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final DownloadIsoToPrimaryStorageMsg msg) {
-        HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getIsoSpec().getInventory().getFormat());
-        HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());
+        HypervisorFactory f = getHypervisorFactoryByHostUuid(msg.getDestHostUuid());
         HypervisorBackend bkd = f.getHypervisorBackend(self);
         bkd.handle(msg, new ReturnValueCompletion<DownloadIsoToPrimaryStorageReply>(msg) {
             @Override
