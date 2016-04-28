@@ -18,7 +18,7 @@ public abstract class FusionstorMonBase {
     protected void checkTools() {
         Ssh ssh = new Ssh();
         ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword())
-                .checkTool("/opt/fusionstor/lich/bin/lich", "/opt/fusionstor/lich/sbin/lichd").runErrorByExceptionAndClose();
+                .checkTool("/opt/fusionstack/lich/bin/lich", "/opt/fusionstack/lich/sbin/lichd").runErrorByExceptionAndClose();
     }
 
     public FusionstorMonAO getSelf() {
