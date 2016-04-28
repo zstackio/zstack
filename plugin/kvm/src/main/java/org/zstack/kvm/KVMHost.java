@@ -296,14 +296,18 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(KvmRunShellMsg msg) {
+    private SshResult runShell(String script) {
         Ssh ssh = new Ssh();
         ssh.setHostname(self.getManagementIp());
         ssh.setPort(22);
         ssh.setUsername(getSelf().getUsername());
         ssh.setPassword(getSelf().getPassword());
-        ssh.shell(msg.getScript());
-        SshResult result = ssh.runAndClose();
+        ssh.shell(script);
+        return ssh.runAndClose();
+    }
+
+    private void handle(KvmRunShellMsg msg) {
+        SshResult result = runShell(msg.getScript());
 
         KvmRunShellReply reply = new KvmRunShellReply();
         if (result.isSshFailure()) {
@@ -2108,7 +2112,7 @@ public class KVMHost extends HostBase implements Host {
 
                     if (info.isNewAdded()) {
                         flow(new NoRollbackFlow() {
-                            String __name__ = String.format("ansbile-get-kvm-host-facts");
+                            String __name__ = "ansbile-get-kvm-host-facts";
 
                             @Override
                             public void run(FlowTrigger trigger, Map data) {
@@ -2187,6 +2191,17 @@ public class KVMHost extends HostBase implements Host {
                                     return HostFactResponse.class;
                                 }
                             });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "prepare-host-env";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            String script = "which iptables > /dev/null && iptables -C FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 && iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 || true";
+                            runShell(script);
+                            trigger.next();
                         }
                     });
 
