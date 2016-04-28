@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -22,7 +23,7 @@ import org.zstack.test.deployer.Deployer;
  * 1. use smp storage
  * 2. create a vm
  *
- * confirm the vm created sucessfully
+ * confirm the vm created successfully
  */
 public class TestSmpPrimaryStorage1 {
     Deployer deployer;
@@ -58,8 +59,11 @@ public class TestSmpPrimaryStorage1 {
         Assert.assertEquals(1, config.downloadBitsCmds.size());
         Assert.assertEquals(1, config.createVolumeFromCacheCmds.size());
 
-        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         VmInstanceInventory vm = deployer.vms.get("TestVm");
+        ImageInventory iso = deployer.images.get("TestIso");
+        api.attachIso(vm.getUuid(), iso.getUuid(), null);
+
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         api.destroyVmInstance(vm.getUuid());
         Assert.assertEquals(1, config.deleteBitsCmds.size());
     }

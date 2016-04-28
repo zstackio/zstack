@@ -10,6 +10,10 @@
         <image name="TestImage" description="Test" size="2G">
             <backupStorageRef>sftp</backupStorageRef>
         </image>
+
+        <image name="TestIso" description="Test" mediaType="ISO" format="iso">
+            <backupStorageRef>sftp</backupStorageRef>
+        </image>
     </images>
 
     <diskOffering name="TestDiskOffering1" description="Test"
