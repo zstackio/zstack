@@ -111,7 +111,7 @@ elif [ $tool = 'zstack-dashboard' ]; then
     if [ $? -ne 0 ]; then
         #fresh install zstack_dashboard
         echo "Installing zstack_dashboard..."
-        pip install -i $pypi_path --trusted-host localhost zstack_dashboard-*.tar.gz
+        pip install -i $pypi_path --trusted-host localhost --upgrade zstack_dashboard-*.tar.gz
         if [ $? -ne 0 ]; then
             rm -rf $UI_VIRENV_PATH
             exit 1
@@ -119,7 +119,7 @@ elif [ $tool = 'zstack-dashboard' ]; then
     else
         #upgrae zstack_dashboard
         echo "Upgrading zstack_dashboard..."
-        pip install -U -i $pypi_path --trusted-host localhost zstack_dashboard-*.tar.gz
+        pip install -U -i $pypi_path --trusted-host localhost --upgrade zstack_dashboard-*.tar.gz
         if [ $? -ne 0 ]; then
             rm -rf $UI_VIRENV_PATH
             exit 1
