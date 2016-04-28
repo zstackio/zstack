@@ -110,6 +110,11 @@
         <class>org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO</class>
         <class>org.zstack.storage.ceph.primary.CephPrimaryStorageVO</class>
         <class>org.zstack.storage.ceph.CephCapacityVO</class>
+        <class>org.zstack.storage.fusionstor.backup.FusionstorBackupStorageVO</class>
+        <class>org.zstack.storage.fusionstor.backup.FusionstorBackupStorageMonVO</class>
+        <class>org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonVO</class>
+        <class>org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageVO</class>
+        <class>org.zstack.storage.fusionstor.FusionstorCapacityVO</class>
         <class>org.zstack.core.gc.GarbageCollectorVO</class>
         <class>org.zstack.header.storage.primary.ImageCacheVolumeRefVO</class>
         <class>org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO</class>

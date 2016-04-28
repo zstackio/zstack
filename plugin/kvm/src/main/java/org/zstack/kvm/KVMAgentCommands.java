@@ -396,6 +396,7 @@ public class KVMAgentCommands {
         public static final String FILE = "file";
         public static final String ISCSI = "iscsi";
         public static final String CEPH = "ceph";
+        public static final String FUSIONSTOR = "fusionstor";
 
         private String installPath;
         private int deviceId;
