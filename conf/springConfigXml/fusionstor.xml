@@ -36,10 +36,4 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="FusionstorKvmExternsion" class="org.zstack.storage.fusionstor.primary.FusionstorKvmExternsion">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
-        </zstack:plugin>
-    </bean>
 </beans>
