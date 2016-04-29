@@ -527,7 +527,6 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     public static final String ROLLBACK_SNAPSHOT_PATH = "/fusionstor/primarystorage/snapshot/rollback";
     public static final String UNPROTECT_SNAPSHOT_PATH = "/fusionstor/primarystorage/snapshot/unprotect";
     public static final String CP_PATH = "/fusionstor/primarystorage/volume/cp";
-    public static final String KVM_CREATE_SECRET_PATH = "/vm/createfusionstorsecret";
     public static final String DELETE_POOL_PATH = "/fusionstor/primarystorage/deletepool";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
@@ -2012,7 +2011,6 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             public KVMHostAsyncHttpCallMsg call(String huuid) {
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);
-                msg.setPath(KVM_CREATE_SECRET_PATH);
                 msg.setHostUuid(huuid);
                 msg.setNoStatusCheck(true);
                 msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
