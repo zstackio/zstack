@@ -1081,6 +1081,18 @@ public class KVMAgentCommands {
     public static class LogoutIscsiTargetRsp extends AgentResponse {
     }
 
+    public static class FusionstorQueryRsp extends AgentResponse {
+        private String rsp;
+    }
+
+    public static class FusionstorQueryCmd extends AgentCommand {
+        private String query;
+
+        public void setQuery(String query) {
+            this.query = query;
+        }
+    }
+
     public static class LoginIscsiTargetCmd extends AgentCommand {
         private String hostname;
         private int port;
