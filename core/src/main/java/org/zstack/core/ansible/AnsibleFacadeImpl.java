@@ -64,10 +64,10 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         ShellUtils.run(String.format("yes | cp %s %s", pip.getAbsolutePath(), filesDir));
     }
 
-    private void placeAnsible182() {
-        File ansible = PathUtil.findFileOnClassPath("tools/ansible-1.8.2.tar.gz");
+    private void placeAnsible196() {
+        File ansible = PathUtil.findFileOnClassPath("tools/ansible-1.9.6.tar.gz");
         if (ansible == null) {
-            throw new CloudRuntimeException(String.format("cannot find tools/ansible-1.8.2.tar.gz on classpath"));
+            throw new CloudRuntimeException(String.format("cannot find tools/ansible-1.9.6.tar.gz on classpath"));
         }
 
         File root = new File(filesDir);
@@ -130,16 +130,16 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             }
 
             placePip703();
-            placeAnsible182();
+            placeAnsible196();
 
-            ShellUtils.run(String.format("if ! ansible --version | grep -q 1.8.2; then " +
+            ShellUtils.run(String.format("if ! ansible --version | grep -q 1.9.6; then " +
                     "if grep -i -s centos /etc/system-release; then " +
                     "sudo yum remove -y ansible; " +
                     "elif grep -i -s ubuntu /etc/issue; then " +
                     "sudo apt-get --assume-yes remove ansible; " +
                     "else echo \"Warning: can't remove ansible from unknown platform\"; " +
                     "fi; " +
-                    "sudo pip install -I %s/ansible-1.8.2.tar.gz; " +
+                    "sudo pip install -I %s/ansible-1.9.6.tar.gz; " +
                     "fi", filesDir), false);
 
             deployModule("ansible/zstacklib", "zstacklib.py");
