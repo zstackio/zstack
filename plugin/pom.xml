@@ -22,6 +22,7 @@
         <module>iscsiPrimaryStorage</module>
         <module>localstorage</module>
         <module>ceph</module>
+        <module>fusionstor</module>
         <module>loadBalancer</module>
         <module>flatNetworkProvider</module>
         <module>sharedMountPointPrimaryStorage</module>

@@ -77,6 +77,7 @@
     <import resource="springConfigXml/iscsiBtrfsPrimaryStorage.xml" />
     <import resource="springConfigXml/localStorage.xml" />
     <import resource="springConfigXml/ceph.xml" />
+    <import resource="springConfigXml/fusionstor.xml" />
     <import resource="springConfigXml/lb.xml" />
     <import resource="springConfigXml/flatNetworkProvider.xml" />
     <import resource="springConfigXml/sharedMountPointPrimaryStorage.xml" />
