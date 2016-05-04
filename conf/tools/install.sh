@@ -15,6 +15,7 @@ usage() {
 }
 
 tool=$1
+force=$2
 
 if [ -z $tool ]; then
   usage
@@ -36,6 +37,7 @@ cd /tmp
 
 if [ $tool = 'zstack-cli' ]; then
     CLI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackcli
+    [ ! -z $force ] && rm -rf $CLI_VIRENV_PATH
     if [ ! -d "$CLI_VIRENV_PATH" ]; then
         virtualenv $CLI_VIRENV_PATH
         if [ $? -ne 0 ]; then
@@ -80,6 +82,7 @@ elif [ $tool = 'zstack-ctl' ]; then
 
 elif [ $tool = 'zstack-dashboard' ]; then
     UI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstack-dashboard
+    [ ! -z $force ] && rm -rf $UI_VIRENV_PATH
     if [ ! -d "$UI_VIRENV_PATH" ]; then
         virtualenv $UI_VIRENV_PATH
         if [ $? -ne 0 ]; then
