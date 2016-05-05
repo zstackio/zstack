@@ -17,8 +17,8 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMConstant;
-import org.zstack.kvm.KVMAgentCommands.FusionstorQueryCmd;
-import org.zstack.kvm.KVMAgentCommands.FusionstorQueryRsp;
+import org.zstack.kvm.KVMAgentCommands.AgentResponse;
+import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMSystemTags;
@@ -34,7 +34,21 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by frank on 6/16/2015.
  */
+class FusionstorQueryRsp extends AgentResponse {
+    private String rsp;
+}
+
+class FusionstorQueryCmd extends AgentCommand {
+    private String query;
+
+    public void setQuery(String query) {
+        this.query = query;
+    }
+}
+
 public class FusionstorPrimaryStorageVmMigrationExtension implements VmInstanceMigrateExtensionPoint {
+    public static final String KVM_FUSIONSTOR_QUERY_PATH = "/fusionstor/query";
+
     private CLogger logger = Utils.getLogger(FusionstorPrimaryStorageVmMigrationExtension.class);
     private Map<String, List<VolumeInventory>> vmVolumes = new ConcurrentHashMap<String, List<VolumeInventory>>();
 
@@ -57,7 +71,7 @@ public class FusionstorPrimaryStorageVmMigrationExtension implements VmInstanceM
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
         msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
-        msg.setPath(KVMConstant.KVM_FUSIONSTOR_QUERY_PATH);
+        msg.setPath(KVM_FUSIONSTOR_QUERY_PATH);
         msg.setHostUuid(destHostUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, destHostUuid);
 
