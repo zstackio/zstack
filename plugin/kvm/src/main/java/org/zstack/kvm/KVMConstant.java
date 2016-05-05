@@ -38,6 +38,7 @@ public interface KVMConstant {
     public static final String KVM_MERGE_SNAPSHOT_PATH = "/vm/volume/mergesnapshot";
     public static final String KVM_LOGOUT_ISCSI_PATH = "/iscsi/target/logout";
     public static final String KVM_LOGIN_ISCSI_PATH = "/iscsi/target/login";
+    public static final String KVM_FUSIONSTOR_QUERY_PATH = "/fusionstor/query";
     public static final String KVM_HARDEN_CONSOLE_PATH = "/vm/console/harden";
     public static final String KVM_DELETE_CONSOLE_FIREWALL_PATH = "/vm/console/deletefirewall";
     public static final String ISO_TO = "kvm.isoto";
