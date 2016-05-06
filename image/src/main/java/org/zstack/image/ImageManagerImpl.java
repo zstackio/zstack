@@ -141,7 +141,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        SyncVolumeActualSizeMsg smsg = new SyncVolumeActualSizeMsg();
+                        SyncVolumeSizeMsg smsg = new SyncVolumeSizeMsg();
                         smsg.setVolumeUuid(msg.getVolumeUuid());
                         bus.makeTargetServiceIdByResourceUuid(smsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
                         bus.send(smsg, new CloudBusCallBack(trigger) {
@@ -152,7 +152,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     return;
                                 }
 
-                                SyncVolumeActualSizeReply sr = reply.castReply();
+                                SyncVolumeSizeReply sr = reply.castReply();
                                 actualSize = sr.getActualSize();
                                 trigger.next();
                             }
@@ -522,7 +522,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        SyncVolumeActualSizeMsg msg = new SyncVolumeActualSizeMsg();
+                        SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
                         msg.setVolumeUuid(rootVolume.getUuid());
                         bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, rootVolume.getPrimaryStorageUuid());
                         bus.send(msg, new CloudBusCallBack(trigger) {
@@ -533,7 +533,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     return;
                                 }
 
-                                SyncVolumeActualSizeReply sr = reply.castReply();
+                                SyncVolumeSizeReply sr = reply.castReply();
                                 imageActualSize = sr.getActualSize();
                                 trigger.next();
                             }

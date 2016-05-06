@@ -129,7 +129,7 @@ public class TestDiskCapacityLocalStorage5 {
                     InstantiateVolumeMsg imsg = (InstantiateVolumeMsg) msg;
                     VolumeInventory vol = imsg.getVolume();
                     if (VolumeType.Root.toString().equals(vol.getType())) {
-                        lconfig.getVolumeActualSizeCmdSize.put(vol.getUuid(), rootVolumeActualSize);
+                        lconfig.getVolumeSizeCmdActualSize.put(vol.getUuid(), rootVolumeActualSize);
                     }
                 }
             }, InstantiateVolumeMsg.class);

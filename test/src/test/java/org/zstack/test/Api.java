@@ -3996,4 +3996,14 @@ public class Api implements CloudBusEventListener {
         APIChangeResourceOwnerEvent evt = sender.send(msg, APIChangeResourceOwnerEvent.class);
         return evt.getInventory();
     }
+
+    public VolumeInventory syncVolumeSize(String volumeUuid, SessionInventory session) throws ApiSenderException {
+        APISyncVolumeSizeMsg msg = new APISyncVolumeSizeMsg();
+        msg.setUuid(volumeUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISyncVolumeSizeEvent evt = sender.send(msg, APISyncVolumeSizeEvent.class);
+        return evt.getInventory();
+    }
 }

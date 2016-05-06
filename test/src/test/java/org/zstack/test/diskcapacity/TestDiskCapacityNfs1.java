@@ -101,7 +101,7 @@ public class TestDiskCapacityNfs1 {
                     InstantiateVolumeMsg imsg = (InstantiateVolumeMsg) msg;
                     VolumeInventory vol = imsg.getVolume();
                     if (VolumeType.Root.toString().equals(vol.getType())) {
-                        nconfig.getVolumeActualSizeCmdSize.put(vol.getUuid(), rootVolumeActualSize);
+                        nconfig.getVolumeSizeCmdActualSize.put(vol.getUuid(), rootVolumeActualSize);
                     }
                 }
             }, InstantiateVolumeMsg.class);
@@ -140,5 +140,13 @@ public class TestDiskCapacityNfs1 {
         long used = addImage.actualSize + root.getSize();
         long avail = pscap.getTotalCapacity() - used;
         Assert.assertEquals(avail, pscap.getAvailableCapacity());
+
+        long volumeActualSize = SizeUnit.GIGABYTE.toByte(1);
+        nconfig.getVolumeSizeCmdActualSize.put(root.getUuid(), volumeActualSize);
+        long volumeSize = SizeUnit.GIGABYTE.toByte(2);
+        nconfig.getVolumeSizeCmdSize.put(root.getUuid(), volumeSize);
+        VolumeInventory vol = api.syncVolumeSize(root.getUuid(), null);
+        Assert.assertEquals(volumeSize, vol.getSize());
+        Assert.assertEquals(volumeActualSize, vol.getActualSize().longValue());
 	}
 }

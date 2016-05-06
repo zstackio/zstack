@@ -303,15 +303,17 @@ public class LocalStorageSimulator {
         return null;
     }
 
-    @RequestMapping(value=LocalStorageKvmBackend.GET_VOLUME_ACTUAL_SIZE, method= RequestMethod.POST)
+    @RequestMapping(value=LocalStorageKvmBackend.GET_VOLUME_SIZE, method= RequestMethod.POST)
     public @ResponseBody
     String getVolumeActualSize(HttpEntity<String> entity) {
-        GetVolumeActualSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeActualSizeCmd.class);
-        GetVolumeActualSizeRsp rsp = new GetVolumeActualSizeRsp();
+        GetVolumeSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeSizeCmd.class);
+        GetVolumeSizeRsp rsp = new GetVolumeSizeRsp();
 
-        config.getVolumeActualSizeCmds.add(cmd);
-        Long asize = config.getVolumeActualSizeCmdSize.get(cmd.volumeUuid);
+        config.getVolumeSizeCmds.add(cmd);
+        Long asize = config.getVolumeSizeCmdActualSize.get(cmd.volumeUuid);
         rsp.actualSize = asize == null ? 0 : asize;
+        Long size = config.getVolumeSizeCmdSize.get(cmd.volumeUuid);
+        rsp.size = size == null ? 0 : size;
         reply(entity, rsp);
         return null;
     }

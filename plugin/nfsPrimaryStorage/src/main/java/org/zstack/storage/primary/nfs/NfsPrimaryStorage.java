@@ -869,8 +869,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final SyncVolumeActualSizeOnPrimaryStorageMsg msg) {
-        final SyncVolumeActualSizeOnPrimaryStorageReply reply = new SyncVolumeActualSizeOnPrimaryStorageReply();
+    protected void handle(final SyncVolumeSizeOnPrimaryStorageMsg msg) {
         NfsPrimaryStorageBackend backend = getUsableBackend();
         if (backend == null) {
             throw new OperationFailureException(errf.stringToOperationError(
@@ -879,15 +878,15 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             ));
         }
 
-        backend.getVolumeActualSize(getSelfInventory(), msg.getVolumeUuid(), msg.getInstallPath(), new ReturnValueCompletion<Long>(msg) {
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply>(msg) {
             @Override
-            public void success(Long returnValue) {
-                reply.setActualSize(returnValue);
+            public void success(SyncVolumeSizeOnPrimaryStorageReply reply) {
                 bus.reply(msg, reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
+                SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

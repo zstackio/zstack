@@ -112,7 +112,7 @@ public class TestDiskCapacitySmp2 {
                     InstantiateVolumeMsg imsg = (InstantiateVolumeMsg) msg;
                     VolumeInventory vol = imsg.getVolume();
                     if (VolumeType.Root.toString().equals(vol.getType())) {
-                        nconfig.getVolumeActualSizeCmdSize.put(vol.getUuid(), rootVolumeActualSize);
+                        nconfig.getVolumeSizeCmdActualSize.put(vol.getUuid(), rootVolumeActualSize);
                     }
                 }
             }, InstantiateVolumeMsg.class);

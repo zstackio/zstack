@@ -106,7 +106,7 @@ public class TestDiskCapacityNfs3 {
                     InstantiateVolumeMsg imsg = (InstantiateVolumeMsg) msg;
                     VolumeInventory vol = imsg.getVolume();
                     if (VolumeType.Root.toString().equals(vol.getType())) {
-                        nconfig.getVolumeActualSizeCmdSize.put(vol.getUuid(), rootVolumeActualSize);
+                        nconfig.getVolumeSizeCmdActualSize.put(vol.getUuid(), rootVolumeActualSize);
                     }
                 }
             }, InstantiateVolumeMsg.class);
@@ -137,7 +137,7 @@ public class TestDiskCapacityNfs3 {
         PrimaryStorageInventory nfs = deployer.primaryStorages.get("nfs");
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(nfs.getUuid(), PrimaryStorageCapacityVO.class);
 
-        nconfig.getVolumeActualSizeCmdSize.put(root.getUuid(), root.getActualSize());
+        nconfig.getVolumeSizeCmdActualSize.put(root.getUuid(), root.getActualSize());
         BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         ImageInventory template = api.createTemplateFromRootVolume("root", root.getUuid(), list(sftp.getUuid()));
         Assert.assertEquals(root.getSize(), template.getSize());

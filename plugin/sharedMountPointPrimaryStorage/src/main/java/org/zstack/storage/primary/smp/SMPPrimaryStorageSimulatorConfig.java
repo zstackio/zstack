@@ -26,6 +26,7 @@ public class SMPPrimaryStorageSimulatorConfig {
     public List<CheckBitsCmd> checkBitsCmds = new ArrayList<CheckBitsCmd>();
     public Map<String, Long> mergeSnapshotCmdSize = new HashMap<String, Long>();
     public Map<String, Long> mergeSnapshotCmdActualSize = new HashMap<String, Long>();
-    public List<GetVolumeActualSizeCmd> getVolumeActualSizeCmds = new ArrayList<GetVolumeActualSizeCmd>();
-    public Map<String, Long> getVolumeActualSizeCmdSize = new HashMap<String, Long>();
+    public List<GetVolumeSizeCmd> getVolumeSizeCmds = new ArrayList<GetVolumeSizeCmd>();
+    public Map<String, Long> getVolumeSizeCmdActualSize = new HashMap<String, Long>();
+    public Map<String, Long> getVolumeSizeCmdSize = new HashMap<String, Long>();
 }

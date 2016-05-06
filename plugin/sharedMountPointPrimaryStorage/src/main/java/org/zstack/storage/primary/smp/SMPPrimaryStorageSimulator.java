@@ -120,15 +120,17 @@ public class SMPPrimaryStorageSimulator {
         return null;
     }
 
-    @RequestMapping(value=KvmBackend.GET_VOLUME_ACTUAL_SIZE_PATH, method= RequestMethod.POST)
+    @RequestMapping(value=KvmBackend.GET_VOLUME_SIZE_PATH, method= RequestMethod.POST)
     public @ResponseBody
-    String getVolumeActualSize(HttpEntity<String> entity) {
-        GetVolumeActualSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeActualSizeCmd.class);
-        config.getVolumeActualSizeCmds.add(cmd);
+    String getVolumeSize(HttpEntity<String> entity) {
+        GetVolumeSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeSizeCmd.class);
+        config.getVolumeSizeCmds.add(cmd);
 
-        GetVolumeActualSizeRsp rsp = new GetVolumeActualSizeRsp();
-        Long asize = config.getVolumeActualSizeCmdSize.get(cmd.volumeUuid);
+        GetVolumeSizeRsp rsp = new GetVolumeSizeRsp();
+        Long asize = config.getVolumeSizeCmdActualSize.get(cmd.volumeUuid);
         rsp.actualSize = asize == null ? 0 : asize;
+        Long size = config.getVolumeSizeCmdSize.get(cmd.volumeUuid);
+        rsp.size = size == null ? 0 : size;
         reply(entity, rsp);
         return null;
     }

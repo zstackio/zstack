@@ -120,8 +120,8 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(SyncVolumeActualSizeOnPrimaryStorageMsg msg) {
-        SyncVolumeActualSizeOnPrimaryStorageReply reply = new SyncVolumeActualSizeOnPrimaryStorageReply();
+    protected void handle(SyncVolumeSizeOnPrimaryStorageMsg msg) {
+        SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
         reply.setActualSize(0);
         bus.reply(msg, reply);
     }

@@ -1415,7 +1415,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(SyncVolumeActualSizeOnPrimaryStorageMsg msg) {
+    protected void handle(SyncVolumeSizeOnPrimaryStorageMsg msg) {
         throw new CloudRuntimeException("not implemented yet");
     }
 

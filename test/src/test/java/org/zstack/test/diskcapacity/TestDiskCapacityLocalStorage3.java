@@ -126,7 +126,7 @@ public class TestDiskCapacityLocalStorage3 {
                     InstantiateVolumeMsg imsg = (InstantiateVolumeMsg) msg;
                     VolumeInventory vol = imsg.getVolume();
                     if (VolumeType.Root.toString().equals(vol.getType())) {
-                        lconfig.getVolumeActualSizeCmdSize.put(vol.getUuid(), rootVolumeActualSize);
+                        lconfig.getVolumeSizeCmdActualSize.put(vol.getUuid(), rootVolumeActualSize);
                     }
                 }
             }, InstantiateVolumeMsg.class);
@@ -179,7 +179,7 @@ public class TestDiskCapacityLocalStorage3 {
         BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         BackupStorageVO bsbfore = dbf.findByUuid(sftp.getUuid(), BackupStorageVO.class);
 
-        lconfig.getVolumeActualSizeCmdSize.put(root.getUuid(), root.getActualSize());
+        lconfig.getVolumeSizeCmdActualSize.put(root.getUuid(), root.getActualSize());
         ImageInventory tmpt = api.createTemplateFromRootVolume("template", root.getUuid(), sftp.getUuid());
         Assert.assertEquals(root.getActualSize(), tmpt.getActualSize());
         Assert.assertEquals(root.getSize(), tmpt.getSize());
@@ -219,7 +219,7 @@ public class TestDiskCapacityLocalStorage3 {
 
         // make the data volume some size
         long dataVolumeActualSize = SizeUnit.GIGABYTE.toByte(3);
-        lconfig.getVolumeActualSizeCmdSize.put(data.getUuid(), dataVolumeActualSize);
+        lconfig.getVolumeSizeCmdActualSize.put(data.getUuid(), dataVolumeActualSize);
         ImageInventory dataTemplate = api.addDataVolumeTemplateFromDataVolume(data.getUuid(), list(sftp.getUuid()));
         Assert.assertEquals(data.getSize(), dataTemplate.getSize());
         Assert.assertEquals(dataVolumeActualSize, dataTemplate.getActualSize().longValue());

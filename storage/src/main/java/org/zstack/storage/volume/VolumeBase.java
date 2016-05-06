@@ -118,19 +118,20 @@ public class VolumeBase implements Volume {
             handle((ExpungeVolumeMsg) msg);
         } else if (msg instanceof RecoverVolumeMsg) {
             handle((RecoverVolumeMsg) msg);
-        } else if (msg instanceof SyncVolumeActualSizeMsg) {
-            handle((SyncVolumeActualSizeMsg) msg);
+        } else if (msg instanceof SyncVolumeSizeMsg) {
+            handle((SyncVolumeSizeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    private void handle(final SyncVolumeActualSizeMsg msg) {
-        final SyncVolumeActualSizeReply reply = new SyncVolumeActualSizeReply();
-        syncVolumeActualSize(new ReturnValueCompletion<Long>(msg) {
+    private void handle(final SyncVolumeSizeMsg msg) {
+        final SyncVolumeSizeReply reply = new SyncVolumeSizeReply();
+        syncVolumeVolumeSize(new ReturnValueCompletion<VolumeSize>(msg) {
             @Override
-            public void success(Long returnValue) {
-                reply.setActualSize(returnValue);
+            public void success(VolumeSize ret) {
+                reply.setActualSize(ret.actualSize);
+                reply.setSize(ret.size);
                 bus.reply(msg, reply);
             }
 
@@ -484,15 +485,20 @@ public class VolumeBase implements Volume {
             handle((APIRecoverDataVolumeMsg) msg);
         } else if (msg instanceof APIExpungeDataVolumeMsg) {
             handle((APIExpungeDataVolumeMsg) msg);
-        } else if (msg instanceof APISyncVolumeActualSizeMsg) {
-            handle((APISyncVolumeActualSizeMsg) msg);
+        } else if (msg instanceof APISyncVolumeSizeMsg) {
+            handle((APISyncVolumeSizeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    private void syncVolumeActualSize(final ReturnValueCompletion<Long> completion) {
-        SyncVolumeActualSizeOnPrimaryStorageMsg smsg = new SyncVolumeActualSizeOnPrimaryStorageMsg();
+    class VolumeSize {
+        long size;
+        long actualSize;
+    }
+
+    private void syncVolumeVolumeSize(final ReturnValueCompletion<VolumeSize> completion) {
+        SyncVolumeSizeOnPrimaryStorageMsg smsg = new SyncVolumeSizeOnPrimaryStorageMsg();
         smsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
         smsg.setVolumeUuid(self.getUuid());
         smsg.setInstallPath(self.getInstallPath());
@@ -505,25 +511,30 @@ public class VolumeBase implements Volume {
                     return;
                 }
 
-                SyncVolumeActualSizeOnPrimaryStorageReply r = reply.castReply();
+                SyncVolumeSizeOnPrimaryStorageReply r = reply.castReply();
                 self.setActualSize(r.getActualSize());
+                self.setSize(r.getSize());
                 self = dbf.updateAndRefresh(self);
-                completion.success(r.getActualSize());
+
+                VolumeSize size = new VolumeSize();
+                size.actualSize = r.getActualSize();
+                size.size = r.getSize();
+                completion.success(size);
             }
         });
     }
 
-    private void handle(APISyncVolumeActualSizeMsg msg) {
-        final APISyncVolumeActualSizeEvent evt = new APISyncVolumeActualSizeEvent(msg.getId());
+    private void handle(APISyncVolumeSizeMsg msg) {
+        final APISyncVolumeSizeEvent evt = new APISyncVolumeSizeEvent(msg.getId());
         if (self.getStatus() != VolumeStatus.Ready) {
             evt.setInventory(getSelfInventory());
             bus.publish(evt);
             return;
         }
 
-        syncVolumeActualSize(new ReturnValueCompletion<Long>(msg) {
+        syncVolumeVolumeSize(new ReturnValueCompletion<VolumeSize>(msg) {
             @Override
-            public void success(Long returnValue) {
+            public void success(VolumeSize ret) {
                 evt.setInventory(getSelfInventory());
                 bus.publish(evt);
             }

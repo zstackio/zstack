@@ -328,15 +328,17 @@ public class NfsPrimaryStorageSimulator {
         reply(entity, rsp);
     }
 
-    @RequestMapping(value=NfsPrimaryStorageKVMBackend.GET_ACTUAL_SIZE_PATH, method=RequestMethod.POST)
-    private @ResponseBody String getVolumeActualSize(HttpServletRequest req) throws InterruptedException {
+    @RequestMapping(value=NfsPrimaryStorageKVMBackend.GET_VOLUME_SIZE_PATH, method=RequestMethod.POST)
+    private @ResponseBody String getVolumeSize(HttpServletRequest req) throws InterruptedException {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
         GetVolumeActualSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeActualSizeCmd.class);
-        config.getVolumeActualSizeCmds.add(cmd);
+        config.getVolumeSizeCmds.add(cmd);
 
         GetVolumeActualSizeRsp rsp = new GetVolumeActualSizeRsp();
-        Long asize = config.getVolumeActualSizeCmdSize.get(cmd.volumeUuid);
+        Long asize = config.getVolumeSizeCmdActualSize.get(cmd.volumeUuid);
         rsp.actualSize = asize == null ? 0 : asize;
+        Long size = config.getVolumeSizeCmdSize.get(cmd.volumeUuid);
+        rsp.size = size == null ? 0 : size;
         reply(entity, rsp);
         return null;
     }

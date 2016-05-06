@@ -124,7 +124,7 @@ public class TestDiskCapacityLocalStorage1 {
                     InstantiateVolumeMsg imsg = (InstantiateVolumeMsg) msg;
                     VolumeInventory vol = imsg.getVolume();
                     if (VolumeType.Root.toString().equals(vol.getType())) {
-                        lconfig.getVolumeActualSizeCmdSize.put(vol.getUuid(), rootVolumeActualSize);
+                        lconfig.getVolumeSizeCmdActualSize.put(vol.getUuid(), rootVolumeActualSize);
                     }
                 }
             }, InstantiateVolumeMsg.class);
@@ -168,5 +168,13 @@ public class TestDiskCapacityLocalStorage1 {
         long avail = pscap.getTotalCapacity() - used;
         Assert.assertEquals(avail, pscap.getAvailableCapacity());
         Assert.assertEquals(avail, href.getAvailableCapacity());
+
+        long volumeActualSize = SizeUnit.GIGABYTE.toByte(2);
+        lconfig.getVolumeSizeCmdActualSize.put(root.getUuid(), volumeActualSize);
+        long volumeSize = SizeUnit.GIGABYTE.toByte(1);
+        lconfig.getVolumeSizeCmdSize.put(root.getUuid(), volumeSize);
+        VolumeInventory vol = api.syncVolumeSize(root.getUuid(), null);
+        Assert.assertEquals(volumeActualSize, vol.getActualSize().longValue());
+        Assert.assertEquals(volumeSize, vol.getSize());
 	}
 }

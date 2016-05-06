@@ -5,7 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 /**
  * Created by xing5 on 2016/4/27.
  */
-public class SyncVolumeActualSizeMsg extends NeedReplyMessage implements VolumeMessage {
+public class SyncVolumeSizeMsg extends NeedReplyMessage implements VolumeMessage {
     private String volumeUuid;
 
     @Override

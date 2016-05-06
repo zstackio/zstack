@@ -157,13 +157,14 @@ public class KvmBackend extends HypervisorBackend {
         public boolean existing;
     }
 
-    public static class GetVolumeActualSizeCmd extends AgentCmd {
+    public static class GetVolumeSizeCmd extends AgentCmd {
         public String volumeUuid;
         public String installPath;
     }
 
-    public static class GetVolumeActualSizeRsp extends AgentRsp {
+    public static class GetVolumeSizeRsp extends AgentRsp {
         public Long actualSize;
+        public Long size;
     }
 
     public static final String CONNECT_PATH = "/sharedmountpointpirmarystorage/connect";
@@ -177,7 +178,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String OFFLINE_MERGE_SNAPSHOT_PATH = "/sharedmountpointpirmarystorage/snapshot/offlinemerge";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/sharedmountpointpirmarystorage/volume/createempty";
     public static final String CHECK_BITS_PATH = "/sharedmountpointpirmarystorage/bits/check";
-    public static final String GET_VOLUME_ACTUAL_SIZE_PATH = "/sharedmountpointpirmarystorage/volume/getactualsize";
+    public static final String GET_VOLUME_SIZE_PATH = "/sharedmountpointpirmarystorage/volume/getsize";
 
     public KvmBackend(PrimaryStorageVO self) {
         super(self);
@@ -1314,23 +1315,24 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    void handle(SyncVolumeActualSizeOnPrimaryStorageMsg msg, final ReturnValueCompletion<SyncVolumeActualSizeOnPrimaryStorageReply> completion) {
+    void handle(SyncVolumeSizeOnPrimaryStorageMsg msg, final ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply> completion) {
         String hostUuid = findConnectedHost();
-        final GetVolumeActualSizeCmd cmd = new GetVolumeActualSizeCmd();
+        final GetVolumeSizeCmd cmd = new GetVolumeSizeCmd();
         cmd.installPath = msg.getInstallPath();
         cmd.volumeUuid = msg.getVolumeUuid();
-        new KvmCommandSender(hostUuid).send(cmd, GET_VOLUME_ACTUAL_SIZE_PATH, new KvmCommandFailureChecker() {
+        new KvmCommandSender(hostUuid).send(cmd, GET_VOLUME_SIZE_PATH, new KvmCommandFailureChecker() {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
-                GetVolumeActualSizeRsp rsp = wrapper.getResponse(GetVolumeActualSizeRsp.class);
+                GetVolumeSizeRsp rsp = wrapper.getResponse(GetVolumeSizeRsp.class);
                 return rsp.success ? null : errf.stringToOperationError(rsp.error);
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>() {
             @Override
             public void success(KvmResponseWrapper returnValue) {
-                SyncVolumeActualSizeOnPrimaryStorageReply reply = new SyncVolumeActualSizeOnPrimaryStorageReply();
-                GetVolumeActualSizeRsp rsp = returnValue.getResponse(GetVolumeActualSizeRsp.class);
+                SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
+                GetVolumeSizeRsp rsp = returnValue.getResponse(GetVolumeSizeRsp.class);
                 reply.setActualSize(rsp.actualSize);
+                reply.setSize(rsp.size);
                 completion.success(reply);
             }
 

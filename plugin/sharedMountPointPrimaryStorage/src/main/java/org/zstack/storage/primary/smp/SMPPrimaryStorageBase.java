@@ -298,7 +298,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final SyncVolumeActualSizeOnPrimaryStorageMsg msg) {
+    protected void handle(final SyncVolumeSizeOnPrimaryStorageMsg msg) {
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
         q.select(VolumeVO_.format);
         q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
@@ -307,15 +307,15 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(format);
         HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());
         HypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, new ReturnValueCompletion<SyncVolumeActualSizeOnPrimaryStorageReply>(msg) {
+        bkd.handle(msg, new ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply>(msg) {
             @Override
-            public void success(SyncVolumeActualSizeOnPrimaryStorageReply returnValue) {
+            public void success(SyncVolumeSizeOnPrimaryStorageReply returnValue) {
                 bus.reply(msg, returnValue);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                SyncVolumeActualSizeOnPrimaryStorageReply reply = new SyncVolumeActualSizeOnPrimaryStorageReply();
+                SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

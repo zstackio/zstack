@@ -5,13 +5,13 @@ import org.zstack.header.message.APIEvent;
 /**
  * Created by xing5 on 2016/4/24.
  */
-public class APISyncVolumeActualSizeEvent extends APIEvent {
+public class APISyncVolumeSizeEvent extends APIEvent {
     private VolumeInventory inventory;
 
-    public APISyncVolumeActualSizeEvent() {
+    public APISyncVolumeSizeEvent() {
     }
 
-    public APISyncVolumeActualSizeEvent(String apiId) {
+    public APISyncVolumeSizeEvent(String apiId) {
         super(apiId);
     }
 

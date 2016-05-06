@@ -47,6 +47,7 @@ public class NfsPrimaryStorageSimulatorConfig {
     public Map<String, Long> mergeSnapshotCmdActualSize = new HashMap<String, Long>();
     public Map<String, Long> rebaseAndMergeSnapshotsCmdSize = new HashMap<String, Long>();
     public Map<String, Long> rebaseAndMergeSnapshotsCmdActualSize = new HashMap<String, Long>();
-    public List<GetVolumeActualSizeCmd> getVolumeActualSizeCmds = new ArrayList<GetVolumeActualSizeCmd>();
-    public Map<String, Long> getVolumeActualSizeCmdSize = new HashMap<String, Long>();
+    public List<GetVolumeActualSizeCmd> getVolumeSizeCmds = new ArrayList<GetVolumeActualSizeCmd>();
+    public Map<String, Long> getVolumeSizeCmdActualSize = new HashMap<String, Long>();
+    public Map<String, Long> getVolumeSizeCmdSize = new HashMap<String, Long>();
 }

@@ -115,6 +115,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>fusionstor</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.shrinkwrap</groupId>
             <artifactId>shrinkwrap-api</artifactId>
             <version>1.0.0-alpha-12</version>
@@ -209,9 +215,9 @@
                 <configuration>
                     <!--
                     <argLine>-XX:+UseConcMarkSweepGC -Xmx8192m -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=10000 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Djava.rmi.server.hostname=192.168.0.199 -Djava.net.preferIPv4Stack=true</argLine>
-		    <useSystemClassLoader>false</useSystemClassLoader>
+            <useSystemClassLoader>false</useSystemClassLoader>
                     <forkCount>0</forkCount>
-		    <useManifestOnlyJar>false</useManifestOnlyJar>
+            <useManifestOnlyJar>false</useManifestOnlyJar>
                     -->
                 </configuration>
             </plugin>

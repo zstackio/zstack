@@ -73,6 +73,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.volume.APISyncVolumeActualSizeMsg</name>
+        <name>org.zstack.header.volume.APISyncVolumeSizeMsg</name>
     </message>
 </service>
