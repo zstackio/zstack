@@ -3,7 +3,6 @@ package org.zstack.storage.fusionstor.primary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
@@ -19,13 +18,11 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -33,17 +30,13 @@ import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotReply.CreateTemplateFromVolumeSnapshotResult;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMConstant;
-import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
-import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
@@ -1421,6 +1414,11 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
+    @Override
+    protected void handle(SyncVolumeActualSizeOnPrimaryStorageMsg msg) {
+        throw new CloudRuntimeException("not implemented yet");
+    }
+
     private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
         cmd.setUuid(self.getUuid());
         cmd.setFsId(getSelf().getFsid());
@@ -1787,8 +1785,6 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
             handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
@@ -1798,6 +1794,10 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        throw new CloudRuntimeException("not implemented yet");
     }
 
     private void handle(final CreateKvmSecretMsg msg) {
@@ -1820,96 +1820,6 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();
         reply.setError(errf.stringToOperationError("backing up snapshots to backup storage is a depreciated feature, which will be removed in future version"));
         bus.reply(msg, reply);
-    }
-
-    private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
-        if (msg.isNeedDownload()) {
-            throw new OperationFailureException(errf.stringToOperationError("downloading snapshots to create template is not supported"));
-        }
-
-        final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
-
-        final String volPath = makeDataVolumeInstallPath(msg.getVolumeUuid());
-        SnapshotDownloadInfo sp = msg.getSnapshots().get(0);
-        CpCmd cmd = new CpCmd();
-        cmd.srcPath = sp.getSnapshot().getPrimaryStorageInstallPath();
-        cmd.dstPath = volPath;
-        httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(msg) {
-            @Override
-            public void success(CpRsp rsp) {
-                reply.setInstallPath(volPath);
-                reply.setSize(rsp.size);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    private void handle(final CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg msg) {
-        if (msg.isNeedDownload()) {
-            throw new OperationFailureException(errf.stringToOperationError("downloading snapshots to create template is not supported"));
-        }
-
-        final CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply();
-
-        final SnapshotDownloadInfo sp = msg.getSnapshotsDownloadInfo().get(0);
-        final ImageInventory image = ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class));
-
-        List<BackupStorageMediator> mediators = CollectionUtils.transformToList(msg.getBackupStorage(), new Function<BackupStorageMediator, BackupStorageInventory>() {
-            @Override
-            public BackupStorageMediator call(BackupStorageInventory bs) {
-                BackupStorageMediator mediator = getBackupStorageMediator(bs.getUuid());
-                UploadParam param = new UploadParam();
-                param.primaryStorageInstallPath = sp.getSnapshot().getPrimaryStorageInstallPath();
-                param.image = image;
-                mediator.param = param;
-                return mediator;
-            }
-        });
-
-        final List<CreateTemplateFromVolumeSnapshotResult> results = new ArrayList<CreateTemplateFromVolumeSnapshotResult>();
-        final List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
-
-        final AsyncLatch latch = new AsyncLatch(mediators.size(), new NoErrorCompletion() {
-            @Override
-            public void done() {
-                if (results.isEmpty()) {
-                    reply.setError(errf.stringToOperationError(String.format("uploading failed on all backup storage. An error list is %s", JSONObjectUtil.toJsonString(errorCodes))));
-                } else {
-                    reply.setResults(results);
-                }
-
-                bus.reply(msg, reply);
-            }
-        });
-
-        for (final BackupStorageMediator m : mediators) {
-            m.upload(new ReturnValueCompletion<String>() {
-                @Override
-                public void success(String returnValue) {
-                    CreateTemplateFromVolumeSnapshotResult ret = new CreateTemplateFromVolumeSnapshotResult();
-                    ret.setInstallPath(returnValue);
-                    ret.setBackupStorageUuid(m.backupStorage.getUuid());
-                    synchronized (results) {
-                        results.add(ret);
-                    }
-                    latch.ack();
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    synchronized (errorCodes) {
-                        errorCodes.add(errorCode);
-                    }
-                    latch.ack();
-                }
-            });
-        }
     }
 
     private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
