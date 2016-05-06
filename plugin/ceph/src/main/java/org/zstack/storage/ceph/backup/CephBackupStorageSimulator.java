@@ -66,6 +66,21 @@ public class CephBackupStorageSimulator {
         return c;
     }
 
+    @RequestMapping(value=CephBackupStorageBase.GET_IMAGE_SIZE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getImageSize(HttpEntity<String> entity) {
+        GetImageSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetImageSizeCmd.class);
+        config.getImageSizeCmds.add(cmd);
+
+        GetImageSizeRsp rsp = new GetImageSizeRsp();
+        Long size = config.getImageSizeCmdSize.get(cmd.imageUuid);
+        rsp.size = size == null ? 0 : size;
+        Long asize = config.getImageSizeCmdActualSize.get(cmd.imageUuid);
+        rsp.actualSize = asize == null ? 0 : asize;
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=CephBackupStorageBase.INIT_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String initialize(HttpEntity<String> entity) {

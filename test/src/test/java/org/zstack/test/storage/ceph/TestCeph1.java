@@ -9,6 +9,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
@@ -16,12 +17,14 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO_;
+import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.utils.data.SizeUnit;
 
 /**
  * 1. use ceph for backup storage and primary storage
@@ -42,6 +45,7 @@ public class TestCeph1 {
     SessionInventory session;
     CephPrimaryStorageSimulatorConfig config;
     KVMSimulatorConfig kconfig;
+    CephBackupStorageSimulatorConfig bconfig;
 
     @Before
     public void setUp() throws Exception {
@@ -58,6 +62,7 @@ public class TestCeph1 {
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(CephPrimaryStorageSimulatorConfig.class);
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
+        bconfig = loader.getComponent(CephBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
     
@@ -85,5 +90,14 @@ public class TestCeph1 {
         api.deletePrimaryStorage(ps.getUuid());
 
         Assert.assertTrue(config.deletePoolCmds.isEmpty());
+
+        ImageInventory img = deployer.images.get("TestImage");
+        long size = SizeUnit.GIGABYTE.toByte(2);
+        bconfig.getImageSizeCmdSize.put(img.getUuid(), size);
+        long asize = SizeUnit.GIGABYTE.toByte(1);
+        bconfig.getImageSizeCmdActualSize.put(img.getUuid(), asize);
+        img = api.syncImageSize(img.getUuid(), null);
+        Assert.assertEquals(size, img.getSize());
+        Assert.assertEquals(asize, img.getActualSize().longValue());
     }
 }

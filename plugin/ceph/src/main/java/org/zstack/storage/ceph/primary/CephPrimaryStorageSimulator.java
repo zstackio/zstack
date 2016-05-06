@@ -219,18 +219,6 @@ public class CephPrimaryStorageSimulator {
         return null;
     }
 
-    @RequestMapping(value= CephPrimaryStorageBase.GET_VOLUME_ACTUAL_SIZE_PATH, method= RequestMethod.POST)
-    public @ResponseBody
-    String getVoluemActualSize(HttpEntity<String> entity) {
-        GetVolumeActualSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeActualSizeCmd.class);
-        config.getVolumeActualSizeCmds.add(cmd);
-        Long asize = config.getVolumeActualSizeCmdSize.get(cmd.volumeUuid);
-        GetVolumeActualSizeRsp rsp = new GetVolumeActualSizeRsp();
-        rsp.actualSize = asize == null ? 0 : asize;
-        reply(entity, rsp);
-        return null;
-    }
-
     @RequestMapping(value= CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String getVolumeSize(HttpEntity<String> entity) {

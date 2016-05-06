@@ -192,5 +192,13 @@ public class TestDiskCapacityCeph2 {
         VolumeInventory data1 = api.createDataVolumeFromSnapshot(dataSp.getUuid());
         Assert.assertEquals(templateSize, data1.getSize());
         Assert.assertEquals(templateActualSize, data1.getActualSize().longValue());
+
+        long volumeSize = SizeUnit.GIGABYTE.toByte(2);
+        cconfig.getVolumeSizeCmdSize.put(data.getUuid(), volumeSize);
+        long volumeActualSize = SizeUnit.GIGABYTE.toByte(1);
+        cconfig.getVolumeSizeCmdActualSize.put(data.getUuid(), volumeActualSize);
+        data = api.syncVolumeSize(data.getUuid(), null);
+        Assert.assertEquals(volumeSize, data.getSize());
+        Assert.assertEquals(volumeActualSize, data.getActualSize().longValue());
 	}
 }

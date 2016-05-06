@@ -37,6 +37,7 @@
 	<Import resource="unitTestSuiteXml/smpPrimaryStorage.xml"/>
 	<Import resource="unitTestSuiteXml/ha.xml"/>
 	<Import resource="unitTestSuiteXml/flatnetworkEip.xml"/>
+	<Import resource="unitTestSuiteXml/diskCapacity.xml"/>
 
 	<!--
 	<Import resource="unitTestSuiteXml/console.xml"/>

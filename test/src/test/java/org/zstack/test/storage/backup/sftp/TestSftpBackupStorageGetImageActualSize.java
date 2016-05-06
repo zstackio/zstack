@@ -58,7 +58,7 @@ public class TestSftpBackupStorageGetImageActualSize {
         config.getImageSizeCmdActualSize.put(iinv.getUuid(), asize);
         long size = SizeUnit.GIGABYTE.toByte(100);
         config.getImageSizeCmdSize.put(iinv.getUuid(), size);
-        iinv = api.getImageActualSize(iinv.getUuid(), null);
+        iinv = api.syncImageSize(iinv.getUuid(), null);
         Assert.assertEquals(asize, iinv.getActualSize().longValue());
         Assert.assertEquals(size, iinv.getSize());
 

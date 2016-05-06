@@ -17,6 +17,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -196,9 +197,20 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     }
 
+    public static class GetImageSizeCmd extends AgentCommand {
+        public String imageUuid;
+        public String installPath;
+    }
+
+    public static class GetImageSizeRsp extends AgentResponse {
+        public Long size;
+        public Long actualSize;
+    }
+
     public static final String INIT_PATH = "/ceph/backupstorage/init";
     public static final String DOWNLOAD_IMAGE_PATH = "/ceph/backupstorage/image/download";
     public static final String DELETE_IMAGE_PATH = "/ceph/backupstorage/image/delete";
+    public static final String GET_IMAGE_SIZE_PATH = "/ceph/backupstorage/image/getsize";
     public static final String PING_PATH = "/ceph/backupstorage/ping";
 
     protected String makeHttpPath(String ip, String path) {
@@ -406,8 +418,38 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     @Override
-    protected void handle(SyncImageSizeOnBackupStorageMsg msg) {
-        throw new CloudRuntimeException("not supported yet");
+    protected void handle(final SyncImageSizeOnBackupStorageMsg msg) {
+        GetImageSizeCmd cmd = new GetImageSizeCmd();
+        cmd.imageUuid = msg.getImage().getUuid();
+
+        ImageBackupStorageRefInventory ref = CollectionUtils.find(msg.getImage().getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
+            @Override
+            public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
+                return self.getUuid().equals(arg.getBackupStorageUuid()) ? arg : null;
+            }
+        });
+
+        if (ref == null) {
+            throw new CloudRuntimeException(String.format("cannot find ImageBackupStorageRefInventory of image[uuid:%s] for" +
+                    " the backup storage[uuid:%s]", msg.getImage().getUuid(), self.getUuid()));
+        }
+
+        final SyncImageSizeOnBackupStorageReply reply = new SyncImageSizeOnBackupStorageReply();
+        cmd.installPath = ref.getInstallPath();
+        httpCall(GET_IMAGE_SIZE_PATH, cmd, GetImageSizeRsp.class, new ReturnValueCompletion<GetImageSizeRsp>(msg) {
+            @Override
+            public void success(GetImageSizeRsp rsp) {
+                reply.setSize(rsp.size);
+                reply.setActualSize(rsp.actualSize);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override

@@ -30,6 +30,9 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.volume.SyncVolumeSizeMsg;
+import org.zstack.header.volume.SyncVolumeSizeReply;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.*;
@@ -420,16 +423,15 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         template.setCreateTemporaryTemplate(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
-                GetVolumeSizeMsg msg = new GetVolumeSizeMsg();
-                msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
                 msg.setVolumeUuid(paramIn.getSnapshot().getVolumeUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, paramIn.getSnapshot().getVolumeUuid());
                 bus.send(msg, new CloudBusCallBack(trigger) {
                     @Override
                     public void run(MessageReply reply) {
                         if (reply.isSuccess()) {
                             ParamOut paramOut = (ParamOut) data.get(ParamOut.class);
-                            GetVolumeSizeReply gr = reply.castReply();
+                            SyncVolumeSizeReply gr = reply.castReply();
                             paramOut.setActualSize(gr.getActualSize());
                             paramOut.setSize(gr.getSize());
                             trigger.next();

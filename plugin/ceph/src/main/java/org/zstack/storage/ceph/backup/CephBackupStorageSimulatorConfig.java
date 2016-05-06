@@ -1,9 +1,6 @@
 package org.zstack.storage.ceph.backup;
 
-import org.zstack.storage.ceph.backup.CephBackupStorageBase.DeleteCmd;
-import org.zstack.storage.ceph.backup.CephBackupStorageBase.DownloadCmd;
-import org.zstack.storage.ceph.backup.CephBackupStorageBase.InitCmd;
-import org.zstack.storage.ceph.backup.CephBackupStorageBase.PingCmd;
+import org.zstack.storage.ceph.backup.CephBackupStorageBase.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,4 +26,8 @@ public class CephBackupStorageSimulatorConfig {
     public List<PingCmd> pingCmds = new ArrayList<PingCmd>();
     public Map<String, Long> imageSize = new HashMap<String, Long>();
     public Map<String, Long> imageActualSize = new HashMap<String, Long>();
+
+    public List<GetImageSizeCmd> getImageSizeCmds = new ArrayList<GetImageSizeCmd>();
+    public Map<String, Long> getImageSizeCmdSize = new HashMap<String, Long>();
+    public Map<String, Long> getImageSizeCmdActualSize = new HashMap<String, Long>();
 }

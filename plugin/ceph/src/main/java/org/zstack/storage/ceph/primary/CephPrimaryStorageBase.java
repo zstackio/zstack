@@ -508,15 +508,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class DeletePoolRsp extends AgentResponse {
     }
 
-    public static class GetVolumeActualSizeCmd extends AgentCommand {
-        public String volumeUuid;
-        public String installPath;
-    }
-
-    public static class GetVolumeActualSizeRsp extends AgentResponse {
-        public long actualSize;
-    }
-
     public static final String INIT_PATH = "/ceph/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/ceph/primarystorage/delete";
@@ -532,7 +523,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String CP_PATH = "/ceph/primarystorage/volume/cp";
     public static final String KVM_CREATE_SECRET_PATH = "/vm/createcephsecret";
     public static final String DELETE_POOL_PATH = "/ceph/primarystorage/deletepool";
-    public static final String GET_VOLUME_ACTUAL_SIZE_PATH = "/ceph/primarystorage/getvolumeactualsize";
     public static final String GET_VOLUME_SIZE_PATH = "/ceph/primarystorage/getvolumesize";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
@@ -1430,14 +1420,23 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final SyncVolumeSizeOnPrimaryStorageMsg msg) {
-        final SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
-        GetVolumeActualSizeCmd cmd = new GetVolumeActualSizeCmd();
-        cmd.installPath = msg.getInstallPath();
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.installPath);
+        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
+        String instalPath = q.findValue();
+
+        GetVolumeSizeCmd cmd = new GetVolumeSizeCmd();
+        cmd.fsId = getSelf().getFsid();
+        cmd.uuid = self.getUuid();
         cmd.volumeUuid = msg.getVolumeUuid();
-        httpCall(GET_VOLUME_ACTUAL_SIZE_PATH, cmd, GetVolumeActualSizeRsp.class, new ReturnValueCompletion<GetVolumeActualSizeRsp>(msg) {
+        cmd.installPath = instalPath;
+
+        final SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
+        httpCall(GET_VOLUME_SIZE_PATH, cmd, GetVolumeSizeRsp.class, new ReturnValueCompletion<GetVolumeSizeRsp>(msg) {
             @Override
-            public void success(GetVolumeActualSizeRsp returnValue) {
-                reply.setActualSize(returnValue.actualSize);
+            public void success(GetVolumeSizeRsp rsp) {
+                reply.setActualSize(rsp.actualSize);
+                reply.setSize(rsp.size);
                 bus.reply(msg, reply);
             }
 
@@ -1823,41 +1822,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CreateKvmSecretMsg) msg);
         } else if (msg instanceof UploadBitsToBackupStorageMsg) {
             handle((UploadBitsToBackupStorageMsg) msg);
-        } else if (msg instanceof GetVolumeSizeMsg) {
-            handle((GetVolumeSizeMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
     }
 
-    private void handle(final GetVolumeSizeMsg msg) {
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.select(VolumeVO_.installPath);
-        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
-        String instalPath = q.findValue();
-
-        GetVolumeSizeCmd cmd = new GetVolumeSizeCmd();
-        cmd.fsId = getSelf().getFsid();
-        cmd.uuid = self.getUuid();
-        cmd.volumeUuid = msg.getVolumeUuid();
-        cmd.installPath = instalPath;
-
-        final GetVolumeSizeReply reply = new GetVolumeSizeReply();
-        httpCall(GET_VOLUME_SIZE_PATH, cmd, GetVolumeSizeRsp.class, new ReturnValueCompletion<GetVolumeSizeRsp>(msg) {
-            @Override
-            public void success(GetVolumeSizeRsp rsp) {
-                reply.setActualSize(rsp.actualSize);
-                reply.setSize(rsp.size);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
 
     private void handle(final UploadBitsToBackupStorageMsg msg) {
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);

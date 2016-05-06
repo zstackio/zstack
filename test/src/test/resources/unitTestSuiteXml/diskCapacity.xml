@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityCeph1"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityCeph2"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityLocalStorage1"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityLocalStorage2"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityLocalStorage3"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityLocalStorage4"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityLocalStorage5"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityLocalStorage6"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityNfs1"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityNfs2"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityNfs3"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityNfs4"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacityNfs5"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacitySmp1"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacitySmp2"/>
+    <TestCase class="org.zstack.test.diskcapacity.TestDiskCapacitySmp3"/>
+</UnitTestSuiteConfig>
