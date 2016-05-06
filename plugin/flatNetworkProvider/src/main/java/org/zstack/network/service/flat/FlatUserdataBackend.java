@@ -182,9 +182,9 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
                         return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
                     }
-                }, new ReturnValueCompletion<Object>(trigger) {
+                }, new ReturnValueCompletion<KvmResponseWrapper>(trigger) {
                     @Override
-                    public void success(Object returnValue) {
+                    public void success(KvmResponseWrapper returnValue) {
                         trigger.next();
                     }
 

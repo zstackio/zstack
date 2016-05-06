@@ -6,6 +6,7 @@ import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageForAttachingDiskFlow;
 import org.zstack.compute.vm.VmMigrateOnHypervisorFlow;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -14,8 +15,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -24,12 +24,18 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
+import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
+import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
+import org.zstack.storage.backup.BackupStorageCapacityUpdater;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -51,8 +57,8 @@ import static org.zstack.utils.CollectionDSL.list;
 public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         MarshalVmOperationFlowExtensionPoint, HostDeleteExtensionPoint, VmAttachVolumeExtensionPoint,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
-        VolumeDeletionExtensionPoint, AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
-        RecoverVmExtensionPoint, VmPreMigrationExtensionPoint {
+        AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
+        RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
@@ -68,8 +74,182 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     private Map<String, LocalStorageBackupStorageMediator> backupStorageMediatorMap = new HashMap<String, LocalStorageBackupStorageMediator>();
 
     @Override
-    public PrimaryStorageType getPrimaryStorageType() {
-        return type;
+    public WorkflowTemplate createTemplateFromVolumeSnapshot(final ParamIn paramIn) {
+        WorkflowTemplate template = new WorkflowTemplate();
+        class Context {
+            String temporaryInstallPath;
+            String hostUuid;
+        }
+
+        final Context ctx = new Context();
+
+        template.setCreateTemporaryTemplate(new Flow() {
+            String __name__ = "create-temporary-template";
+
+            @Override
+            public void run(final FlowTrigger trigger, final Map data) {
+                CreateTemporaryVolumeFromSnapshotMsg msg = new CreateTemporaryVolumeFromSnapshotMsg();
+                msg.setSnapshot(paramIn.getSnapshot());
+                msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                msg.setImageUuid(paramIn.getImage().getUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                        } else {
+                            ParamOut out = (ParamOut) data.get(ParamOut.class);
+                            CreateTemporaryVolumeFromSnapshotReply r = reply.castReply();
+                            out.setActualSize(r.getActualSize());
+                            out.setSize(r.getSize());
+                            ctx.temporaryInstallPath = r.getInstallPath();
+                            ctx.hostUuid = r.getHostUuid();
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                if (ctx.temporaryInstallPath != null) {
+                    LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
+                    msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                    msg.setHostUuid(ctx.hostUuid);
+                    msg.setPath(ctx.temporaryInstallPath);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                    bus.send(msg);
+                }
+
+                trigger.rollback();
+            }
+        });
+
+        template.setUploadToBackupStorage(new Flow() {
+            String __name__ = "upload-to-backup-storage";
+
+            @AfterDone
+            List<Runnable> returnBackupStorageCapacityWhenUploadFailure = new ArrayList<Runnable>();
+
+            @Override
+            public void run(final FlowTrigger trigger, final Map data) {
+                final List<String> bsUuids = paramIn.getSelectedBackupStorageUuids();
+                final List<UploadBitsFromLocalStorageToBackupStorageMsg> msgs = new ArrayList<UploadBitsFromLocalStorageToBackupStorageMsg>();
+
+                List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                for (String bsUuid : bsUuids) {
+                    BackupStorageAskInstallPathMsg ask = new BackupStorageAskInstallPathMsg();
+                    ask.setBackupStorageUuid(bsUuid);
+                    ask.setImageMediaType(paramIn.getImage().getMediaType());
+                    ask.setImageUuid(paramIn.getImage().getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(ask, BackupStorageConstant.SERVICE_ID, bsUuid);
+                    MessageReply areply = bus.call(ask);
+                    if (!areply.isSuccess()) {
+                        errors.add(areply.getError());
+                        continue;
+                    }
+
+                    String bsInstallPath = ((BackupStorageAskInstallPathReply)areply).getInstallPath();
+                    UploadBitsFromLocalStorageToBackupStorageMsg msg = new UploadBitsFromLocalStorageToBackupStorageMsg();
+                    msg.setHostUuid(ctx.hostUuid);
+                    msg.setPrimaryStorageUuid(ctx.temporaryInstallPath);
+                    msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                    msg.setBackupStorageUuid(bsUuid);
+                    msg.setBackupStorageInstallPath(bsInstallPath);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                    msgs.add(msg);
+                }
+
+                if (msgs.isEmpty()) {
+                    trigger.fail(errf.stringToOperationError(
+                            String.format("failed to get install path on all backup storage%s", bsUuids), errors
+                    ));
+
+                    return;
+                }
+
+                bus.send(msgs, new CloudBusListCallBack(trigger) {
+                    @Override
+                    public void run(List<MessageReply> replies) {
+                        List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                        final ParamOut out = (ParamOut) data.get(ParamOut.class);
+
+                        for (MessageReply reply : replies) {
+                            final UploadBitsFromLocalStorageToBackupStorageMsg msg = msgs.get(replies.indexOf(reply));
+                            if (!reply.isSuccess()) {
+                                errors.add(errf.stringToOperationError(
+                                        String.format("failed to upload the temporary volume to the backup storage[uuid:%s]", msg.getBackupStorageUuid()), reply.getError()
+                                ));
+
+                                returnBackupStorageCapacityWhenUploadFailure.add(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // return the capacity to backup storage
+                                        BackupStorageCapacityUpdater updater = new BackupStorageCapacityUpdater(msg.getBackupStorageUuid());
+                                        updater.increaseAvailableCapacity(out.getActualSize());
+                                    }
+                                });
+
+                                continue;
+                            }
+
+
+                            BackupStorageResult ret = new BackupStorageResult();
+                            ret.setBackupStorageUuid(msg.getBackupStorageUuid());
+                            ret.setInstallPath(msg.getBackupStorageInstallPath());
+                            out.getBackupStorageResult().add(ret);
+                        }
+
+                        if (out.getBackupStorageResult().isEmpty()) {
+                            trigger.fail(errf.stringToOperationError(
+                                    String.format("failed to upload temporary volume to backup storage%s", bsUuids), errors
+                            ));
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                ParamOut out = (ParamOut) data.get(ParamOut.class);
+                if (!out.getBackupStorageResult().isEmpty()) {
+                    for (BackupStorageResult res : out.getBackupStorageResult()) {
+                        DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
+                        msg.setBackupStorageUuid(res.getBackupStorageUuid());
+                        msg.setInstallPath(res.getInstallPath());
+                        bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, res.getBackupStorageUuid());
+                        bus.send(msg);
+                    }
+                }
+
+                trigger.rollback();
+            }
+        });
+
+        template.setDeleteTemporaryTemplate(new NoRollbackFlow() {
+            String __name__ = "delete-temporary-volume";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
+                msg.setHostUuid(ctx.hostUuid);
+                msg.setPath(ctx.temporaryInstallPath);
+                msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                bus.send(msg);
+                trigger.next();
+            }
+        });
+
+        return template;
+    }
+
+    @Override
+    public String createTemplateFromVolumeSnapshotPrimaryStorageType() {
+        return type.toString();
     }
 
     @Override
@@ -85,6 +265,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public void beforeRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
         new LocalStorageCapacityRecalculator().calculateTotalCapacity(struct.getPrimaryStorageUuid());
+    }
+
+    @Override
+    public PrimaryStorageType getPrimaryStorageType() {
+        return type;
     }
 
     @Override
@@ -431,42 +616,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.setMaxResults(1);
         Long count = q.getSingleResult();
         return count > 0 ? HostMaintenancePolicy.StopVm : null;
-    }
-
-    @Override
-    public void preDeleteVolume(VolumeInventory volume) {
-    }
-
-    @Override
-    public void beforeDeleteVolume(VolumeInventory volume) {
-
-    }
-
-    @Override
-    public void afterDeleteVolume(VolumeInventory volume) {
-        if (volume.getPrimaryStorageUuid() != null && VolumeStatus.Deleted.toString().equals(volume.getStatus())) {
-            SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-            q.select(LocalStorageResourceRefVO_.hostUuid);
-            q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, volume.getUuid());
-            q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
-            String huuid = q.findValue();
-
-            if (huuid == null) {
-                return;
-            }
-
-            LocalStorageReturnHostCapacityMsg msg = new LocalStorageReturnHostCapacityMsg();
-            msg.setHostUuid(huuid);
-            msg.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
-            msg.setSize(volume.getSize());
-            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, volume.getPrimaryStorageUuid());
-            bus.send(msg);
-        }
-    }
-
-    @Override
-    public void failedToDeleteVolume(VolumeInventory volume, ErrorCode errorCode) {
-
     }
 
     @Override

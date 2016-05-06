@@ -16,6 +16,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -125,6 +126,15 @@ public class CephBackupStorageBase extends BackupStorageBase {
     public static class DownloadCmd extends AgentCommand {
         String url;
         String installPath;
+        String imageUuid;
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
 
         public String getUrl() {
             return url;
@@ -145,6 +155,15 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     public static class DownloadRsp extends AgentResponse {
         long size;
+        Long actualSize;
+
+        public Long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(Long actualSize) {
+            this.actualSize = actualSize;
+        }
 
         public long getSize() {
             return size;
@@ -278,6 +297,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         final DownloadCmd cmd = new DownloadCmd();
         cmd.url = msg.getImageInventory().getUrl();
         cmd.installPath = makeImageInstallPath(msg.getImageInventory().getUuid());
+        cmd.imageUuid = msg.getImageInventory().getUuid();
 
         final DownloadImageReply reply = new DownloadImageReply();
         httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
@@ -291,6 +311,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
             public void success(DownloadRsp ret) {
                 reply.setInstallPath(cmd.installPath);
                 reply.setSize(ret.size);
+                reply.setActualSize(ret.actualSize);
                 reply.setMd5sum("not calculated");
                 bus.reply(msg, reply);
             }
@@ -382,6 +403,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
         BackupStorageAskInstallPathReply reply = new BackupStorageAskInstallPathReply();
         reply.setInstallPath(makeImageInstallPath(msg.getImageUuid()));
         bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(SyncImageSizeOnBackupStorageMsg msg) {
+        throw new CloudRuntimeException("not supported yet");
     }
 
     @Override

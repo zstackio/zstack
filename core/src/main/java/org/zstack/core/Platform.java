@@ -1,6 +1,7 @@
 package org.zstack.core;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.web.context.WebApplicationContext;
@@ -173,10 +174,15 @@ public class Platform {
     private static void linkGlobalProperty() {
         List<Class> clzs = BeanUtils.scanClass("org.zstack", GlobalPropertyDefinition.class);
 
+        List<String> lst = new ArrayList<String>();
         Map<String, String> propertiesMap = new HashMap<String, String>();
         for (final String name: System.getProperties().stringPropertyNames()) {
-            propertiesMap.put(name, System.getProperty(name));
+            String value = System.getProperty(name);
+            propertiesMap.put(name, value);
+            lst.add(String.format("%s=%s", name, value));
         }
+
+        logger.debug(String.format("system properties:\n%s", StringUtils.join(lst, ",")));
 
         for (Class clz : clzs) {
             linkGlobalProperty(clz, propertiesMap);

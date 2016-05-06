@@ -3,12 +3,10 @@ package org.zstack.storage.volume;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Od;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
@@ -104,6 +102,9 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                     vo.setStatus(VolumeStatus.Ready);
                     if (vo.getType() == VolumeType.Data) {
                         vo.setDeviceId(getNextDeviceId());
+                        vo.setActualSize(0L);
+                    } else {
+                        vo.setActualSize(spec.getImageSpec().getInventory().getActualSize());
                     }
                     vo = dbf.updateAndRefresh(vo);
 

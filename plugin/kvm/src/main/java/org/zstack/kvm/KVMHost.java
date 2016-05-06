@@ -841,6 +841,7 @@ public class KVMHost extends HostBase implements Host {
                 }
             }
 
+            cmd.setVolumeUuid(msg.getVolume().getUuid());
             cmd.setVmUuid(msg.getVmUuid());
             cmd.setDeviceId(msg.getVolume().getDeviceId());
         }

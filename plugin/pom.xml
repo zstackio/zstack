@@ -19,7 +19,6 @@
         <module>vip</module>
         <module>eip</module>
         <module>mediator</module>
-        <module>iscsiPrimaryStorage</module>
         <module>localstorage</module>
         <module>ceph</module>
         <module>fusionstor</module>

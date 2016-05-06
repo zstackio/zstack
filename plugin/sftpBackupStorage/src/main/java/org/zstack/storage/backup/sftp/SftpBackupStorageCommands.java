@@ -122,6 +122,15 @@ public class SftpBackupStorageCommands {
     public static class DownloadResponse extends AgentResponse {
         public String md5Sum;
         public long size;
+        public long actualSize;
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
 
         public String getMd5Sum() {
             return md5Sum;
@@ -162,5 +171,15 @@ public class SftpBackupStorageCommands {
         public void setSshKey(String sshKey) {
             this.sshKey = sshKey;
         }
+    }
+
+    public static class GetImageSizeCmd extends AgentCommand {
+        public String imageUuid;
+        public String installPath;
+    }
+
+    public static class GetImageSizeRsp extends AgentResponse {
+        public long size;
+        public long actualSize;
     }
 }

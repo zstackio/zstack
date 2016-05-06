@@ -110,7 +110,25 @@ public class SMPPrimaryStorageSimulator {
         MergeSnapshotCmd cmd = JSONObjectUtil.toObject(entity.getBody(), MergeSnapshotCmd.class);
         config.mergeSnapshotCmds.add(cmd);
         MergeSnapshotRsp rsp = new MergeSnapshotRsp();
-        rsp.size = 0;
+
+        Long size = config.mergeSnapshotCmdSize.get(cmd.volumeUuid);
+        rsp.size = size == null ? 0 : size;
+        Long asize = config.mergeSnapshotCmdActualSize.get(cmd.volumeUuid);
+        rsp.actualSize = asize == null ? 0 : asize;
+
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=KvmBackend.GET_VOLUME_ACTUAL_SIZE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getVolumeActualSize(HttpEntity<String> entity) {
+        GetVolumeActualSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeActualSizeCmd.class);
+        config.getVolumeActualSizeCmds.add(cmd);
+
+        GetVolumeActualSizeRsp rsp = new GetVolumeActualSizeRsp();
+        Long asize = config.getVolumeActualSizeCmdSize.get(cmd.volumeUuid);
+        rsp.actualSize = asize == null ? 0 : asize;
         reply(entity, rsp);
         return null;
     }

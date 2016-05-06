@@ -6,10 +6,11 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -19,7 +20,6 @@ import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
@@ -47,10 +47,8 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -163,7 +161,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 		bus.reply(msg, reply);
     }
 
-
     private void handle(APICreateDataVolumeFromVolumeSnapshotMsg msg) {
         final APICreateDataVolumeFromVolumeSnapshotEvent evt = new APICreateDataVolumeFromVolumeSnapshotEvent(msg.getId());
         final VolumeVO vo = new VolumeVO();
@@ -207,6 +204,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     CreateDataVolumeFromVolumeSnapshotReply cr = reply.castReply();
                     VolumeInventory inv = cr.getInventory();
                     vo.setSize(inv.getSize());
+                    vo.setActualSize(cr.getActualSize());
                     vo.setInstallPath(inv.getInstallPath());
                     vo.setStatus(VolumeStatus.Ready);
                     vo.setPrimaryStorageUuid(inv.getPrimaryStorageUuid());
@@ -266,6 +264,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setDescription(msg.getDescription());
         vol.setFormat(template.getFormat());
         vol.setSize(template.getSize());
+        vol.setActualSize(template.getActualSize());
         vol.setRootImageUuid(template.getUuid());
         vol.setStatus(VolumeStatus.Creating);
         vol.setState(VolumeState.Enabled);
@@ -487,6 +486,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 		vo.setDescription(msg.getDescription());
 		vo.setName(msg.getName());
 		vo.setSize(dvo.getDiskSize());
+        vo.setActualSize(0L);
 		vo.setType(VolumeType.Data);
         vo.setStatus(VolumeStatus.NotInstantiated);
 

@@ -18,6 +18,7 @@ public class VolumeAO_ {
 	public static volatile SingularAttribute<VolumeAO, String> installPath;
 	public static volatile SingularAttribute<VolumeAO, VolumeType> type;
 	public static volatile SingularAttribute<VolumeAO, Long> size;
+	public static volatile SingularAttribute<VolumeAO, Long> actualSize;
 	public static volatile SingularAttribute<VolumeAO, Integer> deviceId;
 	public static volatile SingularAttribute<VolumeAO, VolumeState> state;
     public static volatile SingularAttribute<VolumeAO, VolumeStatus> status;

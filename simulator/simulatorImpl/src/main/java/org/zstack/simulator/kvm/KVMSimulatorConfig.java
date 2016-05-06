@@ -79,4 +79,6 @@ public class KVMSimulatorConfig {
     public volatile boolean vmSyncSuccess = true;
     public List<HardenVmConsoleCmd> hardenVmConsoleCmds = new ArrayList<HardenVmConsoleCmd>();
     public List<DeleteVmConsoleFirewallCmd> deleteVmConsoleFirewallCmds  = new ArrayList<DeleteVmConsoleFirewallCmd>();
+
+    public Map<String, Long> takeSnapshotCmdSize = new HashMap<String, Long>();
 }

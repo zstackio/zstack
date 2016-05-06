@@ -24,14 +24,10 @@ import org.zstack.header.host.*;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageVO;
-import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
-import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotReply.CreateTemplateFromVolumeSnapshotResult;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
@@ -41,10 +37,7 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.kvm.KVMConstant;
-import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
-import org.zstack.kvm.KVMHostAsyncHttpCallReply;
-import org.zstack.kvm.MergeVolumeSnapshotOnKvmMsg;
+import org.zstack.kvm.*;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
@@ -133,11 +126,13 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class MergeSnapshotCmd extends AgentCmd {
+        public String volumeUuid;
         public String snapshotInstallPath;
         public String workspaceInstallPath;
     }
 
     public static class MergeSnapshotRsp extends AgentRsp {
+        public long actualSize;
         public long size;
     }
 
@@ -162,6 +157,15 @@ public class KvmBackend extends HypervisorBackend {
         public boolean existing;
     }
 
+    public static class GetVolumeActualSizeCmd extends AgentCmd {
+        public String volumeUuid;
+        public String installPath;
+    }
+
+    public static class GetVolumeActualSizeRsp extends AgentRsp {
+        public Long actualSize;
+    }
+
     public static final String CONNECT_PATH = "/sharedmountpointpirmarystorage/connect";
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/sharedmountpointpirmarystorage/createrootvolume";
     public static final String DELETE_BITS_PATH = "/sharedmountpointpirmarystorage/bits/delete";
@@ -173,6 +177,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String OFFLINE_MERGE_SNAPSHOT_PATH = "/sharedmountpointpirmarystorage/snapshot/offlinemerge";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/sharedmountpointpirmarystorage/volume/createempty";
     public static final String CHECK_BITS_PATH = "/sharedmountpointpirmarystorage/bits/check";
+    public static final String GET_VOLUME_ACTUAL_SIZE_PATH = "/sharedmountpointpirmarystorage/volume/getactualsize";
 
     public KvmBackend(PrimaryStorageVO self) {
         super(self);
@@ -361,7 +366,7 @@ public class KvmBackend extends HypervisorBackend {
                                 public void run(final FlowTrigger trigger, Map data) {
                                     AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                                     amsg.setRequiredPrimaryStorageUuid(self.getUuid());
-                                    amsg.setSize(image.getSize());
+                                    amsg.setSize(image.getActualSize());
                                     amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
                                     amsg.setNoOverProvisioning(true);
                                     bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
@@ -382,7 +387,7 @@ public class KvmBackend extends HypervisorBackend {
                                 public void rollback(FlowRollback trigger, Map data) {
                                     if (s) {
                                         ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                                        rmsg.setDiskSize(image.getSize());
+                                        rmsg.setDiskSize(image.getActualSize());
                                         rmsg.setNoOverProvisioning(true);
                                         rmsg.setPrimaryStorageUuid(self.getUuid());
                                         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
@@ -421,7 +426,7 @@ public class KvmBackend extends HypervisorBackend {
                                     vo.setMediaType(ImageMediaType.valueOf(image.getMediaType()));
                                     vo.setImageUuid(image.getUuid());
                                     vo.setPrimaryStorageUuid(self.getUuid());
-                                    vo.setSize(image.getSize());
+                                    vo.setSize(image.getActualSize());
                                     vo.setMd5sum("not calculated");
                                     vo.setInstallUrl(primaryStorageInstallPath);
                                     dbf.persist(vo);
@@ -862,210 +867,11 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg, ReturnValueCompletion<BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply> completion) {
-        throw new OperationFailureException(errf.stringToOperationError("not supported"));
-    }
-
-    @Override
-    void handle(final CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg msg, final ReturnValueCompletion<CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply> completion) {
-        final List<SnapshotDownloadInfo> infos = msg.getSnapshotsDownloadInfo();
-
-        SimpleQuery<ImageVO> q = dbf.createQuery(ImageVO.class);
-        q.select(ImageVO_.mediaType);
-        q.add(ImageVO_.uuid, Op.EQ, msg.getImageUuid());
-        final String mediaType = q.findValue().toString();
-
-        final Do doCmd = new Do();
-
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("create-template-%s-from-snapshots", msg.getImageUuid()));
-        chain.then(new ShareFlow() {
-            String workSpaceInstallPath = makeSnapshotWorkspacePath(msg.getImageUuid());
-            long templateSize;
-
-            class Result {
-                BackupStorageInventory backupStorageInventory;
-                String installPath;
-            }
-            List<Result> successBackupStorage = new ArrayList<Result>();
-
-            @Override
-            public void setup() {
-                String __name__ = "create-temporary-template";
-
-                flow(new Flow() {
-
-                    boolean success = false;
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        VolumeSnapshotInventory latest = infos.get(infos.size()-1).getSnapshot();
-                        MergeSnapshotCmd cmd = new MergeSnapshotCmd();
-                        cmd.snapshotInstallPath = latest.getPrimaryStorageInstallPath();
-                        cmd.workspaceInstallPath = workSpaceInstallPath;
-
-                        doCmd.go(MERGE_SNAPSHOT_PATH, cmd, MergeSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
-                            @Override
-                            public void success(AgentRsp returnValue) {
-                                MergeSnapshotRsp rsp = (MergeSnapshotRsp) returnValue;
-                                templateSize = rsp.size;
-                                success = true;
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (success) {
-                            deleteBits(workSpaceInstallPath, new Completion() {
-                                @Override
-                                public void success() {
-                                    // pass
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    //TODO
-                                    logger.warn(String.format("failed to delete %s on shared mount point primary storage[uuid: %s], %s; continue to rollback",
-                                            workSpaceInstallPath, self.getUuid(), errorCode));
-                                }
-                            });
-                        }
-
-                        trigger.rollback();
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-
-                    String __name__ = "upload-template-to-backup-storage";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        upload(msg.getBackupStorage().iterator(), new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                if (successBackupStorage.isEmpty()) {
-                                    trigger.fail(errf.stringToInternalError("failed to upload the template to all backup storage"));
-                                } else {
-                                    trigger.next();
-                                }
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-
-                    private void upload(final Iterator<BackupStorageInventory> it, final Completion completion) {
-                        if (!it.hasNext()) {
-                            completion.success();
-                            return;
-                        }
-
-                        final BackupStorageInventory bs = it.next();
-                        BackupStorageAskInstallPathMsg bmsg = new BackupStorageAskInstallPathMsg();
-                        bmsg.setImageMediaType(mediaType);
-                        bmsg.setImageUuid(msg.getImageUuid());
-                        bmsg.setBackupStorageUuid(bs.getUuid());
-                        bus.makeTargetServiceIdByResourceUuid(bmsg, BackupStorageConstant.SERVICE_ID, bs.getUuid());
-                        MessageReply br = bus.call(bmsg);
-                        if (!br.isSuccess()) {
-                            logger.warn(String.format("failed to get install path on backup storage[uuid: %s] for image[uuid:%s]", bs.getUuid(), msg.getImageUuid()));
-                            upload(it, completion);
-                            return;
-                        }
-
-                        final String backupStorageInstallPath = ((BackupStorageAskInstallPathReply) br).getInstallPath();
-                        BackupStorageKvmUploader uploader = getBackupStorageKvmUploader(bs.getUuid());
-                        uploader.uploadBits(backupStorageInstallPath, workSpaceInstallPath, new Completion(completion) {
-                            @Override
-                            public void success() {
-                                Result ret = new Result();
-                                ret.backupStorageInventory = bs;
-                                ret.installPath = backupStorageInstallPath;
-                                successBackupStorage.add(ret);
-                                upload(it, completion);
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                //TODO
-                                logger.warn(String.format("failed to upload template[%s] from local primary storage[uuid: %s] to the backup storage[uuid: %s, path: %s]",
-                                        workSpaceInstallPath, self.getUuid(), bs.getUuid(), backupStorageInstallPath));
-                                upload(it, completion);
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "delete-temporary-template-from-primary-storage";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        deleteBits(workSpaceInstallPath, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                // pass
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                //TODO
-                                logger.warn(String.format("failed to delete temporary template[%s] from primary storage[uuid:%s], %s; need a cleanup",
-                                        workSpaceInstallPath, self.getUuid(), errorCode));
-                            }
-                        });
-
-                        trigger.next();
-                    }
-                });
-
-                done(new FlowDoneHandler(msg) {
-                    @Override
-                    public void handle(Map data) {
-                        CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply();
-                        List<CreateTemplateFromVolumeSnapshotResult> ret = CollectionUtils.transformToList(successBackupStorage, new Function<CreateTemplateFromVolumeSnapshotResult, Result>() {
-                            @Override
-                            public CreateTemplateFromVolumeSnapshotResult call(Result arg) {
-                                CreateTemplateFromVolumeSnapshotResult r = new CreateTemplateFromVolumeSnapshotResult();
-                                r.setBackupStorageUuid(arg.backupStorageInventory.getUuid());
-                                r.setInstallPath(arg.installPath);
-                                return r;
-                            }
-                        });
-                        reply.setResults(ret);
-                        reply.setSize(templateSize);
-                        completion.success(reply);
-                    }
-                });
-
-                error(new FlowErrorHandler(msg) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        completion.fail(errCode);
-                    }
-                });
-            }
-        }).start();
-    }
-
-    @Override
     void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, final ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion) {
-        final List<SnapshotDownloadInfo> infos = msg.getSnapshots();
-
         final String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
-        VolumeSnapshotInventory latest = infos.get(infos.size()-1).getSnapshot();
+        VolumeSnapshotInventory latest = msg.getSnapshot();
         MergeSnapshotCmd cmd = new MergeSnapshotCmd();
+        cmd.volumeUuid = latest.getVolumeUuid();
         cmd.snapshotInstallPath = latest.getPrimaryStorageInstallPath();
         cmd.workspaceInstallPath = installPath;
 
@@ -1074,6 +880,7 @@ public class KvmBackend extends HypervisorBackend {
             public void success(AgentRsp returnValue) {
                 MergeSnapshotRsp rsp = (MergeSnapshotRsp) returnValue;
                 CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
+                reply.setActualSize(rsp.actualSize);
                 reply.setInstallPath(installPath);
                 reply.setSize(rsp.size);
                 completion.success(reply);
@@ -1339,6 +1146,22 @@ public class KvmBackend extends HypervisorBackend {
         }).start();
     }
 
+    @Override
+    void handle(UploadBitsToBackupStorageMsg msg, final ReturnValueCompletion<UploadBitsToBackupStorageReply> completion) {
+        SftpBackupStorageKvmUploader uploader = new SftpBackupStorageKvmUploader(msg.getBackupStorageUuid());
+        uploader.uploadBits(msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new Completion(completion) {
+            @Override
+            public void success() {
+                completion.success(new UploadBitsToBackupStorageReply());
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
     class SftpBackupStorageKvmDownloader extends BackupStorageKvmDownloader {
         private final String bsUuid;
 
@@ -1488,6 +1311,62 @@ public class KvmBackend extends HypervisorBackend {
         }
 
         connect(hostUuid, completion);
+    }
+
+    @Override
+    void handle(SyncVolumeActualSizeOnPrimaryStorageMsg msg, final ReturnValueCompletion<SyncVolumeActualSizeOnPrimaryStorageReply> completion) {
+        String hostUuid = findConnectedHost();
+        final GetVolumeActualSizeCmd cmd = new GetVolumeActualSizeCmd();
+        cmd.installPath = msg.getInstallPath();
+        cmd.volumeUuid = msg.getVolumeUuid();
+        new KvmCommandSender(hostUuid).send(cmd, GET_VOLUME_ACTUAL_SIZE_PATH, new KvmCommandFailureChecker() {
+            @Override
+            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                GetVolumeActualSizeRsp rsp = wrapper.getResponse(GetVolumeActualSizeRsp.class);
+                return rsp.success ? null : errf.stringToOperationError(rsp.error);
+            }
+        }, new ReturnValueCompletion<KvmResponseWrapper>() {
+            @Override
+            public void success(KvmResponseWrapper returnValue) {
+                SyncVolumeActualSizeOnPrimaryStorageReply reply = new SyncVolumeActualSizeOnPrimaryStorageReply();
+                GetVolumeActualSizeRsp rsp = returnValue.getResponse(GetVolumeActualSizeRsp.class);
+                reply.setActualSize(rsp.actualSize);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+
+    }
+
+    @Override
+    void handle(CreateTemporaryVolumeFromSnapshotMsg msg, final ReturnValueCompletion<CreateTemporaryVolumeFromSnapshotReply> completion) {
+        final String installPath = makeTemplateFromVolumeInWorkspacePath(msg.getTemporaryVolumeUuid());
+        VolumeSnapshotInventory latest = msg.getSnapshot();
+        MergeSnapshotCmd cmd = new MergeSnapshotCmd();
+        cmd.volumeUuid = latest.getVolumeUuid();
+        cmd.snapshotInstallPath = latest.getPrimaryStorageInstallPath();
+        cmd.workspaceInstallPath = installPath;
+
+        new Do().go(MERGE_SNAPSHOT_PATH, cmd, MergeSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp rsp) {
+                CreateTemporaryVolumeFromSnapshotReply reply = new CreateTemporaryVolumeFromSnapshotReply();
+                reply.setInstallPath(installPath);
+                MergeSnapshotRsp mrsp = (MergeSnapshotRsp) rsp;
+                reply.setSize(mrsp.size);
+                reply.setActualSize(mrsp.actualSize);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     private void handle(final InitKvmHostMsg msg) {

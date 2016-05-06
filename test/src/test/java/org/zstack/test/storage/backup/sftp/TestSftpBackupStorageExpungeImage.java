@@ -16,18 +16,13 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.image.ImageGlobalConfig;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
-import org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageMsg;
-import org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageReply;
-import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.search.QueryTestValidator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
@@ -102,7 +97,7 @@ public class TestSftpBackupStorageExpungeImage {
         api.deleteImage(img.getUuid());
         TimeUnit.SECONDS.sleep(3);
         BackupStorageVO bs1 = dbf.findByUuid(sftp.getUuid(), BackupStorageVO.class);
-        Assert.assertEquals(bs1.getAvailableCapacity(), bs.getAvailableCapacity() + img.getSize());
+        Assert.assertEquals(bs1.getAvailableCapacity(), bs.getAvailableCapacity() + img.getActualSize());
 
         ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Delay.toString());
         ImageGlobalConfig.EXPUNGE_PERIOD.updateValue(1);
@@ -110,6 +105,6 @@ public class TestSftpBackupStorageExpungeImage {
         api.deleteImage(img1.getUuid());
         TimeUnit.SECONDS.sleep(3);
         BackupStorageVO bs2 = dbf.findByUuid(sftp.getUuid(), BackupStorageVO.class);
-        Assert.assertEquals(bs2.getAvailableCapacity(), bs1.getAvailableCapacity() + img1.getSize());
+        Assert.assertEquals(bs2.getAvailableCapacity(), bs1.getAvailableCapacity() + img1.getActualSize());
     }
 }

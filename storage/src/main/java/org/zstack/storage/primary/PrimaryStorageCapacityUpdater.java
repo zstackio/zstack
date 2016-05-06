@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
@@ -30,6 +32,8 @@ public class PrimaryStorageCapacityUpdater {
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private ErrorFacade errf;
 
     private String primaryStorageUuid;
     private TypedQuery<PrimaryStorageCapacityVO> query;
@@ -235,5 +239,31 @@ public class PrimaryStorageCapacityUpdater {
         boolean ret = _run(runnable);
         checkResize();
         return ret;
+    }
+
+    public boolean reserve(long size) {
+        return reserve(size, true);
+    }
+
+    @Transactional
+    public boolean reserve(long size, boolean exceptionOnFailure) {
+        if (!lockCapacity()) {
+            logDeletedPrimaryStorage();
+            return false;
+        }
+
+        if (capacityVO.getAvailableCapacity() < size) {
+            if (exceptionOnFailure) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        String.format("cannot reserve %s bytes on the primary storage[uuid:%s], it's short of available capacity", size, capacityVO.getUuid())
+                ));
+            } else {
+                return false;
+            }
+        }
+
+        capacityVO.setAvailableCapacity(capacityVO.getAvailableCapacity() - size);
+        merge();
+        return true;
     }
 }

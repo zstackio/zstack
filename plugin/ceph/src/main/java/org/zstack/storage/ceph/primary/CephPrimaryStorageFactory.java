@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
@@ -16,16 +17,23 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
+import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.*;
+import org.zstack.storage.backup.BackupStorageCapacityUpdater;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
@@ -38,6 +46,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -50,7 +59,7 @@ import static org.zstack.utils.CollectionDSL.map;
  * Created by frank on 7/28/2015.
  */
 public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCapacityUpdateExtensionPoint, KVMStartVmExtensionPoint,
-        KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, Component {
+        KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -130,12 +139,26 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
-    public void update(String fsid, long total, long avail) {
+    public void update(String fsid, final long total, final long avail) {
         String sql = "select cap from PrimaryStorageCapacityVO cap, CephPrimaryStorageVO pri where pri.uuid = cap.uuid and pri.fsid = :fsid";
         TypedQuery<PrimaryStorageCapacityVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageCapacityVO.class);
         q.setParameter("fsid", fsid);
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(q);
-        updater.update(total, avail, total, avail);
+        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
+                    // init
+                    cap.setTotalCapacity(total);
+                    cap.setAvailableCapacity(avail);
+                }
+
+                cap.setTotalPhysicalCapacity(total);
+                cap.setAvailablePhysicalCapacity(avail);
+
+                return cap;
+            }
+        });
     }
 
     private IsoTO convertIsoToCephIfNeeded(final IsoTO to) {
@@ -389,5 +412,147 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             imageCacheCleanupThread.cancel(true);
         }
         return true;
+    }
+
+    @Override
+    public WorkflowTemplate createTemplateFromVolumeSnapshot(final ParamIn paramIn) {
+        WorkflowTemplate template = new WorkflowTemplate();
+        template.setCreateTemporaryTemplate(new NoRollbackFlow() {
+            @Override
+            public void run(final FlowTrigger trigger, final Map data) {
+                GetVolumeSizeMsg msg = new GetVolumeSizeMsg();
+                msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                msg.setVolumeUuid(paramIn.getSnapshot().getVolumeUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            ParamOut paramOut = (ParamOut) data.get(ParamOut.class);
+                            GetVolumeSizeReply gr = reply.castReply();
+                            paramOut.setActualSize(gr.getActualSize());
+                            paramOut.setSize(gr.getSize());
+                            trigger.next();
+                        } else {
+                            trigger.fail(reply.getError());
+                        }
+                    }
+                });
+            }
+        });
+
+        template.setUploadToBackupStorage(new Flow() {
+            String __name__ = "upload-to-backup-storage";
+
+            @AfterDone
+            List<Runnable> returnCapacityToBackupStorage = new ArrayList<Runnable>();
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                final ParamOut out = (ParamOut) data.get(ParamOut.class);
+                final List<String> bsUuids = paramIn.getSelectedBackupStorageUuids();
+                List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                final List<UploadBitsToBackupStorageMsg> msgs = new ArrayList<UploadBitsToBackupStorageMsg>();
+
+                for (final String bsUuid : bsUuids) {
+                    BackupStorageAskInstallPathMsg ask = new BackupStorageAskInstallPathMsg();
+                    ask.setImageUuid(paramIn.getImage().getUuid());
+                    ask.setBackupStorageUuid(bsUuid);
+                    ask.setImageMediaType(paramIn.getImage().getMediaType());
+                    bus.makeTargetServiceIdByResourceUuid(ask, BackupStorageConstant.SERVICE_ID, bsUuid);
+                    MessageReply ar = bus.call(ask);
+                    if (!ar.isSuccess()) {
+                        errors.add(ar.getError());
+
+                        returnCapacityToBackupStorage.add(new Runnable() {
+                            @Override
+                            public void run() {
+                                BackupStorageCapacityUpdater updater = new BackupStorageCapacityUpdater(bsUuid);
+                                updater.increaseAvailableCapacity(out.getActualSize());
+                            }
+                        });
+
+                        continue;
+                    }
+
+                    String bsInstallPath = ((BackupStorageAskInstallPathReply)ar).getInstallPath();
+
+                    UploadBitsToBackupStorageMsg msg = new UploadBitsToBackupStorageMsg();
+                    msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                    msg.setPrimaryStorageInstallPath(paramIn.getSnapshot().getPrimaryStorageInstallPath());
+                    msg.setBackupStorageUuid(bsUuid);
+                    msg.setBackupStorageInstallPath(bsInstallPath);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                    msgs.add(msg);
+                }
+
+                if (msgs.isEmpty()) {
+                    trigger.fail(errf.stringToOperationError(
+                            String.format("failed to get install path on all backup storage%s", bsUuids), errors
+                    ));
+                    return;
+                }
+
+                bus.send(msgs, new CloudBusListCallBack(trigger) {
+                    @Override
+                    public void run(List<MessageReply> replies) {
+                        List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                        for (MessageReply reply : replies) {
+                            final UploadBitsToBackupStorageMsg msg = msgs.get(replies.indexOf(reply));
+                            if (!reply.isSuccess()) {
+                                errors.add(reply.getError());
+
+                                returnCapacityToBackupStorage.add(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        BackupStorageCapacityUpdater updater = new BackupStorageCapacityUpdater(msg.getBackupStorageUuid());
+                                        updater.increaseAvailableCapacity(out.getActualSize());
+                                    }
+                                });
+
+                                continue;
+                            }
+
+                            BackupStorageResult res = new BackupStorageResult();
+                            res.setBackupStorageUuid(msg.getBackupStorageUuid());
+                            res.setInstallPath(msg.getBackupStorageInstallPath());
+                            out.getBackupStorageResult().add(res);
+                        }
+
+                        if (out.getBackupStorageResult().isEmpty()) {
+                            trigger.fail(errf.stringToOperationError(
+                                    String.format("failed to upload to all backup storage%s", bsUuids), errors
+                            ));
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                final ParamOut out = (ParamOut) data.get(ParamOut.class);
+                if (!out.getBackupStorageResult().isEmpty()) {
+                    for (BackupStorageResult res : out.getBackupStorageResult()) {
+                        DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
+                        msg.setInstallPath(res.getInstallPath());
+                        msg.setBackupStorageUuid(res.getBackupStorageUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, res.getBackupStorageUuid());
+                        bus.send(msg);
+                    }
+                }
+
+                trigger.rollback();
+            }
+        });
+        template.setDeleteTemporaryTemplate(new NopeFlow());
+
+        return template;
+    }
+
+    @Override
+    public String createTemplateFromVolumeSnapshotPrimaryStorageType() {
+        return CephConstants.CEPH_PRIMARY_STORAGE_TYPE;
     }
 }

@@ -3,7 +3,6 @@ package org.zstack.storage.primary.nfs;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -18,16 +17,18 @@ import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.backup.BackupStorageType;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.primary.CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg.SnapshotDownloadInfo;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotReply.CreateTemplateFromVolumeSnapshotResult;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
@@ -40,19 +41,16 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
-import org.zstack.storage.primary.nfs.NfsPrimaryStorageBackend.CreateBitsFromSnapshotResult;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -84,15 +82,51 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
             handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
-        } else if (msg instanceof CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((MergeVolumeSnapshotOnPrimaryStorageMsg)msg);
+            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CreateTemporaryVolumeFromSnapshotMsg) {
+            handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
+        } else if (msg instanceof UploadBitsToBackupStorageMsg) {
+            handle((UploadBitsToBackupStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final UploadBitsToBackupStorageMsg msg) {
+        NfsPrimaryStorageBackend bkd = getBackend(HypervisorType.valueOf(msg.getHypervisorType()));
+        bkd.handle(getSelfInventory(), msg, new ReturnValueCompletion<UploadBitsToBackupStorageReply>(msg) {
+            @Override
+            public void success(UploadBitsToBackupStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final CreateTemporaryVolumeFromSnapshotMsg msg) {
+        NfsPrimaryStorageBackend bkd = getBackend(HypervisorType.valueOf(msg.getHypervisorType()));
+        bkd.handle(getSelfInventory(), msg, new ReturnValueCompletion<CreateTemporaryVolumeFromSnapshotReply>(msg) {
+            @Override
+            public void success(CreateTemporaryVolumeFromSnapshotReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                CreateTemporaryVolumeFromSnapshotReply reply = new CreateTemporaryVolumeFromSnapshotReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
@@ -207,264 +241,20 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
-        final List<SnapshotDownloadInfo> infos = msg.getSnapshots();
-        final VolumeSnapshotInventory sinv = infos.get(0).getSnapshot();
-        final NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(sinv.getFormat(), self.getUuid()));
-        final PrimaryStorageInventory pinv = getSelfInventory();
-
-        final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("create-data-volume-from-snapshot-on-nfs-primary-storage-%s", self.getUuid()));
-        chain.then(new ShareFlow() {
-            String volumeInWorkSpacePath;
-            long volumeSize;
-            final String volumeInstallPath = NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(pinv, msg.getVolumeUuid());
-
+        final NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getSnapshot().getFormat(), self.getUuid()));
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply>(msg) {
             @Override
-            public void setup() {
-                flow(new Flow() {
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        backend.createDataVolumeFromVolumeSnapshot(pinv, infos,
-                                msg.getVolumeUuid(),
-                                msg.isNeedDownload(),
-                                new ReturnValueCompletion<CreateBitsFromSnapshotResult>(msg) {
-                                    @Override
-                                    public void success(CreateBitsFromSnapshotResult returnValue) {
-                                        volumeInWorkSpacePath = returnValue.getInstallPath();
-                                        volumeSize = returnValue.getSize();
-                                        trigger.next();
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        trigger.fail(errorCode);
-                                    }
-                                });
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        backend.delete(pinv, volumeInWorkSpacePath, new NopeCompletion());
-                        trigger.rollback();
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        backend.moveBits(pinv, volumeInWorkSpacePath, volumeInstallPath, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
-                done(new FlowDoneHandler(msg) {
-                    @Override
-                    public void handle(Map data) {
-                        reply.setInstallPath(volumeInstallPath);
-                        reply.setSize(volumeSize);
-                        bus.reply(msg, reply);
-                    }
-                });
-
-                error(new FlowErrorHandler(msg) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        reply.setError(errCode);
-                        bus.reply(msg, reply);
-                    }
-                });
-            }
-        }).start();
-    }
-
-    private void handle(final CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg msg) {
-        final CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateTemplateFromVolumeSnapshotOnPrimaryStorageReply();
-        createTemplateFromSnapshot(msg, new ReturnValueCompletion<CreateTemplateFromSnapshotResultStruct>(msg) {
-            @Override
-            public void success(CreateTemplateFromSnapshotResultStruct returnValue) {
-                reply.setResults(returnValue.results);
-                reply.setSize(returnValue.size);
-                bus.reply(msg, reply);
+            public void success(CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
+                CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
         });
-    }
-
-    private class CreateTemplateFromSnapshotResultStruct {
-        List<CreateTemplateFromVolumeSnapshotResult> results;
-        long size;
-    }
-
-    private void createTemplateFromSnapshot(final CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg msg, final ReturnValueCompletion<CreateTemplateFromSnapshotResultStruct> completion) {
-        final List<SnapshotDownloadInfo> infos = msg.getSnapshotsDownloadInfo();
-        final VolumeSnapshotInventory sinv = infos.get(0).getSnapshot();
-        final PrimaryStorageInventory primaryStorage = getSelfInventory();
-
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("create-template-from-snapshot-on-nfs-primary-storage-%s", self.getUuid()));
-        chain.then(new ShareFlow() {
-            NfsPrimaryStorageBackend backend;
-            String templateInstallPathOnPrimaryStorage;
-            List<BackupStorageInventory> backupStorage;
-            List<CreateTemplateFromVolumeSnapshotResult> results = new ArrayList<CreateTemplateFromVolumeSnapshotResult>();
-            long templateSize;
-
-            {
-                backupStorage = msg.getBackupStorage();
-                backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(sinv.getFormat(), self.getUuid()));
-            }
-
-            @Override
-            public void setup() {
-                flow(new Flow() {
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        backend.createTemplateFromVolumeSnapshot(getSelfInventory(), infos,
-                                msg.getImageUuid(),
-                                msg.isNeedDownload(),
-                                new ReturnValueCompletion<CreateBitsFromSnapshotResult>(trigger) {
-                                    @Override
-                                    public void success(CreateBitsFromSnapshotResult returnValue) {
-                                        templateInstallPathOnPrimaryStorage = returnValue.getInstallPath();
-                                        templateSize = returnValue.getSize();
-                                        trigger.next();
-
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        trigger.fail(errorCode);
-                                    }
-                                });
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (templateInstallPathOnPrimaryStorage != null) {
-                            backend.delete(getSelfInventory(), templateInstallPathOnPrimaryStorage, new NopeCompletion());
-                        }
-
-                        trigger.rollback();
-                    }
-                });
-
-                flow(new Flow() {
-                    List<ErrorCode> errs;
-
-                    private void upload(final Iterator<BackupStorageInventory> it, final FlowTrigger trigger) {
-                        if (!it.hasNext()) {
-                            if (results.isEmpty()) {
-                                trigger.fail(errf.stringToOperationError(String.format("failed to upload image to all backup storage, a list of error: %s", JSONObjectUtil.toJsonString(errs))));
-                            } else {
-                                trigger.next();
-                            }
-
-                            return;
-                        }
-
-
-                        final BackupStorageInventory bs = it.next();
-                        NfsPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(
-                                BackupStorageType.valueOf(bs.getType()),
-                                nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(sinv.getFormat(), self.getUuid())
-                        );
-
-                        final String templateInstallPathOnBackupStorage = mediator.makeRootVolumeTemplateInstallPath(bs.getUuid(), msg.getImageUuid());
-                        mediator.uploadBits(primaryStorage, bs, templateInstallPathOnBackupStorage, templateInstallPathOnPrimaryStorage, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                CreateTemplateFromVolumeSnapshotResult res = new CreateTemplateFromVolumeSnapshotResult();
-                                res.setBackupStorageUuid(bs.getUuid());
-                                res.setInstallPath(templateInstallPathOnBackupStorage);
-                                results.add(res);
-                                upload(it, trigger);
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                errs.add(errorCode);
-                                upload(it, trigger);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        upload(backupStorage.iterator(), trigger);
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (!results.isEmpty()) {
-                            List<DeleteBitsOnBackupStorageMsg> dmsgs = CollectionUtils.transformToList(results, new Function<DeleteBitsOnBackupStorageMsg, CreateTemplateFromVolumeSnapshotResult>() {
-                                @Override
-                                public DeleteBitsOnBackupStorageMsg call(CreateTemplateFromVolumeSnapshotResult arg) {
-                                    DeleteBitsOnBackupStorageMsg dmsg = new DeleteBitsOnBackupStorageMsg();
-                                    dmsg.setInstallPath(arg.getInstallPath());
-                                    dmsg.setBackupStorageUuid(arg.getBackupStorageUuid());
-                                    bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, arg.getBackupStorageUuid());
-                                    return dmsg;
-                                }
-                            });
-
-                            bus.send(dmsgs, new CloudBusListCallBack() {
-                                @Override
-                                public void run(List<MessageReply> replies) {
-                                    for (MessageReply r : replies) {
-                                        if (!r.isSuccess()) {
-                                            CreateTemplateFromVolumeSnapshotResult res = results.get(replies.indexOf(r));
-                                            logger.warn(String.format("failed to delete image[%s] from backup storage[uuid:%s]", res.getInstallPath(), res.getBackupStorageUuid()));
-                                        }
-                                    }
-                                }
-                            });
-                        }
-
-                        trigger.rollback();
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        backend.delete(getSelfInventory(), templateInstallPathOnPrimaryStorage, new NopeCompletion());
-                        trigger.next();
-                    }
-                });
-
-                done(new FlowDoneHandler(completion) {
-                    @Override
-                    public void handle(Map data) {
-                        CreateTemplateFromSnapshotResultStruct struct = new CreateTemplateFromSnapshotResultStruct();
-                        struct.results = results;
-                        struct.size = templateSize;
-                        completion.success(struct);
-                    }
-                });
-
-                error(new FlowErrorHandler(completion) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        completion.fail(errCode);
-                    }
-                });
-            }
-        }).start();
     }
 
     private void handle(final BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg) {
@@ -601,7 +391,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             huuid = host.getUuid();
         }
 
-
         VolumeInventory volInv = VolumeInventory.valueOf(vol);
         TakeSnapshotOnHypervisorMsg hmsg = new TakeSnapshotOnHypervisorMsg();
         hmsg.setHostUuid(huuid);
@@ -624,12 +413,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     inv.setType(VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
                     reply.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                     reply.setInventory(inv);
-
-                    TakePrimaryStorageCapacityMsg tmsg = new TakePrimaryStorageCapacityMsg();
-                    tmsg.setPrimaryStorageUuid(self.getUuid());
-                    tmsg.setSize(inv.getSize());
-                    bus.makeTargetServiceIdByResourceUuid(tmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-                    bus.send(tmsg);
                 } else {
                     reply.setError(ret.getError());
                 }
@@ -1083,6 +866,32 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         AskVolumeSnapshotCapabilityReply reply = new AskVolumeSnapshotCapabilityReply();
         reply.setCapability(capability);
         bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(final SyncVolumeActualSizeOnPrimaryStorageMsg msg) {
+        final SyncVolumeActualSizeOnPrimaryStorageReply reply = new SyncVolumeActualSizeOnPrimaryStorageReply();
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("the NFS primary storage[uuid:%s, name:%s] not hosts in attached cluster can perform the operation",
+                            self.getUuid(), self.getName())
+            ));
+        }
+
+        backend.getVolumeActualSize(getSelfInventory(), msg.getVolumeUuid(), msg.getInstallPath(), new ReturnValueCompletion<Long>(msg) {
+            @Override
+            public void success(Long returnValue) {
+                reply.setActualSize(returnValue);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override

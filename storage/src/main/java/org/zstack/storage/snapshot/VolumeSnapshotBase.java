@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.workflow.*;
@@ -19,6 +20,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
@@ -34,6 +36,8 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     protected VolumeSnapshotVO self;
 
@@ -201,10 +205,30 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
     }
 
     private void handle(final VolumeSnapshotPrimaryStorageDeletionMsg msg) {
+        final VolumeSnapshotInventory sp = getSelfInventory();
+
+        for (VolumeSnapshotPreDeleteExtensionPoint ext : pluginRgty.getExtensionList(VolumeSnapshotPreDeleteExtensionPoint.class)) {
+            ext.volumeSnapshotPreDeleteExtensionPoint(sp);
+        }
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeSnapshotBeforeDeleteExtensionPoint.class), new ForEachFunction<VolumeSnapshotBeforeDeleteExtensionPoint>() {
+            @Override
+            public void run(VolumeSnapshotBeforeDeleteExtensionPoint arg) {
+                arg.volumeSnapshotBeforeDeleteExtensionPoint(sp);
+            }
+        });
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-volume-snapshot-%s-on-primary-storage", self.getUuid()));
         chain.then(new ShareFlow() {
             private void finish() {
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeSnapshotAfterDeleteExtensionPoint.class), new ForEachFunction<VolumeSnapshotAfterDeleteExtensionPoint>() {
+                    @Override
+                    public void run(VolumeSnapshotAfterDeleteExtensionPoint arg) {
+                        arg.volumeSnapshotAfterDeleteExtensionPoint(sp);
+                    }
+                });
+
                 VolumeSnapshotPrimaryStorageDeletionReply dreply = new VolumeSnapshotPrimaryStorageDeletionReply();
                 self.setPrimaryStorageInstallPath(null);
                 self.setPrimaryStorageUuid(null);
@@ -235,25 +259,20 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                     }
                 });
 
-                if (VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString().equals(self.getType())) {
-                    // only hypervisor based snapshots have accurate size.
-                    // for storage based snapshots, as we didn't count their size after taking, we don't
-                    // return the size here.
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "return-capacity-to-primary-storage";
+                flow(new NoRollbackFlow() {
+                    String __name__ = "return-capacity-to-primary-storage";
 
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                            rmsg.setDiskSize(self.getSize());
-                            rmsg.setNoOverProvisioning(true);
-                            rmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
-                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
-                            bus.send(rmsg);
-                            trigger.next();
-                        }
-                    });
-                }
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+                        rmsg.setDiskSize(self.getSize());
+                        rmsg.setNoOverProvisioning(true);
+                        rmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
+                        bus.send(rmsg);
+                        trigger.next();
+                    }
+                });
 
                 done(new FlowDoneHandler(msg) {
                     @Override
@@ -265,6 +284,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        // TODO
                         logger.warn(String.format("failed to delete snapshot[uuid:%s, name:%s] on primary storage[uuid:%s], the primary storage should cleanup",
                                 self.getUuid(), self.getName(), self.getPrimaryStorageUuid()));
                         finish();

@@ -9,27 +9,19 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.backup.BackupStorage;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO_;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig.CephPrimaryStorageConfig;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 /**
  * 1. use ceph for backup storage and primary storage

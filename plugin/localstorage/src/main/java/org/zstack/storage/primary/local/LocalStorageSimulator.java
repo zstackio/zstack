@@ -280,7 +280,11 @@ public class LocalStorageSimulator {
         RebaseAndMergeSnapshotsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RebaseAndMergeSnapshotsCmd.class);
         config.rebaseAndMergeSnapshotsCmds.add(cmd);
         RebaseAndMergeSnapshotsRsp rsp = new RebaseAndMergeSnapshotsRsp();
-        rsp.setSize(100);
+
+        Long size = config.snapshotToVolumeSize.get(cmd.getVolumeUuid());
+        rsp.setSize(size == null ? 0 : size);
+        Long asize = config.snapshotToVolumeActualSize.get(cmd.getVolumeUuid());
+        rsp.setActualSize(asize == null ? 0 : asize);
         reply(entity, rsp);
         return null;
     }
@@ -291,7 +295,23 @@ public class LocalStorageSimulator {
         MergeSnapshotCmd cmd = JSONObjectUtil.toObject(entity.getBody(), MergeSnapshotCmd.class);
         config.mergeSnapshotCmds.add(cmd);
         MergeSnapshotRsp rsp = new MergeSnapshotRsp();
-        rsp.setSize(100);
+        Long size = config.snapshotToVolumeSize.get(cmd.getVolumeUuid());
+        rsp.setSize(size == null ? 0 : size);
+        Long asize = config.snapshotToVolumeActualSize.get(cmd.getVolumeUuid());
+        rsp.setActualSize(asize == null ? 0 : asize);
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=LocalStorageKvmBackend.GET_VOLUME_ACTUAL_SIZE, method= RequestMethod.POST)
+    public @ResponseBody
+    String getVolumeActualSize(HttpEntity<String> entity) {
+        GetVolumeActualSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeActualSizeCmd.class);
+        GetVolumeActualSizeRsp rsp = new GetVolumeActualSizeRsp();
+
+        config.getVolumeActualSizeCmds.add(cmd);
+        Long asize = config.getVolumeActualSizeCmdSize.get(cmd.volumeUuid);
+        rsp.actualSize = asize == null ? 0 : asize;
         reply(entity, rsp);
         return null;
     }

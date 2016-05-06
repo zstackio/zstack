@@ -71,4 +71,8 @@
     <message>
         <name>org.zstack.header.volume.APIExpungeDataVolumeMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.volume.APISyncVolumeActualSizeMsg</name>
+    </message>
 </service>

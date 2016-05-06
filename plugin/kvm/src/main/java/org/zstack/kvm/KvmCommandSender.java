@@ -56,11 +56,11 @@ public class KvmCommandSender {
         DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
     }
 
-    public void send(final Object cmd, final String path, final KvmCommandFailureChecker checker, final ReturnValueCompletion<Object> completion) {
+    public void send(final Object cmd, final String path, final KvmCommandFailureChecker checker, final ReturnValueCompletion<KvmResponseWrapper> completion) {
         send(cmd, path, checker, TimeUnit.MINUTES.toMillis(5), completion);
     }
 
-    public void send(final Object cmd, final String path, final KvmCommandFailureChecker checker , final long defaulTimeout, final ReturnValueCompletion<Object> completion) {
+    public void send(final Object cmd, final String path, final KvmCommandFailureChecker checker , final long defaulTimeout, final ReturnValueCompletion<KvmResponseWrapper> completion) {
         if (!it.hasNext()) {
             ErrorCode err = errors.size() == 1 ? errors.get(0) : errf.stringToOperationError(String.format("failed to execute" +
                     " the command[%s] on the kvm host%s", cmd.getClass(), hostUuids), errors);
@@ -86,14 +86,16 @@ public class KvmCommandSender {
                 }
 
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
-                ErrorCode err = checker.getError(new KvmResponseWrapper(ar.getResponse()));
+                KvmResponseWrapper w = new KvmResponseWrapper(ar.getResponse());
+
+                ErrorCode err = checker.getError(w);
                 if (err != null) {
                     errors.add(err);
                     send(cmd, path, checker, defaulTimeout, completion);
                     return;
                 }
 
-                completion.success(ar.getResponse());
+                completion.success(w);
             }
         });
     }

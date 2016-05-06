@@ -38,5 +38,11 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ImageUpgradeExtension" class="org.zstack.image.ImageUpgradeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="ImageDeletionPolicyManager" class="org.zstack.image.ImageDeletionPolicyManagerImpl" />
 </beans>
