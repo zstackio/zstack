@@ -377,7 +377,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CreateSnapshotRsp extends AgentResponse {
-        long size;
+        Long size;
+        Long actualSize;
+
+        public Long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(Long actualSize) {
+            this.actualSize = actualSize;
+        }
 
         public long getSize() {
             return size;
@@ -449,8 +458,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CpRsp extends AgentResponse {
-        long size;
-        long actualSize;
+        Long size;
+        Long actualSize;
     }
 
     public static class RollbackSnapshotCmd extends AgentCommand {
@@ -1435,7 +1444,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         httpCall(GET_VOLUME_SIZE_PATH, cmd, GetVolumeSizeRsp.class, new ReturnValueCompletion<GetVolumeSizeRsp>(msg) {
             @Override
             public void success(GetVolumeSizeRsp rsp) {
-                reply.setActualSize(rsp.actualSize);
+                // current ceph has no way to get actual size
+                long asize = rsp.actualSize == null ? 1 : rsp.actualSize;
+                reply.setActualSize(asize);
                 reply.setSize(rsp.size);
                 bus.reply(msg, reply);
             }
@@ -1896,7 +1907,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void success(CpRsp rsp) {
                 reply.setInstallPath(volPath);
                 reply.setSize(rsp.size);
-                reply.setActualSize(rsp.actualSize);
+
+                // current ceph has no way to get the actual size
+                long asize = rsp.actualSize == null ? 1 : rsp.actualSize;
+                reply.setActualSize(asize);
                 bus.reply(msg, reply);
             }
 
@@ -1966,7 +1980,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         httpCall(CREATE_SNAPSHOT_PATH, cmd, CreateSnapshotRsp.class, new ReturnValueCompletion<CreateSnapshotRsp>(msg) {
             @Override
             public void success(CreateSnapshotRsp rsp) {
-                sp.setSize(rsp.getSize());
+                // current ceph has no way to get actual size
+                long asize = rsp.getActualSize() == null ? 1 : rsp.getActualSize();
+                sp.setSize(asize);
                 sp.setPrimaryStorageUuid(self.getUuid());
                 sp.setPrimaryStorageInstallPath(spPath);
                 sp.setType(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString());

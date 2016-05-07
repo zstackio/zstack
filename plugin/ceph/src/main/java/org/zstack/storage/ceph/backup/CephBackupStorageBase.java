@@ -323,7 +323,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
             public void success(DownloadRsp ret) {
                 reply.setInstallPath(cmd.installPath);
                 reply.setSize(ret.size);
-                reply.setActualSize(ret.actualSize);
+
+                // current ceph has no way to get the actual size
+                // if we cannot get the actual size from HTTP, use the virtual size
+                long asize = ret.actualSize == null ? ret.size : ret.actualSize;
+                reply.setActualSize(asize);
                 reply.setMd5sum("not calculated");
                 bus.reply(msg, reply);
             }
@@ -440,7 +444,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
             @Override
             public void success(GetImageSizeRsp rsp) {
                 reply.setSize(rsp.size);
-                reply.setActualSize(rsp.actualSize);
+
+                // current ceph cannot get actual size
+                long asize = rsp.actualSize == null ? msg.getImage().getActualSize() : rsp.actualSize;
+                reply.setActualSize(asize);
                 bus.reply(msg, reply);
             }
 
