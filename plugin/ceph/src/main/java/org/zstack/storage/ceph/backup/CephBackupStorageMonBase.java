@@ -18,6 +18,8 @@ import org.zstack.storage.ceph.CephGlobalProperty;
 import org.zstack.storage.ceph.CephMonAO;
 import org.zstack.storage.ceph.CephMonBase;
 import org.zstack.storage.ceph.MonStatus;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import java.util.Map;
@@ -27,6 +29,8 @@ import java.util.Map;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
 public class CephBackupStorageMonBase extends CephMonBase {
+    private static final CLogger logger = Utils.getLogger(CephBackupStorageMonBase.class);
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -42,7 +46,21 @@ public class CephBackupStorageMonBase extends CephMonBase {
         return (CephBackupStorageMonVO) self;
     }
 
+    private void changeStatus(MonStatus status) {
+        if (self.getStatus() == status) {
+            return;
+        }
+
+        MonStatus oldStatus = self.getStatus();
+        self.setStatus(status);
+        self = dbf.updateAndRefresh(self);
+        logger.debug(String.format("ceph backup storage mon[uuid:%s] changed status from %s to %s",
+                self.getUuid(), oldStatus, status));
+    }
+
     public void connect(final Completion completion) {
+        changeStatus(MonStatus.Connecting);
+
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("connect-mon-%s-ceph-backup-storage-%s", self.getHostname(), getSelf().getBackupStorageUuid()));
         chain.allowEmptyFlow();
@@ -119,8 +137,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        self.setStatus(MonStatus.Connected);
-                        dbf.update(self);
+                        changeStatus(MonStatus.Connected);
                         completion.success();
                     }
                 });
@@ -128,8 +145,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
                 error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        self.setStatus(MonStatus.Disconnected);
-                        dbf.update(self);
+                        changeStatus(MonStatus.Disconnected);
                         completion.fail(errCode);
                     }
                 });
