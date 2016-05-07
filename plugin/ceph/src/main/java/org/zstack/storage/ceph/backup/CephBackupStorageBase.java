@@ -480,6 +480,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                         self.getUuid(), JSONObjectUtil.toJsonString(errorCodes))
                         ));
                     } else {
+                        // reload because mon status changed
+                        self = dbf.reload(self);
                         trigger.next();
                     }
                     return;

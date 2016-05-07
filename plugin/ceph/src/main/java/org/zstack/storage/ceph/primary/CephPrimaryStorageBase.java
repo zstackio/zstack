@@ -1553,8 +1553,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                         self.getUuid(), JSONObjectUtil.toJsonString(errorCodes))
                         ));
                     } else {
+                        // reload because mon status changed
+                        self = dbf.reload(self);
                         trigger.next();
                     }
+
                     return;
                 }
 
