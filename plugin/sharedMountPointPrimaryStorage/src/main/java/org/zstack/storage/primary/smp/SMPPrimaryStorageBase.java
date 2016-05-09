@@ -323,10 +323,10 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void connectHook(ConnectPrimaryStorageMsg msg, final Completion completion) {
+    protected void connectHook(ConnectParam param, final Completion completion) {
         SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
         q.select(PrimaryStorageClusterRefVO_.clusterUuid);
-        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
+        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
         final List<String> clusterUuids = q.listValue();
 
         if (clusterUuids.isEmpty()) {
@@ -370,6 +370,11 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 }
             });
         }
+    }
+
+    @Override
+    protected void pingHook(Completion completion) {
+        completion.success();
     }
 
     @Override

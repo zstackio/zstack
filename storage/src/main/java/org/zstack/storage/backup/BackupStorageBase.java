@@ -14,18 +14,17 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.TransactionalCallback;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.core.job.JobQueueFacade;
-import org.zstack.core.thread.SyncTask;
-import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.workflow.*;
-import org.zstack.header.core.Completion;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
@@ -53,8 +52,6 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 	protected CloudBus bus;
 	@Autowired
 	protected DatabaseFacade dbf;
-	@Autowired
-	protected JobQueueFacade jobf;
     @Autowired
     protected GlobalConfigFacade gcf;
     @Autowired
@@ -76,13 +73,13 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     abstract protected void handle(DeleteBitsOnBackupStorageMsg msg);
 
-    abstract protected void handle(PingBackupStorageMsg msg);
-
     abstract protected void handle(BackupStorageAskInstallPathMsg msg);
 
     abstract protected void handle(SyncImageSizeOnBackupStorageMsg msg);
 
     abstract protected void connectHook(boolean newAdd, Completion completion);
+
+    abstract protected void pingHook(Completion completion);
 
 	public BackupStorageBase(BackupStorageVO self) {
 		this.self = self;
@@ -171,6 +168,33 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 	        bus.dealWithUnknownMessage(msg);
 	    }
 	}
+
+    private void handle(final PingBackupStorageMsg msg) {
+        final PingBackupStorageReply reply = new PingBackupStorageReply();
+
+        pingHook(new Completion(msg) {
+            @Override
+            public void success() {
+                if (self.getStatus() != BackupStorageStatus.Connected) {
+                    ConnectBackupStorageMsg cmsg = new ConnectBackupStorageMsg();
+                    cmsg.setBackupStorageUuid(self.getUuid());
+                    cmsg.setNewAdd(false);
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, self.getUuid());
+                    bus.send(cmsg);
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                changeStatus(BackupStorageStatus.Disconnected);
+
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 
     private void handleBase(DownloadImageMsg msg) {
         checkState(msg);

@@ -182,6 +182,38 @@ public class SftpBackupStorage extends BackupStorageBase {
         connect(completion);
     }
 
+    @Override
+    protected void pingHook(final Completion completion) {
+        final PingBackupStorageReply reply = new PingBackupStorageReply();
+
+        final PingCmd cmd = new PingCmd();
+        restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.PING_PATH), cmd, new JsonAsyncRESTCallback<PingResponse>(completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                completion.fail(err);
+            }
+
+            @Override
+            public void success(PingResponse ret) {
+                if (ret.isSuccess() && !self.getUuid().equals(ret.getUuid())) {
+                    logger.debug(String.format("the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it's most likely" +
+                            " the agent was manually restarted. Issue a reconnect to sync the status", self.getUuid(), ret.getUuid()));
+
+                    completion.fail(errf.stringToOperationError("uuid on agent side changed"));
+                } else if (ret.isSuccess()) {
+                    completion.success();
+                } else {
+                    completion.fail(errf.stringToOperationError(ret.getError()));
+                }
+            }
+
+            @Override
+            public Class<PingResponse> getReturnClass() {
+                return PingResponse.class;
+            }
+        });
+    }
+
     private void continueConnect(final Completion complete) {
         restf.echo(buildUrl(SftpBackupStorageConstant.ECHO_PATH), new Completion(complete) {
             @Override
@@ -297,43 +329,6 @@ public class SftpBackupStorage extends BackupStorageBase {
             @Override
             public Class<DeleteResponse> getReturnClass() {
                 return DeleteResponse.class;
-            }
-        });
-    }
-
-    protected void handle(final PingBackupStorageMsg msg) {
-        final PingBackupStorageReply reply = new PingBackupStorageReply();
-
-        final PingCmd cmd = new PingCmd();
-        restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.PING_PATH), cmd, new JsonAsyncRESTCallback<PingResponse>() {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setAvailable(false);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void success(PingResponse ret) {
-                if (ret.isSuccess() && !self.getUuid().equals(ret.getUuid())) {
-                    logger.debug(String.format("the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it's most likely" +
-                            " the agent was manually restarted. Issue a reconnect to sync the status", self.getUuid(), ret.getUuid()));
-                    reply.setAvailable(false);
-                    bus.reply(msg, reply);
-
-                    ConnectBackupStorageMsg cmsg = new ConnectBackupStorageMsg();
-                    cmsg.setBackupStorageUuid(self.getUuid());
-                    cmsg.setNewAdd(false);
-                    bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, self.getUuid());
-                    bus.send(cmsg);
-                } else {
-                    reply.setAvailable(ret.isSuccess());
-                    bus.reply(msg, reply);
-                }
-            }
-
-            @Override
-            public Class<PingResponse> getReturnClass() {
-                return PingResponse.class;
             }
         });
     }

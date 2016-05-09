@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.utils.ssh.Ssh;
 
 /**
@@ -9,7 +10,15 @@ import org.zstack.utils.ssh.Ssh;
 public abstract class CephMonBase {
     protected CephMonAO self;
 
+    public static class PingResult {
+        public boolean operationFailure;
+        public boolean success;
+        public String error;
+    }
+
     public abstract void connect(Completion completion);
+
+    public abstract void ping(ReturnValueCompletion<PingResult> completion);
 
     public CephMonBase(CephMonAO self) {
         this.self = self;

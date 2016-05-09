@@ -77,12 +77,25 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected PrimaryStorageOverProvisioningManager ratioMgr;
     @Autowired
     protected EventFacade evtf;
+    @Autowired
+    protected PrimaryStoragePingTracker tracker;
 
     public static class PhysicalCapacityUsage {
         public long totalPhysicalSize;
         public long availablePhysicalSize;
     }
 
+    public static class ConnectParam {
+        private boolean newAdded;
+
+        public boolean isNewAdded() {
+            return newAdded;
+        }
+
+        public void setNewAdded(boolean newAdded) {
+            this.newAdded = newAdded;
+        }
+    }
 
 	protected abstract void handle(InstantiateVolumeMsg msg);
 	
@@ -102,7 +115,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(SyncVolumeSizeOnPrimaryStorageMsg msg);
 
-    protected abstract void connectHook(ConnectPrimaryStorageMsg msg, Completion completion);
+    protected abstract void connectHook(ConnectParam param, Completion completion);
+
+    protected abstract void pingHook(Completion completion);
 
     protected abstract void syncPhysicalCapacity(ReturnValueCompletion<PhysicalCapacityUsage> completion);
 
@@ -177,28 +192,77 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((AskVolumeSnapshotCapabilityMsg) msg);
         } else if (msg instanceof SyncVolumeSizeOnPrimaryStorageMsg) {
             handle((SyncVolumeSizeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof PingPrimaryStorageMsg) {
+            handle((PingPrimaryStorageMsg) msg);
 	    } else {
 	        bus.dealWithUnknownMessage(msg);
 	    }
 	}
+
+    private void handle(final PingPrimaryStorageMsg msg) {
+        final PingPrimaryStorageReply reply = new PingPrimaryStorageReply();
+
+        pingHook(new Completion(msg) {
+            @Override
+            public void success() {
+                if (self.getStatus() == PrimaryStorageStatus.Disconnected) {
+                    doConnect(new ConnectParam(), new NopeCompletion());
+                }
+
+                reply.setConnected(true);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                changeStatus(PrimaryStorageStatus.Disconnected);
+                reply.setConnected(false);
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 
     private void handleBase(DownloadIsoToPrimaryStorageMsg msg) {
         checkIfBackupStorageAttachedToMyZone(msg.getIsoSpec().getSelectedBackupStorage().getBackupStorageUuid());
         handle(msg);
     }
 
-    private void handle(final ConnectPrimaryStorageMsg msg) {
-        final ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply();
-        self.setStatus(PrimaryStorageStatus.Connecting);
-        self = dbf.updateAndRefresh(self);
-        connectHook(msg, new Completion(msg) {
+    private void doConnect(ConnectParam param, final Completion completion) {
+        changeStatus(PrimaryStorageStatus.Connecting);
+
+        connectHook(param, new Completion(completion) {
             @Override
             public void success() {
                 self = dbf.reload(self);
-                self.setStatus(PrimaryStorageStatus.Connected);
-                self = dbf.updateAndRefresh(self);
-                reply.setConnected(true);
+                changeStatus(PrimaryStorageStatus.Connected);
                 logger.debug(String.format("successfully connected primary storage[uuid:%s]", self.getUuid()));
+
+                tracker.track(self.getUuid());
+
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                self = dbf.reload(self);
+                changeStatus(PrimaryStorageStatus.Disconnected);
+                logger.debug(String.format("failed to connect primary storage[uuid:%s], %s", self.getUuid(), errorCode));
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private void handle(final ConnectPrimaryStorageMsg msg) {
+        final ConnectPrimaryStorageReply reply = new ConnectPrimaryStorageReply();
+
+        ConnectParam param = new ConnectParam();
+        param.newAdded = msg.isNewAdded();
+
+        doConnect(param, new Completion(msg) {
+            @Override
+            public void success() {
+                reply.setConnected(true);
                 bus.reply(msg, reply);
             }
 
@@ -207,9 +271,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 if (msg.isNewAdded()) {
                     reply.setError(errorCode);
                 } else {
-                    self.setStatus(PrimaryStorageStatus.Disconnected);
-                    self = dbf.updateAndRefresh(self);
-                    logger.debug(String.format("failed to connect primary storage[uuid:%s], %s", self.getUuid(), errorCode));
                     reply.setConnected(false);
                 }
 
@@ -293,6 +354,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         deleteHook();
         extpEmitter.afterDelete(inv);
 
+        tracker.untrack(self.getUuid());
         PrimaryStorageDeletionReply reply = new PrimaryStorageDeletionReply();
         bus.reply(msg, reply);
     }
@@ -479,10 +541,33 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         bus.publish(evt);
     }
 
+    protected void changeStatus(PrimaryStorageStatus status) {
+        if (status == self.getStatus()) {
+            return;
+        }
+
+        PrimaryStorageStatus oldStatus = self.getStatus();
+        self.setStatus(status);
+        self = dbf.updateAndRefresh(self);
+        logger.debug(String.format("the primary storage[uuid:%s, name:%s] changed status from %s to %s",
+                self.getUuid(), self.getName(), oldStatus, status));
+    }
+
     protected void handle(APIReconnectPrimaryStorageMsg msg) {
-        APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
-        evt.setInventory(getSelfInventory());
-        bus.publish(evt);
+        final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
+        doConnect(new ConnectParam(), new Completion(msg) {
+            @Override
+            public void success() {
+                evt.setInventory(getSelfInventory());
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     protected void handle(final APIDetachPrimaryStorageFromClusterMsg msg) {

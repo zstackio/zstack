@@ -34,7 +34,6 @@
         <module>search</module>
         <module>console</module>
         <module>tag</module>
-        <module>tool</module>
     </modules>
 
     <dependencyManagement>
@@ -415,7 +414,6 @@
                 <module>search</module>
                 <module>console</module>
                 <module>tag</module>
-                <module>tool</module>
                 <module>premium</module>
             </modules>
         </profile>

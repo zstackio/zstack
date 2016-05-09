@@ -359,26 +359,6 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
     }
 
     @Override
-    protected void handle(final PingBackupStorageMsg msg) {
-        PingCmd cmd = new PingCmd();
-
-        final PingBackupStorageReply reply = new PingBackupStorageReply();
-        httpCall(PING_PATH, cmd, PingRsp.class, new ReturnValueCompletion<PingRsp>(msg) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setAvailable(false);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void success(PingRsp ret) {
-                reply.setAvailable(true);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    @Override
     protected void handle(BackupStorageAskInstallPathMsg msg) {
         BackupStorageAskInstallPathReply reply = new BackupStorageAskInstallPathReply();
         reply.setInstallPath(makeImageInstallPath(msg.getImageUuid()));
@@ -497,6 +477,27 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                 });
             }
         }).start();
+    }
+
+    @Override
+    protected void pingHook(final Completion completion) {
+        PingCmd cmd = new PingCmd();
+
+        httpCall(PING_PATH, cmd, PingRsp.class, new ReturnValueCompletion<PingRsp>(completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                completion.fail(err);
+            }
+
+            @Override
+            public void success(PingRsp ret) {
+                if (ret.isSuccess()) {
+                    completion.success();
+                } else {
+                    completion.fail(errf.stringToOperationError(ret.getError()));
+                }
+            }
+        });
     }
 
     @Override

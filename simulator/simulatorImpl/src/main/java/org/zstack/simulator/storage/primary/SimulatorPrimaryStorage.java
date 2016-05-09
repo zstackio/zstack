@@ -127,7 +127,12 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void connectHook(ConnectPrimaryStorageMsg msg, Completion completion) {
+    protected void connectHook(ConnectParam param, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    protected void pingHook(Completion completion) {
         completion.success();
     }
 

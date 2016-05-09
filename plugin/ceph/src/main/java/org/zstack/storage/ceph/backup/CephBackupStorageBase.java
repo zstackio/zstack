@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.AsyncLatch;
@@ -25,12 +26,17 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.ceph.*;
+import org.zstack.storage.ceph.CephMonBase.PingResult;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -39,6 +45,21 @@ import static org.zstack.utils.CollectionDSL.list;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class CephBackupStorageBase extends BackupStorageBase {
+    private static final CLogger logger = Utils.getLogger(CephBackupStorageBase.class);
+
+    class ReconnectMonLock {
+        AtomicBoolean hold = new AtomicBoolean(false);
+
+        boolean lock() {
+            return hold.compareAndSet(false, true);
+        }
+
+        void unlock() {
+            hold.set(false);
+        }
+    }
+
+    ReconnectMonLock reconnectMonLock = new ReconnectMonLock();
 
     @Autowired
     protected RESTFacade restf;
@@ -395,26 +416,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     @Override
-    protected void handle(final PingBackupStorageMsg msg) {
-        PingCmd cmd = new PingCmd();
-
-        final PingBackupStorageReply reply = new PingBackupStorageReply();
-        httpCall(PING_PATH, cmd, PingRsp.class, new ReturnValueCompletion<PingRsp>(msg) {
-            @Override
-            public void fail(ErrorCode err) {
-                reply.setAvailable(false);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void success(PingRsp ret) {
-                reply.setAvailable(true);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    @Override
     protected void handle(BackupStorageAskInstallPathMsg msg) {
         BackupStorageAskInstallPathReply reply = new BackupStorageAskInstallPathReply();
         reply.setInstallPath(makeImageInstallPath(msg.getImageUuid()));
@@ -568,6 +569,156 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 });
             }
         }).start();
+    }
+
+    @Override
+    protected void pingHook(final Completion completion) {
+        final List<CephBackupStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephBackupStorageMonBase, CephBackupStorageMonVO>() {
+            @Override
+            public CephBackupStorageMonBase call(CephBackupStorageMonVO arg) {
+                return new CephBackupStorageMonBase(arg);
+            }
+        });
+
+        final List<ErrorCode> errors = new ArrayList<ErrorCode>();
+
+        class Ping {
+            private AtomicBoolean replied = new AtomicBoolean(false);
+
+            @AsyncThread
+            private void reconnectMon(final CephBackupStorageMonBase mon, boolean delay) {
+                if (!CephGlobalConfig.BACKUP_STORAGE_MON_AUTO_RECONNECT.value(Boolean.class)) {
+                    logger.debug(String.format("do not reconnect the ceph backup storage mon[uuid:%s] as the global config[%s] is set to false",
+                            self.getUuid(), CephGlobalConfig.BACKUP_STORAGE_MON_AUTO_RECONNECT.getCanonicalName()));
+                    return;
+                }
+
+                // there has been a reconnect in process
+                if (!reconnectMonLock.lock()) {
+                    return;
+                }
+
+                final NoErrorCompletion releaseLock = new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        reconnectMonLock.unlock();
+                    }
+                };
+
+                try {
+                    if (delay) {
+                        try {
+                            TimeUnit.SECONDS.sleep(CephGlobalConfig.BACKUP_STORAGE_MON_RECONNECT_DELAY.value(Integer.class));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    mon.connect(new Completion(releaseLock) {
+                        @Override
+                        public void success() {
+                            logger.debug(String.format("successfully reconnected the mon[uuid:%s] of the ceph backup" +
+                                    " storage[uuid:%s, name:%s]", mon.getSelf().getUuid(), self.getUuid(), self.getName()));
+                            releaseLock.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            //TODO
+                            logger.warn(String.format("failed to reconnect the mon[uuid:%s] of the ceph backup" +
+                                    " storage[uuid:%s, name:%s], %s", mon.getSelf().getUuid(), self.getUuid(), self.getName(), errorCode));
+                            releaseLock.done();
+                        }
+                    });
+                } catch (Throwable t) {
+                    releaseLock.done();
+                    logger.warn(t.getMessage(), t);
+                }
+            }
+
+            void ping() {
+                // this is only called when all mons are disconnected
+                final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        if (!replied.compareAndSet(false, true)) {
+                            return;
+                        }
+
+                        ErrorCode err =  errf.stringToOperationError(String.format("failed to ping the ceph backup storage[uuid:%s, name:%s]",
+                                self.getUuid(), self.getName()), errors);
+                        completion.fail(err);
+                    }
+                });
+
+                for (final CephBackupStorageMonBase mon : mons) {
+                    mon.ping(new ReturnValueCompletion<PingResult>(latch) {
+                        private void thisMonIsDown(ErrorCode err) {
+                            //TODO
+                            logger.warn(String.format("cannot ping mon[uuid:%s] of the ceph backup storage[uuid:%s, name:%s], %s",
+                                    mon.getSelf().getUuid(), self.getUuid(), self.getName(), err));
+                            errors.add(err);
+                            mon.changeStatus(MonStatus.Disconnected);
+                            reconnectMon(mon, true);
+                            latch.ack();
+                        }
+
+                        @Override
+                        public void success(PingResult res) {
+                            if (res.success) {
+                                // as long as there is one mon working, the backup storage works
+                                pingSuccess();
+
+                                if (mon.getSelf().getStatus() == MonStatus.Disconnected) {
+                                    reconnectMon(mon, false);
+                                }
+
+                            } else if (res.operationFailure) {
+                                // as long as there is one mon saying the ceph not working, the backup storage goes down
+                                logger.warn(String.format("the ceph backup storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports" +
+                                        " an operation failure[%s]", self.getUuid(), self.getName(), mon.getSelf().getUuid(), res.error));
+                                backupStorageDown();
+                            } else  {
+                                // this mon is down(success == false, operationFailure == false), but the backup storage may still work as other mons may work
+                                ErrorCode errorCode = errf.stringToOperationError(res.error);
+                                thisMonIsDown(errorCode);
+                            }
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            thisMonIsDown(errorCode);
+                        }
+                    });
+                }
+            }
+
+            // this is called once a mon return an operation failure
+            private void backupStorageDown() {
+                if (!replied.compareAndSet(false, true)) {
+                    return;
+                }
+
+                // set all mons to be disconnected
+                for (CephBackupStorageMonBase base : mons) {
+                    base.changeStatus(MonStatus.Disconnected);
+                }
+
+                ErrorCode err = errf.stringToOperationError(String.format("failed to ping the backup primary storage[uuid:%s, name:%s]",
+                        self.getUuid(), self.getName()), errors);
+                completion.fail(err);
+            }
+
+            private void pingSuccess() {
+                if (!replied.compareAndSet(false, true)) {
+                    return;
+                }
+
+                completion.success();
+            }
+        }
+
+        new Ping().ping();
     }
 
     @Override

@@ -68,13 +68,6 @@ public class SimulatorBackupStorage extends BackupStorageBase {
     }
 
     @Override
-    protected void handle(PingBackupStorageMsg msg) {
-        PingBackupStorageReply reply = new PingBackupStorageReply();
-        reply.setAvailable(true);
-        bus.reply(msg, reply);
-    }
-
-    @Override
     protected void handle(BackupStorageAskInstallPathMsg msg) {
         BackupStorageAskInstallPathReply reply = new BackupStorageAskInstallPathReply();
         reply.setInstallPath(String.format("/%s/%s/%s.img", msg.getImageMediaType(), msg.getImageUuid(), msg.getImageUuid()));
@@ -88,6 +81,11 @@ public class SimulatorBackupStorage extends BackupStorageBase {
 
     @Override
     protected void connectHook(boolean newAdded, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    protected void pingHook(Completion completion) {
         completion.success();
     }
 

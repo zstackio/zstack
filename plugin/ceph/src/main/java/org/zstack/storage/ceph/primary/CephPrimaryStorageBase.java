@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -37,14 +38,13 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
-import org.zstack.kvm.KVMAgentCommands;
-import org.zstack.kvm.KVMConstant;
-import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
-import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.*;
+import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmSetupSelfFencerParam;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 import org.zstack.storage.ceph.*;
+import org.zstack.storage.ceph.CephMonBase.PingResult;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -57,6 +57,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -73,6 +74,19 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     @Autowired
     private ApiTimeoutManager timeoutMgr;
 
+    class ReconnectMonLock {
+        AtomicBoolean hold = new AtomicBoolean(false);
+
+        boolean lock() {
+            return hold.compareAndSet(false, true);
+        }
+
+        void unlock() {
+            hold.set(false);
+        }
+    }
+
+    ReconnectMonLock reconnectMonLock = new ReconnectMonLock();
 
     public static class AgentCommand {
         String fsId;
@@ -517,6 +531,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class DeletePoolRsp extends AgentResponse {
     }
 
+    public static class KvmSetupSelfFencerCmd extends AgentCommand {
+        public String heartbeatImagePath;
+        public String hostUuid;
+        public long interval;
+        public int maxAttempts;
+        public int storageCheckerTimeout;
+        public String userKey;
+        public List<String> monUrls;
+    }
+
     public static final String INIT_PATH = "/ceph/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/ceph/primarystorage/delete";
@@ -533,6 +557,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String KVM_CREATE_SECRET_PATH = "/vm/createcephsecret";
     public static final String DELETE_POOL_PATH = "/ceph/primarystorage/deletepool";
     public static final String GET_VOLUME_SIZE_PATH = "/ceph/primarystorage/getvolumesize";
+    public static final String KVM_HA_SETUP_SELF_FENCER = "/ha/ceph/setupselffencer";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -1429,23 +1454,21 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final SyncVolumeSizeOnPrimaryStorageMsg msg) {
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.select(VolumeVO_.installPath);
-        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
-        String instalPath = q.findValue();
+        final SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
+        final VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
 
+        String installPath = vol.getInstallPath();
         GetVolumeSizeCmd cmd = new GetVolumeSizeCmd();
         cmd.fsId = getSelf().getFsid();
         cmd.uuid = self.getUuid();
         cmd.volumeUuid = msg.getVolumeUuid();
-        cmd.installPath = instalPath;
+        cmd.installPath = installPath;
 
-        final SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
         httpCall(GET_VOLUME_SIZE_PATH, cmd, GetVolumeSizeRsp.class, new ReturnValueCompletion<GetVolumeSizeRsp>(msg) {
             @Override
             public void success(GetVolumeSizeRsp rsp) {
                 // current ceph has no way to get actual size
-                long asize = rsp.actualSize == null ? 1 : rsp.actualSize;
+                long asize = rsp.actualSize == null ? vol.getActualSize() : rsp.actualSize;
                 reply.setActualSize(asize);
                 reply.setSize(rsp.size);
                 bus.reply(msg, reply);
@@ -1661,8 +1684,162 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void connectHook(ConnectPrimaryStorageMsg msg, final Completion completion) {
-        connect(msg.isNewAdded(), completion);
+    protected void connectHook(ConnectParam param, final Completion completion) {
+        connect(param.isNewAdded(), completion);
+    }
+
+    @Override
+    protected void pingHook(final Completion completion) {
+        final List<CephPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
+            @Override
+            public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
+                return new CephPrimaryStorageMonBase(arg);
+            }
+        });
+
+        final List<ErrorCode> errors = new ArrayList<ErrorCode>();
+
+        class Ping {
+            private AtomicBoolean replied = new AtomicBoolean(false);
+
+            @AsyncThread
+            private void reconnectMon(final CephPrimaryStorageMonBase mon, boolean delay) {
+                if (!CephGlobalConfig.PRIMARY_STORAGE_MON_AUTO_RECONNECT.value(Boolean.class)) {
+                    logger.debug(String.format("do not reconnect the ceph primary storage mon[uuid:%s] as the global config[%s] is set to false",
+                            self.getUuid(), CephGlobalConfig.PRIMARY_STORAGE_MON_AUTO_RECONNECT.getCanonicalName()));
+                    return;
+                }
+
+                // there has been a reconnect in process
+                if (!reconnectMonLock.lock()) {
+                    logger.debug(String.format("ignore this call, reconnect ceph primary storage mon[uuid:%s] is in process", self.getUuid()));
+                    return;
+                }
+
+                final NoErrorCompletion releaseLock = new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        reconnectMonLock.unlock();
+                    }
+                };
+
+                try {
+                    if (delay) {
+                        try {
+                            TimeUnit.SECONDS.sleep(CephGlobalConfig.PRIMARY_STORAGE_MON_RECONNECT_DELAY.value(Integer.class));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    mon.connect(new Completion() {
+                        @Override
+                        public void success() {
+                            logger.debug(String.format("successfully reconnected the mon[uuid:%s] of the ceph primary" +
+                                    " storage[uuid:%s, name:%s]", mon.getSelf().getUuid(), self.getUuid(), self.getName()));
+                            releaseLock.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            //TODO
+                            logger.warn(String.format("failed to reconnect the mon[uuid:%s] of the ceph primary" +
+                                    " storage[uuid:%s, name:%s], %s", mon.getSelf().getUuid(), self.getUuid(), self.getName(), errorCode));
+                            releaseLock.done();
+                        }
+                    });
+                } catch (Throwable t) {
+                    releaseLock.done();
+                    logger.warn(t.getMessage(), t);
+                }
+            }
+
+            void ping() {
+                // this is only called when all mons are disconnected
+                final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        if (!replied.compareAndSet(false, true)) {
+                            return;
+                        }
+
+                        ErrorCode err = errf.stringToOperationError(String.format("failed to ping the ceph primary storage[uuid:%s, name:%s]",
+                                self.getUuid(), self.getName()), errors);
+                        completion.fail(err);
+                    }
+                });
+
+                for (final CephPrimaryStorageMonBase mon : mons) {
+                    mon.ping(new ReturnValueCompletion<PingResult>(latch) {
+                        private void thisMonIsDown(ErrorCode err) {
+                            //TODO
+                            logger.warn(String.format("cannot ping mon[uuid:%s] of the ceph primary storage[uuid:%s, name:%s], %s",
+                                    mon.getSelf().getUuid(), self.getUuid(), self.getName(), err));
+                            errors.add(err);
+                            mon.changeStatus(MonStatus.Disconnected);
+                            reconnectMon(mon, true);
+                            latch.ack();
+                        }
+
+                        @Override
+                        public void success(PingResult res) {
+                            if (res.success) {
+                                // as long as there is one mon working, the primary storage works
+                                pingSuccess();
+
+                                if (mon.getSelf().getStatus() == MonStatus.Disconnected) {
+                                    reconnectMon(mon, false);
+                                }
+
+                            } else if (res.operationFailure) {
+                                // as long as there is one mon saying the ceph not working, the primary storage goes down
+                                logger.warn(String.format("the ceph primary storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports" +
+                                        " an operation failure[%s]", self.getUuid(), self.getName(), mon.getSelf().getUuid(), res.error));
+                                ErrorCode errorCode = errf.stringToOperationError(res.error);
+                                errors.add(errorCode);
+                                primaryStorageDown();
+                            } else  {
+                                // this mon is down(success == false, operationFailure == false), but the primary storage may still work as other mons may work
+                                ErrorCode errorCode = errf.stringToOperationError(res.error);
+                                thisMonIsDown(errorCode);
+                            }
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            thisMonIsDown(errorCode);
+                        }
+                    });
+                }
+            }
+
+            // this is called once a mon return an operation failure
+            private void primaryStorageDown() {
+                if (!replied.compareAndSet(false, true)) {
+                    return;
+                }
+
+                // set all mons to be disconnected
+                for (CephPrimaryStorageMonBase base : mons) {
+                    base.changeStatus(MonStatus.Disconnected);
+                }
+
+                ErrorCode err = errf.stringToOperationError(String.format("failed to ping the ceph primary storage[uuid:%s, name:%s]",
+                        self.getUuid(), self.getName()), errors);
+                completion.fail(err);
+            }
+
+
+            private void pingSuccess() {
+                if (!replied.compareAndSet(false, true)) {
+                    return;
+                }
+
+                completion.success();
+            }
+        }
+
+        new Ping().ping();
     }
 
     @Override
@@ -1836,9 +2013,50 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CreateKvmSecretMsg) msg);
         } else if (msg instanceof UploadBitsToBackupStorageMsg) {
             handle((UploadBitsToBackupStorageMsg) msg);
+        } else if (msg instanceof SetupSelfFencerOnKvmHostMsg) {
+            handle((SetupSelfFencerOnKvmHostMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final SetupSelfFencerOnKvmHostMsg msg) {
+        KvmSetupSelfFencerParam param = msg.getParam();
+        KvmSetupSelfFencerCmd cmd = new KvmSetupSelfFencerCmd();
+        cmd.uuid = self.getUuid();
+        cmd.fsId = getSelf().getFsid();
+        cmd.hostUuid = param.getHostUuid();
+        cmd.interval = param.getInterval();
+        cmd.maxAttempts = param.getMaxAttempts();
+        cmd.storageCheckerTimeout = param.getStorageCheckerTimeout();
+        cmd.userKey = getSelf().getUserKey();
+        cmd.heartbeatImagePath = String.format("%s/ceph-primary-storage-%s-heartbeat-file", getSelf().getRootVolumePoolName(), self.getUuid());
+        cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), new Function<String, CephPrimaryStorageMonVO>() {
+            @Override
+            public String call(CephPrimaryStorageMonVO arg) {
+                return String.format("%s:%s", arg.getHostname(), arg.getMonPort());
+            }
+        });
+
+        final SetupSelfFencerOnKvmHostReply reply = new SetupSelfFencerOnKvmHostReply();
+        new KvmCommandSender(param.getHostUuid()).send(cmd, KVM_HA_SETUP_SELF_FENCER, new KvmCommandFailureChecker() {
+            @Override
+            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
+                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+            }
+        }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
+            @Override
+            public void success(KvmResponseWrapper wrapper) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
 
