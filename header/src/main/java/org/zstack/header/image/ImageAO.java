@@ -2,12 +2,13 @@ package org.zstack.header.image;
 
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ShadowEntity;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @MappedSuperclass
-public class ImageAO {
+public class ImageAO implements ShadowEntity {
     @Id
     @Column
     private String uuid;
@@ -64,6 +65,13 @@ public class ImageAO {
 
     @Column
     private String guestOsType;
+
+    @Transient
+    private ImageAO shadow;
+
+    public ImageAO getShadow() {
+        return shadow;
+    }
 
     @PreUpdate
     private void preUpdate() {
@@ -204,5 +212,10 @@ public class ImageAO {
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    @Override
+    public void setShadow(Object o) {
+        shadow = (ImageAO) o;
     }
 }

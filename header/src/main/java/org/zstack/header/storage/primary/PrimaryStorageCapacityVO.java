@@ -3,6 +3,7 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ShadowEntity;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -11,7 +12,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
-public class PrimaryStorageCapacityVO {
+public class PrimaryStorageCapacityVO implements ShadowEntity {
     @Column
     @Id
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
@@ -41,6 +42,13 @@ public class PrimaryStorageCapacityVO {
 
     @Column
     private Timestamp lastOpDate;
+
+    @Transient
+    private PrimaryStorageCapacityVO shadow;
+
+    public PrimaryStorageCapacityVO getShadow() {
+        return shadow;
+    }
 
     @PreUpdate
     private void preUpdate() {
@@ -109,5 +117,10 @@ public class PrimaryStorageCapacityVO {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    @Override
+    public void setShadow(Object o) {
+        shadow = (PrimaryStorageCapacityVO) o;
     }
 }

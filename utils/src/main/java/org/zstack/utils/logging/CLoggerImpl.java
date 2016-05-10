@@ -3,8 +3,6 @@ package org.zstack.utils.logging;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.net.URL;
-
 public class CLoggerImpl implements CLogger {
     private final Logger logger;
     private static boolean initialized = false;

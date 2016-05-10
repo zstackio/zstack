@@ -7,12 +7,13 @@ import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ShadowEntity;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @MappedSuperclass
-public class VolumeAO {
+public class VolumeAO implements ShadowEntity {
     @Id
     @Column
     private String uuid;
@@ -72,6 +73,13 @@ public class VolumeAO {
 
     @Column
     private Timestamp lastOpDate;
+
+    @Transient
+    private VolumeAO shadow;
+
+    public VolumeAO getShadow() {
+        return shadow;
+    }
 
     @PreUpdate
     private void preUpdate() {
@@ -220,5 +228,10 @@ public class VolumeAO {
 
     public void setStatus(VolumeStatus status) {
         this.status = status;
+    }
+
+    @Override
+    public void setShadow(Object o) {
+        shadow = (VolumeAO) o;
     }
 }

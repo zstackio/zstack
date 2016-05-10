@@ -12,6 +12,17 @@
             <DefaultRolloverStrategy max="20"/>
         </RollingFile>
 
+        <RollingFile name="DiskCapacityLogger" fileName="disk-capacity.log"
+            filePattern="disk-capacity-%d{yyyy-MM-dd}-%i.log" >
+            <PatternLayout>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="150 MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+
         <Async name="Async" ignoreExceptions="false" bufferSize="512">
             <AppenderRef ref="RollingFile" />
         </Async>
@@ -24,6 +35,10 @@
     </Appenders>
 
     <Loggers>
+        <Logger name="org.zstack.storage.primary.DiskCapacityTracer" level="DEBUG" additivity="TRUE">
+            <AppenderRef ref="DiskCapacityLogger" level="DEBUG" />
+        </Logger>
+
         <Logger name="org.zstack" level="DEBUG" />
 
         <Logger name="org.zstack.utils" level="TRACE" />

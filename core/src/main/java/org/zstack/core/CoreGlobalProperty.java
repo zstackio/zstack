@@ -36,4 +36,6 @@ public class CoreGlobalProperty {
     public static int REST_FACADE_CONNECT_TIMEOUT;
     @GlobalProperty(name="isUpgradeStart", defaultValue = "false")
     public static boolean IS_UPGRADE_START;
+    @GlobalProperty(name="shadowEntityOn", defaultValue = "false")
+    public static boolean SHADOW_ENTITY_ON;
 }

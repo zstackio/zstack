@@ -8,6 +8,7 @@ import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
@@ -18,7 +19,7 @@ import java.sql.Timestamp;
         @SoftDeletionCascade(parent = ImageVO.class, joinColumn = "imageUuid"),
         @SoftDeletionCascade(parent = BackupStorageVO.class, joinColumn = "backupStorageUuid")
 })
-public class ImageBackupStorageRefVO {
+public class ImageBackupStorageRefVO implements Serializable {
     @Id
     @Column
     @GeneratedValue(strategy=GenerationType.IDENTITY)

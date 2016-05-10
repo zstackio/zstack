@@ -155,5 +155,4 @@ public class PrimaryStorageAO {
     public void setZoneUuid(String zoneUuid) {
         this.zoneUuid = zoneUuid;
     }
-    
 }

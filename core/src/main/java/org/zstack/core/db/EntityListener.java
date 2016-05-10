@@ -1,10 +1,14 @@
 package org.zstack.core.db;
 
+import org.apache.commons.lang.SerializationUtils;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
+import org.zstack.header.vo.ShadowEntity;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.*;
+import java.io.Serializable;
 
 /**
  * Created by xing5 on 2016/3/12.
@@ -36,6 +40,13 @@ public class EntityListener {
     @PostLoad
     void onPostLoad(Object o) {
         getDataBaseFacade().entityEvent(EntityEvent.POST_LOAD, o);
+
+        if (CoreGlobalProperty.SHADOW_ENTITY_ON) {
+            if (o instanceof ShadowEntity) {
+                ShadowEntity s = (ShadowEntity) o;
+                s.setShadow(SerializationUtils.clone((Serializable) o));
+            }
+        }
     }
 
     @PreUpdate
