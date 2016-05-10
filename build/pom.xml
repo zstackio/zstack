@@ -56,6 +56,13 @@
                                         <include>**/*</include>
                                     </includes>
                                 </resource>
+                                <resource>	
+                                    <directory>.</directory>
+                                    <targetPath>META-INF/</targetPath>
+                                    <includes>
+                                        <include>context.xml</include>
+                                    </includes>
+                                </resource>
                             </webResources>
                         </configuration>
                     </plugin>
@@ -256,6 +263,13 @@
                             <targetPath>WEB-INF/</targetPath>
                             <includes>
                                 <include>urlrewrite.xml</include>
+                            </includes>
+                        </resource>
+                        <resource>	
+                            <directory>.</directory>
+                            <targetPath>META-INF/</targetPath>
+                            <includes>
+                                <include>context.xml</include>
                             </includes>
                         </resource>
                     </webResources>
