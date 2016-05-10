@@ -1,6 +1,5 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.image.ImageAO;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageEO;
 import org.zstack.header.vo.ForeignKey;
@@ -50,9 +49,9 @@ public class ImageCacheVO implements ShadowEntity {
     private Timestamp lastOpDate;
 
     @Transient
-    private ImageAO shadow;
+    private ImageCacheVO shadow;
 
-    public ImageAO getShadow() {
+    public ImageCacheVO getShadow() {
         return shadow;
     }
 
@@ -143,6 +142,6 @@ public class ImageCacheVO implements ShadowEntity {
 
     @Override
     public void setShadow(Object o) {
-        shadow = (ImageAO) o;
+        shadow = (ImageCacheVO) o;
     }
 }
