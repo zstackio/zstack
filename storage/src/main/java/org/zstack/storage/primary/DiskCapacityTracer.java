@@ -1,6 +1,8 @@
 package org.zstack.storage.primary;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.EntityEvent;
@@ -12,14 +14,29 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.volume.VolumeAO;
 import org.zstack.header.volume.VolumeVO;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by xing5 on 2016/5/10.
  */
 public class DiskCapacityTracer implements Component {
-    private static Logger logger = Logger.getLogger("org.zstack.storage.primary.DiskCapacityTracer");
+    private static Logger logger = LogManager.getLogger("org.zstack.storage.primary.DiskCapacityTracer");
+    private static Logger loggerd = LogManager.getLogger("org.zstack.storage.primary.DiskCapacityTracerDetails");
 
     @Autowired
     private DatabaseFacade dbf;
+
+    private void printCallTrace() {
+        StackTraceElement[] elements = Thread.currentThread().getStackTrace();
+        List<String> lst = new ArrayList<String>();
+        for (StackTraceElement el : elements) {
+            if (el.getClassName().contains("org.zstack")) {
+                lst.add(el.toString());
+            }
+        }
+        loggerd.debug(StringUtils.join(lst, "\n"));
+    }
 
     @Override
     public boolean start() {
@@ -32,8 +49,11 @@ public class DiskCapacityTracer implements Component {
             public void entityLifeCycleEvent(EntityEvent evt, Object o) {
                 VolumeVO vol = (VolumeVO) o;
                 if (vol.getSize() != 0) {
-                    logger.debug(String.format("[Volume:Create][name=%s, uuid=%s, type=%s]: %s",
-                            vol.getName(), vol.getUuid(), vol.getType(), vol.getSize()));
+                    String info = String.format("[Volume:Create][name=%s, uuid=%s, type=%s]: %s",
+                            vol.getName(), vol.getUuid(), vol.getType(), vol.getSize());
+                    logger.debug(info);
+                    loggerd.debug(info);
+                    printCallTrace();
                 }
             }
         });
@@ -43,8 +63,11 @@ public class DiskCapacityTracer implements Component {
                 VolumeVO vol = (VolumeVO) o;
                 VolumeAO pre = vol.getShadow();
                 if (pre.getSize() != vol.getSize()) {
-                    logger.debug(String.format("[Volume:Update][name=%s, uuid=%s, type=%s]: %s --> %s",
-                            vol.getName(), vol.getUuid(), vol.getType(), pre.getSize(), vol.getSize()));
+                    String info = String.format("[Volume:Update][name=%s, uuid=%s, type=%s]: %s --> %s",
+                            vol.getName(), vol.getUuid(), vol.getType(), pre.getSize(), vol.getSize());
+                    logger.debug(info);
+                    loggerd.debug(info);
+                    printCallTrace();
                 }
             }
         });
@@ -52,14 +75,20 @@ public class DiskCapacityTracer implements Component {
             @Override
             public void entityLifeCycleEvent(EntityEvent evt, Object o) {
                 ImageCacheVO img = (ImageCacheVO) o;
-                logger.debug(String.format("[ImageCache:Create][uuid=%s]: %s", img.getImageUuid(), img.getSize()));
+                String info = String.format("[ImageCache:Create][uuid=%s]: %s", img.getImageUuid(), img.getSize());
+                logger.debug(info);
+                loggerd.debug(info);
+                printCallTrace();
             }
         });
         dbf.installEntityLifeCycleCallback(VolumeSnapshotVO.class, EntityEvent.POST_PERSIST, new EntityLifeCycleCallback() {
             @Override
             public void entityLifeCycleEvent(EntityEvent evt, Object o) {
                 VolumeSnapshotVO s = (VolumeSnapshotVO) o;
-                logger.debug(String.format("[VolumeSnapshot:Create][name=%s, uuid=%s]: %s", s.getName(), s.getUuid(), s.getSize()));
+                String info = String.format("[VolumeSnapshot:Create][name=%s, uuid=%s]: %s", s.getName(), s.getUuid(), s.getSize());
+                logger.debug(info);
+                loggerd.debug(info);
+                printCallTrace();
             }
         });
         dbf.installEntityLifeCycleCallback(PrimaryStorageCapacityVO.class, EntityEvent.POST_UPDATE, new EntityLifeCycleCallback() {
@@ -68,7 +97,11 @@ public class DiskCapacityTracer implements Component {
                 PrimaryStorageCapacityVO c = (PrimaryStorageCapacityVO) o;
                 PrimaryStorageCapacityVO pre = c.getShadow();
                 if (c.getAvailableCapacity() != pre.getAvailableCapacity()) {
-                    logger.debug(String.format("[PrimaryStorageCapacity:Change][uuid=%s]: %s --> %s", pre.getUuid(), pre.getAvailableCapacity(), pre.getAvailableCapacity()));
+                    String info = String.format("[PrimaryStorageCapacity:Change][uuid=%s]: %s --> %s", pre.getUuid(), pre.getAvailableCapacity(),
+                            c.getAvailableCapacity());
+                    logger.debug(info);
+                    loggerd.debug(info);
+                    printCallTrace();
                 }
             }
         });

@@ -23,7 +23,7 @@ public class ComponentLoaderWebListener implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent arg0) {
-        logger.warn("web listener issued context destroy event, start stropping process");
+        logger.warn("web listener issued context destroy event, start stopping process");
         if (isInit) {
             throwableSafe(new Runnable() {
                 @Override
