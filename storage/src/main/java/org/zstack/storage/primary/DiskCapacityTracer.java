@@ -71,6 +71,20 @@ public class DiskCapacityTracer implements Component {
                 }
             }
         });
+        dbf.installEntityLifeCycleCallback(VolumeVO.class, EntityEvent.POST_REMOVE, new EntityLifeCycleCallback() {
+            @Override
+            public void entityLifeCycleEvent(EntityEvent evt, Object o) {
+                VolumeVO vol = (VolumeVO) o;
+                if (vol.getSize() != 0) {
+                    String info = String.format("[Volume:Delete][name=%s, uuid=%s, type=%s]: -%s", vol.getName(),
+                            vol.getUuid(), vol.getType(), vol.getSize());
+                    logger.debug(info);
+                    loggerd.debug(info);
+                    printCallTrace();
+                }
+            }
+        });
+
         dbf.installEntityLifeCycleCallback(ImageCacheVO.class, EntityEvent.POST_PERSIST, new EntityLifeCycleCallback() {
             @Override
             public void entityLifeCycleEvent(EntityEvent evt, Object o) {
@@ -81,6 +95,17 @@ public class DiskCapacityTracer implements Component {
                 printCallTrace();
             }
         });
+        dbf.installEntityLifeCycleCallback(ImageCacheVO.class, EntityEvent.POST_REMOVE, new EntityLifeCycleCallback() {
+            @Override
+            public void entityLifeCycleEvent(EntityEvent evt, Object o) {
+                ImageCacheVO img = (ImageCacheVO) o;
+                String info = String.format("[ImageCache:Delete][uuid=%s]: -%s", img.getImageUuid(), img.getSize());
+                logger.debug(info);
+                loggerd.debug(info);
+                printCallTrace();
+            }
+        });
+
         dbf.installEntityLifeCycleCallback(VolumeSnapshotVO.class, EntityEvent.POST_PERSIST, new EntityLifeCycleCallback() {
             @Override
             public void entityLifeCycleEvent(EntityEvent evt, Object o) {
@@ -91,14 +116,25 @@ public class DiskCapacityTracer implements Component {
                 printCallTrace();
             }
         });
+        dbf.installEntityLifeCycleCallback(VolumeSnapshotVO.class, EntityEvent.POST_REMOVE, new EntityLifeCycleCallback() {
+            @Override
+            public void entityLifeCycleEvent(EntityEvent evt, Object o) {
+                VolumeSnapshotVO s = (VolumeSnapshotVO) o;
+                String info = String.format("[VolumeSnapshot:Delete][name=%s, uuid=%s]: -%s", s.getName(), s.getUuid(), s.getSize());
+                logger.debug(info);
+                loggerd.debug(info);
+                printCallTrace();
+            }
+        });
+
         dbf.installEntityLifeCycleCallback(PrimaryStorageCapacityVO.class, EntityEvent.POST_UPDATE, new EntityLifeCycleCallback() {
             @Override
             public void entityLifeCycleEvent(EntityEvent evt, Object o) {
                 PrimaryStorageCapacityVO c = (PrimaryStorageCapacityVO) o;
                 PrimaryStorageCapacityVO pre = c.getShadow();
                 if (c.getAvailableCapacity() != pre.getAvailableCapacity()) {
-                    String info = String.format("[PrimaryStorageCapacity:Change][uuid=%s]: %s --> %s", pre.getUuid(), pre.getAvailableCapacity(),
-                            c.getAvailableCapacity());
+                    String info = String.format("[PrimaryStorageCapacity:Change][uuid=%s]: %s --> %s (%s)", pre.getUuid(), pre.getAvailableCapacity(),
+                            c.getAvailableCapacity(), pre.getAvailableCapacity() - c.getAvailableCapacity());
                     logger.debug(info);
                     loggerd.debug(info);
                     printCallTrace();
