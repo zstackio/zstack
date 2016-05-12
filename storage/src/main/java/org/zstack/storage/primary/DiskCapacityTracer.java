@@ -10,8 +10,10 @@ import org.zstack.core.db.EntityLifeCycleCallback;
 import org.zstack.header.Component;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotEO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.volume.VolumeAO;
+import org.zstack.header.volume.VolumeEO;
 import org.zstack.header.volume.VolumeVO;
 
 import java.util.ArrayList;
@@ -71,11 +73,14 @@ public class DiskCapacityTracer implements Component {
                 }
             }
         });
-        dbf.installEntityLifeCycleCallback(VolumeVO.class, EntityEvent.POST_REMOVE, new EntityLifeCycleCallback() {
+
+        dbf.installEntityLifeCycleCallback(VolumeEO.class, EntityEvent.POST_UPDATE, new EntityLifeCycleCallback() {
             @Override
             public void entityLifeCycleEvent(EntityEvent evt, Object o) {
-                VolumeVO vol = (VolumeVO) o;
-                if (vol.getSize() != 0) {
+                VolumeEO vol = (VolumeEO) o;
+                VolumeEO pre = (VolumeEO) vol.getShadow();
+
+                if (pre.getDeleted() == null && vol.getDeleted() != null && vol.getSize() != 0) {
                     String info = String.format("[Volume:Delete][name=%s, uuid=%s, type=%s]: -%s", vol.getName(),
                             vol.getUuid(), vol.getType(), vol.getSize());
                     logger.debug(info);
@@ -116,14 +121,17 @@ public class DiskCapacityTracer implements Component {
                 printCallTrace();
             }
         });
-        dbf.installEntityLifeCycleCallback(VolumeSnapshotVO.class, EntityEvent.POST_REMOVE, new EntityLifeCycleCallback() {
+        dbf.installEntityLifeCycleCallback(VolumeSnapshotEO.class, EntityEvent.POST_UPDATE, new EntityLifeCycleCallback() {
             @Override
             public void entityLifeCycleEvent(EntityEvent evt, Object o) {
-                VolumeSnapshotVO s = (VolumeSnapshotVO) o;
-                String info = String.format("[VolumeSnapshot:Delete][name=%s, uuid=%s]: -%s", s.getName(), s.getUuid(), s.getSize());
-                logger.debug(info);
-                loggerd.debug(info);
-                printCallTrace();
+                VolumeSnapshotEO s = (VolumeSnapshotEO) o;
+                VolumeSnapshotEO pre = (VolumeSnapshotEO) s.getShadow();
+                if (pre.getDeleted() == null && s.getDeleted() != null) {
+                    String info = String.format("[VolumeSnapshot:Delete][name=%s, uuid=%s]: -%s", s.getName(), s.getUuid(), s.getSize());
+                    logger.debug(info);
+                    loggerd.debug(info);
+                    printCallTrace();
+                }
             }
         });
 

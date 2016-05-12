@@ -894,16 +894,28 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                             }
 
                             KVMHostAsyncHttpCallReply r = reply.castReply();
-                            NfsPrimaryStorageAgentResponse rsp = r.toResponse(NfsPrimaryStorageAgentResponse.class);
+                            final NfsPrimaryStorageAgentResponse rsp = r.toResponse(NfsPrimaryStorageAgentResponse.class);
 
                             if (!rsp.isSuccess()) {
                                 throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
                             }
 
                             PrimaryStorageInventory inv = invs.get(replies.indexOf(reply));
-                            new PrimaryStorageCapacityUpdater(inv.getUuid()).update(
-                                    rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
-                            );
+                            new PrimaryStorageCapacityUpdater(inv.getUuid()).run(new PrimaryStorageCapacityUpdaterRunnable() {
+                                @Override
+                                public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                                    if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
+                                        // init
+                                        cap.setTotalCapacity(rsp.getTotalCapacity());
+                                        cap.setAvailableCapacity(rsp.getAvailableCapacity());
+                                    }
+
+                                    cap.setTotalPhysicalCapacity(rsp.getTotalCapacity());
+                                    cap.setTotalPhysicalCapacity(rsp.getAvailableCapacity());
+
+                                    return cap;
+                                }
+                            });
                         }
 
                         trigger.next();

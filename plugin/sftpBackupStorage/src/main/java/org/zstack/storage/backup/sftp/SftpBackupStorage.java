@@ -184,8 +184,6 @@ public class SftpBackupStorage extends BackupStorageBase {
 
     @Override
     protected void pingHook(final Completion completion) {
-        final PingBackupStorageReply reply = new PingBackupStorageReply();
-
         final PingCmd cmd = new PingCmd();
         restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.PING_PATH), cmd, new JsonAsyncRESTCallback<PingResponse>(completion) {
             @Override

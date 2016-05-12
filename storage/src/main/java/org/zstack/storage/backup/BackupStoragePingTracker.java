@@ -45,28 +45,7 @@ public class BackupStoragePingTracker extends PingTracker {
 
     @Override
     public void handleReply(String resourceUuid, MessageReply reply) {
-        if (!reply.isSuccess()) {
-            logger.warn(String.format("[Backup Storage Tracker]: unable track backup storage[uuid:%s], %s", resourceUuid, reply.getError()));
-            return;
-        }
-
-        PingBackupStorageReply preply = (PingBackupStorageReply) reply;
-        BackupStorageStatus status = preply.isAvailable() ? BackupStorageStatus.Connected : BackupStorageStatus.Disconnected;
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("[Backup Storage Tracker]: discovered backup storage[uuid:%s] status[%s]", resourceUuid, status));
-        }
-
-        BackupStorageStatus old = statusMap.get(resourceUuid);
-        if (old == status) {
-            return;
-        }
-
-        statusMap.put(resourceUuid, status);
-        ChangeBackupStorageStatusMsg cmsg = new ChangeBackupStorageStatusMsg();
-        cmsg.setBackupStorageUuid(resourceUuid);
-        cmsg.setStatus(status.toString());
-        bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, resourceUuid);
-        bus.send(cmsg);
+        // nothing to do
     }
 
     @Override
