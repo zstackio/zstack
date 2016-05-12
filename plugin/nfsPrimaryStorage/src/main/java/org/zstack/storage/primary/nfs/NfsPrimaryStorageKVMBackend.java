@@ -911,7 +911,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                                     }
 
                                     cap.setTotalPhysicalCapacity(rsp.getTotalCapacity());
-                                    cap.setTotalPhysicalCapacity(rsp.getAvailableCapacity());
+                                    cap.setAvailablePhysicalCapacity(rsp.getAvailableCapacity());
 
                                     return cap;
                                 }
