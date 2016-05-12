@@ -222,7 +222,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
     }
 
     private <T> void httpCall(String path, AgentCmd cmd, final Class<T> rspClass, final ReturnValueCompletion<T> completion) {
-        restf.asyncJsonPost(String.format("http://%s:%s%s", self.getHostname(), CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT, path),
+        restf.asyncJsonPost(String.format("http://%s:%s%s", self.getHostname(), CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT, path),
                 cmd, new JsonAsyncRESTCallback<T>(completion) {
                     @Override
                     public void fail(ErrorCode err) {
