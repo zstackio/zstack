@@ -1,18 +1,16 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.rest.RESTFacade;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityCmd;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityResponse;
 
@@ -43,7 +41,7 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
         }
         ReportHostCapacityMessage rmsg = new ReportHostCapacityMessage();
         rmsg.setHostUuid(host.getUuid());
-        rmsg.setTotalCpu(rsp.getCpuNum() * rsp.getCpuSpeed());
+        rmsg.setCpuNum((int) rsp.getCpuNum());
         rmsg.setUsedCpu(rsp.getUsedCpu());
         rmsg.setTotalMemory(rsp.getTotalMemory());
         rmsg.setUsedMemory(rsp.getUsedMemory());

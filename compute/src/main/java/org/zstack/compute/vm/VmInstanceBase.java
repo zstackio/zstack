@@ -995,7 +995,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         final DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
-        amsg.setCpuCapacity(self.getCpuNum() * self.getCpuSpeed());
+        amsg.setCpuCapacity(self.getCpuNum());
         amsg.setMemoryCapacity(self.getMemorySize());
         amsg.getAvoidHostUuids().add(self.getHostUuid());
         if (msg instanceof GetVmMigrationTargetHostMsg) {

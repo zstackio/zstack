@@ -18,7 +18,6 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -35,7 +34,6 @@ import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;

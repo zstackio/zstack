@@ -25,6 +25,10 @@ public class HostCapacityVO {
 
     @Column
     @Index
+    private int cpuNum;
+
+    @Column
+    @Index
     private long availableMemory;
 
     @Column
@@ -41,6 +45,14 @@ public class HostCapacityVO {
 
 	public HostCapacityVO() {
 	}
+
+    public int getCpuNum() {
+        return cpuNum;
+    }
+
+    public void setCpuNum(int cpuNum) {
+        this.cpuNum = cpuNum;
+    }
 
     public long getTotalPhysicalMemory() {
         return totalPhysicalMemory;

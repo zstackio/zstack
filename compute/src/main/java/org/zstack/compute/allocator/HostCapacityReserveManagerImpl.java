@@ -285,8 +285,7 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         List<HostVO> ret = new ArrayList<HostVO>(candidates.size());
         for (HostVO hvo : candidates) {
             ReservedHostCapacity hc = reserves.get(hvo.getUuid());
-            if (hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() > ratioMgr.calculateMemoryByRatio(hvo.getUuid(), requiredMemory)
-                && hvo.getCapacity().getAvailableCpu() - hc.getReservedCpuCapacity() > requiredCpu) {
+            if (hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() > ratioMgr.calculateMemoryByRatio(hvo.getUuid(), requiredMemory)) {
                 ret.add(hvo);
             } else {
                 if (logger.isTraceEnabled()) {
@@ -296,7 +295,7 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
                     }
 
                     if (hvo.getCapacity().getAvailableCpu() - hc.getReservedCpuCapacity() < requiredCpu) {
-                        logger.trace(String.format("remove host[uuid:%s] from candidates;because after subtracting reserved cpu[%s HZ], it cannot provide required cpu[%s HZ]",
+                        logger.trace(String.format("remove host[uuid:%s] from candidates;because after subtracting reserved cpu[%s], it cannot provide required cpu[%s]",
                                 hvo.getUuid(), hc.getReservedCpuCapacity(), requiredCpu));
                     }
                 }

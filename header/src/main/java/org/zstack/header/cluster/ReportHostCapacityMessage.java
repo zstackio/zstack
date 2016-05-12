@@ -3,18 +3,20 @@ package org.zstack.header.cluster;
 import org.zstack.header.message.Message;
 
 public class ReportHostCapacityMessage extends Message {
-	private long totalCpu;
 	private long totalMemory;
 	private long usedCpu;
 	private long usedMemory;
 	private String hostUuid;
-	
-	public long getTotalCpu() {
-    	return totalCpu;
-    }
-	public void setTotalCpu(long totalCpu) {
-    	this.totalCpu = totalCpu;
-    }
+	private int cpuNum;
+
+	public int getCpuNum() {
+		return cpuNum;
+	}
+
+	public void setCpuNum(int cpuNum) {
+		this.cpuNum = cpuNum;
+	}
+
 	public long getTotalMemory() {
     	return totalMemory;
     }
