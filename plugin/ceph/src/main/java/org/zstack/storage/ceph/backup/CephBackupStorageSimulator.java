@@ -66,6 +66,22 @@ public class CephBackupStorageSimulator {
         return c;
     }
 
+    @RequestMapping(value= CephBackupStorageMonBase.PING_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String pingMon(HttpEntity<String> entity) {
+        CephBackupStorageMonBase.PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CephBackupStorageMonBase.PingCmd.class);
+        Boolean success = config.pingCmdSuccess.get(cmd.monUuid);
+        CephBackupStorageMonBase.PingRsp rsp = new CephBackupStorageMonBase.PingRsp();
+        rsp.success = success == null ? true : success;
+        if (!rsp.success) {
+            rsp.error = "on purpose";
+        }
+        Boolean operationFailure = config.pingCmdOperationFailure.get(cmd.monUuid);
+        rsp.operationFailure = operationFailure == null ? false : operationFailure;
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=CephBackupStorageBase.GET_IMAGE_SIZE_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String getImageSize(HttpEntity<String> entity) {
@@ -127,16 +143,6 @@ public class CephBackupStorageSimulator {
         DeleteCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteCmd.class);
         config.deleteCmds.add(cmd);
         DeleteRsp rsp = new DeleteRsp();
-        reply(entity, rsp);
-        return null;
-    }
-
-    @RequestMapping(value=CephBackupStorageBase.PING_PATH, method= RequestMethod.POST)
-    public @ResponseBody
-    String ping(HttpEntity<String> entity) {
-        PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), PingCmd.class);
-        config.pingCmds.add(cmd);
-        PingRsp rsp = new PingRsp();
         reply(entity, rsp);
         return null;
     }

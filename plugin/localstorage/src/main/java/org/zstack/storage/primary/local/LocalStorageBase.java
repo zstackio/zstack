@@ -1626,7 +1626,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void connectHook(final ConnectPrimaryStorageMsg msg, final Completion completion) {
+    protected void connectHook(final ConnectParam param, final Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    protected void pingHook(Completion completion) {
         completion.success();
     }
 

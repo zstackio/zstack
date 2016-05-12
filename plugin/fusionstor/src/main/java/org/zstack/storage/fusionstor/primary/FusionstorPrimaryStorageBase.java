@@ -1618,8 +1618,13 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void connectHook(ConnectPrimaryStorageMsg msg, final Completion completion) {
-        connect(msg.isNewAdded(), completion);
+    protected void connectHook(ConnectParam param, final Completion completion) {
+        connect(param.isNewAdded(), completion);
+    }
+
+    @Override
+    protected void pingHook(Completion completion) {
+        throw new CloudRuntimeException("not supported yet");
     }
 
     @Override

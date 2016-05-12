@@ -30,4 +30,7 @@ public class CephBackupStorageSimulatorConfig {
     public List<GetImageSizeCmd> getImageSizeCmds = new ArrayList<GetImageSizeCmd>();
     public Map<String, Long> getImageSizeCmdSize = new HashMap<String, Long>();
     public Map<String, Long> getImageSizeCmdActualSize = new HashMap<String, Long>();
+
+    public Map<String, Boolean> pingCmdSuccess = new HashMap<String, Boolean>();
+    public Map<String, Boolean> pingCmdOperationFailure = new HashMap<String, Boolean>();
 }

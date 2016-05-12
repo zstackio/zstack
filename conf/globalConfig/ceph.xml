@@ -23,4 +23,36 @@
         <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <name>primaryStorage.mon.reconnectDelay</name>
+        <description>the delay to reconnect a primary storage ceph mon after a ping failure, in seconds</description>
+        <category>ceph</category>
+        <defaultValue>30</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <name>backupStorage.mon.reconnectDelay</name>
+        <description>the delay to reconnect a backup storage ceph mon after a ping failure, in seconds</description>
+        <category>ceph</category>
+        <defaultValue>30</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <name>primaryStorage.mon.autoReconnect</name>
+        <description>whether to automatically reconnect a ceph primary storage mon when it's unable to be pinged</description>
+        <category>ceph</category>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <name>backupStorage.mon.autoReconnect</name>
+        <description>whether to automatically reconnect a ceph backup storage mon when it's unable to be pinged</description>
+        <category>ceph</category>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>

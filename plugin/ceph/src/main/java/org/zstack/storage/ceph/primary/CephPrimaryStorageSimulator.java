@@ -20,6 +20,8 @@ import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.*;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingCmd;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingRsp;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig.CephPrimaryStorageConfig;
 import org.zstack.utils.gson.JSONObjectUtil;
 
@@ -100,6 +102,22 @@ public class CephPrimaryStorageSimulator {
         CephPrimaryStorageConfig cpc = getConfig(cmd);
         rsp.totalCapacity = cpc.totalCapacity;
         rsp.availableCapacity = cpc.availCapacity + size;
+    }
+
+    @RequestMapping(value= CephPrimaryStorageMonBase.PING_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String pingMon(HttpEntity<String> entity) {
+        PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), PingCmd.class);
+        Boolean success = config.pingCmdSuccess.get(cmd.monUuid);
+        PingRsp rsp = new PingRsp();
+        rsp.success = success == null ? true : success;
+        if (!rsp.success) {
+            rsp.error = "on purpose";
+        }
+        Boolean operationFailure = config.pingCmdOperationFailure.get(cmd.monUuid);
+        rsp.operationFailure = operationFailure == null ? false : operationFailure;
+        reply(entity, rsp);
+        return null;
     }
 
     @RequestMapping(value= CephPrimaryStorageBase.CREATE_VOLUME_PATH, method= RequestMethod.POST)

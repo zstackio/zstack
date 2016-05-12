@@ -79,8 +79,6 @@ import org.zstack.storage.backup.sftp.APIUpdateSftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
 import org.zstack.storage.ceph.backup.*;
 import org.zstack.storage.ceph.primary.*;
-import org.zstack.storage.primary.iscsi.APIUpdateIscsiFileSystemBackendPrimaryStorageMsg;
-import org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageInventory;
 import org.zstack.storage.primary.local.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TimeUtils;
@@ -3449,22 +3447,6 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIUpdateHostEvent evt = sender.send(msg, APIUpdateHostEvent.class);
         return (KVMHostInventory) evt.getInventory();
-    }
-
-    public IscsiFileSystemBackendPrimaryStorageInventory updateIscsiFileSystemPrimaryStorage(IscsiFileSystemBackendPrimaryStorageInventory inv) throws ApiSenderException {
-        APIUpdateIscsiFileSystemBackendPrimaryStorageMsg msg = new APIUpdateIscsiFileSystemBackendPrimaryStorageMsg();
-        msg.setSession(adminSession);
-        msg.setName(inv.getName());
-        msg.setDescription(inv.getDescription());
-        msg.setUuid(inv.getUuid());
-        msg.setChapUsername(inv.getChapUsername());
-        msg.setChapPassword(inv.getChapPassword());
-        msg.setSshUsername(inv.getSshUsername());
-        msg.setSshPassword(inv.getSshPassword());
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIUpdatePrimaryStorageEvent evt = sender.send(msg, APIUpdatePrimaryStorageEvent.class);
-        return (IscsiFileSystemBackendPrimaryStorageInventory) evt.getInventory();
     }
 
     public PrimaryStorageInventory syncPrimaryStorageCapacity(String primaryStorageUuid) throws ApiSenderException {

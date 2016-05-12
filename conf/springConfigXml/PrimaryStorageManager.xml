@@ -72,4 +72,10 @@
     <bean id="PrimaryStorageOverProvisioningManager" class="org.zstack.storage.primary.PrimaryStorageOverProvisioningManagerImpl" />
 
     <bean id="PrimaryStoragePhysicalCapacityManager" class="org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManagerImpl" />
+
+    <bean id="PrimaryStoragePingTracker" class="org.zstack.storage.primary.PrimaryStoragePingTracker">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+        </zstack:plugin>
+    </bean>
 </beans>

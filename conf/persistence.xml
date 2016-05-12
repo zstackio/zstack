@@ -101,8 +101,6 @@
         <class>org.zstack.header.tag.UserTagVO</class>
         <class>org.zstack.header.tag.SystemTagVO</class>
         <class>org.zstack.network.service.virtualrouter.VirtualRouterVmVO</class>
-        <class>org.zstack.storage.primary.iscsi.IscsiFileSystemBackendPrimaryStorageVO</class>
-        <class>org.zstack.storage.primary.iscsi.IscsiIsoVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageResourceRefVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageHostRefVO</class>
         <class>org.zstack.storage.ceph.backup.CephBackupStorageVO</class>

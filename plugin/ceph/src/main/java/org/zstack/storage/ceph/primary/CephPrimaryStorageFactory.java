@@ -17,6 +17,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -62,7 +63,7 @@ import static org.zstack.utils.CollectionDSL.map;
  * Created by frank on 7/28/2015.
  */
 public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCapacityUpdateExtensionPoint, KVMStartVmExtensionPoint,
-        KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, Component {
+        KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, KvmSetupSelfFencerExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -79,6 +80,11 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     private CloudBus bus;
 
     private Future imageCacheCleanupThread;
+
+    static {
+        type.setSupportHeartbeatFile(true);
+        type.setSupportPingStorageGateway(true);
+    }
 
     @Override
     public PrimaryStorageType getPrimaryStorageType() {
@@ -556,5 +562,27 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public String createTemplateFromVolumeSnapshotPrimaryStorageType() {
         return CephConstants.CEPH_PRIMARY_STORAGE_TYPE;
+    }
+
+    @Override
+    public String kvmSetupSelfFencerStorageType() {
+        return CephConstants.CEPH_PRIMARY_STORAGE_TYPE;
+    }
+
+    @Override
+    public void kvmSetupSelfFencer(KvmSetupSelfFencerParam param, final Completion completion) {
+        SetupSelfFencerOnKvmHostMsg msg = new SetupSelfFencerOnKvmHostMsg();
+        msg.setParam(param);
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, param.getPrimaryStorage().getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    completion.success();
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
     }
 }

@@ -41,4 +41,7 @@ public class CephPrimaryStorageSimulatorConfig {
     public List<GetVolumeSizeCmd> getVolumeSizeCmds = new ArrayList<GetVolumeSizeCmd>();
     public Map<String, Long> getVolumeSizeCmdSize = new HashMap<String, Long>();
     public Map<String, Long> getVolumeSizeCmdActualSize = new HashMap<String, Long>();
+
+    public Map<String, Boolean> pingCmdSuccess = new HashMap<String, Boolean>();
+    public Map<String, Boolean> pingCmdOperationFailure = new HashMap<String, Boolean>();
 }
