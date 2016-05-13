@@ -276,7 +276,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
     public void doPing(final ReturnValueCompletion<PingResult> completion) {
         SimpleQuery<CephBackupStorageVO> q = dbf.createQuery(CephBackupStorageVO.class);
         q.select(CephBackupStorageVO_.poolName);
-        q.add(CephBackupStorageVO_.uuid, Op.EQ, getSelf().getUuid());
+        q.add(CephBackupStorageVO_.uuid, Op.EQ, getSelf().getBackupStorageUuid());
         String poolName = q.findValue();
 
         PingCmd cmd = new PingCmd();
