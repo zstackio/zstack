@@ -336,7 +336,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     psCap.put(psUuid, ratioMgr.calculateByRatio(psUuid, cap));
                 }
 
-                sql = "select sum(i.size), i.primaryStorageUuid from ImageCacheVO i where i.primaryStorageUuid in (:psUuids) group by i.primaryStorageUuid";
+                sql = "select sum(i.actualSize), i.primaryStorageUuid from ImageCacheVO i where i.primaryStorageUuid in (:psUuids) group by i.primaryStorageUuid";
                 q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("psUuids", psUuids);
                 ts = q.getResultList();

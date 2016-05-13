@@ -14,7 +14,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
-import javax.persistence.NoResultException;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.HashMap;
@@ -60,7 +59,7 @@ public class LocalStorageCapacityRecalculator {
         for (String huuid : huuids) {
             // note: templates in image cache are physical size
             // do not calculate over provisioning for them
-            sql = "select sum(i.size) from ImageCacheVO i where i.installUrl like :mark and i.primaryStorageUuid = :psUuid group by i.primaryStorageUuid";
+            sql = "select sum(i.actualSize) from ImageCacheVO i where i.installUrl like :mark and i.primaryStorageUuid = :psUuid group by i.primaryStorageUuid";
             TypedQuery<Long> iq = dbf.getEntityManager().createQuery(sql, Long.class);
             iq.setParameter("psUuid", psUuid);
             iq.setParameter("mark", String.format("%%hostUuid://%s%%", huuid));
