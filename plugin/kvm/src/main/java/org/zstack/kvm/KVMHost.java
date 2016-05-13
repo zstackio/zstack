@@ -2073,6 +2073,7 @@ public class KVMHost extends HostBase implements Host {
                             runner.setPlayBookName(KVMConstant.ANSIBLE_PLAYBOOK_NAME);
                             runner.setUsername(getSelf().getUsername());
                             runner.setPassword(getSelf().getPassword());
+                            runner.setSshPort(getSelf().getPort());
                             if (info.isNewAdded()) {
                                 runner.putArgument("init", "true");
                                 runner.setFullDeploy(true);
