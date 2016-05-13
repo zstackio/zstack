@@ -78,7 +78,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
             return;
         }
 
-        ShellUtils.run(String.format("mkdir -p %s", AgentConstant.SRC_ANSIBLE_ROOT), false);
+        ShellUtils.run(String.format("sudo mkdir -p %s", AgentConstant.SRC_ANSIBLE_ROOT), false);
         File srcFolder = PathUtil.findFolderOnClassPath(AgentConstant.ANSIBLE_MODULE_PATH, true);
         srcRootFolder = srcFolder.getAbsolutePath();
         ShellUtils.run(String.format("yes | cp -r %s/server %s", srcRootFolder, AgentConstant.SRC_ANSIBLE_ROOT), false);

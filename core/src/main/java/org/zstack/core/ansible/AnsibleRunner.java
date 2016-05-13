@@ -58,7 +58,7 @@ public class AnsibleRunner {
     private String username;
     private String password;
     private String privateKey;
-    private int sshPort = 22;
+    private int sshPort;
     private String playBookName;
     private String playBookPath;
     private Map<String, Object> arguments = new HashMap<String, Object>();

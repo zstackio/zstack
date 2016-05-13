@@ -67,8 +67,8 @@ public class APIAddKVMHostMsg extends APIAddHostMsg {
      * @desc ssh port for login
      * port range (1,65535)
      */
-    @APIParam(numberRange = {1, 65535})
-    private int port;
+    @APIParam(numberRange = {1, 65535}, required = false)
+    private int port = 22;
 
     public String getUsername() {
         return username;

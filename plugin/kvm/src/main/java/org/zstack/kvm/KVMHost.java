@@ -299,7 +299,7 @@ public class KVMHost extends HostBase implements Host {
     private SshResult runShell(String script) {
         Ssh ssh = new Ssh();
         ssh.setHostname(self.getManagementIp());
-        ssh.setPort(22);
+        ssh.setPort(getSelf().getPort());
         ssh.setUsername(getSelf().getUsername());
         ssh.setPassword(getSelf().getPassword());
         ssh.shell(script);
@@ -2061,6 +2061,7 @@ public class KVMHost extends HostBase implements Host {
                             SshFileMd5Checker checker = new SshFileMd5Checker();
                             checker.setUsername(getSelf().getUsername());
                             checker.setPassword(getSelf().getPassword());
+                            checker.setSshPort(getSelf().getPort());
                             checker.setTargetIp(getSelf().getManagementIp());
                             checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                             checker.addSrcDestPair(srcPath, destPath);
