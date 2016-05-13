@@ -8,10 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.allocator.AllocateHostReply;
-import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.allocator.LastHostPreferredAllocateHostMsg;
-import org.zstack.header.allocator.ReturnHostCapacityMsg;
+import org.zstack.header.allocator.*;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -40,22 +37,47 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
     public void run(final FlowTrigger chain, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        LastHostPreferredAllocateHostMsg msg = new LastHostPreferredAllocateHostMsg();
-        msg.setVmInstance(spec.getVmInventory());
-        msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
-        msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
-        msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-        msg.setVmOperation(spec.getCurrentVmOperation().toString());
-        msg.setLastHostUuid(spec.getVmInventory().getLastHostUuid());
-        msg.setAllocatorStrategy(HostAllocatorConstant.LAST_HOST_PREFERRED_ALLOCATOR_STRATEGY_TYPE);
-        msg.setL3NetworkUuids(CollectionUtils.transformToList(spec.getL3Networks(), new Function<String, L3NetworkInventory>() {
-            @Override
-            public String call(L3NetworkInventory arg) {
-                return arg.getUuid();
-            }
-        }));
-        msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
-        bus.send(msg, new CloudBusCallBack(chain) {
+        AllocateHostMsg amsg;
+
+        if (spec.getRequiredClusterUuid() != null || spec.getRequiredHostUuid() != null) {
+            DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
+            msg.setVmInstance(spec.getVmInventory());
+            msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
+            msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
+            msg.setVmOperation(spec.getCurrentVmOperation().toString());
+            msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
+            msg.setL3NetworkUuids(CollectionUtils.transformToList(spec.getL3Networks(), new Function<String, L3NetworkInventory>() {
+                @Override
+                public String call(L3NetworkInventory arg) {
+                    return arg.getUuid();
+                }
+            }));
+            msg.setClusterUuid(spec.getRequiredClusterUuid());
+            msg.setHostUuid(spec.getRequiredHostUuid());
+            msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+
+            amsg = msg;
+        } else {
+            LastHostPreferredAllocateHostMsg msg = new LastHostPreferredAllocateHostMsg();
+            msg.setVmInstance(spec.getVmInventory());
+            msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
+            msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
+            msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
+            msg.setVmOperation(spec.getCurrentVmOperation().toString());
+            msg.setLastHostUuid(spec.getVmInventory().getLastHostUuid());
+            msg.setAllocatorStrategy(HostAllocatorConstant.LAST_HOST_PREFERRED_ALLOCATOR_STRATEGY_TYPE);
+            msg.setL3NetworkUuids(CollectionUtils.transformToList(spec.getL3Networks(), new Function<String, L3NetworkInventory>() {
+                @Override
+                public String call(L3NetworkInventory arg) {
+                    return arg.getUuid();
+                }
+            }));
+            msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+
+            amsg = msg;
+        }
+
+        bus.send(amsg, new CloudBusCallBack(chain) {
             @Transactional
             private void setVmHostUuid(String huuid) {
                 VmInstanceVO vo = dbf.getEntityManager().find(VmInstanceVO.class, spec.getVmInventory().getUuid());

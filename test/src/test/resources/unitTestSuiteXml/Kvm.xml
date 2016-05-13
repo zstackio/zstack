@@ -130,4 +130,6 @@
   <TestCase class="org.zstack.test.kvm.TestDeleteIpRangeOnKvm"/>
   <TestCase class="org.zstack.test.kvm.TestDeleteIpRangeOnKvm1"/>
   <TestCase class="org.zstack.test.kvm.TestDeleteIpRangeOnKvm2"/>
+
+  <TestCase class="org.zstack.test.kvm.TestStartVmOnTargetHost"/>
 </UnitTestSuiteConfig>

@@ -78,10 +78,19 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteVmStaticIpMsg) msg);
         } else if (msg instanceof APISetVmStaticIpMsg) {
             validate((APISetVmStaticIpMsg) msg);
+        } else if (msg instanceof APIStartVmInstanceMsg) {
+            validate((APIStartVmInstanceMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIStartVmInstanceMsg msg) {
+        // host uuid overrides cluster uuid
+        if (msg.getHostUuid() != null) {
+            msg.setClusterUuid(null);
+        }
     }
 
     private void validate(APISetVmStaticIpMsg msg) {

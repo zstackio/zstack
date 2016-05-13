@@ -1,5 +1,7 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -46,7 +48,28 @@ public class APIStartVmInstanceMsg extends APIMessage implements VmInstanceMessa
      */
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
-    
+
+    @APIParam(resourceType = ClusterVO.class, required = false)
+    private String clusterUuid;
+    @APIParam(resourceType = HostVO.class, required = false)
+    private String hostUuid;
+
+    public String getClusterUuid() {
+        return clusterUuid;
+    }
+
+    public void setClusterUuid(String clusterUuid) {
+        this.clusterUuid = clusterUuid;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+
     public String getUuid() {
         return uuid;
     }

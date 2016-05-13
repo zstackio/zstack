@@ -162,6 +162,8 @@ public class VmInstanceSpec implements Serializable {
     private Message message;
     private ImageSpec imageSpec = new ImageSpec();
     private List<VolumeSpec> volumeSpecs = new ArrayList<VolumeSpec>();
+    private String requiredClusterUuid;
+    private String requiredHostUuid;
 
     private List<HostName> hostnames = new ArrayList<HostName>();
     private HostInventory destHost;
@@ -175,6 +177,22 @@ public class VmInstanceSpec implements Serializable {
     private String userdata;
     private List<String> bootOrders;
     private boolean gcOnStopFailure;
+
+    public String getRequiredClusterUuid() {
+        return requiredClusterUuid;
+    }
+
+    public void setRequiredClusterUuid(String requiredClusterUuid) {
+        this.requiredClusterUuid = requiredClusterUuid;
+    }
+
+    public String getRequiredHostUuid() {
+        return requiredHostUuid;
+    }
+
+    public void setRequiredHostUuid(String requiredHostUuid) {
+        this.requiredHostUuid = requiredHostUuid;
+    }
 
     public boolean isGcOnStopFailure() {
         return gcOnStopFailure;

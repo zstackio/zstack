@@ -3066,6 +3066,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Start);
         spec.setMessage(msg);
 
+        if (msg instanceof APIStartVmInstanceMsg) {
+            APIStartVmInstanceMsg amsg = (APIStartVmInstanceMsg) msg;
+            spec.setRequiredClusterUuid(amsg.getClusterUuid());
+            spec.setRequiredHostUuid(amsg.getHostUuid());
+        }
+
         if (spec.getDestNics().isEmpty()) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("unable to start the vm[uuid:%s]. It doesn't have any nic, please attach a nic and try again",
