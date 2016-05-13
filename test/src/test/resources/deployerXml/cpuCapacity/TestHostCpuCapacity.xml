@@ -26,6 +26,7 @@
             <imageRef>TestImage</imageRef>
             <instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
             <l3NetworkRef>TestL3Network1</l3NetworkRef>
+            <hostRef>host1</hostRef>
             <accountRef>test</accountRef>
         </userVm>
     </vm>
@@ -37,6 +38,8 @@
                     <hosts>
                         <kvmHost name="host1" description="Test" managementIp="localhost"
                             memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                        <kvmHost name="host2" description="Test" managementIp="127.0.0.1"
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
                     </hosts>
                     <primaryStorageRef>nfs</primaryStorageRef>
                     <l2NetworkRef>TestL2Network</l2NetworkRef>

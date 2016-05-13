@@ -110,7 +110,7 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
 
             HostInventory host = spec.getDestHost();
             ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
-            msg.setCpuCapacity(spec.getVmInventory().getCpuNum() * spec.getVmInventory().getCpuSpeed());
+            msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
             msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
             msg.setHostUuid(host.getUuid());
             msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));

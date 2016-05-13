@@ -1,4 +1,4 @@
-package org.zstack.test.cpuCapacity;
+package org.zstack.test.cpucapacity;
 
 import junit.framework.Assert;
 import org.junit.Before;

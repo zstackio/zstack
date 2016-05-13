@@ -5,12 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.ReturnHostCapacityMsg;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostVO;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 
@@ -37,7 +35,7 @@ public class VmReturnHostFlow extends NoRollbackFlow {
 
         ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
         msg.setHostUuid(spec.getVmInventory().getHostUuid());
-        msg.setCpuCapacity(spec.getVmInventory().getCpuNum()*spec.getVmInventory().getCpuSpeed());
+        msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         bus.send(msg);

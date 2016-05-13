@@ -87,7 +87,7 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
             final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
             ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
             msg.setHostUuid(spec.getDestHost().getUuid());
-            msg.setCpuCapacity(spec.getVmInventory().getCpuNum() * spec.getVmInventory().getCpuSpeed());
+            msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
             msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
             bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
             bus.send(msg);
