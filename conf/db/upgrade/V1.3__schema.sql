@@ -76,4 +76,10 @@ UPDATE ImageEO set actualSize = size;
 ALTER TABLE VolumeEO ADD actualSize bigint unsigned DEFAULT NULL;
 DROP VIEW IF EXISTS `zstack`.`VolumeVO`;
 CREATE VIEW `zstack`.`VolumeVO` AS SELECT uuid, name, description, primaryStorageUuid, vmInstanceUuid, diskOfferingUuid, rootImageUuid, installPath, type, status, size, actualSize, deviceId, format, state, createDate, lastOpDate FROM `zstack`.`VolumeEO` WHERE deleted IS NULL;
+
 ALTER TABLE KVMHostVO ADD port int unsigned DEFAULT NULL;
+
+ALTER TABLE HostCapacityVO ADD cpuNum int unsigned NOT NULL DEFAULT 0;
+
+# Index for table HostCapacityVO
+CREATE INDEX idxHostCapacityVOcpuNum ON HostCapacityVO (cpuNum);

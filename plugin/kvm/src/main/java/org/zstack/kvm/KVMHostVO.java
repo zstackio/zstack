@@ -25,7 +25,7 @@ public class KVMHostVO extends HostVO {
 
     public KVMHostVO() {
     }
-    
+
     public KVMHostVO(HostVO vo) {
         super(vo);
     }

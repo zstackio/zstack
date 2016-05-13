@@ -15,7 +15,7 @@ public class SimulatorConnectExtensionPointHostCapacityBackend implements Simula
 	public String connect(SimulatorConnection connection) {
 		ReportHostCapacityMessage msg = new ReportHostCapacityMessage();
 		msg.setHostUuid(connection.getHostUuid());
-		msg.setTotalCpu(connection.getTotalCpu());
+		msg.setCpuNum((int) connection.getTotalCpu());
 		msg.setTotalMemory(connection.getTotalMemory());
 		msg.setUsedCpu(connection.getUsedCpu());
 		msg.setUsedMemory(connection.getUsedMemory());

@@ -64,7 +64,7 @@ public class VmAllocateHostFlow implements Flow {
         diskOfferings.addAll(spec.getDataDiskOfferings());
         msg.setDiskOfferings(diskOfferings);
         msg.setDiskSize(diskSize);
-        msg.setCpuCapacity(spec.getVmInventory().getCpuNum() * spec.getVmInventory().getCpuSpeed());
+        msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
         msg.setL3NetworkUuids(CollectionUtils.transformToList(spec.getL3Networks(), new Function<String, L3NetworkInventory>() {
             @Override

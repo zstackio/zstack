@@ -53,6 +53,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     @Autowired
     private HostCapacityOverProvisioningManager ratioMgr;
     @Autowired
+    private HostCpuOverProvisioningManager cpuRatioMgr;
+    @Autowired
     private ErrorFacade errf;
 
 	@Override
@@ -104,7 +106,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             @Override
             @Transactional(readOnly = true)
             public List<Struct> call() {
-                String sql = "select sum(vm.memorySize), vm.hostUuid, sum(vm.cpuNum * vm.cpuSpeed) from VmInstanceVO vm where vm.hostUuid in (:hostUuids) and vm.state not in (:vmStates) group by vm.hostUuid";
+                String sql = "select sum(vm.memorySize), vm.hostUuid, sum(vm.cpuNum) from VmInstanceVO vm where vm.hostUuid in (:hostUuids) and vm.state not in (:vmStates) group by vm.hostUuid";
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("hostUuids", hostUuids);
                 q.setParameter("vmStates", list(VmInstanceState.Destroyed, VmInstanceState.Created, VmInstanceState.Destroying));
@@ -150,13 +152,20 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     long avail = s.usedMemory == null ? cap.getTotalMemory() : cap.getTotalMemory() - s.usedMemory;
                     cap.setAvailableMemory(avail);
 
+                    long totalCpu = cpuRatioMgr.calculateHostCpuByRatio(s.hostUuid, cap.getCpuNum());
+                    long totalCpuBefore = cap.getTotalCpu();
+                    cap.setTotalCpu(totalCpu);
+
                     long beforeCpu = cap.getAvailableCpu();
                     long availCpu = s.usedCpu == null ? cap.getTotalCpu() : cap.getTotalCpu() - s.usedCpu;
                     cap.setAvailableCpu(availCpu);
 
                     logger.debug(String.format("re-calculated available capacity on the host[uuid:%s]:" +
                             "\n[available memory] before: %s, now: %s" +
-                            "\n[available cpu] before: %s, now :%s", s.hostUuid, before, avail, beforeCpu, availCpu));
+                            "\n[total cpu] before: %s, now: %s" +
+                            "\n[available cpu] before: %s, now :%s", s.hostUuid, before, avail,
+                            totalCpuBefore, totalCpu,
+                            beforeCpu, availCpu));
                     return cap;
                 }
             });
@@ -168,24 +177,28 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     }
 
     private void handle(ReportHostCapacityMessage msg) {
-        HostCapacityVO vo = dbf.findByUuid(msg.getHostUuid(), HostCapacityVO.class);
-        long availCpu = msg.getTotalCpu() - msg.getUsedCpu();
-        availCpu = availCpu > 0 ? availCpu : 0;
+        long totalCpu = cpuRatioMgr.calculateHostCpuByRatio(msg.getHostUuid(), msg.getCpuNum());
         long availMem = msg.getTotalMemory() - msg.getUsedMemory();
         availMem = availMem > 0 ? availMem : 0;
+        long availCpu = totalCpu - msg.getUsedCpu();
+        availCpu = availCpu > 0 ? availCpu : 0;
+
+        HostCapacityVO vo = dbf.findByUuid(msg.getHostUuid(), HostCapacityVO.class);
         if (vo == null) {
             vo = new HostCapacityVO();
             vo.setUuid(msg.getHostUuid());
-            vo.setTotalCpu(msg.getTotalCpu());
+            vo.setTotalCpu(totalCpu);
             vo.setAvailableCpu(availCpu);
             vo.setTotalMemory(msg.getTotalMemory());
             vo.setAvailableMemory(availMem);
             vo.setTotalPhysicalMemory(msg.getTotalMemory());
             vo.setAvailablePhysicalMemory(availMem);
+            vo.setCpuNum(msg.getCpuNum());
 
             HostCapacityStruct s = new HostCapacityStruct();
             s.setCapacityVO(vo);
-            s.setTotalCpu(msg.getTotalCpu());
+            s.setCpuNum(msg.getCpuNum());
+            s.setTotalCpu(totalCpu);
             s.setTotalMemory(msg.getTotalMemory());
             s.setUsedCpu(msg.getUsedCpu());
             s.setUsedMemory(msg.getUsedMemory());
@@ -195,7 +208,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             }
             dbf.persist(vo);
         } else {
-            vo.setTotalCpu(msg.getTotalCpu());
+            vo.setCpuNum(msg.getCpuNum());
+            vo.setTotalCpu(totalCpu);
             vo.setAvailableCpu(availCpu);
             vo.setTotalPhysicalMemory(msg.getTotalMemory());
             vo.setAvailablePhysicalMemory(availMem);
@@ -203,7 +217,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
             HostCapacityStruct s = new HostCapacityStruct();
             s.setCapacityVO(vo);
-            s.setTotalCpu(msg.getTotalCpu());
+            s.setTotalCpu(totalCpu);
             s.setTotalMemory(msg.getTotalMemory());
             s.setUsedCpu(msg.getUsedCpu());
             s.setUsedMemory(msg.getUsedMemory());
@@ -326,7 +340,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         long availMemory = ret.get(2, Long.class) == null ? 0 : ret.get(2, Long.class);
         long totalMemory = ret.get(3, Long.class) == null ? 0 : ret.get(3, Long.class);
 
-        ReservedHostCapacity rc = null;
+        ReservedHostCapacity rc;
         if (msg.getHostUuids() != null && !msg.getHostUuids().isEmpty()) {
             rc = reserveMgr.getReservedHostCapacityByHosts(msg.getHostUuids());
         } else if (msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty()) {
@@ -337,9 +351,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             throw new CloudRuntimeException("should not be here");
         }
 
-        availCpu = availCpu - rc.getReservedCpuCapacity();
         availMemory = availMemory - rc.getReservedMemoryCapacity();
-        availCpu = availCpu > 0 ? availCpu : 0;
         availMemory = availMemory > 0 ? availMemory : 0;
 
         reply.setTotalCpu(totalCpu);

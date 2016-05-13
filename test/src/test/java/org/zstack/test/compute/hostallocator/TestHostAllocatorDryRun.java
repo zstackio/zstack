@@ -6,10 +6,11 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.allocator.*;
-import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.allocator.AllocateHostDryRunReply;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
@@ -47,7 +48,7 @@ public class TestHostAllocatorDryRun {
     public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
-        msg.setCpuCapacity(vm.getCpuNum() * vm.getCpuSpeed());
+        msg.setCpuCapacity(vm.getCpuNum());
         msg.setMemoryCapacity(vm.getMemorySize());
         msg.getAvoidHostUuids().add(vm.getHostUuid());
         msg.setVmInstance(vm);
