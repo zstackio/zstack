@@ -53,6 +53,7 @@
   <TestCase class="org.zstack.test.kvm.TestAttachNicOnKvm"/>
   <TestCase class="org.zstack.test.kvm.TestAttachNicOnKvm1"/>
   <TestCase class="org.zstack.test.kvm.TestAttachNicOnKvm2"/>
+  <TestCase class="org.zstack.test.kvm.TestAttachNicOnKvm3"/>
   <TestCase class="org.zstack.test.kvm.TestAttachNicOnKvmFailure"/>
   <TestCase class="org.zstack.test.kvm.TestKvmAttachL2Network"/>
   <TestCase class="org.zstack.test.kvm.TestKvmAttachL2Network1"/>

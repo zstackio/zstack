@@ -2783,9 +2783,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public VmInstanceInventory attachNic(String vmUuid, String l3Uuid) throws ApiSenderException {
+        return attachNic(vmUuid, l3Uuid, null);
+    }
+
+    public VmInstanceInventory attachNic(String vmUuid, String l3Uuid, String staticIp) throws ApiSenderException {
         APIAttachL3NetworkToVmMsg msg = new APIAttachL3NetworkToVmMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setSession(adminSession);
+        msg.setStaticIp(staticIp);
         msg.setVmInstanceUuid(vmUuid);
         msg.setL3NetworkUuid(l3Uuid);
         ApiSender sender = new ApiSender();

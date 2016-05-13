@@ -1157,6 +1157,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
 
             @Override
+            @Deferred
             public void run(final SyncTaskChain chain) {
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
@@ -1166,7 +1167,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 class SetDefaultL3Network {
-                    boolean isSet = false;
+                    private boolean isSet = false;
 
                     void set() {
                         if (self.getDefaultL3NetworkUuid() == null) {
@@ -1184,8 +1185,54 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 }
 
+                class SetStaticIp {
+                    private boolean isSet = false;
+
+                    void set() {
+                        if (!(msg instanceof APIAttachL3NetworkToVmMsg)) {
+                            return;
+                        }
+
+                        APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
+                        if (amsg.getStaticIp() == null) {
+                            return;
+                        }
+
+                        VmSystemTags.STATIC_IP.createTag(self.getUuid(), map(
+                                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, amsg.getL3NetworkUuid()),
+                                e(VmSystemTags.STATIC_IP_TOKEN, amsg.getStaticIp())
+                        ));
+
+                        isSet = true;
+                    }
+
+                    void rollback() {
+                        if (isSet) {
+                            APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
+                            VmSystemTags.STATIC_IP.delete(self.getUuid(), TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_IP.instantiateTag(
+                                    map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, amsg.getL3NetworkUuid()))
+                            )));
+                        }
+                    }
+                }
+
                 final SetDefaultL3Network setDefaultL3Network = new SetDefaultL3Network();
                 setDefaultL3Network.set();
+                Defer.guard(new Runnable() {
+                    @Override
+                    public void run() {
+                        setDefaultL3Network.rollback();
+                    }
+                });
+
+                final SetStaticIp setStaticIp = new SetStaticIp();
+                setStaticIp.set();
+                Defer.guard(new Runnable() {
+                    @Override
+                    public void run() {
+                        setStaticIp.rollback();
+                    }
+                });
 
                 final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
                 spec.setVmInventory(VmInstanceInventory.valueOf(self));
@@ -1240,6 +1287,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             }
                         });
                         setDefaultL3Network.rollback();
+                        setStaticIp.rollback();
                         completion.fail(errCode);
                         chain.next();
                     }

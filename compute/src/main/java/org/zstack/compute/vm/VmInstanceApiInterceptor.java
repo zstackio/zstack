@@ -23,9 +23,7 @@ import org.zstack.header.image.ImageState;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.network.l3.L3NetworkState;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
@@ -191,6 +189,35 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
                     String.format("unable to attach a L3 network. The L3 network[uuid:%s] is a system network", msg.getL3NetworkUuid())
             ));
+        }
+
+        if (msg.getStaticIp() != null) {
+            SimpleQuery<IpRangeVO> iprq = dbf.createQuery(IpRangeVO.class);
+            iprq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+            List<IpRangeVO> iprs = iprq.list();
+
+            boolean found = false;
+            for (IpRangeVO ipr : iprs) {
+                if (NetworkUtils.isIpv4InRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                        String.format("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid())
+                ));
+            }
+
+            SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
+            uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+            uq.add(UsedIpVO_.ip, Op.EQ, msg.getStaticIp());
+            if (uq.isExists()) {
+                throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                        String.format("the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getStaticIp(), msg.getL3NetworkUuid())
+                ));
+            }
         }
     }
 

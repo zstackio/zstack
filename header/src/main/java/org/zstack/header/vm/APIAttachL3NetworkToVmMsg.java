@@ -59,6 +59,16 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
     private String l3NetworkUuid;
 
+    private String staticIp;
+
+    public String getStaticIp() {
+        return staticIp;
+    }
+
+    public void setStaticIp(String staticIp) {
+        this.staticIp = staticIp;
+    }
+
     @Override
     public String getVmInstanceUuid() {
         return vmInstanceUuid;
