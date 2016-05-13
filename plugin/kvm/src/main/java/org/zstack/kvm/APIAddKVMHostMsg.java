@@ -16,8 +16,9 @@ import org.zstack.header.message.APIParam;
  * @httpMsg
  * {
 "org.zstack.kvm.APIAddKVMHostMsg": {
-"username": "root",
+"username": "user",
 "password": "password",
+"port": "port",
 "name": "host1",
 "managementIp": "localhost",
 "clusterUuid": "0f8b6a4702a840bfaf928f04ff0a5da4",
@@ -30,8 +31,9 @@ import org.zstack.header.message.APIParam;
  * @msg
  * {
 "org.zstack.kvm.APIAddKVMHostMsg": {
-"username": "root",
+"username": "user",
 "password": "password",
+"port": "port",
 "name": "host1",
 "managementIp": "localhost",
 "clusterUuid": "0f8b6a4702a840bfaf928f04ff0a5da4",
@@ -50,9 +52,8 @@ import org.zstack.header.message.APIParam;
  */
 public class APIAddKVMHostMsg extends APIAddHostMsg {
     /**
-     * @desc user name used for ssh login. Must be 'root' for now.
+     * @desc user name used for ssh login.
      * Max length of 255 characters
-     * @choices root
      */
     @APIParam(maxLength = 255)
     private String username;
@@ -62,7 +63,13 @@ public class APIAddKVMHostMsg extends APIAddHostMsg {
      */
     @APIParam(maxLength = 255)
     private String password;
-    
+    /**
+     * @desc ssh port for login
+     * port range (1,65535)
+     */
+    @APIParam(numberRange = {1, 65535})
+    private int port;
+
     public String getUsername() {
         return username;
     }
@@ -74,5 +81,11 @@ public class APIAddKVMHostMsg extends APIAddHostMsg {
     }
     public void setPassword(String password) {
         this.password = password;
+    }
+    public int getPort() {
+        return port;
+    }
+    public void setPort(int port) {
+        this.port = port;
     }
 }

@@ -77,6 +77,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         KVMHostVO kvo = new KVMHostVO(vo);
         kvo.setUsername(amsg.getUsername());
         kvo.setPassword(amsg.getPassword());
+        kvo.setPort(amsg.getPort());
         kvo = dbf.persistAndRefresh(kvo);
         return kvo;
     }
