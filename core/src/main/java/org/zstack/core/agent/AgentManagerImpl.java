@@ -229,9 +229,17 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                 if (msg.getSshPort() != null) {
                     ssh.setPort(msg.getSshPort());
                 }
-                ssh.command(String.format("mkdir -p %s", AgentConstant.DST_ANSIBLE_ROOT))
-                        .scp(srcRootFolder, PathUtil.parentFolder(AgentConstant.DST_ANSIBLE_ROOT));
-                ssh.runErrorByExceptionAndClose();
+                if (!msg.getUsername().equals("root")) {
+                    ssh.command(String.format("if [ ! -d %s ]; then mkdir -p %s; fi && sudo chown -R %s %s ", AgentConstant.DST_ANSIBLE_ROOT,
+                            PathUtil.parentFolder(AgentConstant.DST_ANSIBLE_ROOT), msg.getUsername(), AgentConstant.DST_ANSIBLE_ROOT))
+                            .scp(srcRootFolder, PathUtil.parentFolder(AgentConstant.DST_ANSIBLE_ROOT));
+                    ssh.runErrorByExceptionAndClose();
+                }
+                else {
+                    ssh.command(String.format("mkdir -p %s", AgentConstant.DST_ANSIBLE_ROOT))
+                            .scp(srcRootFolder, PathUtil.parentFolder(AgentConstant.DST_ANSIBLE_ROOT));
+                    ssh.runErrorByExceptionAndClose();
+                }
             }
 
             AnsibleRunner runner = new AnsibleRunner();
