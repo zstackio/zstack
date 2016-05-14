@@ -11,4 +11,5 @@ import javax.persistence.metamodel.StaticMetamodel;
 public class KVMHostVO_ extends HostVO_ {
     public static volatile SingularAttribute<KVMHostVO, String> username;
     public static volatile SingularAttribute<KVMHostVO, String> password;
+    public static volatile SingularAttribute<KVMHostVO, Integer> port;
 }
