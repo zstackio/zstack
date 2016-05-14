@@ -343,9 +343,10 @@ public class AnsibleRunner {
             putArgument("pip_url", String.format("http://%s:8080/zstack/static/pypi/simple", Platform.getManagementServerIp()));
             putArgument("trusted_host", Platform.getManagementServerIp());
             putArgument("yum_server", String.format("%s:8080", Platform.getManagementServerIp()));
-            putArgument("remote_user", getUsername());
-            putArgument("remote_pass", getPassword());
-            putArgument("remote_port", getSshPort());
+            putArgument("remote_user", username);
+            if (password != null && "".equals(password))
+                putArgument("remote_pass", password);
+            putArgument("remote_port", sshPort);
 
             logger.debug(String.format("starts to run ansbile[%s]", playBookPath == null ? playBookName : playBookPath));
             new PrepareAnsible().setTargetIp(targetIp).prepare();
