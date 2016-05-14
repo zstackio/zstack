@@ -21,10 +21,14 @@ public class SftpBackupStorageInventory extends BackupStorageInventory {
     @Unqueryable
     public String username;
 
+
+    public int sshport;
+
     protected SftpBackupStorageInventory(SftpBackupStorageVO vo) {
         super(vo);
         hostname = vo.getHostname();
         username = vo.getUsername();
+        sshport = vo.getPort();
     }
 
     public SftpBackupStorageInventory() {
@@ -58,5 +62,11 @@ public class SftpBackupStorageInventory extends BackupStorageInventory {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+    public int getSshport() {
+        return sshport;
+    }
+    public void setSshport(int sshport) {
+        this.sshport = sshport;
     }
 }

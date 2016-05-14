@@ -63,7 +63,6 @@ public class KVMHostInventory extends HostInventory {
     }
 
     public int getSshPort() {
-
         return sshPort;
     }
 

@@ -78,6 +78,7 @@ DROP VIEW IF EXISTS `zstack`.`VolumeVO`;
 CREATE VIEW `zstack`.`VolumeVO` AS SELECT uuid, name, description, primaryStorageUuid, vmInstanceUuid, diskOfferingUuid, rootImageUuid, installPath, type, status, size, actualSize, deviceId, format, state, createDate, lastOpDate FROM `zstack`.`VolumeEO` WHERE deleted IS NULL;
 
 ALTER TABLE KVMHostVO ADD port int unsigned DEFAULT 22;
+ALTER TABLE SftpBackupStorageVO ADD port int unsigned DEFAULT 22;
 
 ALTER TABLE HostCapacityVO ADD cpuNum int unsigned NOT NULL DEFAULT 0;
 

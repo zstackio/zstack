@@ -16,8 +16,9 @@ import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
  * {
 "org.zstack.storage.backup.sftp.APIAddSftpBackupStorageMsg": {
 "hostname": "localhost",
-"username": "root",
+"username": "username",
 "password": "password",
+"port": "port",
 "url": "nfs://test",
 "name": "sftp",
 "type": "SftpBackupStorage",
@@ -31,8 +32,9 @@ import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
  * {
 "org.zstack.storage.backup.sftp.APIAddSftpBackupStorageMsg": {
 "hostname": "localhost",
-"username": "root",
+"username": "username",
 "password": "password",
+"port": "port",
 "url": "nfs://test",
 "name": "sftp",
 "type": "SftpBackupStorage",
@@ -56,6 +58,8 @@ public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
     private String username;
     @APIParam(maxLength = 255)
     private String password;
+    @APIParam(numberRange = {1, 65535}, required = false)
+    private int port = 22;
 
     @Override
     public String getType() {
@@ -79,5 +83,11 @@ public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
     }
     public void setPassword(String password) {
         this.password = password;
+    }
+    public int getPort() {
+        return port;
+    }
+    public void setPort(int port) {
+        this.port = port;
     }
 }
