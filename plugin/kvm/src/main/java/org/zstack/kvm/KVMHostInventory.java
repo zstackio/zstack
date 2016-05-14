@@ -33,7 +33,7 @@ public class KVMHostInventory extends HostInventory {
         this.setPassword(vo.getPassword());
         this.setSshPort(vo.getPort());
     }
-    
+
     public static KVMHostInventory valueOf(KVMHostVO vo) {
         return new KVMHostInventory(vo);
     }
@@ -45,16 +45,19 @@ public class KVMHostInventory extends HostInventory {
         }
         return invs;
     }
-    
+
     public String getUsername() {
         return username;
     }
+
     public void setUsername(String username) {
         this.username = username;
     }
+
     public String getPassword() {
         return password;
     }
+
     public void setPassword(String password) {
         this.password = password;
     }
@@ -67,3 +70,4 @@ public class KVMHostInventory extends HostInventory {
     public void setSshPort(int sshPort) {
         this.sshPort = sshPort;
     }
+}
