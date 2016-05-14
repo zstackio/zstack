@@ -21,6 +21,9 @@ import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostAllocatorError;
+import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -326,6 +329,91 @@ public class VmInstanceBase extends AbstractVmInstance {
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APIGetVmStartingCandidateClustersHostsMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                getStartingCandidateHosts(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "get-starting-candidate-hosts";
+            }
+        });
+    }
+
+    private void getStartingCandidateHosts(final APIGetVmStartingCandidateClustersHostsMsg msg, final NoErrorCompletion completion) {
+        refreshVO();
+        ErrorCode err = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (err != null) {
+            throw new OperationFailureException(err);
+        }
+
+        final DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
+        amsg.setCpuCapacity(self.getCpuNum());
+        amsg.setMemoryCapacity(self.getMemorySize());
+        amsg.setVmInstance(VmInstanceInventory.valueOf(self));
+        amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+        amsg.setAllocatorStrategy(self.getAllocatorStrategy());
+        amsg.setVmOperation(VmOperation.Start.toString());
+        amsg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
+            @Override
+            public String call(VmNicVO arg) {
+                return arg.getL3NetworkUuid();
+            }
+        }));
+        amsg.setDryRun(true);
+
+        final APIGetVmStartingCandidateClustersHostsReply reply = new APIGetVmStartingCandidateClustersHostsReply();
+        bus.send(amsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply re) {
+                if (!re.isSuccess()) {
+                    if (HostAllocatorError.NO_AVAILABLE_HOST.toString().equals(re.getError().getCode())) {
+                        reply.setHostInventories(new ArrayList<HostInventory>());
+                        reply.setClusterInventories(new ArrayList<ClusterInventory>());
+                    } else {
+                        reply.setError(re.getError());
+                    }
+                } else {
+                    List<HostInventory> hosts = ((AllocateHostDryRunReply) re).getHosts();
+                    if (!hosts.isEmpty()) {
+                        List<String> cuuids = CollectionUtils.transformToList(hosts, new Function<String, HostInventory>() {
+                            @Override
+                            public String call(HostInventory arg) {
+                                return arg.getClusterUuid();
+                            }
+                        });
+
+                        SimpleQuery<ClusterVO> cq = dbf.createQuery(ClusterVO.class);
+                        cq.add(ClusterVO_.uuid, Op.IN, cuuids);
+                        List<ClusterVO> cvos = cq.list();
+
+                        reply.setClusterInventories(ClusterInventory.valueOf(cvos));
+                        reply.setHostInventories(hosts);
+                    } else {
+                        reply.setHostInventories(hosts);
+                        reply.setClusterInventories(new ArrayList<ClusterInventory>());
+                    }
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
     }
 
     private void handle(final HaStartVmInstanceMsg msg) {
@@ -1922,6 +2010,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIDeleteVmStaticIpMsg) msg);
         } else if (msg instanceof APIGetVmHostnameMsg) {
             handle((APIGetVmHostnameMsg) msg);
+        } else if (msg instanceof APIGetVmStartingCandidateClustersHostsMsg) {
+            handle((APIGetVmStartingCandidateClustersHostsMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }

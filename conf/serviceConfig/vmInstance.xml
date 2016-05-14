@@ -98,4 +98,7 @@
     <message>
         <name>org.zstack.header.vm.APIGetVmHostnameMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIGetVmStartingCandidateClustersHostsMsg</name>
+    </message>
 </service>

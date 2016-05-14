@@ -65,7 +65,8 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APISetVmStaticIpMsg.class.getName(),
                 APIDeleteVmStaticIpMsg.class.getName(),
                 StartVmInstanceMsg.class.getName(),
-                HaStartVmInstanceMsg.class.getName()
+                HaStartVmInstanceMsg.class.getName(),
+                APIGetVmStartingCandidateClustersHostsMsg.class.getName()
         );
 
         allowedOperations.addState(VmInstanceState.Unknown,

@@ -3993,4 +3993,14 @@ public class Api implements CloudBusEventListener {
         APISyncVolumeSizeEvent evt = sender.send(msg, APISyncVolumeSizeEvent.class);
         return evt.getInventory();
     }
+
+    public APIGetVmStartingCandidateClustersHostsReply getVmStartingCandidateHosts(String vmUuid, SessionInventory session) throws ApiSenderException {
+        APIGetVmStartingCandidateClustersHostsMsg msg = new APIGetVmStartingCandidateClustersHostsMsg();
+        msg.setUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVmStartingCandidateClustersHostsReply reply = sender.call(msg, APIGetVmStartingCandidateClustersHostsReply.class);
+        return reply;
+    }
 }
