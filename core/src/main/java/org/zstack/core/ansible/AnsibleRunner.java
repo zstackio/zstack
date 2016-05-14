@@ -344,7 +344,7 @@ public class AnsibleRunner {
             putArgument("trusted_host", Platform.getManagementServerIp());
             putArgument("yum_server", String.format("%s:8080", Platform.getManagementServerIp()));
             putArgument("remote_user", username);
-            if (password != null && "".equals(password))
+            if (password != null && !password.isEmpty())
                 putArgument("remote_pass", password);
             putArgument("remote_port", sshPort);
 
