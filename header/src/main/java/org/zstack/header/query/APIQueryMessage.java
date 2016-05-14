@@ -2,7 +2,6 @@ package org.zstack.header.query;
 
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
-import org.zstack.header.rest.APINoSee;
 
 import java.util.ArrayList;
 import java.util.List;

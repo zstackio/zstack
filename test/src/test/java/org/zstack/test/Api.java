@@ -7,6 +7,7 @@ import org.zstack.appliancevm.APIListApplianceVmMsg;
 import org.zstack.appliancevm.APIListApplianceVmReply;
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.billing.*;
+import org.zstack.cassandra.APIQueryCassandraMsg;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
@@ -38,6 +39,7 @@ import org.zstack.header.image.*;
 import org.zstack.header.managementnode.*;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.message.Event;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
@@ -4001,6 +4003,14 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIGetVmStartingCandidateClustersHostsReply reply = sender.call(msg, APIGetVmStartingCandidateClustersHostsReply.class);
+        return reply;
+    }
+
+    public <T extends MessageReply> T queryCassandra(APIQueryCassandraMsg msg, Class<T> clz) throws ApiSenderException {
+        ApiSender sender = new ApiSender();
+        msg.setSession(adminSession);
+        sender.setTimeout(timeout);
+        T reply = sender.call(msg, clz);
         return reply;
     }
 }

@@ -5,5 +5,4 @@ import org.zstack.header.query.AutoQuery;
 
 @AutoQuery(replyClass = APIQueryPrimaryStorageReply.class, inventoryClass = PrimaryStorageInventory.class)
 public class APIQueryPrimaryStorageMsg extends APIQueryMessage {
-
 }
