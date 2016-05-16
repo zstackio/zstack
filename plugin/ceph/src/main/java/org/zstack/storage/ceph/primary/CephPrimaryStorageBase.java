@@ -1598,7 +1598,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     return;
                 }
 
-                CephPrimaryStorageMonBase base = it.next();
+                final CephPrimaryStorageMonBase base = it.next();
                 base.connect(new Completion(trigger) {
                     @Override
                     public void success() {
@@ -1608,6 +1608,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         errorCodes.add(errorCode);
+
+                        if (newAdded) {
+                            // the mon fails to connect, remove it
+                            dbf.remove(base.getSelf());
+                        }
+
                         connect(trigger);
                     }
                 });
@@ -1687,7 +1693,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         if (newAdded) {
-                            dbf.removeCollection(getSelf().getMons(), CephPrimaryStorageMonVO.class);
+                            self = dbf.reload(self);
+                            if (!getSelf().getMons().isEmpty()) {
+                                dbf.removeCollection(getSelf().getMons(), CephPrimaryStorageMonVO.class);
+                            }
                         }
 
                         completion.fail(errCode);
