@@ -486,6 +486,11 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
+    public String getCallbackUrl() {
+        return callbackUrl;
+    }
+
+    @Override
     public void installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor) {
         interceptors.add(interceptor);
     }

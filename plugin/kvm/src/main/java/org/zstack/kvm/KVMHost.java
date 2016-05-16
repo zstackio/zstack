@@ -8,6 +8,7 @@ import org.zstack.compute.host.HostBase;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
@@ -2050,6 +2051,32 @@ public class KVMHost extends HostBase implements Host {
                             }
                         });
                     }
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "check-if-host-can-reach-management-node";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            SshResult ret = new Ssh().setHostname(getSelf().getManagementIp())
+                                    .setUsername(getSelf().getUsername()).setPassword(getSelf().getPassword())
+                                    .command(String.format("curl --connect-timeout 10 %s", restf.getCallbackUrl())).runAndClose();
+
+                            if (ret.isSshFailure()) {
+                                throw new OperationFailureException(errf.stringToOperationError(
+                                        String.format("unable to connect to KVM[ip:%s, username:%s] to check the management node connectivity," +
+                                                "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), ret.getExitErrorMessage())
+                                ));
+                            } else if (ret.getReturnCode() != 0) {
+                                throw new OperationFailureException(errf.stringToOperationError(
+                                        String.format("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
+                                                " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), Platform.getManagementServerIp(),
+                                                ret.getStderr(), ret.getExitErrorMessage())
+                                ));
+                            }
+
+                            trigger.next();
+                        }
+                    });
 
                     flow(new NoRollbackFlow() {
                         String __name__ = "apply-ansible-playbook";
