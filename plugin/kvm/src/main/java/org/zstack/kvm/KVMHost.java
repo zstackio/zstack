@@ -2034,7 +2034,7 @@ public class KVMHost extends HostBase implements Host {
                                 String checkList = KVMGlobalConfig.HOST_DNS_CHECK_LIST.value();
                                 checkList = checkList.replaceAll(",", " ");
                                 SshResult ret = new Ssh().setHostname(getSelf().getManagementIp())
-                                        .setUsername(getSelf().getUsername()).setPassword(getSelf().getPassword())
+                                        .setUsername(getSelf().getUsername()).setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
                                         .script("scripts/check-public-dns-name.sh", map(e("dnsCheckList", checkList))).runAndClose();
                                 if (ret.isSshFailure()) {
                                     trigger.fail(errf.stringToOperationError(
@@ -2058,7 +2058,7 @@ public class KVMHost extends HostBase implements Host {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             SshResult ret = new Ssh().setHostname(getSelf().getManagementIp())
-                                    .setUsername(getSelf().getUsername()).setPassword(getSelf().getPassword())
+                                    .setUsername(getSelf().getUsername()).setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
                                     .command(String.format("curl --connect-timeout 10 %s", restf.getCallbackUrl())).runAndClose();
 
                             if (ret.isSshFailure()) {
