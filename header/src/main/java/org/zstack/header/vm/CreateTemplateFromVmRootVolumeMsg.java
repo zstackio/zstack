@@ -1,9 +1,12 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.core.ApiTimeout;
+import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.volume.VolumeInventory;
 
+@ApiTimeout(apiClasses = {APICreateRootVolumeTemplateFromRootVolumeMsg.class})
 public class CreateTemplateFromVmRootVolumeMsg extends NeedReplyMessage implements VmInstanceMessage {
     private ImageInventory imageInventory;
     private VolumeInventory rootVolumeInventory;

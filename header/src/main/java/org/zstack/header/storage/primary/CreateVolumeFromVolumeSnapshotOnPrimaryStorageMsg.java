@@ -1,10 +1,11 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 
-/**
- */
+@ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class})
 public class CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String volumeUuid;
     private String primaryStorageUuid;

@@ -5,9 +5,12 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HypervisorType;
+import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
+import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.BackupStorageInventory;
@@ -82,6 +85,10 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
 
     }
 
+    @ApiTimeout(apiClasses = {
+            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class,
+            APICreateRootVolumeTemplateFromRootVolumeMsg.class
+    })
     public static class SftpUploadBitsCmd extends LocalStorageKvmBackend.AgentCommand {
         private String primaryStorageInstallPath;
         private String backupStorageInstallPath;

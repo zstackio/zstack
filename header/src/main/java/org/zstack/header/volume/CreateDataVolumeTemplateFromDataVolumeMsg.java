@@ -1,9 +1,10 @@
 package org.zstack.header.volume;
 
+import org.zstack.header.core.ApiTimeout;
+import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
 import org.zstack.header.message.NeedReplyMessage;
 
-/**
- */
+@ApiTimeout(apiClasses = {APICreateDataVolumeTemplateFromVolumeMsg.class})
 public class CreateDataVolumeTemplateFromDataVolumeMsg extends NeedReplyMessage implements VolumeMessage {
     private String volumeUuid;
     private String backupStorageUuid;

@@ -1,5 +1,8 @@
 package org.zstack.storage.backup.sftp;
 
+import org.zstack.header.core.ApiTimeout;
+import org.zstack.header.image.APIAddImageMsg;
+
 public class SftpBackupStorageCommands {
     public static class AgentCommand {
     }
@@ -74,7 +77,8 @@ public class SftpBackupStorageCommands {
     }
     public static class ConnectResponse extends AgentResponse {
     }
-    
+
+    @ApiTimeout(apiClasses = {APIAddImageMsg.class})
     public static class DownloadCmd extends AgentCommand {
         private String uuid;
         private String installPath;

@@ -17,6 +17,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -89,6 +90,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         public List<SnapshotTO> snapshots;
     }
 
+    @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand {
         public List<String> paths;
         public String dstIp;

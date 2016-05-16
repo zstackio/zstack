@@ -24,6 +24,9 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
+import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
+import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
@@ -318,6 +321,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class SftpDownloadRsp extends AgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {
+            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
+            APICreateDataVolumeTemplateFromVolumeMsg.class
+    })
     public static class SftpUpLoadCmd extends AgentCommand {
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
@@ -360,6 +367,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class SftpUploadRsp extends AgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {APICreateVolumeSnapshotMsg.class})
     public static class CreateSnapshotCmd extends AgentCommand {
         boolean skipOnExisting;
         String snapshotPath;
@@ -465,6 +473,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class UnprotectedSnapshotRsp extends AgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {
+            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
+            APICreateDataVolumeTemplateFromVolumeMsg.class,
+            APICreateDataVolumeFromVolumeSnapshotMsg.class,
+            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
+    })
     public static class CpCmd extends AgentCommand {
         String resourceUuid;
         String srcPath;

@@ -1,8 +1,11 @@
 package org.zstack.header.storage.backup;
 
+import org.zstack.header.core.ApiTimeout;
+import org.zstack.header.image.APIAddImageMsg;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 
+@ApiTimeout(apiClasses = {APIAddImageMsg.class})
 public class DownloadImageMsg extends NeedReplyMessage implements BackupStorageMessage {
 	private ImageInventory imageInventory;
     private String backupStorageUuid;

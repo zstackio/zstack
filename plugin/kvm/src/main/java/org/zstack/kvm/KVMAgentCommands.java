@@ -1,8 +1,10 @@
 package org.zstack.kvm;
 
 import org.zstack.core.validation.ConditionalValidation;
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.vm.VmBootDevice;
+import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
 import java.util.*;
@@ -967,6 +969,7 @@ public class KVMAgentCommands {
         }
     }
 
+    @ApiTimeout(apiClasses = {APICreateVolumeSnapshotMsg.class})
     public static class TakeSnapshotCmd extends AgentCommand {
         private String vmUuid;
         private String volumeUuid;
