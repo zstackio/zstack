@@ -8,8 +8,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.gc.GCFacade;
 import org.zstack.core.gc.TimeBasedGCPersistentContext;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterVO;
@@ -125,77 +123,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 CreateTemporaryVolumeFromSnapshotReply reply = new CreateTemporaryVolumeFromSnapshotReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
-            }
-        });
-    }
-
-    @Override
-    protected void handle(final APIReconnectPrimaryStorageMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return String.format("reconnect-nfs-primary-storage-%s", self.getUuid());
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
-                SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
-                q.select(PrimaryStorageClusterRefVO_.clusterUuid);
-                q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-                List<String> cuuids = q.listValue();
-                if (cuuids.isEmpty()) {
-                    evt.setInventory(getSelfInventory());
-                    bus.publish(evt);
-                    chain.next();
-                    return;
-                }
-
-                class Result {
-                    List<ErrorCode> errors = new ArrayList<ErrorCode>();
-                    boolean success;
-                }
-
-                final Result ret = new Result();
-
-                final AsyncLatch latch = new AsyncLatch(cuuids.size(), new NoErrorCompletion(msg, chain) {
-                    @Override
-                    public void done() {
-                        if (ret.success) {
-                            self = dbf.reload(self);
-                            evt.setInventory(getSelfInventory());
-                        } else {
-                            evt.setErrorCode(errf.stringToOperationError(String.format("unable to connect the NFS primary storage," +
-                                    "errors are %s", ret.errors)));
-                        }
-
-                        bus.publish(evt);
-                        chain.next();
-                    }
-                });
-
-                PrimaryStorageInventory inv = getSelfInventory();
-                for (String cuuid : cuuids) {
-                    NfsPrimaryStorageBackend bkd = getBackendByClusterUuid(cuuid);
-                    bkd.remount(inv, cuuid, new Completion(latch) {
-                        @Override
-                        public void success() {
-                            ret.success = true;
-                            latch.ack();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            ret.errors.add(errorCode);
-                            latch.ack();
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public String getName() {
-                return getSyncSignature();
             }
         });
     }
@@ -894,8 +821,108 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void connectHook(ConnectParam param, Completion completion) {
-        completion.success();
+    protected void connectHook(ConnectParam param, final Completion completion) {
+        final NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            // the nfs primary storage has not been attached to any clusters
+            completion.success();
+            return;
+        }
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("reconnect-nfs-primary-storage-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "ping";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        backend.ping(getSelfInventory(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "remount";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
+                        q.select(PrimaryStorageClusterRefVO_.clusterUuid);
+                        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+                        List<String> cuuids = q.listValue();
+
+                        if (cuuids.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        class Result {
+                            List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                            boolean success;
+                        }
+
+                        final Result ret = new Result();
+
+                        final AsyncLatch latch = new AsyncLatch(cuuids.size(), new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                if (ret.success) {
+                                    self = dbf.reload(self);
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(errf.stringToOperationError(String.format("unable to connect the NFS primary storage," +
+                                            "errors are %s", ret.errors)));
+                                }
+                            }
+                        });
+
+                        PrimaryStorageInventory inv = getSelfInventory();
+                        for (String cuuid : cuuids) {
+                            NfsPrimaryStorageBackend bkd = getBackendByClusterUuid(cuuid);
+                            bkd.remount(inv, cuuid, new Completion(latch) {
+                                @Override
+                                public void success() {
+                                    ret.success = true;
+                                    latch.ack();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    ret.errors.add(errorCode);
+                                    latch.ack();
+                                }
+                            });
+                        }
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override

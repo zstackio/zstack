@@ -43,6 +43,8 @@ public interface NfsPrimaryStorageBackend {
 
     HypervisorType getHypervisorType();
 
+    void ping(PrimaryStorageInventory inv, Completion completion);
+
     void handle(PrimaryStorageInventory inv, CreateTemporaryVolumeFromSnapshotMsg msg, ReturnValueCompletion<CreateTemporaryVolumeFromSnapshotReply> completion);
 
     void handle(PrimaryStorageInventory inv, CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion);

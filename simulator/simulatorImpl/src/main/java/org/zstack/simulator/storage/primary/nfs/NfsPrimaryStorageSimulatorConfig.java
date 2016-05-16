@@ -50,4 +50,6 @@ public class NfsPrimaryStorageSimulatorConfig {
     public List<GetVolumeActualSizeCmd> getVolumeSizeCmds = new ArrayList<GetVolumeActualSizeCmd>();
     public Map<String, Long> getVolumeSizeCmdActualSize = new HashMap<String, Long>();
     public Map<String, Long> getVolumeSizeCmdSize = new HashMap<String, Long>();
+    public volatile boolean pingSuccess = true;
+    public List<PingCmd> pingCmds = new ArrayList<PingCmd>();
 }
