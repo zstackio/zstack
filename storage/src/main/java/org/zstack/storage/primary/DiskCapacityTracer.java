@@ -8,16 +8,24 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.EntityEvent;
 import org.zstack.core.db.EntityLifeCycleCallback;
 import org.zstack.header.Component;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.PrimaryStorageAllocationSpec;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
+import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotEO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.volume.VolumeAO;
 import org.zstack.header.volume.VolumeEO;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.utils.CollectionDSL;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by xing5 on 2016/5/10.
@@ -25,9 +33,55 @@ import java.util.List;
 public class DiskCapacityTracer implements Component {
     private static Logger logger = LogManager.getLogger("org.zstack.storage.primary.DiskCapacityTracer");
     private static Logger loggerd = LogManager.getLogger("org.zstack.storage.primary.DiskCapacityTracerDetails");
+    private static CLogger clogger = Utils.getLogger(DiskCapacityTracer.class);
 
     @Autowired
     private DatabaseFacade dbf;
+
+    public void trackAllocatorChain(FlowChain chain) {
+        if (!PrimaryStorageGlobalProperty.CAPACITY_TRACKER_ON) {
+            return;
+        }
+
+        chain.setProcessors(CollectionDSL.<FlowChainProcessor>list(new FlowChainProcessor() {
+            @Override
+            public void processFlowChain(FlowChainMutable chain) {
+                List<Flow> flows = new ArrayList<Flow>();
+                for (Flow f : chain.getFlows()) {
+                    flows.add(f);
+                    flows.add(new NoRollbackFlow() {
+                        String __name__ = "disk-capacity-tracker";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            PrimaryStorageAllocationSpec spec = (PrimaryStorageAllocationSpec) data.get(AllocatorParams.SPEC);
+                            List<PrimaryStorageVO> candidates = (List<PrimaryStorageVO>) data.get(AllocatorParams.CANDIDATES);
+                            List<PrimaryStorageVO> all = dbf.listAll(PrimaryStorageVO.class);
+
+                            StringBuilder sb = new StringBuilder("\n=== Primary Storage Allocation Tracker ====\n");
+                            sb.append(String.format("REQUIRED SIZE: %s\n", spec.getSize()));
+                            sb.append("CANDIDATES:\n");
+                            for (PrimaryStorageVO p : candidates) {
+                                sb.append(String.format("[name]:%s [uuid]:%s [status]:%s [state]:%s [available]:%s [total]:%s",
+                                        p.getName(), p.getUuid(), p.getStatus(), p.getState(), p.getCapacity().getAvailableCapacity(), p.getCapacity().getTotalCapacity()));
+                            }
+                            sb.append("\n\n");
+                            sb.append("ALL:\n");
+                            for (PrimaryStorageVO p : all) {
+                                sb.append(String.format("[name]:%s [uuid]:%s [status]:%s [state]:%s [available]:%s [total]:%s",
+                                        p.getName(), p.getUuid(), p.getStatus(), p.getState(), p.getCapacity().getAvailableCapacity(), p.getCapacity().getTotalCapacity()));
+                            }
+                            sb.append("\n===========================================\n");
+                            clogger.debug(sb.toString());
+                            trigger.next();
+                        }
+                    });
+                }
+
+                chain.setFlows(flows);
+            }
+        }));
+    }
 
     private void printCallTrace() {
         StackTraceElement[] elements = Thread.currentThread().getStackTrace();

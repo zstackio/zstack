@@ -44,7 +44,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
     private Result allocate(Map data) {
         PrimaryStorageAllocationSpec spec = (PrimaryStorageAllocationSpec) data.get(AllocatorParams.SPEC);
         TypedQuery<PrimaryStorageVO> query;
-        String errorInfo = null;
+        String errorInfo;
         if (spec.getRequiredPrimaryStorageUuid() != null) {
             String sql = "select pri from PrimaryStorageVO pri where pri.state = :priState and pri.status = :status and pri.uuid = :priUuid";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
@@ -124,7 +124,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         iq.setParameter("iuuid", spec.getImageUuid());
         List<String> hasImagePrimaryStorage = iq.getResultList();
 
-        sql = "select i.size from ImageVO i where i.uuid = :uuid";
+        sql = "select i.actualSize from ImageVO i where i.uuid = :uuid";
         TypedQuery<Long> sq = dbf.getEntityManager().createQuery(sql, Long.class);
         sq.setParameter("uuid", spec.getImageUuid());
         long imageSize = sq.getSingleResult();
@@ -135,7 +135,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
                 requiredSize += imageSize;
             }
 
-            if (vo.getCapacity().getAvailableCapacity() > requiredSize) {
+            if (vo.getCapacity().getAvailableCapacity() >= requiredSize) {
                 res.add(vo);
             }
         }

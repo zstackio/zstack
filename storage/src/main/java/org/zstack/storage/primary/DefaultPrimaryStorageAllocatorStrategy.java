@@ -1,16 +1,16 @@
 package org.zstack.storage.primary;
 
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.storage.primary.PrimaryStorageAllocationSpec;
-import org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategy;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,8 +20,12 @@ import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
 
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 class DefaultPrimaryStorageAllocatorStrategy implements PrimaryStorageAllocatorStrategy {
     private FlowChainBuilder builder;
+
+    @Autowired
+    private DiskCapacityTracer tracker;
 
     DefaultPrimaryStorageAllocatorStrategy(FlowChainBuilder builder) {
         this.builder = builder;
@@ -59,7 +63,11 @@ class DefaultPrimaryStorageAllocatorStrategy implements PrimaryStorageAllocatorS
             public void handle(ErrorCode errCode, Map data) {
                 ret.errorCode = errCode;
             }
-        }).start();
+        });
+
+        tracker.trackAllocatorChain(allocatorChain);
+
+        allocatorChain.start();
 
         if (ret.errorCode != null) {
             throw new OperationFailureException(ret.errorCode);
