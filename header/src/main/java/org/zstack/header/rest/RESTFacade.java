@@ -39,5 +39,7 @@ public interface RESTFacade {
 
     String getSendCommandUrl();
 
+    String getCallbackUrl();
+
     void installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor);
 }
