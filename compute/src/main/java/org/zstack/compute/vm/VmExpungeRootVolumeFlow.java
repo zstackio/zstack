@@ -30,6 +30,12 @@ public class VmExpungeRootVolumeFlow extends NoRollbackFlow {
     @Override
     public void run(FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        if (spec.getVmInventory().getRootVolumeUuid() == null) {
+            // the vm is in an intermediate state that has no root volume
+            trigger.next();
+            return;
+        }
+
         ExpungeVolumeMsg msg = new ExpungeVolumeMsg();
         msg.setVolumeUuid(spec.getVmInventory().getRootVolumeUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
