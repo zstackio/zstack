@@ -575,5 +575,6 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public long size;
     }
 
-    public static final String UNABLE_TO_FIND_IMAGE_IN_CACHE = "UNABLE_TO_FIND_IMAGE_IN_CACHE";
+    public static class PingCmd extends NfsPrimaryStorageAgentCommand {
+    }
 }

@@ -156,6 +156,21 @@ public class NfsPrimaryStorageSimulator {
         return null;
     }
 
+    @RequestMapping(value=NfsPrimaryStorageKVMBackend.PING_PATH, method=RequestMethod.POST)
+    private @ResponseBody String ping(HttpServletRequest req) throws InterruptedException {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        NfsPrimaryStorageAgentResponse rsp = new NfsPrimaryStorageAgentResponse();
+        if (!config.pingSuccess) {
+            rsp.setError("on purpose");
+            rsp.setSuccess(false);
+        } else {
+            config.pingCmds.add(JSONObjectUtil.toObject(entity.getBody(), PingCmd.class));
+        }
+
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=NfsPrimaryStorageKVMBackend.DELETE_PATH, method=RequestMethod.POST)
     private @ResponseBody String delete(HttpServletRequest req) throws InterruptedException {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);

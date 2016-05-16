@@ -83,6 +83,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String OFFLINE_SNAPSHOT_MERGE = "/nfsprimarystorage/offlinesnapshotmerge";
     public static final String REMOUNT_PATH = "/nfsprimarystorage/remount";
     public static final String GET_VOLUME_SIZE_PATH = "/nfsprimarystorage/getvolumesize";
+    public static final String PING_PATH = "/nfsprimarystorage/ping";
 
     //////////////// For unit test //////////////////////////
     private boolean syncGetCapacity = false;
@@ -230,6 +231,31 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Override
     public HypervisorType getHypervisorType() {
         return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
+    }
+
+    @Override
+    public void ping(PrimaryStorageInventory inv, final Completion completion) {
+        HostInventory host = nfsFactory.getConnectedHostForOperation(inv);
+        PingCmd cmd = new PingCmd();
+        cmd.setUuid(inv.getUuid());
+
+        new KvmCommandSender(host.getUuid()).send(cmd, PING_PATH, new KvmCommandFailureChecker() {
+            @Override
+            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                NfsPrimaryStorageAgentResponse rsp = wrapper.getResponse(NfsPrimaryStorageAgentResponse.class);
+                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+            }
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper wrapper) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override
