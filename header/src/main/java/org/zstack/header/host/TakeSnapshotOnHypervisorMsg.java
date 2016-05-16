@@ -1,10 +1,11 @@
 package org.zstack.header.host;
 
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.header.volume.VolumeInventory;
 
-/**
- */
+@ApiTimeout(apiClasses = {APICreateVolumeSnapshotMsg.class})
 public class TakeSnapshotOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
     private String vmUuid;

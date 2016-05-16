@@ -1,9 +1,12 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.core.ApiTimeout;
+import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.volume.VolumeInventory;
 
+@ApiTimeout(apiClasses = {APICreateDataVolumeTemplateFromVolumeMsg.class})
 public class CreateTemplateFromVolumeOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private VolumeInventory volumeInventory;
     private ImageInventory imageInventory;

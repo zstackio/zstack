@@ -1,9 +1,10 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 
-/**
- */
+@ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class})
 public class DeleteBitsOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private String installPath;

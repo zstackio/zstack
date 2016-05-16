@@ -1,5 +1,11 @@
 package org.zstack.storage.primary.nfs;
+
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
+import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
+import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
+import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 
@@ -104,7 +110,11 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
     public static class UnmountResponse extends NfsPrimaryStorageAgentResponse {
     }
-    
+
+    @ApiTimeout(apiClasses = {
+            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
+            APICreateDataVolumeTemplateFromVolumeMsg.class
+    })
     public static class CreateTemplateFromVolumeCmd extends NfsPrimaryStorageAgentCommand {
         private String installPath;
         private String rootVolumePath;
@@ -289,7 +299,8 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
     public static class CreateEmptyVolumeResponse extends NfsPrimaryStorageAgentResponse {
     }
-    
+
+    @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class})
     public static class DeleteCmd extends NfsPrimaryStorageAgentCommand {
         private boolean isFolder;
         private String installPath;
@@ -381,6 +392,10 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class UploadToSftpResponse extends NfsPrimaryStorageAgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {
+            APICreateDataVolumeFromVolumeSnapshotMsg.class,
+            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
+    })
     public static class MergeSnapshotCmd extends NfsPrimaryStorageAgentCommand {
         private String volumeUuid;
         private String snapshotInstallPath;
@@ -432,6 +447,10 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
+    @ApiTimeout(apiClasses = {
+            APICreateDataVolumeFromVolumeSnapshotMsg.class,
+            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
+    })
     public static class RebaseAndMergeSnapshotsCmd extends NfsPrimaryStorageAgentCommand {
         private String volumeUuid;
         private List<String> snapshotInstallPaths;

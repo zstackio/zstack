@@ -12,6 +12,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.validation.Validation;
@@ -21,9 +22,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
@@ -34,6 +34,7 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
@@ -97,6 +98,10 @@ public class KvmBackend extends HypervisorBackend {
         public String path;
     }
 
+    @ApiTimeout(apiClasses = {
+            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
+            APICreateDataVolumeTemplateFromVolumeMsg.class
+    })
     public static class CreateTemplateFromVolumeCmd extends AgentCmd {
         public String installPath;
         public String volumePath;
@@ -109,6 +114,7 @@ public class KvmBackend extends HypervisorBackend {
         public String sshKey;
     }
 
+    @ApiTimeout(apiClasses = {APIAddImageMsg.class})
     public static class SftpDownloadBitsCmd extends AgentCmd {
         public String sshKey;
         public String hostname;
@@ -125,6 +131,7 @@ public class KvmBackend extends HypervisorBackend {
         public String newVolumeInstallPath;
     }
 
+    @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class})
     public static class MergeSnapshotCmd extends AgentCmd {
         public String volumeUuid;
         public String snapshotInstallPath;
@@ -136,6 +143,7 @@ public class KvmBackend extends HypervisorBackend {
         public long size;
     }
 
+    @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class})
     public static class OfflineMergeSnapshotCmd extends AgentCmd {
         public String srcPath;
         public String destPath;

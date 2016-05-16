@@ -17,6 +17,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.validation.Validation;
@@ -26,11 +27,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageStatus;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
@@ -42,6 +40,7 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
@@ -247,6 +246,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     }
 
+    @ApiTimeout(apiClasses = {
+            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
+            APICreateDataVolumeTemplateFromVolumeMsg.class,
+            APICreateDataVolumeFromVolumeSnapshotMsg.class,
+            APILocalStorageMigrateVolumeMsg.class,
+    })
     public static class DeleteBitsCmd extends AgentCommand {
         private String hostUuid;
         private String path;
@@ -271,6 +276,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static class DeleteBitsRsp extends AgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {
+            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
+            APICreateDataVolumeTemplateFromVolumeMsg.class
+    })
     public static class CreateTemplateFromVolumeCmd extends AgentCommand {
         private String installPath;
         private String volumePath;
@@ -369,6 +378,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    @ApiTimeout(apiClasses = {APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class})
     public static class RebaseAndMergeSnapshotsCmd extends AgentCommand {
         private String volumeUuid;
         private List<String> snapshotInstallPaths;
@@ -474,6 +484,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public String path;
     }
 
+    @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class GetMd5Cmd extends AgentCommand {
         public List<GetMd5TO> md5s;
     }
@@ -489,10 +500,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
 
+    @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class CheckMd5sumCmd extends AgentCommand {
         public List<Md5TO> md5s;
     }
 
+    @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class GetBackingFileCmd extends AgentCommand {
         public String path;
         public String volumeUuid;

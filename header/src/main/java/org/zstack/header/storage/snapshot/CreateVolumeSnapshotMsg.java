@@ -1,9 +1,10 @@
 package org.zstack.header.storage.snapshot;
 
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 
-/**
- */
+@ApiTimeout(apiClasses = {APICreateVolumeSnapshotMsg.class})
 public class CreateVolumeSnapshotMsg extends NeedReplyMessage {
     private String accountUuid;
     private String resourceUuid;

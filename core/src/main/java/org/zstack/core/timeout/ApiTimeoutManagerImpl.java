@@ -1,8 +1,8 @@
 package org.zstack.core.timeout;
 
+import org.reflections.Reflections;
 import org.zstack.core.Platform;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.BootErrorLog;
 import org.zstack.utils.StringDSL;
@@ -21,6 +21,40 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
     private Map<Class, ApiTimeout> apiTimeouts = new HashMap<Class, ApiTimeout>();
     private Map<Class, Long> timeouts = new HashMap<Class, Long>();
 
+    class Value {
+        private String valueString;
+        private String key;
+        private Map<String, String> values = new HashMap<String, String>();
+
+        public Value(String key, String valueString) {
+            this.valueString = valueString;
+            this.key = key;
+            String[] vals = valueString.split(",");
+            for (String val : vals) {
+                val = val.trim();
+                String[] keyval = val.split("::", 2);
+                if (keyval.length != 2) {
+                    throw new IllegalArgumentException(String.format("the key/value pair must be in format of key::value;" +
+                            "invalid configuration[%s=%s] found, check your zstack.properties", key, valueString));
+                }
+
+                values.put(keyval[0], keyval[1]);
+            }
+        }
+
+        public String getValue(String key) {
+            String val = values.get(key);
+            if (val == null) {
+                throw new IllegalArgumentException(String.format("not key[%s] found key/value pair[%s=%s], check your zstack.properties",
+                        key, this.key, valueString));
+            }
+
+            return val;
+        }
+    }
+
+    private final String VALUE_TIMEOUT = "timeout";
+
     void init() {
         try {
             collectTimeout();
@@ -36,33 +70,52 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
         for (Map.Entry<Class, ApiTimeout> e :apiTimeouts.entrySet()) {
             ApiTimeout v = e.getValue();
             for (Class clz : v.getRelatives()) {
-                timeouts.put(clz, v.getTimeout());
+                Long currentTimeout = timeouts.get(clz);
+                Long timeout = currentTimeout == null ? v.getTimeout() : Math.max(currentTimeout, v.getTimeout());
+                timeouts.put(clz, timeout);
             }
         }
     }
 
     private void collectTimeoutForDerivedApi() {
-        List<Class> allApis = BeanUtils.scanClassByType("org.zstack", APIMessage.class);
-        Set<Class> origin = new HashSet<Class>();
-        origin.addAll(apiTimeouts.keySet());
+        Reflections reflections = new Reflections("org.zstack");
 
-        for (Class clz : allApis) {
-            for (Class ac : origin) {
-                if (clz != ac && ac.isAssignableFrom(clz)) {
-                    ApiTimeout at = apiTimeouts.get(ac);
-                    apiTimeouts.put(clz, at);
+        Map<Class, ApiTimeout> children = new HashMap<Class, ApiTimeout>();
+        for (Map.Entry<Class, ApiTimeout> e : apiTimeouts.entrySet()) {
+            Class clz = e.getKey();
+            ApiTimeout at = e.getValue();
 
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("configure timeout for API[%s]:" +
-                                "\nrelatives: %s" +
-                                "\ntimeout: %sms", clz, at.relatives, at.timeout));
-                    }
+            Set<Class> subClasses = reflections.getSubTypesOf(clz);
+            for (Class child : subClasses) {
+                children.put(child, at);
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("configure timeout for API[%s]:" +
+                            "\nrelatives: %s" +
+                            "\ntimeout: %sms", child, at.relatives, at.timeout));
                 }
             }
         }
+
+        apiTimeouts.putAll(children);
     }
 
     private void collectTimeout() {
+        Map<Class, Set<Class>> m = new HashMap<Class, Set<Class>>();
+        List<Class> subs = BeanUtils.scanClass("org.zstack", org.zstack.header.core.ApiTimeout.class);
+        for (Class sub : subs) {
+            org.zstack.header.core.ApiTimeout at = (org.zstack.header.core.ApiTimeout) sub.getAnnotation(org.zstack.header.core.ApiTimeout.class);
+            for (Class apiClz : at.apiClasses()) {
+                Set<Class> relatives = m.get(apiClz);
+                if (relatives == null) {
+                    relatives = new HashSet<Class>();
+                    m.put(apiClz, relatives);
+                }
+
+                relatives.add(sub);
+            }
+        }
+
         for (final Map.Entry<String, String> e : Platform.getGlobalProperties().entrySet()) {
             String key = e.getKey();
             if (!key.startsWith("ApiTimeout.")) {
@@ -72,7 +125,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
             String apiName = StringDSL.stripStart(key, "ApiTimeout.").trim();
             Class apiClz;
             String ERROR_INFO = "The configuration must be in format of \n" +
-                    "   ApiTimeout.full_api_class_name = full_sub_message_names_or_commands; timeout(e.g. 60s, 1m, 1h)";
+                    "   ApiTimeout.full_api_class_name = timeout::the_value_of_timeout(e.g. 1h, 30m)";
             try {
                 apiClz = Class.forName(apiName);
             } catch (ClassNotFoundException ex) {
@@ -81,39 +134,16 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
             }
 
             String value = e.getValue();
-            if (!value.contains(";")) {
-                throw new CloudRuntimeException(String.format("Invalid API timeout configuration[%s=%s], no ';' found. %s",
-                        key, value, ERROR_INFO));
-            }
-
-            String[] p = value.split(";");
-            if (p.length > 2) {
-                throw new CloudRuntimeException(String.format("Invalid API timeout configuration[%s=%s], multiple ';' found. %s",
-                        key, value, ERROR_INFO));
-            }
-
-            String relativeNames = p[0];
-            String timeout = p[1];
-
-            ApiTimeout at = new ApiTimeout();
-            try {
-                at.relatives = parseRelatives(relativeNames);
-            } catch (ClassNotFoundException ex) {
-                throw new CloudRuntimeException(String.format("Invalid API timeout configuration[%s=%s], class %s not found. %s", key, value,
-                        ex.getMessage(), ERROR_INFO));
-            }
-            try {
-                at.timeout = parseTimeout(timeout.trim());
-            } catch (NumberFormatException ex) {
-                throw new CloudRuntimeException(String.format("Invalid API timeout configuration[%s=%s], %s. %s", key, value,
-                        String.format("%s is not a valid time number", timeout), ERROR_INFO), ex);
-            }
-
-            apiTimeouts.put(apiClz, at);
+            Value val = new Value(key, value);
+            long timeout = parseTimeout(val.getValue(VALUE_TIMEOUT));
+            ApiTimeout apiTimeout = new ApiTimeout();
+            apiTimeout.setTimeout(timeout);
+            apiTimeout.setRelatives(m.get(apiClz));
+            apiTimeouts.put(apiClz, apiTimeout);
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("configure timeout for API[%s]:" +
                         "\nrelatives: %s" +
-                        "\ntimeout: %sms", apiClz, at.relatives, at.timeout));
+                        "\ntimeout: %sms", apiClz, apiTimeout.relatives, apiTimeout.timeout));
             }
         }
     }
@@ -155,18 +185,6 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
                 throw new NumberFormatException();
             }
         }
-    }
-
-    private Set<Class> parseRelatives(String relativeNames) throws ClassNotFoundException {
-        Set<Class> classes = new HashSet<Class>();
-        String[] names = relativeNames.split(",");
-
-        for (String name : names) {
-            name = name.trim();
-            classes.add(Class.forName(name));
-        }
-
-        return classes;
     }
 
     @Override
