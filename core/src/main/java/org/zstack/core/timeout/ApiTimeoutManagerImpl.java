@@ -3,10 +3,7 @@ package org.zstack.core.timeout;
 import org.reflections.Reflections;
 import org.zstack.core.Platform;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.utils.BeanUtils;
-import org.zstack.utils.BootErrorLog;
-import org.zstack.utils.StringDSL;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
@@ -154,37 +151,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
             return 300000;
         }
 
-        try {
-            return Long.valueOf(timeout);
-        } catch (NumberFormatException e) {
-            if (timeout.endsWith("s")) {
-                timeout = StringDSL.stripEnd(timeout, "s");
-                return TimeUnit.SECONDS.toMillis(Long.valueOf(timeout));
-            } else if (timeout.endsWith("S")) {
-                timeout = StringDSL.stripEnd(timeout, "S");
-                return TimeUnit.SECONDS.toMillis(Long.valueOf(timeout));
-            } else if (timeout.endsWith("m")) {
-                timeout = StringDSL.stripEnd(timeout, "m");
-                return TimeUnit.MINUTES.toMillis(Long.valueOf(timeout));
-            } else if (timeout.endsWith("M")) {
-                timeout = StringDSL.stripEnd(timeout, "M");
-                return TimeUnit.MINUTES.toMillis(Long.valueOf(timeout));
-            } else if (timeout.endsWith("h")) {
-                timeout = StringDSL.stripEnd(timeout, "h");
-                return TimeUnit.HOURS.toMillis(Long.valueOf(timeout));
-            } else if (timeout.endsWith("H")) {
-                timeout = StringDSL.stripEnd(timeout, "H");
-                return TimeUnit.HOURS.toMillis(Long.valueOf(timeout));
-            } else if (timeout.endsWith("d")) {
-                timeout = StringDSL.stripEnd(timeout, "d");
-                return TimeUnit.DAYS.toMillis(Long.valueOf(timeout));
-            } else if (timeout.endsWith("D")) {
-                timeout = StringDSL.stripEnd(timeout, "D");
-                return TimeUnit.DAYS.toMillis(Long.valueOf(timeout));
-            } else {
-                throw new NumberFormatException();
-            }
-        }
+        return TimeUtils.parseTimeInMillis(timeout);
     }
 
     @Override
