@@ -1113,8 +1113,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                if (!HostErrors.HOST_IS_DISCONNECTED.toString().equals(errorCode.getCode()) &&
-                        !SysErrors.HTTP_ERROR.toString().equals(errorCode.getCode())) {
+                if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
                     completion.fail(errorCode);
                     return;
                 }

@@ -22,6 +22,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.*;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.IptablesUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -307,7 +308,7 @@ public class RESTFacadeImpl implements RESTFacade {
             }
         } catch (Throwable e) {
             logger.warn(String.format("Unable to post to %s", url), e);
-            wrapper.fail(errf.throwableToInternalError(e));
+            wrapper.fail(ExceptionDSL.isCausedBy(e, IOException.class) ? errf.instantiateErrorCode(SysErrors.IO_ERROR, e.getMessage()) : errf.throwableToInternalError(e));
         }
     }
 

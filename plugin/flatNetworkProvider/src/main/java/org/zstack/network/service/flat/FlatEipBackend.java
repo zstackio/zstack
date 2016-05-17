@@ -18,7 +18,6 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostConstant;
@@ -457,7 +456,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 if (!reply.isSuccess()) {
 
                     ErrorCode err = reply.getError();
-                    if (SysErrors.HTTP_ERROR.toString().equals(err.getCode()) || HostErrors.HOST_IS_DISCONNECTED.toString().equals(err.getCode())) {
+                    if (err.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
                         setupGC(eips, hostUuid);
                         completion.success();
                     } else {
@@ -640,7 +639,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 if (!reply.isSuccess()) {
 
                     ErrorCode err = reply.getError();
-                    if (SysErrors.HTTP_ERROR.toString().equals(err.getCode()) || HostErrors.HOST_IS_DISCONNECTED.toString().equals(err.getCode())) {
+                    if (err.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
                         setupGC(list(cmd.eip), msg.getHostUuid());
                         completion.success();
                     } else {
