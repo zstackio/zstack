@@ -2021,12 +2021,12 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(APIGetVmCapabilitiesMsg msg) {
         APIGetVmCapabilitiesReply reply = new APIGetVmCapabilitiesReply();
         Map<String, Object> ret = new HashMap<String, Object>();
-        checkLiveMigration(ret);
+        checkPrimaryStorageCapabilities(ret);
         reply.setCapabilities(ret);
         bus.reply(msg, reply);
     }
 
-    private void checkLiveMigration(Map<String, Object> ret) {
+    private void checkPrimaryStorageCapabilities(Map<String, Object> ret) {
         VolumeInventory rootVolume = getSelfInventory().getRootVolume();
         SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
         q.select(PrimaryStorageVO_.type);
@@ -2035,6 +2035,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         PrimaryStorageType psType = PrimaryStorageType.valueOf(type);
         ret.put(Capability.LiveMigration.toString(), psType.isSupportVmLiveMigration());
+        ret.put(Capability.VolumeMigration.toString(), psType.isSupportVolumeMigration());
     }
 
     private void handle(APIGetVmHostnameMsg msg) {

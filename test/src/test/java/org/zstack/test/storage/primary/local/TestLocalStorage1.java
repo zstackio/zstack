@@ -104,5 +104,6 @@ public class TestLocalStorage1 {
 
         Map<String, Object> cap = api.getVmCapabilities(vm.getUuid(), null);
         Assert.assertFalse((Boolean) cap.get(Capability.LiveMigration.toString()));
+        Assert.assertTrue((Boolean) cap.get(Capability.VolumeMigration.toString()));
     }
 }
