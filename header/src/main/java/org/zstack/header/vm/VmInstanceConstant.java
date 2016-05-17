@@ -38,6 +38,7 @@ public interface VmInstanceConstant {
     String QUOTA_CPU_NUM = "vm.cpuNum";
 
     enum Capability {
-        LiveMigration
+        LiveMigration,
+        VolumeMigration
     }
 }
