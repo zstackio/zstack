@@ -101,4 +101,7 @@
     <message>
         <name>org.zstack.header.vm.APIGetVmStartingCandidateClustersHostsMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIGetVmCapabilitiesMsg</name>
+    </message>
 </service>

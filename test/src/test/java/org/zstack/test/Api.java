@@ -4013,4 +4013,14 @@ public class Api implements CloudBusEventListener {
         T reply = sender.call(msg, clz);
         return reply;
     }
+
+    public Map<String, Object> getVmCapabilities(String vmUuid, SessionInventory session) throws ApiSenderException {
+        APIGetVmCapabilitiesMsg msg = new APIGetVmCapabilitiesMsg();
+        msg.setUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVmCapabilitiesReply reply = sender.call(msg, APIGetVmCapabilitiesReply.class);
+        return reply.getCapabilities();
+    }
 }

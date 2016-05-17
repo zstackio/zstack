@@ -12,6 +12,7 @@ import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.vm.VmInstanceConstant.Capability;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.storage.primary.local.*;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -21,6 +22,8 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
+
+import java.util.Map;
 
 /**
  * 1. use local storage
@@ -69,7 +72,7 @@ public class TestLocalStorage1 {
     }
     
 	@Test
-	public void test() {
+	public void test() throws ApiSenderException {
         HostInventory host = deployer.hosts.get("host1");
         SimpleQuery<LocalStorageHostRefVO> hq = dbf.createQuery(LocalStorageHostRefVO.class);
         hq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, host.getUuid());
@@ -98,5 +101,8 @@ public class TestLocalStorage1 {
             s = true;
         }
         Assert.assertTrue(s);
+
+        Map<String, Object> cap = api.getVmCapabilities(vm.getUuid(), null);
+        Assert.assertFalse((Boolean) cap.get(Capability.LiveMigration.toString()));
     }
 }

@@ -41,15 +41,14 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageMsg;
-import org.zstack.header.storage.primary.CreateTemplateFromVolumeOnPrimaryStorageReply;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
+import org.zstack.header.vm.VmInstanceConstant.Capability;
 import org.zstack.header.vm.VmInstanceConstant.Params;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
@@ -2012,9 +2011,30 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIGetVmHostnameMsg) msg);
         } else if (msg instanceof APIGetVmStartingCandidateClustersHostsMsg) {
             handle((APIGetVmStartingCandidateClustersHostsMsg) msg);
+        } else if (msg instanceof APIGetVmCapabilitiesMsg) {
+            handle((APIGetVmCapabilitiesMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetVmCapabilitiesMsg msg) {
+        APIGetVmCapabilitiesReply reply = new APIGetVmCapabilitiesReply();
+        Map<String, Object> ret = new HashMap<String, Object>();
+        checkLiveMigration(ret);
+        reply.setCapabilities(ret);
+        bus.reply(msg, reply);
+    }
+
+    private void checkLiveMigration(Map<String, Object> ret) {
+        VolumeInventory rootVolume = getSelfInventory().getRootVolume();
+        SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
+        q.select(PrimaryStorageVO_.type);
+        q.add(PrimaryStorageVO_.uuid, Op.EQ, rootVolume.getPrimaryStorageUuid());
+        String type = q.findValue();
+
+        PrimaryStorageType psType = PrimaryStorageType.valueOf(type);
+        ret.put(Capability.LiveMigration.toString(), psType.isSupportVmLiveMigration());
     }
 
     private void handle(APIGetVmHostnameMsg msg) {
