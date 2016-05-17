@@ -62,6 +62,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
+    static {
+        type.setSupportVmLiveMigration(false);
+    }
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
