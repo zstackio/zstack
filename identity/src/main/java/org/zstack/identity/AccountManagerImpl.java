@@ -946,6 +946,24 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void logOutSession(String sessionUuid) {
+        SessionInventory session = sessions.get(sessionUuid);
+        if (session == null) {
+            SessionVO svo = dbf.findByUuid(sessionUuid, SessionVO.class);
+            session = svo == null ? null : SessionInventory.valueOf(svo);
+        }
+
+        if (session == null) {
+            return;
+        }
+
+        final SessionInventory finalSession = session;
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(SessionLogoutExtensionPoint.class), new ForEachFunction<SessionLogoutExtensionPoint>() {
+            @Override
+            public void run(SessionLogoutExtensionPoint ext) {
+                ext.sessionLogout(finalSession);
+            }
+        });
+
         sessions.remove(sessionUuid);
         dbf.removeByPrimaryKey(sessionUuid, SessionVO.class);
     }
