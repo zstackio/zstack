@@ -188,6 +188,7 @@ public class GlobalConfig {
         conf.setDefaultValue(c.getDefaultValue());
         conf.setDescription(c.getDescription());
         conf.setValue(c.getValue());
+        conf.setType(c.getType());
         return conf;
     }
 

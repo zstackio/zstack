@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.config.GlobalConfigInventory;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
@@ -36,16 +37,41 @@ public class TestSessionExpired {
     }
     
     
-    @Test(expected=ApiSenderException.class)
+    @Test
     public void test() throws ApiSenderException, InterruptedException {
         IdentityGlobalConfig.SESSION_TIMEOUT.updateValue(1);
+
+        GlobalConfigInventory g = new GlobalConfigInventory();
+        g.setCategory(IdentityGlobalConfig.CATEGORY);
+        g.setName(IdentityGlobalConfig.SESSION_TIMEOUT.getName());
+        g.setValue("72000000000000000000000000000");
+
+        boolean s = false;
+        try {
+            api.updateGlobalConfig(g);
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
+
+        int val = IdentityGlobalConfig.SESSION_TIMEOUT.value(Integer.class);
+        Assert.assertEquals(1, val);
+
         AccountInventory inv = api.createAccount("Test", "Test");
         AccountVO vo = dbf.findByUuid(inv.getUuid(), AccountVO.class);
         Assert.assertNotNull(vo);
         SessionInventory session = api.loginByAccount(inv.getName(), vo.getPassword());
         api.setAdminSession(session);
         TimeUnit.SECONDS.sleep(3);
-        api.listAccount(null);
+        s = false;
+        try {
+            api.listAccount(null);
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
+
+
    }
 
 }
