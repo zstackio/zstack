@@ -292,14 +292,14 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     {
                         if (g.getType() != null) {
                             typeClass = Class.forName(g.getType());
-                        }
 
-                        try {
-                            typeClassValueOfMethod = typeClass.getMethod("valueOf", String.class);
-                        } catch (Exception e) {
-                            String err = String.format("GlobalConfig[category:%s, name:%s] specifies type[%s] which doesn't have a static valueOf() method, ignore this type",
-                                    g.getCategory(), g.getName(), g.getType());
-                            logger.warn(err);
+                            try {
+                                typeClassValueOfMethod = typeClass.getMethod("valueOf", String.class);
+                            } catch (Exception e) {
+                                String err = String.format("GlobalConfig[category:%s, name:%s] specifies type[%s] which doesn't have a static valueOf() method, ignore this type",
+                                        g.getCategory(), g.getName(), g.getType());
+                                logger.warn(err);
+                            }
                         }
 
                         regularExpression = g.getValidatorRegularExpression();
@@ -310,10 +310,17 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         if (typeClassValueOfMethod != null) {
                             try {
                                 typeClassValueOfMethod.invoke(typeClass, newValue);
+                            } catch (Exception e) {
+                                String err = String.format("GlobalConfig[category:%s, name:%s] is of type %s, the value[%s] cannot be converted to that type, %s",
+                                        g.getCategory(), g.getName(), typeClass.getName(), newValue, e.getMessage());
+                                throw new GlobalConfigException(err, e);
+                            }
+
+                            try {
                                 typeClassValueOfMethod.invoke(typeClass, g.getDefaultValue());
                             } catch (Exception e) {
-                                String err = String.format("GlobalConfig[category:%s, name:%s] specifies type[%s], but its value[%s] or defaultValuep[%s] cannot be converted to that type, %s",
-                                        g.getCategory(), g.getName(), typeClass.getName(), g.value(), g.getDefaultValue(), e.getMessage());
+                                String err = String.format("GlobalConfig[category:%s, name:%s] is of type %s, the default value[%s] cannot be converted to that type, %s",
+                                        g.getCategory(), g.getName(), typeClass.getName(), g.getDefaultValue(), e.getMessage());
                                 throw new GlobalConfigException(err, e);
                             }
                         }
