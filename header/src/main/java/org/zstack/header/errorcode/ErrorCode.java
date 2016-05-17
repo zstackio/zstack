@@ -92,4 +92,14 @@ public class ErrorCode implements Serializable, Cloneable {
     public void setElaboration(String elaboration) {
         this.elaboration = elaboration;
     }
+
+    public boolean isError(Enum...errorEnums) {
+        for (Enum e : errorEnums) {
+            if (e.toString().equals(getCode())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

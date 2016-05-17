@@ -90,7 +90,8 @@ public abstract class HostBase extends AbstractHost {
 
     protected void checkStatus() {
         if (HostStatus.Connected != self.getStatus()) {
-            throw new OperationFailureException(errf.instantiateErrorCode(HostErrors.HOST_IS_DISCONNECTED, String.format("host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getStatus())));
+            ErrorCode cause = errf.instantiateErrorCode(HostErrors.HOST_IS_DISCONNECTED, String.format("host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getStatus()));
+            throw new OperationFailureException(errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to do the operation because the host is in status of Disconnected", cause));
         }
     }
 

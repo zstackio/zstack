@@ -676,7 +676,10 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void fail(ErrorCode err) {
                 KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
-                reply.setError(err);
+                if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
+                    reply.setError(errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "cannot do the operation on the KVM host",err));
+                }
+
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -1388,6 +1391,11 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void fail(ErrorCode err) {
                 DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
+
+                if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
+                    err = errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to destroy a vm", err);
+                }
+
                 reply.setError(err);
                 extEmitter.destroyVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
                 bus.reply(msg, reply);
@@ -1562,6 +1570,10 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void fail(ErrorCode err) {
                 StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
+                if (err.isError(SysErrors.IO_ERROR, SysErrors.HTTP_ERROR)) {
+                    err = errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to stop a vm", err);
+                }
+
                 reply.setError(err);
                 extEmitter.stopVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, err);
                 bus.reply(msg, reply);

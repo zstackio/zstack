@@ -19,7 +19,6 @@ import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.*;
@@ -698,8 +697,7 @@ public class KvmBackend extends HypervisorBackend {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    if (!SysErrors.HTTP_ERROR.toString().equals(errorCode.getCode()) &&
-                            !HostErrors.HOST_IS_DISCONNECTED.toString().equals(errorCode.getCode())) {
+                    if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
                         completion.fail(errorCode);
                         return;
                     }

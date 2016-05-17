@@ -168,6 +168,21 @@ public class ExceptionDSL {
         return self.exceptionSafeSuppress(runnable, eclazz);
     }
 
+    public static boolean isCausedBy(Throwable t, Class<? extends Throwable> causeClass) {
+        if (causeClass.isAssignableFrom(t.getClass())) {
+            return true;
+        }
+
+        while (t.getCause() != null) {
+            t = t.getCause();
+            if (causeClass.isAssignableFrom(t.getClass())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static Throwable getRootThrowable(Throwable t) {
         Throwable ret = t;
         while (t.getCause() != null) {

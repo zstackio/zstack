@@ -12,7 +12,6 @@ import org.zstack.core.gc.GCEventTrigger;
 import org.zstack.core.gc.GCFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
@@ -48,14 +47,12 @@ public class VmStopOnHypervisorFlow extends NoRollbackFlow {
                 if (reply.isSuccess()) {
                     chain.next();
                 } else {
-                    if (spec.isGcOnStopFailure() && (SysErrors.HTTP_ERROR.toString().equals(reply.getError().getCode()) ||
-                            HostErrors.HOST_IS_DISCONNECTED.toString().equals(reply.getError().getCode()))) {
+                    if (spec.isGcOnStopFailure() && reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
                         setupGcJob(spec);
                         chain.next();
                     } else {
                         chain.fail(reply.getError());
                     }
-
                 }
             }
         });
