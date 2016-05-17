@@ -15,12 +15,14 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -31,6 +33,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -54,6 +57,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
     private File scriptFolder;
     private GroovyScriptEngine gse;
 
+    private long scanJobIntervalInMillis;
+
     void init() {
         String scriptFolderPath = PathUtil.join(CoreGlobalProperty.USER_HOME, "garbage_collector_script");
         scriptFolder = new File(scriptFolderPath);
@@ -66,6 +71,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
         } catch (MalformedURLException e) {
             throw new CloudRuntimeException(e);
         }
+
+        scanJobIntervalInMillis = TimeUtils.parseTimeInMillis(GCGlobalProperty.SCAN_JOB_INTERVAL);
     }
 
     private GarbageCollectorVO save(TimeBasedGCPersistentContext context) {
@@ -503,9 +510,7 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
     public void iJoin(String nodeId) {
     }
 
-    @Override
-    @AsyncThread
-    public void managementNodeReady() {
+    private void loadJobs() {
         SimpleQuery<GarbageCollectorVO> q = dbf.createQuery(GarbageCollectorVO.class);
         q.select(GarbageCollectorVO_.id);
         q.add(GarbageCollectorVO_.status, Op.IN, list(GCStatus.Idle, GCStatus.Processing));
@@ -523,6 +528,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
             return;
         }
 
+        logger.debug(String.format("GC is going to load %s jobs", ours.size()));
+
         q = dbf.createQuery(GarbageCollectorVO.class);
         q.add(GarbageCollectorVO_.id, Op.IN, ours);
         List<GarbageCollectorVO> vos = q.list();
@@ -533,5 +540,33 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
                 scheduleTask(new EventBasedGCPersistentContextInternal(vo).toGCContext(), vo, true);
             }
         }
+    }
+
+    @Override
+    @AsyncThread
+    public void managementNodeReady() {
+        loadJobs();
+
+        thdf.submitPeriodicTask(new PeriodicTask() {
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.MILLISECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return scanJobIntervalInMillis;
+            }
+
+            @Override
+            public String getName() {
+                return "scan-GC-job";
+            }
+
+            @Override
+            public void run() {
+                loadJobs();
+            }
+        }, scanJobIntervalInMillis + new Random().nextInt((int) TimeUnit.SECONDS.toMillis(30)));
     }
 }
