@@ -22,6 +22,7 @@ public class ConsoleProxyVO_ {
     public static volatile SingularAttribute<ConsoleProxyVO, String> agentIp;
     public static volatile SingularAttribute<ConsoleProxyVO, String> agentType;
     public static volatile SingularAttribute<ConsoleProxyVO, String> proxyIdentity;
+    public static volatile SingularAttribute<ConsoleProxyVO, String> token;
     public static volatile SingularAttribute<ConsoleProxyVO, ConsoleProxyStatus> status;
     public static volatile SingularAttribute<ConsoleProxyVO, Timestamp> createDate;
     public static volatile SingularAttribute<ConsoleProxyVO, Timestamp> lastOpDate;

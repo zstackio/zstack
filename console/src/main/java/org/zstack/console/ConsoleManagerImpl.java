@@ -13,10 +13,13 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.console.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
+import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.identity.SessionLogoutExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
@@ -33,7 +36,7 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public class ConsoleManagerImpl extends AbstractService implements ConsoleManager, VmInstanceMigrateExtensionPoint,
-        VmReleaseResourceExtensionPoint {
+        VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint {
     private static CLogger logger = Utils.getLogger(ConsoleManagerImpl.class);
 
     @Autowired
@@ -223,6 +226,17 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
                 //TODO
                 logger.warn(errorCode.toString());
                 completion.success();
+            }
+        });
+    }
+
+    @Override
+    public void sessionLogout(final SessionInventory session) {
+        ConsoleBackend bkd = getBackend();
+        bkd.deleteConsoleSession(session, new NoErrorCompletion() {
+            @Override
+            public void done() {
+                logger.debug(String.format("deleted all console proxy opened by the session[uuid:%s]", session.getUuid()));
             }
         });
     }

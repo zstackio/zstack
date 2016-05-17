@@ -8,13 +8,16 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Component;
 import org.zstack.header.console.*;
+import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -23,6 +26,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -211,6 +215,54 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         q.setParameter("uuid", vm.getUuid());
         List<String> ret = q.getResultList();
         return ret.isEmpty() ? null : ret.get(0);
+    }
+
+    @Override
+    public void deleteConsoleSession(SessionInventory session, final NoErrorCompletion completion) {
+        SimpleQuery<ConsoleProxyVO> q = dbf.createQuery(ConsoleProxyVO.class);
+        q.add(ConsoleProxyVO_.token, Op.EQ, session.getUuid());
+        List<ConsoleProxyVO> vos = q.list();
+
+        if (vos.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        final AsyncLatch latch = new AsyncLatch(vos.size(), new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                completion.done();
+            }
+        });
+
+        for (final ConsoleProxyVO vo : vos) {
+            final VmInstanceVO vm = dbf.findByUuid(vo.getVmInstanceUuid(), VmInstanceVO.class);
+            if (vm == null) {
+                latch.ack();
+                continue;
+            }
+
+            VmInstanceInventory vminv = VmInstanceInventory.valueOf(vm);
+            ConsoleProxy proxy = getConsoleProxy(session, vminv);
+            proxy.deleteProxy(vminv, new Completion(latch) {
+                @Override
+                public void success() {
+                    dbf.remove(vo);
+                    logger.debug(String.format("deleted a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s",
+                            vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort()));
+                    latch.ack();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    //TODO
+                    logger.warn(String.format("failed to delete a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s, %s",
+                            vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort(), errorCode.toString()));
+                    latch.ack();
+                }
+            });
+        }
+
     }
 
     @Override
