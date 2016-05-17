@@ -3,6 +3,7 @@ package org.zstack.storage.backup;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -30,6 +31,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStorageStatusChangedData;
 import org.zstack.utils.Utils;
@@ -66,6 +68,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     protected BackupStoragePingTracker tracker;
     @Autowired
     protected EventFacade evtf;
+    @Autowired
+    protected RESTFacade restf;
 
 	abstract protected void handle(DownloadImageMsg msg);
 
@@ -101,6 +105,27 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     @Override
     public void changeStateHook(BackupStorageStateEvent evt, BackupStorageState nextState) {
+    }
+
+    protected void exceptionIfImageSizeGreaterThanAvailableCapacity(String url) {
+        url = url.trim();
+        if (!url.startsWith("http") && !url.startsWith("https")) {
+            return;
+        }
+
+        HttpHeaders header = restf.getRESTTemplate().headForHeaders(url);
+        String len = header.getFirst("Content-Length");
+        if (len == null) {
+            return;
+        }
+
+        long size = Long.valueOf(len);
+        if (size > self.getAvailableCapacity()) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s]." +
+                            "Required size:%s, available size:%s", self.getUuid(), self.getName(), url, size, self.getAvailableCapacity())
+            ));
+        }
     }
 
     protected void refreshVO() {
@@ -199,6 +224,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     private void handleBase(DownloadImageMsg msg) {
         checkState(msg);
         checkStatus(msg);
+        exceptionIfImageSizeGreaterThanAvailableCapacity(msg.getImageInventory().getUrl());
         handle(msg);
     }
 
