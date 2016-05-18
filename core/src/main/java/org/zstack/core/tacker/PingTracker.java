@@ -160,7 +160,7 @@ public abstract class PingTracker implements Component {
             trackerThread.cancel(true);
         }
 
-        trackerThread = thdf.submitPeriodicTask(new Tracker());
+        trackerThread = thdf.submitPeriodicTask(new Tracker(), getPingInterval() + new Random().nextInt(30));
     }
 
     @Override
