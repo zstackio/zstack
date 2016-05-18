@@ -927,7 +927,12 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void pingHook(Completion completion) {
-        completion.success();
+        NfsPrimaryStorageBackend bkd = getUsableBackend();
+        if (bkd == null) {
+            completion.success();
+        } else {
+            bkd.ping(getSelfInventory(), completion);
+        }
     }
 
     @Override
