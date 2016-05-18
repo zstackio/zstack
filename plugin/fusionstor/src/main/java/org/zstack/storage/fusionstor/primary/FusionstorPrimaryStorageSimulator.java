@@ -20,6 +20,8 @@ import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageBase.*;
+import org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonBase.PingCmd;
+import org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonBase.PingRsp;
 import org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageSimulatorConfig.FusionstorPrimaryStorageConfig;
 import org.zstack.utils.gson.JSONObjectUtil;
 
@@ -66,6 +68,24 @@ public class FusionstorPrimaryStorageSimulator {
         return c;
     }
 
+    @RequestMapping(value= FusionstorPrimaryStorageBase.GET_FACTS, method= RequestMethod.POST)
+    public @ResponseBody
+    String getFacts(HttpEntity<String> entity) {
+        GetFactsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetFactsCmd.class);
+        GetFactsRsp rsp = new GetFactsRsp();
+
+        config.getFactsCmds.add(cmd);
+        String fsid = config.getFactsCmdFsid.get(cmd.monUuid);
+        if (fsid == null) {
+            FusionstorPrimaryStorageConfig c = getConfig(cmd);
+            fsid = c.fsid;
+        }
+
+        rsp.fsid = fsid;
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value= FusionstorPrimaryStorageBase.DELETE_POOL_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String deletePool(HttpEntity<String> entity) {
@@ -102,6 +122,22 @@ public class FusionstorPrimaryStorageSimulator {
         rsp.availableCapacity = cpc.availCapacity + size;
     }
 
+    @RequestMapping(value= FusionstorPrimaryStorageMonBase.PING_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String pingMon(HttpEntity<String> entity) {
+        PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), PingCmd.class);
+        Boolean success = config.pingCmdSuccess.get(cmd.monUuid);
+        PingRsp rsp = new PingRsp();
+        rsp.success = success == null ? true : success;
+        if (!rsp.success) {
+            rsp.error = "on purpose";
+        }
+        Boolean operationFailure = config.pingCmdOperationFailure.get(cmd.monUuid);
+        rsp.operationFailure = operationFailure == null ? false : operationFailure;
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value= FusionstorPrimaryStorageBase.CREATE_VOLUME_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String createEmptyVolume(HttpEntity<String> entity) {
@@ -109,12 +145,13 @@ public class FusionstorPrimaryStorageSimulator {
         config.createEmptyVolumeCmds.add(cmd);
 
         CreateEmptyVolumeRsp rsp = new CreateEmptyVolumeRsp();
-        setCapacity(cmd, rsp, -cmd.getSize());
+        //setCapacity(cmd, rsp, -cmd.getSize());
         bitSizeMap.put(cmd.getInstallPath(), cmd.getSize());
         reply(entity, rsp);
         return null;
     }
 
+    @RequestMapping(value= FusionstorPrimaryStorageBase.KVM_CREATE_SECRET_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String createKvmSecret(HttpEntity<String> entity) {
         CreateKvmSecretCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateKvmSecretCmd.class);
@@ -143,7 +180,11 @@ public class FusionstorPrimaryStorageSimulator {
         CreateSnapshotCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateSnapshotCmd.class);
         config.createSnapshotCmds.add(cmd);
 
-        reply(entity, new CreateSnapshotRsp());
+        CreateSnapshotRsp rsp = new CreateSnapshotRsp();
+        Long size = config.createSnapshotCmdSize.get(cmd.getVolumeUuid());
+        rsp.setActualSize(size == null ? 0 : size);
+
+        reply(entity, rsp);
         return null;
     }
 
@@ -201,10 +242,31 @@ public class FusionstorPrimaryStorageSimulator {
     @RequestMapping(value= FusionstorPrimaryStorageBase.CP_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String cp(HttpEntity<String> entity) {
+        CpRsp rsp = new CpRsp();
         CpCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CpCmd.class);
         config.cpCmds.add(cmd);
 
-        reply(entity, new CpRsp());
+        Long size = config.cpCmdSize.get(cmd.resourceUuid);
+        rsp.size = size == null ? 0 : size;
+        Long asize = config.cpCmdActualSize.get(cmd.resourceUuid);
+        rsp.actualSize = asize == null ? 0 : asize;
+
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value= FusionstorPrimaryStorageBase.GET_VOLUME_SIZE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getVolumeSize(HttpEntity<String> entity) {
+        GetVolumeSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeSizeCmd.class);
+        config.getVolumeSizeCmds.add(cmd);
+
+        Long asize = config.getVolumeSizeCmdActualSize.get(cmd.volumeUuid);
+        GetVolumeSizeRsp rsp = new GetVolumeSizeRsp();
+        rsp.actualSize = asize == null ? 0 : asize;
+        Long size = config.getVolumeSizeCmdSize.get(cmd.volumeUuid);
+        rsp.size = size == null ? 0 : size;
+        reply(entity, rsp);
         return null;
     }
 
