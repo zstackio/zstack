@@ -583,6 +583,15 @@ public class KVMAgentCommands {
         private String consoleMode;
         private String nestedVirtualization;
         private String hostManagementIp;
+        private String clock;
+
+        public String getClock() {
+            return clock;
+        }
+
+        public void setClock(String clock) {
+            this.clock = clock;
+        }
 
         public int getSocketNum() {
             return socketNum;
