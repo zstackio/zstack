@@ -11,7 +11,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO_;

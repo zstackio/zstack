@@ -66,6 +66,24 @@ public class CephBackupStorageSimulator {
         return c;
     }
 
+    @RequestMapping(value= CephBackupStorageBase.GET_FACTS, method= RequestMethod.POST)
+    public @ResponseBody
+    String getFacts(HttpEntity<String> entity) {
+        GetFactsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetFactsCmd.class);
+        GetFactsRsp rsp = new GetFactsRsp();
+
+        config.getFactsCmds.add(cmd);
+        String fsid = config.getFactsCmdFsid.get(cmd.monUuid);
+        if (fsid == null) {
+            CephBackupStorageConfig c = getConfig(cmd);
+            fsid = c.fsid;
+        }
+
+        rsp.fsid = fsid;
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value= CephBackupStorageMonBase.PING_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String pingMon(HttpEntity<String> entity) {

@@ -19,6 +19,7 @@ import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
@@ -32,7 +33,6 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
@@ -555,6 +555,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public List<String> monUrls;
     }
 
+    public static class GetFactsCmd extends AgentCommand {
+        public String monUuid;
+    }
+
+    public static class GetFactsRsp extends AgentResponse {
+        public String fsid;
+    }
+
     public static final String INIT_PATH = "/ceph/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/ceph/primarystorage/delete";
@@ -572,6 +580,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String DELETE_POOL_PATH = "/ceph/primarystorage/deletepool";
     public static final String GET_VOLUME_SIZE_PATH = "/ceph/primarystorage/getvolumesize";
     public static final String KVM_HA_SETUP_SELF_FENCER = "/ha/ceph/setupselffencer";
+    public static final String GET_FACTS = "/ceph/primarystorage/facts";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -1530,38 +1539,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 CephPrimaryStorageMonBase base = it.next();
 
-                restf.asyncJsonPost(makeHttpPath(base.getSelf().getHostname(), path), cmd, new JsonAsyncRESTCallback<T>(callback) {
-                    @Override
-                    public void fail(ErrorCode err) {
-                        errorCodes.add(err);
-                        call();
-                    }
-
+                base.httpCall(path, cmd, retClass, new ReturnValueCompletion<T>(callback) {
                     @Override
                     public void success(T ret) {
                         if (!ret.success) {
                             callback.fail(errf.stringToOperationError(ret.error));
-                        } else {
-                            if (!(cmd instanceof InitCmd)) {
-                                updateCapacityIfNeeded(ret);
-                            }
-                            callback.success(ret);
+                            return;
                         }
+
+                        if (!(cmd instanceof InitCmd)) {
+                            updateCapacityIfNeeded(ret);
+                        }
+                        callback.success(ret);
                     }
 
                     @Override
-                    public Class<T> getReturnClass() {
-                        return retClass;
+                    public void fail(ErrorCode errorCode) {
+                        errorCodes.add(errorCode);
+                        call();
                     }
                 });
             }
         }
 
         new HttpCaller().call();
-    }
-
-    protected String makeHttpPath(String ip, String path) {
-        return String.format("http://%s:%s%s", ip, CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT, path);
     }
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
@@ -1631,6 +1632,69 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         new Connector().connect(trigger);
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-mon-integrity";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        final Map<String, String> fsids = new HashMap<String, String>();
+
+                        final List<CephPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
+                            @Override
+                            public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
+                                return new CephPrimaryStorageMonBase(arg);
+                            }
+                        });
+
+                        final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                Set<String> set = new HashSet<String>();
+                                set.addAll(fsids.values());
+
+                                if (set.size() == 1) {
+                                    trigger.next();
+                                    return;
+                                }
+
+                                StringBuilder sb =  new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\n");
+                                for (CephPrimaryStorageMonBase mon : mons) {
+                                    String fsid = fsids.get(mon.getSelf().getUuid());
+                                    sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
+                                }
+
+                                trigger.fail(errf.stringToOperationError(sb.toString()));
+                            }
+                        });
+
+                        for (final CephPrimaryStorageMonBase mon : mons) {
+                            GetFactsCmd cmd = new GetFactsCmd();
+                            cmd.uuid = self.getUuid();
+                            cmd.monUuid = mon.getSelf().getUuid();
+                            mon.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(latch) {
+                                @Override
+                                public void success(GetFactsRsp rsp) {
+                                    if (!rsp.success) {
+                                        // one mon cannot get the facts, directly error out
+                                        trigger.fail(errf.stringToOperationError(rsp.error));
+                                        return;
+                                    }
+
+                                    fsids.put(mon.getSelf().getUuid(), rsp.fsid);
+                                    latch.ack();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    // one mon cannot get the facts, directly error out
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
                     }
                 });
 
@@ -1975,10 +2039,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             }
                         });
 
+                        final List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
                         final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
                             @Override
                             public void done() {
-                                trigger.next();
+                                if (!errorCodes.isEmpty()) {
+                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, "unable to connect mons", errorCodes));
+                                } else {
+                                    trigger.next();
+                                }
                             }
                         });
 
@@ -1992,7 +2061,66 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 @Override
                                 public void fail(ErrorCode errorCode) {
                                     // one fails, all fail
-                                    trigger.fail(errorCode);
+                                    errorCodes.add(errorCode);
+                                    latch.ack();
+                                }
+                            });
+                        }
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-mon-integrity";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        List<CephPrimaryStorageMonBase> bases = CollectionUtils.transformToList(monVOs, new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
+                            @Override
+                            public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
+                                return new CephPrimaryStorageMonBase(arg);
+                            }
+                        });
+
+                        final List<ErrorCode> errors = new ArrayList<ErrorCode>();
+
+                        final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                // one fail, all fail
+                                if (!errors.isEmpty()) {
+                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, "unable to add mon to ceph primary storage", errors));
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+
+                        for (final CephPrimaryStorageMonBase base : bases) {
+                            GetFactsCmd cmd = new GetFactsCmd();
+                            cmd.uuid = self.getUuid();
+                            cmd.monUuid = base.getSelf().getUuid();
+                            base.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(latch) {
+                                @Override
+                                public void success(GetFactsRsp rsp) {
+                                    if (!rsp.isSuccess()) {
+                                        errors.add(errf.stringToOperationError(rsp.getError()));
+                                    } else {
+                                        String fsid = rsp.fsid;
+                                        if (!getSelf().getFsid().equals(fsid)) {
+                                            errors.add(errf.stringToOperationError(
+                                                    String.format("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
+                                                            "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
+                                            ));
+                                        }
+                                    }
+
+                                    latch.ack();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    errors.add(errorCode);
+                                    latch.ack();
                                 }
                             });
                         }

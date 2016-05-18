@@ -1,8 +1,6 @@
 package org.zstack.storage.ceph.backup;
 
-import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
@@ -21,7 +19,6 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
-import org.zstack.header.rest.RESTFacade;
 import org.zstack.storage.ceph.CephGlobalProperty;
 import org.zstack.storage.ceph.CephMonAO;
 import org.zstack.storage.ceph.CephMonBase;
@@ -35,14 +32,12 @@ import java.util.Map;
 /**
  * Created by frank on 7/27/2015.
  */
-@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
+
 public class CephBackupStorageMonBase extends CephMonBase {
     private static final CLogger logger = Utils.getLogger(CephBackupStorageMonBase.class);
 
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private RESTFacade restf;
     @Autowired
     private ThreadFacade thdf;
 
@@ -271,6 +266,11 @@ public class CephBackupStorageMonBase extends CephMonBase {
                 return String.format("ping-ceph-backup-storage-mon-%s", self.getUuid());
             }
         });
+    }
+
+    @Override
+    protected int getAgentPort() {
+        return CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT;
     }
 
     public void doPing(final ReturnValueCompletion<PingResult> completion) {
