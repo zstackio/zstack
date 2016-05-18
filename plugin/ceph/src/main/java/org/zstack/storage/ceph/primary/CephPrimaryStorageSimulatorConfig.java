@@ -44,4 +44,6 @@ public class CephPrimaryStorageSimulatorConfig {
 
     public Map<String, Boolean> pingCmdSuccess = new HashMap<String, Boolean>();
     public Map<String, Boolean> pingCmdOperationFailure = new HashMap<String, Boolean>();
+    public List<GetFactsCmd> getFactsCmds = new ArrayList<GetFactsCmd>();
+    public Map<String, String> getFactsCmdFsid = new HashMap<String, String>();
 }

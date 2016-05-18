@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -108,6 +109,10 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     }
 
     protected void exceptionIfImageSizeGreaterThanAvailableCapacity(String url) {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return;
+        }
+
         url = url.trim();
         if (!url.startsWith("http") && !url.startsWith("https")) {
             return;

@@ -68,6 +68,24 @@ public class CephPrimaryStorageSimulator {
         return c;
     }
 
+    @RequestMapping(value= CephPrimaryStorageBase.GET_FACTS, method= RequestMethod.POST)
+    public @ResponseBody
+    String getFacts(HttpEntity<String> entity) {
+        GetFactsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetFactsCmd.class);
+        GetFactsRsp rsp = new GetFactsRsp();
+
+        config.getFactsCmds.add(cmd);
+        String fsid = config.getFactsCmdFsid.get(cmd.monUuid);
+        if (fsid == null) {
+            CephPrimaryStorageConfig c = getConfig(cmd);
+            fsid = c.fsid;
+        }
+
+        rsp.fsid = fsid;
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value= CephPrimaryStorageBase.DELETE_POOL_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String deletePool(HttpEntity<String> entity) {
