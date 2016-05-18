@@ -243,7 +243,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
             }
 
             VmInstanceInventory vminv = VmInstanceInventory.valueOf(vm);
-            ConsoleProxy proxy = getConsoleProxy(session, vminv);
+            ConsoleProxy proxy = getConsoleProxy(vminv, vo);
             proxy.deleteProxy(vminv, new Completion(latch) {
                 @Override
                 public void success() {
