@@ -1708,6 +1708,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setCpuSpeed(spec.getVmInventory().getCpuSpeed());
         cmd.setMemory(spec.getVmInventory().getMemorySize());
         cmd.setUseVirtio(virtio);
+        cmd.setClock(ImagePlatform.Windows.toString().equals(platform) ? "localtime" : "utc");
         VolumeTO rootVolume = new VolumeTO();
         consoleMode = KVMGlobalConfig.VM_CONSOLE_MODE.value(String.class);
         nestedVirtualization = KVMGlobalConfig.NESTED_VIRTUALIZATION.value(String.class);
