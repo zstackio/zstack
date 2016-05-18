@@ -44,6 +44,7 @@ import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.VersionComparer;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -749,7 +750,7 @@ public class KVMHost extends HostBase implements Host {
 
             if (state == VmInstanceState.Running) {
                 String libvirtVersion = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN);
-                if (KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION.compareTo(libvirtVersion) > 0) {
+                if (new VersionComparer(KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION).compare(libvirtVersion) > 0) {
                     throw new OperationFailureException(errf.stringToOperationError(
                             String.format("live volume snapshot merge needs libvirt version greater than %s, current libvirt version is %s. Please stop vm and redo the operation or detach the volume if it's data volume",
                                     KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION, libvirtVersion)
