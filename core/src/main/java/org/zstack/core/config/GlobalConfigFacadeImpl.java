@@ -222,7 +222,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
             private void mergeXmlDatabase() {
                 for (GlobalConfig g : configsFromDatabase.values()) {
-                    configsFromXml.put(g.getIdentity(), g);
+                    GlobalConfig x = configsFromXml.get(g.getIdentity());
+                    if (x == null) {
+                        configsFromXml.put(g.getIdentity(), g);
+                    } else {
+                        x.setValue(g.value());
+                        x.setDefaultValue(g.getDefaultValue());
+                    }
                 }
             }
 
