@@ -8,9 +8,9 @@ import org.zstack.core.GlobalPropertyDefinition;
  */
 @GlobalPropertyDefinition
 public class FusionstorGlobalProperty {
-    @GlobalProperty(name="Fusionstor.backupStorageAgent.port", defaultValue = "7763")
+    @GlobalProperty(name="Fusionstor.backupStorageAgent.port", defaultValue = "7761")
     public static int BACKUP_STORAGE_AGENT_PORT;
-    @GlobalProperty(name="Fusionstor.primaryStorageAgent.port", defaultValue = "7764")
+    @GlobalProperty(name="Fusionstor.primaryStorageAgent.port", defaultValue = "7762")
     public static int PRIMARY_STORAGE_AGENT_PORT;
     @GlobalProperty(name="Fusionstor.backupStorage.agentPackageName", defaultValue = "fusionstorbackupstorage-1.2.tar.gz")
     public static String BACKUP_STORAGE_PACKAGE_NAME;
