@@ -10,6 +10,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -37,6 +39,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeConstant.Capability;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
@@ -47,10 +50,7 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -487,9 +487,30 @@ public class VolumeBase implements Volume {
             handle((APIExpungeDataVolumeMsg) msg);
         } else if (msg instanceof APISyncVolumeSizeMsg) {
             handle((APISyncVolumeSizeMsg) msg);
+        } else if (msg instanceof APIGetVolumeCapabilitiesMsg) {
+            handle((APIGetVolumeCapabilitiesMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetVolumeCapabilitiesMsg msg) {
+        APIGetVolumeCapabilitiesReply reply = new APIGetVolumeCapabilitiesReply();
+        Map<String, Object> ret = new HashMap<String, Object>();
+        getPrimaryStorageCapacities(ret);
+        reply.setCapabilities(ret);
+        bus.reply(msg, reply);
+    }
+
+    private void getPrimaryStorageCapacities(Map<String, Object> ret) {
+        SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
+        q.select(PrimaryStorageVO_.type);
+        q.add(PrimaryStorageVO_.uuid, Op.EQ, self.getPrimaryStorageUuid());
+        String type = q.findValue();
+
+        PrimaryStorageType psType = PrimaryStorageType.valueOf(type);
+        ret.put(Capability.MigrationInCurrentPrimaryStorage.toString(), psType.isSupportVolumeMigrationInCurrentPrimaryStorage());
+        ret.put(Capability.MigrationToOtherPrimaryStorage.toString(), psType.isSupportVolumeMigrationToOtherPrimaryStorage());
     }
 
     class VolumeSize {

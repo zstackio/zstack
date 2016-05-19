@@ -59,6 +59,8 @@
 
         <Logger name="org.springframework" level="warn" />
 
+        <Logger name="org.zstack.billing" level="TRACE" />
+
         <Logger name="org.hibernate" level="warn" />
 
         <Root level="warn" additivity="false">

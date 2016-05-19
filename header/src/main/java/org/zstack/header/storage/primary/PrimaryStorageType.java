@@ -11,7 +11,9 @@ public class PrimaryStorageType {
 	private boolean supportPingStorageGateway;
 	private boolean supportVmLiveMigration = true;
     private boolean supportVolumeMigration;
-	
+	private boolean supportVolumeMigrationInCurrentPrimaryStorage;
+	private boolean supportVolumeMigrationToOtherPrimaryStorage;
+
 	public PrimaryStorageType(String typeName) {
 		this.typeName = typeName;
 		types.put(typeName, this);
@@ -98,5 +100,21 @@ public class PrimaryStorageType {
 
     public void setSupportVolumeMigration(boolean supportVolumeMigration) {
         this.supportVolumeMigration = supportVolumeMigration;
+    }
+
+    public boolean isSupportVolumeMigrationInCurrentPrimaryStorage() {
+        return supportVolumeMigrationInCurrentPrimaryStorage;
+    }
+
+    public void setSupportVolumeMigrationInCurrentPrimaryStorage(boolean supportVolumeMigrationInCurrentPrimaryStorage) {
+        this.supportVolumeMigrationInCurrentPrimaryStorage = supportVolumeMigrationInCurrentPrimaryStorage;
+    }
+
+    public boolean isSupportVolumeMigrationToOtherPrimaryStorage() {
+        return supportVolumeMigrationToOtherPrimaryStorage;
+    }
+
+    public void setSupportVolumeMigrationToOtherPrimaryStorage(boolean supportVolumeMigrationToOtherPrimaryStorage) {
+        this.supportVolumeMigrationToOtherPrimaryStorage = supportVolumeMigrationToOtherPrimaryStorage;
     }
 }
