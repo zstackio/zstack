@@ -576,7 +576,6 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     public static final String ROLLBACK_SNAPSHOT_PATH = "/fusionstor/primarystorage/snapshot/rollback";
     public static final String UNPROTECT_SNAPSHOT_PATH = "/fusionstor/primarystorage/snapshot/unprotect";
     public static final String CP_PATH = "/fusionstor/primarystorage/volume/cp";
-    public static final String KVM_CREATE_SECRET_PATH = "/vm/createfusionstorsecret";
     public static final String DELETE_POOL_PATH = "/fusionstor/primarystorage/deletepool";
     public static final String GET_VOLUME_SIZE_PATH = "/fusionstor/primarystorage/getvolumesize";
     public static final String KVM_HA_SETUP_SELF_FENCER = "/ha/fusionstor/setupselffencer";
@@ -2385,46 +2384,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void createSecretOnKvmHosts(List<String> hostUuids, final Completion completion) {
-        final CreateKvmSecretCmd cmd = new CreateKvmSecretCmd();
-        cmd.setUserKey(getSelf().getUserKey());
-        String suuid = FusionstorSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(self.getUuid(), FusionstorSystemTags.KVM_SECRET_UUID_TOKEN);
-        DebugUtils.Assert(suuid != null, String.format("cannot find system tag[%s] for fusionstor primary storage[uuid:%s]", FusionstorSystemTags.KVM_SECRET_UUID.getTagFormat(), self.getUuid()));
-        cmd.setUuid(suuid);
-
-        List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids, new Function<KVMHostAsyncHttpCallMsg, String>() {
-            @Override
-            public KVMHostAsyncHttpCallMsg call(String huuid) {
-                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                msg.setCommand(cmd);
-                msg.setPath(KVM_CREATE_SECRET_PATH);
-                msg.setHostUuid(huuid);
-                msg.setNoStatusCheck(true);
-                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
-                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
-                return msg;
-            }
-        });
-
-        bus.send(msgs, new CloudBusListCallBack(completion) {
-            @Override
-            public void run(List<MessageReply> replies) {
-                for (MessageReply r : replies) {
-                    if (!r.isSuccess()) {
-                        completion.fail(r.getError());
-                        return;
-                    }
-
-                    KVMHostAsyncHttpCallReply kr = r.castReply();
-                    CreateKvmSecretRsp rsp = kr.toResponse(CreateKvmSecretRsp.class);
-                    if (!rsp.isSuccess()) {
-                        completion.fail(errf.stringToOperationError(rsp.getError()));
-                        return;
-                    }
-                }
-
-                completion.success();
-            }
-        });
+        completion.success();
     }
 
     private void attachToKvmCluster(String clusterUuid, Completion completion) {
