@@ -11,4 +11,9 @@ public interface VolumeConstant {
     public static final String QUOTA_DATA_VOLUME_NUM = "volume.data.num";
 
 	public static final String QUOTA_VOLUME_SIZE = "volume.capacity";
+
+	enum Capability {
+		MigrationInCurrentPrimaryStorage,
+		MigrationToOtherPrimaryStorage
+	}
 }
