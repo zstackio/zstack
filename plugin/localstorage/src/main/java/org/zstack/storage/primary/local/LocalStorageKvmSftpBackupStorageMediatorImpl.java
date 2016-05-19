@@ -45,9 +45,16 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     public static class SftpDownloadBitsCmd extends LocalStorageKvmBackend.AgentCommand {
         private String sshKey;
         private String hostname;
+        private int sshPort;
         private String backupStorageInstallPath;
         private String primaryStorageInstallPath;
 
+        public int getSshPort() {
+            return sshPort;
+        }
+        public void setSshPort(int sshPort) {
+            this.sshPort = sshPort;
+        }
         public String getSshKey() {
             return sshKey;
         }
@@ -94,7 +101,14 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
         private String backupStorageInstallPath;
         private String hostname;
         private String sshKey;
+        private int sshPort;
 
+        public int getSshPort() {
+            return sshPort;
+        }
+        public void setSshPort(int sshPort) {
+            this.sshPort = sshPort;
+        }
         public String getPrimaryStorageInstallPath() {
             return primaryStorageInstallPath;
         }
@@ -148,6 +162,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                 SftpDownloadBitsCmd cmd = new SftpDownloadBitsCmd();
                 cmd.setHostname(greply.getHostname());
                 cmd.setSshKey(greply.getSshKey());
+                cmd.setSshPort(greply.getSshPort());
                 cmd.setBackupStorageInstallPath(backupStorageInstallPath);
                 cmd.setPrimaryStorageInstallPath(primaryStorageInstallPath);
 
@@ -201,6 +216,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                 cmd.setBackupStorageInstallPath(backupStorageInstallPath);
                 cmd.setHostname(r.getHostname());
                 cmd.setSshKey(r.getSshKey());
+                cmd.setSshPort(r.getSshPort());
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);
