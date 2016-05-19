@@ -39,7 +39,7 @@ public abstract class FusionstorMonBase {
     protected void checkTools() {
         Ssh ssh = new Ssh();
         ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword())
-                .checkTool("fusionstor", "rbd").runErrorByExceptionAndClose();
+            .checkTool("/opt/fusionstack/lich/bin/lich", "/opt/fusionstack/lich/sbin/lichd").runErrorByExceptionAndClose();
     }
 
     protected String makeHttpPath(String ip, String path) {
