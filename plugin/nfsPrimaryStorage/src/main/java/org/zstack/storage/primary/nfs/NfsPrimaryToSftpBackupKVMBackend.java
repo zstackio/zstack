@@ -134,6 +134,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
                 DownloadBitsFromSftpBackupStorageCmd cmd = new DownloadBitsFromSftpBackupStorageCmd();
                 cmd.setHostname(greply.getHostname());
                 cmd.setSshKey(greply.getSshKey());
+                cmd.setSshPort(greply.getSshPort());
                 cmd.setPrimaryStorageInstallPath(primaryStorageInstallPath);
                 cmd.setBackupStorageInstallPath(backupStorageInstallPath);
                 cmd.setUuid(pinv.getUuid());
@@ -183,14 +184,15 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
                 }
 
                 GetSftpBackupStorageDownloadCredentialReply r = reply.castReply();
-                upload(r.getHostname(), r.getSshKey());
+                upload(r.getHostname(), r.getSshKey(), r.getSshPort());
             }
 
-            private void upload(final String hostname, String sshKey) {
+            private void upload(final String hostname, String sshKey, int sshPort) {
                 final HostInventory host = primaryStorageFactory.getConnectedHostForOperation(pinv);
                 UploadToSftpCmd cmd = new UploadToSftpCmd();
                 cmd.setBackupStorageHostName(hostname);
                 cmd.setBackupStorageSshKey(sshKey);
+                cmd.setBackupStorageSshPort(sshPort);
                 cmd.setPrimaryStorageInstallPath(primaryStorageInstallPath);
                 cmd.setBackupStorageInstallPath(backupStorageInstallPath);
                 cmd.setUuid(pinv.getUuid());

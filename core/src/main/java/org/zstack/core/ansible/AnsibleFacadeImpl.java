@@ -188,6 +188,19 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 arguments.put("pkg_zstacklib", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME);
                 arguments.putAll(getVariables());
                 String playBookPath = msg.getPlayBookPath();
+                if ( ! playBookPath.contains("py")) {
+                   arguments.put("ansible_ssh_user", arguments.get("remote_user"));
+                   arguments.put("ansible_ssh_port", arguments.get("remote_port"));
+                   arguments.put("ansible_ssh_pass", arguments.get("remote_pass"));
+                   arguments.remove("remote_user");
+                   arguments.remove("remote_pass");
+                   arguments.remove("remote_port");
+                   if  ( ! arguments.get("ansible_ssh_user").equals("root")) {
+                       arguments.put("ansible_become", "yes");
+                       arguments.put("become_user", "root");
+                       arguments.put("become_pass", arguments.get("ansible_ssh_pass"));
+                   }
+                }
                 String executable = msg.getAnsibleExecutable() == null ? AnsibleGlobalProperty.EXECUTABLE : msg.getAnsibleExecutable();
                 try {
                     String output;

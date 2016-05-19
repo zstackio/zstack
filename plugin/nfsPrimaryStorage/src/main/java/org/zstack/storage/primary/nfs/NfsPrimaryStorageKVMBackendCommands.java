@@ -139,9 +139,16 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class DownloadBitsFromSftpBackupStorageCmd extends NfsPrimaryStorageAgentCommand {
         private String sshKey;
         private String hostname;
+        private int sshPort;
         private String backupStorageInstallPath;
         private String primaryStorageInstallPath;
 
+        public int getSshPort() {
+            return sshPort;
+        }
+        public void setSshPort(int sshPort) {
+            this.sshPort = sshPort;
+        }
         public String getSshKey() {
             return sshKey;
         }
@@ -355,7 +362,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
         private String backupStorageInstallPath;
         private String backupStorageHostName;
         private String backupStorageSshKey;
+        private int backupStorageSshPort;
 
+        public int getBackupStorageSshPort() {
+            return backupStorageSshPort;
+        }
+        public void setBackupStorageSshPort(int backupStorageSshPort) {
+            this.backupStorageSshPort = backupStorageSshPort;
+        }
         public String getPrimaryStorageInstallPath() {
             return primaryStorageInstallPath;
         }
