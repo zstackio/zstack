@@ -151,7 +151,6 @@ public class FusionstorPrimaryStorageSimulator {
         return null;
     }
 
-    @RequestMapping(value= FusionstorPrimaryStorageBase.KVM_CREATE_SECRET_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String createKvmSecret(HttpEntity<String> entity) {
         CreateKvmSecretCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CreateKvmSecretCmd.class);

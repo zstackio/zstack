@@ -209,12 +209,6 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
             ));
         }
 
-        String secretUuid = FusionstorSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(pri.getUuid(), FusionstorSystemTags.KVM_SECRET_UUID_TOKEN);
-        if (secretUuid == null) {
-            throw new CloudRuntimeException(String.format("cannot find KVM secret uuid for fusionstor primary storage[uuid:%s]", pri.getUuid()));
-        }
-        cto.setSecretUuid(secretUuid);
-
         return cto;
     }
 
@@ -248,14 +242,7 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
             }
         });
 
-
-        String secretUuid = FusionstorSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(vol.getPrimaryStorageUuid(), FusionstorSystemTags.KVM_SECRET_UUID_TOKEN);
-        if (secretUuid == null) {
-            throw new CloudRuntimeException(String.format("cannot find KVM secret uuid for fusionstor primary storage[uuid:%s]", vol.getPrimaryStorageUuid()));
-        }
-
         KVMFusionstorVolumeTO cto = new KVMFusionstorVolumeTO(to);
-        cto.setSecretUuid(secretUuid);
         cto.setMonInfo(monInfos);
         cto.setDeviceType(VolumeTO.FUSIONSTOR);
         return cto;
