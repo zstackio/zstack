@@ -7,7 +7,7 @@ import org.zstack.core.GlobalPropertyDefinition;
  */
 @GlobalPropertyDefinition
 public class KVMGlobalProperty {
-    @GlobalProperty(name="KvmAgent.agentPackageName", defaultValue = "kvmagent-1.2.tar.gz")
+    @GlobalProperty(name="KvmAgent.agentPackageName", defaultValue = "kvmagent-1.3.tar.gz")
     public static String AGENT_PACKAGE_NAME;
     @GlobalProperty(name="KvmAgent.agentUrlRootPath", defaultValue = "")
     public static String AGENT_URL_ROOT_PATH;
