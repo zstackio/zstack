@@ -1,5 +1,6 @@
 package com.zstack.utils.test;
 
+import junit.framework.Assert;
 import org.apache.commons.net.util.SubnetUtils;
 import org.junit.Test;
 import org.zstack.utils.network.NetworkUtils;
@@ -32,5 +33,14 @@ public class TestEval {
 
         sub = new SubnetUtils("192.168.55.10/24");
         System.out.println(String.format("22222 %s", sub.getInfo().isInRange("192.168.0.1")));
+
+        A a1 = new A();
+        A a2 = new A();
+        A a3 = new A();
+        System.out.println(a1.getClass().hashCode());
+        System.out.println(a2.getClass().hashCode());
+        System.out.println(a3.getClass().hashCode());
+        Assert.assertTrue(a1.getClass() == a2.getClass());
+        Assert.assertTrue(a2.getClass() == a3.getClass());
     }
 }

@@ -20,4 +20,6 @@ public class IdentityGlobalConfig {
     public static GlobalConfig SHOW_ALL_RESOURCE_TO_ADMIN = new GlobalConfig(CATEGORY, "admin.showAllResource");
     @GlobalConfigValidation(notEmpty = false)
     public static GlobalConfig ACCOUNT_API_CONTROL = new GlobalConfig(CATEGORY, "account.api.control");
+    @GlobalConfigValidation
+    public static GlobalConfig STRICT_QUOTA_CHECK = new GlobalConfig(CATEGORY, "quota.strictCheck");
 }

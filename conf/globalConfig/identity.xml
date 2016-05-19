@@ -34,4 +34,11 @@
 		<defaultValue>org.zstack.header.storage.backup.APIQueryBackupStorageMsg, org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageMsg, org.zstack.header.image.APIAddImageMsg, org.zstack.header.host.APIQueryHostMsg</defaultValue>
 		<category>identity</category>
 	</config>
+	<config>
+		<name>quota.strictCheck</name>
+		<description>Whether do quota check in strict mode</description>
+		<defaultValue>true</defaultValue>
+		<category>identity</category>
+		<type>java.lang.Boolean</type>
+	</config>
 </globalConfig>
