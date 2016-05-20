@@ -29,11 +29,9 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
 import org.zstack.header.host.HostStatus;
-import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
-import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
@@ -53,6 +51,7 @@ import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPo
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -76,7 +75,8 @@ import java.util.concurrent.TimeUnit;
 import static org.zstack.utils.CollectionDSL.*;
 
 public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager,
-        ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint {
+        ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint,
+        ResourceOwnerPreChangeExtensionPoint, ResourceOwnerAfterChangeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<String, VmInstanceFactory>());
     private List<String> createVmWorkFlowElements;
@@ -1075,5 +1075,48 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, inventory.getUuid()),
                 e(VmSystemTags.STATIC_IP_TOKEN, "%")
         )));
+    }
+
+    @Override
+    public void resourceOwnerAfterChange(AccountResourceRefInventory ref, String newOwnerUuid) {
+        if (!VmInstanceVO.class.getSimpleName().equals(ref.getResourceType())) {
+            return;
+        }
+
+        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+        q.select(VmInstanceVO_.rootVolumeUuid);
+        q.add(VmInstanceVO_.uuid, Op.EQ, ref.getResourceUuid());
+        String rootVolumeUuid = q.findValue();
+
+        if (rootVolumeUuid == null) {
+            // an VM in an intermediate state
+            return;
+        }
+
+        SimpleQuery<AccountResourceRefVO> refq = dbf.createQuery(AccountResourceRefVO.class);
+        refq.add(AccountResourceRefVO_.resourceUuid, Op.EQ, rootVolumeUuid);
+        refq.add(AccountResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
+        AccountResourceRefVO ar = refq.find();
+
+        ar.setAccountUuid(newOwnerUuid);
+        ar.setOwnerAccountUuid(newOwnerUuid);
+        dbf.update(ar);
+    }
+
+    @Override
+    public void resourceOwnerPreChange(AccountResourceRefInventory ref, String newOwnerUuid) {
+        if (!VolumeVO.class.getSimpleName().equals(ref.getResourceType())) {
+            return;
+        }
+
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.add(VolumeVO_.uuid, Op.EQ, ref.getResourceUuid());
+        q.add(VolumeVO_.type, Op.EQ, VolumeType.Root);
+        if (q.isExists()) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("the resource[uuid:%s] is a ROOT volume, you cannot change its owner, instead," +
+                            "change the owner of the VM the root volume belongs to", ref.getResourceUuid())
+            ));
+        }
     }
 }

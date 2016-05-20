@@ -234,7 +234,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
     }
 
-    private void handle(APIChangeResourceOwnerMsg msg) {
+    private void handle(final APIChangeResourceOwnerMsg msg) {
         SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
         q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
         AccountResourceRefVO ref = q.find();
@@ -244,9 +244,22 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             ));
         }
 
+        final AccountResourceRefInventory origin = AccountResourceRefInventory.valueOf(ref);
+
+        for (ResourceOwnerPreChangeExtensionPoint ext : pluginRgty.getExtensionList(ResourceOwnerPreChangeExtensionPoint.class)) {
+            ext.resourceOwnerPreChange(origin, msg.getAccountUuid());
+        }
+
         ref.setAccountUuid(msg.getAccountUuid());
         ref.setOwnerAccountUuid(msg.getAccountUuid());
         ref = dbf.updateAndRefresh(ref);
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(ResourceOwnerAfterChangeExtensionPoint.class), new ForEachFunction<ResourceOwnerAfterChangeExtensionPoint>() {
+            @Override
+            public void run(ResourceOwnerAfterChangeExtensionPoint ext) {
+                ext.resourceOwnerAfterChange(origin, msg.getAccountUuid());
+            }
+        });
 
         APIChangeResourceOwnerEvent evt = new APIChangeResourceOwnerEvent(msg.getId());
         evt.setInventory(AccountResourceRefInventory.valueOf(ref));
