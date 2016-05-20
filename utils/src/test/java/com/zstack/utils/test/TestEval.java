@@ -3,11 +3,13 @@ package com.zstack.utils.test;
 import junit.framework.Assert;
 import org.apache.commons.net.util.SubnetUtils;
 import org.junit.Test;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -42,5 +44,12 @@ public class TestEval {
         System.out.println(a3.getClass().hashCode());
         Assert.assertTrue(a1.getClass() == a2.getClass());
         Assert.assertTrue(a2.getClass() == a3.getClass());
+
+        long time = SizeUnit.GIGABYTE.convert(19862528, SizeUnit.BYTE);
+        System.out.println(String.format("time:%s", time));
+        long during = TimeUnit.HOURS.convert(17, TimeUnit.MILLISECONDS);
+        System.out.println(String.format("during:%s", during));
+        double mem = time * during * 1.0;
+        System.out.println(String.format("total:%s", mem));
     }
 }
