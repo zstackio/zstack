@@ -25,6 +25,10 @@ public class FusionstorBackupStorageFactory implements BackupStorageFactory, Fus
 
     public static final BackupStorageType type = new BackupStorageType(FusionstorConstants.FUSIONSTOR_BACKUP_STORAGE_TYPE);
 
+    static {
+        type.setOrder(799);
+    }
+
     @Override
     public BackupStorageType getBackupStorageType() {
         return type;

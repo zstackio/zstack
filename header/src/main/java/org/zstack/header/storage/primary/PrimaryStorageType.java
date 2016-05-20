@@ -1,5 +1,8 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.function.Function;
+
 import java.util.*;
 
 
@@ -13,8 +16,17 @@ public class PrimaryStorageType {
     private boolean supportVolumeMigration;
 	private boolean supportVolumeMigrationInCurrentPrimaryStorage;
 	private boolean supportVolumeMigrationToOtherPrimaryStorage;
+    private int order;
 
-	public PrimaryStorageType(String typeName) {
+    public int getOrder() {
+        return order;
+    }
+
+    public void setOrder(int order) {
+        this.order = order;
+    }
+
+    public PrimaryStorageType(String typeName) {
 		this.typeName = typeName;
 		types.put(typeName, this);
 	}
@@ -60,14 +72,27 @@ public class PrimaryStorageType {
 		return typeName.hashCode();
 	}
 	
-    public static Set<String> getAllTypeNames() {
-        HashSet<String> exposedTypes = new HashSet<String>();
+    public static List<String> getAllTypeNames() {
+        List<PrimaryStorageType> exposedTypes = new ArrayList<PrimaryStorageType>();
         for (PrimaryStorageType type : types.values()) {
             if (type.isExposed()) {
-                exposedTypes.add(type.toString());
+                exposedTypes.add(type);
             }
         }
-        return exposedTypes;
+
+        Collections.sort(exposedTypes, new Comparator<PrimaryStorageType>() {
+            @Override
+            public int compare(PrimaryStorageType o1, PrimaryStorageType o2) {
+                return o1.getOrder() - o2.getOrder();
+            }
+        });
+
+        return CollectionUtils.transformToList(exposedTypes, new Function<String, PrimaryStorageType>() {
+            @Override
+            public String call(PrimaryStorageType arg) {
+                return arg.toString();
+            }
+        });
     }
 
 	public boolean isSupportHeartbeatFile() {

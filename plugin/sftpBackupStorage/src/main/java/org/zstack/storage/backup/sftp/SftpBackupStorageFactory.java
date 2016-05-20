@@ -31,6 +31,10 @@ public class SftpBackupStorageFactory implements BackupStorageFactory, GlobalApi
     @Autowired
     private ErrorFacade errf;
 
+    static {
+        type.setOrder(999);
+    }
+
     @Override
     public BackupStorageType getBackupStorageType() {
         return type;

@@ -25,6 +25,10 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
 
     public static final BackupStorageType type = new BackupStorageType(CephConstants.CEPH_BACKUP_STORAGE_TYPE);
 
+    static {
+        type.setOrder(899);
+    }
+
     @Override
     public BackupStorageType getBackupStorageType() {
         return type;

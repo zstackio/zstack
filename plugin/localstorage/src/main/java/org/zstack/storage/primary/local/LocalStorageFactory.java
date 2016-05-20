@@ -66,6 +66,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         type.setSupportVmLiveMigration(false);
         type.setSupportVolumeMigration(true);
         type.setSupportVolumeMigrationInCurrentPrimaryStorage(true);
+        type.setOrder(999);
     }
 
     @Autowired
