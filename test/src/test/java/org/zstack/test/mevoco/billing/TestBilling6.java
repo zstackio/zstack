@@ -105,14 +105,14 @@ public class TestBilling6 {
         msg.setTimeUnit("s");
         msg.setPrice(10f);
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
-        msg.setResourceUnit("b");
+        msg.setResourceUnit("m");
         api.createPrice(msg);
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
         msg.setPrice(9f);
         msg.setResourceName(BillingConstants.SPENDING_ROOT_VOLUME);
-        msg.setResourceUnit("b");
+        msg.setResourceUnit("m");
         api.createPrice(msg);
 
         APIQueryResourcePriceMsg qmsg = new APIQueryResourcePriceMsg();
