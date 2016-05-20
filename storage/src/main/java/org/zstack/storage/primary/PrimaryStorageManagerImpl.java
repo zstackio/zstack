@@ -357,45 +357,61 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             }
         }.run();
 
-        for (final Map.Entry<String, Long> e : psCap.entrySet()) {
-            final String psUuid = e.getKey();
-            final long used = e.getValue();
 
-            new Runnable() {
-                @Override
-                @Transactional
-                public void run() {
-                    String sql = "select ps.type from PrimaryStorageVO ps where ps.uuid = :psUuid";
-                    TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                    q.setParameter("psUuid", psUuid);
-                    String type = q.getSingleResult();
-
-                    RecalculatePrimaryStorageCapacityExtensionPoint ext = recalculateCapacityExtensions.get(type);
-                    RecalculatePrimaryStorageCapacityStruct struct = new RecalculatePrimaryStorageCapacityStruct();
-                    struct.setPrimaryStorageUuid(psUuid);
-
-                    if (ext != null) {
-                        ext.beforeRecalculatePrimaryStorageCapacity(struct);
+        if (psCap.isEmpty()) {
+            // the primary storage is empty, adjust the available capacity to the total capacity
+            for (String psUuid : psUuids) {
+                new PrimaryStorageCapacityUpdater(psUuid).run(new PrimaryStorageCapacityUpdaterRunnable() {
+                    @Override
+                    public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                        cap.setAvailableCapacity(cap.getTotalCapacity());
+                        return cap;
                     }
+                });
+            }
 
-                    PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(psUuid);
-                    updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                        @Override
-                        public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                            long before = cap.getAvailableCapacity();
-                            long avail = cap.getTotalCapacity() - used - (cap.getSystemUsedCapacity() == null ? 0 : cap.getSystemUsedCapacity());
-                            cap.setAvailableCapacity(avail);
-                            logger.debug(String.format("re-calculated available capacity of the primary storage[uuid:%s, before:%s, now:%s] with over-provisioning ratio[%s]",
-                                    psUuid, before, avail, ratioMgr.getRatio(psUuid)));
-                            return cap;
+        } else {
+            // there are volumes/images on the primary storage, re-calculate the available capacity
+            for (final Map.Entry<String, Long> e : psCap.entrySet()) {
+                final String psUuid = e.getKey();
+                final long used = e.getValue();
+
+                new Runnable() {
+                    @Override
+                    @Transactional
+                    public void run() {
+                        String sql = "select ps.type from PrimaryStorageVO ps where ps.uuid = :psUuid";
+                        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                        q.setParameter("psUuid", psUuid);
+                        String type = q.getSingleResult();
+
+                        RecalculatePrimaryStorageCapacityExtensionPoint ext = recalculateCapacityExtensions.get(type);
+                        RecalculatePrimaryStorageCapacityStruct struct = new RecalculatePrimaryStorageCapacityStruct();
+                        struct.setPrimaryStorageUuid(psUuid);
+
+                        if (ext != null) {
+                            ext.beforeRecalculatePrimaryStorageCapacity(struct);
                         }
-                    });
 
-                    if (ext != null) {
-                        ext.afterRecalculatePrimaryStorageCapacity(struct);
+                        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(psUuid);
+                        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+                            @Override
+                            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                                long before = cap.getAvailableCapacity();
+                                long avail = cap.getTotalCapacity() - used - (cap.getSystemUsedCapacity() == null ? 0 : cap.getSystemUsedCapacity());
+                                cap.setAvailableCapacity(avail);
+                                logger.debug(String.format("re-calculated available capacity of the primary storage[uuid:%s, before:%s, now:%s] with over-provisioning ratio[%s]",
+                                        psUuid, before, avail, ratioMgr.getRatio(psUuid)));
+                                return cap;
+                            }
+                        });
+
+                        if (ext != null) {
+                            ext.afterRecalculatePrimaryStorageCapacity(struct);
+                        }
                     }
-                }
-            }.run();
+                }.run();
+            }
         }
 
         bus.reply(msg, reply);
