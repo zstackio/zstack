@@ -28,9 +28,11 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.DhcpStruct;
 import org.zstack.header.network.service.NetworkServiceDhcpBackend;
 import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.*;
+import org.zstack.network.service.NetworkServiceProviderLookup;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TagUtils;
@@ -45,15 +47,14 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created by frank on 9/15/2015.
  */
 public class FlatDhcpBackend extends AbstractService implements NetworkServiceDhcpBackend, KVMHostConnectExtensionPoint,
-        L3NetworkDeleteExtensionPoint, VmInstanceMigrateExtensionPoint, VmAbnormalLifeCycleExtensionPoint, IpRangeDeletionExtensionPoint {
+        L3NetworkDeleteExtensionPoint, VmInstanceMigrateExtensionPoint, VmAbnormalLifeCycleExtensionPoint, IpRangeDeletionExtensionPoint,
+        BeforeStartNewCreatedVmExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FlatDhcpBackend.class);
 
     @Autowired
@@ -705,6 +706,28 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 });
             }
         };
+    }
+
+    @Override
+    public void beforeStartNewCreatedVm(VmInstanceSpec spec) {
+        String providerUuid = new NetworkServiceProviderLookup().lookupUuidByType(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
+
+        // make sure the Flat DHCP acquired DHCP server IP before starting VMs,
+        // otherwise it may not be able to get IP when lots of VMs start concurrently
+        // because the logic of VM acquiring IP is ahead flat DHCP acquiring IP
+        for (L3NetworkInventory l3 : spec.getL3Networks()) {
+            List<String> serviceTypes = l3.getNetworkServiceTypesFromProvider(providerUuid);
+            if (serviceTypes.contains(NetworkServiceType.DHCP.toString())) {
+                FlatDhcpAcquireDhcpServerIpMsg msg = new FlatDhcpAcquireDhcpServerIpMsg();
+                msg.setL3NetworkUuid(l3.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, FlatNetworkServiceConstant.SERVICE_ID, l3.getUuid());
+                MessageReply reply = bus.call(msg);
+                if (!reply.isSuccess()) {
+                    // TODO
+                    logger.warn(String.format("failed to acquire DHCP server IP for L3 network[uuid:%s], %s", msg.getL3NetworkUuid(), reply.getError()));
+                }
+            }
+        }
     }
 
     public static class DhcpInfo {

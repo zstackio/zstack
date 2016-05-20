@@ -1,6 +1,7 @@
 package org.zstack.header.errorcode;
 
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.io.Serializable;
 
@@ -61,8 +62,7 @@ public class ErrorCode implements Serializable, Cloneable {
     
     @Override
     public String toString() {
-        return cause == null ? String.format("ErrorCode [code = %s, description = %s, details = %s]", this.getCode(), this.getDescription(), this.getDetails()) :
-                String.format("ErrorCode [code = %s, description = %s, details = %s, cause = %s]", this.getCode(), this.getDescription(), this.getDetails(), cause.toString());
+        return JSONObjectUtil.toJsonString(this);
     }
     
     public static ErrorCode fromString(String err) {

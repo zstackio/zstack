@@ -1891,6 +1891,13 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             changeVmStateInDb(VmInstanceStateEvent.starting);
 
+            CollectionUtils.safeForEach(pluginRgty.getExtensionList(BeforeStartNewCreatedVmExtensionPoint.class), new ForEachFunction<BeforeStartNewCreatedVmExtensionPoint>() {
+                @Override
+                public void run(BeforeStartNewCreatedVmExtensionPoint ext) {
+                    ext.beforeStartNewCreatedVm(spec);
+                }
+            });
+
             extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
             FlowChain chain = getCreateVmWorkFlowChain(msg.getVmInstanceInventory());
             setFlowMarshaller(chain);
