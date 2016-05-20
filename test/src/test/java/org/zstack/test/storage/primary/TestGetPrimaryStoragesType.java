@@ -37,5 +37,6 @@ public class TestGetPrimaryStoragesType {
     public void test() throws ApiSenderException {
         List<String> types = api.getPrimaryStorageTypes();
         Assert.assertFalse(types.isEmpty());
+        System.out.println(types);
     }
 }

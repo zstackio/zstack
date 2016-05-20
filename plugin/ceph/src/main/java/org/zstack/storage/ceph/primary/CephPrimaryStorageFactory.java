@@ -84,6 +84,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     static {
         type.setSupportHeartbeatFile(true);
         type.setSupportPingStorageGateway(true);
+        type.setOrder(799);
     }
 
     @Override

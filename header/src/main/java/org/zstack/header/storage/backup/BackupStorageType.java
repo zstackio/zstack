@@ -1,5 +1,8 @@
 package org.zstack.header.storage.backup;
 
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.function.Function;
+
 import java.util.*;
 
 
@@ -8,6 +11,7 @@ public class BackupStorageType {
 	private final String typeName;
 	private final Set<String> supportedSchemes;
     private boolean exposed = true;
+	private int order;
 	
 	public BackupStorageType(String typeName, String...protocols) {
 		this.typeName = typeName;
@@ -61,13 +65,34 @@ public class BackupStorageType {
 		return typeName.hashCode();
 	}
 	
-    public static Set<String> getAllTypeNames() {
-        HashSet<String> exposedTypes = new HashSet<String>();
+    public static List<String> getAllTypeNames() {
+        List<BackupStorageType> exposedTypes = new ArrayList<BackupStorageType>();
         for (BackupStorageType type : types.values()) {
             if (type.isExposed()) {
-                exposedTypes.add(type.toString());
+                exposedTypes.add(type);
             }
         }
-        return exposedTypes;
+
+        Collections.sort(exposedTypes, new Comparator<BackupStorageType>() {
+            @Override
+            public int compare(BackupStorageType o1, BackupStorageType o2) {
+                return o1.getOrder() - o2.getOrder();
+            }
+        });
+
+        return CollectionUtils.transformToList(exposedTypes, new Function<String, BackupStorageType>() {
+            @Override
+            public String call(BackupStorageType arg) {
+                return arg.toString();
+            }
+        });
+    }
+
+    public int getOrder() {
+        return order;
+    }
+
+    public void setOrder(int order) {
+        this.order = order;
     }
 }
