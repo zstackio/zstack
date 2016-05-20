@@ -5,16 +5,19 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.defer.Deferred;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
+import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.Completion;
@@ -31,7 +34,10 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.Bucket;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
@@ -59,6 +65,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     protected HostTracker tracker;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private HostCpuOverProvisioningManager cpuRatioMgr;
 
     private Map<String, HypervisorFactory> hypervisorFactories = Collections.synchronizedMap(new HashMap<String, HypervisorFactory>());
     private Map<String, HostMessageHandlerExtensionPoint> msgHandlers = Collections.synchronizedMap(new HashMap<String, HostMessageHandlerExtensionPoint>());
@@ -353,8 +361,18 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
     @Override
     public boolean start() {
+        setupGlobalConfig();
         populateExtensions();
         return true;
+    }
+
+    private void setupGlobalConfig() {
+        HostGlobalConfig.HOST_CPU_OVER_PROVISIONING_RATIO.installLocalUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                cpuRatioMgr.setGlobalRatio(newConfig.value(Integer.class));
+            }
+        });
     }
 
     @Override
