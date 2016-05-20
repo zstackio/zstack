@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.*;
 import org.zstack.header.query.QueryCondition;
@@ -91,5 +93,18 @@ public class TestQueryVm {
         msg.setConditions(new ArrayList<QueryCondition>());
         APIQueryVmInstanceReply reply = api.query(msg, APIQueryVmInstanceReply.class, session);
         Assert.assertEquals(0, reply.getInventories().size());
+
+        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
+        q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, vm.getRootVolumeUuid());
+        AccountResourceRefVO ref = q.find();
+        Assert.assertEquals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, ref.getAccountUuid());
+
+        boolean s = false;
+        try {
+            api.changeResourceOwner(vm.getRootVolumeUuid(), AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
     }
 }
