@@ -44,11 +44,17 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
 
     public static class SftpDownloadBitsCmd extends LocalStorageKvmBackend.AgentCommand {
         private String sshKey;
+        private String username;
         private String hostname;
         private int sshPort;
         private String backupStorageInstallPath;
         private String primaryStorageInstallPath;
-
+        public String getUsername() {
+            return username;
+        }
+        public void setUsername(String username) {
+            this.username = username;
+        }
         public int getSshPort() {
             return sshPort;
         }
@@ -101,8 +107,14 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
         private String backupStorageInstallPath;
         private String hostname;
         private String sshKey;
+        private String username;
         private int sshPort;
-
+        public String getUsername() {
+            return username;
+        }
+        public void setUsername(String username) {
+            this.username = username;
+        }
         public int getSshPort() {
             return sshPort;
         }
@@ -161,6 +173,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                 final GetSftpBackupStorageDownloadCredentialReply greply = reply.castReply();
                 SftpDownloadBitsCmd cmd = new SftpDownloadBitsCmd();
                 cmd.setHostname(greply.getHostname());
+                cmd.setUsername(greply.getUsername());
                 cmd.setSshKey(greply.getSshKey());
                 cmd.setSshPort(greply.getSshPort());
                 cmd.setBackupStorageInstallPath(backupStorageInstallPath);
@@ -217,6 +230,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                 cmd.setHostname(r.getHostname());
                 cmd.setSshKey(r.getSshKey());
                 cmd.setSshPort(r.getSshPort());
+                cmd.setUsername(r.getUsername());
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);
