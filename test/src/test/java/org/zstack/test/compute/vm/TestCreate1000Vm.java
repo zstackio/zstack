@@ -1,5 +1,6 @@
 package org.zstack.test.compute.vm;
 
+import junit.framework.Assert;
 import org.apache.commons.lang.time.StopWatch;
 import org.junit.Before;
 import org.junit.Test;
@@ -8,7 +9,11 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
+import org.zstack.core.thread.ThreadGlobalProperty;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
@@ -17,8 +22,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.*;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.identity.IdentityGlobalConfig;
 import org.zstack.test.Api;
@@ -44,7 +48,7 @@ public class TestCreate1000Vm {
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
-    int vmNum = 50;
+    int vmNum = 1000;
     CountDownLatch latch = new CountDownLatch(vmNum);
     List<Long> timeCost = new ArrayList<Long>();
     ClusterInventory cluster;

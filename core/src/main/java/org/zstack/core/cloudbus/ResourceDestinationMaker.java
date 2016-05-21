@@ -14,6 +14,4 @@ public interface ResourceDestinationMaker {
     boolean isManagedByUs(String resourceUuid);
 
     Collection<String> getManagementNodesInHashRing();
-
-    boolean isMultiNodes();
 }

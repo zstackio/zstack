@@ -87,8 +87,8 @@ public class GLock {
                     memLocks.put(name, mlock);
                 }
 
-                if (memLocks.size() > 1000) {
-                    logger.warn(String.format("there are more than 100 GLocks[num:%s] are created, something may be wrong in our program", memLocks.size()));
+                if (memLocks.size() > 100) {
+                    logger.warn(String.format("there are more than 100 GLocks[num:%s] are created, something must be wrong in our program", memLocks.size()));
                 }
             }
         }

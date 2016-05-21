@@ -73,11 +73,6 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
         return nodeHash.getNodes();
     }
 
-    @Override
-    public boolean isMultiNodes() {
-        return nodeHash.getNodes().size() > 1;
-    }
-
     public boolean isNodeInCircle(String nodeId) {
         return nodeHash.hasNode(nodeId);
     }
