@@ -1,6 +1,7 @@
 package com.zstack.utils.test;
 
 import org.apache.commons.net.util.SubnetUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.network.NetworkUtils;
