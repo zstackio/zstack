@@ -1,9 +1,7 @@
 package org.zstack.identity;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.GLock;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -17,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by frank on 7/30/2015.
@@ -27,8 +24,6 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
     private AccountManager acntMgr;
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private ResourceDestinationMaker destinationMaker;
 
     @Override
     public List<Class> getMessageClassToIntercept() {
@@ -90,32 +85,8 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
         return pairs;
     }
 
-
     private void check(APIMessage msg, Quota quota) {
-        if (IdentityGlobalConfig.STRICT_QUOTA_CHECK.value(Boolean.class)) {
-            strictCheck(msg, quota);
-        } else {
-            Map<String, QuotaPair> pairs = makeQuotaPairs(quota, msg.getSession());
-            quota.getOperator().checkQuota(msg, pairs);
-        }
-    }
-
-    private void strictCheck(APIMessage msg, Quota quota) {
         Map<String, QuotaPair> pairs = makeQuotaPairs(quota, msg.getSession());
-
-        if (destinationMaker.isMultiNodes()) {
-            // multi nodes env, use a global DB lock
-            GLock lock = new GLock(msg.getClass().getName(), TimeUnit.MINUTES.toSeconds(5));
-            lock.lock();
-            try {
-                quota.getOperator().checkQuota(msg, pairs);
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            synchronized (msg.getClass()) {
-                quota.getOperator().checkQuota(msg, pairs);
-            }
-        }
+        quota.getOperator().checkQuota(msg, pairs);
     }
 }
