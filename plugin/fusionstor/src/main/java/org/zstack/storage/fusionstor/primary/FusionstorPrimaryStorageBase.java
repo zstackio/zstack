@@ -254,10 +254,16 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     public static class SftpDownloadCmd extends AgentCommand {
         String sshKey;
         String hostname;
+        String username;
         int sshPort;
         String backupStorageInstallPath;
         String primaryStorageInstallPath;
-
+        public String getUsername() {
+            return username;
+        }
+        public void setUsername(String username) {
+            this.username = username;
+        }
         public int getSshPort() {
             return sshPort;
         }
@@ -309,9 +315,16 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
         String hostname;
+        String username;
         String sshKey;
         int sshPort;
 
+        public String getUsername() {
+            return username;
+        }
+        public void setUsername(String username) {
+            this.username = username;
+        }
         public int getSshPort() {
             return sshPort;
         }
@@ -617,6 +630,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                 String sshkey;
                 int sshport;
                 String sftpHostname;
+                String username;
 
                 @Override
                 public void setup() {
@@ -630,6 +644,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 public void success(GetSftpBackupStorageDownloadCredentialReply greply) {
                                     sshkey = greply.getSshKey();
                                     sftpHostname = greply.getHostname();
+                                    username = greply.getUsername();
                                     sshport = greply.getSshPort();
                                     trigger.next();
                                 }
@@ -650,6 +665,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                             SftpDownloadCmd cmd = new SftpDownloadCmd();
                             cmd.backupStorageInstallPath = dparam.image.getSelectedBackupStorage().getInstallPath();
                             cmd.hostname = sftpHostname;
+                            cmd.username = username;
                             cmd.sshKey = sshkey;
                             cmd.sshPort = sshport;
                             cmd.primaryStorageInstallPath = dparam.installPath;
@@ -696,6 +712,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             chain.then(new ShareFlow() {
                 String sshKey;
                 String hostname;
+                String username;
                 int sshPort;
                 String backupStorageInstallPath;
 
@@ -711,6 +728,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 public void success(GetSftpBackupStorageDownloadCredentialReply returnValue) {
                                     sshKey = returnValue.getSshKey();
                                     hostname = returnValue.getHostname();
+                                    username = returnValue.getUsername();
                                     sshPort = returnValue.getSshPort();
                                     trigger.next();
                                 }
@@ -755,6 +773,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                             SftpUpLoadCmd cmd = new SftpUpLoadCmd();
                             cmd.setBackupStorageInstallPath(backupStorageInstallPath);
                             cmd.setHostname(hostname);
+                            cmd.setUsername(username);
                             cmd.setSshKey(sshKey);
                             cmd.setSshPort(sshPort);
                             cmd.setPrimaryStorageInstallPath(uparam.primaryStorageInstallPath);
