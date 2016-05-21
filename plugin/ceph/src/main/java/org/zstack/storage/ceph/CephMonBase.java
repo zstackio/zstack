@@ -38,7 +38,7 @@ public abstract class CephMonBase {
 
     protected void checkTools() {
         Ssh ssh = new Ssh();
-        ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword())
+        ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
                 .checkTool("ceph", "rbd").runErrorByExceptionAndClose();
     }
 
