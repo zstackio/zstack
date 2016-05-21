@@ -198,7 +198,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                    if  ( ! arguments.get("ansible_ssh_user").equals("root")) {
                        arguments.put("ansible_become", "yes");
                        arguments.put("become_user", "root");
-                       arguments.put("become_pass", arguments.get("ansible_ssh_pass"));
+                       arguments.put("ansible_become_pass", arguments.get("ansible_ssh_pass"));
                    }
                 }
                 String executable = msg.getAnsibleExecutable() == null ? AnsibleGlobalProperty.EXECUTABLE : msg.getAnsibleExecutable();
