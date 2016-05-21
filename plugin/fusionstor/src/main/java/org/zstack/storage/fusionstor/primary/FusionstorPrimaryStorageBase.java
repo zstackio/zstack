@@ -1177,7 +1177,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                         public void handle(Map data) {
                             ImageCacheVO cvo = new ImageCacheVO();
                             cvo.setMd5sum("not calculated");
-                            cvo.setSize(image.getInventory().getSize());
+                            cvo.setSize(image.getInventory().getActualSize());
                             cvo.setInstallUrl(snapshotPath);
                             cvo.setImageUuid(image.getInventory().getUuid());
                             cvo.setPrimaryStorageUuid(self.getUuid());

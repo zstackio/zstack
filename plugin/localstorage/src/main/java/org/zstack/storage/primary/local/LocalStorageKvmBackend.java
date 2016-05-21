@@ -893,7 +893,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     vo.setMediaType(ImageMediaType.valueOf(image.getMediaType()));
                                     vo.setImageUuid(image.getUuid());
                                     vo.setPrimaryStorageUuid(self.getUuid());
-                                    vo.setSize(image.getSize());
+                                    vo.setSize(image.getActualSize());
                                     vo.setMd5sum("not calculated");
 
                                     CacheInstallPath path = new CacheInstallPath();
@@ -965,7 +965,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
                             bus.send(rmsg);
 
-                            returnCapacityToHost(hostUuid, image.getSize());
+                            returnCapacityToHost(hostUuid, cvo.getSize());
                             dbf.remove(cvo);
 
                             doDownload(chain);
