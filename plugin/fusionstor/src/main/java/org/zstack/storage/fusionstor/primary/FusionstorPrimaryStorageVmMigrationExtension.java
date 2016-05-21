@@ -1,27 +1,32 @@
 package org.zstack.storage.fusionstor.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.kvm.KVMAgentCommands.AgentCommand;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
+import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
-import org.zstack.storage.fusionstor.FusionstorConstants;
+import org.zstack.kvm.KVMSystemTags;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
+import javax.persistence.Tuple;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,18 +34,20 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by frank on 6/16/2015.
  */
+class FusionstorQueryRsp extends AgentResponse {
+    private String rsp;
+}
 
+class FusionstorQueryCmd extends AgentCommand {
+    private String query;
+
+    public void setQuery(String query) {
+        this.query = query;
+    }
+}
 
 public class FusionstorPrimaryStorageVmMigrationExtension implements VmInstanceMigrateExtensionPoint {
     public static final String KVM_FUSIONSTOR_QUERY_PATH = "/fusionstor/query";
-
-    public static class FusionstorQueryRsp extends AgentResponse {
-        public String rsp;
-    }
-
-    public static class FusionstorQueryCmd extends AgentCommand {
-        public String query;
-    }
 
     private CLogger logger = Utils.getLogger(FusionstorPrimaryStorageVmMigrationExtension.class);
     private Map<String, List<VolumeInventory>> vmVolumes = new ConcurrentHashMap<String, List<VolumeInventory>>();
@@ -54,29 +61,12 @@ public class FusionstorPrimaryStorageVmMigrationExtension implements VmInstanceM
     @Autowired
     private ApiTimeoutManager timeoutMgr;
 
-    @Transactional(readOnly = true)
-    private boolean needLink(VmInstanceInventory inv) {
-        String sql = "select ps.type from PrimaryStorageVO ps, VolumeVO vol where ps.uuid = vol.primaryStorageUuid" +
-                " and vol.uuid = :uuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("uuid", inv.getRootVolumeUuid());
-        List<String> res = q.getResultList();
-        if (res.isEmpty()) {
-            return false;
-        }
-
-        String type = res.get(0);
-        return FusionstorConstants.FUSIONSTOR_PRIMARY_STORAGE_TYPE.equals(type);
-    }
-
     @Override
     public String preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-        if (!needLink(inv)) {
-            return null;
-        }
+        List<KVMHostAsyncHttpCallMsg> msgs = new ArrayList<KVMHostAsyncHttpCallMsg>();
 
         FusionstorQueryCmd cmd = new FusionstorQueryCmd();
-        cmd.query = "query";
+        cmd.setQuery("query");
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -84,15 +74,27 @@ public class FusionstorPrimaryStorageVmMigrationExtension implements VmInstanceM
         msg.setPath(KVM_FUSIONSTOR_QUERY_PATH);
         msg.setHostUuid(destHostUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, destHostUuid);
-        MessageReply reply = bus.call(msg);
-        if (!reply.isSuccess()) {
-            throw new OperationFailureException(reply.getError());
+
+        msgs.add(msg);
+
+        List<MessageReply> replies = bus.call(msgs);
+        ErrorCode errorCode = null;
+        for (MessageReply reply : replies) {
+            if (!reply.isSuccess()) {
+                errorCode = reply.getError();
+                break;
+            } else {
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                FusionstorQueryRsp rsp = r.toResponse(FusionstorQueryRsp.class);
+                if (!rsp.isSuccess()) {
+                    errorCode = errf.stringToOperationError(rsp.getError());
+                    break;
+                }
+            }
         }
 
-        KVMHostAsyncHttpCallReply r = reply.castReply();
-        FusionstorQueryRsp rsp = r.toResponse(FusionstorQueryRsp.class);
-        if (!rsp.isSuccess()) {
-            throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
+        if (errorCode != null) {
+            throw new OperationFailureException(errorCode);
         }
 
         return null;
