@@ -51,5 +51,9 @@ public class TestEval {
         System.out.println(String.format("during:%s", during));
         double mem = time * during * 1.0;
         System.out.println(String.format("total:%s", mem));
+
+        sub = new SubnetUtils("224.0.0.0/24");
+        System.out.println(sub.getInfo().getLowAddress());
+        System.out.println(sub.getInfo().getHighAddress());
     }
 }
