@@ -66,7 +66,7 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
         KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, KvmSetupSelfFencerExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(FusionstorPrimaryStorageFactory.class);
 
-    public static final PrimaryStorageType type = new PrimaryStorageType(FusionstorConstants.FUSIONSTOR_PRIMARY_STORAGE_TYPE);
+    public static final PrimaryStorageType type = new PrimaryStorageType(FusionstorGlobalProperty.FUSIONSTOR_PRIMARY_STORAGE_TYPE);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -97,8 +97,8 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
         APIAddFusionstorPrimaryStorageMsg cmsg = (APIAddFusionstorPrimaryStorageMsg) msg;
 
         FusionstorPrimaryStorageVO cvo = new FusionstorPrimaryStorageVO(vo);
-        cvo.setType(FusionstorConstants.FUSIONSTOR_PRIMARY_STORAGE_TYPE);
-        cvo.setMountPath(FusionstorConstants.FUSIONSTOR_PRIMARY_STORAGE_TYPE);
+        cvo.setType(FusionstorGlobalProperty.FUSIONSTOR_PRIMARY_STORAGE_TYPE);
+        cvo.setMountPath(FusionstorGlobalProperty.FUSIONSTOR_PRIMARY_STORAGE_TYPE);
         cvo.setRootVolumePoolName(cmsg.getRootVolumePoolName() == null ? String.format("pri-v-r-%s", vo.getUuid()) : cmsg.getRootVolumePoolName());
         cvo.setDataVolumePoolName(cmsg.getDataVolumePoolName() == null ? String.format("pri-v-d-%s", vo.getUuid()) : cmsg.getDataVolumePoolName());
         cvo.setImageCachePoolName(cmsg.getImageCachePoolName() == null ? String.format("pri-c-%s", vo.getUuid()) : cmsg.getImageCachePoolName());
@@ -377,7 +377,7 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
                 String sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where ((c.imageUuid is null) or (i.uuid = c.imageUuid and i.deleted is not null)) and " +
                         "pri.type = :ptype and pri.uuid = c.primaryStorageUuid";
                 TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("ptype", FusionstorConstants.FUSIONSTOR_PRIMARY_STORAGE_TYPE);
+                q.setParameter("ptype", FusionstorGlobalProperty.FUSIONSTOR_PRIMARY_STORAGE_TYPE);
                 List<Long> ids = q.getResultList();
                 if (ids.isEmpty()) {
                     return null;
@@ -548,12 +548,12 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
 
     @Override
     public String createTemplateFromVolumeSnapshotPrimaryStorageType() {
-        return FusionstorConstants.FUSIONSTOR_PRIMARY_STORAGE_TYPE;
+        return FusionstorGlobalProperty.FUSIONSTOR_PRIMARY_STORAGE_TYPE;
     }
 
     @Override
     public String kvmSetupSelfFencerStorageType() {
-        return FusionstorConstants.FUSIONSTOR_PRIMARY_STORAGE_TYPE;
+        return FusionstorGlobalProperty.FUSIONSTOR_PRIMARY_STORAGE_TYPE;
     }
 
     @Override
