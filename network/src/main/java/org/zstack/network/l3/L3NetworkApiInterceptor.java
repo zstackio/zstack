@@ -206,6 +206,12 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
+        if (NetworkUtils.isIpv4RangeOverlap("169.254.1.0", "169.254.254.255", ipr.getStartIp(), ipr.getEndIp())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the IP range[%s ~ %s] contains link local addresses which are reserved", ipr.getStartIp(), ipr.getEndIp())
+            ));
+        }
+
         SubnetUtils sub = new SubnetUtils(ipr.getStartIp(), ipr.getNetmask());
         SubnetInfo info = sub.getInfo();
         if (!info.isInRange(ipr.getGateway())) {
