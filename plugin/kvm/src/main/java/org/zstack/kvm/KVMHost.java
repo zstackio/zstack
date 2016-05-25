@@ -2292,6 +2292,9 @@ public class KVMHost extends HostBase implements Host {
         if (umsg.getPassword() != null) {
             vo.setPassword(umsg.getPassword());
         }
+        if (umsg.getSshport() > 0 && umsg.getSshport() <= 65535 ) {
+            vo.setPort(umsg.getSshport());
+        }
 
         return vo;
     }

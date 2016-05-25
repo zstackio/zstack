@@ -441,6 +441,9 @@ public class SftpBackupStorage extends BackupStorageBase {
         if (umsg.getHostname() != null) {
             vo.setHostname(umsg.getHostname());
         }
+        if (umsg.getSshport() > 0 && umsg.getSshport() <= 65535 ) {
+            vo.setPort(umsg.getSshport());
+        }
 
         return vo;
     }
