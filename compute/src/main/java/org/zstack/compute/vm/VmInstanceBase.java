@@ -484,6 +484,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             ));
         }
 
+        if (ip.equals(targetNic.getIp())) {
+            completion.success();
+            return;
+        }
+
         final UsedIpInventory oldIp = new UsedIpInventory();
         oldIp.setIp(targetNic.getIp());
         oldIp.setGateway(targetNic.getGateway());
