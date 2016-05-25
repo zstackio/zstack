@@ -3210,6 +3210,7 @@ public class Api implements CloudBusEventListener {
         msg.setUuid(inv.getUuid());
         msg.setUsername(inv.getUsername());
         msg.setPassword(password);
+        msg.setSshport(inv.getSshport());
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIUpdateBackupStorageEvent evt = sender.send(msg, APIUpdateBackupStorageEvent.class);
@@ -3450,6 +3451,7 @@ public class Api implements CloudBusEventListener {
         msg.setUuid(inv.getUuid());
         msg.setUsername(inv.getUsername());
         msg.setPassword(password);
+        msg.setSshport(inv.getSshPort());
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIUpdateHostEvent evt = sender.send(msg, APIUpdateHostEvent.class);
