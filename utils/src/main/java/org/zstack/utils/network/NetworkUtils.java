@@ -1,7 +1,6 @@
 package org.zstack.utils.network;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.Pair;
 import org.zstack.utils.logging.CLogger;

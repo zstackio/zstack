@@ -42,8 +42,6 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -56,18 +54,22 @@ import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 
 public class VmInstanceBase extends AbstractVmInstance {
@@ -1285,10 +1287,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             return;
                         }
 
-                        VmSystemTags.STATIC_IP.createTag(self.getUuid(), map(
-                                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, amsg.getL3NetworkUuid()),
-                                e(VmSystemTags.STATIC_IP_TOKEN, amsg.getStaticIp())
-                        ));
+                        new StaticIpOperator().setStaticIp(self.getUuid(), amsg.getL3NetworkUuid(), amsg.getStaticIp());
 
                         isSet = true;
                     }
@@ -1296,9 +1295,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     void rollback() {
                         if (isSet) {
                             APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
-                            VmSystemTags.STATIC_IP.delete(self.getUuid(), TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_IP.instantiateTag(
-                                    map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, amsg.getL3NetworkUuid()))
-                            )));
+                            new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), amsg.getL3NetworkUuid());
                         }
                     }
                 }
@@ -2062,9 +2059,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(SyncTaskChain chain) {
                 APIDeleteVmStaticIpEvent evt = new APIDeleteVmStaticIpEvent(msg.getId());
-                VmSystemTags.STATIC_IP.delete(self.getUuid(), TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_IP.instantiateTag(
-                        map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()))
-                )));
+                new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid());
                 bus.publish(evt);
                 chain.next();
             }
@@ -2107,31 +2102,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             throw new OperationFailureException(error);
         }
 
-        SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
-        q.select(SystemTagVO_.uuid);
-        q.add(SystemTagVO_.resourceType, Op.EQ, VmInstanceVO.class.getSimpleName());
-        q.add(SystemTagVO_.resourceUuid, Op.EQ, self.getUuid());
-        q.add(SystemTagVO_.tag, Op.LIKE, TagUtils.tagPatternToSqlPattern(VmSystemTags.STATIC_IP.instantiateTag(
-                map(e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()))
-        )));
-        final String tagUuid = q.findValue();
-
         final APISetVmStaticIpEvent evt = new APISetVmStaticIpEvent(msg.getId());
         changeVmIp(msg.getL3NetworkUuid(), msg.getIp(), new Completion(msg, completion) {
             @Override
             public void success() {
-                if (tagUuid == null) {
-                    VmSystemTags.STATIC_IP.createTag(self.getUuid(), map(
-                            e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
-                            e(VmSystemTags.STATIC_IP_TOKEN, msg.getIp())
-                    ));
-                } else {
-                    VmSystemTags.STATIC_IP.updateByTagUuid(tagUuid, VmSystemTags.STATIC_IP.instantiateTag(map(
-                            e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
-                            e(VmSystemTags.STATIC_IP_TOKEN, msg.getIp())
-                    )));
-                }
-
+                new StaticIpOperator().setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp());
                 bus.publish(evt);
                 completion.done();
             }
@@ -2671,6 +2646,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(Map data) {
                 selectDefaultL3();
+                removeStaticIp();
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class), new ForEachFunction<VmDetachNicExtensionPoint>() {
                     @Override
                     public void run(VmDetachNicExtensionPoint arg) {
@@ -2678,6 +2654,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
                 completion.success();
+            }
+
+            private void removeStaticIp() {
+                new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), nic.getL3NetworkUuid());
             }
 
             private void selectDefaultL3() {
