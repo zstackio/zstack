@@ -8,8 +8,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Event;
 import org.zstack.header.message.NeedJsonSchema;
 import org.zstack.utils.TypeUtils;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -170,6 +168,11 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
             evt.setContent(data);
         }
         bus.publish(evt);
+    }
+
+    @Override
+    public boolean isFromThisManagementNode(Map tokens) {
+        return Platform.getManagementServerId().equals(tokens.get(EventFacade.META_DATA_MANAGEMENT_NODE_ID));
     }
 
     @Override
