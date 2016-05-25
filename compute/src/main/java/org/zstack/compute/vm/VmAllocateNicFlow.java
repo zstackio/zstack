@@ -85,15 +85,12 @@ public class VmAllocateNicFlow implements Flow {
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         List<AllocateIpMsg> msgs = new ArrayList<AllocateIpMsg>();
+        Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
         for (final L3NetworkInventory nw : spec.getL3Networks()) {
             AllocateIpMsg msg = new AllocateIpMsg();
-
-            List<Map<String, String>> tokenList = VmSystemTags.STATIC_IP.getTokensOfTagsByResourceUuid(spec.getVmInventory().getUuid());
-            for (Map<String, String> tokens : tokenList) {
-                String l3Uuid = tokens.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
-                if (l3Uuid.equals(nw.getUuid())) {
-                    msg.setRequiredIp(tokens.get(VmSystemTags.STATIC_IP_TOKEN));
-                }
+            String staticIp = vmStaticIps.get(nw.getUuid());
+            if (staticIp != null) {
+                msg.setRequiredIp(staticIp);
             }
 
             msg.setL3NetworkUuid(nw.getUuid());

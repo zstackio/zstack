@@ -1071,10 +1071,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
     @Override
     public void afterDeleteL3Network(L3NetworkInventory inventory) {
-        VmSystemTags.STATIC_IP.delete(null, VmSystemTags.STATIC_IP.instantiateTag(map(
-                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, inventory.getUuid()),
-                e(VmSystemTags.STATIC_IP_TOKEN, "%")
-        )));
+        new StaticIpOperator().deleteStaticIpByL3NetworkUuid(inventory.getUuid());
     }
 
     @Override
