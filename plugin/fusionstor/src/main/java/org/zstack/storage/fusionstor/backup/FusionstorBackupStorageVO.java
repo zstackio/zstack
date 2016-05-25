@@ -43,8 +43,22 @@ public class FusionstorBackupStorageVO extends BackupStorageVO {
     }
 
     public void setFsid(String fsid) {
+
         this.fsid = fsid;
     }
+
+    @Column
+    private  Integer sshPort;
+
+    public Integer getSshPort() {
+        return sshPort;
+    }
+
+    public void setSshPort(Integer sshPort) {
+        this.sshPort = sshPort;
+    }
+
+
 
     public FusionstorBackupStorageVO() {
     }
