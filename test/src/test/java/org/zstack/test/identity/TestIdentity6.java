@@ -13,6 +13,8 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * 1. create an account
  * 2. create a group
@@ -52,7 +54,7 @@ public class TestIdentity6 {
     }
     
     @Test
-    public void test() throws ApiSenderException {
+    public void test() throws ApiSenderException, InterruptedException {
         IdentityCreator creator = new IdentityCreator(api);
         AccountInventory a = creator.createAccount("test", "test");
         UserGroupInventory g = creator.createGroup("test");
@@ -71,11 +73,15 @@ public class TestIdentity6 {
         ref = q.find();
         Assert.assertNull(ref);
 
+        creator.userLogin("test", "test");
         creator.addUserToGroup("test", "test");
         creator.deleteUser("test");
         Assert.assertFalse(dbf.isExist(u.getUuid(), UserVO.class));
         Assert.assertFalse(q.isExists());
-
+        TimeUnit.SECONDS.sleep(2);
+        SimpleQuery<SessionVO> sq = dbf.createQuery(SessionVO.class);
+        sq.add(SessionVO_.userUuid, Op.EQ, u.getUuid());
+        Assert.assertFalse(sq.isExists());
 
         UserInventory user = creator.createUser("user1", "password");
         creator.addUserToGroup("user1", "test");
