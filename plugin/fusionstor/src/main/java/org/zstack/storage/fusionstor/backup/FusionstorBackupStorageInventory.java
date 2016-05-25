@@ -32,7 +32,6 @@ public class FusionstorBackupStorageInventory extends BackupStorageInventory {
         mons = FusionstorBackupStorageMonInventory.valueOf(vo.getMons());
         fsid = vo.getFsid();
         poolName = vo.getPoolName();
-        sshPort = vo.getSshPort();
     }
 
     public FusionstorBackupStorageInventory() {
