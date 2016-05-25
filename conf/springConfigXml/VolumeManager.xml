@@ -52,4 +52,10 @@
 	</bean>
 
     <bean id="VolumeDeletionPolicyManager" class="org.zstack.storage.volume.VolumeDeletionPolicyManagerImpl" />
+
+	<bean id="VolumeUpgradeExtension" class="org.zstack.storage.volume.VolumeUpgradeExtension">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.Component" />
+		</zstack:plugin>
+	</bean>
 </beans>
