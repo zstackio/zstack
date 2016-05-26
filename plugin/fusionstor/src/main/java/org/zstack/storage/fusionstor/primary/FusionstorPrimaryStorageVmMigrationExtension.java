@@ -71,9 +71,9 @@ public class FusionstorPrimaryStorageVmMigrationExtension implements VmInstanceM
     }
 
     @Override
-    public String preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
         if (!needLink(inv)) {
-            return null;
+            return;
         }
 
         FusionstorQueryCmd cmd = new FusionstorQueryCmd();
@@ -96,7 +96,7 @@ public class FusionstorPrimaryStorageVmMigrationExtension implements VmInstanceM
             throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
         }
 
-        return null;
+        return;
     }
 
     @Override
