@@ -1,9 +1,6 @@
 package org.zstack.storage.fusionstor.backup;
 
-import org.zstack.storage.fusionstor.backup.FusionstorBackupStorageBase.DeleteCmd;
-import org.zstack.storage.fusionstor.backup.FusionstorBackupStorageBase.DownloadCmd;
-import org.zstack.storage.fusionstor.backup.FusionstorBackupStorageBase.InitCmd;
-import org.zstack.storage.fusionstor.backup.FusionstorBackupStorageBase.PingCmd;
+import org.zstack.storage.fusionstor.backup.FusionstorBackupStorageBase.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,4 +24,15 @@ public class FusionstorBackupStorageSimulatorConfig {
     public List<DownloadCmd> downloadCmds = new ArrayList<DownloadCmd>();
     public List<DeleteCmd> deleteCmds = new ArrayList<DeleteCmd>();
     public List<PingCmd> pingCmds = new ArrayList<PingCmd>();
+    public Map<String, Long> imageSize = new HashMap<String, Long>();
+    public Map<String, Long> imageActualSize = new HashMap<String, Long>();
+
+    public List<GetImageSizeCmd> getImageSizeCmds = new ArrayList<GetImageSizeCmd>();
+    public Map<String, Long> getImageSizeCmdSize = new HashMap<String, Long>();
+    public Map<String, Long> getImageSizeCmdActualSize = new HashMap<String, Long>();
+
+    public Map<String, Boolean> pingCmdSuccess = new HashMap<String, Boolean>();
+    public Map<String, Boolean> pingCmdOperationFailure = new HashMap<String, Boolean>();
+    public List<GetFactsCmd> getFactsCmds = new ArrayList<GetFactsCmd>();
+    public Map<String, String> getFactsCmdFsid = new HashMap<String, String>();
 }

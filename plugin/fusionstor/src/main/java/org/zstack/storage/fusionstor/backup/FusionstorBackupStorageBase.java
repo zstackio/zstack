@@ -7,27 +7,34 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.APIAddImageMsg;
+import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.fusionstor.*;
+import org.zstack.storage.fusionstor.FusionstorMonBase.PingResult;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -36,6 +43,21 @@ import static org.zstack.utils.CollectionDSL.list;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class FusionstorBackupStorageBase extends BackupStorageBase {
+    private static final CLogger logger = Utils.getLogger(FusionstorBackupStorageBase.class);
+
+    class ReconnectMonLock {
+        AtomicBoolean hold = new AtomicBoolean(false);
+
+        boolean lock() {
+            return hold.compareAndSet(false, true);
+        }
+
+        void unlock() {
+            hold.set(false);
+        }
+    }
+
+    ReconnectMonLock reconnectMonLock = new ReconnectMonLock();
 
     @Autowired
     protected RESTFacade restf;
@@ -125,6 +147,15 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
     public static class DownloadCmd extends AgentCommand {
         String url;
         String installPath;
+        String imageUuid;
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
 
         public String getUrl() {
             return url;
@@ -145,6 +176,15 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
 
     public static class DownloadRsp extends AgentResponse {
         long size;
+        Long actualSize;
+
+        public Long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(Long actualSize) {
+            this.actualSize = actualSize;
+        }
 
         public long getSize() {
             return size;
@@ -177,14 +217,30 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
 
     }
 
+    public static class GetImageSizeCmd extends AgentCommand {
+        public String imageUuid;
+        public String installPath;
+    }
+
+    public static class GetImageSizeRsp extends AgentResponse {
+        public Long size;
+        public Long actualSize;
+    }
+
+    public static class GetFactsCmd extends AgentCommand {
+        public String monUuid;
+    }
+
+    public static class GetFactsRsp extends AgentResponse {
+        public String fsid;
+    }
+
     public static final String INIT_PATH = "/fusionstor/backupstorage/init";
     public static final String DOWNLOAD_IMAGE_PATH = "/fusionstor/backupstorage/image/download";
     public static final String DELETE_IMAGE_PATH = "/fusionstor/backupstorage/image/delete";
+    public static final String GET_IMAGE_SIZE_PATH = "/fusionstor/backupstorage/image/getsize";
     public static final String PING_PATH = "/fusionstor/backupstorage/ping";
-
-    protected String makeHttpPath(String ip, String path) {
-        return String.format("http://%s:%s%s", ip, FusionstorGlobalProperty.BACKUP_STORAGE_AGENT_PORT, path);
-    }
+    public static final String GET_FACTS = "/fusionstor/backupstorage/facts";
 
     protected String makeImageInstallPath(String imageUuid) {
         return String.format("fusionstor://%s/%s", getSelf().getPoolName(), imageUuid);
@@ -223,17 +279,11 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                 }
 
                 FusionstorBackupStorageMonBase base = it.next();
-
-                restf.asyncJsonPost(makeHttpPath(base.getSelf().getHostname(), path), cmd, new JsonAsyncRESTCallback<T>() {
-                    @Override
-                    public void fail(ErrorCode err) {
-                        errorCodes.add(err);
-                        call();
-                    }
-
+                base.httpCall(path, cmd, retClass, new ReturnValueCompletion<T>() {
                     @Override
                     public void success(T ret) {
                         if (!ret.success) {
+                            // not an IO error but an operation error, return it
                             callback.fail(errf.stringToOperationError(ret.error));
                         } else {
                             if (!(cmd instanceof InitCmd)) {
@@ -245,8 +295,9 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                     }
 
                     @Override
-                    public Class<T> getReturnClass() {
-                        return retClass;
+                    public void fail(ErrorCode errorCode) {
+                        errorCodes.add(errorCode);
+                        call();
                     }
                 });
             }
@@ -278,6 +329,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
         final DownloadCmd cmd = new DownloadCmd();
         cmd.url = msg.getImageInventory().getUrl();
         cmd.installPath = makeImageInstallPath(msg.getImageInventory().getUuid());
+        cmd.imageUuid = msg.getImageInventory().getUuid();
 
         final DownloadImageReply reply = new DownloadImageReply();
         httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
@@ -291,6 +343,11 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
             public void success(DownloadRsp ret) {
                 reply.setInstallPath(cmd.installPath);
                 reply.setSize(ret.size);
+
+                // current fusionstor has no way to get the actual size
+                // if we cannot get the actual size from HTTP, use the virtual size
+                long asize = ret.actualSize == null ? ret.size : ret.actualSize;
+                reply.setActualSize(asize);
                 reply.setMd5sum("not calculated");
                 bus.reply(msg, reply);
             }
@@ -365,8 +422,41 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
     }
 
     @Override
-    protected void handle(SyncImageSizeOnBackupStorageMsg msg) {
-        throw new CloudRuntimeException("not implemented yet");
+    protected void handle(final SyncImageSizeOnBackupStorageMsg msg) {
+        GetImageSizeCmd cmd = new GetImageSizeCmd();
+        cmd.imageUuid = msg.getImage().getUuid();
+
+        ImageBackupStorageRefInventory ref = CollectionUtils.find(msg.getImage().getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
+            @Override
+            public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
+                return self.getUuid().equals(arg.getBackupStorageUuid()) ? arg : null;
+            }
+        });
+
+        if (ref == null) {
+            throw new CloudRuntimeException(String.format("cannot find ImageBackupStorageRefInventory of image[uuid:%s] for" +
+                    " the backup storage[uuid:%s]", msg.getImage().getUuid(), self.getUuid()));
+        }
+
+        final SyncImageSizeOnBackupStorageReply reply = new SyncImageSizeOnBackupStorageReply();
+        cmd.installPath = ref.getInstallPath();
+        httpCall(GET_IMAGE_SIZE_PATH, cmd, GetImageSizeRsp.class, new ReturnValueCompletion<GetImageSizeRsp>(msg) {
+            @Override
+            public void success(GetImageSizeRsp rsp) {
+                reply.setSize(rsp.size);
+
+                // current fusionstor cannot get actual size
+                long asize = rsp.actualSize == null ? msg.getImage().getActualSize() : rsp.actualSize;
+                reply.setActualSize(asize);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
@@ -390,12 +480,14 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                                         self.getUuid(), JSONObjectUtil.toJsonString(errorCodes))
                         ));
                     } else {
+                        // reload because mon status changed
+                        self = dbf.reload(self);
                         trigger.next();
                     }
                     return;
                 }
 
-                FusionstorBackupStorageMonBase base = it.next();
+                final FusionstorBackupStorageMonBase base = it.next();
                 base.connect(new Completion(completion) {
                     @Override
                     public void success() {
@@ -405,6 +497,12 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         errorCodes.add(errorCode);
+
+                        if (newAdded) {
+                            // the mon fails to connect, remove it
+                            dbf.remove(base.getSelf());
+                        }
+
                         connect(trigger);
                     }
                 });
@@ -422,6 +520,69 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         new Connector().connect(trigger);
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-mon-integrity";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        final Map<String, String> fsids = new HashMap<String, String>();
+
+                        final List<FusionstorBackupStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<FusionstorBackupStorageMonBase, FusionstorBackupStorageMonVO>() {
+                            @Override
+                            public FusionstorBackupStorageMonBase call(FusionstorBackupStorageMonVO arg) {
+                                return new FusionstorBackupStorageMonBase(arg);
+                            }
+                        });
+
+                        final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                Set<String> set = new HashSet<String>();
+                                set.addAll(fsids.values());
+
+                                if (set.size() == 1) {
+                                    trigger.next();
+                                    return;
+                                }
+
+                                StringBuilder sb =  new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different fusionstor clusters:\n");
+                                for (FusionstorBackupStorageMonBase mon : mons) {
+                                    String fsid = fsids.get(mon.getSelf().getUuid());
+                                    sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
+                                }
+
+                                trigger.fail(errf.stringToOperationError(sb.toString()));
+                            }
+                        });
+
+                        for (final FusionstorBackupStorageMonBase mon : mons) {
+                            GetFactsCmd cmd = new GetFactsCmd();
+                            cmd.uuid = self.getUuid();
+                            cmd.monUuid = mon.getSelf().getUuid();
+                            mon.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(latch) {
+                                @Override
+                                public void success(GetFactsRsp rsp) {
+                                    if (!rsp.success) {
+                                        // one mon cannot get the facts, directly error out
+                                        trigger.fail(errf.stringToOperationError(rsp.error));
+                                        return;
+                                    }
+
+                                    fsids.put(mon.getSelf().getUuid(), rsp.fsid);
+                                    latch.ack();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    // one mon cannot get the facts, directly error out
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
                     }
                 });
 
@@ -468,7 +629,10 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         if (newAdded) {
-                            dbf.removeCollection(getSelf().getMons(), FusionstorBackupStorageMonVO.class);
+                            self = dbf.reload(self);
+                            if (!getSelf().getMons().isEmpty()) {
+                                dbf.removeCollection(getSelf().getMons(), FusionstorBackupStorageMonVO.class);
+                            }
                         }
 
                         completion.fail(errCode);
@@ -480,23 +644,152 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
 
     @Override
     protected void pingHook(final Completion completion) {
-        PingCmd cmd = new PingCmd();
-
-        httpCall(PING_PATH, cmd, PingRsp.class, new ReturnValueCompletion<PingRsp>(completion) {
+        final List<FusionstorBackupStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<FusionstorBackupStorageMonBase, FusionstorBackupStorageMonVO>() {
             @Override
-            public void fail(ErrorCode err) {
+            public FusionstorBackupStorageMonBase call(FusionstorBackupStorageMonVO arg) {
+                return new FusionstorBackupStorageMonBase(arg);
+            }
+        });
+
+        final List<ErrorCode> errors = new ArrayList<ErrorCode>();
+
+        class Ping {
+            private AtomicBoolean replied = new AtomicBoolean(false);
+
+            @AsyncThread
+            private void reconnectMon(final FusionstorBackupStorageMonBase mon, boolean delay) {
+                if (!FusionstorGlobalConfig.BACKUP_STORAGE_MON_AUTO_RECONNECT.value(Boolean.class)) {
+                    logger.debug(String.format("do not reconnect the fusionstor backup storage mon[uuid:%s] as the global config[%s] is set to false",
+                            self.getUuid(), FusionstorGlobalConfig.BACKUP_STORAGE_MON_AUTO_RECONNECT.getCanonicalName()));
+                    return;
+                }
+
+                // there has been a reconnect in process
+                if (!reconnectMonLock.lock()) {
+                    return;
+                }
+
+                final NoErrorCompletion releaseLock = new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        reconnectMonLock.unlock();
+                    }
+                };
+
+                try {
+                    if (delay) {
+                        try {
+                            TimeUnit.SECONDS.sleep(FusionstorGlobalConfig.BACKUP_STORAGE_MON_RECONNECT_DELAY.value(Integer.class));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    mon.connect(new Completion(releaseLock) {
+                        @Override
+                        public void success() {
+                            logger.debug(String.format("successfully reconnected the mon[uuid:%s] of the fusionstor backup" +
+                                    " storage[uuid:%s, name:%s]", mon.getSelf().getUuid(), self.getUuid(), self.getName()));
+                            releaseLock.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            //TODO
+                            logger.warn(String.format("failed to reconnect the mon[uuid:%s] of the fusionstor backup" +
+                                    " storage[uuid:%s, name:%s], %s", mon.getSelf().getUuid(), self.getUuid(), self.getName(), errorCode));
+                            releaseLock.done();
+                        }
+                    });
+                } catch (Throwable t) {
+                    releaseLock.done();
+                    logger.warn(t.getMessage(), t);
+                }
+            }
+
+            void ping() {
+                // this is only called when all mons are disconnected
+                final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        if (!replied.compareAndSet(false, true)) {
+                            return;
+                        }
+
+                        ErrorCode err =  errf.stringToOperationError(String.format("failed to ping the fusionstor backup storage[uuid:%s, name:%s]",
+                                self.getUuid(), self.getName()), errors);
+                        completion.fail(err);
+                    }
+                });
+
+                for (final FusionstorBackupStorageMonBase mon : mons) {
+                    mon.ping(new ReturnValueCompletion<PingResult>(latch) {
+                        private void thisMonIsDown(ErrorCode err) {
+                            //TODO
+                            logger.warn(String.format("cannot ping mon[uuid:%s] of the fusionstor backup storage[uuid:%s, name:%s], %s",
+                                    mon.getSelf().getUuid(), self.getUuid(), self.getName(), err));
+                            errors.add(err);
+                            mon.changeStatus(MonStatus.Disconnected);
+                            reconnectMon(mon, true);
+                            latch.ack();
+                        }
+
+                        @Override
+                        public void success(PingResult res) {
+                            if (res.success) {
+                                // as long as there is one mon working, the backup storage works
+                                pingSuccess();
+
+                                if (mon.getSelf().getStatus() == MonStatus.Disconnected) {
+                                    reconnectMon(mon, false);
+                                }
+
+                            } else if (res.operationFailure) {
+                                // as long as there is one mon saying the fusionstor not working, the backup storage goes down
+                                logger.warn(String.format("the fusionstor backup storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports" +
+                                        " an operation failure[%s]", self.getUuid(), self.getName(), mon.getSelf().getUuid(), res.error));
+                                backupStorageDown();
+                            } else  {
+                                // this mon is down(success == false, operationFailure == false), but the backup storage may still work as other mons may work
+                                ErrorCode errorCode = errf.stringToOperationError(res.error);
+                                thisMonIsDown(errorCode);
+                            }
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            thisMonIsDown(errorCode);
+                        }
+                    });
+                }
+            }
+
+            // this is called once a mon return an operation failure
+            private void backupStorageDown() {
+                if (!replied.compareAndSet(false, true)) {
+                    return;
+                }
+
+                // set all mons to be disconnected
+                for (FusionstorBackupStorageMonBase base : mons) {
+                    base.changeStatus(MonStatus.Disconnected);
+                }
+
+                ErrorCode err = errf.stringToOperationError(String.format("failed to ping the backup primary storage[uuid:%s, name:%s]",
+                        self.getUuid(), self.getName()), errors);
                 completion.fail(err);
             }
 
-            @Override
-            public void success(PingRsp ret) {
-                if (ret.isSuccess()) {
-                    completion.success();
-                } else {
-                    completion.fail(errf.stringToOperationError(ret.getError()));
+            private void pingSuccess() {
+                if (!replied.compareAndSet(false, true)) {
+                    return;
                 }
+
+                completion.success();
             }
-        });
+        }
+
+        new Ping().ping();
     }
 
     @Override
@@ -582,10 +875,15 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                             }
                         });
 
+                        final List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
                         final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
                             @Override
                             public void done() {
-                                trigger.next();
+                                if (!errorCodes.isEmpty()) {
+                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, "unable to connect mons", errorCodes));
+                                } else {
+                                    trigger.next();
+                                }
                             }
                         });
 
@@ -598,8 +896,66 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    // one fails, all fail
-                                    trigger.fail(errorCode);
+                                    errorCodes.add(errorCode);
+                                    latch.ack();
+                                }
+                            });
+                        }
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-mon-integrity";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        List<FusionstorBackupStorageMonBase> bases = CollectionUtils.transformToList(monVOs, new Function<FusionstorBackupStorageMonBase, FusionstorBackupStorageMonVO>() {
+                            @Override
+                            public FusionstorBackupStorageMonBase call(FusionstorBackupStorageMonVO arg) {
+                                return new FusionstorBackupStorageMonBase(arg);
+                            }
+                        });
+
+                        final List<ErrorCode> errors = new ArrayList<ErrorCode>();
+
+                        final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                // one fail, all fail
+                                if (!errors.isEmpty()) {
+                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, "unable to add mon to fusionstor backup storage", errors));
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+
+                        for (final FusionstorBackupStorageMonBase base : bases) {
+                            GetFactsCmd cmd = new GetFactsCmd();
+                            cmd.uuid = self.getUuid();
+                            cmd.monUuid = base.getSelf().getUuid();
+                            base.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(latch) {
+                                @Override
+                                public void success(GetFactsRsp rsp) {
+                                    if (!rsp.isSuccess()) {
+                                        errors.add(errf.stringToOperationError(rsp.getError()));
+                                    } else {
+                                        String fsid = rsp.fsid;
+                                        if (!getSelf().getFsid().equals(fsid)) {
+                                            errors.add(errf.stringToOperationError(
+                                                    String.format("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
+                                                            "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
+                                            ));
+                                        }
+                                    }
+
+                                    latch.ack();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    errors.add(errorCode);
+                                    latch.ack();
                                 }
                             });
                         }
