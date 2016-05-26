@@ -36,6 +36,7 @@
             <list>
                 <value>org.zstack.compute.vm.VmStopOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmReleaseResourceFlow</value>
+                <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmStartOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>

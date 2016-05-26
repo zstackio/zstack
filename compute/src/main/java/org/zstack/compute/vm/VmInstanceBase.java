@@ -1875,7 +1875,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
             ImageVO imvo = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
             if (imvo.getMediaType() == ImageMediaType.ISO) {
-                VmSystemTags.ISO.createInherentTag(self.getUuid(), map(e(VmSystemTags.ISO_TOKEN, imvo.getUuid())));
+                new IsoOperator().attachIsoToVm(self.getUuid(), imvo.getUuid());
                 IsoSpec isoSpec  = new IsoSpec();
                 isoSpec.setImageUuid(imvo.getUuid());
                 spec.setDestIso(isoSpec);
@@ -2394,12 +2394,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void detachIso(final Completion completion) {
         if (self.getState() == VmInstanceState.Stopped) {
-            VmSystemTags.ISO.deleteInherentTag(self.getUuid());
+            new IsoOperator().detachIsoFromVm(self.getUuid());
             completion.success();
             return;
         }
 
-        if (!VmSystemTags.ISO.hasTag(self.getUuid())) {
+        if (!new IsoOperator().isIsoAttachedToVm(self.getUuid())) {
             completion.success();
             return;
         }
@@ -2408,7 +2408,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (spec.getDestIso() == null) {
             // the image ISO has been deleted from backup storage
             // try to detach it from the VM anyway
-            String isoUuid = VmSystemTags.ISO.getTokenByResourceUuid(self.getUuid(), VmSystemTags.ISO_TOKEN);
+            String isoUuid = new IsoOperator().getIsoUuidByVmUuid(self.getUuid());
             IsoSpec isoSpec = new IsoSpec();
             isoSpec.setImageUuid(isoUuid);
             spec.setDestIso(isoSpec);
@@ -2425,7 +2425,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                VmSystemTags.ISO.deleteInherentTag(self.getUuid());
+                new IsoOperator().detachIsoFromVm(self.getUuid());
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -2536,7 +2536,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void attachIso(final String isoUuid, final Completion completion) {
         if (self.getState() == VmInstanceState.Stopped) {
-            VmSystemTags.ISO.createInherentTag(self.getUuid(), map(e(VmSystemTags.ISO_TOKEN, isoUuid)));
+            new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
             completion.success();
             return;
         }
@@ -2555,7 +2555,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                VmSystemTags.ISO.createInherentTag(self.getUuid(), map(e(VmSystemTags.ISO_TOKEN, isoUuid)));
+                new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -3522,7 +3522,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setVmInventory(inv);
         buildHostname(spec);
 
-        String isoUuid = VmSystemTags.ISO.getTokenByResourceUuid(inv.getUuid(), VmSystemTags.ISO_TOKEN);
+        String isoUuid = new IsoOperator().getIsoUuidByVmUuid(inv.getUuid());
         if (isoUuid != null) {
             if (dbf.isExist(isoUuid, ImageVO.class)) {
                 IsoSpec isoSpec = new IsoSpec();
