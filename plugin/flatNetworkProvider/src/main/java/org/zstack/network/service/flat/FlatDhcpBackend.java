@@ -402,10 +402,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     @Override
-    public String preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
         List<DhcpInfo> info = getVmDhcpInfo(inv);
         if (info == null) {
-            return null;
+            return;
         }
 
         FutureCompletion completion = new FutureCompletion();
@@ -417,8 +417,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                             inv.getUuid(), destHostUuid), completion.getErrorCode()
             ));
         }
-
-        return null;
     }
 
     @Override

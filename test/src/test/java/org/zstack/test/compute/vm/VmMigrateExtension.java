@@ -1,6 +1,7 @@
 package org.zstack.test.compute.vm;
 
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.utils.Utils;
@@ -15,11 +16,10 @@ public class VmMigrateExtension implements VmInstanceMigrateExtensionPoint {
     String expectedUuid;
     
     @Override
-    public String preMigrateVm(VmInstanceInventory inv, String huuid) {
+    public void preMigrateVm(VmInstanceInventory inv, String huuid) {
         if (preventMigrate) {
-            return "Prevent migrating vm on purpose";
+            throw new CloudRuntimeException("on purpose");
         }
-        return null;
     }
 
     @Override

@@ -108,8 +108,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     public static final String BATCH_DELETE_EIP_PATH = "/flatnetworkprovider/eip/batchdelete";
 
     @Override
-    public String preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-        return null;
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
     }
 
     @Override
