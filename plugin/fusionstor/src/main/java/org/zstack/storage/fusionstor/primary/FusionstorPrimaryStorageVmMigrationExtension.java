@@ -18,6 +18,7 @@ import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.storage.fusionstor.FusionstorConstants;
+import org.zstack.storage.fusionstor.FusionstorGlobalProperty;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -66,7 +67,7 @@ public class FusionstorPrimaryStorageVmMigrationExtension implements VmInstanceM
         }
 
         String type = res.get(0);
-        return FusionstorConstants.FUSIONSTOR_PRIMARY_STORAGE_TYPE.equals(type);
+        return FusionstorGlobalProperty.FUSIONSTOR_PRIMARY_STORAGE_TYPE.equals(type);
     }
 
     @Override
