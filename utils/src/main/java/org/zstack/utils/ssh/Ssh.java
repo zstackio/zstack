@@ -292,7 +292,7 @@ public class Ssh {
 
             @Override
             public String getCommand() {
-                return String.format("scp %s %s@%s:%s", src, username, hostname, dst);
+                return String.format("scp -P %d %s %s@%s:%s", port, src, username, hostname, dst);
             }
         };
     }

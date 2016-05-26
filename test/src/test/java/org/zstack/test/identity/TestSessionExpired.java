@@ -44,7 +44,8 @@ public class TestSessionExpired {
         GlobalConfigInventory g = new GlobalConfigInventory();
         g.setCategory(IdentityGlobalConfig.CATEGORY);
         g.setName(IdentityGlobalConfig.SESSION_TIMEOUT.getName());
-        g.setValue("72000000000000000000000000000");
+        //g.setValue("72000000000000000000000000000");
+        g.setValue("720000000000000000000000000000000000000000");
 
         boolean s = false;
         try {
@@ -70,8 +71,6 @@ public class TestSessionExpired {
             s = true;
         }
         Assert.assertTrue(s);
-
-
    }
 
 }

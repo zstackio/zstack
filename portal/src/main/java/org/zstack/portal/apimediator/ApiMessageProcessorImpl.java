@@ -279,7 +279,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
 
                     if (!vals.contains(value.toString())) {
                         throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                                String.format("valid value for field[%s] of message[%s] are %s, but actual is %s", f.getName(),
+                                String.format("valid value for field[%s] of message[%s] are %s, but %s found", f.getName(),
                                         msg.getClass().getName(), vals, value)
                         ));
                     }

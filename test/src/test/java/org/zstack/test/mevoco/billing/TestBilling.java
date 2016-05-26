@@ -109,14 +109,14 @@ public class TestBilling {
         msg.setTimeUnit("s");
         msg.setPrice(10f);
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
-        msg.setResourceUnit("b");
+        msg.setResourceUnit("m");
         api.createPrice(msg);
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
         msg.setPrice(9f);
         msg.setResourceName(BillingConstants.SPENDING_ROOT_VOLUME);
-        msg.setResourceUnit("b");
+        msg.setResourceUnit("m");
         api.createPrice(msg);
 
         long during = 5;
@@ -130,12 +130,13 @@ public class TestBilling {
 
         float cpuPrice = vm.getCpuNum() * 100f * during;
         float memPrice = vm.getMemorySize() * 10f * during;
-        float volPrice = rootVolume.getSize() * 9f * during;
+        long volSizeInM = SizeUnit.BYTE.toMegaByte(rootVolume.getSize());
+        float volPrice = volSizeInM * 9f * during;
 
         // for 2s error margin
         float cpuPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
         float memPriceErrorMargin = vm.getMemorySize() * 100f  * 2;
-        float volPriceErrorMargin = rootVolume.getSize() * 9f * 2;
+        float volPriceErrorMargin = volSizeInM * 9f * 2;
         float errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
 
         Assert.assertEquals(cpuPrice + memPrice + volPrice, reply.getTotal(), errorMargin);

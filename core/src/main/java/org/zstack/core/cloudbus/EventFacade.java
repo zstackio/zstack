@@ -1,5 +1,7 @@
 package org.zstack.core.cloudbus;
 
+import java.util.Map;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -16,6 +18,8 @@ public interface EventFacade {
     void off(Object cb);
 
     void fire(String path, Object data);
+
+    boolean isFromThisManagementNode(Map tokens);
 
     String META_DATA_MANAGEMENT_NODE_ID = "metadata::managementNodeId";
 }

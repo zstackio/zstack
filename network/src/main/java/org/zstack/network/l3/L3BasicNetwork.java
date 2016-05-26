@@ -119,6 +119,15 @@ public class L3BasicNetwork implements L3Network {
     private void handle(APIAddIpRangeMsg msg) {
         IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
         ipr = createIpRange(msg, ipr);
+
+        final IpRangeInventory finalIpr = ipr;
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAddIpRangeExtensionPoint.class), new ForEachFunction<AfterAddIpRangeExtensionPoint>() {
+            @Override
+            public void run(AfterAddIpRangeExtensionPoint ext) {
+                ext.afterAddIpRange(finalIpr);
+            }
+        });
+
         APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
         evt.setInventory(ipr);
         bus.publish(evt);

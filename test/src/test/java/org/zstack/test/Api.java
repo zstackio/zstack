@@ -3210,6 +3210,7 @@ public class Api implements CloudBusEventListener {
         msg.setUuid(inv.getUuid());
         msg.setUsername(inv.getUsername());
         msg.setPassword(password);
+        msg.setSshport(inv.getSshport());
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIUpdateBackupStorageEvent evt = sender.send(msg, APIUpdateBackupStorageEvent.class);
@@ -3450,6 +3451,7 @@ public class Api implements CloudBusEventListener {
         msg.setUuid(inv.getUuid());
         msg.setUsername(inv.getUsername());
         msg.setPassword(password);
+        msg.setSshport(inv.getSshPort());
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIUpdateHostEvent evt = sender.send(msg, APIUpdateHostEvent.class);
@@ -4021,6 +4023,16 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIGetVmCapabilitiesReply reply = sender.call(msg, APIGetVmCapabilitiesReply.class);
+        return reply.getCapabilities();
+    }
+
+    public Map<String, Object> getVolumeCapabilities(String volumeUuid, SessionInventory session) throws ApiSenderException {
+        APIGetVolumeCapabilitiesMsg msg = new APIGetVolumeCapabilitiesMsg();
+        msg.setUuid(volumeUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVolumeCapabilitiesReply reply = sender.call(msg, APIGetVolumeCapabilitiesReply.class);
         return reply.getCapabilities();
     }
 }

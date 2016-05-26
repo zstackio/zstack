@@ -110,13 +110,17 @@ public class KvmBackend extends HypervisorBackend {
         public String primaryStorageInstallPath;
         public String backupStorageInstallPath;
         public String hostname;
+        public String username;
         public String sshKey;
+        public int sshPort;
     }
 
     @ApiTimeout(apiClasses = {APIAddImageMsg.class})
     public static class SftpDownloadBitsCmd extends AgentCmd {
         public String sshKey;
+        public int sshPort;
         public String hostname;
+        public String username;
         public String backupStorageInstallPath;
         public String primaryStorageInstallPath;
     }
@@ -1193,7 +1197,9 @@ public class KvmBackend extends HypervisorBackend {
                     final GetSftpBackupStorageDownloadCredentialReply greply = reply.castReply();
                     SftpDownloadBitsCmd cmd = new SftpDownloadBitsCmd();
                     cmd.hostname = greply.getHostname();
+                    cmd.username = greply.getUsername();
                     cmd.sshKey = greply.getSshKey();
+                    cmd.sshPort = greply.getSshPort();
                     cmd.backupStorageInstallPath = bsPath;
                     cmd.primaryStorageInstallPath = psPath;
 
@@ -1238,7 +1244,9 @@ public class KvmBackend extends HypervisorBackend {
                     cmd.primaryStorageInstallPath = psPath;
                     cmd.backupStorageInstallPath = bsPath;
                     cmd.hostname = r.getHostname();
+                    cmd.username = r.getUsername();
                     cmd.sshKey = r.getSshKey();
+                    cmd.sshPort = r.getSshPort();
 
                     new Do().go(UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
                         @Override

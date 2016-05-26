@@ -4,7 +4,7 @@
 
     <backupStorages>
         <cephBackupStorage name="ceph-bk" description="Test"
-                           url="/path1" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost,root:pass@#$word@127.0.0.1"
+                           url="/path1" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost:23,root:pass@#$word@127.0.0.1:23"
                            totalCapacity="1T" availableCapacity="500G"/>
     </backupStorages>
 

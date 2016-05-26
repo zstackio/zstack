@@ -61,6 +61,10 @@ public class ImageUpgradeExtension implements Component {
 
             @Override
             public void run(Map tokens, Object data) {
+                if (!evtf.isFromThisManagementNode(tokens)) {
+                    return;
+                }
+
                 final BackupStorageStatusChangedData d = (BackupStorageStatusChangedData) data;
 
                 if (!BackupStorageStatus.Connected.toString().equals(d.getNewStatus())) {

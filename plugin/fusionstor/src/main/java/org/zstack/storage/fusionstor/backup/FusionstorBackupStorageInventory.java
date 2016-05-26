@@ -25,6 +25,7 @@ public class FusionstorBackupStorageInventory extends BackupStorageInventory {
     private List<FusionstorBackupStorageMonInventory> mons = new ArrayList<FusionstorBackupStorageMonInventory>();
     private String fsid;
     private String poolName;
+    private Integer sshPort;
 
     public FusionstorBackupStorageInventory(FusionstorBackupStorageVO vo) {
         super(vo);
@@ -34,6 +35,13 @@ public class FusionstorBackupStorageInventory extends BackupStorageInventory {
     }
 
     public FusionstorBackupStorageInventory() {
+    }
+    public Integer getSshPort() {
+        return sshPort;
+    }
+
+    public void setSshPort(Integer sshPort) {
+        this.sshPort = sshPort;
     }
 
     public String getPoolName() {

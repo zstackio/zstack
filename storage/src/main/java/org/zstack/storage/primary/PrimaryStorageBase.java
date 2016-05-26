@@ -34,6 +34,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
+import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageReply;
@@ -549,6 +550,14 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         PrimaryStorageStatus oldStatus = self.getStatus();
         self.setStatus(status);
         self = dbf.updateAndRefresh(self);
+
+        PrimaryStorageStatusChangedData d = new PrimaryStorageStatusChangedData();
+        d.setInventory(PrimaryStorageInventory.valueOf(self));
+        d.setPrimaryStorageUuid(self.getUuid());
+        d.setOldStatus(oldStatus.toString());
+        d.setNewStatus(status.toString());
+        evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_STATUS_CHANGED_PATH, d);
+
         logger.debug(String.format("the primary storage[uuid:%s, name:%s] changed status from %s to %s",
                 self.getUuid(), self.getName(), oldStatus, status));
     }

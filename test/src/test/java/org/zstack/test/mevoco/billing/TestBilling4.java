@@ -98,7 +98,7 @@ public class TestBilling4 {
         msg.setTimeUnit("s");
         msg.setPrice(10f);
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
-        msg.setResourceUnit("b");
+        msg.setResourceUnit("m");
         PriceInventory pm1 = api.createPrice(msg);
 
         int during = 2;
@@ -110,19 +110,18 @@ public class TestBilling4 {
         msg.setTimeUnit("s");
         msg.setPrice(80f);
         msg.setResourceName(BillingConstants.SPENDING_CPU);
-        msg.setResourceUnit("s");
         PriceInventory pc2 = api.createPrice(msg);
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
         msg.setPrice(120f);
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
-        msg.setResourceUnit("b");
+        msg.setResourceUnit("m");
         PriceInventory pm2 = api.createPrice(msg);
 
         vm = api.stopVmInstance(vm.getUuid());
         float cpuPrice1 = vm.getCpuNum() * pc1.getPrice() * during;
-        float memPrice1 = vm.getMemorySize() * pm1.getPrice() * during;
+        float memPrice1 = SizeUnit.BYTE.toMegaByte(vm.getMemorySize()) * pm1.getPrice() * during;
 
         logger.debug(String.format("phase1: cpu price: %s, memory price: %s, during: %s s", cpuPrice1, memPrice1, during));
 
@@ -132,7 +131,7 @@ public class TestBilling4 {
         api.destroyVmInstance(vm.getUuid());
 
         float cpuPrice2 = vm.getCpuNum() * pc2.getPrice() * during;
-        float memPrice2 = vm.getMemorySize() * pm2.getPrice() * during;
+        float memPrice2 = SizeUnit.BYTE.toMegaByte(vm.getMemorySize()) * pm2.getPrice() * during;
 
         logger.debug(String.format("phase2: cpu price: %s, memory price: %s, during: %s s", cpuPrice2, memPrice2, during));
 

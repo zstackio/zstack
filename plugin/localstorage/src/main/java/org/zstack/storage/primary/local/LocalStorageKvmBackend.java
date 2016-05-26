@@ -893,7 +893,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     vo.setMediaType(ImageMediaType.valueOf(image.getMediaType()));
                                     vo.setImageUuid(image.getUuid());
                                     vo.setPrimaryStorageUuid(self.getUuid());
-                                    vo.setSize(image.getSize());
+                                    vo.setSize(image.getActualSize());
                                     vo.setMd5sum("not calculated");
 
                                     CacheInstallPath path = new CacheInstallPath();
@@ -965,7 +965,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
                             bus.send(rmsg);
 
-                            returnCapacityToHost(hostUuid, image.getSize());
+                            returnCapacityToHost(hostUuid, cvo.getSize());
                             dbf.remove(cvo);
 
                             doDownload(chain);
@@ -1402,7 +1402,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion) {
         final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
 
-        String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
+        final String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
         VolumeSnapshotInventory sp = msg.getSnapshot();
         MergeSnapshotCmd cmd = new MergeSnapshotCmd();
         cmd.setVolumeUuid(sp.getVolumeUuid());
@@ -1414,6 +1414,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public void success(MergeSnapshotRsp rsp) {
                 reply.setActualSize(rsp.actualSize);
                 reply.setSize(rsp.size);
+                reply.setInstallPath(installPath);
                 completion.success(reply);
             }
 

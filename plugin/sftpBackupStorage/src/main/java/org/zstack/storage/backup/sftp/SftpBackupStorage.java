@@ -251,6 +251,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         checker.setTargetIp(getSelf().getHostname());
         checker.setUsername(getSelf().getUsername());
         checker.setPassword(getSelf().getPassword());
+        checker.setSshPort(getSelf().getPort());
         checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/sftpbackupstorage/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
         checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/sftpbackupstorage/%s", agentPackageName), true).getAbsolutePath(),
                 String.format("/var/lib/zstack/sftpbackupstorage/%s", agentPackageName));
@@ -260,6 +261,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         runner.setPassword(getSelf().getPassword());
         runner.setUsername(getSelf().getUsername());
         runner.setTargetIp(getSelf().getHostname());
+        runner.setSshPort(getSelf().getPort());
         runner.setAgentPort(SftpBackupStorageGlobalProperty.AGENT_PORT);
         runner.setPlayBookName(SftpBackupStorageConstant.ANSIBLE_PLAYBOOK_NAME);
         runner.putArgument("pkg_sftpbackupstorage", agentPackageName);
@@ -391,7 +393,9 @@ public class SftpBackupStorage extends BackupStorageBase {
 
         String key = asf.getPrivateKey();
         reply.setHostname(getSelf().getHostname());
+        reply.setUsername(getSelf().getUsername());
         reply.setSshKey(key);
+        reply.setSshPort(getSelf().getPort());
         bus.reply(msg, reply);
     }
 
@@ -436,6 +440,9 @@ public class SftpBackupStorage extends BackupStorageBase {
         }
         if (umsg.getHostname() != null) {
             vo.setHostname(umsg.getHostname());
+        }
+        if (umsg.getSshport() > 0 && umsg.getSshport() <= 65535 ) {
+            vo.setPort(umsg.getSshport());
         }
 
         return vo;

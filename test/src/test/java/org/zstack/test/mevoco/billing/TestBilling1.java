@@ -115,7 +115,7 @@ public class TestBilling1 {
         msg.setTimeUnit("s");
         msg.setPrice(mprice);
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
-        msg.setResourceUnit("b");
+        msg.setResourceUnit("m");
         api.createPrice(msg);
         cql = new Cql("select * from <table> where resourceName = :name limit 1");
         cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_MEMORY);
@@ -170,7 +170,7 @@ public class TestBilling1 {
         final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
 
         float cpuPrice = vm.getCpuNum() * cprice * duringInSeconds;
-        float memPrice = vm.getMemorySize() * mprice * duringInSeconds;
+        float memPrice = SizeUnit.BYTE.toMegaByte(vm.getMemorySize()) * mprice * duringInSeconds;
         Assert.assertEquals(reply.getTotal(), cpuPrice + memPrice, 0.02);
 
         Spending spending = CollectionUtils.find(reply.getSpending(), new Function<Spending, Spending>() {

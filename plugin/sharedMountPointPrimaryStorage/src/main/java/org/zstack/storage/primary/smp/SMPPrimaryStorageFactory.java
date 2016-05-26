@@ -36,6 +36,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     static {
         type.setSupportPingStorageGateway(true);
         type.setSupportHeartbeatFile(true);
+        type.setOrder(699);
     }
 
     @Autowired

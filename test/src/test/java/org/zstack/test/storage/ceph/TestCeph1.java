@@ -76,6 +76,7 @@ public class TestCeph1 {
 
         Assert.assertEquals("root", bsmon.getSshUsername());
         Assert.assertEquals("pass@#$word", bsmon.getSshPassword());
+        Assert.assertEquals(23, bsmon.getSshPort());
 
         Assert.assertFalse(config.createSnapshotCmds.isEmpty());
         Assert.assertFalse(config.protectSnapshotCmds.isEmpty());

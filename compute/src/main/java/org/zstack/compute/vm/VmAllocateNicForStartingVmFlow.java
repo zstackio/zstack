@@ -11,7 +11,6 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
@@ -65,17 +64,15 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
             return;
         }
 
+        final Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(vm.getUuid());
         List<AllocateIpMsg> amsgs = CollectionUtils.transformToList(nicsNeedNewIp, new Function<AllocateIpMsg, VmNicInventory>() {
             @Override
             public AllocateIpMsg call(VmNicInventory arg) {
                 AllocateIpMsg msg = new AllocateIpMsg();
 
-                List<Map<String, String>> tokenList = VmSystemTags.STATIC_IP.getTokensOfTagsByResourceUuid(spec.getVmInventory().getUuid());
-                for (Map<String, String> tokens : tokenList) {
-                    String l3Uuid = tokens.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
-                    if (l3Uuid.equals(arg.getL3NetworkUuid())) {
-                        msg.setRequiredIp(tokens.get(VmSystemTags.STATIC_IP_TOKEN));
-                    }
+                String staticIp = vmStaticIps.get(arg.getL3NetworkUuid());
+                if (staticIp != null) {
+                    msg.setRequiredIp(staticIp);
                 }
 
                 msg.setL3NetworkUuid(arg.getL3NetworkUuid());

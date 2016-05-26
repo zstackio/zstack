@@ -18,6 +18,9 @@ public class FusionstorBackupStorageMonInventory {
     private Timestamp lastOpDate;
     private String backupStorageUuid;
 
+
+    private Integer sshPort;
+
     public static FusionstorBackupStorageMonInventory valueOf(FusionstorBackupStorageMonVO vo) {
         FusionstorBackupStorageMonInventory inv = new FusionstorBackupStorageMonInventory();
         inv.setHostname(vo.getHostname());
@@ -25,6 +28,7 @@ public class FusionstorBackupStorageMonInventory {
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setBackupStorageUuid(vo.getBackupStorageUuid());
+        inv.setSshPort(vo.getSshPort());
         return inv;
     }
 
@@ -37,6 +41,13 @@ public class FusionstorBackupStorageMonInventory {
         return invs;
     }
 
+    public Integer getSshPort() {
+        return sshPort;
+    }
+
+    public void setSshPort(Integer sshPort) {
+        this.sshPort = sshPort;
+    }
     public String getBackupStorageUuid() {
         return backupStorageUuid;
     }

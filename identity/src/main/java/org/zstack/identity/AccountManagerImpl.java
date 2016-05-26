@@ -27,6 +27,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountConstant.StatementEffect;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
+import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
@@ -234,7 +235,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
     }
 
-    private void handle(APIChangeResourceOwnerMsg msg) {
+    private void handle(final APIChangeResourceOwnerMsg msg) {
         SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
         q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
         AccountResourceRefVO ref = q.find();
@@ -244,9 +245,22 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             ));
         }
 
+        final AccountResourceRefInventory origin = AccountResourceRefInventory.valueOf(ref);
+
+        for (ResourceOwnerPreChangeExtensionPoint ext : pluginRgty.getExtensionList(ResourceOwnerPreChangeExtensionPoint.class)) {
+            ext.resourceOwnerPreChange(origin, msg.getAccountUuid());
+        }
+
         ref.setAccountUuid(msg.getAccountUuid());
         ref.setOwnerAccountUuid(msg.getAccountUuid());
         ref = dbf.updateAndRefresh(ref);
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(ResourceOwnerAfterChangeExtensionPoint.class), new ForEachFunction<ResourceOwnerAfterChangeExtensionPoint>() {
+            @Override
+            public void run(ResourceOwnerAfterChangeExtensionPoint ext) {
+                ext.resourceOwnerAfterChange(origin, msg.getAccountUuid());
+            }
+        });
 
         APIChangeResourceOwnerEvent evt = new APIChangeResourceOwnerEvent(msg.getId());
         evt.setInventory(AccountResourceRefInventory.valueOf(ref));
@@ -586,21 +600,39 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             public void run(Map tokens, Object data) {
                 AccountDeletedData d = (AccountDeletedData) data;
 
-                List<String> sessionToDelete = new ArrayList<String>();
-                for (Map.Entry<String, SessionInventory> e : sessions.entrySet()) {
-                    SessionInventory session = e.getValue();
-                    if (d.getAccountUuid().equals(session.getAccountUuid())) {
-                        sessionToDelete.add(e.getKey());
-                    }
+                SimpleQuery<SessionVO> q = dbf.createQuery(SessionVO.class);
+                q.select(SessionVO_.uuid);
+                q.add(SessionVO_.accountUuid, Op.EQ, d.getAccountUuid());
+                List<String> suuids = q.listValue();
+
+                for (String uuid : suuids) {
+                    logOutSession(uuid);
                 }
 
-                for (String suuid : sessionToDelete) {
-                    sessions.remove(suuid);
-                }
-
-                if (!sessionToDelete.isEmpty()) {
-                    logger.debug(String.format("successfully removed %s sessions for the deleted account[%s]", sessionToDelete.size(),
+                if (!suuids.isEmpty()) {
+                    logger.debug(String.format("successfully removed %s sessions for the deleted account[%s]", suuids.size(),
                             d.getAccountUuid()));
+                }
+            }
+        });
+
+        evtf.on(IdentityCanonicalEvents.USER_DELETED_PATH, new EventCallback() {
+            @Override
+            public void run(Map tokens, Object data) {
+                UserDeletedData d = (UserDeletedData) data;
+
+                SimpleQuery<SessionVO> q = dbf.createQuery(SessionVO.class);
+                q.select(SessionVO_.uuid);
+                q.add(SessionVO_.userUuid, Op.EQ, d.getUserUuid());
+                List<String> suuids = q.listValue();
+
+                for (String uuid : suuids) {
+                    logOutSession(uuid);
+                }
+
+                if (!suuids.isEmpty()) {
+                    logger.debug(String.format("successfully removed %s sessions for the deleted user[%s]", suuids.size(),
+                            d.getUserUuid()));
                 }
             }
         });

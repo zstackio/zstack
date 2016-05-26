@@ -107,8 +107,12 @@ public class PrimaryStorageCapacityUpdater {
         return capacityVO != null;
     }
 
+    private boolean isResized() {
+        return originalCopy != null && capacityVO != null && originalCopy.getTotalPhysicalCapacity() != 0 && originalCopy.getTotalPhysicalCapacity() != capacityVO.getTotalPhysicalCapacity();
+    }
+
     private void checkResize() {
-        if (originalCopy != null && capacityVO != null && originalCopy.getTotalPhysicalCapacity() != 0 && originalCopy.getTotalPhysicalCapacity() != capacityVO.getTotalPhysicalCapacity()) {
+        if (isResized()) {
             logger.debug(String.format("the physical capacity of primary storage[uuid:%s] changed from %s to %s, this indicates the primary storage is re-sized." +
                     " We need to recalculate its capacity", capacityVO.getUuid(), originalCopy.getTotalPhysicalCapacity(), capacityVO.getTotalPhysicalCapacity()));
             // primary storage re-sized
@@ -120,6 +124,10 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     private void merge() {
+        if (isResized()) {
+            capacityVO.setTotalCapacity(capacityVO.getTotalPhysicalCapacity());
+        }
+
         capacityVO = dbf.getEntityManager().merge(capacityVO);
         logCapacityChange();
     }

@@ -139,7 +139,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
         if (!pass && !msg.isAll()) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("ipRangeUuids, L3NetworkUuids, zoneUuids must have at least one be none-empty list, or all is set to true")
+                    "ipRangeUuids, L3NetworkUuids, zoneUuids must have at least one be none-empty list, or all is set to true"
             ));
         }
 
@@ -194,6 +194,24 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(IpRangeInventory ipr) {
+        if (NetworkUtils.isIpv4RangeOverlap("224.0.0.0", "239.255.255.255", ipr.getStartIp(), ipr.getEndIp())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the IP range[%s ~ %s] contains D class addresses which are for multicast", ipr.getStartIp(), ipr.getEndIp())
+            ));
+        }
+
+        if (NetworkUtils.isIpv4RangeOverlap("240.0.0.0", "255.255.255.255", ipr.getStartIp(), ipr.getEndIp())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the IP range[%s ~ %s] contains E class addresses which are reserved", ipr.getStartIp(), ipr.getEndIp())
+            ));
+        }
+
+        if (NetworkUtils.isIpv4RangeOverlap("169.254.1.0", "169.254.254.255", ipr.getStartIp(), ipr.getEndIp())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("the IP range[%s ~ %s] contains link local addresses which are reserved", ipr.getStartIp(), ipr.getEndIp())
+            ));
+        }
+
         SubnetUtils sub = new SubnetUtils(ipr.getStartIp(), ipr.getNetmask());
         SubnetInfo info = sub.getInfo();
         if (!info.isInRange(ipr.getGateway())) {

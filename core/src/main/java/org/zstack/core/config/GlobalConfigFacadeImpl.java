@@ -222,7 +222,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
             private void mergeXmlDatabase() {
                 for (GlobalConfig g : configsFromDatabase.values()) {
-                    configsFromXml.put(g.getIdentity(), g);
+                    GlobalConfig x = configsFromXml.get(g.getIdentity());
+                    if (x == null) {
+                        configsFromXml.put(g.getIdentity(), g);
+                    } else {
+                        x.setValue(g.value());
+                        x.setDefaultValue(g.getDefaultValue());
+                    }
                 }
             }
 
@@ -456,7 +462,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                                                 config.getCanonicalName(), at.numberLessThan(), num));
                                     }
                                 } catch (NumberFormatException e) {
-                                    throw new GlobalConfigException(String.format("%s is not a number", value), e);
+                                    throw new GlobalConfigException(String.format("%s is not a number or out of range of a Long type", value), e);
                                 }
                             }
                         });
@@ -473,7 +479,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                                                 config.getCanonicalName(), at.numberGreaterThan(), num));
                                     }
                                 } catch (NumberFormatException e) {
-                                    throw new GlobalConfigException(String.format("%s is not a number", value), e);
+                                    throw new GlobalConfigException(String.format("%s is not a number or out of range of a Long type", value), e);
                                 }
                             }
                         });
@@ -495,7 +501,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                                                 config.getCanonicalName(), lowBound, upBound));
                                     }
                                 } catch (NumberFormatException e) {
-                                    throw new GlobalConfigException(String.format("%s is not a number", value), e);
+                                    throw new GlobalConfigException(String.format("%s is not a number or out of range of a Long type", value), e);
                                 }
                             }
                         });

@@ -22,7 +22,7 @@ public class FusionstorMonAO {
     private String hostname;
 
     @Column
-    private int sshPort;
+    private int sshPort = 22;
 
     @Column
     private int monPort = 6789;

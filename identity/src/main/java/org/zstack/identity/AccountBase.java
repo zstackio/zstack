@@ -23,6 +23,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
+import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -559,7 +560,17 @@ public class AccountBase extends AbstractAccount {
     }
 
     private void handle(APIDeleteUserMsg msg) {
-        dbf.removeByPrimaryKey(msg.getUuid(), UserVO.class);
+        UserVO user = dbf.findByUuid(msg.getUuid(), UserVO.class);
+        if (user != null) {
+            UserInventory inv = UserInventory.valueOf(user);
+            UserDeletedData d = new UserDeletedData();
+            d.setInventory(inv);
+            d.setUserUuid(inv.getUuid());
+            evtf.fire(IdentityCanonicalEvents.USER_DELETED_PATH, d);
+
+            dbf.remove(user);
+        }
+
         APIDeleteUserEvent evt = new APIDeleteUserEvent(msg.getId());
         bus.publish(evt);
     }
