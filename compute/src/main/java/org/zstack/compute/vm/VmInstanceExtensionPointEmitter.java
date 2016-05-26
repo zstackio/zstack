@@ -246,31 +246,6 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
     
-    public ErrorCode preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
-        for (VmInstanceMigrateExtensionPoint ext : migrateVmExtensions) {
-            try {
-                String err = ext.preMigrateVm(inv, destHostUuid);
-                if (err != null) {
-                    logger.debug(String.format("VmInstanceMigrateExtensionPoint[%s] refuses to destroy vm[uuid:%s] because %s", ext.getClass().getName(),
-                            inv.getUuid(), err));
-                    return errf.stringToOperationError(err);
-                }
-            } catch (Exception e) {
-                logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
-            }
-        }
-        return null;
-    }
-    
-    public void beforeMigrateVm(final VmInstanceInventory inv, final String destHostUuid) {
-        CollectionUtils.safeForEach(migrateVmExtensions, new ForEachFunction<VmInstanceMigrateExtensionPoint>() {
-            @Override
-            public void run(VmInstanceMigrateExtensionPoint arg) {
-                arg.beforeMigrateVm(inv, destHostUuid);
-            }
-        });
-    }
-    
     public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid) {
         CollectionUtils.safeForEach(migrateVmExtensions, new ForEachFunction<VmInstanceMigrateExtensionPoint>() {
             @Override
