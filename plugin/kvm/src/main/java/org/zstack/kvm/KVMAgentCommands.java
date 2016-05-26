@@ -87,6 +87,15 @@ public class KVMAgentCommands {
     public static class AttachNicCommand extends AgentCommand {
         private String vmUuid;
         private NicTO nic;
+        private Map addons = new HashMap();
+
+        public Map getAddons() {
+            return addons;
+        }
+
+        public void setAddons(Map addons) {
+            this.addons = addons;
+        }
 
         public String getVmUuid() {
             return vmUuid;
