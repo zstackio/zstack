@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
-import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
@@ -25,7 +24,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -46,7 +44,8 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
     static {
         operations = list(
                 VmOperation.NewCreate,
-                VmOperation.Start
+                VmOperation.Start,
+                VmOperation.Reboot
         );
     }
 
