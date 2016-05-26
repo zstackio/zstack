@@ -1151,6 +1151,12 @@ public class KVMHost extends HostBase implements Host {
         AttachNicCommand cmd = new AttachNicCommand();
         cmd.setVmUuid(msg.getNicInventory().getVmInstanceUuid());
         cmd.setNic(to);
+
+        KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
+        for (KvmPreAttachNicExtensionPoint ext : pluginRgty.getExtensionList(KvmPreAttachNicExtensionPoint.class)) {
+            ext.preAttachNicExtensionPoint(inv, cmd);
+        }
+
         restf.asyncJsonPost(attachNicPath, cmd, new JsonAsyncRESTCallback<AttachNicResponse>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
