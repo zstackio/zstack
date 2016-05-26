@@ -23,7 +23,7 @@ public class FusionstorBackupStorageFactory implements BackupStorageFactory, Fus
     @Autowired
     private AnsibleFacade asf;
 
-    public static final BackupStorageType type = new BackupStorageType(FusionstorConstants.FUSIONSTOR_BACKUP_STORAGE_TYPE);
+    public static final BackupStorageType type = new BackupStorageType(FusionstorGlobalProperty.FUSIONSTOR_BACKUP_STORAGE_TYPE);
 
     static {
         type.setOrder(799);
@@ -40,7 +40,7 @@ public class FusionstorBackupStorageFactory implements BackupStorageFactory, Fus
         APIAddFusionstorBackupStorageMsg cmsg = (APIAddFusionstorBackupStorageMsg)msg;
 
         FusionstorBackupStorageVO cvo = new FusionstorBackupStorageVO(vo);
-        cvo.setType(FusionstorConstants.FUSIONSTOR_BACKUP_STORAGE_TYPE);
+        cvo.setType(FusionstorGlobalProperty.FUSIONSTOR_BACKUP_STORAGE_TYPE);
         String poolName = cmsg.getPoolName() == null ? String.format("bak-t-%s", vo.getUuid()) : cmsg.getPoolName();
         cvo.setPoolName(poolName);
 

@@ -614,7 +614,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
     {
         backupStorageMediators.put(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE, new SftpBackupStorageMediator());
-        backupStorageMediators.put(FusionstorConstants.FUSIONSTOR_BACKUP_STORAGE_TYPE, new FusionstorBackupStorageMediator());
+        backupStorageMediators.put(FusionstorGlobalProperty.FUSIONSTOR_BACKUP_STORAGE_TYPE, new FusionstorBackupStorageMediator());
     }
 
 
@@ -2257,7 +2257,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         q.add(BackupStorageVO_.uuid, Op.EQ, msg.getBackupStorageUuid());
         String bsType = q.findValue();
 
-        if (!FusionstorConstants.FUSIONSTOR_BACKUP_STORAGE_TYPE.equals(bsType)) {
+        if (!FusionstorGlobalProperty.FUSIONSTOR_BACKUP_STORAGE_TYPE.equals(bsType)) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("unable to upload bits to the backup storage[type:%s], we only support FUSIONSTOR", bsType)
             ));
