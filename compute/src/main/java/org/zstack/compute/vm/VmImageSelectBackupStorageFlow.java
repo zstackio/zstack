@@ -10,11 +10,8 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
-import org.zstack.header.storage.backup.BackupStorageZoneRefVO_;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -22,11 +19,8 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -94,7 +88,8 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
             if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
                 spec.getDestIso().setBackupStorageUuid(bsUuid);
             }
-        } else if (VmOperation.Start == spec.getCurrentVmOperation() && spec.getDestIso() != null) {
+        } else if ((VmOperation.Start == spec.getCurrentVmOperation() || VmOperation.Reboot == spec.getCurrentVmOperation())
+                && spec.getDestIso() != null) {
             String isoBsUuid = findBackupStorage(spec, spec.getDestIso().getImageUuid());
             spec.getDestIso().setBackupStorageUuid(isoBsUuid);
         }

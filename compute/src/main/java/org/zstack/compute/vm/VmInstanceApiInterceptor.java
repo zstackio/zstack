@@ -136,7 +136,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAttachIsoToVmInstanceMsg msg) {
-        String isoUuid = VmSystemTags.ISO.getTokenByResourceUuid(msg.getVmInstanceUuid(), VmSystemTags.ISO_TOKEN);
+        String isoUuid = new IsoOperator().getIsoUuidByVmUuid(msg.getVmInstanceUuid());
         if (isoUuid != null) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
                     String.format("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), isoUuid)
