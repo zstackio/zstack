@@ -66,6 +66,55 @@ public class FusionstorBackupStorageSimulator {
         return c;
     }
 
+    @RequestMapping(value= FusionstorBackupStorageBase.GET_FACTS, method= RequestMethod.POST)
+    public @ResponseBody
+    String getFacts(HttpEntity<String> entity) {
+        GetFactsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetFactsCmd.class);
+        GetFactsRsp rsp = new GetFactsRsp();
+
+        config.getFactsCmds.add(cmd);
+        String fsid = config.getFactsCmdFsid.get(cmd.monUuid);
+        if (fsid == null) {
+            FusionstorBackupStorageConfig c = getConfig(cmd);
+            fsid = c.fsid;
+        }
+
+        rsp.fsid = fsid;
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value= FusionstorBackupStorageMonBase.PING_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String pingMon(HttpEntity<String> entity) {
+        FusionstorBackupStorageMonBase.PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), FusionstorBackupStorageMonBase.PingCmd.class);
+        Boolean success = config.pingCmdSuccess.get(cmd.monUuid);
+        FusionstorBackupStorageMonBase.PingRsp rsp = new FusionstorBackupStorageMonBase.PingRsp();
+        rsp.success = success == null ? true : success;
+        if (!rsp.success) {
+            rsp.error = "on purpose";
+        }
+        Boolean operationFailure = config.pingCmdOperationFailure.get(cmd.monUuid);
+        rsp.operationFailure = operationFailure == null ? false : operationFailure;
+        reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value=FusionstorBackupStorageBase.GET_IMAGE_SIZE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getImageSize(HttpEntity<String> entity) {
+        GetImageSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetImageSizeCmd.class);
+        config.getImageSizeCmds.add(cmd);
+
+        GetImageSizeRsp rsp = new GetImageSizeRsp();
+        Long size = config.getImageSizeCmdSize.get(cmd.imageUuid);
+        rsp.size = size == null ? 0 : size;
+        Long asize = config.getImageSizeCmdActualSize.get(cmd.imageUuid);
+        rsp.actualSize = asize == null ? 0 : asize;
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=FusionstorBackupStorageBase.INIT_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String initialize(HttpEntity<String> entity) {
@@ -93,10 +142,15 @@ public class FusionstorBackupStorageSimulator {
     @RequestMapping(value=FusionstorBackupStorageBase.DOWNLOAD_IMAGE_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String download(HttpEntity<String> entity) {
+        DownloadRsp rsp = new DownloadRsp();
         DownloadCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DownloadCmd.class);
         config.downloadCmds.add(cmd);
 
-        DownloadRsp rsp = new DownloadRsp();
+        Long size = config.imageSize.get(cmd.imageUuid);
+        rsp.setSize(size == null ? 0 : size);
+        Long asize = config.imageActualSize.get(cmd.imageUuid);
+        rsp.setActualSize(asize == null ? 0 : asize);
+
         reply(entity, rsp);
         return null;
     }
@@ -107,16 +161,6 @@ public class FusionstorBackupStorageSimulator {
         DeleteCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteCmd.class);
         config.deleteCmds.add(cmd);
         DeleteRsp rsp = new DeleteRsp();
-        reply(entity, rsp);
-        return null;
-    }
-
-    @RequestMapping(value=FusionstorBackupStorageBase.PING_PATH, method= RequestMethod.POST)
-    public @ResponseBody
-    String ping(HttpEntity<String> entity) {
-        PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), PingCmd.class);
-        config.pingCmds.add(cmd);
-        PingRsp rsp = new PingRsp();
         reply(entity, rsp);
         return null;
     }

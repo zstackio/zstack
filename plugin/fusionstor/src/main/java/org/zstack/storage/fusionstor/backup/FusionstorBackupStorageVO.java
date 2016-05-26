@@ -43,7 +43,6 @@ public class FusionstorBackupStorageVO extends BackupStorageVO {
     }
 
     public void setFsid(String fsid) {
-
         this.fsid = fsid;
     }
 
