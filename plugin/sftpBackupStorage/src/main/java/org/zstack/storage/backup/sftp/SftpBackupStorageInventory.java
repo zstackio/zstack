@@ -22,13 +22,13 @@ public class SftpBackupStorageInventory extends BackupStorageInventory {
     public String username;
 
 
-    public int sshport;
+    public int sshPort;
 
     protected SftpBackupStorageInventory(SftpBackupStorageVO vo) {
         super(vo);
         hostname = vo.getHostname();
         username = vo.getUsername();
-        sshport = vo.getPort();
+        sshPort = vo.getPort();
     }
 
     public SftpBackupStorageInventory() {
@@ -64,9 +64,9 @@ public class SftpBackupStorageInventory extends BackupStorageInventory {
         this.username = username;
     }
     public int getSshport() {
-        return sshport;
+        return sshPort;
     }
-    public void setSshport(int sshport) {
-        this.sshport = sshport;
+    public void setSshport(int sshPort) {
+        this.sshPort = sshPort;
     }
 }
