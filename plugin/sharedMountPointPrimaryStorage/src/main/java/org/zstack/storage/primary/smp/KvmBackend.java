@@ -12,9 +12,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.core.ApiTimeout;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -195,17 +193,11 @@ public class KvmBackend extends HypervisorBackend {
         super(self);
     }
 
-
-    private String findConnectedHostByClusterUuid(String clusterUuid) {
-        return findConnectedHostByClusterUuid(clusterUuid, true);
-    }
-
-    private String findConnectedHostByClusterUuid(String clusterUuid, boolean exceptionOnNotFound) {
+    private List<String> findConnectedHostByClusterUuid(String clusterUuid, boolean exceptionOnNotFound) {
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.uuid);
         q.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
         q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
-        q.setLimit(200);
         List<String> hostUuids = q.listValue();
         if (hostUuids.isEmpty() && exceptionOnNotFound) {
             throw new OperationFailureException(errf.stringToOperationError(
@@ -213,12 +205,7 @@ public class KvmBackend extends HypervisorBackend {
             ));
         }
 
-        if (hostUuids.isEmpty()) {
-            return null;
-        }
-
-        Collections.shuffle(hostUuids);
-        return hostUuids.get(0);
+        return hostUuids;
     }
 
     private <T extends AgentRsp> void httpCall(String path, final String hostUuid, AgentCmd cmd, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
@@ -289,15 +276,8 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    public void attachHook(String clusterUuid, final Completion completion) {
-        String huuid = findConnectedHostByClusterUuid(clusterUuid, false);
-        if (huuid == null) {
-            // no host in the cluster
-            completion.success();
-            return;
-        }
-
-        connect(huuid, completion);
+    public void attachHook(final String clusterUuid, final Completion completion) {
+        connectByClusterUuid(clusterUuid, completion);
     }
 
     @Override
@@ -1318,14 +1298,47 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    void connectByClusterUuid(String clusterUuid, Completion completion) {
-        String hostUuid = findConnectedHostByClusterUuid(clusterUuid, false);
-        if (hostUuid == null) {
+    void connectByClusterUuid(final String clusterUuid, final Completion completion) {
+        List<String> huuids = findConnectedHostByClusterUuid(clusterUuid, false);
+        if (huuids.isEmpty()) {
+            // no host in the cluster
             completion.success();
             return;
         }
 
-        connect(hostUuid, completion);
+        class Result {
+            List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+            boolean success = false;
+        }
+
+        final Result ret = new Result();
+        final AsyncLatch latch = new AsyncLatch(huuids.size(), new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                if (ret.success) {
+                    completion.success();
+                } else {
+                    completion.fail(errf.stringToOperationError(String.format("unable to connect the shared mount point storage[uuid:%s, name:%s] to" +
+                            " the cluster[uuid:%s]", self.getUuid(), self.getName(), clusterUuid), ret.errorCodes));
+                }
+            }
+        });
+
+        for (String huuid : huuids) {
+            connect(huuid, new Completion(latch) {
+                @Override
+                public void success() {
+                    ret.success = true;
+                    latch.ack();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    ret.errorCodes.add(errorCode);
+                    latch.ack();
+                }
+            });
+        }
     }
 
     @Override

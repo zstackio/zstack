@@ -55,7 +55,7 @@ public class TestSmpPrimaryStorage1 {
     
 	@Test
 	public void test() throws ApiSenderException {
-        Assert.assertEquals(1, config.connectCmds.size());
+        Assert.assertEquals(2, config.connectCmds.size());
         Assert.assertEquals(1, config.downloadBitsCmds.size());
         Assert.assertEquals(1, config.createVolumeFromCacheCmds.size());
 
