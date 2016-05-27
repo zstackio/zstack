@@ -25,7 +25,7 @@ public class KVMHostInventory extends HostInventory {
     @APINoSee
     private String password;
 
-    private int sshPort;
+    private Integer sshPort;
 
     protected KVMHostInventory(KVMHostVO vo) {
         super(vo);
@@ -61,12 +61,12 @@ public class KVMHostInventory extends HostInventory {
     public void setPassword(String password) {
         this.password = password;
     }
-
-    public int getSshPort() {
+    public Integer getSshPort() {
         return sshPort;
     }
 
-    public void setSshPort(int sshPort) {
+    public void setSshPort(Integer sshPort) {
         this.sshPort = sshPort;
     }
+
 }

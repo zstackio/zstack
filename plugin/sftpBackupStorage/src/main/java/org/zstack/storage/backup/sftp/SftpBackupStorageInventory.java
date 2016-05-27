@@ -22,7 +22,7 @@ public class SftpBackupStorageInventory extends BackupStorageInventory {
     public String username;
 
 
-    public int sshPort;
+    public Integer sshPort;
 
     protected SftpBackupStorageInventory(SftpBackupStorageVO vo) {
         super(vo);
@@ -61,12 +61,15 @@ public class SftpBackupStorageInventory extends BackupStorageInventory {
     }
 
     public void setUsername(String username) {
+
         this.username = username;
     }
-    public int getSshport() {
+
+    public Integer getSshPort() {
         return sshPort;
     }
-    public void setSshport(int sshPort) {
+
+    public void setSshPort(Integer sshPort) {
         this.sshPort = sshPort;
     }
 }

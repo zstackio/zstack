@@ -314,7 +314,7 @@ public class KVMHost extends HostBase implements Host {
         KvmRunShellReply reply = new KvmRunShellReply();
         if (result.isSshFailure()) {
             reply.setError(errf.stringToOperationError(
-                    String.format("unable to connect to KVM[ip:%s, username:%s] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), result.getExitErrorMessage())
+                    String.format("unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), result.getExitErrorMessage())
             ));
         } else {
             reply.setStdout(result.getStdout());
@@ -2058,7 +2058,7 @@ public class KVMHost extends HostBase implements Host {
                                         .script("scripts/check-public-dns-name.sh", map(e("dnsCheckList", checkList))).runAndClose();
                                 if (ret.isSshFailure()) {
                                     trigger.fail(errf.stringToOperationError(
-                                            String.format("unable to connect to KVM[ip:%s, username:%s] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), ret.getExitErrorMessage())
+                                            String.format("unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage())
                                     ));
                                 } else if (ret.getReturnCode() != 0) {
                                     trigger.fail(errf.stringToOperationError(
@@ -2083,8 +2083,8 @@ public class KVMHost extends HostBase implements Host {
 
                             if (ret.isSshFailure()) {
                                 throw new OperationFailureException(errf.stringToOperationError(
-                                        String.format("unable to connect to KVM[ip:%s, username:%s] to check the management node connectivity," +
-                                                "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), ret.getExitErrorMessage())
+                                        String.format("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
+                                                "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage())
                                 ));
                             } else if (ret.getReturnCode() != 0) {
                                 throw new OperationFailureException(errf.stringToOperationError(
