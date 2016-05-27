@@ -22,6 +22,7 @@ public class FusionstorPrimaryStorageSimulatorConfig {
     public List<CreateEmptyVolumeCmd> createEmptyVolumeCmds = new ArrayList<CreateEmptyVolumeCmd>();
     public List<DeleteCmd> deleteCmds = new ArrayList<DeleteCmd>();
     public List<CreateSnapshotCmd> createSnapshotCmds = new ArrayList<CreateSnapshotCmd>();
+    public Map<String, Long> createSnapshotCmdSize = new HashMap<String, Long>();
     public List<DeleteSnapshotCmd> deleteSnapshotCmds = new ArrayList<DeleteSnapshotCmd>();
     public List<ProtectSnapshotCmd> protectSnapshotCmds = new ArrayList<ProtectSnapshotCmd>();
     public List<UnprotectedSnapshotCmd> unprotectedSnapshotCmds = new ArrayList<UnprotectedSnapshotCmd>();
@@ -33,4 +34,16 @@ public class FusionstorPrimaryStorageSimulatorConfig {
     public List<RollbackSnapshotCmd> rollbackSnapshotCmds = new ArrayList<RollbackSnapshotCmd>();
     public List<CreateKvmSecretCmd> createKvmSecretCmds = new ArrayList<CreateKvmSecretCmd>();
     public List<DeletePoolCmd> deletePoolCmds = new ArrayList<DeletePoolCmd>();
+    public Map<String, Long> cpCmdSize = new HashMap<String, Long>();
+    public Map<String, Long> cpCmdActualSize = new HashMap<String, Long>();
+    public Map<String, Long> getVolumeActualSizeCmdSize = new HashMap<String, Long>();
+
+    public List<GetVolumeSizeCmd> getVolumeSizeCmds = new ArrayList<GetVolumeSizeCmd>();
+    public Map<String, Long> getVolumeSizeCmdSize = new HashMap<String, Long>();
+    public Map<String, Long> getVolumeSizeCmdActualSize = new HashMap<String, Long>();
+
+    public Map<String, Boolean> pingCmdSuccess = new HashMap<String, Boolean>();
+    public Map<String, Boolean> pingCmdOperationFailure = new HashMap<String, Boolean>();
+    public List<GetFactsCmd> getFactsCmds = new ArrayList<GetFactsCmd>();
+    public Map<String, String> getFactsCmdFsid = new HashMap<String, String>();
 }

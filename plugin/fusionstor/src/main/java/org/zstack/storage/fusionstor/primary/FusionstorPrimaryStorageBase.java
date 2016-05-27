@@ -3,8 +3,10 @@ package org.zstack.storage.fusionstor.primary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -17,7 +19,9 @@ import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -29,7 +33,6 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
@@ -38,12 +41,13 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
-import org.zstack.kvm.KVMAgentCommands;
-import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.*;
+import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmSetupSelfFencerParam;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 import org.zstack.storage.fusionstor.*;
+import org.zstack.storage.fusionstor.FusionstorMonBase.PingResult;
 import org.zstack.storage.fusionstor.backup.FusionstorBackupStorageVO;
 import org.zstack.storage.fusionstor.backup.FusionstorBackupStorageVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -56,6 +60,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -72,6 +77,19 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     @Autowired
     private ApiTimeoutManager timeoutMgr;
 
+    class ReconnectMonLock {
+        AtomicBoolean hold = new AtomicBoolean(false);
+
+        boolean lock() {
+            return hold.compareAndSet(false, true);
+        }
+
+        void unlock() {
+            hold.set(false);
+        }
+    }
+
+    ReconnectMonLock reconnectMonLock = new ReconnectMonLock();
 
     public static class AgentCommand {
         String fsId;
@@ -131,6 +149,16 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         public void setAvailableCapacity(Long availableCapacity) {
             this.availableCapacity = availableCapacity;
         }
+    }
+
+    public static class GetVolumeSizeCmd extends AgentCommand {
+        public String volumeUuid;
+        public String installPath;
+    }
+
+    public static class GetVolumeSizeRsp extends AgentResponse {
+        public Long size;
+        public Long actualSize;
     }
 
     public static class Pool {
@@ -372,6 +400,15 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     public static class CreateSnapshotCmd extends AgentCommand {
         boolean skipOnExisting;
         String snapshotPath;
+        String volumeUuid;
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
 
         public boolean isSkipOnExisting() {
             return skipOnExisting;
@@ -391,7 +428,16 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CreateSnapshotRsp extends AgentResponse {
-        long size;
+        Long size;
+        Long actualSize;
+
+        public Long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(Long actualSize) {
+            this.actualSize = actualSize;
+        }
 
         public long getSize() {
             return size;
@@ -463,36 +509,14 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
     })
     public static class CpCmd extends AgentCommand {
+        String resourceUuid;
         String srcPath;
         String dstPath;
-
-        public String getSrcPath() {
-            return srcPath;
-        }
-
-        public void setSrcPath(String srcPath) {
-            this.srcPath = srcPath;
-        }
-
-        public String getDstPath() {
-            return dstPath;
-        }
-
-        public void setDstPath(String dstPath) {
-            this.dstPath = dstPath;
-        }
     }
 
     public static class CpRsp extends AgentResponse {
-        long size;
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
-        }
+        Long size;
+        Long actualSize;
     }
 
     public static class RollbackSnapshotCmd extends AgentCommand {
@@ -550,6 +574,24 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     public static class DeletePoolRsp extends AgentResponse {
     }
 
+    public static class KvmSetupSelfFencerCmd extends AgentCommand {
+        public String heartbeatImagePath;
+        public String hostUuid;
+        public long interval;
+        public int maxAttempts;
+        public int storageCheckerTimeout;
+        public String userKey;
+        public List<String> monUrls;
+    }
+
+    public static class GetFactsCmd extends AgentCommand {
+        public String monUuid;
+    }
+
+    public static class GetFactsRsp extends AgentResponse {
+        public String fsid;
+    }
+
     public static final String INIT_PATH = "/fusionstor/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/fusionstor/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/fusionstor/primarystorage/delete";
@@ -564,12 +606,15 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     public static final String UNPROTECT_SNAPSHOT_PATH = "/fusionstor/primarystorage/snapshot/unprotect";
     public static final String CP_PATH = "/fusionstor/primarystorage/volume/cp";
     public static final String DELETE_POOL_PATH = "/fusionstor/primarystorage/deletepool";
+    public static final String GET_VOLUME_SIZE_PATH = "/fusionstor/primarystorage/getvolumesize";
+    public static final String KVM_HA_SETUP_SELF_FENCER = "/ha/fusionstor/setupselffencer";
+    public static final String GET_FACTS = "/fusionstor/primarystorage/facts";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
     {
         backupStorageMediators.put(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE, new SftpBackupStorageMediator());
-        backupStorageMediators.put(FusionstorConstants.FUSIONSTOR_BACKUP_STORAGE_TYPE, new FusionstorBackupStorageMediator());
+        backupStorageMediators.put(FusionstorGlobalProperty.FUSIONSTOR_BACKUP_STORAGE_TYPE, new FusionstorBackupStorageMediator());
     }
 
 
@@ -584,6 +629,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     class UploadParam extends MediatorParam {
         ImageInventory image;
         String primaryStorageInstallPath;
+        String backupStorageInstallPath;
     }
 
     abstract class BackupStorageMediator {
@@ -1038,7 +1084,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                         public void run(final FlowTrigger trigger, Map data) {
                             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                             amsg.setRequiredPrimaryStorageUuid(self.getUuid());
-                            amsg.setSize(image.getInventory().getSize());
+                            amsg.setSize(image.getInventory().getActualSize());
                             amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
                             amsg.setNoOverProvisioning(true);
                             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
@@ -1061,7 +1107,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
                                 rmsg.setNoOverProvisioning(true);
                                 rmsg.setPrimaryStorageUuid(self.getUuid());
-                                rmsg.setDiskSize(image.getInventory().getSize());
+                                rmsg.setDiskSize(image.getInventory().getActualSize());
                                 bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
                                 bus.send(rmsg);
                             }
@@ -1470,8 +1516,33 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(SyncVolumeSizeOnPrimaryStorageMsg msg) {
-        throw new CloudRuntimeException("not implemented yet");
+    protected void handle(final SyncVolumeSizeOnPrimaryStorageMsg msg) {
+        final SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
+        final VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+
+        String installPath = vol.getInstallPath();
+        GetVolumeSizeCmd cmd = new GetVolumeSizeCmd();
+        cmd.fsId = getSelf().getFsid();
+        cmd.uuid = self.getUuid();
+        cmd.volumeUuid = msg.getVolumeUuid();
+        cmd.installPath = installPath;
+
+        httpCall(GET_VOLUME_SIZE_PATH, cmd, GetVolumeSizeRsp.class, new ReturnValueCompletion<GetVolumeSizeRsp>(msg) {
+            @Override
+            public void success(GetVolumeSizeRsp rsp) {
+                // current fusionstor has no way to get actual size
+                long asize = rsp.actualSize == null ? vol.getActualSize() : rsp.actualSize;
+                reply.setActualSize(asize);
+                reply.setSize(rsp.size);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
@@ -1508,38 +1579,30 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
                 FusionstorPrimaryStorageMonBase base = it.next();
 
-                restf.asyncJsonPost(makeHttpPath(base.getSelf().getHostname(), path), cmd, new JsonAsyncRESTCallback<T>(callback) {
-                    @Override
-                    public void fail(ErrorCode err) {
-                        errorCodes.add(err);
-                        call();
-                    }
-
+                base.httpCall(path, cmd, retClass, new ReturnValueCompletion<T>(callback) {
                     @Override
                     public void success(T ret) {
                         if (!ret.success) {
                             callback.fail(errf.stringToOperationError(ret.error));
-                        } else {
-                            if (!(cmd instanceof InitCmd)) {
-                                updateCapacityIfNeeded(ret);
-                            }
-                            callback.success(ret);
+                            return;
                         }
+
+                        if (!(cmd instanceof InitCmd)) {
+                            updateCapacityIfNeeded(ret);
+                        }
+                        callback.success(ret);
                     }
 
                     @Override
-                    public Class<T> getReturnClass() {
-                        return retClass;
+                    public void fail(ErrorCode errorCode) {
+                        errorCodes.add(errorCode);
+                        call();
                     }
                 });
             }
         }
 
         new HttpCaller().call();
-    }
-
-    protected String makeHttpPath(String ip, String path) {
-        return String.format("http://%s:%s%s", ip, FusionstorGlobalProperty.PRIMARY_STORAGE_AGENT_PORT, path);
     }
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
@@ -1568,12 +1631,15 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                         self.getUuid(), JSONObjectUtil.toJsonString(errorCodes))
                         ));
                     } else {
+                        // reload because mon status changed
+                        self = dbf.reload(self);
                         trigger.next();
                     }
+
                     return;
                 }
 
-                FusionstorPrimaryStorageMonBase base = it.next();
+                final FusionstorPrimaryStorageMonBase base = it.next();
                 base.connect(new Completion(trigger) {
                     @Override
                     public void success() {
@@ -1583,6 +1649,12 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         errorCodes.add(errorCode);
+
+                        if (newAdded) {
+                            // the mon fails to connect, remove it
+                            dbf.remove(base.getSelf());
+                        }
+
                         connect(trigger);
                     }
                 });
@@ -1600,6 +1672,69 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         new Connector().connect(trigger);
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-mon-integrity";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        final Map<String, String> fsids = new HashMap<String, String>();
+
+                        final List<FusionstorPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<FusionstorPrimaryStorageMonBase, FusionstorPrimaryStorageMonVO>() {
+                            @Override
+                            public FusionstorPrimaryStorageMonBase call(FusionstorPrimaryStorageMonVO arg) {
+                                return new FusionstorPrimaryStorageMonBase(arg);
+                            }
+                        });
+
+                        final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                Set<String> set = new HashSet<String>();
+                                set.addAll(fsids.values());
+
+                                if (set.size() == 1) {
+                                    trigger.next();
+                                    return;
+                                }
+
+                                StringBuilder sb =  new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different fusionstor clusters:\n");
+                                for (FusionstorPrimaryStorageMonBase mon : mons) {
+                                    String fsid = fsids.get(mon.getSelf().getUuid());
+                                    sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
+                                }
+
+                                trigger.fail(errf.stringToOperationError(sb.toString()));
+                            }
+                        });
+
+                        for (final FusionstorPrimaryStorageMonBase mon : mons) {
+                            GetFactsCmd cmd = new GetFactsCmd();
+                            cmd.uuid = self.getUuid();
+                            cmd.monUuid = mon.getSelf().getUuid();
+                            mon.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(latch) {
+                                @Override
+                                public void success(GetFactsRsp rsp) {
+                                    if (!rsp.success) {
+                                        // one mon cannot get the facts, directly error out
+                                        trigger.fail(errf.stringToOperationError(rsp.error));
+                                        return;
+                                    }
+
+                                    fsids.put(mon.getSelf().getUuid(), rsp.fsid);
+                                    latch.ack();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    // one mon cannot get the facts, directly error out
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
                     }
                 });
 
@@ -1662,7 +1797,10 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         if (newAdded) {
-                            dbf.removeCollection(getSelf().getMons(), FusionstorPrimaryStorageMonVO.class);
+                            self = dbf.reload(self);
+                            if (!getSelf().getMons().isEmpty()) {
+                                dbf.removeCollection(getSelf().getMons(), FusionstorPrimaryStorageMonVO.class);
+                            }
                         }
 
                         completion.fail(errCode);
@@ -1678,8 +1816,157 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void pingHook(Completion completion) {
-        throw new CloudRuntimeException("not supported yet");
+    protected void pingHook(final Completion completion) {
+        final List<FusionstorPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<FusionstorPrimaryStorageMonBase, FusionstorPrimaryStorageMonVO>() {
+            @Override
+            public FusionstorPrimaryStorageMonBase call(FusionstorPrimaryStorageMonVO arg) {
+                return new FusionstorPrimaryStorageMonBase(arg);
+            }
+        });
+
+        final List<ErrorCode> errors = new ArrayList<ErrorCode>();
+
+        class Ping {
+            private AtomicBoolean replied = new AtomicBoolean(false);
+
+            @AsyncThread
+            private void reconnectMon(final FusionstorPrimaryStorageMonBase mon, boolean delay) {
+                if (!FusionstorGlobalConfig.PRIMARY_STORAGE_MON_AUTO_RECONNECT.value(Boolean.class)) {
+                    logger.debug(String.format("do not reconnect the fusionstor primary storage mon[uuid:%s] as the global config[%s] is set to false",
+                            self.getUuid(), FusionstorGlobalConfig.PRIMARY_STORAGE_MON_AUTO_RECONNECT.getCanonicalName()));
+                    return;
+                }
+
+                // there has been a reconnect in process
+                if (!reconnectMonLock.lock()) {
+                    logger.debug(String.format("ignore this call, reconnect fusionstor primary storage mon[uuid:%s] is in process", self.getUuid()));
+                    return;
+                }
+
+                final NoErrorCompletion releaseLock = new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        reconnectMonLock.unlock();
+                    }
+                };
+
+                try {
+                    if (delay) {
+                        try {
+                            TimeUnit.SECONDS.sleep(FusionstorGlobalConfig.PRIMARY_STORAGE_MON_RECONNECT_DELAY.value(Integer.class));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    mon.connect(new Completion() {
+                        @Override
+                        public void success() {
+                            logger.debug(String.format("successfully reconnected the mon[uuid:%s] of the fusionstor primary" +
+                                    " storage[uuid:%s, name:%s]", mon.getSelf().getUuid(), self.getUuid(), self.getName()));
+                            releaseLock.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            //TODO
+                            logger.warn(String.format("failed to reconnect the mon[uuid:%s] of the fusionstor primary" +
+                                    " storage[uuid:%s, name:%s], %s", mon.getSelf().getUuid(), self.getUuid(), self.getName(), errorCode));
+                            releaseLock.done();
+                        }
+                    });
+                } catch (Throwable t) {
+                    releaseLock.done();
+                    logger.warn(t.getMessage(), t);
+                }
+            }
+
+            void ping() {
+                // this is only called when all mons are disconnected
+                final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        if (!replied.compareAndSet(false, true)) {
+                            return;
+                        }
+
+                        ErrorCode err = errf.stringToOperationError(String.format("failed to ping the fusionstor primary storage[uuid:%s, name:%s]",
+                                self.getUuid(), self.getName()), errors);
+                        completion.fail(err);
+                    }
+                });
+
+                for (final FusionstorPrimaryStorageMonBase mon : mons) {
+                    mon.ping(new ReturnValueCompletion<PingResult>(latch) {
+                        private void thisMonIsDown(ErrorCode err) {
+                            //TODO
+                            logger.warn(String.format("cannot ping mon[uuid:%s] of the fusionstor primary storage[uuid:%s, name:%s], %s",
+                                    mon.getSelf().getUuid(), self.getUuid(), self.getName(), err));
+                            errors.add(err);
+                            mon.changeStatus(MonStatus.Disconnected);
+                            reconnectMon(mon, true);
+                            latch.ack();
+                        }
+
+                        @Override
+                        public void success(PingResult res) {
+                            if (res.success) {
+                                // as long as there is one mon working, the primary storage works
+                                pingSuccess();
+
+                                if (mon.getSelf().getStatus() == MonStatus.Disconnected) {
+                                    reconnectMon(mon, false);
+                                }
+
+                            } else if (res.operationFailure) {
+                                // as long as there is one mon saying the fusionstor not working, the primary storage goes down
+                                logger.warn(String.format("the fusionstor primary storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports" +
+                                        " an operation failure[%s]", self.getUuid(), self.getName(), mon.getSelf().getUuid(), res.error));
+                                ErrorCode errorCode = errf.stringToOperationError(res.error);
+                                errors.add(errorCode);
+                                primaryStorageDown();
+                            } else  {
+                                // this mon is down(success == false, operationFailure == false), but the primary storage may still work as other mons may work
+                                ErrorCode errorCode = errf.stringToOperationError(res.error);
+                                thisMonIsDown(errorCode);
+                            }
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            thisMonIsDown(errorCode);
+                        }
+                    });
+                }
+            }
+
+            // this is called once a mon return an operation failure
+            private void primaryStorageDown() {
+                if (!replied.compareAndSet(false, true)) {
+                    return;
+                }
+
+                // set all mons to be disconnected
+                for (FusionstorPrimaryStorageMonBase base : mons) {
+                    base.changeStatus(MonStatus.Disconnected);
+                }
+
+                ErrorCode err = errf.stringToOperationError(String.format("failed to ping the fusionstor primary storage[uuid:%s, name:%s]",
+                        self.getUuid(), self.getName()), errors);
+                completion.fail(err);
+            }
+
+
+            private void pingSuccess() {
+                if (!replied.compareAndSet(false, true)) {
+                    return;
+                }
+
+                completion.success();
+            }
+        }
+
+        new Ping().ping();
     }
 
     @Override
@@ -1792,10 +2079,15 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                             }
                         });
 
+                        final List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
                         final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
                             @Override
                             public void done() {
-                                trigger.next();
+                                if (!errorCodes.isEmpty()) {
+                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, "unable to connect mons", errorCodes));
+                                } else {
+                                    trigger.next();
+                                }
                             }
                         });
 
@@ -1809,7 +2101,66 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 @Override
                                 public void fail(ErrorCode errorCode) {
                                     // one fails, all fail
-                                    trigger.fail(errorCode);
+                                    errorCodes.add(errorCode);
+                                    latch.ack();
+                                }
+                            });
+                        }
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-mon-integrity";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        List<FusionstorPrimaryStorageMonBase> bases = CollectionUtils.transformToList(monVOs, new Function<FusionstorPrimaryStorageMonBase, FusionstorPrimaryStorageMonVO>() {
+                            @Override
+                            public FusionstorPrimaryStorageMonBase call(FusionstorPrimaryStorageMonVO arg) {
+                                return new FusionstorPrimaryStorageMonBase(arg);
+                            }
+                        });
+
+                        final List<ErrorCode> errors = new ArrayList<ErrorCode>();
+
+                        final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                // one fail, all fail
+                                if (!errors.isEmpty()) {
+                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, "unable to add mon to fusionstor primary storage", errors));
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+
+                        for (final FusionstorPrimaryStorageMonBase base : bases) {
+                            GetFactsCmd cmd = new GetFactsCmd();
+                            cmd.uuid = self.getUuid();
+                            cmd.monUuid = base.getSelf().getUuid();
+                            base.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(latch) {
+                                @Override
+                                public void success(GetFactsRsp rsp) {
+                                    if (!rsp.isSuccess()) {
+                                        errors.add(errf.stringToOperationError(rsp.getError()));
+                                    } else {
+                                        String fsid = rsp.fsid;
+                                        if (!getSelf().getFsid().equals(fsid)) {
+                                            errors.add(errf.stringToOperationError(
+                                                    String.format("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
+                                                            "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
+                                            ));
+                                        }
+                                    }
+
+                                    latch.ack();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    errors.add(errorCode);
+                                    latch.ack();
                                 }
                             });
                         }
@@ -1851,13 +2202,85 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
         } else if (msg instanceof CreateKvmSecretMsg) {
             handle((CreateKvmSecretMsg) msg);
+        } else if (msg instanceof UploadBitsToBackupStorageMsg) {
+            handle((UploadBitsToBackupStorageMsg) msg);
+        } else if (msg instanceof SetupSelfFencerOnKvmHostMsg) {
+            handle((SetupSelfFencerOnKvmHostMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
     }
 
-    private void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
-        throw new CloudRuntimeException("not implemented yet");
+    private void handle(final SetupSelfFencerOnKvmHostMsg msg) {
+        KvmSetupSelfFencerParam param = msg.getParam();
+        KvmSetupSelfFencerCmd cmd = new KvmSetupSelfFencerCmd();
+        cmd.uuid = self.getUuid();
+        cmd.fsId = getSelf().getFsid();
+        cmd.hostUuid = param.getHostUuid();
+        cmd.interval = param.getInterval();
+        cmd.maxAttempts = param.getMaxAttempts();
+        cmd.storageCheckerTimeout = param.getStorageCheckerTimeout();
+        cmd.userKey = getSelf().getUserKey();
+        cmd.heartbeatImagePath = String.format("%s/fusionstor-primary-storage-%s-heartbeat-file", getSelf().getRootVolumePoolName(), self.getUuid());
+        cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), new Function<String, FusionstorPrimaryStorageMonVO>() {
+            @Override
+            public String call(FusionstorPrimaryStorageMonVO arg) {
+                return String.format("%s:%s", arg.getHostname(), arg.getMonPort());
+            }
+        });
+
+        final SetupSelfFencerOnKvmHostReply reply = new SetupSelfFencerOnKvmHostReply();
+        new KvmCommandSender(param.getHostUuid()).send(cmd, KVM_HA_SETUP_SELF_FENCER, new KvmCommandFailureChecker() {
+            @Override
+            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
+                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+            }
+        }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
+            @Override
+            public void success(KvmResponseWrapper wrapper) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+
+    private void handle(final UploadBitsToBackupStorageMsg msg) {
+        SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
+        q.select(BackupStorageVO_.type);
+        q.add(BackupStorageVO_.uuid, Op.EQ, msg.getBackupStorageUuid());
+        String bsType = q.findValue();
+
+        if (!FusionstorGlobalProperty.FUSIONSTOR_BACKUP_STORAGE_TYPE.equals(bsType)) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("unable to upload bits to the backup storage[type:%s], we only support FUSIONSTOR", bsType)
+            ));
+        }
+
+        final UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
+
+        CpCmd cmd = new CpCmd();
+        cmd.fsId = getSelf().getFsid();
+        cmd.srcPath = msg.getPrimaryStorageInstallPath();
+        cmd.dstPath = msg.getBackupStorageInstallPath();
+        httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(msg) {
+            @Override
+            public void success(CpRsp rsp) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final CreateKvmSecretMsg msg) {
@@ -1880,6 +2303,35 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();
         reply.setError(errf.stringToOperationError("backing up snapshots to backup storage is a depreciated feature, which will be removed in future version"));
         bus.reply(msg, reply);
+    }
+
+    private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
+
+        final String volPath = makeDataVolumeInstallPath(msg.getVolumeUuid());
+        VolumeSnapshotInventory sp = msg.getSnapshot();
+        CpCmd cmd = new CpCmd();
+        cmd.resourceUuid = msg.getSnapshot().getVolumeUuid();
+        cmd.srcPath = sp.getPrimaryStorageInstallPath();
+        cmd.dstPath = volPath;
+        httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(msg) {
+            @Override
+            public void success(CpRsp rsp) {
+                reply.setInstallPath(volPath);
+                reply.setSize(rsp.size);
+
+                // current fusionstor has no way to get the actual size
+                long asize = rsp.actualSize == null ? 1 : rsp.actualSize;
+                reply.setActualSize(asize);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
@@ -1935,11 +2387,14 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
         final String spPath = String.format("%s@%s", volumePath, sp.getUuid());
         CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+        cmd.volumeUuid = sp.getVolumeUuid();
         cmd.snapshotPath = spPath;
         httpCall(CREATE_SNAPSHOT_PATH, cmd, CreateSnapshotRsp.class, new ReturnValueCompletion<CreateSnapshotRsp>(msg) {
             @Override
             public void success(CreateSnapshotRsp rsp) {
-                sp.setSize(rsp.getSize());
+                // current fusionstor has no way to get actual size
+                long asize = rsp.getActualSize() == null ? 1 : rsp.getActualSize();
+                sp.setSize(asize);
                 sp.setPrimaryStorageUuid(self.getUuid());
                 sp.setPrimaryStorageInstallPath(spPath);
                 sp.setType(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString());
@@ -1970,7 +2425,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void createSecretOnKvmHosts(List<String> hostUuids, final Completion completion) {
-    	completion.success();
+        completion.success();
     }
 
     private void attachToKvmCluster(String clusterUuid, Completion completion) {
