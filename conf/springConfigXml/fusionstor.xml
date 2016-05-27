@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
     xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
@@ -27,6 +26,8 @@
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KVMAttachVolumeExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KVMDetachVolumeExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KvmSetupSelfFencerExtensionPoint" />
             <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>

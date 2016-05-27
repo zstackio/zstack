@@ -5,6 +5,7 @@ import org.zstack.header.message.OverriddenApiParam;
 import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
 import org.zstack.storage.fusionstor.FusionstorConstants;
+import org.zstack.storage.fusionstor.FusionstorGlobalProperty;
 
 import java.util.List;
 
@@ -42,6 +43,6 @@ public class APIAddFusionstorBackupStorageMsg extends APIAddBackupStorageMsg {
 
     @Override
     public String getType() {
-        return FusionstorConstants.FUSIONSTOR_BACKUP_STORAGE_TYPE;
+        return FusionstorGlobalProperty.FUSIONSTOR_BACKUP_STORAGE_TYPE;
     }
 }
