@@ -97,7 +97,7 @@ public class TestDefaultHostAllocationStrategy {
         creator.instanceOfferingUuid = instanceOffering.getUuid();
         VmInstanceInventory vm = creator.create();
         HostCapacityVO cvo = dbf.findByUuid(vm.getHostUuid(), HostCapacityVO.class);
-        Assert.assertEquals(instanceOffering.getCpuNum()*instanceOffering.getCpuSpeed(), cvo.getUsedCpu());
+        Assert.assertEquals(instanceOffering.getCpuNum(), cvo.getUsedCpu());
         Assert.assertEquals(instanceOffering.getMemorySize(), cvo.getUsedMemory());
     }
 

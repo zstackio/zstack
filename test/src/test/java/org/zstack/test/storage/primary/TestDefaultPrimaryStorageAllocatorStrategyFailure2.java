@@ -34,9 +34,16 @@ public class TestDefaultPrimaryStorageAllocatorStrategyFailure2 {
         DBUtil.reDeployDB();
         BeanConstructor con = new BeanConstructor();
         /* This loads spring application context */
-        loader = con.addXml("PortalForUnitTest.xml").addXml("Simulator.xml")
-                .addXml("PrimaryStorageManager.xml").addXml("ZoneManager.xml")
-                .addXml("ClusterManager.xml").addXml("HostManager.xml").addXml("ConfigurationManager.xml").addXml("AccountManager.xml").build();
+        loader = con.addXml("PortalForUnitTest.xml")
+                .addXml("Simulator.xml")
+                .addXml("PrimaryStorageManager.xml")
+                .addXml("ZoneManager.xml")
+                .addXml("ClusterManager.xml")
+                .addXml("HostManager.xml")
+                .addXml("ConfigurationManager.xml")
+                .addXml("HostAllocatorManager.xml")
+                .addXml("AccountManager.xml")
+                .build();
         dbf = loader.getComponent(DatabaseFacade.class);
         bus = loader.getComponent(CloudBus.class);
         api = new Api();

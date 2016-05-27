@@ -10,10 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.zstack.utils.StringDSL.ln;
-import static org.zstack.utils.StringDSL.s;
 
 public class BeanConstructor {
     private List<String> xmls = new ArrayList<String>();
+    private List<String> excludedXmls = new ArrayList<String>();
     private static final String SPRING_XML_NAME = "spring-config-for-unit-test-from-BeanConstructor.xml";
     protected ComponentLoader loader;
     protected String springConfigPath;
@@ -50,6 +50,11 @@ public class BeanConstructor {
         }
 
         xmls.add(xmlName);
+        return this;
+    }
+
+    public BeanConstructor excludeXml(String name) {
+        excludedXmls.add(name);
         return this;
     }
 
@@ -100,9 +105,23 @@ public class BeanConstructor {
     }
 
     public ComponentLoader build() {
+        excludeXmls();
         generateSpringConfig();
         System.setProperty("spring.xml", SPRING_XML_NAME);
         loader = Platform.getComponentLoader();
         return loader;
+    }
+
+    private void excludeXmls() {
+        List<String> tmp = new ArrayList<String>();
+        for (String xml : xmls) {
+            if (excludedXmls.contains(xml)) {
+                continue;
+            }
+
+            tmp.add(xml);
+        }
+
+        xmls = tmp;
     }
 }

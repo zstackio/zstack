@@ -15,7 +15,6 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.ReportVmStateCmd;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMConstant.KvmVmState;
@@ -103,7 +102,7 @@ public class TestKvmVmTracer {
         Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
         Assert.assertNull(vmvo.getHostUuid());
 
-        long cpu = vmvo.getCpuNum() * vmvo.getCpuSpeed();
+        long cpu = vmvo.getCpuNum();
         HostCapacityVO cap2 = dbf.findByUuid(hostUuid, HostCapacityVO.class);
         Assert.assertEquals(cap2.getAvailableCpu(), cap1.getAvailableCpu() + cpu);
         Assert.assertEquals(cap2.getAvailableMemory(), cap1.getAvailableMemory() + vmvo.getMemorySize());

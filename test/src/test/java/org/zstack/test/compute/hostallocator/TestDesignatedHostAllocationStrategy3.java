@@ -8,7 +8,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.apimediator.ApiMediatorConstant;
-import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageInventory;
@@ -99,7 +98,7 @@ public class TestDesignatedHostAllocationStrategy3 {
         creator.hostUuid = host.getUuid();
         VmInstanceInventory vm = creator.create();
         HostCapacityVO cvo = dbf.findByUuid(vm.getHostUuid(), HostCapacityVO.class);
-        Assert.assertEquals(instanceOffering.getCpuNum()*instanceOffering.getCpuSpeed(), cvo.getUsedCpu());
+        Assert.assertEquals(instanceOffering.getCpuNum(), cvo.getUsedCpu());
         Assert.assertEquals(instanceOffering.getMemorySize(), cvo.getUsedMemory());
         Assert.assertEquals(host.getUuid(), vm.getHostUuid());
     }

@@ -1,39 +1,26 @@
 package org.zstack.test.compute.hostallocator;
 
 import junit.framework.Assert;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.allocator.AllocateHostReply;
-import org.zstack.header.allocator.DesignatedAllocateHostMsg;
-import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.header.vm.APICreateVmInstanceEvent;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.zone.ZoneInventory;
-import org.zstack.header.zone.ZoneVO;
-import org.zstack.header.zone.ZoneVO_;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.data.SizeUnit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -111,7 +98,7 @@ public class TestDesignatedHostAllocationStrategy1 {
         creator.zoneUuid = zone1.getUuid();
         VmInstanceInventory vm = creator.create();
         HostCapacityVO cvo = dbf.findByUuid(vm.getHostUuid(), HostCapacityVO.class);
-        Assert.assertEquals(instanceOffering.getCpuNum()*instanceOffering.getCpuSpeed(), cvo.getUsedCpu());
+        Assert.assertEquals(instanceOffering.getCpuNum(), cvo.getUsedCpu());
         Assert.assertEquals(instanceOffering.getMemorySize(), cvo.getUsedMemory());
         Assert.assertEquals(zone1.getUuid(), vm.getZoneUuid());
     }

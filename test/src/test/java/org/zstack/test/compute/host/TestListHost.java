@@ -17,6 +17,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+
+@Deprecated
 public class TestListHost {
 	CLogger logger = Utils.getLogger(TestListHost.class);
     Api api;

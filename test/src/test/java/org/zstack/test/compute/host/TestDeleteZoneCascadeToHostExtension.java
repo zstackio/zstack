@@ -25,8 +25,15 @@ public class TestDeleteZoneCascadeToHostExtension {
         DBUtil.reDeployDB();
         BeanConstructor con = new BeanConstructor();
         /* This loads spring application context */
-        loader = con.addXml("PortalForUnitTest.xml").addXml("ClusterManager.xml").addXml("ZoneManager.xml")
-                .addXml("HostManager.xml").addXml("Simulator.xml").addXml("DeletHostExtension.xml").addXml("AccountManager.xml").build();
+        loader = con.addXml("PortalForUnitTest.xml")
+                .addXml("ClusterManager.xml")
+                .addXml("ZoneManager.xml")
+                .addXml("HostManager.xml")
+                .addXml("Simulator.xml")
+                .addXml("DeletHostExtension.xml")
+                .addXml("AccountManager.xml")
+                .addXml("HostAllocatorManager.xml")
+                .build();
         dbf = loader.getComponent(DatabaseFacade.class);
         ext = loader.getComponent(DeletHostExtension.class);
         api = new Api();

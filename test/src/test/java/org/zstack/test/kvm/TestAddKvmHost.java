@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.host.HostInventory;
@@ -30,6 +31,7 @@ public class TestAddKvmHost {
     static KVMHostFactory kvmFactory;
     static SessionInventory session;
     static KVMSimulatorConfig config;
+    static HostCpuOverProvisioningManager cpuMgr;
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -45,6 +47,7 @@ public class TestAddKvmHost {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(KVMSimulatorConfig.class);
+        cpuMgr = loader.getComponent(HostCpuOverProvisioningManager.class);
         session = api.loginAsAdmin();
     }
     
@@ -74,7 +77,7 @@ public class TestAddKvmHost {
         config.usedMemory = SizeUnit.MEGABYTE.toByte(512);
         String huuid = addHost().getUuid();
         HostCapacityVO hvo = dbf.findByUuid(huuid, HostCapacityVO.class);
-        Assert.assertEquals(config.cpuNum * config.cpuSpeed, hvo.getTotalCpu());
+        Assert.assertEquals(cpuMgr.calculateHostCpuByRatio(huuid, (int) config.cpuNum), hvo.getTotalCpu());
         Assert.assertEquals(config.usedMemory, hvo.getUsedPhysicalMemory());
         Assert.assertEquals(config.totalMemory, hvo.getTotalMemory());
     }

@@ -88,7 +88,7 @@ public class TestVmStateTracer3 {
         Assert.assertEquals(VmInstanceState.Stopped, vm1.getState());
         Assert.assertNull(vm1.getHostUuid());
         HostCapacityVO cap2 = dbf.findByUuid(hostUuid, HostCapacityVO.class);
-        Assert.assertEquals(cap2.getAvailableCpu(), cap1.getAvailableCpu() + vm1.getCpuSpeed() * vm1.getCpuNum());
+        Assert.assertEquals(cap2.getAvailableCpu(), cap1.getAvailableCpu() + vm1.getCpuNum());
         Assert.assertEquals(cap2.getAvailableMemory(), cap1.getAvailableMemory() + vm1.getMemorySize());
         Assert.assertTrue(success1);
     }

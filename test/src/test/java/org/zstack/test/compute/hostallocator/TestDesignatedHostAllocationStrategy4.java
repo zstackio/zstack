@@ -101,7 +101,7 @@ public class TestDesignatedHostAllocationStrategy4 {
         creator.hostUuid = host.getUuid();
         VmInstanceInventory vm = creator.create();
         HostCapacityVO cvo = dbf.findByUuid(vm.getHostUuid(), HostCapacityVO.class);
-        Assert.assertEquals(instanceOffering.getCpuNum()*instanceOffering.getCpuSpeed(), cvo.getUsedCpu());
+        Assert.assertEquals(instanceOffering.getCpuNum(), cvo.getUsedCpu());
         Assert.assertEquals(instanceOffering.getMemorySize(), cvo.getUsedMemory());
         Assert.assertEquals(host.getUuid(), vm.getHostUuid());
     }

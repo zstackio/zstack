@@ -679,6 +679,8 @@ public class KVMHost extends HostBase implements Host {
                 KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
                 if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
                     reply.setError(errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "cannot do the operation on the KVM host",err));
+                } else {
+                    reply.setError(reply.getError());
                 }
 
                 bus.reply(msg, reply);

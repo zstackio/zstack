@@ -180,6 +180,7 @@ public class TestDiskCapacityLocalStorage3 {
         BackupStorageVO bsbfore = dbf.findByUuid(sftp.getUuid(), BackupStorageVO.class);
 
         lconfig.getVolumeSizeCmdActualSize.put(root.getUuid(), root.getActualSize());
+        lconfig.getVolumeSizeCmdSize.put(root.getUuid(), root.getSize());
         ImageInventory tmpt = api.createTemplateFromRootVolume("template", root.getUuid(), sftp.getUuid());
         Assert.assertEquals(root.getActualSize(), tmpt.getActualSize());
         Assert.assertEquals(root.getSize(), tmpt.getSize());
@@ -220,6 +221,7 @@ public class TestDiskCapacityLocalStorage3 {
         // make the data volume some size
         long dataVolumeActualSize = SizeUnit.GIGABYTE.toByte(3);
         lconfig.getVolumeSizeCmdActualSize.put(data.getUuid(), dataVolumeActualSize);
+        lconfig.getVolumeSizeCmdSize.put(data.getUuid(), data.getSize());
         ImageInventory dataTemplate = api.addDataVolumeTemplateFromDataVolume(data.getUuid(), list(sftp.getUuid()));
         Assert.assertEquals(data.getSize(), dataTemplate.getSize());
         Assert.assertEquals(dataVolumeActualSize, dataTemplate.getActualSize().longValue());

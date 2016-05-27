@@ -19,7 +19,6 @@ import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageGlobalProperty;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.DeleteCmd;
-import org.zstack.storage.snapshot.VolumeSnapshot;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;

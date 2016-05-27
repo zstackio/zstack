@@ -31,6 +31,7 @@ import static org.zstack.utils.CollectionDSL.map;
  *
  * confirm getCpuMemoryCapacity returns right capacity
  */
+@Deprecated
 public class TestGetCpuMemoryCapacity2 {
     Deployer deployer;
     Api api; 

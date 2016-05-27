@@ -30,6 +30,7 @@ import static org.zstack.utils.CollectionDSL.map;
  * confirm the precedence is:
  * HostTag.RESERVED_CPU_CAPACITY > ClusterTag.HOST_RESERVED_CPU_CAPACITY >  ZoneTag.HOST_RESERVED_CPU_CAPACITY > KvmGlobalConfig.RESERVED_CPU_CAPACITY
  */
+@Deprecated
 public class TestReservedHostCapacity5 {
     Deployer deployer;
     Api api; 
