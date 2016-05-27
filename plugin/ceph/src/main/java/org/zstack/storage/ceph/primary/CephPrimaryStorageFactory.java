@@ -63,7 +63,8 @@ import static org.zstack.utils.CollectionDSL.map;
  * Created by frank on 7/28/2015.
  */
 public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCapacityUpdateExtensionPoint, KVMStartVmExtensionPoint,
-        KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, KvmSetupSelfFencerExtensionPoint, Component {
+        KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
+        KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -585,5 +586,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 }
             }
         });
+    }
+
+    @Override
+    public void preAttachIsoExtensionPoint(KVMHostInventory host, AttachIsoCmd cmd) {
+        convertIsoToCephIfNeeded(cmd.iso);
     }
 }

@@ -435,6 +435,12 @@ public class KVMHost extends HostBase implements Host {
         DetachIsoCmd cmd = new DetachIsoCmd();
         cmd.isoUuid = msg.getIsoUuid();
         cmd.vmUuid = msg.getVmInstanceUuid();
+
+        KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
+        for (KVMPreDetachIsoExtensionPoint ext : pluginRgty.getExtensionList(KVMPreDetachIsoExtensionPoint.class)) {
+            ext.preDetachIsoExtensionPoint(inv, cmd);
+        }
+
         restf.asyncJsonPost(detachIsoPath, cmd, new JsonAsyncRESTCallback<DetachIsoRsp>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
@@ -499,6 +505,12 @@ public class KVMHost extends HostBase implements Host {
         AttachIsoCmd cmd = new AttachIsoCmd();
         cmd.vmUuid = msg.getVmInstanceUuid();
         cmd.iso = iso;
+
+        KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
+        for (KVMPreAttachIsoExtensionPoint ext : pluginRgty.getExtensionList(KVMPreAttachIsoExtensionPoint.class)) {
+            ext.preAttachIsoExtensionPoint(inv, cmd);
+        }
+
         restf.asyncJsonPost(attachIsoPath, cmd, new JsonAsyncRESTCallback<AttachIsoRsp>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
