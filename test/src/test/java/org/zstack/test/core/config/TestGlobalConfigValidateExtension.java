@@ -1,16 +1,12 @@
 package org.zstack.test.core.config;
 
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.core.config.*;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.BeanConstructor;
-import org.zstack.test.DBUtil;
-import org.zstack.utils.Utils;
-import org.zstack.utils.data.FieldPrinter;
-import org.zstack.utils.logging.CLogger;
+import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.config.GlobalConfigInventory;
+import org.zstack.test.*;
 
 public class TestGlobalConfigValidateExtension {
 	GlobalConfigFacade gcf;
@@ -37,6 +33,14 @@ public class TestGlobalConfigValidateExtension {
 		    }
 		}
 		target.setValue("not a integer");
-		api.updateGlobalConfig(target);
+
+		boolean s = false;
+		try {
+			api.updateGlobalConfig(target);
+		} catch (ApiSenderException e) {
+			s = true;
+		}
+
+		Assert.assertTrue(s);
 	}
 }

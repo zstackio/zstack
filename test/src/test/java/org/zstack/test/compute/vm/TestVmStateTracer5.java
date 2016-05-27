@@ -8,14 +8,11 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.simulator.SimulatorController;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -72,7 +69,7 @@ public class TestVmStateTracer5 {
 
         HostCapacityVO cap11 = dbf.findByUuid(host1.getUuid(), HostCapacityVO.class);
         HostCapacityVO cap22 = dbf.findByUuid(host2.getUuid(), HostCapacityVO.class);
-        long cpu = vm1.getCpuNum() * vm1.getCpuSpeed();
+        long cpu = vm1.getCpuNum();
         Assert.assertEquals(cap11.getAvailableCpu(), cap1.getAvailableCpu() + cpu);
         Assert.assertEquals(cap11.getAvailableMemory(), cap1.getAvailableMemory() + vm1.getMemorySize());
         Assert.assertEquals(cap22.getAvailableCpu(), cap2.getAvailableCpu() - cpu);

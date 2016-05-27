@@ -12,14 +12,11 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.tag.SystemTag;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -129,7 +126,7 @@ public class TestVmStaticIp3 {
         api.stopVmInstance(vm.getUuid());
         String wrongIp = "129.12.19.1";
         try {
-            api.setStaticIp(vm.getUuid(), l31.getUuid(), l3Ip3);
+            api.setStaticIp(vm.getUuid(), l31.getUuid(), wrongIp);
             /*
             api.createSystemTag(vm.getUuid(), VmSystemTags.STATIC_IP.instantiateTag(map(
                     e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l31.getUuid()),

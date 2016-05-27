@@ -27,8 +27,15 @@ public class TestDeleteHost {
         DBUtil.reDeployDB();
         BeanConstructor con = new BeanConstructor();
         /* This loads spring application context */
-        loader = con.addXml("PortalForUnitTest.xml").addXml("ClusterManager.xml")
-                .addXml("ZoneManager.xml").addXml("HostManager.xml").addXml("Simulator.xml").addXml("AccountManager.xml").build();
+        loader = con.addXml("PortalForUnitTest.xml")
+                .addXml("ClusterManager.xml")
+                .addXml("ZoneManager.xml")
+                .addXml("HostManager.xml")
+                .addXml("Simulator.xml")
+                .addXml("HostManager.xml")
+                .addXml("AccountManager.xml")
+                .addXml("HostAllocatorManager.xml")
+                .build();
         dbf = loader.getComponent(DatabaseFacade.class);
         api = new Api();
         api.startServer();

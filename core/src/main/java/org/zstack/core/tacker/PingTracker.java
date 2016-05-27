@@ -1,6 +1,7 @@
 package org.zstack.core.tacker;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusSteppingCallback;
@@ -160,7 +161,11 @@ public abstract class PingTracker implements Component {
             trackerThread.cancel(true);
         }
 
-        trackerThread = thdf.submitPeriodicTask(new Tracker(), getPingInterval() + new Random().nextInt(30));
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            trackerThread = thdf.submitPeriodicTask(new Tracker(), getPingInterval());
+        } else {
+            trackerThread = thdf.submitPeriodicTask(new Tracker(), getPingInterval() + new Random().nextInt(30));
+        }
     }
 
     @Override

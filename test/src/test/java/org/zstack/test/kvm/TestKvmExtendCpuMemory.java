@@ -7,13 +7,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -41,6 +38,7 @@ public class TestKvmExtendCpuMemory {
     DatabaseFacade dbf;
     SessionInventory session;
     KVMSimulatorConfig config;
+    HostCpuOverProvisioningManager cpuMgr;
 
     @Before
     public void setUp() throws Exception {
@@ -54,6 +52,7 @@ public class TestKvmExtendCpuMemory {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(KVMSimulatorConfig.class);
+        cpuMgr = loader.getComponent(HostCpuOverProvisioningManager.class);
         session = api.loginAsAdmin();
     }
     
@@ -70,8 +69,8 @@ public class TestKvmExtendCpuMemory {
         api.reconnectHost(host1.getUuid());
         TimeUnit.SECONDS.sleep(3);
         HostCapacityVO cap = dbf.findByUuid(host1.getUuid(), HostCapacityVO.class);
-        Assert.assertEquals(cap.getTotalCpu(), config.cpuNum * config.cpuSpeed);
-        Assert.assertEquals(cap.getAvailableCpu(), cap1.getAvailableCpu() + expandedCpuNum * config.cpuSpeed);
+        Assert.assertEquals(cap.getTotalCpu(), cpuMgr.calculateByRatio(host1.getUuid(), (int) config.cpuNum));
+        Assert.assertEquals(cap.getAvailableCpu(), cap1.getAvailableCpu() + expandedCpuNum);
         Assert.assertEquals(cap.getTotalMemory(), config.totalMemory);
         Assert.assertEquals(cap.getAvailableMemory(), cap1.getAvailableMemory() + expandedMem);
         Assert.assertEquals(cap.getTotalPhysicalMemory(), config.totalMemory);

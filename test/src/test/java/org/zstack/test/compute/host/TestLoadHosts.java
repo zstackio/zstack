@@ -14,8 +14,6 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.UnitTestUtils;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 public class TestLoadHosts {
@@ -28,8 +26,13 @@ public class TestLoadHosts {
         UnitTestUtils.runTestCase(CreateHost.class, "-Dhost.num=100");
         BeanConstructor con = new BeanConstructor();
         /* This loads spring application context */
-        loader = con.addXml("PortalForUnitTest.xml").addXml("ClusterManager.xml")
-                .addXml("ZoneManager.xml").addXml("HostManager.xml").addXml("Simulator.xml").addXml("HostAllocatorManager.xml").addXml("AccountManager.xml").build();
+        loader = con.addXml("PortalForUnitTest.xml")
+                .addXml("ClusterManager.xml")
+                .addXml("ZoneManager.xml")
+                .addXml("HostManager.xml")
+                .addXml("Simulator.xml")
+                .addXml("HostAllocatorManager.xml")
+                .addXml("AccountManager.xml").build();
         dbf = loader.getComponent(DatabaseFacade.class);
         api = new Api();
         api.startServer();

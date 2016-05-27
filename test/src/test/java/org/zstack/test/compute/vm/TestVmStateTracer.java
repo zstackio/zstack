@@ -101,7 +101,7 @@ public class TestVmStateTracer {
         Assert.assertNull(vm1.getHostUuid());
         HostVO hvo2 = dbf.findByUuid(hostUuid, HostVO.class);
         Assert.assertEquals(hvo2.getCapacity().getAvailableMemory(), hvo1.getCapacity().getAvailableMemory() + vm1.getMemorySize());
-        Assert.assertEquals(hvo2.getCapacity().getAvailableCpu(), hvo1.getCapacity().getAvailableCpu() + vm1.getCpuSpeed() * vm1.getCpuNum());
+        Assert.assertEquals(hvo2.getCapacity().getAvailableCpu(), hvo1.getCapacity().getAvailableCpu() + vm1.getCpuNum());
         Assert.assertTrue(success1);
         Assert.assertFalse(success2);
 
@@ -113,7 +113,7 @@ public class TestVmStateTracer {
         Assert.assertNotNull(vm1.getHostUuid());
         HostVO hvo3 = dbf.findByUuid(vm1.getHostUuid(), HostVO.class);
         Assert.assertEquals(hvo3.getCapacity().getAvailableMemory(), hvo2.getCapacity().getAvailableMemory() - vm1.getMemorySize());
-        Assert.assertEquals(hvo3.getCapacity().getAvailableCpu(), hvo2.getCapacity().getAvailableCpu() - vm1.getCpuNum() * vm1.getCpuSpeed());
+        Assert.assertEquals(hvo3.getCapacity().getAvailableCpu(), hvo2.getCapacity().getAvailableCpu() - vm1.getCpuNum());
         Assert.assertTrue(success2);
     }
 }

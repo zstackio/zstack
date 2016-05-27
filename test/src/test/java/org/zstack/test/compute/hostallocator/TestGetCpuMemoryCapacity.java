@@ -6,11 +6,9 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostVO;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -61,19 +59,14 @@ public class TestGetCpuMemoryCapacity {
             }
         });
         
-        long totalCpu = 2600 * 8;
         long totalMemory = SizeUnit.GIGABYTE.toByte(12);
         
         APIGetCpuMemoryCapacityReply reply = api.retrieveHostCapacity(Arrays.asList(zone.getUuid()), null, null);
-        Assert.assertEquals(totalCpu, reply.getTotalCpu());
         Assert.assertEquals(totalMemory, reply.getTotalMemory());
-        Assert.assertEquals(totalCpu, reply.getAvailableCpu());
         Assert.assertEquals(totalMemory, reply.getAvailableMemory());
         
         reply = api.retrieveHostCapacity(null, Arrays.asList(cluster.getUuid()), null);
-        Assert.assertEquals(totalCpu, reply.getTotalCpu());
         Assert.assertEquals(totalMemory, reply.getTotalMemory());
-        Assert.assertEquals(totalCpu, reply.getAvailableCpu());
         Assert.assertEquals(totalMemory, reply.getAvailableMemory());
         
         reply = api.retrieveHostCapacity(null, null, Arrays.asList(host.getUuid()));
@@ -83,15 +76,11 @@ public class TestGetCpuMemoryCapacity {
         Assert.assertEquals(SizeUnit.GIGABYTE.toByte(8), reply.getAvailableMemory());
 
         reply = api.retrieveHostCapacity(null, null, huuids);
-        Assert.assertEquals(totalCpu, reply.getTotalCpu());
         Assert.assertEquals(totalMemory, reply.getTotalMemory());
-        Assert.assertEquals(totalCpu, reply.getAvailableCpu());
         Assert.assertEquals(totalMemory, reply.getAvailableMemory());
 
         reply = api.retrieveHostCapacityByAll();
-        Assert.assertEquals(totalCpu, reply.getTotalCpu());
         Assert.assertEquals(totalMemory, reply.getTotalMemory());
-        Assert.assertEquals(totalCpu, reply.getAvailableCpu());
         Assert.assertEquals(totalMemory, reply.getAvailableMemory());
     }
 }

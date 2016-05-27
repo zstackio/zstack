@@ -29,8 +29,13 @@ public class TestLoadHosts2 {
         UnitTestUtils.runTestCase(CreateHost.class, "-Dhost.num=100");
         BeanConstructor con = new BeanConstructor();
         /* This loads spring application context */
-        loader = con.addXml("PortalForUnitTest.xml").addXml("ClusterManager.xml")
-                .addXml("ZoneManager.xml").addXml("HostManager.xml").addXml("Simulator.xml").addXml("HostAllocatorManager.xml").addXml("AccountManager.xml").build();
+        loader = con.addXml("PortalForUnitTest.xml")
+                .addXml("ClusterManager.xml")
+                .addXml("ZoneManager.xml")
+                .addXml("HostManager.xml")
+                .addXml("Simulator.xml")
+                .addXml("HostAllocatorManager.xml")
+                .addXml("AccountManager.xml").build();
         dbf = loader.getComponent(DatabaseFacade.class);
         gcf = loader.getComponent(GlobalConfigFacade.class);
         HostGlobalConfig.SIMULTANEOUSLY_LOAD.updateValue(false);
