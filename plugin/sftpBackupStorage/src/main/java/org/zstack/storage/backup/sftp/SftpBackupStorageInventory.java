@@ -17,11 +17,7 @@ import java.util.List;
 @PythonClassInventory
 public class SftpBackupStorageInventory extends BackupStorageInventory {
     public String hostname;
-    @APINoSee
-    @Unqueryable
     public String username;
-
-
     public Integer sshPort;
 
     protected SftpBackupStorageInventory(SftpBackupStorageVO vo) {
