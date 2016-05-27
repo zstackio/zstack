@@ -20,8 +20,9 @@ public class KVMHostVO extends HostVO {
     @Column
     private String password;
 
+
     @Column
-    private int port;
+    private Integer port;
 
     public KVMHostVO() {
     }
@@ -45,13 +46,13 @@ public class KVMHostVO extends HostVO {
     public void setPassword(String password) {
         this.password = password;
     }
-
-    public int getPort() {
+    public Integer getPort() {
         return port;
     }
 
-    public void setPort(int port) {
+    public void setPort(Integer port) {
         this.port = port;
     }
+
 }
 
