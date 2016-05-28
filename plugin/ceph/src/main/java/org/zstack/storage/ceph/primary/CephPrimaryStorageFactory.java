@@ -590,6 +590,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     @Override
     public void preAttachIsoExtensionPoint(KVMHostInventory host, AttachIsoCmd cmd) {
-        convertIsoToCephIfNeeded(cmd.iso);
+        IsoTO to = convertIsoToCephIfNeeded(cmd.iso);
+        cmd.iso = to;
     }
 }

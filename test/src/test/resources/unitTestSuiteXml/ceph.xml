@@ -15,6 +15,7 @@
     <TestCase class="org.zstack.test.storage.ceph.TestCeph12"/>
     <TestCase class="org.zstack.test.storage.ceph.TestCeph13"/>
     <TestCase class="org.zstack.test.storage.ceph.TestCeph14"/>
+    <TestCase class="org.zstack.test.storage.ceph.TestCeph15"/>
     <TestCase class="org.zstack.test.storage.ceph.TestPingCephPs1"/>
     <TestCase class="org.zstack.test.storage.ceph.TestPingCephBs1"/>
 </UnitTestSuiteConfig>
