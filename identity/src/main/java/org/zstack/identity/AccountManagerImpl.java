@@ -132,6 +132,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return definedQuotas;
     }
 
+    @Override
+    public void checkApiMessagePermission(APIMessage msg) {
+        new Auth().check(msg);
+    }
+
     private void handle(GenerateMessageIdentityCategoryMsg msg) {
         List<String> adminMsgs = new ArrayList<String>();
         List<String> userMsgs = new ArrayList<String>();

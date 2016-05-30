@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.logging.Log;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.core.workflow.*;
@@ -170,6 +171,8 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
                     trigger.next();
                     return;
                 }
+
+                new Log(context.getInventory().getUuid()).log(KVMHostLabel.PREPARE_L2_NETWORK);
 
                 prepareNetwork(l2s.iterator(), context.getInventory().getUuid(), new Completion(trigger) {
                     @Override

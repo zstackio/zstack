@@ -8,10 +8,9 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.SysErrors;
-import org.zstack.core.logging.LogFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -37,8 +36,6 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
     private PluginRegistry pluginRgty;
     @Autowired
     private DbEntityLister dl;
-    @Autowired
-    private LogFacade logf;
     @Autowired
     private ErrorFacade errf;
     @Autowired
@@ -150,9 +147,6 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
 
         evt.setInventory(ZoneInventory.valueOf(vo));
         logger.debug("Created zone: " + vo.getName() + " uuid:" + vo.getUuid());
-        if (logf.isEnabled()) {
-            logf.info(vo.getUuid(), String.format("Create zone successfully"));
-        }
         bus.publish(evt);
     }
 

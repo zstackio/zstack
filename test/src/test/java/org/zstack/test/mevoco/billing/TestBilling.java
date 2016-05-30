@@ -56,7 +56,7 @@ public class TestBilling {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        DBUtil.reDeployCassandra(BillingConstants.CASSANDRA_KEYSPACE);
+        DBUtil.reDeployCassandra(BillingConstants.CASSANDRA_KEYSPACE, "zstack_logging");
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");

@@ -26,7 +26,7 @@ public class CoreGlobalProperty {
     public static boolean EXPOSE_SIMULATOR_TYPE;
     @GlobalProperty(name="exitJVMOnStop", defaultValue = "true")
     public static boolean EXIT_JVM_ON_STOP;
-    @GlobalProperty(name="locale", defaultValue = "zh_cn")
+    @GlobalProperty(name="locale", defaultValue = "zh_CN")
     public static String LOCALE;
     @GlobalProperty(name="user.home")
     public static String USER_HOME;
@@ -38,4 +38,6 @@ public class CoreGlobalProperty {
     public static boolean IS_UPGRADE_START;
     @GlobalProperty(name="shadowEntityOn", defaultValue = "false")
     public static boolean SHADOW_ENTITY_ON;
+    @GlobalProperty(name="Log.log4jBackendOn", defaultValue = "true")
+    public static boolean LOG4j_BACKEND_ON;
 }

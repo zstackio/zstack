@@ -9,6 +9,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.gc.EventBasedGCPersistentContext;
 import org.zstack.core.gc.GCEventTrigger;
 import org.zstack.core.gc.GCFacade;
+import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -534,6 +535,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     trigger.next();
                     return;
                 }
+
+                new Log(context.getInventory().getUuid()).log(FlatNetworkLabel.SYNC_EIP);
 
                 batchApplyEips(tos, context.getInventory().getUuid(), true, new Completion(trigger) {
                     @Override

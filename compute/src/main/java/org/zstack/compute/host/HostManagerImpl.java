@@ -13,6 +13,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.logging.Log;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -186,6 +187,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         final HypervisorFactory factory = getHypervisorFactory(HypervisorType.valueOf(cluster.getHypervisorType()));
         final HostVO vo = factory.createHost(hvo, msg);
 
+        new Log(vo.getUuid()).log(HostLogLabel.ADD_HOST_WRITE_DB);
+
         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), HostVO.class.getSimpleName());
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -194,12 +197,17 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         chain.then(new NoRollbackFlow() {
             String __name__ = "call-before-add-host-extension";
 
-            @Override
-            public void run(final FlowTrigger trigger, Map data) {
-                extEmitter.beforeAddHost(inv, new Completion(trigger) {
+            private void callPlugins(final Iterator<HostAddExtensionPoint> it, final FlowTrigger trigger) {
+                if (!it.hasNext()) {
+                    trigger.next();
+                    return;
+                }
+
+                HostAddExtensionPoint ext = it.next();
+                ext.beforeAddHost(inv, new Completion(trigger) {
                     @Override
                     public void success() {
-                        trigger.next();
+                        callPlugins(it, trigger);
                     }
 
                     @Override
@@ -208,11 +216,20 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     }
                 });
             }
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                List<HostAddExtensionPoint> exts = pluginRgty.getExtensionList(HostAddExtensionPoint.class);
+                callPlugins(exts.iterator(), trigger);
+            }
+
         }).then(new NoRollbackFlow() {
             String __name__ = "send-connect-host-message";
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
+                new Log(inv.getUuid()).log(HostLogLabel.ADD_HOST_CONNECT);
+
                 ConnectHostMsg connectMsg = new ConnectHostMsg(vo.getUuid());
                 connectMsg.setNewAdd(true);
                 connectMsg.setStartPingTaskOnFailure(false);
@@ -233,6 +250,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                new Log(inv.getUuid()).log(HostLogLabel.ADD_HOST_CHECK_OS_VERSION_IN_CLUSTER);
+
                 String distro = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_DISTRIBUTION_TOKEN);
                 String release = HostSystemTags.OS_RELEASE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_RELEASE_TOKEN);
                 String version = HostSystemTags.OS_VERSION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_VERSION_TOKEN);
@@ -299,6 +318,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 inv.setStatus(HostStatus.Connected.toString());
                 evt.setInventory(inv);
                 bus.publish(evt);
+
+                new Log(inv.getUuid()).log(HostLogLabel.ADD_HOST_SUCCESS);
                 logger.debug(String.format("successfully added host[name:%s, hypervisor:%s, uuid:%s]", vo.getName(), vo.getHypervisorType(), vo.getUuid()));
             }
         }).error(new FlowErrorHandler(msg) {

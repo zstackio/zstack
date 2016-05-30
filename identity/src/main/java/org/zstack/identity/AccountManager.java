@@ -1,6 +1,7 @@
 package org.zstack.identity;
 
 import org.zstack.header.identity.Quota;
+import org.zstack.header.message.APIMessage;
 
 import java.util.List;
 import java.util.Map;
@@ -17,4 +18,6 @@ public interface AccountManager {
     Map<Class, Quota> getMessageQuotaMap();
 
     List<Quota> getQuotas();
+
+    void checkApiMessagePermission(APIMessage msg);
 }
