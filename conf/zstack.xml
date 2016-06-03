@@ -27,6 +27,11 @@
         <property name="ignoreUnresolvablePlaceholders" value="true" />
     </bean>
 
+    <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+ 	<property name="basename" value="i18n/messages"></property>
+	<property name="defaultEncoding" value="UTF-8"></property>
+    </bean>
+
     <import resource="springConfigXml/AccountManager.xml" />
     <import resource="springConfigXml/ApiMediator.xml" />
     <import resource="springConfigXml/BackupStorageManager.xml" />

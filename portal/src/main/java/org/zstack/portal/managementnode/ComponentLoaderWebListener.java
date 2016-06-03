@@ -32,7 +32,6 @@ public class ComponentLoaderWebListener implements ServletContextListener {
                 }
             });
         }
-
     }
 
     @Override
