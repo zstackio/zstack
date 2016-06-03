@@ -49,7 +49,7 @@ public class DBUtil {
         }
     }
 
-    public static void reDeployCassandra(String keyspace) {
+    public static void reDeployCassandra(String...keyspaces) {
         // initializing platform causes zstack.properties to be load
         Platform.getUuid();
         logger.info("Redeploying cassandra");
@@ -94,7 +94,9 @@ public class DBUtil {
             });
         }
 
-        ShellUtils.run(String.format("%s -e \"drop keyspace if exists %s\"", cqlsh, keyspace), false);
+        for (String keyspace : keyspaces) {
+            ShellUtils.run(String.format("%s -e \"drop keyspace if exists %s\"", cqlsh, keyspace), false);
+        }
 
         File schemaFolder = PathUtil.findFolderOnClassPath("mevoco/cassandra/db", true);
         File deployer = PathUtil.findFileOnClassPath("deploy_cassandra_db.py", true);

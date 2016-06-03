@@ -3,6 +3,7 @@ package org.zstack.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.logging.Log;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.workflow.Flow;
@@ -67,6 +68,8 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                new Log(context.getInventory().getUuid()).log(KVMHostLabel.SYNC_HOST_CAPACITY);
+
                 reportCapacity(context.getInventory());
                 trigger.next();
             }

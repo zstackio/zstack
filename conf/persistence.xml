@@ -4,7 +4,6 @@
     <persistence-unit name="zstack.jpa" transaction-type="RESOURCE_LOCAL">
         <mapping-file>persistence-mapping.xml</mapping-file>
 
-        <class>org.zstack.core.logging.LogVO</class>
         <class>org.zstack.core.checkpoint.CheckPointVO</class>
         <class>org.zstack.core.checkpoint.CheckPointEntryVO</class>
         <class>org.zstack.core.workflow.WorkFlowChainVO</class>

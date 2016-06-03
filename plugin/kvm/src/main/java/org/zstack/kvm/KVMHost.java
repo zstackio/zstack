@@ -16,6 +16,7 @@ import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.logging.Log;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -2066,6 +2067,9 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void run(FlowTrigger trigger, Map data) {
                                 String checkList = KVMGlobalConfig.HOST_DNS_CHECK_LIST.value();
+
+                                new Log(self.getUuid()).log(KVMHostLabel.ADD_HOST_CHECK_DNS, checkList);
+
                                 checkList = checkList.replaceAll(",", " ");
                                 SshResult ret = new Ssh().setHostname(getSelf().getManagementIp())
                                         .setUsername(getSelf().getUsername()).setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
@@ -2091,6 +2095,8 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
+                            new Log(self.getUuid()).log(KVMHostLabel.ADD_HOST_CHECK_PING_MGMT_NODE);
+
                             SshResult ret = new Ssh().setHostname(getSelf().getManagementIp())
                                     .setUsername(getSelf().getUsername()).setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
                                     .command(String.format("curl --connect-timeout 10 %s", restf.getCallbackUrl())).runAndClose();
@@ -2117,6 +2123,8 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            new Log(self.getUuid()).log(KVMHostLabel.CALL_ANSIBLE);
+
                             String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", agentPackageName), true).getAbsolutePath();
                             String destPath = String.format("/var/lib/zstack/kvm/%s", agentPackageName);
                             SshFileMd5Checker checker = new SshFileMd5Checker();
@@ -2160,6 +2168,8 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            new Log(self.getUuid()).log(KVMHostLabel.ECHO_AGENT);
+
                             restf.echo(echoPath, new Completion(trigger) {
                                 @Override
                                 public void success() {
@@ -2218,6 +2228,8 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            new Log(self.getUuid()).log(KVMHostLabel.COLLECT_HOST_FACTS);
+
                             HostFactCmd cmd = new HostFactCmd();
                             restf.asyncJsonPost(hostFactPath, cmd, new JsonAsyncRESTCallback<HostFactResponse>() {
                                 @Override
@@ -2263,6 +2275,8 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
+                            new Log(self.getUuid()).log(KVMHostLabel.PREPARE_FIREWALL);
+
                             String script = "which iptables > /dev/null && iptables -C FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 && iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 || true";
                             runShell(script);
                             trigger.next();

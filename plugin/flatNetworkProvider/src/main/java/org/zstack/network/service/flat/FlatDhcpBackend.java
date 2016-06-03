@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.logging.Log;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -672,6 +673,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     trigger.next();
                     return;
                 }
+
+                new Log(context.getInventory().getUuid()).log(FlatNetworkLabel.SYNC_DHCP);
 
                 // to flush ebtables
                 ConnectCmd cmd = new ConnectCmd();
