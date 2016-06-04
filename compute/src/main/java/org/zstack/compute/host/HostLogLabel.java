@@ -19,10 +19,14 @@ public class HostLogLabel {
     public static String ADD_HOST_CONNECT = "add.host.connect";
 
     @LogLabel(messages = {
-            "en_US = successfully added the host",
-            "zh_CN = 添加物理机成功"
+            "en_US = check if the operating system version on the host matches others in the same cluster",
+            "zh_CN = 检查物理机操作系统版本是否与集群中其它物理机一致"
     })
     public static String ADD_HOST_CHECK_OS_VERSION_IN_CLUSTER = "add.host.checkOSVersionInCluster";
 
+    @LogLabel(messages = {
+            "en_US = successfully added the host",
+            "zh_CN = 添加物理机成功"
+    })
     public static String ADD_HOST_SUCCESS = "add.host.success";
 }

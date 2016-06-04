@@ -265,6 +265,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 q.select(HostVO_.uuid);
                 q.add(HostVO_.clusterUuid, Op.EQ, vo.getClusterUuid());
                 q.add(HostVO_.uuid, Op.NOT_EQ, vo.getUuid());
+                q.add(HostVO_.status, Op.NOT_EQ, HostStatus.Connecting);
                 q.setLimit(1);
                 List<String> huuids = q.listValue();
                 if (huuids.isEmpty()) {
