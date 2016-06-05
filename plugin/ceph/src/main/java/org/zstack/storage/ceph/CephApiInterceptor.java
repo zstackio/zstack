@@ -10,10 +10,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
-import org.zstack.storage.ceph.backup.APIAddCephBackupStorageMsg;
-import org.zstack.storage.ceph.backup.APIAddMonToCephBackupStorageMsg;
-import org.zstack.storage.ceph.backup.CephBackupStorageMonVO;
-import org.zstack.storage.ceph.backup.CephBackupStorageMonVO_;
+import org.zstack.storage.ceph.backup.*;
 import org.zstack.storage.ceph.primary.APIAddCephPrimaryStorageMsg;
 import org.zstack.storage.ceph.primary.APIAddMonToCephPrimaryStorageMsg;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO;
@@ -22,6 +19,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -48,6 +46,8 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddCephPrimaryStorageMsg) msg);
         } else if (msg instanceof APIAddMonToCephBackupStorageMsg) {
             validate((APIAddMonToCephBackupStorageMsg) msg);
+        } else if (msg instanceof APIUpdateMonToCephBackupStorageMsg) {
+            validate((APIUpdateMonToCephBackupStorageMsg) msg);
         } else if (msg instanceof APIAddMonToCephPrimaryStorageMsg) {
             validate((APIAddMonToCephPrimaryStorageMsg) msg);
         }
@@ -81,6 +81,13 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAddMonToCephBackupStorageMsg msg) {
         checkMonUrls(msg.getMonUrls());
+    }
+    private void validate(APIUpdateMonToCephBackupStorageMsg msg) {
+        if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
+            ));
+        }
     }
 
     private void checkMonUrls(List<String> monUrls) {

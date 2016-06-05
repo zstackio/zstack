@@ -13,6 +13,11 @@
     </message>
 
     <message>
+        <name>org.zstack.storage.ceph.backup.APIUpdateMonToCephBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
         <name>org.zstack.storage.ceph.backup.APIRemoveMonFromCephBackupStorageMsg</name>
         <serviceId>storage.backup</serviceId>
     </message>
