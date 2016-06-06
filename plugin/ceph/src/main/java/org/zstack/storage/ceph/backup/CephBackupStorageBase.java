@@ -801,8 +801,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIAddMonToCephBackupStorageMsg) {
             handle((APIAddMonToCephBackupStorageMsg) msg);
-        } else if (msg instanceof APIUpdateMonToCephBackupStorageMsg) {
-            handle((APIUpdateMonToCephBackupStorageMsg) msg);
+        } else if (msg instanceof APIUpdateCephBackupStorageMonMsg) {
+            handle((APIUpdateCephBackupStorageMonMsg) msg);
         } else if (msg instanceof APIRemoveMonFromCephBackupStorageMsg) {
             handle((APIRemoveMonFromCephBackupStorageMsg) msg);
         } else {
@@ -983,7 +983,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }).start();
     }
 
-    private void handle(final APIUpdateMonToCephBackupStorageMsg msg) {
+    private void handle(final APIUpdateCephBackupStorageMonMsg msg) {
         final APIUpdateMonToCephBackupStorageEvent evt = new APIUpdateMonToCephBackupStorageEvent(msg.getId());
         CephBackupStorageMonVO monvo = dbf.findByUuid(msg.getMonUuid(), CephBackupStorageMonVO.class);
         if (msg.getHostname() != null) {

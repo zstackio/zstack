@@ -13,7 +13,7 @@
     </message>
 
     <message>
-        <name>org.zstack.storage.ceph.backup.APIUpdateMonToCephBackupStorageMsg</name>
+        <name>org.zstack.storage.ceph.backup.APIUpdateCephBackupStorageMonMsg</name>
         <serviceId>storage.backup</serviceId>
     </message>
 
@@ -34,6 +34,11 @@
 
     <message>
         <name>org.zstack.storage.ceph.primary.APIAddMonToCephPrimaryStorageMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.ceph.primary.APIUpdateCephPrimaryStorageMonMsg</name>
         <serviceId>storage.primary</serviceId>
     </message>
 
