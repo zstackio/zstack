@@ -45,7 +45,7 @@ import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.VersionComparer;
+import org.zstack.utils.VersionComparator;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -765,7 +765,7 @@ public class KVMHost extends HostBase implements Host {
 
             if (state == VmInstanceState.Running) {
                 String libvirtVersion = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN);
-                if (new VersionComparer(KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION).compare(libvirtVersion) > 0) {
+                if (new VersionComparator(KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION).compare(libvirtVersion) > 0) {
                     throw new OperationFailureException(errf.stringToOperationError(
                             String.format("live volume snapshot merge needs libvirt version greater than %s, current libvirt version is %s. Please stop vm and redo the operation or detach the volume if it's data volume",
                                     KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION, libvirtVersion)
@@ -1977,8 +1977,8 @@ public class KVMHost extends HostBase implements Host {
                         rsp.getError());
                 errCode = errf.stringToOperationError(err);
             } else {
-                VersionComparer libvirtVersion = new VersionComparer(rsp.getLibvirtVersion());
-                VersionComparer qemuVersion = new VersionComparer(rsp.getQemuVersion());
+                VersionComparator libvirtVersion = new VersionComparator(rsp.getLibvirtVersion());
+                VersionComparator qemuVersion = new VersionComparator(rsp.getQemuVersion());
                 boolean liveSnapshot = libvirtVersion.compare(KVMConstant.MIN_LIBVIRT_LIVESNAPSHOT_VERSION) >= 0
                         && qemuVersion.compare(KVMConstant.MIN_QEMU_LIVESNAPSHOT_VERSION) >= 0;
 

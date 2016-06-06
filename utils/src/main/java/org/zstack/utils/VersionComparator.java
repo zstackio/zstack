@@ -6,11 +6,11 @@ import java.util.List;
 /**
  * Created by xing5 on 2016/5/18.
  */
-public class VersionComparer {
+public class VersionComparator {
     private String version;
     private List<Integer> elements = new ArrayList<Integer>();
 
-    public VersionComparer(String version) {
+    public VersionComparator(String version) {
         this.version = version;
 
         try {
@@ -24,11 +24,11 @@ public class VersionComparer {
     }
 
     public int compare(String ver) {
-        VersionComparer c = new VersionComparer(ver);
+        VersionComparator c = new VersionComparator(ver);
         return compare(c);
     }
 
-    public int compare(VersionComparer v) {
+    public int compare(VersionComparator v) {
         List<Integer> him = new ArrayList<Integer>();
         him.addAll(v.elements);
         List<Integer> me = new ArrayList<Integer>();
