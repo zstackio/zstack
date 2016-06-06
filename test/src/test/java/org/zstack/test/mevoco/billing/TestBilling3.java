@@ -98,18 +98,15 @@ public class TestBilling3 {
         });
         Assert.assertNotNull(spending);
 
-        float c = 0;
-        float m = 0;
-        for (SpendingDetails d : spending.getDetails()) {
-            if (BillingConstants.SPENDING_CPU.equals(d.type)) {
-                c += d.spending;
-            }
-            if (BillingConstants.SPENDING_MEMORY.equals(d.type)) {
-                m += d.spending;
-            }
-        }
-        Assert.assertEquals(cpuPrice, c, 0.02);
-        Assert.assertEquals(memPrice, m, 0.02);
+        VmSpending vmSpending = (VmSpending) spending.getDetails().get(0);
+        float cpuSpending = (float) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
+        Assert.assertEquals(cpuPrice, cpuSpending, 0.02);
+
+        float memSpending = (float) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
+        Assert.assertEquals(memPrice, memSpending, 0.02);
+
+        Assert.assertEquals(cpuPrice, cpuSpending, 0.02);
+        Assert.assertEquals(memPrice, memSpending, 0.02);
     }
     
 	@Test
@@ -132,11 +129,6 @@ public class TestBilling3 {
         PriceCO cpupco = ops.selectOne(cql.build(), PriceCO.class);
         Assert.assertNotNull(cpupco);
 
-        final PriceUDF pudf = new PriceUDF();
-        pudf.setPrice(cpupco.getPrice());
-        pudf.setTimeUnit(cpupco.getTimeUnit());
-        pudf.setResourceUnit(cpupco.getResourceUnit());
-
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
         msg.setPrice(mprice);
@@ -147,11 +139,6 @@ public class TestBilling3 {
         cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_MEMORY);
         PriceCO mempco = ops.selectOne(cql.build(), PriceCO.class);
         Assert.assertNotNull(mempco);
-
-        final PriceUDF mudf = new PriceUDF();
-        mudf.setPrice(mempco.getPrice());
-        mudf.setTimeUnit(mempco.getTimeUnit());
-        mudf.setResourceUnit(mempco.getResourceUnit());
 
         cql = new Cql("delete from <table> where accountUuid = :uuid");
         cql.setTable(VmUsageCO.class.getSimpleName()).setParameter("uuid", AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
@@ -170,8 +157,6 @@ public class TestBilling3 {
                 u.setVmUuid(vmInstance.getUuid());
                 u.setCpuNum(vmInstance.getCpuNum());
                 u.setMemorySize(vmInstance.getMemorySize());
-                u.setCpuPrice(pudf);
-                u.setMemoryPrice(mudf);
                 u.setInventory(JSONObjectUtil.toJsonString(vmInstance));
                 u.setDateInLong(date.getTime());
                 u.setName(vmInstance.getName());
@@ -208,13 +193,15 @@ public class TestBilling3 {
                 TimeUnit.MILLISECONDS.toSeconds(during3),
                 duringInSeconds));
 
-        APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
+        APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null,
+                Long.MAX_VALUE, null);
 
         float cpuPrice = vm.getCpuNum() * cprice * duringInSeconds;
         float memPrice = SizeUnit.BYTE.toMegaByte(vm.getMemorySize()) * mprice * duringInSeconds;
         Assert.assertEquals(reply.getTotal(), cpuPrice + memPrice, 0.02);
         check(reply, cpuPrice, memPrice);
 
+        baseDate = new Date(date6.getTime() + TimeUnit.DAYS.toSeconds(10));
         // S -> S -> S -> R -> R -> R -> S
         cp = new CreatePrice(vm1);
         Date date11 = new Date(baseDate.getTime() + TimeUnit.DAYS.toMillis(1));
@@ -235,8 +222,8 @@ public class TestBilling3 {
         float cpuPrice11 = vm1.getCpuNum() * cprice * duringInSeconds;
         float memPrice11 = SizeUnit.BYTE.toMegaByte(vm1.getMemorySize()) * mprice * duringInSeconds;
 
-        reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
-        Assert.assertEquals(reply.getTotal(), cpuPrice + memPrice + cpuPrice11 + memPrice11, 0.02);
-        check(reply, cpuPrice + cpuPrice11, memPrice + memPrice11);
+        reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, date33.getTime(), date66.getTime(), null);
+        Assert.assertEquals(cpuPrice11 + memPrice11, reply.getTotal(), 0.02);
+        check(reply, cpuPrice11, memPrice11);
     }
 }

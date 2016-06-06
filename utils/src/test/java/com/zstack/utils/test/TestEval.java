@@ -55,5 +55,12 @@ public class TestEval {
         sub = new SubnetUtils("224.0.0.0/24");
         System.out.println(sub.getInfo().getLowAddress());
         System.out.println(sub.getInfo().getHighAddress());
+
+        Runnable r = () -> {
+            System.out.println("test lambda");
+            System.out.println("test lambda2");
+        };
+
+        r.run();
     }
 }

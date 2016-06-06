@@ -6,17 +6,16 @@ import org.junit.Test;
 import org.zstack.billing.*;
 import org.zstack.cassandra.CassandraFacade;
 import org.zstack.cassandra.CassandraOperator;
+import org.zstack.cassandra.Cql;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
-import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeVO;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
@@ -26,19 +25,25 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 1. test data volume billing
+ * 1. start a vm
+ * 2. create prices
+ * 3. reboot the vm and let it run a while
+ *
+ * confirm the billing is correct
  */
-public class TestBilling5 {
-    CLogger logger = Utils.getLogger(TestBilling5.class);
+public class TestBilling7 {
+    CLogger logger = Utils.getLogger(TestBilling7.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -59,7 +64,7 @@ public class TestBilling5 {
         DBUtil.reDeployDB();
         DBUtil.reDeployCassandra(BillingConstants.CASSANDRA_KEYSPACE);
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/billing/TestBilling5.xml", con);
+        deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
         deployer.addSpringConfig("cassandra.xml");
         deployer.addSpringConfig("billing.xml");
@@ -89,49 +94,65 @@ public class TestBilling5 {
     
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
-        DiskOfferingInventory doffering = deployer.diskOfferings.get("DataDiskOffering");
-        VolumeInventory vol = api.createDataVolume("data", doffering.getUuid());
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        VolumeInventory rootVolume = vm.getRootVolume();
 
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
+        msg.setPrice(100f);
+        msg.setResourceName(BillingConstants.SPENDING_CPU);
+        api.createPrice(msg);
+        Cql cql = new Cql("select * from <table> where resourceName = :name limit 1");
+        cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_CPU);
+        PriceCO co = ops.selectOne(cql.build(), PriceCO.class);
+        Assert.assertNotNull(co);
+
+        msg = new APICreateResourcePriceMsg();
+        msg.setTimeUnit("s");
         msg.setPrice(10f);
-        msg.setResourceName(BillingConstants.SPENDING_TYPE_DATA_VOLUME);
+        msg.setResourceName(BillingConstants.SPENDING_MEMORY);
         msg.setResourceUnit("m");
         api.createPrice(msg);
 
-        VmInstanceInventory vm = deployer.vms.get("TestVm");
+        msg = new APICreateResourcePriceMsg();
+        msg.setTimeUnit("s");
+        msg.setPrice(9f);
+        msg.setResourceName(BillingConstants.SPENDING_ROOT_VOLUME);
+        msg.setResourceUnit("m");
+        api.createPrice(msg);
 
-        vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
+        long during = 5;
+        api.rebootVmInstance(vm.getUuid());
+        TimeUnit.SECONDS.sleep(during);
 
-        TimeUnit.SECONDS.sleep(5);
+        final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
 
-        api.deleteDataVolume(vol.getUuid());
-        VolumeVO volvo  = dbf.findByUuid(vol.getUuid(), VolumeVO.class);
-        long during = TimeUnit.MILLISECONDS.toSeconds(volvo.getLastOpDate().getTime() - vol.getLastOpDate().getTime());
+        float cpuPrice = vm.getCpuNum() * 100f * during;
+        float memPrice = vm.getMemorySize() * 10f * during;
+        long volSizeInM = SizeUnit.BYTE.toMegaByte(rootVolume.getSize());
+        float volPrice = volSizeInM * 9f * during;
 
-        logger.debug(String.format("duration: %s s", during));
+        // for 2s error margin
+        float cpuPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
+        float memPriceErrorMargin = vm.getMemorySize() * 100f  * 2;
+        float volPriceErrorMargin = volSizeInM * 9f * 2;
+        float errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
 
-        long volSize = SizeUnit.BYTE.toMegaByte(vol.getSize());
-        float price = 10 * volSize * during;
+        Assert.assertEquals(cpuPrice + memPrice + volPrice, reply.getTotal(), errorMargin);
 
-        float errorMargin = 10 * volSize * 2; // the error margin of duration is 2s
+        Spending spending = CollectionUtils.find(reply.getSpending(), arg -> BillingConstants.SPENDING_TYPE_VM.equals(arg.getSpendingType()) ? arg : null);
+        Assert.assertNotNull(spending);
+        List<VmSpending> vmSpendings = JSONObjectUtil.toCollection(JSONObjectUtil.toJsonString(spending.getDetails()),
+                ArrayList.class, VmSpending.class);
+        VmSpending vmSpending = vmSpendings.get(0);
 
-        final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID,
-                null, Long.MAX_VALUE, null);
+        float cpuSpending = (float) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
+        Assert.assertEquals(cpuPrice, cpuSpending, cpuPriceErrorMargin);
 
-        Assert.assertEquals(price, reply.getTotal(), errorMargin);
+        float memSpending = (float) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
+        Assert.assertEquals(memPrice, memSpending, memPriceErrorMargin);
 
-        Optional<Spending> opt = reply.getSpending().stream()
-                .filter(s -> s.getSpendingType().equals(BillingConstants.SPENDING_TYPE_DATA_VOLUME)).findFirst();
-        Assert.assertTrue(opt.isPresent());
-        Spending spending = opt.get();
-        Assert.assertEquals(1, spending.getDetails().size());
-        SpendingDetails sp = spending.getDetails().get(0);
-        DataVolumeSpending ds = JSONObjectUtil.rehashObject(sp, DataVolumeSpending.class);
-        Assert.assertEquals(volvo.getUuid(), ds.resourceUuid);
-        Assert.assertFalse(ds.sizeInventory.isEmpty());
-
-        float volPrice = (float) ds.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
-        Assert.assertEquals(price, volPrice, errorMargin);
+        float rootVolSpending = (float) vmSpending.rootVolumeInventory.stream().mapToDouble(i -> i.spending).sum();
+        Assert.assertEquals(volPrice, rootVolSpending, volPriceErrorMargin);
     }
 }

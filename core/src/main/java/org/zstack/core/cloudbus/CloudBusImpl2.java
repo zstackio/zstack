@@ -2493,7 +2493,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             for (Message msg : e.getRequests()) {
                 WaitingReplyMessageStatistic statistic = new WaitingReplyMessageStatistic(
                         msg.getClass().getName(),
-                        currentTime - msg.getCreatingTime(),
+                        currentTime - msg.getCreatedTime(),
                         msg.getId(),
                         msg.getServiceId()
                 );

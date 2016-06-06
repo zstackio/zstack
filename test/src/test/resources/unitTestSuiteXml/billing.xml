@@ -7,4 +7,6 @@
     <TestCase class="org.zstack.test.mevoco.billing.TestBilling4"/>
     <TestCase class="org.zstack.test.mevoco.billing.TestBilling5"/>
     <TestCase class="org.zstack.test.mevoco.billing.TestBilling6"/>
+    <TestCase class="org.zstack.test.mevoco.billing.TestBilling7"/>
+    <TestCase class="org.zstack.test.mevoco.billing.TestBilling8"/>
 </UnitTestSuiteConfig>

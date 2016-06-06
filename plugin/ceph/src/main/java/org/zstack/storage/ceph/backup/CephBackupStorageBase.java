@@ -679,7 +679,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 try {
                     if (delay) {
                         try {
-                            TimeUnit.SECONDS.sleep(CephGlobalConfig.BACKUP_STORAGE_MON_RECONNECT_DELAY.value(Integer.class));
+                            TimeUnit.SECONDS.sleep(CephGlobalConfig.BACKUP_STORAGE_MON_RECONNECT_DELAY.value(Long.class));
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }

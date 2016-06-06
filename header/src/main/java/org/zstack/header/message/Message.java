@@ -40,11 +40,11 @@ public abstract class Message implements Serializable, AsyncBackup {
      * @ignore
      */
 	@APINoSee
-    private long creatingTime;
+    private long createdTime;
     
     
     public Message() {
-        creatingTime = System.currentTimeMillis();
+        createdTime = System.currentTimeMillis();
         id = UUID.randomUUID().toString().replace("-", "");
     }
 
@@ -101,8 +101,8 @@ public abstract class Message implements Serializable, AsyncBackup {
         this.serviceId = serviceId;
     }
 
-    public long getCreatingTime() {
-        return creatingTime;
+    public long getCreatedTime() {
+        return createdTime;
     }
 
     public String getMessageName() {
