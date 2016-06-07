@@ -1,6 +1,7 @@
 package org.zstack.identity;
 
 import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.APIMessage;
 
 import java.util.List;
@@ -20,4 +21,6 @@ public interface AccountManager {
     List<Quota> getQuotas();
 
     void checkApiMessagePermission(APIMessage msg);
+
+    boolean isAdmin(SessionInventory session);
 }
