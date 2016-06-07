@@ -58,10 +58,8 @@ public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
     private String username;
     @APIParam(maxLength = 255)
     private String password;
-
-
     @APIParam(numberRange = {1, 65535}, required = false)
-    private int sshport = 22;
+    private int sshPort = 22;
 
     @Override
     public String getType() {
@@ -86,11 +84,11 @@ public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
     public void setPassword(String password) {
         this.password = password;
     }
-    public int getSshport() {
-        return sshport;
+    public int getSshPort() {
+        return sshPort;
     }
 
-    public void setSshport(int sshport) {
-        this.sshport = sshport;
+    public void setSshPort(int sshPort) {
+        this.sshPort = sshPort;
     }
 }

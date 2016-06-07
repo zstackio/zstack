@@ -14,14 +14,14 @@ public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {
     @APIParam(maxLength = 255, required = false)
     private String hostname;
     @APIParam(numberRange = {1, 65535}, required = false)
-    private Integer sshport;
+    private Integer sshPort;
 
-    public Integer getSshport() {
-        return sshport;
+    public Integer getSshPort() {
+        return sshPort;
     }
 
-    public void setSshport(Integer sshport) {
-        this.sshport = sshport;
+    public void setSshPort(Integer sshPort) {
+        this.sshPort = sshPort;
     }
     public String getHostname() {
         return hostname;

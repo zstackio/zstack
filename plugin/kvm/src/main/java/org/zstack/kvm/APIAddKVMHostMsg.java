@@ -70,7 +70,7 @@ public class APIAddKVMHostMsg extends APIAddHostMsg {
      * port range (1,65535)
      */
     @APIParam(numberRange = {1, 65535}, required = false)
-    private int sshport = 22;
+    private int sshPort = 22;
 
     public String getUsername() {
         return username;
@@ -84,11 +84,11 @@ public class APIAddKVMHostMsg extends APIAddHostMsg {
     public void setPassword(String password) {
         this.password = password;
     }
-    public int getSshport() {
-        return sshport;
+    public int getSshPort() {
+        return sshPort;
     }
 
-    public void setSshport(int sshport) {
-        this.sshport = sshport;
+    public void setSshPort(int sshPort) {
+        this.sshPort = sshPort;
     }
 }

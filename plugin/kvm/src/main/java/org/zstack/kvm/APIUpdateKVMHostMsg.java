@@ -12,14 +12,14 @@ public class APIUpdateKVMHostMsg extends APIUpdateHostMsg {
     @APIParam(maxLength = 255, required = false)
     private String password;
     @APIParam(numberRange = {1, 65535}, required = false)
-    private Integer sshport;
+    private Integer sshPort;
 
-    public void setSshport(Integer sshport) {
-        this.sshport = sshport;
+    public void setSshPort(Integer sshPort) {
+        this.sshPort = sshPort;
     }
 
-    public Integer getSshport() {
-        return sshport;
+    public Integer getSshPort() {
+        return sshPort;
     }
 
     public String getUsername() {
