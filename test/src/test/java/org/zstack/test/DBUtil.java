@@ -25,20 +25,27 @@ public class DBUtil {
         
         try {
             prop.load(DBUtil.class.getClassLoader().getResourceAsStream("zstack.properties"));
-            String user = prop.getProperty("DB.user");
+
+            String user = System.getProperty("DB.user");
             if (user == null) {
-                user = prop.getProperty("DbFacadeDataSource.user");
-            }
-            if (user == null) {
-                throw new CloudRuntimeException("cannot find DB user in zstack.properties, please set either DB.user or DbFacadeDataSource.user");
+                user = prop.getProperty("DB.user");
+                if (user == null) {
+                    user = prop.getProperty("DbFacadeDataSource.user");
+                }
+                if (user == null) {
+                    throw new CloudRuntimeException("cannot find DB user in zstack.properties, please set either DB.user or DbFacadeDataSource.user");
+                }
             }
 
-            String password = prop.getProperty("DB.password");
+            String password = System.getProperty("DB.password");
             if (password == null) {
-                password = prop.getProperty("DbFacadeDataSource.password");
-            }
-            if (password == null) {
-                throw new CloudRuntimeException("cannot find DB user in zstack.properties, please set either DB.password or DbFacadeDataSource.password");
+                password = prop.getProperty("DB.password");
+                if (password == null) {
+                    password = prop.getProperty("DbFacadeDataSource.password");
+                }
+                if (password == null) {
+                    throw new CloudRuntimeException("cannot find DB user in zstack.properties, please set either DB.password or DbFacadeDataSource.password");
+                }
             }
 
             String shellcmd = String.format("build/deploydb.sh %s %s",  user, password);
