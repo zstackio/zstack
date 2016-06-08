@@ -3536,6 +3536,21 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public PrimaryStorageInventory updateCephPrimaryStorageMon (CephPrimaryStorageMonVO inv) throws ApiSenderException {
+        APIUpdateCephPrimaryStorageMonMsg msg = new APIUpdateCephPrimaryStorageMonMsg();
+        msg.setSession(adminSession);
+        msg.setMonUuid(inv.getUuid());
+        msg.setHostname(inv.getHostname());
+        msg.setSshUsername(inv.getSshUsername());
+        msg.setSshPassword(inv.getSshPassword());
+        msg.setSshPort(inv.getSshPort());
+        msg.setMonPort(inv.getMonPort());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateMonToCephPrimaryStorageEvent evt = sender.send(msg, APIUpdateMonToCephPrimaryStorageEvent.class);
+        return evt.getInventory();
+    }
+
     public CephPrimaryStorageInventory addMonToCephPrimaryStorage(String psUuid, List<String> monUrls) throws ApiSenderException {
         APIAddMonToCephPrimaryStorageMsg msg = new APIAddMonToCephPrimaryStorageMsg();
         msg.setUuid(psUuid);
