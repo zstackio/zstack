@@ -3940,6 +3940,16 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public void deletePrice(String resourceName, long dateInLong) throws ApiSenderException {
+        APIDeleteResourcePriceMsg msg = new APIDeleteResourcePriceMsg();
+        msg.setResourceName(resourceName);
+        msg.setDateInLong(dateInLong);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteResourcePriceEvent.class);
+    }
+
     public AccountInventory updateAccount(AccountInventory acnt, String password, SessionInventory session) throws ApiSenderException {
         APIUpdateAccountMsg msg = new APIUpdateAccountMsg();
         msg.setName(acnt.getName());

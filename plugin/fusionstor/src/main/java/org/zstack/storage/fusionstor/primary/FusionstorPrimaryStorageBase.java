@@ -3,7 +3,6 @@ package org.zstack.storage.fusionstor.primary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
@@ -21,7 +20,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -1853,7 +1851,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                 try {
                     if (delay) {
                         try {
-                            TimeUnit.SECONDS.sleep(FusionstorGlobalConfig.PRIMARY_STORAGE_MON_RECONNECT_DELAY.value(Integer.class));
+                            TimeUnit.SECONDS.sleep(FusionstorGlobalConfig.PRIMARY_STORAGE_MON_RECONNECT_DELAY.value(Long.class));
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }

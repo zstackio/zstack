@@ -159,6 +159,7 @@
                 </executions>
                 <configuration>
                     <source>${project.java.version}</source>
+                    <complianceLevel>${project.java.version}</complianceLevel>
                     <target>${project.java.version}</target>
                     <XnoInline>true</XnoInline>
                     <aspectLibraries>

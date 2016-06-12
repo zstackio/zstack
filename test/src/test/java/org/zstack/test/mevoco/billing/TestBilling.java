@@ -28,9 +28,11 @@ import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
-import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -88,6 +90,8 @@ public class TestBilling {
     
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
+        BillingGlobalConfig.SAMPLING_INTERVAL.updateValue(1);
+
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 
@@ -141,39 +145,19 @@ public class TestBilling {
 
         Assert.assertEquals(cpuPrice + memPrice + volPrice, reply.getTotal(), errorMargin);
 
-        Spending spending = CollectionUtils.find(reply.getSpending(), new Function<Spending, Spending>() {
-            @Override
-            public Spending call(Spending arg) {
-                return BillingConstants.SPENDING_TYPE_VM.equals(arg.getSpendingType()) ? arg : null;
-            }
-        });
+        Spending spending = CollectionUtils.find(reply.getSpending(), arg -> BillingConstants.SPENDING_TYPE_VM.equals(arg.getSpendingType()) ? arg : null);
         Assert.assertNotNull(spending);
+        List<VmSpending> vmSpendings = JSONObjectUtil.toCollection(JSONObjectUtil.toJsonString(spending.getDetails()),
+                ArrayList.class, VmSpending.class);
+        VmSpending vmSpending = vmSpendings.get(0);
 
-        SpendingDetails cpudetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
-            @Override
-            public SpendingDetails call(SpendingDetails arg) {
-                return BillingConstants.SPENDING_CPU.equals(arg.type) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(cpudetails);
-        Assert.assertEquals(cpuPrice, cpudetails.spending, cpuPriceErrorMargin);
+        float cpuSpending = (float) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
+        Assert.assertEquals(cpuPrice, cpuSpending, cpuPriceErrorMargin);
 
-        SpendingDetails memdetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
-            @Override
-            public SpendingDetails call(SpendingDetails arg) {
-                return BillingConstants.SPENDING_MEMORY.equals(arg.type) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(memdetails);
-        Assert.assertEquals(memPrice, memdetails.spending, memPriceErrorMargin);
+        float memSpending = (float) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
+        Assert.assertEquals(memPrice, memSpending, memPriceErrorMargin);
 
-        SpendingDetails volDetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
-            @Override
-            public SpendingDetails call(SpendingDetails arg) {
-                return BillingConstants.SPENDING_ROOT_VOLUME.equals(arg.type) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(volDetails);
-        Assert.assertEquals(volPrice, volDetails.spending, volPriceErrorMargin);
+        float rootVolSpending = (float) vmSpending.rootVolumeInventory.stream().mapToDouble(i -> i.spending).sum();
+        Assert.assertEquals(volPrice, rootVolSpending, volPriceErrorMargin);
     }
 }
