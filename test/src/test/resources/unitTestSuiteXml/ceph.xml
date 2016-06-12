@@ -18,4 +18,6 @@
     <TestCase class="org.zstack.test.storage.ceph.TestCeph15"/>
     <TestCase class="org.zstack.test.storage.ceph.TestPingCephPs1"/>
     <TestCase class="org.zstack.test.storage.ceph.TestPingCephBs1"/>
+    <TestCase class="org.zstack.test.storage.ceph.TestUpdateCephPrimaryStorageMon"/>
+    <TestCase class="org.zstack.test.storage.ceph.TestUpdateCephBackupStorageMon"/>
 </UnitTestSuiteConfig>
