@@ -64,20 +64,3 @@ public class TestEval {
         r.run();
     }
 }
-
-class Parent {
-    int a;
-}
-
-class Child extends Parent {
-    String name;
-}
-
-class JSONObject {
-    List parents;
-    Parent child;
-}
-
-JSONObject json = new JSONObject();
-json.parents.add(new Parent());
-json.child = new Child();
