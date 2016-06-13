@@ -3,6 +3,7 @@ package com.zstack.utils.test;
 import org.apache.commons.net.util.SubnetUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.zstack.utils.VersionComparator;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -62,5 +63,8 @@ public class TestEval {
         };
 
         r.run();
+
+        System.out.print(String.format("xxxxxxxxxxxxxxxx %s\n", new VersionComparator("1.2.17").compare("1.0.0")));
+        System.out.print(String.format("xxxxxxxxxxxxxxxx %s\n", new VersionComparator("2.3.0").compare("1.3.0")));
     }
 }
