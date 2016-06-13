@@ -564,11 +564,25 @@ public class Platform {
         return managementServerIp;
     }
 
-    public static String _(String code, Object...args) {
+    public static String i18n(String code, List args) {
+        return i18n(code, args.toArray(new Object[args.size()]));
+    }
+
+    public static String i18n(String code, Object...args) {
+        return i18n(code, null, args);
+    }
+
+    public static String i18n(String code, Locale l, List args) {
+        return i18n(code, l, args.toArray(new Object[args.size()]));
+    }
+
+    public static String i18n(String code, Locale l, Object...args) {
+        l = l == null ? locale : l;
+
         if (args.length > 0) {
-            return messageSource.getMessage(code, args, locale);
+            return messageSource.getMessage(code, args, l);
         } else {
-            return messageSource.getMessage(code, null, locale);
+            return messageSource.getMessage(code, null, l);
         }
     }
 }

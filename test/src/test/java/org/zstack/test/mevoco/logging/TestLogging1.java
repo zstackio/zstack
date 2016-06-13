@@ -1,11 +1,11 @@
 package org.zstack.test.mevoco.logging;
 
 import junit.framework.Assert;
+import org.apache.commons.lang.LocaleUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -17,10 +17,7 @@ import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.logging.APIQueryLogMsg;
-import org.zstack.logging.APIQueryLogReply;
-import org.zstack.logging.LogConstants;
-import org.zstack.logging.LogInventory;
+import org.zstack.logging.*;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
@@ -33,7 +30,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -109,11 +105,10 @@ public class TestLogging1 {
         Assert.assertEquals(LogType.SYSTEM.toString(), loginv.getType());
         Assert.assertEquals(LogType.SYSTEM.toString(), loginv.getResourceUuid());
 
-        evtf.on(Event.EVENT_PATH, new EventCallback() {
-            @Override
-            public void run(Map tokens, Object data) {
-                logContent = (Content) data;
-            }
+        api.deleteLog(loginv.getUuid(), null);
+
+        evtf.on(Event.EVENT_PATH, (tokens, data) -> {
+            logContent = (Content) data;
         });
 
         new Event(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID).log(LogLabelTest.TEST1);
@@ -131,5 +126,15 @@ public class TestLogging1 {
         Assert.assertEquals("测试1", loginv.getText());
         Assert.assertEquals(LogType.EVENT.toString(), loginv.getType());
         Assert.assertEquals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, loginv.getResourceUuid());
+
+        LogGlobalConfig.LOCALE.updateValue("en_US");
+        log = new Log(Platform.getUuid()).log(LogLabelTest.TEST2, "你好");
+        msg = new APIQueryLogMsg();
+        msg.setType(LogType.RESOURCE.toString());
+        msg.setResourceUuid(log.getResourceUuid());
+        reply = api.queryCassandra(msg, APIQueryLogReply.class);
+        Assert.assertEquals(1, reply.getInventories().size());
+        loginv = reply.getInventories().get(0);
+        Assert.assertEquals(Platform.i18n(LogLabelTest.TEST2, LocaleUtils.toLocale("en_US"), "你好"), loginv.getText());
     }
 }

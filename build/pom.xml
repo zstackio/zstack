@@ -40,6 +40,7 @@
                                     </includes>
                                     <excludes>
                                         <exclude>zstack.xml</exclude>
+                                        <exclude>springConfigXml/logFacade.xml</exclude>
                                     </excludes>
                                 </resource>
                                 <resource>	

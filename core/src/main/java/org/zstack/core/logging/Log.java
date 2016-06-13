@@ -7,8 +7,10 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.message.NeedJsonSchema;
 
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform._;
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created by xing5 on 2016/5/30.
@@ -24,6 +26,7 @@ public class Log {
     public static class Content {
         public LogLevel level;
         public String text;
+        public List parameters;
         public String resourceUuid;
         public String uuid;
         public long dateInLong;
@@ -81,7 +84,11 @@ public class Log {
     }
 
     public Log setText(String label, Object...args) {
-        content.text = _(label, args);
+        content.text = label;
+        if (args.length != 0) {
+            content.parameters = list(args).stream().map(Object::toString).collect(Collectors.toList());
+        }
+
         return this;
     }
 
@@ -105,6 +112,10 @@ public class Log {
     public Log log(String label, Object...args) {
         setText(label, args).write();
         return this;
+    }
+
+    public List getParameters() {
+        return content.parameters;
     }
 
     public void write() {
