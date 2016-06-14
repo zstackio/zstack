@@ -2,12 +2,15 @@ package org.zstack.core.db;
 
 import javax.persistence.Tuple;
 import javax.persistence.metamodel.SingularAttribute;
+import java.util.Collection;
 import java.util.List;
 
 
 public interface SimpleQuery<T> {
     SimpleQuery<T> select(SingularAttribute...attrs);
-    
+
+    SimpleQuery<T> add(SingularAttribute attr, Op op, Collection vals);
+
     SimpleQuery<T> add(SingularAttribute attr, Op op, Object...val);
     
     SimpleQuery<T> isSoftDeleted(SingularAttribute attr);

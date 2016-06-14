@@ -17,6 +17,7 @@ import javax.persistence.criteria.*;
 import javax.persistence.metamodel.SingularAttribute;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Configurable(preConstruction=true,autowire=Autowire.BY_TYPE,dependencyCheck=true)
@@ -84,6 +85,12 @@ public class SimpleQueryImpl<T> implements SimpleQuery<T> {
     }
 
     @Override
+    public SimpleQuery<T> add(SingularAttribute attr, Op op, Collection vals) {
+        _conditions.add(new Condition(attr, op, vals.toArray(new Object[vals.size()])));
+        return this;
+    }
+
+    @Override
     public SimpleQuery<T> add(SingularAttribute attr, Op op, Object... val) {
         _conditions.add(new Condition(attr, op, val));
         return this;
@@ -129,7 +136,7 @@ public class SimpleQueryImpl<T> implements SimpleQuery<T> {
             } else if (op == Op.IN) {
                 //preds.add(_builder.in(p.in(vals)));
                 assert vals.length !=0 : String.format("Op.IN needs more than on value, but %s given", vals.length);
-                preds.add(p.in(vals)); 
+                preds.add(p.in(vals));
             } else if (op == Op.NOT_IN) {
                 assert vals.length !=0 : String.format("Op.NOT_IN needs more than on value, but %s given", vals.length);
                 preds.add(_builder.not(p.in(vals)));

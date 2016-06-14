@@ -1,7 +1,6 @@
 package org.zstack.test.storage.primary.local;
 
 import junit.framework.Assert;
-import org.hibernate.ejb.criteria.expression.SelectionImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -19,11 +18,17 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
-import org.zstack.storage.primary.local.*;
+import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
+import org.zstack.storage.primary.local.LocalStorageResourceRefInventory;
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.data.SizeUnit;
