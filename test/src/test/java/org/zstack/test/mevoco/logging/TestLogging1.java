@@ -58,6 +58,7 @@ public class TestLogging1 {
         deployer = new Deployer("deployerXml/OnlyOneZone.xml", con);
         deployer.addSpringConfig("cassandra.xml");
         deployer.addSpringConfig("mevocoRelated.xml");
+        deployer.addSpringConfig("logging.xml");
         deployer.load();
 
         loader = deployer.getComponentLoader();

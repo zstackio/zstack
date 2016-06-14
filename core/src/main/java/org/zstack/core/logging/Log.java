@@ -18,7 +18,7 @@ import static org.zstack.utils.CollectionDSL.list;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class Log {
     @Autowired
-    protected LogBackend bkd;
+    protected LogFacade logf;
 
     protected LogType type;
 
@@ -119,6 +119,6 @@ public class Log {
     }
 
     public void write() {
-        bkd.writeLog(this);
+        logf.getBackend().writeLog(this);
     }
 }

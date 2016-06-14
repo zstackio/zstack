@@ -12,6 +12,6 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="Log4jBackend" class = "org.zstack.core.logging.Log4jBackend" />
+    <bean id="LogFacade" class = "org.zstack.core.logging.LogFacadeImpl" />
 
 </beans>

@@ -38,6 +38,4 @@ public class CoreGlobalProperty {
     public static boolean IS_UPGRADE_START;
     @GlobalProperty(name="shadowEntityOn", defaultValue = "false")
     public static boolean SHADOW_ENTITY_ON;
-    @GlobalProperty(name="Log.log4jBackendOn", defaultValue = "true")
-    public static boolean LOG4j_BACKEND_ON;
 }
