@@ -1,6 +1,5 @@
 package org.zstack.test.core.gc;
 
-import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBusImpl2;
@@ -13,12 +12,12 @@ import org.zstack.test.DBUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 /**
  * test event based GC
  */
-public class TestGC6 {
+public class TestGC9PreCase {
     ComponentLoader loader;
     GCFacade gcf;
     DatabaseFacade dbf;
@@ -39,7 +38,7 @@ public class TestGC6 {
     }
 
     public static class TRunner implements GCRunner {
-        CLogger logger = Utils.getLogger(TestGC6.class);
+        CLogger logger = Utils.getLogger(TestGC9PreCase.class);
 
         @Override
         public void run(GCContext context, GCCompletion completion) {
@@ -49,13 +48,12 @@ public class TestGC6 {
         }
     }
 
-    @Test
-    public void test() throws InterruptedException {
+    private void scheduleJobs(String name) {
         String eventPath = "/test/gc";
         EventBasedGCPersistentContext<String> ctx = new EventBasedGCPersistentContext<String>();
         ctx.setContextClass(String.class);
         ctx.setRunnerClass(TRunner.class);
-        ctx.setName("test-gc");
+        ctx.setName(name);
         ctx.setContext("I am running");
 
         GCEventTrigger trigger = new GCEventTrigger();
@@ -72,13 +70,18 @@ public class TestGC6 {
         ctx.addTrigger(trigger);
 
         gcf.schedule(ctx);
+    }
 
-        evtf.fire(eventPath, "not run");
-        TimeUnit.SECONDS.sleep(1);
-        Assert.assertFalse(success);
+    @Test
+    public void test() throws InterruptedException {
+        for (int i=0; i<50; i++) {
+            scheduleJobs(String.format("test-gc-%s", i));
+        }
 
-        evtf.fire(eventPath, "hello");
-        TimeUnit.SECONDS.sleep(1);
-        Assert.assertTrue(success);
+        List<GarbageCollectorVO> vos = dbf.listAll(GarbageCollectorVO.class);
+        for (GarbageCollectorVO vo : vos) {
+            vo.setManagementNodeUuid(null);
+        }
+        dbf.updateCollection(vos);
     }
 }

@@ -142,4 +142,5 @@
     <TestCase class="org.zstack.test.core.gc.TestGC5" />
     <TestCase class="org.zstack.test.core.gc.TestGC6" />
     <TestCase class="org.zstack.test.core.gc.TestGC7" />
+    <TestCase class="org.zstack.test.core.gc.TestGC10" />
 </UnitTestSuiteConfig>
