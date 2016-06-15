@@ -42,10 +42,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
-import org.zstack.utils.ShellResult;
-import org.zstack.utils.ShellUtils;
-import org.zstack.utils.Utils;
-import org.zstack.utils.VersionComparator;
+import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -2151,6 +2148,7 @@ public class KVMHost extends HostBase implements Host {
                             }
                             runner.putArgument("pkg_kvmagent", agentPackageName);
                             runner.putArgument("hostname", String.format("%s.zstack.org",self.getManagementIp().replaceAll("\\.", "-")));
+                            runner.putArgument("post_url", new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
                             runner.run(new Completion(trigger) {
                                 @Override
                                 public void success() {

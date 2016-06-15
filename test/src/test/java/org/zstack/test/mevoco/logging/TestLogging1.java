@@ -4,7 +4,9 @@ import junit.framework.Assert;
 import org.apache.commons.lang.LocaleUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.Platform;
+import org.zstack.core.ansible.AnsibleLogCmd;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.ComponentLoader;
@@ -16,7 +18,9 @@ import org.zstack.core.logging.LogType;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.logging.*;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -26,11 +30,14 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.utils.StringBind;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  */
@@ -47,6 +54,7 @@ public class TestLogging1 {
     KVMSimulatorConfig kconfig;
     PrimaryStorageOverProvisioningManager psRatioMgr;
     HostCapacityOverProvisioningManager hostRatioMgr;
+    RESTFacade restf;
     EventFacade evtf;
     Log.Content logContent;
 
@@ -70,6 +78,7 @@ public class TestLogging1 {
         psRatioMgr = loader.getComponent(PrimaryStorageOverProvisioningManager.class);
         hostRatioMgr = loader.getComponent(HostCapacityOverProvisioningManager.class);
         evtf = loader.getComponent(EventFacade.class);
+        restf = loader.getComponent(RESTFacade.class);
 
         deployer.build();
         api = deployer.getApi();
@@ -137,5 +146,25 @@ public class TestLogging1 {
         Assert.assertEquals(1, reply.getInventories().size());
         loginv = reply.getInventories().get(0);
         Assert.assertEquals(Platform.i18n(LogLabelTest.TEST2, LocaleUtils.toLocale("en_US"), "你好"), loginv.getText());
+
+        api.deleteLog(loginv.getUuid(), null);
+
+        AnsibleLogCmd cmd = new AnsibleLogCmd();
+        cmd.setLabel(LogLabelTest.TEST2);
+        cmd.setParameters(list("test"));
+        String uuid = Platform.getUuid();
+
+        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
+        //ub.path(String.format("/kvm/ansiblelog/%s", uuid));
+        ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", uuid).toString());
+        String url = ub.build().toUriString();
+        restf.syncJsonPost(url, cmd, Void.class);
+        msg = new APIQueryLogMsg();
+        msg.setType(LogType.RESOURCE.toString());
+        msg.setResourceUuid(uuid);
+        reply = api.queryCassandra(msg, APIQueryLogReply.class);
+        loginv = reply.getInventories().get(0);
+        Assert.assertEquals(uuid, loginv.getResourceUuid());
+        Assert.assertEquals(Platform.i18n(LogLabelTest.TEST2, LocaleUtils.toLocale("en_US"), "test"), loginv.getText());
     }
 }

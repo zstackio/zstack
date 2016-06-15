@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.message.NeedJsonSchema;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,6 +82,11 @@ public class Log {
 
     public String getResourceUuid() {
         return content.resourceUuid;
+    }
+
+    public Log setText(String label, Collection args) {
+        setText(label, args.toArray(new Object[args.size()]));
+        return this;
     }
 
     public Log setText(String label, Object...args) {
