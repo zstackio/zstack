@@ -155,7 +155,12 @@ public class TestBilling8 {
         float memSpending = (float) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(memPrice, memSpending, memPriceErrorMargin);
 
-        float rootVolSpending = (float) vmSpending.rootVolumeInventory.stream().mapToDouble(i -> i.spending).sum();
+        spending = CollectionUtils.find(reply.getSpending(), arg -> BillingConstants.SPENDING_TYPE_ROOT_VOLUME.equals(arg.getSpendingType()) ? arg : null);
+        Assert.assertNotNull(spending);
+        Assert.assertEquals(volPrice, spending.getSpending(), volPriceErrorMargin);
+        RootVolumeSpending rootVolumeSpending = (RootVolumeSpending) spending.getDetails().get(0);
+
+        float rootVolSpending = (float) rootVolumeSpending.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(volPrice, rootVolSpending, volPriceErrorMargin);
 
         api.deletePrice(cp.getResourceName(), cp.getDateInLong());

@@ -160,7 +160,13 @@ public class TestBilling9 {
         float memSpending = (float) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(memPrice, memSpending, memPriceErrorMargin);
 
-        float rootVolSpending = (float) vmSpending.rootVolumeInventory.stream().mapToDouble(i -> i.spending).sum();
+        spending = CollectionUtils.find(reply.getSpending(), arg -> BillingConstants.SPENDING_TYPE_ROOT_VOLUME.equals(arg.getSpendingType()) ? arg : null);
+        Assert.assertNotNull(spending);
+        Assert.assertEquals(volPrice * 2, spending.getSpending(), volPriceErrorMargin);
+        RootVolumeSpending rootVolumeSpending = (RootVolumeSpending) spending.getDetails().stream()
+                .filter(d -> d.resourceUuid.equals(vm.getRootVolumeUuid())).findAny().get();
+
+        float rootVolSpending = (float) rootVolumeSpending.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(volPrice, rootVolSpending, volPriceErrorMargin);
 
         vmSpending = vmSpendings.stream().filter(s -> vm2.getUuid().equals(s.resourceUuid)).findFirst().get();
@@ -172,7 +178,12 @@ public class TestBilling9 {
         memSpending = (float) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(memPrice, memSpending, memPriceErrorMargin);
 
-        rootVolSpending = (float) vmSpending.rootVolumeInventory.stream().mapToDouble(i -> i.spending).sum();
+        spending = CollectionUtils.find(reply.getSpending(), arg -> BillingConstants.SPENDING_TYPE_ROOT_VOLUME.equals(arg.getSpendingType()) ? arg : null);
+        Assert.assertNotNull(spending);
+        rootVolumeSpending = (RootVolumeSpending) spending.getDetails().stream()
+                .filter(d -> d.resourceUuid.equals(vm2.getRootVolumeUuid())).findAny().get();
+
+        rootVolSpending = (float) rootVolumeSpending.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(volPrice, rootVolSpending, volPriceErrorMargin);
 
         api.deletePrice(cp.getResourceName(), cp.getDateInLong());
