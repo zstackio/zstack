@@ -3,7 +3,6 @@ package org.zstack.core.gc;
 import groovy.lang.Binding;
 import groovy.util.GroovyScriptEngine;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
@@ -32,9 +31,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -150,15 +152,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
     private CancelEventCallback setupEventTrigger(final AbstractEventBasedGCContext context, final Runnable runner) {
         List<GCEventTrigger> triggers = context.getTriggers();
 
-        List<String> ids = new ArrayList<String>();
-        DebugUtils.Assert(context.getName() != null, "context.getName() cannot return null");
-        ids.add(context.getName());
-        for (GCEventTrigger trigger : triggers) {
-            ids.add(trigger.getEventPath());
-        }
-
-        final String pathId = StringUtils.join(ids, "::");
-        logger.debug(String.format("[GC] setup the trigger on the canonical event[%s]", pathId));
+        List<String> ids = triggers.stream().map(GCEventTrigger::getEventPath).collect(Collectors.toList());
+        logger.debug(String.format("[GC] setup the trigger on the canonical events %s", ids));
 
         final List<EventCallback> cbs = new ArrayList<EventCallback>();
 
@@ -330,6 +325,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
 
     @Override
     public void schedule(final GCContext context) {
+        DebugUtils.Assert(context.getName() != null, "context.getName() cannot be null");
+
         if (context instanceof TimeBasedGCPersistentContext) {
             scheduleTask((TimeBasedGCPersistentContext) context, save((TimeBasedGCPersistentContext) context), false, true);
         } else if (context instanceof EventBasedGCPersistentContext) {
@@ -455,6 +452,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
 
     @Override
     public void scheduleImmediately(GCContext context) {
+        DebugUtils.Assert(context.getName() != null, "context.getName() cannot be null");
+
         if (context instanceof TimeBasedGCPersistentContext) {
             scheduleTask((TimeBasedGCPersistentContext) context, save((TimeBasedGCPersistentContext) context), true, true);
         } else {
