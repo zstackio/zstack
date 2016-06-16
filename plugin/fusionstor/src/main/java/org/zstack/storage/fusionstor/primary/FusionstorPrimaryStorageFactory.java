@@ -54,6 +54,8 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -66,6 +68,8 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
     private static final CLogger logger = Utils.getLogger(FusionstorPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(FusionstorConstants.FUSIONSTOR_PRIMARY_STORAGE_TYPE);
+
+    public static final String QEMUPATH = "/opt/fusionstack/qemu/bin/qemu-system-x86_64";
 
     @Autowired
     private DatabaseFacade dbf;
@@ -278,6 +282,9 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
 
     @Override
     public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, StartVmCmd cmd) throws KVMException {
+        Map<String, Object> addons = new HashMap<String, Object>();
+        addons.put("qemuPath", QEMUPATH);
+        cmd.setAddons(addons);
         cmd.setRootVolume(convertVolumeToFusionstorIfNeeded(spec.getDestRootVolume(), cmd.getRootVolume()));
 
         List<VolumeTO> dtos = new ArrayList<VolumeTO>();
