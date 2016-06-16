@@ -187,7 +187,6 @@ public class KVMHostLabel {
     @LogLabel(messages = {
             "en_US = yum removing package [{0}] ... ",
             "zh_CN = 通过 yum 删除软件包 {0} ..."
-            "zh_CN = "
     })
     public static final String YUM_REMOVE_PKG = "ansible.yum.remove.pkg";
 
@@ -279,7 +278,7 @@ public class KVMHostLabel {
             "en_US = set cron task [{0}] successfully",
             "zh_CN = 通过cron设置任务 {0} 成功"
     })
-    public static final String CRON_SET_TASK = "ansible.cron.set.task.succ";
+    public static final String CRON_SET_TASK_SUCC = "ansible.cron.set.task.succ";
 
     @LogLabel(messages = {
             "en_US = starting set cron task [{0}] failed",
@@ -356,7 +355,6 @@ public class KVMHostLabel {
     @LogLabel(messages = {
             "en_US = pip-[{0}] not exist in system",
             "zh_CN = pip-{0} 在系统中不存在"
-            "zh_CN = "
     })
     public static final String CHECK_PIP_VERSION_FAIL = "ansible.check.pip.version.fail";
 
@@ -423,7 +421,6 @@ public class KVMHostLabel {
     @LogLabel(messages = {
             "en_US = update file: [{0}] option: [{1}] value [{2}] successfully",
             "zh_CN = 更新文件 {0} 的 {1} 字段的值为 {2} 成功"
-            "zh_CN = "
     })
     public static final String SET_INI_FILE_SUCC = "ansible.set.ini.file.succ";
 
