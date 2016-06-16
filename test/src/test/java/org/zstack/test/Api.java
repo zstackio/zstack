@@ -67,6 +67,8 @@ import org.zstack.kvm.APIAddKVMHostMsg;
 import org.zstack.kvm.APIUpdateKVMHostMsg;
 import org.zstack.kvm.KVMHostInventory;
 import org.zstack.license.*;
+import org.zstack.logging.APIDeleteLogEvent;
+import org.zstack.logging.APIDeleteLogMsg;
 import org.zstack.network.securitygroup.*;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.network.service.eip.*;
@@ -3210,7 +3212,7 @@ public class Api implements CloudBusEventListener {
         msg.setUuid(inv.getUuid());
         msg.setUsername(inv.getUsername());
         msg.setPassword(password);
-        msg.setSshport(inv.getSshport());
+        msg.setSshPort(inv.getSshPort());
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIUpdateBackupStorageEvent evt = sender.send(msg, APIUpdateBackupStorageEvent.class);
@@ -3451,7 +3453,7 @@ public class Api implements CloudBusEventListener {
         msg.setUuid(inv.getUuid());
         msg.setUsername(inv.getUsername());
         msg.setPassword(password);
-        msg.setSshport(inv.getSshPort());
+        msg.setSshPort(inv.getSshPort());
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIUpdateHostEvent evt = sender.send(msg, APIUpdateHostEvent.class);
@@ -3516,6 +3518,36 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIAddMonToCephBackupStorageEvent evt = sender.send(msg, APIAddMonToCephBackupStorageEvent.class);
+        return evt.getInventory();
+    }
+
+    public BackupStorageInventory updateCephBackupStorageMon(CephBackupStorageMonVO inv) throws ApiSenderException {
+        APIUpdateCephBackupStorageMonMsg msg = new APIUpdateCephBackupStorageMonMsg();
+        msg.setSession(adminSession);
+        msg.setMonUuid(inv.getUuid());
+        msg.setHostname(inv.getHostname());
+        msg.setSshUsername(inv.getSshUsername());
+        msg.setSshPassword(inv.getSshPassword());
+        msg.setSshPort(inv.getSshPort());
+        msg.setMonPort(inv.getMonPort());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateMonToCephBackupStorageEvent evt = sender.send(msg, APIUpdateMonToCephBackupStorageEvent.class);
+        return evt.getInventory();
+    }
+
+    public PrimaryStorageInventory updateCephPrimaryStorageMon (CephPrimaryStorageMonVO inv) throws ApiSenderException {
+        APIUpdateCephPrimaryStorageMonMsg msg = new APIUpdateCephPrimaryStorageMonMsg();
+        msg.setSession(adminSession);
+        msg.setMonUuid(inv.getUuid());
+        msg.setHostname(inv.getHostname());
+        msg.setSshUsername(inv.getSshUsername());
+        msg.setSshPassword(inv.getSshPassword());
+        msg.setSshPort(inv.getSshPort());
+        msg.setMonPort(inv.getMonPort());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIUpdateMonToCephPrimaryStorageEvent evt = sender.send(msg, APIUpdateMonToCephPrimaryStorageEvent.class);
         return evt.getInventory();
     }
 
@@ -3908,6 +3940,16 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public void deletePrice(String resourceName, long dateInLong) throws ApiSenderException {
+        APIDeleteResourcePriceMsg msg = new APIDeleteResourcePriceMsg();
+        msg.setResourceName(resourceName);
+        msg.setDateInLong(dateInLong);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteResourcePriceEvent.class);
+    }
+
     public AccountInventory updateAccount(AccountInventory acnt, String password, SessionInventory session) throws ApiSenderException {
         APIUpdateAccountMsg msg = new APIUpdateAccountMsg();
         msg.setName(acnt.getName());
@@ -4034,5 +4076,14 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIGetVolumeCapabilitiesReply reply = sender.call(msg, APIGetVolumeCapabilitiesReply.class);
         return reply.getCapabilities();
+    }
+
+    public void deleteLog(String uuid, SessionInventory session) throws ApiSenderException {
+        APIDeleteLogMsg msg = new APIDeleteLogMsg();
+        msg.setUuids(list(uuid));
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIDeleteLogEvent evt = sender.send(msg, APIDeleteLogEvent.class);
     }
 }

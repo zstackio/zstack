@@ -10,6 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -888,6 +889,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     trigger.next();
                     return;
                 }
+
+                new Log(context.getInventory().getUuid()).log(NfsPrimaryStorageLabels.INIT);
 
                 if (context.isNewAddedHost() && !CoreGlobalProperty.UNIT_TEST_ON && !invs.isEmpty()) {
                     checkQemuImgVersionInOtherClusters(context, invs);

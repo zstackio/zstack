@@ -346,7 +346,7 @@ public class AnsibleRunner {
             putArgument("remote_user", username);
             if (password != null && !password.isEmpty())
                 putArgument("remote_pass", password);
-            putArgument("remote_port", sshPort);
+            putArgument("remote_port", Integer.toString(sshPort));
 
             logger.debug(String.format("starts to run ansbile[%s]", playBookPath == null ? playBookName : playBookPath));
             new PrepareAnsible().setTargetIp(targetIp).prepare();

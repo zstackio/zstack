@@ -23,9 +23,10 @@
         <property name="ignoreUnresolvablePlaceholders" value="true" />
     </bean>
 
-	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basename" value="i18n/messages"></property>
-	</bean>
+    <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+        <property name="basename" value="i18n/messages"></property>
+        <property name="defaultEncoding" value="UTF-8"></property>
+    </bean>
 
     <context:annotation-config />
     <context:spring-configured />

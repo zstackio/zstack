@@ -28,7 +28,6 @@ import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -106,11 +105,6 @@ public class TestBilling1 {
         PriceCO cpupco = ops.selectOne(cql.build(), PriceCO.class);
         Assert.assertNotNull(cpupco);
 
-        final PriceUDF pudf = new PriceUDF();
-        pudf.setPrice(cpupco.getPrice());
-        pudf.setTimeUnit(cpupco.getTimeUnit());
-        pudf.setResourceUnit(cpupco.getResourceUnit());
-
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
         msg.setPrice(mprice);
@@ -121,11 +115,6 @@ public class TestBilling1 {
         cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_MEMORY);
         PriceCO mempco = ops.selectOne(cql.build(), PriceCO.class);
         Assert.assertNotNull(mempco);
-
-        final PriceUDF mudf = new PriceUDF();
-        mudf.setPrice(mempco.getPrice());
-        mudf.setTimeUnit(mempco.getTimeUnit());
-        mudf.setResourceUnit(mempco.getResourceUnit());
 
         cql = new Cql("delete from <table> where accountUuid = :uuid");
         cql.setTable(VmUsageCO.class.getSimpleName()).setParameter("uuid", AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
@@ -138,8 +127,6 @@ public class TestBilling1 {
                 u.setVmUuid(vm.getUuid());
                 u.setCpuNum(vm.getCpuNum());
                 u.setMemorySize(vm.getMemorySize());
-                u.setCpuPrice(pudf);
-                u.setMemoryPrice(mudf);
                 u.setInventory(JSONObjectUtil.toJsonString(vm));
                 u.setDateInLong(date.getTime());
                 u.setName(vm.getName());
@@ -167,36 +154,20 @@ public class TestBilling1 {
 
         logger.debug(String.format("expected seconds[%s]", duringInSeconds));
 
-        final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
+        final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null, Long.MAX_VALUE, null);
 
         float cpuPrice = vm.getCpuNum() * cprice * duringInSeconds;
         float memPrice = SizeUnit.BYTE.toMegaByte(vm.getMemorySize()) * mprice * duringInSeconds;
-        Assert.assertEquals(reply.getTotal(), cpuPrice + memPrice, 0.02);
+        Assert.assertEquals(cpuPrice + memPrice, reply.getTotal(), 0.02);
 
-        Spending spending = CollectionUtils.find(reply.getSpending(), new Function<Spending, Spending>() {
-            @Override
-            public Spending call(Spending arg) {
-                return BillingConstants.SPENDING_TYPE_VM.equals(arg.getSpendingType()) ? arg : null;
-            }
-        });
+        Spending spending = CollectionUtils.find(reply.getSpending(), arg -> BillingConstants.SPENDING_TYPE_VM.equals(arg.getSpendingType()) ? arg : null);
         Assert.assertNotNull(spending);
 
-        SpendingDetails cpudetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
-            @Override
-            public SpendingDetails call(SpendingDetails arg) {
-                return BillingConstants.SPENDING_CPU.equals(arg.type) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(cpudetails);
-        Assert.assertEquals(cpuPrice, cpudetails.spending, 0.02);
+        VmSpending vmSpending = (VmSpending) spending.getDetails().get(0);
+        float cpuSpending = (float) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
+        Assert.assertEquals(cpuPrice, cpuSpending, 0.02);
 
-        SpendingDetails memdetails = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
-            @Override
-            public SpendingDetails call(SpendingDetails arg) {
-                return BillingConstants.SPENDING_MEMORY.equals(arg.type) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(memdetails);
-        Assert.assertEquals(memPrice, memdetails.spending, 0.02);
+        float memSpending = (float) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
+        Assert.assertEquals(memPrice, memSpending, 0.02);
     }
 }

@@ -5,14 +5,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleFacade;
-import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.configuration.ConfigurationConstant;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -106,7 +104,7 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
             }
 
             private void sshLogIn() throws InterruptedException {
-                long expired = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(ApplianceVmGlobalConfig.SSH_LOGIN_TIMEOUT.value(Integer.class));
+                long expired = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(ApplianceVmGlobalConfig.SSH_LOGIN_TIMEOUT.value(Long.class));
                 SshException se = null;
                 while (true) {
                    try {

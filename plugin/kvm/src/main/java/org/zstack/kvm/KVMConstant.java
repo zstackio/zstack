@@ -51,6 +51,7 @@ public interface KVMConstant {
 
     public static final String KVM_REPORT_VM_STATE = "/kvm/reportvmstate";
     public static final String KVM_RECONNECT_ME = "/kvm/reconnectme";
+    public static final String KVM_ANSIBLE_LOG_PATH_FROMAT = "/kvm/ansiblelog/{uuid}";
 
     public static final String KVM_AGENT_OWNER = "kvm";
 

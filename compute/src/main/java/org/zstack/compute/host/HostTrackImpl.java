@@ -51,7 +51,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
         @Override
         public long getInterval() {
-            return HostGlobalConfig.PING_HOST_INTERVAL.value(Integer.class);
+            return HostGlobalConfig.PING_HOST_INTERVAL.value(Long.class);
         }
 
         @Override

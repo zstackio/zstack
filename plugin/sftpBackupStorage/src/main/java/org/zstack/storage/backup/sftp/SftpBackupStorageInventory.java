@@ -17,18 +17,14 @@ import java.util.List;
 @PythonClassInventory
 public class SftpBackupStorageInventory extends BackupStorageInventory {
     public String hostname;
-    @APINoSee
-    @Unqueryable
     public String username;
-
-
-    public int sshport;
+    public Integer sshPort;
 
     protected SftpBackupStorageInventory(SftpBackupStorageVO vo) {
         super(vo);
         hostname = vo.getHostname();
         username = vo.getUsername();
-        sshport = vo.getPort();
+        sshPort = vo.getPort();
     }
 
     public SftpBackupStorageInventory() {
@@ -61,12 +57,15 @@ public class SftpBackupStorageInventory extends BackupStorageInventory {
     }
 
     public void setUsername(String username) {
+
         this.username = username;
     }
-    public int getSshport() {
-        return sshport;
+
+    public Integer getSshPort() {
+        return sshPort;
     }
-    public void setSshport(int sshport) {
-        this.sshport = sshport;
+
+    public void setSshPort(Integer sshPort) {
+        this.sshPort = sshPort;
     }
 }

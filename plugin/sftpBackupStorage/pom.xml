@@ -15,7 +15,7 @@
   	</dependency>
   </dependencies>
   
- <build>
+ 	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -30,7 +30,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>aspectj-maven-plugin</artifactId>
-                <version>${aspectj.plugin.version}</version>
+       			         <version>${aspectj.plugin.version}</version>
 				<executions>
 					<execution>
 						<goals>
@@ -42,6 +42,7 @@
 				<configuration>
 					<source>${project.java.version}</source>
 					<target>${project.java.version}</target>
+					<complianceLevel>${project.java.version}</complianceLevel>
 					<XnoInline>true</XnoInline>
 					<aspectLibraries>
 						<aspectLibrary>

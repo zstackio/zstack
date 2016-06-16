@@ -22,15 +22,14 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
-import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
@@ -161,6 +160,7 @@ public class TestKvmHostCapacityOnFailure {
 
         TimeUnit.SECONDS.sleep(5);
         HostCapacityVO hcap1 = dbf.findByUuid(host.getUuid(), HostCapacityVO.class);
-        Assert.assertEquals(hcap.getAvailableMemory(), hcap1.getAvailableMemory());
+        Assert.assertEquals(String.format("mismatch memory capacity: %s", SizeUnit.BYTE.toMegaByte(hcap.getAvailableMemory() - hcap1.getAvailableMemory())),
+                hcap.getAvailableMemory(), hcap1.getAvailableMemory());
 	}
 }

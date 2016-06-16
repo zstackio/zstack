@@ -20,6 +20,7 @@ public class CephBackupStorageMonInventory {
     private Integer sshPort;
     private String sshUsername;
     private String sshPassword;
+    private String monUuid;
 
     public static CephBackupStorageMonInventory valueOf(CephBackupStorageMonVO vo) {
         CephBackupStorageMonInventory inv = new CephBackupStorageMonInventory();
@@ -31,6 +32,7 @@ public class CephBackupStorageMonInventory {
         inv.setSshPort(vo.getSshPort());
         inv.setSshUsername(vo.getSshUsername());
         inv.setSshPassword(vo.getSshPassword());
+        inv.setMonUuid(vo.getUuid());
         return inv;
     }
 
@@ -103,5 +105,12 @@ public class CephBackupStorageMonInventory {
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+    public String getMonUuid() {
+        return monUuid;
+    }
+
+    public void setMonUuid(String monUuid) {
+        this.monUuid = monUuid;
     }
 }

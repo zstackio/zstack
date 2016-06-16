@@ -68,7 +68,7 @@
 					<l3Networks>
 						<l3BasicNetwork name="TestL3Network3" description="Test">
 							<ipRange name="TestIpRange" description="Test" startIp="10.20.3.100"
-								endIp="10.20.3.200" gateway="10.10.3.1" netmask="255.255.255.0" />
+								endIp="10.20.3.200" gateway="10.20.3.1" netmask="255.255.255.0" />
 
 							<networkService provider="VirtualRouter">
 								<serviceType>DHCP</serviceType>

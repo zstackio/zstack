@@ -26,12 +26,12 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
-import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -116,23 +116,22 @@ public class TestBilling5 {
 
         float errorMargin = 10 * volSize * 2; // the error margin of duration is 2s
 
-        final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
+        final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID,
+                null, Long.MAX_VALUE, null);
 
-        Spending spending = CollectionUtils.find(reply.getSpending(), new Function<Spending, Spending>() {
-            @Override
-            public Spending call(Spending arg) {
-                return BillingConstants.SPENDING_TYPE_DATA_VOLUME.equals(arg.getSpendingType()) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(spending);
+        Assert.assertEquals(price, reply.getTotal(), errorMargin);
 
-        SpendingDetails details = CollectionUtils.find(spending.getDetails(), new Function<SpendingDetails, SpendingDetails>() {
-            @Override
-            public SpendingDetails call(SpendingDetails arg) {
-                return BillingConstants.SPENDING_TYPE_DATA_VOLUME.equals(arg.type) ? arg : null;
-            }
-        });
-        Assert.assertNotNull(details);
-        Assert.assertEquals(price, details.spending, errorMargin);
+        Optional<Spending> opt = reply.getSpending().stream()
+                .filter(s -> s.getSpendingType().equals(BillingConstants.SPENDING_TYPE_DATA_VOLUME)).findFirst();
+        Assert.assertTrue(opt.isPresent());
+        Spending spending = opt.get();
+        Assert.assertEquals(1, spending.getDetails().size());
+        SpendingDetails sp = spending.getDetails().get(0);
+        DataVolumeSpending ds = JSONObjectUtil.rehashObject(sp, DataVolumeSpending.class);
+        Assert.assertEquals(volvo.getUuid(), ds.resourceUuid);
+        Assert.assertFalse(ds.sizeInventory.isEmpty());
+
+        float volPrice = (float) ds.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
+        Assert.assertEquals(price, volPrice, errorMargin);
     }
 }

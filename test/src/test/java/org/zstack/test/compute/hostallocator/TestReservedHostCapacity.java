@@ -9,8 +9,6 @@ import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.kvm.KVMGlobalConfig;
-import org.zstack.simulator.SimulatorHostReservedCapacityExtension;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 
@@ -19,6 +17,7 @@ import org.zstack.test.deployer.Deployer;
  *
  * confirm vm creation failure
  */
+@Deprecated
 public class TestReservedHostCapacity {
     Deployer deployer;
     Api api; 

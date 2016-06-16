@@ -3,7 +3,6 @@ package org.zstack.core.gc;
 import groovy.lang.Binding;
 import groovy.util.GroovyScriptEngine;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
@@ -32,9 +31,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -53,7 +55,6 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
     @Autowired
     private EventFacade evtf;
 
-    private final Set<String> listenedEventPaths = new HashSet<String>();
     private File scriptFolder;
     private GroovyScriptEngine gse;
 
@@ -149,78 +150,55 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
     }
 
     private CancelEventCallback setupEventTrigger(final AbstractEventBasedGCContext context, final Runnable runner) {
-        synchronized (listenedEventPaths) {
-            List<GCEventTrigger> triggers = context.getTriggers();
+        List<GCEventTrigger> triggers = context.getTriggers();
 
-            List<String> ids = new ArrayList<String>();
-            ids.add(context.getName());
-            for (GCEventTrigger trigger : triggers) {
-                ids.add(trigger.getEventPath());
+        List<String> ids = triggers.stream().map(GCEventTrigger::getEventPath).collect(Collectors.toList());
+        logger.debug(String.format("[GC] setup the trigger on the canonical events %s", ids));
+
+        final List<EventCallback> cbs = new ArrayList<EventCallback>();
+
+        for (final GCEventTrigger trigger : triggers) {
+            String scriptName = String.format("%s.groovy", trigger.getCodeName());
+            scriptName = scriptName.replaceAll(" ", "_");
+            String scriptPath = PathUtil.join(scriptFolder.getAbsolutePath(), scriptName);
+            try {
+                FileUtils.writeStringToFile(new File(scriptPath), trigger.getCode());
+            } catch (IOException e) {
+                throw new CloudRuntimeException(e);
             }
 
-            final String pathId = StringUtils.join(ids, "::");
+            final String finalScriptName = scriptName;
+            final EventCallback cb = (tokens, data) -> {
+                if (!Platform.getManagementServerId().equals(tokens.get(EventFacade.META_DATA_MANAGEMENT_NODE_ID))) {
+                    return;
+                }
 
-            if (listenedEventPaths.contains(pathId)) {
-                return null;
-            }
-
-            listenedEventPaths.add(pathId);
-            logger.warn(String.format("[GC] setup the trigger on the canonical event[%s]", pathId));
-
-            final List<EventCallback> cbs = new ArrayList<EventCallback>();
-
-            for (final GCEventTrigger trigger : triggers) {
-                String scriptName = String.format("%s.groovy", trigger.getCodeName());
-                scriptName = scriptName.replaceAll(" ", "_");
-                String scriptPath = PathUtil.join(scriptFolder.getAbsolutePath(), scriptName);
                 try {
-                    FileUtils.writeStringToFile(new File(scriptPath), trigger.getCode());
-                } catch (IOException e) {
+                    Binding binding = new Binding();
+                    binding.setVariable("tokens", tokens);
+                    binding.setVariable("data", data);
+                    binding.setVariable("context", context.getContext());
+                    boolean ret = (Boolean) gse.run(finalScriptName, binding);
+                    if (ret) {
+                        logger.debug(String.format("[GC] code[%s], event[%s] triggered a GC job[%s]",
+                                trigger.getCodeName(), trigger.getEventPath(), context.getName()));
+                        runner.run();
+                    }
+                } catch (Exception e) {
                     throw new CloudRuntimeException(e);
                 }
-
-                final String finalScriptName = scriptName;
-                final EventCallback cb = new EventCallback() {
-                    @Override
-                    public void run(Map tokens, Object data) {
-                        if (!Platform.getManagementServerId().equals(tokens.get(EventFacade.META_DATA_MANAGEMENT_NODE_ID))) {
-                            return;
-                        }
-
-                        try {
-                            Binding binding = new Binding();
-                            binding.setVariable("tokens", tokens);
-                            binding.setVariable("data", data);
-                            binding.setVariable("context", context.getContext());
-                            boolean ret = (Boolean) gse.run(finalScriptName, binding);
-                            if (ret) {
-                                logger.debug(String.format("[GC] code[%s], event[%s] triggered a GC job[%s]",
-                                        trigger.getCodeName(), trigger.getEventPath(), context.getName()));
-                                runner.run();
-                            }
-                        } catch (Exception e) {
-                            throw new CloudRuntimeException(e);
-                        }
-                    }
-                };
-
-                evtf.on(trigger.getEventPath(), cb);
-                cbs.add(cb);
-            }
-
-            return new CancelEventCallback() {
-                @Override
-                public void cancel() {
-                    synchronized (listenedEventPaths) {
-                        listenedEventPaths.remove(pathId);
-                    }
-
-                    for (EventCallback cb : cbs) {
-                        evtf.off(cb);
-                    }
-                }
             };
+
+            evtf.on(trigger.getEventPath(), cb);
+            cbs.add(cb);
         }
+
+        return () -> {
+            for (EventCallback cb : cbs) {
+                logger.debug(String.format("[GC] unlisten event for Job[%s] as it's done or cancelled", context.getName()));
+                evtf.off(cb);
+            }
+        };
     }
 
     class EventCanceller {
@@ -266,24 +244,21 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
         };
 
         final GCRunner runner = getGCRunner(context);
-        final Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                if (!once.setToRun()) {
-                    return;
-                }
-
-                context.increaseExecutedTime();
-
-                if (updateDb) {
-                    vo.setStatus(GCStatus.Processing);
-                    dbf.update(vo);
-                }
-
-                logger.debug(String.format("start running GC job[id:%s, name: %s, runner class:%s], already executed %s times",
-                        vo.getId(), context.getName(), vo.getRunnerClass(), context.getExecutedTimes()));
-                runner.run(context, completion);
+        final Runnable r = () -> {
+            if (!once.setToRun()) {
+                return;
             }
+
+            context.increaseExecutedTime();
+
+            if (updateDb) {
+                vo.setStatus(GCStatus.Processing);
+                dbf.update(vo);
+            }
+
+            logger.debug(String.format("start running GC job[id:%s, name: %s, runner class:%s], already executed %s times",
+                    vo.getId(), context.getName(), vo.getRunnerClass(), context.getExecutedTimes()));
+            runner.run(context, completion);
         };
 
         canceller.canceller =  setupEventTrigger(context, r);
@@ -350,6 +325,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
 
     @Override
     public void schedule(final GCContext context) {
+        DebugUtils.Assert(context.getName() != null, "context.getName() cannot be null");
+
         if (context instanceof TimeBasedGCPersistentContext) {
             scheduleTask((TimeBasedGCPersistentContext) context, save((TimeBasedGCPersistentContext) context), false, true);
         } else if (context instanceof EventBasedGCPersistentContext) {
@@ -475,6 +452,8 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
 
     @Override
     public void scheduleImmediately(GCContext context) {
+        DebugUtils.Assert(context.getName() != null, "context.getName() cannot be null");
+
         if (context instanceof TimeBasedGCPersistentContext) {
             scheduleTask((TimeBasedGCPersistentContext) context, save((TimeBasedGCPersistentContext) context), true, true);
         } else {
@@ -525,6 +504,7 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
         }
 
         if (ours.isEmpty()) {
+            logger.debug("no GC jobs managed by us");
             return;
         }
 
@@ -538,13 +518,16 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
                 scheduleTask(new TimeBasedGCPersistentContextInternal(vo).toGCContext(), vo, true, true);
             } else if (EventBasedGCPersistentContext.class.getName().equals(vo.getType())) {
                 scheduleTask(new EventBasedGCPersistentContextInternal(vo).toGCContext(), vo, true);
+            } else {
+                logger.warn(String.format("cannot load the GC job[id:%s], unknown type[%s]", vo.getId(), vo.getType()));
             }
         }
     }
 
-    @Override
     @AsyncThread
+    @Override
     public void managementNodeReady() {
+        logger.debug(String.format("Management node[uuid:%s] joins, start loading GC jobs...", Platform.getManagementServerId()));
         loadJobs();
 
         thdf.submitPeriodicTask(new PeriodicTask() {

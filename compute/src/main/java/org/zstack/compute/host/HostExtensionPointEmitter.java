@@ -1,7 +1,6 @@
 package org.zstack.compute.host;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
@@ -12,7 +11,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class HostExtensionPointEmitter implements Component {
 	private static final CLogger logger = Utils.getLogger(HostExtensionPointEmitter.class);

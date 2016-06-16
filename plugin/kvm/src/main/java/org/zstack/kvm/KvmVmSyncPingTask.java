@@ -8,19 +8,18 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.logging.Log;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
@@ -223,6 +222,8 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
         return new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
+                new Log(context.getInventory().getUuid()).log(KVMHostLabel.SYNC_VM_STATE);
+
                 syncVm(context.getInventory(), new Completion(trigger) {
                     String __name__ = "sync-vm-state";
 

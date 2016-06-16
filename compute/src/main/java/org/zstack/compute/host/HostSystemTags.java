@@ -15,7 +15,7 @@ public class HostSystemTags {
     public static String RESERVED_MEMORY_CAPACITY_TOKEN = "capacity";
     public static PatternedSystemTag RESERVED_MEMORY_CAPACITY = new PatternedSystemTag(String.format("reservedMemory::{%s}", RESERVED_MEMORY_CAPACITY_TOKEN), HostVO.class);
 
-    public static SystemTag LIVE_SNAPSHOT = new SystemTag("capability:liveSnapshot", HostVO.class);
+    public static SystemTag LIVE_SNAPSHOT = new SystemTag("capability::liveSnapshot", HostVO.class);
 
     public static String OS_DISTRIBUTION_TOKEN = "distribution";
     public static PatternedSystemTag OS_DISTRIBUTION = new PatternedSystemTag(String.format("os::distribution::{%s}", OS_DISTRIBUTION_TOKEN), HostVO.class);

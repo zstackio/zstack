@@ -132,6 +132,16 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return definedQuotas;
     }
 
+    @Override
+    public void checkApiMessagePermission(APIMessage msg) {
+        new Auth().check(msg);
+    }
+
+    @Override
+    public boolean isAdmin(SessionInventory session) {
+        return AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(session.getAccountUuid());
+    }
+
     private void handle(GenerateMessageIdentityCategoryMsg msg) {
         List<String> adminMsgs = new ArrayList<String>();
         List<String> userMsgs = new ArrayList<String>();

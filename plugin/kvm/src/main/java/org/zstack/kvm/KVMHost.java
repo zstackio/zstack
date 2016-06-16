@@ -16,6 +16,7 @@ import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.logging.Log;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -41,10 +42,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
-import org.zstack.utils.ShellResult;
-import org.zstack.utils.ShellUtils;
-import org.zstack.utils.Utils;
-import org.zstack.utils.VersionComparer;
+import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -314,7 +312,7 @@ public class KVMHost extends HostBase implements Host {
         KvmRunShellReply reply = new KvmRunShellReply();
         if (result.isSshFailure()) {
             reply.setError(errf.stringToOperationError(
-                    String.format("unable to connect to KVM[ip:%s, username:%s] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), result.getExitErrorMessage())
+                    String.format("unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), result.getExitErrorMessage())
             ));
         } else {
             reply.setStdout(result.getStdout());
@@ -435,6 +433,12 @@ public class KVMHost extends HostBase implements Host {
         DetachIsoCmd cmd = new DetachIsoCmd();
         cmd.isoUuid = msg.getIsoUuid();
         cmd.vmUuid = msg.getVmInstanceUuid();
+
+        KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
+        for (KVMPreDetachIsoExtensionPoint ext : pluginRgty.getExtensionList(KVMPreDetachIsoExtensionPoint.class)) {
+            ext.preDetachIsoExtensionPoint(inv, cmd);
+        }
+
         restf.asyncJsonPost(detachIsoPath, cmd, new JsonAsyncRESTCallback<DetachIsoRsp>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
@@ -499,6 +503,12 @@ public class KVMHost extends HostBase implements Host {
         AttachIsoCmd cmd = new AttachIsoCmd();
         cmd.vmUuid = msg.getVmInstanceUuid();
         cmd.iso = iso;
+
+        KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
+        for (KVMPreAttachIsoExtensionPoint ext : pluginRgty.getExtensionList(KVMPreAttachIsoExtensionPoint.class)) {
+            ext.preAttachIsoExtensionPoint(inv, cmd);
+        }
+
         restf.asyncJsonPost(attachIsoPath, cmd, new JsonAsyncRESTCallback<AttachIsoRsp>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
@@ -679,6 +689,8 @@ public class KVMHost extends HostBase implements Host {
                 KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
                 if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
                     reply.setError(errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "cannot do the operation on the KVM host",err));
+                } else {
+                    reply.setError(reply.getError());
                 }
 
                 bus.reply(msg, reply);
@@ -750,7 +762,7 @@ public class KVMHost extends HostBase implements Host {
 
             if (state == VmInstanceState.Running) {
                 String libvirtVersion = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN);
-                if (new VersionComparer(KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION).compare(libvirtVersion) > 0) {
+                if (new VersionComparator(KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION).compare(libvirtVersion) > 0) {
                     throw new OperationFailureException(errf.stringToOperationError(
                             String.format("live volume snapshot merge needs libvirt version greater than %s, current libvirt version is %s. Please stop vm and redo the operation or detach the volume if it's data volume",
                                     KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION, libvirtVersion)
@@ -1962,11 +1974,13 @@ public class KVMHost extends HostBase implements Host {
                         rsp.getError());
                 errCode = errf.stringToOperationError(err);
             } else {
-                boolean liveSnapshot = rsp.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_LIVESNAPSHOT_VERSION) >= 0 &&
-                        rsp.getQemuVersion().compareTo(KVMConstant.MIN_QEMU_LIVESNAPSHOT_VERSION) >= 0;
+                VersionComparator libvirtVersion = new VersionComparator(rsp.getLibvirtVersion());
+                VersionComparator qemuVersion = new VersionComparator(rsp.getQemuVersion());
+                boolean liveSnapshot = libvirtVersion.compare(KVMConstant.MIN_LIBVIRT_LIVESNAPSHOT_VERSION) >= 0
+                        && qemuVersion.compare(KVMConstant.MIN_QEMU_LIVESNAPSHOT_VERSION) >= 0;
 
                 String hostOS = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(self.getUuid(), HostSystemTags.OS_DISTRIBUTION_TOKEN);
-                liveSnapshot = liveSnapshot && (!"CentOS".equals(hostOS) || KVMGlobalConfig.ALLOW_LIVE_SNAPSHOT_ON_REDHAT.value(Boolean.class));
+                //liveSnapshot = liveSnapshot && (!"CentOS".equals(hostOS) || KVMGlobalConfig.ALLOW_LIVE_SNAPSHOT_ON_REDHAT.value(Boolean.class));
 
                 if (liveSnapshot) {
                     logger.debug(String.format("kvm host[OS:%s, uuid:%s, name:%s, ip:%s] supports live snapshot with libvirt[version:%s], qemu[version:%s]",
@@ -2052,13 +2066,16 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void run(FlowTrigger trigger, Map data) {
                                 String checkList = KVMGlobalConfig.HOST_DNS_CHECK_LIST.value();
+
+                                new Log(self.getUuid()).log(KVMHostLabel.ADD_HOST_CHECK_DNS, checkList);
+
                                 checkList = checkList.replaceAll(",", " ");
                                 SshResult ret = new Ssh().setHostname(getSelf().getManagementIp())
                                         .setUsername(getSelf().getUsername()).setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
                                         .script("scripts/check-public-dns-name.sh", map(e("dnsCheckList", checkList))).runAndClose();
                                 if (ret.isSshFailure()) {
                                     trigger.fail(errf.stringToOperationError(
-                                            String.format("unable to connect to KVM[ip:%s, username:%s] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), ret.getExitErrorMessage())
+                                            String.format("unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage())
                                     ));
                                 } else if (ret.getReturnCode() != 0) {
                                     trigger.fail(errf.stringToOperationError(
@@ -2077,14 +2094,16 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
+                            new Log(self.getUuid()).log(KVMHostLabel.ADD_HOST_CHECK_PING_MGMT_NODE);
+
                             SshResult ret = new Ssh().setHostname(getSelf().getManagementIp())
                                     .setUsername(getSelf().getUsername()).setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
                                     .command(String.format("curl --connect-timeout 10 %s", restf.getCallbackUrl())).runAndClose();
 
                             if (ret.isSshFailure()) {
                                 throw new OperationFailureException(errf.stringToOperationError(
-                                        String.format("unable to connect to KVM[ip:%s, username:%s] to check the management node connectivity," +
-                                                "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), ret.getExitErrorMessage())
+                                        String.format("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
+                                                "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage())
                                 ));
                             } else if (ret.getReturnCode() != 0) {
                                 throw new OperationFailureException(errf.stringToOperationError(
@@ -2103,6 +2122,8 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            new Log(self.getUuid()).log(KVMHostLabel.CALL_ANSIBLE);
+
                             String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", agentPackageName), true).getAbsolutePath();
                             String destPath = String.format("/var/lib/zstack/kvm/%s", agentPackageName);
                             SshFileMd5Checker checker = new SshFileMd5Checker();
@@ -2127,6 +2148,12 @@ public class KVMHost extends HostBase implements Host {
                             }
                             runner.putArgument("pkg_kvmagent", agentPackageName);
                             runner.putArgument("hostname", String.format("%s.zstack.org",self.getManagementIp().replaceAll("\\.", "-")));
+
+                            UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
+                            ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
+                            String postUrl = ub.build().toString();
+
+                            runner.putArgument("post_url", postUrl);
                             runner.run(new Completion(trigger) {
                                 @Override
                                 public void success() {
@@ -2146,6 +2173,8 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            new Log(self.getUuid()).log(KVMHostLabel.ECHO_AGENT);
+
                             restf.echo(echoPath, new Completion(trigger) {
                                 @Override
                                 public void success() {
@@ -2204,6 +2233,8 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            new Log(self.getUuid()).log(KVMHostLabel.COLLECT_HOST_FACTS);
+
                             HostFactCmd cmd = new HostFactCmd();
                             restf.asyncJsonPost(hostFactPath, cmd, new JsonAsyncRESTCallback<HostFactResponse>() {
                                 @Override
@@ -2249,6 +2280,8 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
+                            new Log(self.getUuid()).log(KVMHostLabel.PREPARE_FIREWALL);
+
                             String script = "which iptables > /dev/null && iptables -C FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 && iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 || true";
                             runShell(script);
                             trigger.next();
@@ -2298,8 +2331,8 @@ public class KVMHost extends HostBase implements Host {
         if (umsg.getPassword() != null) {
             vo.setPassword(umsg.getPassword());
         }
-        if (umsg.getSshport() > 0 && umsg.getSshport() <= 65535 ) {
-            vo.setPort(umsg.getSshport());
+        if (umsg.getSshPort() != null && umsg.getSshPort() > 0 && umsg.getSshPort() <= 65535 ) {
+            vo.setPort(umsg.getSshPort());
         }
 
         return vo;

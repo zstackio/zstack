@@ -6,16 +6,18 @@ import org.junit.Test;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.test.UnitTestSuiteConfig.Import;
 import org.zstack.test.UnitTestSuiteConfig.TestCase;
-import org.zstack.utils.*;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils.ShellRunner;
+import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-import java.io.*;
-import java.lang.reflect.Field;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -295,6 +297,11 @@ public class UnitTestSuite {
         Thread progressBar;
 
         void run() throws IOException, NoSuchFieldException, IllegalAccessException, InterruptedException {
+            if (caseInfo.clazz.isAnnotationPresent(Deprecated.class)) {
+                System.out.print(String.format("Skip deprecated case: %s", caseInfo.clazz.getSimpleName()));
+                return;
+            }
+
             startProgressBar();
             startTimeoutMonitor();
             shellRunner = new ShellRunner();

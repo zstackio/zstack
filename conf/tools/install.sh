@@ -79,6 +79,7 @@ elif [ $tool = 'zstack-ctl' ]; then
     cd $cwd
     pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
     chmod +x /usr/bin/zstack-ctl
+    python $CTL_VIRENV_PATH/lib/python2.7/site-packages/zstackctl/generate_zstackctl_bash_completion.py
 
 elif [ $tool = 'zstack-dashboard' ]; then
     UI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstack-dashboard

@@ -5,12 +5,12 @@ import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by frank on 8/5/2015.
  */
 class EventBasedGCPersistentContextInternal {
+    String contextName;
     String runnerClassName;
     String contextClassName;
     LinkedHashMap context;
@@ -27,6 +27,7 @@ class EventBasedGCPersistentContextInternal {
         EventBasedGCPersistentContextInternal i = JSONObjectUtil.toObject(vo.getContext(), EventBasedGCPersistentContextInternal.class);
         runnerClassName = i.runnerClassName;
         contextClassName = i.contextClassName;
+        contextName = i.contextName;
         context = i.context;
         triggers = i.triggers;
     }
@@ -42,6 +43,7 @@ class EventBasedGCPersistentContextInternal {
             }
             ctx.setRunnerClass(Class.forName(runnerClassName));
             ctx.setTriggers(triggers);
+            ctx.setName(contextName);
             return ctx;
         } catch (Exception e) {
             throw new CloudRuntimeException(e);

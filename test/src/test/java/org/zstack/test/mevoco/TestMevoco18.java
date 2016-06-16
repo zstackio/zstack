@@ -9,30 +9,15 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
-import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
-import org.zstack.kvm.KVMSystemTags;
-import org.zstack.mevoco.KVMAddOns.NicQos;
-import org.zstack.mevoco.KVMAddOns.VolumeQos;
-import org.zstack.mevoco.MevocoConstants;
-import org.zstack.mevoco.MevocoSystemTags;
-import org.zstack.network.service.flat.FlatDhcpBackend.ApplyDhcpCmd;
-import org.zstack.network.service.flat.FlatDhcpBackend.DhcpInfo;
-import org.zstack.network.service.flat.FlatDhcpBackend.PrepareDhcpCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
-import org.zstack.network.service.flat.FlatNetworkSystemTags;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
@@ -45,14 +30,9 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import static org.zstack.core.Platform._;
 
 /**
  * 1. create a vm with mevoco setting

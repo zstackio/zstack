@@ -9,7 +9,7 @@ import org.zstack.header.message.APISyncCallMessage;
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APICheckIpAvailabilityMsg extends APISyncCallMessage implements L3NetworkMessage {
-    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
     private String l3NetworkUuid;
     @APIParam(maxLength = 255)
     private String ip;

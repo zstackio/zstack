@@ -26,6 +26,7 @@ import static org.zstack.utils.CollectionDSL.map;
  *
  * confirm in case 1,2 vm creation fails, in case 3 vm creation succeeds
  */
+@Deprecated
 public class TestReservedHostCapacity4 {
     Deployer deployer;
     Api api; 

@@ -679,7 +679,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 try {
                     if (delay) {
                         try {
-                            TimeUnit.SECONDS.sleep(CephGlobalConfig.BACKUP_STORAGE_MON_RECONNECT_DELAY.value(Integer.class));
+                            TimeUnit.SECONDS.sleep(CephGlobalConfig.BACKUP_STORAGE_MON_RECONNECT_DELAY.value(Long.class));
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -801,6 +801,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIAddMonToCephBackupStorageMsg) {
             handle((APIAddMonToCephBackupStorageMsg) msg);
+        } else if (msg instanceof APIUpdateCephBackupStorageMonMsg) {
+            handle((APIUpdateCephBackupStorageMonMsg) msg);
         } else if (msg instanceof APIRemoveMonFromCephBackupStorageMsg) {
             handle((APIRemoveMonFromCephBackupStorageMsg) msg);
         } else {
@@ -979,6 +981,29 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 });
             }
         }).start();
+    }
+
+    private void handle(final APIUpdateCephBackupStorageMonMsg msg) {
+        final APIUpdateMonToCephBackupStorageEvent evt = new APIUpdateMonToCephBackupStorageEvent(msg.getId());
+        CephBackupStorageMonVO monvo = dbf.findByUuid(msg.getMonUuid(), CephBackupStorageMonVO.class);
+        if (msg.getHostname() != null) {
+            monvo.setHostname(msg.getHostname());
+        }
+        if (msg.getMonPort() != null && msg.getMonPort() > 0 && msg.getMonPort() <= 65535) {
+            monvo.setMonPort(msg.getMonPort());
+        }
+        if (msg.getSshPort() != null && msg.getSshPort() > 0 && msg.getSshPort() <= 65535) {
+            monvo.setSshPort(msg.getSshPort());
+        }
+        if (msg.getSshUsername() != null) {
+            monvo.setSshUsername(msg.getSshUsername());
+        }
+        if (msg.getSshPassword() != null) {
+            monvo.setSshPassword(msg.getSshPassword());
+        }
+        dbf.update(monvo);
+        evt.setInventory(CephBackupStorageInventory.valueOf(dbf.reload(getSelf())));
+        bus.publish(evt);
     }
 
     @Override

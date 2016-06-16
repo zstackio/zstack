@@ -160,7 +160,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                     String bsInstallPath = ((BackupStorageAskInstallPathReply)areply).getInstallPath();
                     UploadBitsFromLocalStorageToBackupStorageMsg msg = new UploadBitsFromLocalStorageToBackupStorageMsg();
                     msg.setHostUuid(ctx.hostUuid);
-                    msg.setPrimaryStorageUuid(ctx.temporaryInstallPath);
+                    msg.setPrimaryStorageInstallPath(ctx.temporaryInstallPath);
                     msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
                     msg.setBackupStorageUuid(bsUuid);
                     msg.setBackupStorageInstallPath(bsInstallPath);

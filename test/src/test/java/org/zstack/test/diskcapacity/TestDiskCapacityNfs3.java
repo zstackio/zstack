@@ -138,6 +138,7 @@ public class TestDiskCapacityNfs3 {
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(nfs.getUuid(), PrimaryStorageCapacityVO.class);
 
         nconfig.getVolumeSizeCmdActualSize.put(root.getUuid(), root.getActualSize());
+        nconfig.getVolumeSizeCmdSize.put(root.getUuid(), root.getSize());
         BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         ImageInventory template = api.createTemplateFromRootVolume("root", root.getUuid(), list(sftp.getUuid()));
         Assert.assertEquals(root.getSize(), template.getSize());

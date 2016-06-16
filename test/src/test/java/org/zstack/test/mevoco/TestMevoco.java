@@ -47,10 +47,9 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import static org.zstack.core.Platform._;
 
 /**
  * 1. create a vm with mevoco setting
@@ -110,7 +109,7 @@ public class TestMevoco {
     }
     
 	@Test
-	public void test() throws ApiSenderException {
+	public void test() throws ApiSenderException, IOException {
         L2NetworkInventory l2 = deployer.l2Networks.get("TestL2Network");
         Assert.assertTrue(KVMSystemTags.L2_BRIDGE_NAME.hasTag(l2.getUuid()));
 
@@ -184,8 +183,6 @@ public class TestMevoco {
         long usedDisk = localVO.getCapacity().getTotalCapacity() - localVO.getCapacity().getAvailableCapacity() - isize;
         VolumeInventory vol = vm.getRootVolume();
         Assert.assertEquals(usedDisk, psRatioMgr.calculateByRatio(vol.getPrimaryStorageUuid(), vol.getSize()));
-
-        logger.debug(_("hello.world"));
 
         DiskOfferingInventory doinv = deployer.diskOfferings.get("TestRootDiskOffering");
         VolumeInventory datavol = api.createDataVolume("data", doinv.getUuid());

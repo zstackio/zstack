@@ -231,7 +231,7 @@ public class ManagementNode implements CloudBusEventListener {
                     }
 
                     try {
-                        TimeUnit.SECONDS.sleep(ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
+                        TimeUnit.SECONDS.sleep(ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Long.class));
                     } catch (InterruptedException ie) {
                     }
 

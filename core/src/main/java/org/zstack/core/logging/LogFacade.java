@@ -1,13 +1,8 @@
 package org.zstack.core.logging;
 
 /**
+ * Created by xing5 on 2016/6/14.
  */
 public interface LogFacade {
-    boolean isEnabled();
-
-    void info(String resourceUuid, String info);
-
-    void warn(String resourceUuid, String info);
-
-    void error(String resourceUuid, String info);
+    LogBackend getBackend();
 }

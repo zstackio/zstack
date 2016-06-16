@@ -5,12 +5,13 @@ import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
 import javax.persistence.*;
+import java.io.Serializable;
 
 /**
  */
 @Entity
 @Table
-public class VolumeSnapshotBackupStorageRefVO {
+public class VolumeSnapshotBackupStorageRefVO implements Serializable {
     @Id
     @Column
     @GeneratedValue(strategy=GenerationType.IDENTITY)

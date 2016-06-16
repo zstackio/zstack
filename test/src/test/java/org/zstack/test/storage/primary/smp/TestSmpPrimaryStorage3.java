@@ -62,6 +62,7 @@ public class TestSmpPrimaryStorage3 {
         api.stopVmInstance(vm.getUuid());
         VolumeInventory root = vm.getRootVolume();
 
+        config.getVolumeSizeCmdSize.put(root.getUuid(), root.getSize());
         ImageInventory image = api.createTemplateFromRootVolume("root", root.getUuid(), sftp.getUuid());
         Assert.assertEquals(root.getSize(), image.getSize());
         Assert.assertEquals(1, image.getBackupStorageRefs().size());

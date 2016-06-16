@@ -12,6 +12,7 @@ public class CephMonAO_ {
     public static volatile SingularAttribute<CephMonAO, String> uuid;
     public static volatile SingularAttribute<CephMonAO, String> sshUsername;
     public static volatile SingularAttribute<CephMonAO, String> sshPassword;
+    public static volatile SingularAttribute<CephMonAO, String> sshPort;
     public static volatile SingularAttribute<CephMonAO, String> hostname;
     public static volatile SingularAttribute<CephMonAO, Integer> monPort;
     public static volatile SingularAttribute<CephMonAO, MonStatus> status;

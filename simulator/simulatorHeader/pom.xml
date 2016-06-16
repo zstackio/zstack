@@ -34,6 +34,7 @@
 				<configuration>
 					<source>${project.java.version}</source>
 					<target>${project.java.version}</target>
+					<complianceLevel>${project.java.version}</complianceLevel>
 					<XnoInline>true</XnoInline>
 					<aspectLibraries>
 						<aspectLibrary>

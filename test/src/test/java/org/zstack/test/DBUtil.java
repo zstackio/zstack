@@ -25,20 +25,27 @@ public class DBUtil {
         
         try {
             prop.load(DBUtil.class.getClassLoader().getResourceAsStream("zstack.properties"));
-            String user = prop.getProperty("DB.user");
+
+            String user = System.getProperty("DB.user");
             if (user == null) {
-                user = prop.getProperty("DbFacadeDataSource.user");
-            }
-            if (user == null) {
-                throw new CloudRuntimeException("cannot find DB user in zstack.properties, please set either DB.user or DbFacadeDataSource.user");
+                user = prop.getProperty("DB.user");
+                if (user == null) {
+                    user = prop.getProperty("DbFacadeDataSource.user");
+                }
+                if (user == null) {
+                    throw new CloudRuntimeException("cannot find DB user in zstack.properties, please set either DB.user or DbFacadeDataSource.user");
+                }
             }
 
-            String password = prop.getProperty("DB.password");
+            String password = System.getProperty("DB.password");
             if (password == null) {
-                password = prop.getProperty("DbFacadeDataSource.password");
-            }
-            if (password == null) {
-                throw new CloudRuntimeException("cannot find DB user in zstack.properties, please set either DB.password or DbFacadeDataSource.password");
+                password = prop.getProperty("DB.password");
+                if (password == null) {
+                    password = prop.getProperty("DbFacadeDataSource.password");
+                }
+                if (password == null) {
+                    throw new CloudRuntimeException("cannot find DB user in zstack.properties, please set either DB.password or DbFacadeDataSource.password");
+                }
             }
 
             String shellcmd = String.format("build/deploydb.sh %s %s",  user, password);
@@ -49,7 +56,7 @@ public class DBUtil {
         }
     }
 
-    public static void reDeployCassandra(String keyspace) {
+    public static void reDeployCassandra(String...keyspaces) {
         // initializing platform causes zstack.properties to be load
         Platform.getUuid();
         logger.info("Redeploying cassandra");
@@ -94,7 +101,9 @@ public class DBUtil {
             });
         }
 
-        ShellUtils.run(String.format("%s -e \"drop keyspace if exists %s\"", cqlsh, keyspace), false);
+        for (String keyspace : keyspaces) {
+            ShellUtils.run(String.format("%s -e \"drop keyspace if exists %s\"", cqlsh, keyspace), false);
+        }
 
         File schemaFolder = PathUtil.findFolderOnClassPath("mevoco/cassandra/db", true);
         File deployer = PathUtil.findFileOnClassPath("deploy_cassandra_db.py", true);

@@ -33,7 +33,9 @@
                         </goals>
                     </execution>
                 </executions>
+
                 <configuration>
+                    <complianceLevel>${project.java.version}</complianceLevel>
                     <source>${project.java.version}</source>
                     <target>${project.java.version}</target>
                     <XnoInline>true</XnoInline>
@@ -52,7 +54,7 @@
     <dependencies>
         <dependency>
             <groupId>org.hibernate.javax.persistence</groupId>
-            <artifactId>hibernate-jpa-2.0-api</artifactId>
+            <artifactId>hibernate-jpa-2.1-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.rabbitmq</groupId>

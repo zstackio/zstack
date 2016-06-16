@@ -12,16 +12,7 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="LogFacade" class = "org.zstack.core.logging.LogFacadeImpl">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
-        </zstack:plugin>
-    </bean>
+    <bean id="LogFacade" class = "org.zstack.core.logging.LogFacadeImpl" />
 
-    <bean id="MysqlLogBackend" class = "org.zstack.core.logging.MysqlLogBackend">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.core.logging.LogBackend" />
-        </zstack:plugin>
-    </bean>
-
+    <bean id="Log4jBackend" class = "org.zstack.core.logging.Log4jBackend" />
 </beans>

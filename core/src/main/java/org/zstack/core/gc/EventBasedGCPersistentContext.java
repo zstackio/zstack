@@ -48,6 +48,7 @@ public class EventBasedGCPersistentContext<T> extends AbstractEventBasedGCContex
         }
         i.runnerClassName = runnerClass.getName();
         i.triggers  = triggers;
+        i.contextName = name;
         return i;
     }
 }

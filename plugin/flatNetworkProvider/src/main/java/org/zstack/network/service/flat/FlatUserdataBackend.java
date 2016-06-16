@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -172,6 +173,8 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     trigger.next();
                     return;
                 }
+
+                new Log(context.getInventory().getUuid()).log(FlatNetworkLabel.SYNC_USERDATA);
 
                 BatchApplyUserdataCmd cmd = new BatchApplyUserdataCmd();
                 cmd.userdata = tos;
