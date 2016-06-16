@@ -5,7 +5,6 @@ import org.zstack.header.message.OverriddenApiParam;
 import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
 import org.zstack.storage.fusionstor.FusionstorConstants;
-import org.zstack.storage.fusionstor.FusionstorGlobalProperty;
 
 import java.util.List;
 
@@ -55,7 +54,7 @@ public class APIAddFusionstorPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
 
     @Override
     public String getType() {
-        return FusionstorGlobalProperty.FUSIONSTOR_PRIMARY_STORAGE_TYPE;
+        return FusionstorConstants.FUSIONSTOR_PRIMARY_STORAGE_TYPE;
     }
 
     public List<String> getMonUrls() {
