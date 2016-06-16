@@ -1,5 +1,7 @@
 package org.zstack.core.ansible;
 
+import org.zstack.core.logging.LogLevel;
+
 import java.util.List;
 
 /**
@@ -8,6 +10,15 @@ import java.util.List;
 public class AnsibleLogCmd {
     private String label;
     private List<String> parameters;
+    private String level = LogLevel.INFO.toString();
+
+    public String getLevel() {
+        return level;
+    }
+
+    public void setLevel(String level) {
+        this.level = level;
+    }
 
     public String getLabel() {
         return label;
@@ -25,3 +36,4 @@ public class AnsibleLogCmd {
         this.parameters = parameters;
     }
 }
+

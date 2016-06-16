@@ -4,6 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.zstack.core.ansible.AnsibleLogCmd;
 import org.zstack.core.logging.Log;
+import org.zstack.core.logging.LogLevel;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 /**
@@ -16,9 +17,9 @@ public class AnsibleLogController {
     String log(@PathVariable String uuid, @RequestBody String body) {
         AnsibleLogCmd cmd = JSONObjectUtil.toObject(body, AnsibleLogCmd.class);
         if (cmd.getParameters() != null) {
-            new Log(uuid).setText(cmd.getLabel(), cmd.getParameters()).write();
+            new Log(uuid).setLevel(LogLevel.valueOf(cmd.getLevel())).setText(cmd.getLabel(), cmd.getParameters()).write();
         } else {
-            new Log(uuid).setText(cmd.getLabel()).write();
+            new Log(uuid).setLevel(LogLevel.valueOf(cmd.getLevel())).setText(cmd.getLabel()).write();
         }
 
         return null;
