@@ -8,9 +8,9 @@ import org.zstack.header.configuration.PythonClass;
 @PythonClass
 public interface FusionstorConstants {
     @PythonClass
-    String FUSIONSTOR_BACKUP_STORAGE_TYPE = "SS100-Storage";
+    String FUSIONSTOR_BACKUP_STORAGE_TYPE = "Fusionstor";
     @PythonClass
-    String FUSIONSTOR_PRIMARY_STORAGE_TYPE = "SS100-Storage";
+    String FUSIONSTOR_PRIMARY_STORAGE_TYPE = "Fusionstor";
 
     String MON_PARAM_MON_PORT = "monPort";
 }
