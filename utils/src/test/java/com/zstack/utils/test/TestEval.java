@@ -5,9 +5,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zstack.utils.VersionComparator;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -66,5 +68,9 @@ public class TestEval {
 
         System.out.print(String.format("xxxxxxxxxxxxxxxx %s\n", new VersionComparator("1.2.17").compare("1.0.0")));
         System.out.print(String.format("xxxxxxxxxxxxxxxx %s\n", new VersionComparator("2.3.0").compare("1.3.0")));
+
+        String testJson = "[\"files/kvm/libvirtd.conf\",\"/etc/libvirt/libvirtd.conf\"]";
+        List collection = JSONObjectUtil.toCollection(testJson, ArrayList.class, String.class);
+        System.out.println(collection);
     }
 }
