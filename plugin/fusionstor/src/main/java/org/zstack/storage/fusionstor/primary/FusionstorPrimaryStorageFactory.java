@@ -67,6 +67,8 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
 
     public static final PrimaryStorageType type = new PrimaryStorageType(FusionstorConstants.FUSIONSTOR_PRIMARY_STORAGE_TYPE);
 
+    public static final String QEMUPATH = "/opt/fusionstack/qemu/bin/qemu-system-x86_64";
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -278,6 +280,7 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
 
     @Override
     public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, StartVmCmd cmd) throws KVMException {
+        cmd.getAddons().put("qemuPath", QEMUPATH);
         cmd.setRootVolume(convertVolumeToFusionstorIfNeeded(spec.getDestRootVolume(), cmd.getRootVolume()));
 
         List<VolumeTO> dtos = new ArrayList<VolumeTO>();
