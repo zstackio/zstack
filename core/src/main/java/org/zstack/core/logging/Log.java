@@ -4,6 +4,7 @@ import com.fasterxml.uuid.Generators;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.header.message.NeedJsonSchema;
 
 import java.util.Collection;
@@ -124,7 +125,21 @@ public class Log {
         return content.parameters;
     }
 
-    public void write() {
+    public Log write() {
         logf.getBackend().writeLog(this);
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        if (content == null) {
+            return "";
+        }
+
+        if (content.parameters != null) {
+            return Platform.i18n(content.text, logf.getBackend().getCurrentLocale(), content.parameters);
+        } else {
+            return Platform.i18n(content.text, logf.getBackend().getCurrentLocale());
+        }
     }
 }

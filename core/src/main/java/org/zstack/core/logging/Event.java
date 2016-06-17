@@ -23,9 +23,10 @@ public class Event extends Log {
     }
 
     @Override
-    public void write() {
+    public Event write() {
         evtf.fire(EVENT_PATH, getContent());
         super.write();
+        return this;
     }
 
     public Event log(String label, Object...args) {
