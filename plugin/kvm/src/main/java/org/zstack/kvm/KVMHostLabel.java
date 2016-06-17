@@ -323,20 +323,20 @@ public class KVMHostLabel {
     public static final String FETCH_SUCC = "ansible.fetch.succ";
 
     @LogLabel(messages = {
-            "en_US = starting run command [ [{0}] ] ...",
-            "zh_CN = 开始运行命令： {0} ..."
+            "en_US = starting run remote task: [{0}]  ...",
+            "zh_CN = 开始执行操作：{0} ..."
     })
     public static final String COMMAND = "ansible.command";
 
     @LogLabel(messages = {
-            "en_US = run shell command: [{0}] successfully ",
-            "zh_CN = 运行命令： {0} 成功"
+            "en_US = run remote task: [{0}] successfully ",
+            "zh_CN = 执行操作：{0} 成功"
     })
     public static final String COMMAND_SUCC = "ansible.command.succ";
 
     @LogLabel(messages = {
-            "en_US = run shell command: [{0}] failed ",
-            "zh_CN = 运行命令： {0} 失败"
+            "en_US = run remote task: [{0}] failed",
+            "zh_CN = 执行操作：{0} 失败"
     })
     public static final String COMMAND_FAIL = "ansible.command.fail";
 
@@ -525,4 +525,203 @@ public class KVMHostLabel {
             "zh_CN = 解压缩 {0} 到 {1} 成功"
     })
     public static final String UNARCHIVE_SUCC = "ansible.unarchive.succ";
+
+    @LogLabel(messages = {
+            "en_US = remove [{0}] ...",
+            "zh_CN = 删除 {0} ..."
+    })
+    public static final String SHELL_REMOVE = "ansible.shell.remove.file";
+
+    @LogLabel(messages = {
+            "en_US = remove [{0}] successfully",
+            "zh_CN = 删除 {0} 成功"
+    })
+    public static final String SHELL_REMOVE_SUCC = "ansible.shell.remove.file.succ";
+
+    @LogLabel(messages = {
+            "en_US = remove [{0}] failed",
+            "zh_CN = 删除 {0} 失败"
+    })
+    public static final String SHELL_REMOVE_FAIL = "ansible.shell.remove.file.fail";
+
+    @LogLabel(messages = {
+            "en_US = deploy [{0}] repo",
+            "zh_CN = 部署 {0} 源"
+    })
+    public static final String SHELL_DEPLOY_REPO = "ansible.shell.deploy.repo";
+
+    @LogLabel(messages = {
+            "en_US = deploy [{0}] repo successfully",
+            "zh_CN = 部署 {0} 源成功"
+    })
+    public static final String SHELL_DEPLOY_REPO_SUCC = "ansible.shell.deploy.repo.succ";
+
+    @LogLabel(messages = {
+            "en_US = deploy [{0}] repo failed",
+            "zh_CN = 部署 {0} 源失败"
+    })
+    public static final String SHELL_DEPLOY_REPO_FAIL = "ansible.shell.deploy.repo.failed";
+
+    @LogLabel(messages = {
+            "en_US = installing package: [{0}] ...",
+            "zh_CN = 安装软件包 {0} ..."
+    })
+    public static final String SHELL_INSTALL_PKG = "ansible.shell.install.pkg";
+
+    @LogLabel(messages = {
+            "en_US = install package [{0}] successfully",
+            "zh_CN = 安装软件包 {0} 成功"
+    })
+    public static final String SHELL_INSTALL_PKG_SUCC = "ansible.shell.install.pkg.succ";
+
+    @LogLabel(messages = {
+            "en_US = install package [{0}] failed",
+            "zh_CN = 安装软件包 {0} 失败"
+    })
+    public static final String SHELL_INSTALL_PKG_FAIL = "ansible.shell.install.pkg.fail";
+
+    @LogLabel(messages = {
+            "en_US = backup file [{0}] ",
+            "zh_CN = 备份文件 {0}"
+    })
+    public static final String SHELL_BACKUP_FILE = "ansible.shell.bakcup.file";
+
+    @LogLabel(messages = {
+            "en_US = backup file [{0}] successfully",
+            "zh_CN = 备份文件 {0} 成功"
+    })
+    public static final String SHELL_BACKUP_FILE_SUCC = "ansible.shell.bakcup.file.succ";
+
+    @LogLabel(messages = {
+            "en_US = backup file [{0}] failed",
+            "zh_CN = 备份文件 {0} 失败"
+    })
+    public static final String SHELL_BACKUP_FILE_FAIL = "ansible.shell.bakcup.file.fail";
+
+    @LogLabel(messages = {
+            "en_US = enable service [{0}] ",
+            "zh_CN = 启用服务 {0}"
+    })
+    public static final String SHELL_ENABLE_SERVICE = "ansible.shell.enable.service";
+
+    @LogLabel(messages = {
+            "en_US = enable service [{0}] successfully",
+            "zh_CN = 启用服务 {0} 成功"
+    })
+    public static final String SHELL_ENABLE_SERVICE_SUCC = "ansible.shell.enable.service.succ";
+
+    @LogLabel(messages = {
+            "en_US = enable service [{0}] failed",
+            "zh_CN = 启用服务 {0} 失败"
+    })
+    public static final String SHELL_ENABLE_SERVICE_FAIL = "ansible.shell.enable.service.fail";
+
+    @LogLabel(messages = {
+            "en_US = enable kernel module [{0}] ",
+            "zh_CN = 启用内核模块 {0}"
+    })
+    public static final String SHELL_ENABLE_MODULE = "ansible.shell.enable.module";
+
+    @LogLabel(messages = {
+            "en_US = enable kernel module [{0}] successfully",
+            "zh_CN = 启用内核模块 {0} 成功"
+    })
+    public static final String SHELL_ENABLE_MODULE_SUCC = "ansible.shell.enable.module.succ";
+
+    @LogLabel(messages = {
+            "en_US = enable kernel module [{0}] failed",
+            "zh_CN = 启用内核模块 {0} 失败"
+    })
+    public static final String SHELL_ENABLE_MODULE_FAIL = "ansible.shell.enable.module.fail";
+
+    @LogLabel(messages = {
+            "en_US = disable service [{0}] ",
+            "zh_CN = 停用服务 {0}"
+    })
+    public static final String SHELL_DISABLE_SERVICE = "ansible.shell.disable.service";
+
+    @LogLabel(messages = {
+            "en_US = disable service [{0}] successfully",
+            "zh_CN = 停用服务 {0} 成功"
+    })
+    public static final String SHELL_DISABLE_SERVICE_SUCC = "ansible.shell.disable.service.succ";
+
+    @LogLabel(messages = {
+            "en_US = disable service [{0}] failed",
+            "zh_CN = 停用服务 {0} 失败"
+    })
+    public static final String SHELL_DISABLE_SERVICE_FAIL = "ansible.shell.disable.service.fail";
+
+    @LogLabel(messages = {
+            "en_US = restart service [{0}] ",
+            "zh_CN = 重启服务 {0} "
+    })
+    public static final String SHELL_RESTART_SERVICE = "ansible.shell.restart.service";
+
+    @LogLabel(messages = {
+            "en_US = restart service [{0}] successfully",
+            "zh_CN = 重启服务 {0} 成功"
+    })
+    public static final String SHELL_RESTART_SERVICE_SUCC = "ansible.shell.restart.service.succ";
+
+    @LogLabel(messages = {
+            "en_US = restart service [{0}] failed",
+            "zh_CN = 重启服务 {0} 失败"
+    })
+    public static final String SHELL_RESTART_SERVICE_FAIL = "ansible.shell.restart.service.fail";
+
+    @LogLabel(messages = {
+            "en_US = create directory [{0}] ",
+            "zh_CN = 创建目录 {0}"
+    })
+    public static final String SHELL_CREATE_DIR = "ansible.shell.mkdir";
+
+    @LogLabel(messages = {
+            "en_US = create directory [{0}] successfully",
+            "zh_CN = 创建目录 {0} 成功"
+    })
+    public static final String SHELL_CREATE_DIR_SUCC = "ansible.shell.mkdir.succ";
+
+    @LogLabel(messages = {
+            "en_US = create directory [{0}] failed",
+            "zh_CN = 创建目录 {0} 失败"
+    })
+    public static final String SHELL_CREATE_DIR_FAIL = "ansible.shell.mkdir.fail";
+
+    @LogLabel(messages = {
+            "en_US = remove libvirt default bridge ",
+            "zh_CN = 删除libvirt默认网桥"
+    })
+    public static final String SHELL_VIRSH_DESTROY_BRIDGE = "ansible.shell.virsh.destroy.bridge";
+
+    @LogLabel(messages = {
+            "en_US = remove libvirt default bridge successfully",
+            "zh_CN = 删除libvirt默认网桥成功"
+    })
+    public static final String SHELL_VIRSH_DESTROY_BRIDGE_SUCC = "ansible.shell.virsh.destroy.bridge.succ";
+
+    @LogLabel(messages = {
+            "en_US = remove libvirt default bridge failed",
+            "zh_CN = 删除libvirt默认网桥失败"
+    })
+    public static final String SHELL_VIRSH_DESTROY_BRIDGE_FAIL = "ansible.shell.virsh.destroy.bridge.fail";
+
+    @LogLabel(messages = {
+            "en_US = verify virtualenv has been setup in system",
+            "zh_CN = 确认virtualenv环境是否已经安装"
+    })
+    public static final String SHELL_CHECK_VIRTUALENV = "ansible.shell.check.virtualenv";
+
+    @LogLabel(messages = {
+            "en_US = verify virtualenv has been setup in system successfully",
+            "zh_CN = virtualenv环境已安装"
+    })
+    public static final String SHELL_CHECK_VIRTUALENV_SUCC = "ansible.shell.check.virtualenv.succ";
+
+    @LogLabel(messages = {
+            "en_US = verify virtualenv has been setup in system failed",
+            "zh_CN = virtualenv环境确认失败"
+    })
+    public static final String SHELL_CHECK_VIRTUALENV_FAIL = "ansible.shell.check.virtualenv.fail";
+
 }
