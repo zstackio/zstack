@@ -101,7 +101,7 @@ public class VmAllocateHostFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         AllocateHostMsg msg = this.prepareMsg(data);
 
-        new Log(spec.getVmInventory().getUuid()).log(VmLabels.VM_START_ALLOCATE_HOST).write();
+        new Log(spec.getVmInventory().getUuid()).log(VmLabels.VM_START_ALLOCATE_HOST);
 
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

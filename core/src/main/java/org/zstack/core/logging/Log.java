@@ -85,12 +85,12 @@ public class Log {
         return content.resourceUuid;
     }
 
-    public Log setText(String label, Collection args) {
+    protected Log setText(String label, Collection args) {
         setText(label, args.toArray(new Object[args.size()]));
         return this;
     }
 
-    public Log setText(String label, Object...args) {
+    protected Log setText(String label, Object... args) {
         content.text = label;
         if (args.length != 0) {
             content.parameters = list(args).stream().map(Object::toString).collect(Collectors.toList());
@@ -121,11 +121,16 @@ public class Log {
         return this;
     }
 
+    public Log log(String label, Collection args) {
+        setText(label, args).write();
+        return this;
+    }
+
     public List getParameters() {
         return content.parameters;
     }
 
-    public Log write() {
+    protected Log write() {
         logf.getBackend().writeLog(this);
         return this;
     }

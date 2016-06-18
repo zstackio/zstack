@@ -64,7 +64,7 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
             fail(String.format("no host having cpu[%s], memory[%s bytes] found",
                     spec.getCpuCapacity(), spec.getMemoryCapacity()));
         } else {
-            new Log(spec.getVmInstance().getUuid()).log(VmLabels.VM_START_ALLOCATE_HOST_STATE_CAPACITY_SUCCESS, candidates.size()).write();
+            new Log(spec.getVmInstance().getUuid()).log(VmLabels.VM_START_ALLOCATE_HOST_STATE_CAPACITY_SUCCESS, candidates.size());
             next(ret);
         }
     }

@@ -109,10 +109,10 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
 
         if (candidates.isEmpty()) {
             new Log(spec.getVmInstance().getUuid()).setLevel(LogLevel.ERROR)
-                    .log(VmLabels.VM_START_ALLOCATE_HOST_L2_FAILURE, candidates.size()).write();
+                    .log(VmLabels.VM_START_ALLOCATE_HOST_L2_FAILURE, candidates.size());
             fail(String.format("no host found in clusters that has attached to L2Networks which have L3Networks%s", spec.getL3NetworkUuids()));
         } else {
-            new Log(spec.getVmInstance().getUuid()).log(VmLabels.VM_START_ALLOCATE_HOST_L2_SUCCESS, candidates.size()).write();
+            new Log(spec.getVmInstance().getUuid()).log(VmLabels.VM_START_ALLOCATE_HOST_L2_SUCCESS, candidates.size());
             next(candidates);
         }
     }

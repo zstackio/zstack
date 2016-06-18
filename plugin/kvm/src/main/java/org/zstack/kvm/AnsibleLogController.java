@@ -22,9 +22,9 @@ public class AnsibleLogController {
     String log(@PathVariable String uuid, @RequestBody String body) {
         AnsibleLogCmd cmd = JSONObjectUtil.toObject(body, AnsibleLogCmd.class);
         if (cmd.getParameters() != null) {
-            new Log(uuid).setLevel(LogLevel.valueOf(cmd.getLevel())).setText(cmd.getLabel(), cmd.getParameters()).write();
+            new Log(uuid).setLevel(LogLevel.valueOf(cmd.getLevel())).log(cmd.getLabel(), cmd.getParameters());
         } else {
-            new Log(uuid).setLevel(LogLevel.valueOf(cmd.getLevel())).setText(cmd.getLabel()).write();
+            new Log(uuid).setLevel(LogLevel.valueOf(cmd.getLevel())).log(cmd.getLabel());
         }
 
         return null;
