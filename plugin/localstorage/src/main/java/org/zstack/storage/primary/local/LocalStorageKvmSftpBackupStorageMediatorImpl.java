@@ -7,6 +7,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
@@ -158,7 +159,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
 
     }
 
-    public void downloadBits(final PrimaryStorageInventory pinv, BackupStorageInventory bsinv, final String backupStorageInstallPath, final String primaryStorageInstallPath, final String hostUuid, final Completion completion) {
+    public void downloadBits(final PrimaryStorageInventory pinv, BackupStorageInventory bsinv, final String backupStorageInstallPath, final String primaryStorageInstallPath, final String hostUuid, final ReturnValueCompletion<String> completion) {
         GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
         gmsg.setBackupStorageUuid(bsinv.getUuid());
         bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsinv.getUuid());
@@ -203,7 +204,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                             return;
                         }
 
-                        completion.success();
+                        completion.success(backupStorageInstallPath);
                     }
                 });
             }
@@ -211,7 +212,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     }
 
     @Override
-    public void uploadBits(final PrimaryStorageInventory pinv, BackupStorageInventory bsinv, final String backupStorageInstallPath, final String primaryStorageInstallPath, final String hostUuid, final Completion completion) {
+    public void uploadBits(final PrimaryStorageInventory pinv, BackupStorageInventory bsinv, final String backupStorageInstallPath, final String primaryStorageInstallPath, final String hostUuid, final ReturnValueCompletion<String> completion) {
         GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
         gmsg.setBackupStorageUuid(bsinv.getUuid());
         bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsinv.getUuid());
@@ -256,7 +257,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                             return;
                         }
 
-                        completion.success();
+                        completion.success(backupStorageInstallPath);
                     }
                 });
             }
