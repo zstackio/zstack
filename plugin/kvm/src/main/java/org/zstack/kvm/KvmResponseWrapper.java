@@ -9,12 +9,19 @@ import java.util.LinkedHashMap;
  */
 public class KvmResponseWrapper {
     private LinkedHashMap response;
+    private Object cache;
 
     public KvmResponseWrapper(LinkedHashMap response) {
         this.response = response;
     }
 
+    // this method may be called multiple times
+    // use a cache to save the JSON dump effort
     public <T> T getResponse(Class<T> type) {
-        return JSONObjectUtil.rehashObject(response, type);
+        if (cache == null) {
+            cache = JSONObjectUtil.rehashObject(response, type);
+        }
+
+        return (T) cache;
     }
 }
