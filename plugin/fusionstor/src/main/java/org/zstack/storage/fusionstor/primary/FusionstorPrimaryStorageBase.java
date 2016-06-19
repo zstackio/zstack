@@ -164,8 +164,23 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         boolean predefined;
     }
 
+    public static class MonHostname {
+        String monHostname;
+    }
+
+    public static class SshUsername {
+        String sshUsername;
+    }
+
+    public static class SshPassword {
+        String sshPassword;
+    }
+
     public static class InitCmd extends AgentCommand {
         List<Pool> pools;
+        List<MonHostname> monHostnames;
+        List<SshUsername> sshUsernames;
+        List<SshPassword> sshPasswords;
 
         public List<Pool> getPools() {
             return pools;
@@ -612,7 +627,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
     {
         backupStorageMediators.put(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE, new SftpBackupStorageMediator());
-        backupStorageMediators.put(FusionstorGlobalProperty.FUSIONSTOR_BACKUP_STORAGE_TYPE, new FusionstorBackupStorageMediator());
+        backupStorageMediators.put(FusionstorConstants.FUSIONSTOR_BACKUP_STORAGE_TYPE, new FusionstorBackupStorageMediator());
     }
 
 
@@ -1743,6 +1758,28 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                     public void run(final FlowTrigger trigger, Map data) {
                         InitCmd cmd = new InitCmd();
                         List<Pool> pools = new ArrayList<Pool>();
+                        List<MonHostname> monHostnames = new ArrayList<MonHostname>();
+                        List<SshUsername> sshUsernames = new ArrayList<SshUsername>();
+                        List<SshPassword> sshPasswords = new ArrayList<SshPassword>();
+
+                        final List<FusionstorPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<FusionstorPrimaryStorageMonBase, FusionstorPrimaryStorageMonVO>() {
+                            @Override
+                            public FusionstorPrimaryStorageMonBase call(FusionstorPrimaryStorageMonVO arg) {
+                                return new FusionstorPrimaryStorageMonBase(arg);
+                            }
+                        });
+
+                        for (FusionstorPrimaryStorageMonBase mon : mons) {
+                            MonHostname m = new MonHostname();
+                            SshUsername u = new SshUsername();
+                            SshPassword p = new SshPassword();
+                            m.monHostname = mon.getSelf().getHostname();
+                            u.sshUsername = mon.getSelf().getSshUsername();
+                            p.sshPassword = mon.getSelf().getSshPassword();
+                            monHostnames.add(m);
+                            sshUsernames.add(u);
+                            sshPasswords.add(p);
+                        }
 
                         Pool p = new Pool();
                         p.name = getSelf().getImageCachePoolName();
@@ -1760,6 +1797,9 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                         pools.add(p);
 
                         cmd.pools = pools;
+                        cmd.monHostnames = monHostnames;
+                        cmd.sshUsernames = sshUsernames;
+                        cmd.sshPasswords = sshPasswords;
 
                         httpCall(INIT_PATH, cmd, InitRsp.class, new ReturnValueCompletion<InitRsp>(trigger) {
                             @Override
@@ -2255,7 +2295,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         q.add(BackupStorageVO_.uuid, Op.EQ, msg.getBackupStorageUuid());
         String bsType = q.findValue();
 
-        if (!FusionstorGlobalProperty.FUSIONSTOR_BACKUP_STORAGE_TYPE.equals(bsType)) {
+        if (!FusionstorConstants.FUSIONSTOR_BACKUP_STORAGE_TYPE.equals(bsType)) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("unable to upload bits to the backup storage[type:%s], we only support FUSIONSTOR", bsType)
             ));
