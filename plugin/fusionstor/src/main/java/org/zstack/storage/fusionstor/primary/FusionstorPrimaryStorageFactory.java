@@ -280,8 +280,11 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
 
     @Override
     public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, StartVmCmd cmd) throws KVMException {
-        cmd.getAddons().put("qemuPath", QEMUPATH);
-        cmd.setRootVolume(convertVolumeToFusionstorIfNeeded(spec.getDestRootVolume(), cmd.getRootVolume()));
+        VolumeInventory root = spec.getDestRootVolume();
+        if (root.getInstallPath().startsWith(VolumeTO.FUSIONSTOR)) {
+            cmd.getAddons().put("qemuPath", QEMUPATH);
+        }
+        cmd.setRootVolume(convertVolumeToFusionstorIfNeeded(root, cmd.getRootVolume()));
 
         List<VolumeTO> dtos = new ArrayList<VolumeTO>();
         for (VolumeTO to : cmd.getDataVolumes()) {
