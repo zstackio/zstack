@@ -168,6 +168,10 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
     public static class InitCmd extends AgentCommand {
         List<Pool> pools;
+        List<String> monHostnames;
+        List<String> sshUsernames;
+        List<String> sshPasswords;
+        String fusionstorType;
 
         public List<Pool> getPools() {
             return pools;
@@ -1745,6 +1749,22 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                     public void run(final FlowTrigger trigger, Map data) {
                         InitCmd cmd = new InitCmd();
                         List<Pool> pools = new ArrayList<Pool>();
+                        List<String> monHostnames = new ArrayList<String>();
+                        List<String> sshUsernames = new ArrayList<String>();
+                        List<String> sshPasswords = new ArrayList<String>();
+
+                        final List<FusionstorPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<FusionstorPrimaryStorageMonBase, FusionstorPrimaryStorageMonVO>() {
+                            @Override
+                            public FusionstorPrimaryStorageMonBase call(FusionstorPrimaryStorageMonVO arg) {
+                                return new FusionstorPrimaryStorageMonBase(arg);
+                            }
+                        });
+
+                        for (FusionstorPrimaryStorageMonBase mon : mons) {
+                            monHostnames.add(mon.getSelf().getHostname());
+                            sshUsernames.add(mon.getSelf().getSshUsername());
+                            sshPasswords.add(mon.getSelf().getSshPassword());
+                        }
 
                         Pool p = new Pool();
                         p.name = getSelf().getImageCachePoolName();
@@ -1762,6 +1782,10 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                         pools.add(p);
 
                         cmd.pools = pools;
+                        cmd.monHostnames = monHostnames;
+                        cmd.sshUsernames = sshUsernames;
+                        cmd.sshPasswords = sshPasswords;
+                        cmd.fusionstorType = FusionstorGlobalProperty.FUSIONSTOR_PRIMARY_STORAGE_TYPE;
 
                         httpCall(INIT_PATH, cmd, InitRsp.class, new ReturnValueCompletion<InitRsp>(trigger) {
                             @Override
