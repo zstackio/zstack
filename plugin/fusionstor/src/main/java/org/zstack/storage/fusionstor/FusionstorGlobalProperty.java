@@ -24,4 +24,6 @@ public class FusionstorGlobalProperty {
     public static String PRIMARY_STORAGE_PLAYBOOK_NAME;
     @GlobalProperty(name="Fusionstor.primaryStorage.ansibleModulePath", defaultValue = "ansible/fusionstorp")
     public static String PRIMARY_STORAGE_MODULE_PATH;
+    @GlobalProperty(name="Fusionstor.type", defaultValue = "Fusionstor")
+    public static String FUSIONSTOR_PRIMARY_STORAGE_TYPE;
 }
