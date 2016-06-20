@@ -578,9 +578,9 @@ public abstract class HostBase extends AbstractHost {
                 reply.setError(errorCode);
                 reply.setSuccess(true);
 
-                changeConnectionState(HostStatusEvent.disconnected);
-
-                new Event().log(HostLogLabel.HOST_STATUS_DISCONNECTED, self.getUuid(), self.getName(), errorCode.toString());
+                if (changeConnectionState(HostStatusEvent.disconnected)) {
+                    new Event().log(HostLogLabel.HOST_STATUS_DISCONNECTED, self.getUuid(), self.getName(), errorCode.toString());
+                }
 
                 bus.reply(msg, reply);
             }
@@ -743,11 +743,11 @@ public abstract class HostBase extends AbstractHost {
         return HostInventory.valueOf(self);
     }
 
-    protected void changeConnectionState(final HostStatusEvent event) {
+    protected boolean changeConnectionState(final HostStatusEvent event) {
 	    HostStatus before = self.getStatus();
 	    HostStatus next = before.nextStatus(event);
         if (before == next) {
-            return;
+            return false;
         }
 
 	    self.setStatus(next);
@@ -760,6 +760,8 @@ public abstract class HostBase extends AbstractHost {
         data.setOldStatus(before.toString());
         data.setInventory(HostInventory.valueOf(self));
         evtf.fire(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, data);
+
+        return true;
 	}
 
 	private void handle(final ConnectHostMsg msg) {
