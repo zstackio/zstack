@@ -7,12 +7,13 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.header.message.NeedJsonSchema;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.zstack.utils.CollectionDSL.list;
+import static java.util.Arrays.asList;
 
 /**
  * Created by xing5 on 2016/5/30.
@@ -93,7 +94,7 @@ public class Log {
     protected Log setText(String label, Object... args) {
         content.text = label;
         if (args.length != 0) {
-            content.parameters = list(args).stream().map(Object::toString).collect(Collectors.toList());
+            content.parameters = asList(args).stream().map(Object::toString).collect(Collectors.toList());
         }
 
         return this;
@@ -117,12 +118,26 @@ public class Log {
     }
 
     public Log log(String label, Object...args) {
+        for (int i=0; i<args.length; i++) {
+            if (args[i] == null) {
+                args[i] = "null";
+            }
+        }
+
         setText(label, args).write();
         return this;
     }
 
     public Log log(String label, Collection args) {
-        setText(label, args).write();
+        List noNullArgs = new ArrayList<>();
+        args.forEach(i -> {
+            if (i == null) {
+                noNullArgs.add("null");
+            } else {
+                noNullArgs.add(i);
+            }
+        });
+        setText(label, noNullArgs).write();
         return this;
     }
 
