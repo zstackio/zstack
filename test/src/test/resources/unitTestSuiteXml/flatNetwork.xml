@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
     <TestCase class="org.zstack.test.network.flat.TestFlatNetwork1"/>
+    <TestCase class="org.zstack.test.network.flat.TestFlatNetwork2"/>
+    <TestCase class="org.zstack.test.network.flat.TestFlatNetwork3"/>
 </UnitTestSuiteConfig>
