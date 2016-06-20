@@ -88,6 +88,15 @@ public class FlatNetworkServiceSimulator {
         return null;
     }
 
+    @RequestMapping(value = FlatDhcpBackend.DHCP_DELETE_NAMESPACE_PATH, method = RequestMethod.POST)
+    public @ResponseBody String deleteNamespace(HttpEntity<String> entity) {
+        DeleteNamespaceCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteNamespaceCmd.class);
+        config.deleteNamespaceCmds.add(cmd);
+        DeleteNamespaceRsp rsp = new DeleteNamespaceRsp();
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value = FlatUserdataBackend.APPLY_USER_DATA, method = RequestMethod.POST)
     public @ResponseBody String applyUserdata(HttpEntity<String> entity) {
         ApplyUserdataCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ApplyUserdataCmd.class);
