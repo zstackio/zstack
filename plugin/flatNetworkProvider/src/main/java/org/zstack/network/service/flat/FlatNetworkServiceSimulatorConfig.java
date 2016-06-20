@@ -1,9 +1,6 @@
 package org.zstack.network.service.flat;
 
-import org.zstack.network.service.flat.FlatDhcpBackend.ApplyDhcpCmd;
-import org.zstack.network.service.flat.FlatDhcpBackend.PrepareDhcpCmd;
-import org.zstack.network.service.flat.FlatDhcpBackend.ReleaseDhcpCmd;
-import org.zstack.network.service.flat.FlatDhcpBackend.ResetDefaultGatewayCmd;
+import org.zstack.network.service.flat.FlatDhcpBackend.*;
 import org.zstack.network.service.flat.FlatDnsBackend.SetDnsCmd;
 import org.zstack.network.service.flat.FlatEipBackend.ApplyEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.BatchApplyEipCmd;
@@ -33,4 +30,5 @@ public class FlatNetworkServiceSimulatorConfig {
     public List<BatchDeleteEipCmd> batchDeleteEipCmds = new ArrayList<BatchDeleteEipCmd>();
     public List<ResetDefaultGatewayCmd> resetDefaultGatewayCmds = new ArrayList<ResetDefaultGatewayCmd>();
     public List<BatchApplyUserdataCmd> batchApplyUserdataCmds = new ArrayList<BatchApplyUserdataCmd>();
+    public List<DeleteNamespaceCmd> deleteNamespaceCmds = new ArrayList<>();
 }
