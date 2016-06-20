@@ -6,9 +6,6 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.network.service.flat.BridgeNameFinder;
@@ -23,16 +20,12 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
 
-import java.util.concurrent.TimeUnit;
-
 /**
- * 1. make the host disconnected
- * 2. delete a flat network
+ * 1. delete a flat network
  *
- * confirm the GC works
  * confirm the namespace is deleted
  */
-public class TestFlatNetwork2 {
+public class TestFlatNetwork3 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -77,17 +70,9 @@ public class TestFlatNetwork2 {
 	public void test() throws ApiSenderException, InterruptedException {
         final L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         String brName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
-        HostInventory host = deployer.hosts.get("host1");
-        HostVO hvo = dbf.findByUuid(host.getUuid(), HostVO.class);
-        hvo.setStatus(HostStatus.Disconnected);
-        dbf.update(hvo);
+
 
         api.deleteL3Network(l3.getUuid());
-
-        Assert.assertEquals(0, fconfig.deleteNamespaceCmds.size());
-
-        api.reconnectHost(host.getUuid());
-        TimeUnit.SECONDS.sleep(2);
 
         Assert.assertEquals(1, fconfig.deleteNamespaceCmds.size());
         DeleteNamespaceCmd cmd = fconfig.deleteNamespaceCmds.get(0);
