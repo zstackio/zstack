@@ -687,7 +687,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    void handle(final InstantiateVolumeMsg msg, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
+    protected void handle(final InstantiateVolumeMsg msg, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
         if (msg instanceof  InstantiateRootVolumeFromTemplateMsg) {
             createRootVolume((InstantiateRootVolumeFromTemplateMsg) msg, completion);
         } else {
