@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.header.message.NeedJsonSchema;
+import org.zstack.utils.DebugUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -92,6 +93,7 @@ public class Log {
     }
 
     protected Log setText(String label, Object... args) {
+        DebugUtils.Assert(label != null, "label cannot be null");
         content.text = label;
         if (args.length != 0) {
             content.parameters = asList(args).stream().map(Object::toString).collect(Collectors.toList());
