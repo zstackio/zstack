@@ -224,4 +224,8 @@ public class IpRangeInventory implements Serializable{
         ipr.setUuid(msg.getResourceUuid());
         return ipr;
     }
+
+    public SubnetUtils toSubnetUtils() {
+        return new SubnetUtils(new SubnetUtils(gateway, netmask).getInfo().getNetworkAddress(), netmask);
+    }
 }
