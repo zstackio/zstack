@@ -135,6 +135,7 @@ public class TestMevoco20 {
         Assert.assertNotNull(dhcp.dns);
         Assert.assertTrue(dhcp.dns.contains("1.1.1.1"));
         Assert.assertNotNull(dhcp.bridgeName);
+        Assert.assertNotNull(dhcp.namespaceName);
 
         Assert.assertTrue(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.hasTag(l3.getUuid()));
         Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByResourceUuid(l3.getUuid());
@@ -147,6 +148,7 @@ public class TestMevoco20 {
         Assert.assertEquals(ipvo.getIp(), dhcpServerIp);
         Assert.assertEquals(dhcpServerIp, cmd.dhcpServerIp);
         Assert.assertEquals(dhcp.bridgeName, cmd.bridgeName);
+        Assert.assertEquals(dhcp.namespaceName, cmd.namespaceName);
         Assert.assertEquals(ipvo.getNetmask(), cmd.dhcpNetmask);
 
         Assert.assertEquals(1, fconfig.connectCmds.size());

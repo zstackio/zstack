@@ -90,6 +90,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     private Map<String, UsedIpInventory> l3NetworkDhcpServerIp = new ConcurrentHashMap<String, UsedIpInventory>();
 
+    public static String makeNamespaceName(String brName, String l3Uuid) {
+        return String.format("%s_%s", brName, l3Uuid);
+    }
+
     @Transactional(readOnly = true)
     private List<DhcpInfo> getDhcpInfoForConnectedKvmHost(KVMHostConnectedContext context) {
         String sql = "select vm.uuid, vm.defaultL3NetworkUuid from VmInstanceVO vm where vm.hostUuid = :huuid and vm.state in (:states) and vm.type = :vtype";
@@ -163,6 +167,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         for (VmNicVO nic : nics) {
             DhcpInfo info = new DhcpInfo();
             info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+            info.namespaceName = makeNamespaceName(
+                    info.bridgeName,
+                    nic.getL3NetworkUuid()
+            );
             DebugUtils.Assert(info.bridgeName != null, "bridge name cannot be null");
             info.mac = nic.getMac();
             info.netmask = nic.getNetmask();
@@ -344,6 +352,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         String brName = new BridgeNameFinder().findByL3Uuid(inventory.getUuid());
         DeleteNamespaceCmd cmd = new DeleteNamespaceCmd();
         cmd.bridgeName = brName;
+        cmd.namespaceName = makeNamespaceName(brName, inventory.getUuid());
 
         new KvmCommandSender(huuids).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
             DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
@@ -462,7 +471,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
         for (VmNicVO nic : nics) {
             DhcpInfo info = new DhcpInfo();
-            info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+            info.bridgeName =  KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+            info.namespaceName = makeNamespaceName(
+                    info.bridgeName,
+                    nic.getL3NetworkUuid()
+            );
             DebugUtils.Assert(info.bridgeName != null, "bridge name cannot be null");
             info.mac = nic.getMac();
             info.netmask = nic.getNetmask();
@@ -837,12 +850,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public String dnsDomain;
         public List<String> dns;
         public String bridgeName;
+        public String namespaceName;
         public String l3NetworkUuid;
     }
 
     public static class ApplyDhcpCmd extends KVMAgentCommands.AgentCommand {
         public List<DhcpInfo> dhcp;
         public boolean rebuild;
+        public String l3NetworkUuid;
     }
 
     public static class ApplyDhcpRsp extends KVMAgentCommands.AgentResponse {
@@ -859,6 +874,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public String bridgeName;
         public String dhcpServerIp;
         public String dhcpNetmask;
+        public String namespaceName;
     }
 
     public static class PrepareDhcpRsp extends KVMAgentCommands.AgentResponse {
@@ -872,11 +888,13 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     public static class ResetDefaultGatewayCmd extends KVMAgentCommands.AgentCommand {
         public String bridgeNameOfGatewayToRemove;
+        public String namespaceNameOfGatewayToRemove;
         public String gatewayToRemove;
         public String macOfGatewayToRemove;
         public String gatewayToAdd;
         public String macOfGatewayToAdd;
         public String bridgeNameOfGatewayToAdd;
+        public String namespaceNameOfGatewayToAdd;
     }
 
     public static class ResetDefaultGatewayRsp extends KVMAgentCommands.AgentResponse {
@@ -884,6 +902,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     public static class DeleteNamespaceCmd extends KVMAgentCommands.AgentCommand {
         public String bridgeName;
+        public String namespaceName;
     }
 
     public static class  DeleteNamespaceRsp extends KVMAgentCommands.AgentResponse {
@@ -927,6 +946,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.dns = arg.getL3Network().getDns();
                 info.l3NetworkUuid = arg.getL3Network().getUuid();
                 info.bridgeName = l3Bridges.get(arg.getL3Network().getUuid());
+                info.namespaceName = makeNamespaceName(info.bridgeName, arg.getL3Network().getUuid());
                 return info;
             }
         });
@@ -999,6 +1019,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                                 PrepareDhcpCmd cmd = new PrepareDhcpCmd();
                                 cmd.bridgeName = i.bridgeName;
+                                cmd.namespaceName = i.namespaceName;
                                 cmd.dhcpServerIp = dhcpServerIp;
                                 cmd.dhcpNetmask = dhcpNetmask;
 
@@ -1038,6 +1059,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                 ApplyDhcpCmd cmd = new ApplyDhcpCmd();
                                 cmd.dhcp = info;
                                 cmd.rebuild = rebuild;
+                                cmd.l3NetworkUuid = l3Uuid;
 
                                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                                 msg.setCommand(cmd);
@@ -1168,11 +1190,13 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             cmd.gatewayToRemove = pnic.getGateway();
             cmd.macOfGatewayToRemove = pnic.getMac();
             cmd.bridgeNameOfGatewayToRemove = new BridgeNameFinder().findByL3Uuid(previousL3);
+            cmd.namespaceNameOfGatewayToRemove = makeNamespaceName(cmd.bridgeNameOfGatewayToRemove, previousL3);
         }
         if (nnic != null) {
             cmd.gatewayToAdd = nnic.getGateway();
             cmd.macOfGatewayToAdd = nnic.getMac();
             cmd.bridgeNameOfGatewayToAdd = new BridgeNameFinder().findByL3Uuid(nowL3);
+            cmd.namespaceNameOfGatewayToAdd = makeNamespaceName(cmd.bridgeNameOfGatewayToAdd, nowL3);
         }
 
         KvmCommandSender sender = new KvmCommandSender(vm.getHostUuid());
