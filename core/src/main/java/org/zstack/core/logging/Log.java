@@ -36,6 +36,20 @@ public class Log {
         public long dateInLong;
         public Date date;
         public Object opaque;
+
+        public Content() {
+        }
+
+        public Content(Content other) {
+            this.level = other.level;
+            this.text = other.text;
+            this.parameters = other.parameters;
+            this.resourceUuid = other.resourceUuid;
+            this.uuid = other.uuid;
+            this.dateInLong = other.dateInLong;
+            this.date = other.date;
+            this.opaque = other.opaque;
+        }
     }
 
     protected Content content;

@@ -22,9 +22,22 @@ public class Event extends Log {
         type = LogType.EVENT;
     }
 
+    public static class EventContent extends Content {
+        public String message;
+
+        public EventContent() {
+        }
+
+        public EventContent(Content other) {
+            super(other);
+        }
+    }
+
     @Override
     public Event write() {
-        evtf.fire(EVENT_PATH, getContent());
+        EventContent c = new EventContent(getContent());
+        c.message = toString();
+        evtf.fire(EVENT_PATH, c);
         super.write();
         return this;
     }
