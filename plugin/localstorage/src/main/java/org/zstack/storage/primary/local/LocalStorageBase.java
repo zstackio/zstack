@@ -799,7 +799,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private String getHostUuidByResourceUuid(String resUuid) {
+    protected String getHostUuidByResourceUuid(String resUuid) {
         SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
         q.select(LocalStorageResourceRefVO_.hostUuid);
         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, resUuid);
