@@ -80,16 +80,16 @@ public class HostStateAndHypervisorAllocatorFlow extends AbstractHostAllocatorFl
 
             String error;
             if (isNoConnectedHost()) {
-                Log log = new Log(spec.getVmInstance().getUuid())
-                        .log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_FAILURE_NO_CONNECTED_HOST, candidates.size());
+                Log log = new Log(spec.getVmInstance().getUuid());
+                log.log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_FAILURE_NO_CONNECTED_HOST, candidates.size());
                 error = log.toString();
             } else if (isNoEnabledHost()) {
-                Log log = new Log(spec.getVmInstance().getUuid())
-                        .log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_FAILURE_NO_ENABLED_HOST, candidates.size());
+                Log log = new Log(spec.getVmInstance().getUuid());
+                log.log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_FAILURE_NO_ENABLED_HOST, candidates.size());
                 error = log.toString();
             } else if (isNoHypervisor(spec.getHypervisorType())) {
-                Log log = new Log(spec.getVmInstance().getUuid())
-                        .log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_FAILURE_NO_HYPERVISOR, candidates.size(), spec.getHypervisorType());
+                Log log = new Log(spec.getVmInstance().getUuid());
+                log.log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_FAILURE_NO_HYPERVISOR, candidates.size(), spec.getHypervisorType());
                 error = log.toString();
             } else {
                 StringBuilder sb = new StringBuilder("no host having");
