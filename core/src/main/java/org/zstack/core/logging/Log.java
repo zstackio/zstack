@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.message.NeedJsonSchema;
 import org.zstack.utils.DebugUtils;
 
@@ -133,7 +134,8 @@ public class Log {
         return content.opaque;
     }
 
-    public Log log(String label, Object...args) {
+    @ExceptionSafe
+    public void log(String label, Object...args) {
         for (int i=0; i<args.length; i++) {
             if (args[i] == null) {
                 args[i] = "null";
@@ -141,10 +143,10 @@ public class Log {
         }
 
         setText(label, args).write();
-        return this;
     }
 
-    public Log log(String label, Collection args) {
+    @ExceptionSafe
+    public void log(String label, Collection args) {
         List noNullArgs = new ArrayList<>();
         args.forEach(i -> {
             if (i == null) {
@@ -154,7 +156,6 @@ public class Log {
             }
         });
         setText(label, noNullArgs).write();
-        return this;
     }
 
     public List getParameters() {
