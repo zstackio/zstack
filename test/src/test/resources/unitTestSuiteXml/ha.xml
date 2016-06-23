@@ -10,4 +10,6 @@
     <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm8"/>
     <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm9"/>
     <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm10"/>
+    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm11"/>
+    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm12"/>
 </UnitTestSuiteConfig>

@@ -589,6 +589,23 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
+    public void kvmCancelSelfFencer(KvmCancelSelfFencerParam param, Completion completion) {
+        CancelSelfFencerOnKvmHostMsg msg = new CancelSelfFencerOnKvmHostMsg();
+        msg.setParam(param);
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, param.getPrimaryStorage().getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    completion.success();
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
+    }
+
+    @Override
     public void preAttachIsoExtensionPoint(KVMHostInventory host, AttachIsoCmd cmd) {
         IsoTO to = convertIsoToCephIfNeeded(cmd.iso);
         cmd.iso = to;

@@ -7,6 +7,27 @@ import org.zstack.header.storage.primary.PrimaryStorageInventory;
  * Created by xing5 on 2016/5/10.
  */
 public interface KvmSetupSelfFencerExtensionPoint {
+    class KvmCancelSelfFencerParam {
+        private String hostUuid;
+        private PrimaryStorageInventory primaryStorage;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public PrimaryStorageInventory getPrimaryStorage() {
+            return primaryStorage;
+        }
+
+        public void setPrimaryStorage(PrimaryStorageInventory primaryStorage) {
+            this.primaryStorage = primaryStorage;
+        }
+    }
+
     class KvmSetupSelfFencerParam {
         private String hostUuid;
         private long interval;
@@ -58,4 +79,6 @@ public interface KvmSetupSelfFencerExtensionPoint {
     String kvmSetupSelfFencerStorageType();
 
     void kvmSetupSelfFencer(KvmSetupSelfFencerParam param, Completion completion);
+
+    void kvmCancelSelfFencer(KvmCancelSelfFencerParam param, Completion completion);
 }
