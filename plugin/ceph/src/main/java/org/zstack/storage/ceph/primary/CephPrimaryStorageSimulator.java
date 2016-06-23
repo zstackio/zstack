@@ -299,4 +299,22 @@ public class CephPrimaryStorageSimulator {
         reply(entity, new RollbackSnapshotRsp());
         return null;
     }
+
+    @RequestMapping(value= CephPrimaryStorageBase.KVM_HA_SETUP_SELF_FENCER, method= RequestMethod.POST)
+    public @ResponseBody
+    String setupSelfFencer(HttpEntity<String> entity) {
+        KvmSetupSelfFencerCmd cmd = JSONObjectUtil.toObject(entity.getBody(), KvmSetupSelfFencerCmd.class);
+        config.kvmSetupSelfFencerCmds.add(cmd);
+        reply(entity, new AgentResponse());
+        return null;
+    }
+
+    @RequestMapping(value= CephPrimaryStorageBase.KVM_HA_CANCEL_SELF_FENCER, method= RequestMethod.POST)
+    public @ResponseBody
+    String cancelSelfFencer(HttpEntity<String> entity) {
+        KvmCancelSelfFencerCmd cmd = JSONObjectUtil.toObject(entity.getBody(), KvmCancelSelfFencerCmd.class);
+        config.kvmCancelSelfFencerCmds.add(cmd);
+        reply(entity, new AgentResponse());
+        return null;
+    }
 }

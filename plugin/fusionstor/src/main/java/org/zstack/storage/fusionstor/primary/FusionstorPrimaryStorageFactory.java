@@ -579,4 +579,9 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
             }
         });
     }
+
+    @Override
+    public void kvmCancelSelfFencer(KvmCancelSelfFencerParam param, Completion completion) {
+        completion.fail(errf.stringToOperationError("this has not been supported by fusionstor"));
+    }
 }
