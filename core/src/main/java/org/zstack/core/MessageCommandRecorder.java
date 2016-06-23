@@ -11,13 +11,20 @@ import java.util.stream.Collectors;
  */
 public class MessageCommandRecorder {
     private static Class starter;
+    private static boolean enabled;
 
     private static List<Class> followers = new ArrayList<>();
 
+    static boolean needRun() {
+        return CoreGlobalProperty.UNIT_TEST_ON && enabled;
+    }
+
     public static void start(Class s) {
-        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+        if (!needRun()) {
             return;
         }
+
+        enabled = true;
 
         if (starter != null) {
             throw new RuntimeException(String.format("already a starter[%s] here", starter));
@@ -27,7 +34,7 @@ public class MessageCommandRecorder {
     }
 
     public static void record(String c) {
-        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+        if (!needRun()) {
             return;
         }
 
@@ -39,7 +46,7 @@ public class MessageCommandRecorder {
     }
 
     public static void record(Class c) {
-        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+        if (!needRun()) {
             return;
         }
 
@@ -47,7 +54,7 @@ public class MessageCommandRecorder {
     }
 
     public static List<Class> end() {
-        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+        if (!needRun()) {
             return null;
         }
 
@@ -57,16 +64,17 @@ public class MessageCommandRecorder {
     }
 
     public static void reset() {
-        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+        if (!needRun()) {
             return;
         }
 
+        enabled = false;
         starter = null;
         followers = new ArrayList<>();
     }
 
     public static String endAndToString() {
-        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+        if (!needRun()) {
             return null;
         }
 
