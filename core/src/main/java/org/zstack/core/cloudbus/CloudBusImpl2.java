@@ -7,6 +7,7 @@ import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnection;
 import org.apache.commons.lang.StringUtils;
 import org.mvel2.MVEL;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -494,6 +495,9 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         public void send(Message msg) {
+            // for unit test finding invocation chain
+            MessageCommandRecorder.record(msg.getClass());
+
             List<BeforeSendMessageInterceptor> interceptors = beforeSendMessageInterceptors.get(msg.getClass());
             if (interceptors != null) {
                 for (BeforeSendMessageInterceptor interceptor : interceptors) {

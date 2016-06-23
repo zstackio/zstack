@@ -39,6 +39,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.*;
@@ -239,6 +240,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     }
 
+    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class CloneCmd extends AgentCommand {
         String srcPath;
         String dstPath;
@@ -395,7 +397,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class SftpUploadRsp extends AgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {APICreateVolumeSnapshotMsg.class})
+    @ApiTimeout(apiClasses = {
+            APICreateVolumeSnapshotMsg.class,
+            APICreateVmInstanceMsg.class
+    })
     public static class CreateSnapshotCmd extends AgentCommand {
         boolean skipOnExisting;
         String snapshotPath;
@@ -462,6 +467,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class DeleteSnapshotRsp extends AgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class ProtectSnapshotCmd extends AgentCommand {
         String snapshotPath;
         boolean ignoreError;

@@ -1,7 +1,10 @@
 package org.zstack.header.volume;
 
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 
+@ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
 public class CreateVolumeMsg extends NeedReplyMessage {
     private long size;
 	private String primaryStorageUuid;

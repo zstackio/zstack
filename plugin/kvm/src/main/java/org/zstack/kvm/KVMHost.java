@@ -8,6 +8,7 @@ import org.zstack.compute.host.HostBase;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
@@ -629,6 +630,7 @@ public class KVMHost extends HostBase implements Host {
             checkStatus();
         }
         String url = buildUrl(msg.getPath());
+        MessageCommandRecorder.record(msg.getCommandClassName());
         LinkedHashMap rsp = restf.syncJsonPost(url, msg.getCommand(), LinkedHashMap.class);
         KVMHostSyncHttpCallReply reply = new KVMHostSyncHttpCallReply();
         reply.setResponse(rsp);
@@ -683,6 +685,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         String url = buildUrl(msg.getPath());
+        MessageCommandRecorder.record(msg.getCommandClassName());
         restf.asyncJsonPost(url, msg.getCommand(), new JsonAsyncRESTCallback<LinkedHashMap>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {

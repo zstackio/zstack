@@ -11,6 +11,7 @@ public class KVMHostSyncHttpCallMsg extends NeedReplyMessage implements HostMess
     private String command;
     private String hostUuid;
     private boolean noStatusCheck;
+    private String commandClassName;
 
     public boolean isNoStatusCheck() {
         return noStatusCheck;
@@ -34,6 +35,11 @@ public class KVMHostSyncHttpCallMsg extends NeedReplyMessage implements HostMess
 
     public void setCommand(Object command) {
         this.command = JSONObjectUtil.toJsonString(command);
+        commandClassName = command.getClass().getName();
+    }
+
+    public String getCommandClassName() {
+        return commandClassName;
     }
 
     @Override
