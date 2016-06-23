@@ -6,6 +6,7 @@ import org.zstack.appliancevm.ApplianceVmCommands.RefreshFirewallCmd;
 import org.zstack.appliancevm.ApplianceVmCommands.RefreshFirewallRsp;
 import org.zstack.compute.vm.VmInstanceBase;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.Completion;
@@ -126,6 +127,8 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                     chain.next();
                     return;
                 }
+
+                MessageCommandRecorder.record(msg.getCommandClassName());
 
                 restf.asyncJsonPost(buildUrl(msg.getPath()), msg.getCommand(), new JsonAsyncRESTCallback<LinkedHashMap>(msg, chain) {
                     @Override

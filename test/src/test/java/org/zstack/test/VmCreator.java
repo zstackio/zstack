@@ -1,11 +1,14 @@
 package org.zstack.test;
 
+import org.zstack.core.MessageCommandRecorder;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.APICreateVmInstanceEvent;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +16,8 @@ import java.util.List;
 /**
  */
 public class VmCreator {
+    private static final CLogger logger = Utils.getLogger(VmCreator.class);
+
     List<String> l3NetworkUuids = new ArrayList<String>();
     public String imageUuid;
     public String instanceOfferingUuid;
@@ -44,6 +49,9 @@ public class VmCreator {
     }
 
     public VmInstanceInventory create() throws ApiSenderException {
+        MessageCommandRecorder.reset();
+        MessageCommandRecorder.start(APICreateVmInstanceMsg.class);
+
         APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
         msg.setClusterUuid(clusterUUid);
         msg.setImageUuid(imageUuid);
@@ -65,6 +73,10 @@ public class VmCreator {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateVmInstanceEvent evt = sender.send(msg, APICreateVmInstanceEvent.class);
+
+        String callingChain = MessageCommandRecorder.endAndToString();
+        logger.debug(callingChain);
+
         return evt.getInventory();
     }
 }

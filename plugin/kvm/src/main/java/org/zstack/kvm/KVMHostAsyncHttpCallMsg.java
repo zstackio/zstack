@@ -27,6 +27,7 @@ public class KVMHostAsyncHttpCallMsg extends NeedReplyMessage implements HostMes
 
     public long getCommandTimeout() {
         assert commandTimeout != -1 : "commandTimeout is not set";
+        assert commandTimeout != 0 : "commandTimeout cannot be 0";
         return commandTimeout;
     }
 

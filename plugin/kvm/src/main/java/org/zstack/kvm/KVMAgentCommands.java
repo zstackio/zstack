@@ -3,11 +3,15 @@ package org.zstack.kvm;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class KVMAgentCommands {
 	public static enum BootDev {
@@ -572,6 +576,7 @@ public class KVMAgentCommands {
         public String hostManagementIp;
     }
 
+    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class StartVmCmd extends AgentCommand {
     	private String vmInstanceUuid;
     	private long vmInternalId;

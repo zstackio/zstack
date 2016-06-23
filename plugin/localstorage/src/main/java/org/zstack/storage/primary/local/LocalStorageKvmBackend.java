@@ -36,6 +36,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -212,6 +213,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class CreateVolumeFromCacheCmd extends AgentCommand {
         private String templatePathInCache;
         private String installUrl;

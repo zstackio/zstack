@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
@@ -195,6 +196,8 @@ public class RESTFacadeImpl implements RESTFacade {
             ic.beforeAsyncJsonPost(url, body, unit, timeout);
         }
 
+        // for unit test finding invocation chain
+        MessageCommandRecorder.record(body.getClass());
         String bodyStr = JSONObjectUtil.toJsonString(body);
         asyncJsonPost(url, bodyStr, callback, unit, timeout);
     }
@@ -354,6 +357,11 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public <T> T syncJsonPost(String url, Object body, Class<T> returnClass) {
+        // for unit test finding invocation chain
+        if (body != null) {
+            MessageCommandRecorder.record(body.getClass());
+        }
+
         return syncJsonPost(url, body == null ? null : JSONObjectUtil.toJsonString(body), returnClass);
     }
 
