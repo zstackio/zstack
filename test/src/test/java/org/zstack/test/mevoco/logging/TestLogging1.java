@@ -96,7 +96,7 @@ public class TestLogging1 {
         APIQueryLogReply reply = api.queryCassandra(msg, APIQueryLogReply.class);
         Assert.assertEquals(1, reply.getInventories().size());
         LogInventory loginv = reply.getInventories().get(0);
-        Assert.assertEquals("测试1", loginv.getText());
+        Assert.assertEquals("测试1", loginv.getMessage());
         Assert.assertEquals(LogType.RESOURCE.toString(), loginv.getType());
         Assert.assertEquals(log.getResourceUuid(), loginv.getResourceUuid());
 
@@ -113,7 +113,7 @@ public class TestLogging1 {
         reply = api.queryCassandra(msg, APIQueryLogReply.class);
         Assert.assertEquals(1, reply.getInventories().size());
         loginv = reply.getInventories().get(0);
-        Assert.assertEquals("测试1", loginv.getText());
+        Assert.assertEquals("测试1", loginv.getMessage());
         Assert.assertEquals(LogType.SYSTEM.toString(), loginv.getType());
         Assert.assertEquals(LogType.SYSTEM.toString(), loginv.getResourceUuid());
 
@@ -135,7 +135,7 @@ public class TestLogging1 {
         reply = api.queryCassandra(msg, APIQueryLogReply.class);
         Assert.assertEquals(1, reply.getInventories().size());
         loginv = reply.getInventories().get(0);
-        Assert.assertEquals("测试1", loginv.getText());
+        Assert.assertEquals("测试1", loginv.getMessage());
         Assert.assertEquals(LogType.EVENT.toString(), loginv.getType());
         Assert.assertEquals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, loginv.getResourceUuid());
 
@@ -148,7 +148,7 @@ public class TestLogging1 {
         reply = api.queryCassandra(msg, APIQueryLogReply.class);
         Assert.assertEquals(1, reply.getInventories().size());
         loginv = reply.getInventories().get(0);
-        Assert.assertEquals(Platform.i18n(LogLabelTest.TEST2, LocaleUtils.toLocale("en_US"), "你好"), loginv.getText());
+        Assert.assertEquals(Platform.i18n(LogLabelTest.TEST2, LocaleUtils.toLocale("en_US"), "你好"), loginv.getMessage());
 
         api.deleteLog(loginv.getUuid(), null);
 
@@ -168,6 +168,6 @@ public class TestLogging1 {
         reply = api.queryCassandra(msg, APIQueryLogReply.class);
         loginv = reply.getInventories().get(0);
         Assert.assertEquals(uuid, loginv.getResourceUuid());
-        Assert.assertEquals(Platform.i18n(LogLabelTest.TEST2, LocaleUtils.toLocale("en_US"), "test"), loginv.getText());
+        Assert.assertEquals(Platform.i18n(LogLabelTest.TEST2, LocaleUtils.toLocale("en_US"), "test"), loginv.getMessage());
     }
 }
