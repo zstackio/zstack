@@ -681,7 +681,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("auuid", accountUUid);
                 q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
-                q.setParameter("states", list(VmInstanceState.Destroying, VmInstanceState.Destroyed));
+                q.setParameter("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying, VmInstanceState.Destroyed));
                 Tuple t = q.getSingleResult();
                 Long vnum = t.get(0, Long.class);
                 quota.vmNum = vnum == null ? 0 : vnum;
