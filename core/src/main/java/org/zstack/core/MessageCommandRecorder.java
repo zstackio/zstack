@@ -20,7 +20,7 @@ public class MessageCommandRecorder {
     }
 
     public static void start(Class s) {
-        if (!needRun()) {
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
             return;
         }
 
