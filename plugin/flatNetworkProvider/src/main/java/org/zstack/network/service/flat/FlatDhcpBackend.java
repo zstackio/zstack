@@ -41,6 +41,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
+import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceProviderLookup;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -320,8 +321,17 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public void beforeDeleteL3Network(L3NetworkInventory inventory) {
     }
 
+    private boolean isProvidedbyMe(L3NetworkInventory l3) {
+        String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(l3.getUuid(), NetworkServiceType.DHCP.toString());
+        return FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING.equals(providerType);
+    }
+
     @Override
     public void afterDeleteL3Network(L3NetworkInventory inventory) {
+        if (!isProvidedbyMe(inventory)) {
+            return;
+        }
+
         UsedIpInventory dhchip = getDHCPServerIP(inventory.getUuid());
         if (dhchip != null) {
             deleteDhcpServerIp(dhchip);
