@@ -8,6 +8,7 @@ import org.zstack.appliancevm.APIListApplianceVmReply;
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.billing.*;
 import org.zstack.cassandra.APIQueryCassandraMsg;
+import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
@@ -193,6 +194,9 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeSnapshotInventory createSnapshot(String volUuid, SessionInventory session) throws ApiSenderException {
+        MessageCommandRecorder.reset();
+        MessageCommandRecorder.start(APICreateVolumeSnapshotMsg.class);
+
         APICreateVolumeSnapshotMsg msg = new APICreateVolumeSnapshotMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setName("Snapshot-" + volUuid);
@@ -202,6 +206,9 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateVolumeSnapshotEvent evt = sender.send(msg, APICreateVolumeSnapshotEvent.class);
+
+        logger.debug(MessageCommandRecorder.endAndToString());
+
         return evt.getInventory();
     }
 
@@ -265,6 +272,9 @@ public class Api implements CloudBusEventListener {
     }
 
     public void deleteSnapshot(String snapshotUuid, SessionInventory session) throws ApiSenderException {
+        MessageCommandRecorder.reset();
+        MessageCommandRecorder.start(APIDeleteVolumeSnapshotMsg.class);
+
         APIDeleteVolumeSnapshotMsg msg = new APIDeleteVolumeSnapshotMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
@@ -272,6 +282,7 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APIDeleteVolumeSnapshotEvent.class);
+        logger.debug(MessageCommandRecorder.endAndToString());
     }
 
     public void revertVolumeToSnapshot(String snapshotUuid) throws ApiSenderException {

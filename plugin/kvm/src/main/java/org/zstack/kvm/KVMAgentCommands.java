@@ -3,6 +3,7 @@ package org.zstack.kvm;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
@@ -944,6 +945,7 @@ public class KVMAgentCommands {
     public static class MergeSnapshotRsp extends AgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class MergeSnapshotCmd extends AgentCommand {
         private String vmUuid;
         private int deviceId;
