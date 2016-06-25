@@ -668,9 +668,7 @@ public class KvmBackend extends HypervisorBackend {
 
         private void doCommand(final Iterator<String> it, final String path, final AgentCmd cmd, final Class rspType, final ReturnValueCompletion<AgentRsp> completion) {
             if (!it.hasNext()) {
-                completion.fail(errf.stringToOperationError(
-                        String.format("the operation failed on all hosts, errors are %s", errors)
-                ));
+                completion.fail(errf.stringToOperationError("an operation failed on all hosts", errors));
                 return;
             }
 
@@ -688,6 +686,7 @@ public class KvmBackend extends HypervisorBackend {
                         return;
                     }
 
+                    errors.add(errorCode);
                     logger.warn(String.format("failed to do the command[%s] on the kvm host[uuid:%s], %s, try next one",
                             cmd.getClass(), hostUuid, errorCode));
                     doCommand(it, path, cmd, rspType, completion);
