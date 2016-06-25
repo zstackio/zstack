@@ -246,6 +246,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                tracker.track(self.getUuid());
+
                 self = dbf.reload(self);
                 changeStatus(PrimaryStorageStatus.Disconnected);
                 logger.debug(String.format("failed to connect primary storage[uuid:%s], %s", self.getUuid(), errorCode));
