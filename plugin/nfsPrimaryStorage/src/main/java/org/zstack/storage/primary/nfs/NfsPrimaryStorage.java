@@ -362,6 +362,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         getBackend(HypervisorType.valueOf(cluster.getHypervisorType())).deleteImageCache(msg.getInventory());
     }
 
+
     @Transactional(readOnly = true)
     private NfsPrimaryStorageBackend getUsableBackend() {
         List<String> cuuids = CollectionUtils.transformToList(self.getAttachedClusterRefs(), new Function<String, PrimaryStorageClusterRefVO>() {
@@ -800,7 +801,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         NfsPrimaryStorageBackend backend = getUsableBackend();
         if (backend == null) {
             throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("the NFS primary storage[uuid:%s, name:%s] not hosts in attached cluster can perform the operation",
+                    String.format("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
                             self.getUuid(), self.getName())
             ));
         }
@@ -824,8 +825,11 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     protected void connectHook(ConnectParam param, final Completion completion) {
         final NfsPrimaryStorageBackend backend = getUsableBackend();
         if (backend == null) {
-            // the nfs primary storage has not been attached to any clusters
-            completion.success();
+            // the nfs primary storage has not been attached to any clusters, or no connected hosts
+            completion.fail(errf.stringToOperationError(
+                    String.format("the NFS primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the" +
+                            " attached clusters are connected", self.getUuid(), self.getName())
+            ));
             return;
         }
 
@@ -929,7 +933,11 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     protected void pingHook(Completion completion) {
         NfsPrimaryStorageBackend bkd = getUsableBackend();
         if (bkd == null) {
-            completion.success();
+            // the nfs primary storage has not been attached to any clusters, or no connected hosts
+            completion.fail(errf.stringToOperationError(
+                    String.format("the NFS primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the" +
+                            " attached clusters are connected", self.getUuid(), self.getName())
+            ));
         } else {
             bkd.ping(getSelfInventory(), completion);
         }
