@@ -17,6 +17,14 @@ public interface EventFacade {
 
     void off(Object cb);
 
+    void onLocal(String path, AutoOffEventCallback cb);
+
+    void onLocal(String path, EventCallback cb);
+
+    void onLocal(String path, Runnable runnable);
+
+    void offLocal(Object cb);
+
     void fire(String path, Object data);
 
     boolean isFromThisManagementNode(Map tokens);
