@@ -3,5 +3,6 @@ CREATE TABLE  `zstack`.`ImageStoreBackupStorageVO` (
     `hostname` varchar(255) NOT NULL UNIQUE,
     `username` varchar(255) NOT NULL,
     `password` varchar(255) NOT NULL,
+    `sshPort` int unsigned NOT NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
