@@ -158,6 +158,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     to.dhcpServerIp = l.dhcpServerIp;
                     to.vmIp = l.vmIp;
                     to.bridgeName = bridgeNames.get(l.l3Uuid);
+                    to.namespaceName = FlatDhcpBackend.makeNamespaceName(to.bridgeName, l.l3Uuid);
                     to.userdata = userdata.get(vmuuid);
                     to.port = UserdataGlobalProperty.HOST_PORT;
                     tos.add(to);
@@ -178,6 +179,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
                 BatchApplyUserdataCmd cmd = new BatchApplyUserdataCmd();
                 cmd.userdata = tos;
+                cmd.rebuild = true;
 
                 new KvmCommandSender(context.getInventory().getUuid(), true).send(cmd, BATCH_APPLY_USER_DATA, new KvmCommandFailureChecker() {
                     @Override
@@ -206,6 +208,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         public String vmIp;
         public String dhcpServerIp;
         public String bridgeName;
+        public String namespaceName;
         public int port;
     }
 
@@ -215,6 +218,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     public static class BatchApplyUserdataCmd extends KVMAgentCommands.AgentCommand {
         public List<UserdataTO> userdata;
+        public boolean rebuild;
     }
 
     public static class ApplyUserdataCmd extends KVMAgentCommands.AgentCommand {
@@ -228,6 +232,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     public static class ReleaseUserdataCmd extends KVMAgentCommands.AgentCommand {
         public String vmIp;
         public String bridgeName;
+        public String namespaceName;
     }
 
     public static class ReleaseUserdataRsp extends KVMAgentCommands.AgentResponse {
@@ -290,6 +295,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                             }
                         });
                         uto.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
+                        uto.namespaceName = FlatDhcpBackend.makeNamespaceName(uto.bridgeName, struct.getL3NetworkUuid());
                         uto.port = UserdataGlobalProperty.HOST_PORT;
                         cmd.userdata = uto;
 
@@ -352,6 +358,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     public void run(final FlowTrigger trigger, Map data) {
                         ReleaseUserdataCmd cmd = new ReleaseUserdataCmd();
                         cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
+                        cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
                         cmd.vmIp = CollectionUtils.find(struct.getVmSpec().getDestNics(), new Function<String, VmNicInventory>() {
                             @Override
                             public String call(VmNicInventory arg) {

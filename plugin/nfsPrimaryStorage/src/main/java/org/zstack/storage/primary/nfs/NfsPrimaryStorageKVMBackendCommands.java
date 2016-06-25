@@ -5,6 +5,7 @@ import org.zstack.header.core.validation.Validation;
 import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
@@ -136,6 +137,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class CreateTemplateFromVolumeRsp extends NfsPrimaryStorageAgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class DownloadBitsFromSftpBackupStorageCmd extends NfsPrimaryStorageAgentCommand {
         private String sshKey;
         private String hostname;
@@ -216,6 +218,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
+    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class CreateRootVolumeFromTemplateCmd extends NfsPrimaryStorageAgentCommand {
         private String templatePathInCache;
         private long timeout;

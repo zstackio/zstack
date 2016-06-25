@@ -8,6 +8,10 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.gc.EventBasedGCPersistentContext;
+import org.zstack.core.gc.GCEventTrigger;
+import org.zstack.core.gc.GCFacade;
+import org.zstack.core.logging.Event;
 import org.zstack.core.logging.Log;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -21,7 +25,10 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkVO;
@@ -33,6 +40,8 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.*;
+import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
+import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceProviderLookup;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -45,10 +54,12 @@ import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.StringDSL.ln;
 
 /**
  * Created by frank on 9/15/2015.
@@ -68,14 +79,21 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private ThreadFacade thdf;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private GCFacade gcf;
 
     public static final String APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/apply";
     public static final String PREPARE_DHCP_PATH = "/flatnetworkprovider/dhcp/prepare";
     public static final String RELEASE_DHCP_PATH = "/flatnetworkprovider/dhcp/release";
     public static final String DHCP_CONNECT_PATH = "/flatnetworkprovider/dhcp/connect";
     public static final String RESET_DEFAULT_GATEWAY_PATH = "/flatnetworkprovider/dhcp/resetDefaultGateway";
+    public static final String DHCP_DELETE_NAMESPACE_PATH = "/flatnetworkprovider/dhcp/deletenamespace";
 
     private Map<String, UsedIpInventory> l3NetworkDhcpServerIp = new ConcurrentHashMap<String, UsedIpInventory>();
+
+    public static String makeNamespaceName(String brName, String l3Uuid) {
+        return String.format("%s_%s", brName, l3Uuid);
+    }
 
     @Transactional(readOnly = true)
     private List<DhcpInfo> getDhcpInfoForConnectedKvmHost(KVMHostConnectedContext context) {
@@ -150,6 +168,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         for (VmNicVO nic : nics) {
             DhcpInfo info = new DhcpInfo();
             info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+            info.namespaceName = makeNamespaceName(
+                    info.bridgeName,
+                    nic.getL3NetworkUuid()
+            );
             DebugUtils.Assert(info.bridgeName != null, "bridge name cannot be null");
             info.mac = nic.getMac();
             info.netmask = nic.getNetmask();
@@ -299,14 +321,107 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public void beforeDeleteL3Network(L3NetworkInventory inventory) {
     }
 
+    private boolean isProvidedbyMe(L3NetworkInventory l3) {
+        String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(l3.getUuid(), NetworkServiceType.DHCP.toString());
+        return FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING.equals(providerType);
+    }
+
     @Override
     public void afterDeleteL3Network(L3NetworkInventory inventory) {
+        if (!isProvidedbyMe(inventory)) {
+            return;
+        }
+
         UsedIpInventory dhchip = getDHCPServerIP(inventory.getUuid());
         if (dhchip != null) {
             deleteDhcpServerIp(dhchip);
             logger.debug(String.format("delete DHCP IP[%s] of the flat network[uuid:%s] as the L3 network is deleted",
                     dhchip.getIp(), dhchip.getL3NetworkUuid()));
         }
+
+        deleteNameSpace(inventory);
+    }
+
+    private void deleteNameSpace(L3NetworkInventory inventory) {
+        List<String> huuids = new Callable<List<String>>() {
+            @Override
+            @Transactional(readOnly = true)
+            public List<String> call() {
+                String sql = "select host.uuid from HostVO host, L2NetworkVO l2, L2NetworkClusterRefVO ref where l2.uuid = ref.l2NetworkUuid" +
+                        " and ref.clusterUuid = host.clusterUuid and l2.uuid = :uuid";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                q.setParameter("uuid", inventory.getL2NetworkUuid());
+                return q.getResultList();
+            }
+        }.call();
+
+        if (huuids.isEmpty()) {
+            return;
+        }
+
+        String brName = new BridgeNameFinder().findByL3Uuid(inventory.getUuid());
+        DeleteNamespaceCmd cmd = new DeleteNamespaceCmd();
+        cmd.bridgeName = brName;
+        cmd.namespaceName = makeNamespaceName(brName, inventory.getUuid());
+
+        new KvmCommandSender(huuids).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
+            DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
+            return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+        }, new SteppingSendCallback<KvmResponseWrapper>() {
+            @Override
+            public void success(KvmResponseWrapper w) {
+                logger.debug(String.format("successfully deleted namespace for L3 network[uuid:%s, name:%s] on the " +
+                        "KVM host[uuid:%s]", inventory.getUuid(), inventory.getName(), getHostUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
+                    new Event().log(FlatNetworkLabels.DELETE_NAMESPACE_FAILURE, inventory.getName(), inventory.getUuid(),
+                            getHostUuid(), errorCode.toString());
+                    return;
+                }
+
+                GCFlatDHCPDeleteNamespaceContext c = new GCFlatDHCPDeleteNamespaceContext();
+                c.setHostUuid(getHostUuid());
+                c.setCommand(cmd);
+                c.setTriggerHostStatus(HostStatus.Connected.toString());
+
+                EventBasedGCPersistentContext<GCFlatDHCPDeleteNamespaceContext> ctx = new EventBasedGCPersistentContext<GCFlatDHCPDeleteNamespaceContext>();
+                ctx.setRunnerClass(GCFlatDHCPDeleteNamespaceRunner.class);
+                ctx.setContextClass(GCFlatDHCPDeleteNamespaceContext.class);
+                ctx.setName(String.format("delete-namespace-for-l3-%s", inventory.getUuid()));
+                ctx.setContext(c);
+
+                GCEventTrigger trigger = new GCEventTrigger();
+                trigger.setCodeName("gc-delete-vm-on-host-connected");
+                trigger.setEventPath(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH);
+                String code = ln(
+                        "import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData",
+                        "import org.zstack.network.service.flat.GCFlatDHCPDeleteNamespaceContext",
+                        "HostStatusChangedData d = (HostStatusChangedData) data",
+                        "GCFlatDHCPDeleteNamespaceContext c = (GCFlatDHCPDeleteNamespaceContext) context",
+                        "return c.hostUuid == d.hostUuid && d.newStatus == c.triggerHostStatus"
+                ).toString();
+                trigger.setCode(code);
+                ctx.addTrigger(trigger);
+
+                trigger = new GCEventTrigger();
+                trigger.setCodeName("gc-delete-vm-on-host-deleted");
+                trigger.setEventPath(HostCanonicalEvents.HOST_DELETED_PATH);
+                code = ln(
+                        "import org.zstack.header.host.HostCanonicalEvents.HostDeletedData",
+                        "import org.zstack.network.service.flat.GCFlatDHCPDeleteNamespaceContext",
+                        "HostDeletedData d = (HostDeletedData) data",
+                        "GCFlatDHCPDeleteNamespaceContext c = (GCFlatDHCPDeleteNamespaceContext) context",
+                        "return c.hostUuid == d.hostUuid"
+                ).toString();
+                trigger.setCode(code);
+                ctx.addTrigger(trigger);
+
+                gcf.schedule(ctx);
+            }
+        });
     }
 
     @Transactional(readOnly = true)
@@ -366,7 +481,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
         for (VmNicVO nic : nics) {
             DhcpInfo info = new DhcpInfo();
-            info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+            info.bridgeName =  KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+            info.namespaceName = makeNamespaceName(
+                    info.bridgeName,
+                    nic.getL3NetworkUuid()
+            );
             DebugUtils.Assert(info.bridgeName != null, "bridge name cannot be null");
             info.mac = nic.getMac();
             info.netmask = nic.getNetmask();
@@ -741,12 +860,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public String dnsDomain;
         public List<String> dns;
         public String bridgeName;
+        public String namespaceName;
         public String l3NetworkUuid;
     }
 
     public static class ApplyDhcpCmd extends KVMAgentCommands.AgentCommand {
         public List<DhcpInfo> dhcp;
         public boolean rebuild;
+        public String l3NetworkUuid;
     }
 
     public static class ApplyDhcpRsp extends KVMAgentCommands.AgentResponse {
@@ -763,6 +884,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public String bridgeName;
         public String dhcpServerIp;
         public String dhcpNetmask;
+        public String namespaceName;
     }
 
     public static class PrepareDhcpRsp extends KVMAgentCommands.AgentResponse {
@@ -776,14 +898,24 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     public static class ResetDefaultGatewayCmd extends KVMAgentCommands.AgentCommand {
         public String bridgeNameOfGatewayToRemove;
+        public String namespaceNameOfGatewayToRemove;
         public String gatewayToRemove;
         public String macOfGatewayToRemove;
         public String gatewayToAdd;
         public String macOfGatewayToAdd;
         public String bridgeNameOfGatewayToAdd;
+        public String namespaceNameOfGatewayToAdd;
     }
 
     public static class ResetDefaultGatewayRsp extends KVMAgentCommands.AgentResponse {
+    }
+
+    public static class DeleteNamespaceCmd extends KVMAgentCommands.AgentCommand {
+        public String bridgeName;
+        public String namespaceName;
+    }
+
+    public static class  DeleteNamespaceRsp extends KVMAgentCommands.AgentResponse {
     }
 
     public NetworkServiceProviderType getProviderType() {
@@ -824,6 +956,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.dns = arg.getL3Network().getDns();
                 info.l3NetworkUuid = arg.getL3Network().getUuid();
                 info.bridgeName = l3Bridges.get(arg.getL3Network().getUuid());
+                info.namespaceName = makeNamespaceName(info.bridgeName, arg.getL3Network().getUuid());
                 return info;
             }
         });
@@ -896,6 +1029,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                                 PrepareDhcpCmd cmd = new PrepareDhcpCmd();
                                 cmd.bridgeName = i.bridgeName;
+                                cmd.namespaceName = i.namespaceName;
                                 cmd.dhcpServerIp = dhcpServerIp;
                                 cmd.dhcpNetmask = dhcpNetmask;
 
@@ -935,6 +1069,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                 ApplyDhcpCmd cmd = new ApplyDhcpCmd();
                                 cmd.dhcp = info;
                                 cmd.rebuild = rebuild;
+                                cmd.l3NetworkUuid = l3Uuid;
 
                                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                                 msg.setCommand(cmd);
@@ -1065,20 +1200,19 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             cmd.gatewayToRemove = pnic.getGateway();
             cmd.macOfGatewayToRemove = pnic.getMac();
             cmd.bridgeNameOfGatewayToRemove = new BridgeNameFinder().findByL3Uuid(previousL3);
+            cmd.namespaceNameOfGatewayToRemove = makeNamespaceName(cmd.bridgeNameOfGatewayToRemove, previousL3);
         }
         if (nnic != null) {
             cmd.gatewayToAdd = nnic.getGateway();
             cmd.macOfGatewayToAdd = nnic.getMac();
             cmd.bridgeNameOfGatewayToAdd = new BridgeNameFinder().findByL3Uuid(nowL3);
+            cmd.namespaceNameOfGatewayToAdd = makeNamespaceName(cmd.bridgeNameOfGatewayToAdd, nowL3);
         }
 
         KvmCommandSender sender = new KvmCommandSender(vm.getHostUuid());
-        sender.send(cmd, RESET_DEFAULT_GATEWAY_PATH, new KvmCommandFailureChecker() {
-            @Override
-            public ErrorCode getError(KvmResponseWrapper wrapper) {
-                ResetDefaultGatewayRsp rsp = wrapper.getResponse(ResetDefaultGatewayRsp.class);
-                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
-            }
+        sender.send(cmd, RESET_DEFAULT_GATEWAY_PATH, wrapper -> {
+            ResetDefaultGatewayRsp rsp = wrapper.getResponse(ResetDefaultGatewayRsp.class);
+            return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
             public void success(KvmResponseWrapper returnValue) {

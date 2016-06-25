@@ -39,9 +39,11 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.*;
+import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmCancelSelfFencerParam;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmSetupSelfFencerParam;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
@@ -239,6 +241,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     }
 
+    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class CloneCmd extends AgentCommand {
         String srcPath;
         String dstPath;
@@ -395,7 +398,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class SftpUploadRsp extends AgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {APICreateVolumeSnapshotMsg.class})
+    @ApiTimeout(apiClasses = {
+            APICreateVolumeSnapshotMsg.class,
+            APICreateVmInstanceMsg.class
+    })
     public static class CreateSnapshotCmd extends AgentCommand {
         boolean skipOnExisting;
         String snapshotPath;
@@ -462,6 +468,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class DeleteSnapshotRsp extends AgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class ProtectSnapshotCmd extends AgentCommand {
         String snapshotPath;
         boolean ignoreError;
@@ -583,6 +590,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public List<String> monUrls;
     }
 
+    public static class KvmCancelSelfFencerCmd extends AgentCommand {
+        public String hostUuid;
+    }
+
     public static class GetFactsCmd extends AgentCommand {
         public String monUuid;
     }
@@ -608,6 +619,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String DELETE_POOL_PATH = "/ceph/primarystorage/deletepool";
     public static final String GET_VOLUME_SIZE_PATH = "/ceph/primarystorage/getvolumesize";
     public static final String KVM_HA_SETUP_SELF_FENCER = "/ha/ceph/setupselffencer";
+    public static final String KVM_HA_CANCEL_SELF_FENCER = "/ha/ceph/cancelselffencer";
     public static final String GET_FACTS = "/ceph/primarystorage/facts";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
@@ -2231,9 +2243,36 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((UploadBitsToBackupStorageMsg) msg);
         } else if (msg instanceof SetupSelfFencerOnKvmHostMsg) {
             handle((SetupSelfFencerOnKvmHostMsg) msg);
+        } else if (msg instanceof CancelSelfFencerOnKvmHostMsg) {
+            handle((CancelSelfFencerOnKvmHostMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(CancelSelfFencerOnKvmHostMsg msg) {
+        KvmCancelSelfFencerParam param = msg.getParam();
+        KvmCancelSelfFencerCmd cmd = new KvmCancelSelfFencerCmd();
+        cmd.uuid = self.getUuid();
+        cmd.fsId = getSelf().getFsid();
+        cmd.hostUuid = param.getHostUuid();
+
+        CancelSelfFencerOnKvmHostReply reply = new CancelSelfFencerOnKvmHostReply();
+        new KvmCommandSender(param.getHostUuid()).send(cmd, KVM_HA_CANCEL_SELF_FENCER, wrapper -> {
+            AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
+            return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+        }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
+            @Override
+            public void success(KvmResponseWrapper w) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final SetupSelfFencerOnKvmHostMsg msg) {

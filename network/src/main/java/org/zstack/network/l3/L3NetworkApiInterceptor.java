@@ -259,6 +259,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
+        String cidr = ipr.toSubnetUtils().getInfo().getCidrSignature();
         SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
         q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, ipr.getL3NetworkUuid());
         List<IpRangeVO> ranges = q.list();
@@ -266,6 +267,15 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             if (NetworkUtils.isIpv4RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp())
+                ));
+            }
+
+            String rcidr = IpRangeInventory.valueOf(r).toSubnetUtils().getInfo().getCidrSignature();
+            if (!cidr.equals(rcidr)) {
+                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                        String.format("multiple CIDR on the same L3 network is not allowed. There has been a IP" +
+                                " range[uuid:%s, CIDR:%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
+                                ipr.getUuid(), rcidr, cidr)
                 ));
             }
         }

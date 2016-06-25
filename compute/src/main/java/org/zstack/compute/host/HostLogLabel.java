@@ -29,4 +29,10 @@ public class HostLogLabel {
             "zh_CN = 添加物理机成功"
     })
     public static String ADD_HOST_SUCCESS = "add.host.success";
+
+    @LogLabel(messages = {
+            "en_US = the host[UUID:{0}, name:{1}] status becomes Disconnected, cause: {2}",
+            "zh_CN = 物理机[UUID:{0}, name:{1}]失联，请检查链接并重连物理机。失联原因是: {2}"
+    })
+    public static String HOST_STATUS_DISCONNECTED = "host.status.disconnected";
 }

@@ -5,18 +5,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusSteppingCallback;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.DebugUtils;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -33,13 +35,19 @@ public class KvmCommandSender {
     private ErrorFacade errf;
 
     private List<String> hostUuids;
-    private Iterator<String> it;
-    private List<ErrorCode> errors = new ArrayList<ErrorCode>();
     private boolean noStatusCheck;
+
+    public static abstract class SteppingSendCallback<T> extends ReturnValueCompletion<T> {
+        String hostUuid;
+
+        protected String getHostUuid() {
+            return hostUuid;
+        }
+    }
+
 
     public KvmCommandSender(List<String> hostUuids, boolean noStatusCheck) {
         this.hostUuids = hostUuids;
-        it = hostUuids.iterator();
         this.noStatusCheck = noStatusCheck;
     }
 
@@ -56,19 +64,61 @@ public class KvmCommandSender {
         DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
     }
 
+    public void send(final Object cmd, final String path, final KvmCommandFailureChecker checker, final SteppingSendCallback<KvmResponseWrapper> completion) {
+        send(cmd, path, checker, TimeUnit.MINUTES.toMillis(5), completion);
+    }
+
+    public void send(final Object cmd, final String path, final KvmCommandFailureChecker checker , final long defaulTimeout, final SteppingSendCallback<KvmResponseWrapper> completion) {
+        List<KVMHostAsyncHttpCallMsg> msgs = hostUuids.stream().map(huuid -> {
+            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+            msg.setCommand(cmd);
+            msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), defaulTimeout));
+            msg.setHostUuid(huuid);
+            msg.setPath(path);
+            msg.setNoStatusCheck(noStatusCheck);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
+            return msg;
+        }).collect(Collectors.toList());
+
+        bus.send(msgs, msgs.size(), new CloudBusSteppingCallback(completion) {
+            @Override
+            public void run(NeedReplyMessage msg, MessageReply reply) {
+                KVMHostAsyncHttpCallMsg kmsg = (KVMHostAsyncHttpCallMsg) msg;
+                completion.hostUuid = kmsg.getHostUuid();
+
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply ar = reply.castReply();
+                KvmResponseWrapper w = new KvmResponseWrapper(ar.getResponse());
+
+                ErrorCode err = checker.getError(w);
+                if (err != null) {
+                    completion.fail(err);
+                    return;
+                }
+
+                completion.success(w);
+            }
+        });
+    }
+
     public void send(final Object cmd, final String path, final KvmCommandFailureChecker checker, final ReturnValueCompletion<KvmResponseWrapper> completion) {
         send(cmd, path, checker, TimeUnit.MINUTES.toMillis(5), completion);
     }
 
     public void send(final Object cmd, final String path, final KvmCommandFailureChecker checker , final long defaulTimeout, final ReturnValueCompletion<KvmResponseWrapper> completion) {
-        if (!it.hasNext()) {
-            ErrorCode err = errors.size() == 1 ? errors.get(0) : errf.stringToOperationError(String.format("failed to execute" +
-                    " the command[%s] on the kvm host%s", cmd.getClass(), hostUuids), errors);
-            completion.fail(err);
-            return;
+        if (hostUuids.isEmpty()) {
+            throw new CloudRuntimeException("no host uuid given");
         }
 
-        String huuid = it.next();
+        if (hostUuids.size() > 1) {
+            throw new CloudRuntimeException("please use SteppingSendCallback");
+        }
+
+        String huuid = hostUuids.get(0);
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
         msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), defaulTimeout));
@@ -80,8 +130,7 @@ public class KvmCommandSender {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    errors.add(reply.getError());
-                    send(cmd, path, checker, defaulTimeout, completion);
+                    completion.fail(reply.getError());
                     return;
                 }
 
@@ -90,8 +139,7 @@ public class KvmCommandSender {
 
                 ErrorCode err = checker.getError(w);
                 if (err != null) {
-                    errors.add(err);
-                    send(cmd, path, checker, defaulTimeout, completion);
+                    completion.fail(err);
                     return;
                 }
 

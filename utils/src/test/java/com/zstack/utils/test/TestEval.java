@@ -3,7 +3,6 @@ package com.zstack.utils.test;
 import org.apache.commons.net.util.SubnetUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.zstack.utils.VersionComparator;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.network.NetworkUtils;
@@ -58,6 +57,13 @@ public class TestEval {
         sub = new SubnetUtils("224.0.0.0/24");
         System.out.println(sub.getInfo().getLowAddress());
         System.out.println(sub.getInfo().getHighAddress());
+        System.out.println(sub.getInfo().getCidrSignature());
+
+        sub = new SubnetUtils("224.0.1.1", "255.255.255.0");
+        System.out.println(sub.getInfo().getCidrSignature());
+
+        sub = new SubnetUtils(sub.getInfo().getNetworkAddress(), "255.255.255.0");
+        System.out.println(sub.getInfo().getCidrSignature());
 
         Runnable r = () -> {
             System.out.println("test lambda");
@@ -65,9 +71,6 @@ public class TestEval {
         };
 
         r.run();
-
-        System.out.print(String.format("xxxxxxxxxxxxxxxx %s\n", new VersionComparator("1.2.17").compare("1.0.0")));
-        System.out.print(String.format("xxxxxxxxxxxxxxxx %s\n", new VersionComparator("2.3.0").compare("1.3.0")));
 
         String testJson = "[\"files/kvm/libvirtd.conf\",\"/etc/libvirt/libvirtd.conf\"]";
         List collection = JSONObjectUtil.toCollection(testJson, ArrayList.class, String.class);

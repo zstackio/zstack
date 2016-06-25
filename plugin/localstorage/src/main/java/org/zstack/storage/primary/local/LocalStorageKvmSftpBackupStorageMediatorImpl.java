@@ -18,6 +18,7 @@ import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageType;
+import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
@@ -32,6 +33,7 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  * Created by frank on 7/1/2015.
  */
+@ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
 public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorageBackupStorageMediator {
     @Autowired
     private CloudBus bus;
@@ -43,6 +45,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     public static final String UPLOAD_BIT_PATH = "/localstorage/sftp/upload";
     public static final String DOWNLOAD_BIT_PATH = "/localstorage/sftp/download";
 
+    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class SftpDownloadBitsCmd extends LocalStorageKvmBackend.AgentCommand {
         private String sshKey;
         private String username;

@@ -328,7 +328,7 @@ public class AccountBase extends AbstractAccount {
     @Transactional
     private void handle(APIAttachPoliciesToUserMsg msg) {
         String sql = "select p.uuid from PolicyVO p where p.uuid in (:uuids) and p.uuid not in (select ref.policyUuid from UserPolicyRefVO ref" +
-                " where ref.userUuid = :userUuid)";
+                " where ref.userUuid = :userUuid) group by p.uuid";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuids", msg.getPolicyUuids());
         q.setParameter("userUuid", msg.getUserUuid());

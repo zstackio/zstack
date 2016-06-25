@@ -1,9 +1,11 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.List;
 
+@ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
 public class StartNewCreatedVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
     private VmInstanceInventory vmInstanceInventory;
     private List<String> l3NetworkUuids;

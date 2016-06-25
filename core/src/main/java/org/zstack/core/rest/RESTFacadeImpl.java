@@ -8,8 +8,11 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.retry.Retry;
+import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -195,6 +198,8 @@ public class RESTFacadeImpl implements RESTFacade {
             ic.beforeAsyncJsonPost(url, body, unit, timeout);
         }
 
+        // for unit test finding invocation chain
+        MessageCommandRecorder.record(body.getClass());
         String bodyStr = JSONObjectUtil.toJsonString(body);
         asyncJsonPost(url, bodyStr, callback, unit, timeout);
     }
@@ -300,7 +305,15 @@ public class RESTFacadeImpl implements RESTFacade {
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("json post[%s], %s", url, req.toString()));
             }
-            ResponseEntity<String> rsp = template.exchange(url, HttpMethod.POST, req, String.class);
+
+            ResponseEntity<String> rsp = new Retry<ResponseEntity<String>>() {
+                @Override
+                @RetryCondition(onExceptions = {IOException.class})
+                protected ResponseEntity<String> call() {
+                    return template.exchange(url, HttpMethod.POST, req, String.class);
+                }
+            }.run();
+
             if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
                 String err = String.format("http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody());
                 logger.warn(err);
@@ -327,7 +340,7 @@ public class RESTFacadeImpl implements RESTFacade {
     public HttpEntity<String> httpServletRequestToHttpEntity(HttpServletRequest req) {
         try {
             StringBuilder sb = new StringBuilder();
-            String line = "";
+            String line;
             while ((line = req.getReader().readLine()) != null) {
                 sb.append(line);
             }
@@ -338,9 +351,8 @@ public class RESTFacadeImpl implements RESTFacade {
                 String name = e.nextElement().toString();
                 header.add(name, req.getHeader(name));
             }
-            
-            HttpEntity<String> entity = new HttpEntity<String>(sb.toString(), header);
-            return entity;
+
+            return new HttpEntity<String>(sb.toString(), header);
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
             throw new CloudRuntimeException(e);
@@ -354,6 +366,11 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public <T> T syncJsonPost(String url, Object body, Class<T> returnClass) {
+        // for unit test finding invocation chain
+        if (body != null) {
+            MessageCommandRecorder.record(body.getClass());
+        }
+
         return syncJsonPost(url, body == null ? null : JSONObjectUtil.toJsonString(body), returnClass);
     }
 
@@ -374,7 +391,16 @@ public class RESTFacadeImpl implements RESTFacade {
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("json post[%s], %s", url, req.toString()));
         }
-        ResponseEntity<String> rsp = template.exchange(url, HttpMethod.POST, req, String.class);
+
+
+        ResponseEntity<String> rsp = new Retry<ResponseEntity<String>>() {
+            @Override
+            @RetryCondition(onExceptions = {IOException.class})
+            protected ResponseEntity<String> call() {
+                return template.exchange(url, HttpMethod.POST, req, String.class);
+            }
+        }.run();
+
         if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
             String err = String.format("http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody());
             throw new RestClientException(err);
@@ -392,7 +418,6 @@ public class RESTFacadeImpl implements RESTFacade {
         }
     }
 
-    
     @Override
     public void echo(String url, Completion callback) {
         echo(url, callback, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(30));

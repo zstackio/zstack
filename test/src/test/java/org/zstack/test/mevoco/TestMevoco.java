@@ -150,6 +150,7 @@ public class TestMevoco {
         Assert.assertNotNull(dhcp.dns);
         Assert.assertTrue(dhcp.dns.contains("1.1.1.1"));
         Assert.assertNotNull(dhcp.bridgeName);
+        Assert.assertNotNull(dhcp.namespaceName);
         Assert.assertEquals(dhcp.ip.replaceAll("\\.", "-"), dhcp.hostname);
 
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
@@ -164,6 +165,7 @@ public class TestMevoco {
         Assert.assertEquals(ipvo.getIp(), dhcpServerIp);
         Assert.assertEquals(dhcpServerIp, cmd.dhcpServerIp);
         Assert.assertEquals(dhcp.bridgeName, cmd.bridgeName);
+        Assert.assertEquals(dhcp.namespaceName, cmd.namespaceName);
         Assert.assertEquals(ipvo.getNetmask(), cmd.dhcpNetmask);
 
         HostInventory host = deployer.hosts.get("host1");

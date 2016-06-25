@@ -2,7 +2,6 @@ package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
@@ -35,7 +34,7 @@ public class ImageUpgradeExtension implements Component {
 
     @Override
     public boolean start() {
-        if (!CoreGlobalProperty.IS_UPGRADE_START) {
+        if (!ImageGlobalProperty.SYNC_IMAGE_ACTUAL_SIZE_ON_START) {
             return true;
         }
 

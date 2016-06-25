@@ -1,8 +1,10 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
+@ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
 public class CreateVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
     private VmInstanceSpec vmSpec;
     
