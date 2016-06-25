@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,6 +28,7 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
     private ConcurrentMap<Object, CallbackWrapper> callbacks = new ConcurrentHashMap<Object, CallbackWrapper>();
     private final List<Object> toRemove = new ArrayList<Object>();
     private final List<CallbackWrapper> toAdd = new ArrayList<CallbackWrapper>();
+    private final List<CallbackWrapper> local = new ArrayList<CallbackWrapper>();
     private EventSubscriberReceipt unsubscriber;
 
     private class CallbackWrapper {
@@ -74,6 +76,7 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
                 } else if (callback instanceof AutoOffEventCallback) {
                     if (((AutoOffEventCallback)callback).run(tokens, data)) {
                         off(callback);
+                        offLocal(callback);
                     }
                 }
             }
@@ -155,6 +158,43 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
     }
 
     @Override
+    public void onLocal(String path, AutoOffEventCallback cb) {
+        synchronized (local) {
+            String glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
+            local.add(new CallbackWrapper(path, glob, cb));
+        }
+    }
+
+    @Override
+    public void onLocal(String path, EventCallback cb) {
+        synchronized (local) {
+            String glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
+            local.add(new CallbackWrapper(path, glob, cb));
+        }
+    }
+
+    @Override
+    public void onLocal(String path, Runnable runnable) {
+        synchronized (local) {
+            String glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
+            local.add(new CallbackWrapper(path, glob, runnable));
+        }
+    }
+
+    @Override
+    public void offLocal(Object cb) {
+        synchronized (local) {
+            Iterator<CallbackWrapper> it = local.iterator();
+            while (it.hasNext()) {
+                CallbackWrapper w = it.next();
+                if (w.callback == cb) {
+                    it.remove();
+                }
+            }
+        }
+    }
+
+    @Override
     public void fire(String path, Object data) {
         assert path != null;
         CanonicalEvent evt = new CanonicalEvent();
@@ -167,7 +207,23 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
 
             evt.setContent(data);
         }
+        
+        fireLocal(evt);
+        
         bus.publish(evt);
+    }
+
+    private void fireLocal(CanonicalEvent cevt) {
+        List<CallbackWrapper> wrappers;
+        synchronized (local) {
+            wrappers = local.stream().collect(Collectors.toList());
+        }
+
+        for (CallbackWrapper w : wrappers) {
+            if (cevt.getPath().matches(w.getGlob())) {
+                w.call(cevt);
+            }
+        }
     }
 
     @Override
