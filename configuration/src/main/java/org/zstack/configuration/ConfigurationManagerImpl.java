@@ -47,7 +47,6 @@ import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.swing.text.html.HTML.Tag;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
