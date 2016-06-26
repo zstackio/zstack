@@ -8,6 +8,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleLogCmd;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -35,6 +36,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -119,8 +121,11 @@ public class TestLogging1 {
 
         api.deleteLog(loginv.getUuid(), null);
 
-        evtf.on(Event.EVENT_PATH, (tokens, data) -> {
-            logContent = (Content) data;
+        evtf.on(Event.EVENT_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                logContent = (Content) data;
+            }
         });
 
         new Event(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID).log(LogLabelTest.TEST1);

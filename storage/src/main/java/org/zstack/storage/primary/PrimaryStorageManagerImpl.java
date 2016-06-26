@@ -253,14 +253,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    PrimaryStorageInventory pinv = factory.getInventory(finalVo.getUuid());
-                    logger.debug(String.format("successfully add primary storage[uuid:%s, name:%s, url: %s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
-                    evt.setInventory(pinv);
-                } else {
+                if (!reply.isSuccess() && !reply.getError().isError(PrimaryStorageErrors.DISCONNECTED)) {
                     evt.setErrorCode(reply.getError());
                     logger.warn(String.format("failed to connect primary storage[uuid:%s, name:%s, url:%s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
                     dbf.remove(finalVo);
+                } else {
+                    PrimaryStorageInventory pinv = factory.getInventory(finalVo.getUuid());
+                    logger.debug(String.format("successfully add primary storage[uuid:%s, name:%s, url: %s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
+                    evt.setInventory(pinv);
                 }
 
                 bus.publish(evt);

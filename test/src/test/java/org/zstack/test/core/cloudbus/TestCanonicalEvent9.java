@@ -3,14 +3,15 @@ package org.zstack.test.core.cloudbus;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.EventFacadeImpl;
-import org.zstack.core.cloudbus.EventRunnable;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.test.BeanConstructor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,11 +20,12 @@ import java.util.concurrent.TimeUnit;
  * Time: 12:38 AM
  * To change this template use File | Settings | File Templates.
  */
-public class TestCanonicalEvent5 {
-    CLogger logger = Utils.getLogger(TestCanonicalEvent5.class);
+public class TestCanonicalEvent9 {
+    CLogger logger = Utils.getLogger(TestCanonicalEvent9.class);
     ComponentLoader loader;
     EventFacade evtf;
-    boolean success;
+    int count;
+    int successWhen = 3;
 
     @Before
     public void setUp() throws Exception {
@@ -35,17 +37,26 @@ public class TestCanonicalEvent5 {
 
     @Test
     public void test() throws InterruptedException {
-        evtf.on("/?e?t/event", new EventRunnable() {
+        String path = "/test/event";
+        evtf.on(path, new AutoOffEventCallback() {
             @Override
-            public void run() {
-                success = true;
+            public boolean run(Map tokens, Object data) {
+                count ++;
+                return successWhen-- == 0;
             }
         });
 
-        String path = "/test/event";
         evtf.fire(path, null);
         TimeUnit.SECONDS.sleep(1);
-        Assert.assertTrue(success);
+        evtf.fire(path, null);
+        TimeUnit.SECONDS.sleep(1);
+        evtf.fire(path, null);
+        TimeUnit.SECONDS.sleep(1);
+
+        evtf.fire(path, null);
+        evtf.fire(path, null);
+        evtf.fire(path, null);
+        Assert.assertEquals(3, count);
     }
 }
 

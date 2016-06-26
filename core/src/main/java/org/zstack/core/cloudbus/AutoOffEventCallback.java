@@ -4,6 +4,6 @@ import java.util.Map;
 
 /**
  */
-public interface AutoOffEventCallback<T> {
-    boolean run(Map<String, String> tokens, T data);
+public abstract class AutoOffEventCallback<T> extends AbstractEventFacadeCallback {
+    abstract protected boolean run(Map<String, String> tokens, T data);
 }

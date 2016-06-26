@@ -27,6 +27,9 @@
     <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent6"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent7"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent8"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent9"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent10"/>
+    <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent11"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestLocalCanonicalEvent"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestMessageSafe"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestLockResourceMessage"/>

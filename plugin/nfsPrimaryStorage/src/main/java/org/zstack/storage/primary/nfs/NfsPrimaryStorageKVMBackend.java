@@ -126,7 +126,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
-    public void attachToCluster(PrimaryStorageInventory inv, String clusterUuid) throws NfsPrimaryStorageException {
+    public boolean attachToCluster(PrimaryStorageInventory inv, String clusterUuid) throws NfsPrimaryStorageException {
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
             checkQemuImgVersionInOtherClusters(inv, clusterUuid);
         }
@@ -140,6 +140,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         for (String huuid : hostUuids) {
             mount(inv, huuid);
         }
+
+        return !hostUuids.isEmpty();
     }
 
     private void checkQemuImgVersionInOtherClusters(final PrimaryStorageInventory inv, String clusterUuid) {

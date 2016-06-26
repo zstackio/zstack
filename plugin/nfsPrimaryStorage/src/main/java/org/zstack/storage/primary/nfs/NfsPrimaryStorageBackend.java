@@ -57,7 +57,7 @@ public interface NfsPrimaryStorageBackend {
 
     void checkIsBitsExisting(PrimaryStorageInventory inv, String installPath, ReturnValueCompletion<Boolean> completion);
 
-    void attachToCluster(PrimaryStorageInventory inv, String clusterUuid) throws NfsPrimaryStorageException;
+    boolean attachToCluster(PrimaryStorageInventory inv, String clusterUuid) throws NfsPrimaryStorageException;
     
     void detachFromCluster(PrimaryStorageInventory inv, String clusterUuid) throws NfsPrimaryStorageException;
     

@@ -15,5 +15,10 @@
         <id>1002</id>
         <description>Unable to detach a primary storage from cluster</description>
     </code>
+
+    <code>
+        <id>1003</id>
+        <description>The primary storage is disconnected</description>
+    </code>
 </error>
 

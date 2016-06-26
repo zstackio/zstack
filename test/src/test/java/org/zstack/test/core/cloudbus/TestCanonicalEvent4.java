@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.EventFacadeImpl;
+import org.zstack.core.cloudbus.EventRunnable;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.test.BeanConstructor;
 import org.zstack.utils.Utils;
@@ -34,7 +35,7 @@ public class TestCanonicalEvent4 {
 
     @Test
     public void test() throws InterruptedException {
-        evtf.on("/*/event", new Runnable() {
+        evtf.on("/*/event", new EventRunnable() {
             @Override
             public void run() {
                 success = true;

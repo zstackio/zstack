@@ -8,6 +8,6 @@ import java.util.Map;
  * Time: 11:33 PM
  * To change this template use File | Settings | File Templates.
  */
-public interface EventCallback<T> {
-    void run(Map<String, String> tokens, T data);
+public abstract class EventCallback<T> extends AbstractEventFacadeCallback {
+    abstract protected void run(Map<String, String> tokens, T data);
 }

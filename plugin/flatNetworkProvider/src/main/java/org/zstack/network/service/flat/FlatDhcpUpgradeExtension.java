@@ -2,6 +2,7 @@ package org.zstack.network.service.flat;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -31,6 +32,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.zstack.utils.StringDSL.ln;
 
@@ -111,79 +113,82 @@ public class FlatDhcpUpgradeExtension implements Component {
         logger.debug(String.format("will delete deprecated DHCP namespace on %s hosts", l3Hosts.size()));
 
         for (L3Host l3Host : l3Hosts) {
-            evtf.onLocal(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, (tokens, data) -> {
-                HostStatusChangedData d = (HostStatusChangedData) data;
-                if (!HostStatus.Connected.toString().equals(d.getNewStatus())) {
-                    return false;
-                }
-
-                L3NetworkInventory l3 = l3Host.l3;
-
-                String brName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
-                DeleteNamespaceCmd cmd = new DeleteNamespaceCmd();
-                cmd.bridgeName = brName;
-                cmd.namespaceName = brName;
-
-                new KvmCommandSender(l3Host.hostUuid).send(cmd, FlatDhcpBackend.DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
-                    DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
-                    return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
-                }, new SteppingSendCallback<KvmResponseWrapper>() {
-                    @Override
-                    public void success(KvmResponseWrapper w) {
-                        logger.debug(String.format("successfully deleted namespace for L3 network[uuid:%s, name:%s] on the " +
-                                "KVM host[uuid:%s]", l3.getUuid(), l3.getName(), getHostUuid()));
+            evtf.onLocal(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new AutoOffEventCallback() {
+                @Override
+                protected boolean run(Map tokens, Object data) {
+                    HostStatusChangedData d = (HostStatusChangedData) data;
+                    if (!HostStatus.Connected.toString().equals(d.getNewStatus())) {
+                        return false;
                     }
 
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
-                            new Event().log(FlatNetworkLabels.DELETE_NAMESPACE_FAILURE, l3.getName(), l3.getUuid(),
-                                    getHostUuid(), errorCode.toString());
-                            return;
+                    L3NetworkInventory l3 = l3Host.l3;
+
+                    String brName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
+                    DeleteNamespaceCmd cmd = new DeleteNamespaceCmd();
+                    cmd.bridgeName = brName;
+                    cmd.namespaceName = brName;
+
+                    new KvmCommandSender(l3Host.hostUuid).send(cmd, FlatDhcpBackend.DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
+                        DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
+                        return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                    }, new SteppingSendCallback<KvmResponseWrapper>() {
+                        @Override
+                        public void success(KvmResponseWrapper w) {
+                            logger.debug(String.format("successfully deleted namespace for L3 network[uuid:%s, name:%s] on the " +
+                                    "KVM host[uuid:%s]", l3.getUuid(), l3.getName(), getHostUuid()));
                         }
 
-                        GCFlatDHCPDeleteNamespaceContext c = new GCFlatDHCPDeleteNamespaceContext();
-                        c.setHostUuid(getHostUuid());
-                        c.setCommand(cmd);
-                        c.setTriggerHostStatus(HostStatus.Connected.toString());
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
+                                new Event().log(FlatNetworkLabels.DELETE_NAMESPACE_FAILURE, l3.getName(), l3.getUuid(),
+                                        getHostUuid(), errorCode.toString());
+                                return;
+                            }
 
-                        EventBasedGCPersistentContext<GCFlatDHCPDeleteNamespaceContext> ctx = new EventBasedGCPersistentContext<GCFlatDHCPDeleteNamespaceContext>();
-                        ctx.setRunnerClass(GCFlatDHCPDeleteNamespaceRunner.class);
-                        ctx.setContextClass(GCFlatDHCPDeleteNamespaceContext.class);
-                        ctx.setName(String.format("delete-namespace-for-l3-%s", l3.getUuid()));
-                        ctx.setContext(c);
+                            GCFlatDHCPDeleteNamespaceContext c = new GCFlatDHCPDeleteNamespaceContext();
+                            c.setHostUuid(getHostUuid());
+                            c.setCommand(cmd);
+                            c.setTriggerHostStatus(HostStatus.Connected.toString());
 
-                        GCEventTrigger trigger = new GCEventTrigger();
-                        trigger.setCodeName("gc-delete-vm-on-host-connected");
-                        trigger.setEventPath(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH);
-                        String code = ln(
-                                "import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData",
-                                "import org.zstack.network.service.flat.GCFlatDHCPDeleteNamespaceContext",
-                                "HostStatusChangedData d = (HostStatusChangedData) data",
-                                "GCFlatDHCPDeleteNamespaceContext c = (GCFlatDHCPDeleteNamespaceContext) context",
-                                "return c.hostUuid == d.hostUuid && d.newStatus == c.triggerHostStatus"
-                        ).toString();
-                        trigger.setCode(code);
-                        ctx.addTrigger(trigger);
+                            EventBasedGCPersistentContext<GCFlatDHCPDeleteNamespaceContext> ctx = new EventBasedGCPersistentContext<GCFlatDHCPDeleteNamespaceContext>();
+                            ctx.setRunnerClass(GCFlatDHCPDeleteNamespaceRunner.class);
+                            ctx.setContextClass(GCFlatDHCPDeleteNamespaceContext.class);
+                            ctx.setName(String.format("delete-namespace-for-l3-%s", l3.getUuid()));
+                            ctx.setContext(c);
 
-                        trigger = new GCEventTrigger();
-                        trigger.setCodeName("gc-delete-vm-on-host-deleted");
-                        trigger.setEventPath(HostCanonicalEvents.HOST_DELETED_PATH);
-                        code = ln(
-                                "import org.zstack.header.host.HostCanonicalEvents.HostDeletedData",
-                                "import org.zstack.network.service.flat.GCFlatDHCPDeleteNamespaceContext",
-                                "HostDeletedData d = (HostDeletedData) data",
-                                "GCFlatDHCPDeleteNamespaceContext c = (GCFlatDHCPDeleteNamespaceContext) context",
-                                "return c.hostUuid == d.hostUuid"
-                        ).toString();
-                        trigger.setCode(code);
-                        ctx.addTrigger(trigger);
+                            GCEventTrigger trigger = new GCEventTrigger();
+                            trigger.setCodeName("gc-delete-vm-on-host-connected");
+                            trigger.setEventPath(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH);
+                            String code = ln(
+                                    "import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData",
+                                    "import org.zstack.network.service.flat.GCFlatDHCPDeleteNamespaceContext",
+                                    "HostStatusChangedData d = (HostStatusChangedData) data",
+                                    "GCFlatDHCPDeleteNamespaceContext c = (GCFlatDHCPDeleteNamespaceContext) context",
+                                    "return c.hostUuid == d.hostUuid && d.newStatus == c.triggerHostStatus"
+                            ).toString();
+                            trigger.setCode(code);
+                            ctx.addTrigger(trigger);
 
-                        gcf.schedule(ctx);
-                    }
-                });
+                            trigger = new GCEventTrigger();
+                            trigger.setCodeName("gc-delete-vm-on-host-deleted");
+                            trigger.setEventPath(HostCanonicalEvents.HOST_DELETED_PATH);
+                            code = ln(
+                                    "import org.zstack.header.host.HostCanonicalEvents.HostDeletedData",
+                                    "import org.zstack.network.service.flat.GCFlatDHCPDeleteNamespaceContext",
+                                    "HostDeletedData d = (HostDeletedData) data",
+                                    "GCFlatDHCPDeleteNamespaceContext c = (GCFlatDHCPDeleteNamespaceContext) context",
+                                    "return c.hostUuid == d.hostUuid"
+                            ).toString();
+                            trigger.setCode(code);
+                            ctx.addTrigger(trigger);
 
-                return true;
+                            gcf.schedule(ctx);
+                        }
+                    });
+
+                    return true;
+                }
             });
         }
     }

@@ -10,10 +10,7 @@ import org.zstack.header.message.NeedJsonSchema;
 import org.zstack.utils.TypeUtils;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,21 +22,20 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
     @Autowired
     private CloudBus bus;
 
-    private ConcurrentMap<Object, CallbackWrapper> callbacks = new ConcurrentHashMap<Object, CallbackWrapper>();
-    private final List<Object> toRemove = new ArrayList<Object>();
-    private final List<CallbackWrapper> toAdd = new ArrayList<CallbackWrapper>();
-    private final List<CallbackWrapper> local = new ArrayList<CallbackWrapper>();
+    private final Map<String, CallbackWrapper> global = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, CallbackWrapper> local =  Collections.synchronizedMap(new HashMap<>());
+
     private EventSubscriberReceipt unsubscriber;
 
     private class CallbackWrapper {
         String path;
         String glob;
-        Object callback;
+        AbstractEventFacadeCallback callback;
         AtomicBoolean hasRun;
 
-        CallbackWrapper(String path, String glob, Object callback) {
+        CallbackWrapper(String path, AbstractEventFacadeCallback callback) {
             this.path = path;
-            this.glob = glob;
+            this.glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
             this.callback = callback;
             if (callback instanceof AutoOffEventCallback) {
                 hasRun = new AtomicBoolean(false);
@@ -56,9 +52,8 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
 
         @AsyncThread
         void call(CanonicalEvent e) {
-            if (callback instanceof Runnable) {
-                Runnable r = (Runnable)callback;
-                r.run();
+            if (callback instanceof EventRunnable) {
+                ((EventRunnable) callback).run();
             } else {
                 Map<String, String> tokens = tokenize(e.getPath(), path);
                 tokens.put(EventFacade.META_DATA_MANAGEMENT_NODE_ID, e.getManagementNodeId());
@@ -67,16 +62,19 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
                     data = e.getContent();
                 }
 
-                if (hasRun != null && !hasRun.compareAndSet(false, true)) {
-                    return;
-                }
-
                 if (callback instanceof EventCallback) {
                     ((EventCallback)callback).run(tokens, data);
                 } else if (callback instanceof AutoOffEventCallback) {
+
+                    if (!hasRun.compareAndSet(false, true)) {
+                        // the callback is being called
+                        return;
+                    }
+
                     if (((AutoOffEventCallback)callback).run(tokens, data)) {
                         off(callback);
-                        offLocal(callback);
+                    } else {
+                        hasRun.set(false);
                     }
                 }
             }
@@ -125,73 +123,40 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
         return ret;
     }
 
-
     @Override
     public void on(String path, AutoOffEventCallback cb) {
-        synchronized (toAdd) {
-            String glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
-            toAdd.add(new CallbackWrapper(path, glob, cb));
-        }
+        global.put(cb.uniqueIdentity, new CallbackWrapper(path, cb));
     }
 
     @Override
     public void on(String path, final EventCallback cb) {
-        synchronized (toAdd) {
-            String glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
-            toAdd.add(new CallbackWrapper(path, glob, cb));
-        }
+        global.put(cb.uniqueIdentity, new CallbackWrapper(path, cb));
     }
 
     @Override
-    public void on(String path, Runnable runnable) {
-        synchronized (toAdd) {
-            String glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
-            toAdd.add(new CallbackWrapper(path, glob, runnable));
-        }
+    public void on(String path, EventRunnable cb) {
+        global.put(cb.uniqueIdentity, new CallbackWrapper(path, cb));
     }
 
     @Override
-    public void off(Object cb) {
-        synchronized (toRemove) {
-            toRemove.add(cb);
-        }
+    public void off(AbstractEventFacadeCallback cb) {
+        global.remove(cb.uniqueIdentity);
+        local.remove(cb.uniqueIdentity);
     }
 
     @Override
     public void onLocal(String path, AutoOffEventCallback cb) {
-        synchronized (local) {
-            String glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
-            local.add(new CallbackWrapper(path, glob, cb));
-        }
+        local.put(cb.uniqueIdentity, new CallbackWrapper(path, cb));
     }
 
     @Override
     public void onLocal(String path, EventCallback cb) {
-        synchronized (local) {
-            String glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
-            local.add(new CallbackWrapper(path, glob, cb));
-        }
+        local.put(cb.uniqueIdentity, new CallbackWrapper(path, cb));
     }
 
     @Override
-    public void onLocal(String path, Runnable runnable) {
-        synchronized (local) {
-            String glob = createRegexFromGlob(path.replaceAll("\\{.*\\}", ".*"));
-            local.add(new CallbackWrapper(path, glob, runnable));
-        }
-    }
-
-    @Override
-    public void offLocal(Object cb) {
-        synchronized (local) {
-            Iterator<CallbackWrapper> it = local.iterator();
-            while (it.hasNext()) {
-                CallbackWrapper w = it.next();
-                if (w.callback == cb) {
-                    it.remove();
-                }
-            }
-        }
+    public void onLocal(String path, EventRunnable cb) {
+        local.put(cb.uniqueIdentity, new CallbackWrapper(path, cb));
     }
 
     @Override
@@ -214,12 +179,10 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
     }
 
     private void fireLocal(CanonicalEvent cevt) {
-        List<CallbackWrapper> wrappers;
-        synchronized (local) {
-            wrappers = local.stream().collect(Collectors.toList());
-        }
+        Map<String, CallbackWrapper> wrappers = new HashMap<>();
+        wrappers.putAll(local);
 
-        for (CallbackWrapper w : wrappers) {
+        for (CallbackWrapper w : wrappers.values()) {
             if (cevt.getPath().matches(w.getGlob())) {
                 w.call(cevt);
             }
@@ -237,30 +200,12 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
             return false;
         }
 
-        synchronized (toAdd) {
-            if (!toAdd.isEmpty()) {
-                for (CallbackWrapper wrapper : toAdd) {
-                    callbacks.put(wrapper.getIdentity(), wrapper);
-                }
-
-                toAdd.clear();
-            }
-        }
-
-        synchronized (toRemove) {
-            if (!toRemove.isEmpty()) {
-                for (Object cb : toRemove) {
-                    callbacks.remove(cb);
-                }
-
-                toRemove.clear();
-            }
-        }
-
         CanonicalEvent cevt = (CanonicalEvent)evt;
-        for (CallbackWrapper wrapper : callbacks.values()) {
-            if (cevt.getPath().matches(wrapper.getGlob())) {
-                wrapper.call(cevt);
+        Map<String, CallbackWrapper> wrappers = new HashMap<>();
+        wrappers.putAll(global);
+        for (CallbackWrapper w : wrappers.values()) {
+            if (cevt.getPath().matches(w.getGlob())) {
+                w.call(cevt);
             }
         }
 
