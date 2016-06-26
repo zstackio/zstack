@@ -2,6 +2,8 @@ package org.zstack.storage.primary.nfs;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.AsyncBatchRunner;
+import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
@@ -51,7 +53,7 @@ import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -934,43 +936,50 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                             return;
                         }
 
-                        class Result {
-                            List<ErrorCode> errors = new ArrayList<ErrorCode>();
+                        PrimaryStorageInventory inv = getSelfInventory();
+
+                        new LoopAsyncBatch<String>(trigger) {
                             boolean success;
-                        }
 
-                        final Result ret = new Result();
-
-                        final AsyncLatch latch = new AsyncLatch(cuuids.size(), new NoErrorCompletion(trigger) {
                             @Override
-                            public void done() {
-                                if (ret.success) {
+                            protected Collection<String> collect() {
+                                return cuuids;
+                            }
+
+                            @Override
+                            protected AsyncBatchRunner forEach(String cuuid) {
+                                return new AsyncBatchRunner() {
+                                    @Override
+                                    public void run(NoErrorCompletion completion) {
+                                        NfsPrimaryStorageBackend bkd = getBackendByClusterUuid(cuuid);
+                                        bkd.remount(inv, cuuid, new Completion(completion) {
+                                            @Override
+                                            public void success() {
+                                                success = true;
+                                                completion.done();
+                                            }
+
+                                            @Override
+                                            public void fail(ErrorCode errorCode) {
+                                                errors.add(errorCode);
+                                                completion.done();
+                                            }
+                                        });
+                                    }
+                                };
+                            }
+
+                            @Override
+                            protected void done() {
+                                if (success) {
                                     self = dbf.reload(self);
                                     trigger.next();
                                 } else {
-                                    trigger.fail(errf.stringToOperationError(String.format("unable to connect the NFS primary storage," +
-                                            "errors are %s", ret.errors)));
+                                    trigger.fail(errf.stringToOperationError(String.format("unable to connect the" +
+                                            "NFS primary storage[uuid:%s, name:%s]", self.getUuid(), self.getName()), errors));
                                 }
                             }
-                        });
-
-                        PrimaryStorageInventory inv = getSelfInventory();
-                        for (String cuuid : cuuids) {
-                            NfsPrimaryStorageBackend bkd = getBackendByClusterUuid(cuuid);
-                            bkd.remount(inv, cuuid, new Completion(latch) {
-                                @Override
-                                public void success() {
-                                    ret.success = true;
-                                    latch.ack();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    ret.errors.add(errorCode);
-                                    latch.ack();
-                                }
-                            });
-                        }
+                        }.start();
                     }
                 });
 
