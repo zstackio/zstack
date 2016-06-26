@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  */
 public abstract class AbstractCompletion implements AsyncBackup {
-    private List<AsyncBackup> backups;
+    protected List<AsyncBackup> backups;
     private final AtomicBoolean successCalled = new AtomicBoolean(false);
     private final AtomicBoolean failCalled = new AtomicBoolean(false);
 
