@@ -831,62 +831,66 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
+    protected void hookToKVMHostConnectedEventToChangeStatusToConnected() {
+        // hook on host connected event to reconnect the primary storage once there is
+        // a host connected in attached clusters
+        evtf.on(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new AutoOffEventCallback() {
+            {
+                uniqueIdentity = String.format("connect-nfs-%s-when-host-connected", self.getUuid());
+            }
+
+            @Override
+            protected boolean run(Map tokens, Object data) {
+                HostStatusChangedData d = (HostStatusChangedData) data;
+                if (!HostStatus.Connected.toString().equals(d.getNewStatus())) {
+                    return false;
+                }
+
+                if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(d.getInventory().getHypervisorType())) {
+                    return false;
+                }
+
+                self = dbf.reload(self);
+                if (self.getStatus() == PrimaryStorageStatus.Connected) {
+                    return true;
+                }
+
+                if (!self.getAttachedClusterRefs().stream()
+                        .anyMatch(ref -> ref.getClusterUuid().equals(d.getInventory().getClusterUuid()))) {
+                    return false;
+                }
+
+                FutureCompletion future = new FutureCompletion();
+
+                ConnectParam p = new ConnectParam();
+                p.setNewAdded(false);
+                connectHook(p, future);
+
+                future.await();
+
+                if (!future.isSuccess()) {
+                    //TODO
+                    logger.warn(String.format("%s", future.getErrorCode()));
+                }
+
+                return future.isSuccess();
+            }
+        });
+    }
+
     @Override
     protected void connectHook(ConnectParam param, final Completion completion) {
         final NfsPrimaryStorageBackend backend = getUsableBackend();
         if (backend == null) {
+            if (!param.isNewAdded()) {
+                hookToKVMHostConnectedEventToChangeStatusToConnected();
+            }
+
             // the nfs primary storage has not been attached to any clusters, or no connected hosts
             completion.fail(errf.instantiateErrorCode(PrimaryStorageErrors.DISCONNECTED,
                     String.format("the NFS primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the" +
                             " attached clusters are connected", self.getUuid(), self.getName())
             ));
-
-            if (!param.isNewAdded()) {
-                // hook on host connected event to reconnect the primary storage once there is
-                // a host connected in attached clusters
-                evtf.on(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new AutoOffEventCallback() {
-                    {
-                        uniqueIdentity = String.format("connect-nfs-%s-when-host-connected", self.getUuid());
-                    }
-
-                    @Override
-                    protected boolean run(Map tokens, Object data) {
-                        HostStatusChangedData d = (HostStatusChangedData) data;
-                        if (!HostStatus.Connected.toString().equals(d.getNewStatus())) {
-                            return false;
-                        }
-
-                        if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(d.getInventory().getHypervisorType())) {
-                            return false;
-                        }
-
-                        self = dbf.reload(self);
-                        if (self.getStatus() == PrimaryStorageStatus.Connected) {
-                            return true;
-                        }
-
-                        if (!self.getAttachedClusterRefs().stream()
-                                .anyMatch(ref -> ref.getClusterUuid().equals(d.getInventory().getClusterUuid()))) {
-                            return false;
-                        }
-
-                        FutureCompletion future = new FutureCompletion();
-
-                        ConnectParam p = new ConnectParam();
-                        p.setNewAdded(false);
-                        connectHook(p, future);
-
-                        future.await();
-
-                        if (!future.isSuccess()) {
-                            //TODO
-                            logger.warn(String.format("%s", future.getErrorCode()));
-                        }
-
-                        return future.isSuccess();
-                    }
-                });
-            }
 
             return;
         }
@@ -991,6 +995,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     protected void pingHook(Completion completion) {
         NfsPrimaryStorageBackend bkd = getUsableBackend();
         if (bkd == null) {
+            hookToKVMHostConnectedEventToChangeStatusToConnected();
+
             // the nfs primary storage has not been attached to any clusters, or no connected hosts
             completion.fail(errf.stringToOperationError(
                     String.format("the NFS primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the" +
