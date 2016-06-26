@@ -841,50 +841,52 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                             " attached clusters are connected", self.getUuid(), self.getName())
             ));
 
-            // hook on host connected event to reconnect the primary storage once there is
-            // a host connected in attached clusters
-            evtf.on(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new AutoOffEventCallback() {
-                {
-                    uniqueIdentity = String.format("connect-nfs-%s-when-host-connected", self.getUuid());
-                }
-
-                @Override
-                protected boolean run(Map tokens, Object data) {
-                    HostStatusChangedData d = (HostStatusChangedData) data;
-                    if (!HostStatus.Connected.toString().equals(d.getNewStatus())) {
-                        return false;
+            if (!param.isNewAdded()) {
+                // hook on host connected event to reconnect the primary storage once there is
+                // a host connected in attached clusters
+                evtf.on(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new AutoOffEventCallback() {
+                    {
+                        uniqueIdentity = String.format("connect-nfs-%s-when-host-connected", self.getUuid());
                     }
 
-                    if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(d.getInventory().getHypervisorType())) {
-                        return false;
+                    @Override
+                    protected boolean run(Map tokens, Object data) {
+                        HostStatusChangedData d = (HostStatusChangedData) data;
+                        if (!HostStatus.Connected.toString().equals(d.getNewStatus())) {
+                            return false;
+                        }
+
+                        if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(d.getInventory().getHypervisorType())) {
+                            return false;
+                        }
+
+                        self = dbf.reload(self);
+                        if (self.getStatus() == PrimaryStorageStatus.Connected) {
+                            return true;
+                        }
+
+                        if (!self.getAttachedClusterRefs().stream()
+                                .anyMatch(ref -> ref.getClusterUuid().equals(d.getInventory().getClusterUuid()))) {
+                            return false;
+                        }
+
+                        FutureCompletion future = new FutureCompletion();
+
+                        ConnectParam p = new ConnectParam();
+                        p.setNewAdded(false);
+                        connectHook(p, future);
+
+                        future.await();
+
+                        if (!future.isSuccess()) {
+                            //TODO
+                            logger.warn(String.format("%s", future.getErrorCode()));
+                        }
+
+                        return future.isSuccess();
                     }
-
-                    self = dbf.reload(self);
-                    if (self.getStatus() == PrimaryStorageStatus.Connected) {
-                        return true;
-                    }
-
-                    if (!self.getAttachedClusterRefs().stream()
-                            .anyMatch(ref -> ref.getClusterUuid().equals(d.getInventory().getClusterUuid()))) {
-                        return false;
-                    }
-
-                    FutureCompletion future = new FutureCompletion();
-
-                    ConnectParam p = new ConnectParam();
-                    p.setNewAdded(false);
-                    connectHook(p, future);
-
-                    future.await();
-
-                    if (!future.isSuccess()) {
-                        //TODO
-                        logger.warn(String.format("%s", future.getErrorCode()));
-                    }
-
-                    return future.isSuccess();
-                }
-            });
+                });
+            }
 
             return;
         }
