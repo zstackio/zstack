@@ -8,5 +8,6 @@
     <TestCase class="org.zstack.test.storage.primary.nfs.TestReconnectNfsPrimaryStorage2"/>
     <TestCase class="org.zstack.test.storage.primary.nfs.TestReconnectNfsPrimaryStorage3"/>
     <TestCase class="org.zstack.test.storage.primary.nfs.TestReconnectNfsPrimaryStorage4"/>
+    <TestCase class="org.zstack.test.storage.primary.nfs.TestNfsPrimaryStorageStatus"/>
     <TestCase class="org.zstack.test.storage.primary.nfs.TestNfsMountOptions1"/>
 </UnitTestSuiteConfig>

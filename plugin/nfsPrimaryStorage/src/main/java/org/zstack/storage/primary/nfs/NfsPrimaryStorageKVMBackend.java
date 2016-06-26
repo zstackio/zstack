@@ -34,6 +34,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.kvm.*;
+import org.zstack.storage.primary.ChangePrimaryStorageStatusMsg;
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
@@ -947,6 +948,15 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                                     return cap;
                                 }
                             });
+
+                            if (!PrimaryStorageStatus.Connected.toString().equals(inv.getStatus())) {
+                                // use sync call here to make sure the NFS primary storage connected before continue to the next step
+                                ChangePrimaryStorageStatusMsg cmsg = new ChangePrimaryStorageStatusMsg();
+                                cmsg.setPrimaryStorageUuid(inv.getUuid());
+                                cmsg.setStatus(PrimaryStorageStatus.Connected.toString());
+                                bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
+                                bus.call(cmsg);
+                            }
                         }
 
                         trigger.next();

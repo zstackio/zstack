@@ -35,9 +35,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
-import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageMsg;
-import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageReply;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
@@ -195,10 +193,18 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((SyncVolumeSizeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof PingPrimaryStorageMsg) {
             handle((PingPrimaryStorageMsg) msg);
+        } else if (msg instanceof ChangePrimaryStorageStatusMsg) {
+            handle((ChangePrimaryStorageStatusMsg) msg);
 	    } else {
 	        bus.dealWithUnknownMessage(msg);
 	    }
 	}
+
+    private void handle(ChangePrimaryStorageStatusMsg msg) {
+        changeStatus(PrimaryStorageStatus.valueOf(msg.getStatus()));
+        ChangeVolumeSnapshotStatusReply reply = new ChangeVolumeSnapshotStatusReply();
+        bus.reply(msg, reply);
+    }
 
     private void handle(final PingPrimaryStorageMsg msg) {
         final PingPrimaryStorageReply reply = new PingPrimaryStorageReply();
