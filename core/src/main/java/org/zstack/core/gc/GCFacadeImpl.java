@@ -33,6 +33,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -168,24 +169,27 @@ public class GCFacadeImpl implements GCFacade, ManagementNodeChangeListener, Man
             }
 
             final String finalScriptName = scriptName;
-            final EventCallback cb = (tokens, data) -> {
-                if (!Platform.getManagementServerId().equals(tokens.get(EventFacade.META_DATA_MANAGEMENT_NODE_ID))) {
-                    return;
-                }
-
-                try {
-                    Binding binding = new Binding();
-                    binding.setVariable("tokens", tokens);
-                    binding.setVariable("data", data);
-                    binding.setVariable("context", context.getContext());
-                    boolean ret = (Boolean) gse.run(finalScriptName, binding);
-                    if (ret) {
-                        logger.debug(String.format("[GC] code[%s], event[%s] triggered a GC job[%s]",
-                                trigger.getCodeName(), trigger.getEventPath(), context.getName()));
-                        runner.run();
+            final EventCallback cb = new EventCallback() {
+                @Override
+                protected void run(Map tokens, Object data) {
+                    if (!Platform.getManagementServerId().equals(tokens.get(EventFacade.META_DATA_MANAGEMENT_NODE_ID))) {
+                        return;
                     }
-                } catch (Exception e) {
-                    throw new CloudRuntimeException(e);
+
+                    try {
+                        Binding binding = new Binding();
+                        binding.setVariable("tokens", tokens);
+                        binding.setVariable("data", data);
+                        binding.setVariable("context", context.getContext());
+                        boolean ret = (Boolean) gse.run(finalScriptName, binding);
+                        if (ret) {
+                            logger.debug(String.format("[GC] code[%s], event[%s] triggered a GC job[%s]",
+                                    trigger.getCodeName(), trigger.getEventPath(), context.getName()));
+                            runner.run();
+                        }
+                    } catch (Exception e) {
+                        throw new CloudRuntimeException(e);
+                    }
                 }
             };
 

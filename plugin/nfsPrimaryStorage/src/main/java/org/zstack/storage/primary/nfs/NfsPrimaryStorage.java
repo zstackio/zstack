@@ -2,7 +2,9 @@ package org.zstack.storage.primary.nfs;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -17,6 +19,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
+import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
@@ -63,6 +66,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private NfsPrimaryStorageManager nfsMgr;
     @Autowired
     private GCFacade gcf;
+    @Autowired
+    private EventFacade evtf;
 
     public NfsPrimaryStorage(PrimaryStorageVO vo) {
         super(vo);
@@ -356,7 +361,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             bus.reply(msg, reply);
             return;
         }
-        
+
         PrimaryStorageClusterRefVO ref = self.getAttachedClusterRefs().iterator().next();
         ClusterVO cluster = dbf.findByUuid(ref.getClusterUuid(), ClusterVO.class);
         getBackend(HypervisorType.valueOf(cluster.getHypervisorType())).deleteImageCache(msg.getInventory());
@@ -403,9 +408,14 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     public void attachHook(String clusterUuid, Completion completion) {
+
         NfsPrimaryStorageBackend backend = getBackendByClusterUuid(clusterUuid);
         try {
-            backend.attachToCluster(PrimaryStorageInventory.valueOf(self), clusterUuid);
+            boolean ret = backend.attachToCluster(PrimaryStorageInventory.valueOf(self), clusterUuid);
+            if (ret) {
+                changeStatus(PrimaryStorageStatus.Connected);
+            }
+
             completion.success();
         } catch (NfsPrimaryStorageException e) {
             completion.fail(errf.throwableToOperationError(e));
@@ -691,18 +701,18 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
         mediator.downloadBits(getSelfInventory(), BackupStorageInventory.valueOf(bsvo),
                 msg.getBackupStorageRef().getInstallPath(), installPath, new Completion(msg) {
-            @Override
-            public void success() {
-                reply.setInstallPath(installPath);
-                bus.reply(msg, reply);
-            }
+                    @Override
+                    public void success() {
+                        reply.setInstallPath(installPath);
+                        bus.reply(msg, reply);
+                    }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
     }
 
     @Override
@@ -826,10 +836,56 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         final NfsPrimaryStorageBackend backend = getUsableBackend();
         if (backend == null) {
             // the nfs primary storage has not been attached to any clusters, or no connected hosts
-            completion.fail(errf.stringToOperationError(
+            completion.fail(errf.instantiateErrorCode(PrimaryStorageErrors.DISCONNECTED,
                     String.format("the NFS primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the" +
                             " attached clusters are connected", self.getUuid(), self.getName())
             ));
+
+            // hook on host connected event to reconnect the primary storage once there is
+            // a host connected in attached clusters
+            evtf.on(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new AutoOffEventCallback() {
+                {
+                    uniqueIdentity = String.format("connect-nfs-%s-when-host-connected", self.getUuid());
+                }
+
+                @Override
+                protected boolean run(Map tokens, Object data) {
+                    HostStatusChangedData d = (HostStatusChangedData) data;
+                    if (!HostStatus.Connected.toString().equals(d.getNewStatus())) {
+                        return false;
+                    }
+
+                    if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(d.getInventory().getHypervisorType())) {
+                        return false;
+                    }
+
+                    self = dbf.reload(self);
+                    if (self.getStatus() == PrimaryStorageStatus.Connected) {
+                        return true;
+                    }
+
+                    if (!self.getAttachedClusterRefs().stream()
+                            .anyMatch(ref -> ref.getClusterUuid().equals(d.getInventory().getClusterUuid()))) {
+                        return false;
+                    }
+
+                    FutureCompletion future = new FutureCompletion();
+
+                    ConnectParam p = new ConnectParam();
+                    p.setNewAdded(false);
+                    connectHook(p, future);
+
+                    future.await();
+
+                    if (!future.isSuccess()) {
+                        //TODO
+                        logger.warn(String.format("%s", future.getErrorCode()));
+                    }
+
+                    return future.isSuccess();
+                }
+            });
+
             return;
         }
 

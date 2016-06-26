@@ -13,17 +13,15 @@ public interface EventFacade {
 
     void on(String path, EventCallback cb);
 
-    void on(String path, Runnable runnable);
+    void on(String path, EventRunnable runnable);
 
-    void off(Object cb);
+    void off(AbstractEventFacadeCallback cb);
 
     void onLocal(String path, AutoOffEventCallback cb);
 
     void onLocal(String path, EventCallback cb);
 
-    void onLocal(String path, Runnable runnable);
-
-    void offLocal(Object cb);
+    void onLocal(String path, EventRunnable runnable);
 
     void fire(String path, Object data);
 

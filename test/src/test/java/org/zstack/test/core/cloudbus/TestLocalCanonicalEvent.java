@@ -3,12 +3,15 @@ package org.zstack.test.core.cloudbus;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.EventFacadeImpl;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.test.BeanConstructor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -33,9 +36,12 @@ public class TestLocalCanonicalEvent {
     @Test
     public void test() throws InterruptedException {
         String path = "/test/event";
-        evtf.onLocal(path, (tokens, data) -> {
-            count ++;
-            return true;
+        evtf.onLocal(path, new AutoOffEventCallback() {
+            @Override
+            protected boolean run(Map tokens, Object data) {
+                count++;
+                return true;
+            }
         });
 
         evtf.fire(path, null);
