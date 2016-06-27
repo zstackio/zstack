@@ -6,17 +6,21 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.network.service.flat.FlatDhcpUpgradeExtension;
 import org.zstack.network.service.flat.FlatNetworkGlobalProperty;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
-import org.zstack.test.UnitTestUtils;
+import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * 1. delete a flat network
@@ -32,17 +36,14 @@ public class TestFlatNetwork5 {
     SessionInventory session;
     LocalStorageSimulatorConfig config;
     FlatNetworkServiceSimulatorConfig fconfig;
+    FlatDhcpUpgradeExtension dhcpUpgradeExtension;
     long totalSize = SizeUnit.GIGABYTE.toByte(100);
 
     @Before
     public void setUp() throws Exception {
-        UnitTestUtils.runTestCase(TestFlatNetwork5Prepare.class);
-
+        DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-
-        FlatNetworkGlobalProperty.DELETE_DEPRECATED_DHCP_NAME_SPACE = true;
-
-        deployer = new Deployer("deployerXml/OnlyOneZone.xml", con);
+        deployer = new Deployer("deployerXml/flatnetwork/TestFlatNetwork2.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
         deployer.addSpringConfig("localStorageSimulator.xml");
         deployer.addSpringConfig("localStorage.xml");
@@ -55,6 +56,7 @@ public class TestFlatNetwork5 {
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(LocalStorageSimulatorConfig.class);
         fconfig = loader.getComponent(FlatNetworkServiceSimulatorConfig.class);
+        dhcpUpgradeExtension = loader.getComponent(FlatDhcpUpgradeExtension.class);
 
         Capacity c = new Capacity();
         c.total = totalSize;
@@ -70,6 +72,14 @@ public class TestFlatNetwork5 {
 
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
+        FlatNetworkGlobalProperty.DELETE_DEPRECATED_DHCP_NAME_SPACE = true;
+        dhcpUpgradeExtension.start();
+
+        HostInventory host = deployer.hosts.get("host1");
+        api.reconnectHost(host.getUuid());
+
+        TimeUnit.SECONDS.sleep(2);
+
         Assert.assertEquals(1, fconfig.deleteNamespaceCmds.size());
     }
 }
