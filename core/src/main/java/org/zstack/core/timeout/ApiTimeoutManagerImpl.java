@@ -75,7 +75,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
     }
 
     private void collectTimeoutForDerivedApi() {
-        Reflections reflections = new Reflections("org.zstack");
+        Reflections reflections = Platform.getReflections();
 
         Map<Class, ApiTimeout> children = new HashMap<Class, ApiTimeout>();
         for (Map.Entry<Class, ApiTimeout> e : apiTimeouts.entrySet()) {

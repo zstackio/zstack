@@ -728,7 +728,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     }
 
     private void generateConstantPythonClass(StringBuilder sb, List<String> basePkgs) {
-        Reflections reflections = new Reflections("org.zstack");
+        Reflections reflections = Platform.getReflections();
         Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(PythonClass.class);
         for (Class<?> clazz : annotated) {
             try {
