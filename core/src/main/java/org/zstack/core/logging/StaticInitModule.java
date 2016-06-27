@@ -4,9 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.StringUtils;
 import org.reflections.Reflections;
-import org.reflections.scanners.FieldAnnotationsScanner;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
+import org.zstack.core.Platform;
 import org.zstack.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Utils;
@@ -27,9 +25,7 @@ public class StaticInitModule {
 
     @StaticInit
     public static void init() throws IllegalAccessException, IOException {
-        Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage("org.zstack"))
-                .setScanners(new FieldAnnotationsScanner())
-        );
+        Reflections reflections = Platform.getReflections();
 
         Map<String, Map<String, String>> localeMsgs = new HashMap<String, Map<String, String>>();
 

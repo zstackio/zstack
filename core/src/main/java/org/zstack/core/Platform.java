@@ -4,9 +4,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.StringUtils;
 import org.reflections.Reflections;
-import org.reflections.scanners.MethodAnnotationsScanner;
+import org.reflections.scanners.*;
 import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.web.context.WebApplicationContext;
@@ -60,6 +59,12 @@ public class Platform {
     private static Locale locale;
 
     public static volatile boolean IS_RUNNING = true;
+
+    private static Reflections reflections;
+
+    public static Reflections getReflections() {
+        return reflections;
+    }
 
     private static Map<String, String> linkGlobalPropertyMap(String prefix) {
         Map<String, String> ret = new HashMap<String, String>();
@@ -313,6 +318,11 @@ public class Platform {
         try {
             msId = getUuid();
 
+            reflections = new Reflections(ClasspathHelper.forPackage("org.zstack"),
+                    new SubTypesScanner(), new MethodAnnotationsScanner(), new FieldAnnotationsScanner(),
+                    new MemberUsageScanner(), new MethodParameterNamesScanner(), new ResourcesScanner(),
+                    new TypeAnnotationsScanner(), new TypeElementsScanner());
+
             // TODO: get code version from MANIFEST file
             codeVersion = "0.1.0";
 
@@ -337,11 +347,6 @@ public class Platform {
     }
 
     private static void callStaticInitMethods() throws InvocationTargetException, IllegalAccessException {
-        Reflections reflections = new Reflections(new ConfigurationBuilder()
-                .setUrls(ClasspathHelper.forPackage("org.zstack"))
-                .setScanners(new MethodAnnotationsScanner())
-        );
-
         Set<Method> inits = reflections.getMethodsAnnotatedWith(StaticInit.class);
         for (Method init : inits)  {
             if (!Modifier.isStatic(init.getModifiers())) {
