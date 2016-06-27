@@ -30,6 +30,7 @@
                                 WEB-INF/lib/jtidy*.jar,
                                 WEB-INF/lib/servlet-api*.jar,
                                 WEB-INF/lib/c3p0-0.9.1.1.jar,
+                                WEB-INF/lib/reflections-0.9.8.jar,
                             </packagingExcludes>
                             <webResources>
                                 <resource>	
@@ -249,6 +250,7 @@
                         WEB-INF/lib/jtidy*.jar,
                         WEB-INF/lib/servlet-api*.jar,
                         WEB-INF/lib/c3p0-0.9.1.1.jar,
+			WEB-INF/lib/reflections-0.9.8.jar,
                     </packagingExcludes>
                     <webResources>
                         <resource>	
