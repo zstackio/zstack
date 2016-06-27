@@ -313,5 +313,9 @@ public class TestPolicyForSnapshot {
         APIQueryVolumeSnapshotTreeMsg tmsg = new APIQueryVolumeSnapshotTreeMsg();
         tmsg.setConditions(new ArrayList<QueryCondition>());
         api.query(tmsg, APIQueryVolumeSnapshotTreeReply.class, session);
+
+        VolumeSnapshotInventory spd = api.createSnapshot(root.getUuid());
+        api.changeResourceOwner(spd.getUuid(), identityCreator.getAccountSession().getAccountUuid());
+        api.deleteSnapshot(spd.getUuid(), identityCreator.getAccountSession());
     }
 }
