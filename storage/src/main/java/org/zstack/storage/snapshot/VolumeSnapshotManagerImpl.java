@@ -19,6 +19,8 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.identity.AccountResourceRefInventory;
+import org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -36,6 +38,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -46,7 +49,7 @@ import java.util.Map;
 /**
  */
 public class VolumeSnapshotManagerImpl extends AbstractService implements VolumeSnapshotManager,
-        ReplyMessagePreSendingExtensionPoint, VolumeBeforeExpungeExtensionPoint {
+        ReplyMessagePreSendingExtensionPoint, VolumeBeforeExpungeExtensionPoint, ResourceOwnerAfterChangeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotManagerImpl.class);
 
     @Autowired
@@ -482,6 +485,33 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
 
         if (!msgs.isEmpty()) {
             bus.call(msgs);
+        }
+    }
+
+    @Override
+    public void resourceOwnerAfterChange(AccountResourceRefInventory ref, String newOwnerUuid) {
+        if (!VolumeVO.class.getSimpleName().equals(ref.getResourceType())) {
+            return;
+        }
+
+        changeVolumeSnapshotOwner(ref, newOwnerUuid);
+    }
+
+    @Transactional
+    private void changeVolumeSnapshotOwner(AccountResourceRefInventory ref, String newOwnerUuid) {
+        String sql = "select sp.uuid from VolumeSnapshotVO sp where sp.volumeUuid = :volUuid";
+        TypedQuery<String> sq = dbf.getEntityManager().createQuery(sql, String.class);
+        sq.setParameter("volUuid", ref.getResourceUuid());
+        List<String> spUuids = sq.getResultList();
+
+        if (!spUuids.isEmpty()) {
+            sql = "update AccountResourceRefVO ref set ref.accountUuid = :acntUuid, ref.ownerAccountUuid = :acntUuid" +
+                    " where ref.resourceUuid in (:uuids) and ref.resourceType = :type";
+            Query rq = dbf.getEntityManager().createQuery(sql);
+            rq.setParameter("acntUuid", newOwnerUuid);
+            rq.setParameter("uuids", spUuids);
+            rq.setParameter("type", VolumeSnapshotVO.class.getSimpleName());
+            rq.executeUpdate();
         }
     }
 }

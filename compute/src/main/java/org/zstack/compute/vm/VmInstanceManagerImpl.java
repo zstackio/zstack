@@ -43,6 +43,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.search.SearchOp;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagValidator;
@@ -65,6 +66,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
@@ -72,7 +74,7 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.list;
 
 public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager,
         ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint,
@@ -1074,30 +1076,50 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         new StaticIpOperator().deleteStaticIpByL3NetworkUuid(inventory.getUuid());
     }
 
+
+    @Transactional
+    private void changeOwnerOfRootVolume(AccountResourceRefInventory ref, String newOwnerUuid) {
+        String sql = "select vm.rootVolumeUuid from VmInstanceVO vm where vm.uuid = :uuid";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("uuid", ref.getResourceUuid());
+        List<String> ret = q.getResultList();
+        if (q.getResultList().isEmpty()) {
+            // an VM in an intermediate state
+            return;
+        }
+
+        String rootVolumeUuid = ret.get(0);
+        sql = "update AccountResourceRefVO ref set ref.accountUuid = :acntUuid, ref.ownerAccountUuid = :acntUuid" +
+                " where ref.resourceUuid = :uuid and ref.resourceType = :type";
+        Query rq = dbf.getEntityManager().createQuery(sql);
+        rq.setParameter("acntUuid", newOwnerUuid);
+        rq.setParameter("uuid", rootVolumeUuid);
+        rq.setParameter("type", VolumeVO.class.getSimpleName());
+        rq.executeUpdate();
+
+        sql = "select sp.uuid from VolumeSnapshotVO sp where sp.volumeUuid = :volUuid";
+        TypedQuery<String> sq = dbf.getEntityManager().createQuery(sql, String.class);
+        sq.setParameter("volUuid", rootVolumeUuid);
+        List<String> spUuids = sq.getResultList();
+
+        if (!spUuids.isEmpty()) {
+            sql = "update AccountResourceRefVO ref set ref.accountUuid = :acntUuid, ref.ownerAccountUuid = :acntUuid" +
+                    " where ref.resourceUuid in (:uuids) and ref.resourceType = :type";
+            rq = dbf.getEntityManager().createQuery(sql);
+            rq.setParameter("acntUuid", newOwnerUuid);
+            rq.setParameter("uuids", spUuids);
+            rq.setParameter("type", VolumeSnapshotVO.class.getSimpleName());
+            rq.executeUpdate();
+        }
+    }
+
     @Override
     public void resourceOwnerAfterChange(AccountResourceRefInventory ref, String newOwnerUuid) {
         if (!VmInstanceVO.class.getSimpleName().equals(ref.getResourceType())) {
             return;
         }
 
-        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-        q.select(VmInstanceVO_.rootVolumeUuid);
-        q.add(VmInstanceVO_.uuid, Op.EQ, ref.getResourceUuid());
-        String rootVolumeUuid = q.findValue();
-
-        if (rootVolumeUuid == null) {
-            // an VM in an intermediate state
-            return;
-        }
-
-        SimpleQuery<AccountResourceRefVO> refq = dbf.createQuery(AccountResourceRefVO.class);
-        refq.add(AccountResourceRefVO_.resourceUuid, Op.EQ, rootVolumeUuid);
-        refq.add(AccountResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
-        AccountResourceRefVO ar = refq.find();
-
-        ar.setAccountUuid(newOwnerUuid);
-        ar.setOwnerAccountUuid(newOwnerUuid);
-        dbf.update(ar);
+        changeOwnerOfRootVolume(ref, newOwnerUuid);
     }
 
     @Override
