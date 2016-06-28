@@ -25,8 +25,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
-import org.zstack.header.volume.VolumeAfterExpungeExtensionPoint;
+import org.zstack.header.volume.VolumeBeforeExpungeExtensionPoint;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
@@ -47,7 +46,7 @@ import java.util.Map;
 /**
  */
 public class VolumeSnapshotManagerImpl extends AbstractService implements VolumeSnapshotManager,
-        ReplyMessagePreSendingExtensionPoint, VolumeAfterExpungeExtensionPoint {
+        ReplyMessagePreSendingExtensionPoint, VolumeBeforeExpungeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotManagerImpl.class);
 
     @Autowired
@@ -443,7 +442,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
     }
 
     @Override
-    public void volumeAfterExpunge(VolumeInventory volume) {
+    public void volumeBeforeExpunge(VolumeInventory volume) {
         List<VolumeSnapshotDeletionMsg> msgs = new ArrayList<VolumeSnapshotDeletionMsg>();
         SimpleQuery<VolumeSnapshotTreeVO> cq = dbf.createQuery(VolumeSnapshotTreeVO.class);
         cq.select(VolumeSnapshotTreeVO_.uuid);
