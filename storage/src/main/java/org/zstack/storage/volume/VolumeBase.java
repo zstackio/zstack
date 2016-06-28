@@ -533,14 +533,25 @@ public class VolumeBase implements Volume {
                 }
 
                 SyncVolumeSizeOnPrimaryStorageReply r = reply.castReply();
-                self.setActualSize(r.getActualSize());
                 self.setSize(r.getSize());
+                // the actual size = volume actual size + all snapshot size
+                long snapshotSize = calculateSnapshotSize();
+                self.setActualSize(r.getActualSize() + snapshotSize);
                 self = dbf.updateAndRefresh(self);
 
                 VolumeSize size = new VolumeSize();
-                size.actualSize = r.getActualSize();
-                size.size = r.getSize();
+                size.actualSize = self.getActualSize();
+                size.size = self.getSize();
                 completion.success(size);
+            }
+
+            @Transactional(readOnly = true)
+            private long calculateSnapshotSize() {
+                String sql = "select sum(sp.size) from VolumeSnapshotVO sp where sp.volumeUuid = :uuid";
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("uuid", self.getUuid());
+                Long size = q.getSingleResult();
+                return size == null ? 0 : size;
             }
         });
     }
