@@ -5,6 +5,7 @@ import org.zstack.header.core.validation.Validation;
 import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
+import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 import org.zstack.kvm.KVMAgentCommands.AgentCommand;
@@ -556,6 +557,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class MoveBitsRsp extends NfsPrimaryStorageAgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class OfflineMergeSnapshotCmd extends NfsPrimaryStorageAgentCommand {
         private String srcPath;
         private String destPath;
