@@ -25,6 +25,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
@@ -146,7 +147,7 @@ public class KvmBackend extends HypervisorBackend {
         public long size;
     }
 
-    @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class})
+    @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class, APIDeleteVolumeSnapshotMsg.class})
     public static class OfflineMergeSnapshotCmd extends AgentCmd {
         public String srcPath;
         public String destPath;

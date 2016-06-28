@@ -33,6 +33,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
@@ -432,6 +433,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class OfflineMergeSnapshotCmd extends AgentCommand {
         private String srcPath;
         private String destPath;
