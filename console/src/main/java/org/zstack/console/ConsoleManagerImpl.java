@@ -6,8 +6,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.SyncThread;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.console.*;
@@ -20,12 +22,16 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SessionLogoutExtensionPoint;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Query;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,7 +41,7 @@ import java.util.Map;
  * Time: 11:51 PM
  * To change this template use File | Settings | File Templates.
  */
-public class ConsoleManagerImpl extends AbstractService implements ConsoleManager, VmInstanceMigrateExtensionPoint,
+public class ConsoleManagerImpl extends AbstractService implements ConsoleManager, VmInstanceMigrateExtensionPoint, ManagementNodeChangeListener,
         VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint {
     private static CLogger logger = Utils.getLogger(ConsoleManagerImpl.class);
 
@@ -239,4 +245,38 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
             }
         });
     }
+
+    public void cleanupNode(String nodeId){
+        logger.debug(String.format("Management node[uuid:%s] left, will clean the record in ConsoleProxyVO", nodeId));
+        SimpleQuery<ManagementNodeVO> query = dbf.createQuery(ManagementNodeVO.class);
+        query.add(ManagementNodeVO_.uuid, SimpleQuery.Op.EQ, nodeId);
+        ManagementNodeVO managementNode = query.find();
+        if (managementNode == null) {
+            logger.debug("Cannot find management node: " + nodeId + ", it may have been deleted");
+            return;
+        }
+        String managementHostName = managementNode.getHostName();
+        String sql = "delete from ConsoleProxyVO q where q.proxyHostname = :managementHostName";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("managementHostName", managementHostName);
+        q.executeUpdate();
+    }
+
+    @Override
+    public void nodeLeft(String nodeId) {
+        cleanupNode(nodeId);
+    }
+
+    @Override
+    public void iAmDead(String nodeId) {
+        cleanupNode(nodeId);
+    }
+    @Override
+    public void nodeJoin(String nodeId) {
+    }
+    @Override
+    public void iJoin(String nodeId) {
+    }
+
+
 }
