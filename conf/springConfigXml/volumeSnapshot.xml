@@ -18,6 +18,7 @@
 			<zstack:extension interface="org.zstack.header.Service" />
 			<zstack:extension interface="org.zstack.header.volume.VolumeBeforeExpungeExtensionPoint" />
 			<zstack:extension interface="org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint" />
+			<zstack:extension interface="org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint" />
 		</zstack:plugin>
     </bean>
 
