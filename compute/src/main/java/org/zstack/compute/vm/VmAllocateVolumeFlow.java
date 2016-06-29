@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -17,6 +19,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
@@ -93,6 +97,8 @@ public class VmAllocateVolumeFlow implements Flow {
                         CreateVolumeReply cr = r.castReply();
                         VolumeInventory inv = cr.getInventory();
                         if (inv.getType().equals(VolumeType.Root.toString())) {
+                            UpdateQuery.New().entity(VmInstanceVO.class).set(VmInstanceVO_.rootVolumeUuid, inv.getUuid())
+                                    .condAnd(VmInstanceVO_.uuid, Op.EQ, spec.getVmInventory().getUuid()).update();
                             spec.setDestRootVolume(inv);
                         } else {
                             spec.getDestDataVolumes().add(inv);

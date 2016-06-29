@@ -6,8 +6,11 @@ import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.header.zone.ZoneVO_;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
@@ -38,5 +41,17 @@ public class TestCreateZone {
         SimpleQuery<ZoneVO> query = dbf.createQuery(ZoneVO.class);
         long count = query.count();
         Assert.assertEquals(1, count);
+
+        ZoneInventory inv = zones.get(0);
+
+        UpdateQuery q = UpdateQuery.New();
+        q.entity(ZoneVO.class).set(ZoneVO_.name, "newName").condAnd(ZoneVO_.uuid, Op.EQ, inv.getUuid()).update();
+
+        ZoneVO vo = dbf.findByUuid(inv.getUuid(), ZoneVO.class);
+        Assert.assertEquals("newName", vo.getName());
+
+        q = UpdateQuery.New();
+        q.entity(ZoneVO.class).condAnd(ZoneVO_.uuid, Op.EQ, inv.getUuid()).delete();
+        Assert.assertFalse(dbf.isExist(inv.getUuid(), ZoneVO.class));
     }
 }
