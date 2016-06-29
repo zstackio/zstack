@@ -9,6 +9,16 @@ public enum ImagePlatform {
     Other(false),
     Paravirtualization(true);
 
+    public static boolean isType(String actual, ImagePlatform...expected) {
+        for (ImagePlatform imagePlatform : expected) {
+            if (imagePlatform.toString().equals(actual)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private boolean paraVirtualization;
 
     private ImagePlatform(boolean para) {
