@@ -109,7 +109,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 String sql = "select sum(vm.memorySize), vm.hostUuid, sum(vm.cpuNum) from VmInstanceVO vm where vm.hostUuid in (:hostUuids) and vm.state not in (:vmStates) group by vm.hostUuid";
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("hostUuids", hostUuids);
-                q.setParameter("vmStates", list(VmInstanceState.Destroyed, VmInstanceState.Created, VmInstanceState.Destroying));
+                q.setParameter("vmStates", list(VmInstanceState.Destroyed, VmInstanceState.Created, VmInstanceState.Destroying, VmInstanceState.Stopped));
                 List<Tuple> ts = q.getResultList();
 
                 List<Struct> ret = new ArrayList<Struct>();
