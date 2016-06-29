@@ -59,6 +59,8 @@
 
         <Logger name="org.springframework" level="warn" />
 
+	<Logger name="org.zstack.core.workflow" level="TRACE" />
+
 <!--
         <Logger name="org.zstack.billing" level="TRACE" />
 -->
