@@ -1,26 +1,35 @@
 package org.zstack.portal.managementnode;
 
-import com.rabbitmq.client.AlreadyClosedException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.dao.RecoverableDataAccessException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.CloudBusIN;
-import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.Service;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.*;
+import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.LifeCycle;
+import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.ManagementNodeLifeCycleData;
 import org.zstack.header.managementnode.ManagementNodeExitMsg.Reason;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -31,22 +40,26 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.ExceptionDSL.throwableSafe;
 import static org.zstack.utils.ExceptionDSL.throwableSafeSuppress;
 
-public class ManagementNodeManagerImpl extends AbstractService implements ManagementNodeManager, ManagementNodeChangeListener {
+public class ManagementNodeManagerImpl extends AbstractService implements ManagementNodeManager {
 	private static final CLogger logger = Utils.getLogger(ManagementNodeManager.class);
-	private ManagementNode node;
 
 	private boolean forceInventory = false;
 	private List<ComponentWrapper> components;
 	private List<PrepareDbInitialValueExtensionPoint> prepareDbExts;
 	private ComponentLoader loader;
+    private ManagementNodeVO node;
 	private volatile boolean isRunning = true;
 	private volatile int isNodeRunning = NODE_STARTING;
 	private static final String INVENTORY_LOCK = "ManagementNodeManager.inventory_lock";
@@ -54,6 +67,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 	private static boolean started = false;
 	private static boolean stopped = false;
     private static boolean isDbDead = false;
+    private Future<Void> heartBeatTask = null;
 	
 	private static int NODE_STARTING = 0;
 	private static int NODE_RUNNING = 1;
@@ -71,8 +85,74 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     private ThreadFacade thdf;
     @Autowired
     private ResourceDestinationMaker destinationMaker;
+    @Autowired
+    private EventFacade evtf;
 
     private List<ManagementNodeChangeListener> lifeCycleExtension = new ArrayList<ManagementNodeChangeListener>();
+
+    private ManagementNodeChangeListener nodeLifeCycle = new ManagementNodeChangeListener() {
+        @Override
+        public void nodeJoin(String nodeId) {
+            if (destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
+                logger.debug(String.format("the management node[uuid:%s] is already in our hash ring, ignore this node-join call", nodeId));
+                return;
+            }
+
+            ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
+            l.nodeJoin(nodeId);
+
+            CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
+                @Override
+                public void run(ManagementNodeChangeListener arg) {
+                    arg.nodeJoin(nodeId);
+                }
+            });
+        }
+
+        @Override
+        public void nodeLeft(String nodeId) {
+            if (!destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
+                logger.debug(String.format("the management node[uuid:%s] is not in our hash ring, ignore this node-left call", nodeId));
+                return;
+            }
+
+            ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
+            l.nodeLeft(nodeId);
+
+            CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
+                @Override
+                public void run(ManagementNodeChangeListener arg) {
+                    arg.nodeLeft(nodeId);
+                }
+            });
+        }
+
+        @Override
+        public void iAmDead(String nodeId) {
+            ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
+            l.iAmDead(nodeId);
+
+            CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
+                @Override
+                public void run(ManagementNodeChangeListener arg) {
+                    arg.iAmDead(nodeId);
+                }
+            });
+        }
+
+        @Override
+        public void iJoin(String nodeId) {
+            ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
+            l.iJoin(nodeId);
+
+            CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
+                @Override
+                public void run(ManagementNodeChangeListener arg) {
+                    arg.iJoin(nodeId);
+                }
+            });
+        }
+    };
 
     private interface ComponentWrapper {
         void start();
@@ -203,7 +283,11 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
 	private void stopComponents() {
         for (final ComponentWrapper c : components) {
-            c.stop();
+            try {
+                c.stop();
+            } catch (Throwable t) {
+                logger.warn(t.getMessage(), t);
+            }
         }
 	}
 
@@ -260,12 +344,30 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         lifeCycleExtension = pluginRgty.getExtensionList(ManagementNodeChangeListener.class);
     }
 
+    private EventCallback nodeLifeCycleCallback = new EventCallback() {
+        @Override
+        protected void run(Map tokens, Object data) {
+            ManagementNodeLifeCycleData d = (ManagementNodeLifeCycleData) data;
+            if (d.getNodeUuid().equals(node.getUuid())) {
+                return;
+            }
+
+            if (LifeCycle.NodeJoin.toString().equals(d.getLifeCycle())) {
+                nodeLifeCycle.nodeJoin(d.getNodeUuid());
+            } else if (LifeCycle.NodeLeft.toString().equals(d.getLifeCycle())) {
+                nodeLifeCycle.nodeLeft(d.getNodeUuid());
+            } else {
+                throw new CloudRuntimeException(String.format("unknown lifecycle[%s]", d.getLifeCycle()));
+            }
+        }
+    };
+
 	@Override
 	public boolean start() {
 	    if (started) {
 	        /* largely for unittest, the ComponentLoaderWebListener and Api may both call start()
 	         */
-	        logger.debug(String.format("Management Node has already started, ignore this call"));
+	        logger.debug("Management Node has already started, ignore this call");
 	        return true;
 	    }
 
@@ -295,7 +397,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             bootstrap.then(new Flow() {
                 String __name__ = "bootstrap-cloudbus";
 
-                // CloudBus is special, it initializes in Platform.createComponentLoaderFromWebApplicationContext(),
+                // CloudBus is special, it is initialized in Platform.createComponentLoaderFromWebApplicationContext(),
                 // however, when exception happens in bootstrap we need to stop bus in rollback, because the exception
                 // cannot make JVM exist and cloudbus.stop is only called in JVM exit hook;
                 @Override
@@ -309,6 +411,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     trigger.rollback();
                 }
             }).then(new NoRollbackFlow() {
+                String __name__ = "populate-components";
+
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     loader = Platform.getComponentLoader();
@@ -317,6 +421,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
             }).then(new Flow() {
                 String __name__ = "register-node-on-cloudbus";
+
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     bus.registerService(self);
@@ -330,6 +435,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
             }).then(new Flow() {
                 String __name__ = "start-components";
+
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     startComponents();
@@ -343,6 +449,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
             }).then(new Flow() {
                 String __name__ = "check-management-node-inventory";
+
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     checkInventory();
@@ -356,28 +463,59 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
             }).then(new NoRollbackFlow() {
                 String __name__ = "call-prepare-db-extension";
+
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     callPrepareDbExtensions();
                     trigger.next();
                 }
             }).then(new Flow() {
-                String __name__ = "join-management-node";
+                String __name__ = "create-DB-record";
+
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
-                    node = new ManagementNode();
-                    node.addNodeManagerCallback(self);
-                    node.join();
+                    ManagementNodeVO vo = new ManagementNodeVO();
+                    vo.setHostName(Platform.getManagementServerIp());
+                    vo.setUuid(Platform.getManagementServerId());
+                    node = dbf.persistAndRefresh(vo);
                     trigger.next();
                 }
 
                 @Override
                 public void rollback(FlowRollback trigger, Map data) {
-                    node.leave();
+                    if (node != null) {
+                        dbf.remove(node);
+                    }
+
                     trigger.rollback();
+                }
+            }).then(new NoRollbackFlow() {
+                String __name__ = "delay-join";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    int delay = ManagementNodeGlobalConfig.NODE_JOIN_DELAY.value(Integer.class);
+                    if (delay != 0) {
+                        try {
+                            TimeUnit.SECONDS.sleep(delay);
+                        } catch (InterruptedException e) {
+                            logger.warn(e.getMessage(), e);
+                        }
+                    }
+
+                    trigger.next();
+                }
+            }).then(new NoRollbackFlow() {
+                String __name__ = "start-heartbeat";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    setupHeartbeat();
+                    trigger.next();
                 }
             }).then(new Flow() {
                 String __name__ = "start-api-mediator";
+
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     apim.start();
@@ -388,6 +526,54 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 public void rollback(FlowRollback trigger, Map data) {
                     apim.stop();
                     trigger.rollback();
+                }
+            }).then(new NoRollbackFlow() {
+                String __name__ = "set-node-to-running";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    node.setState(ManagementNodeState.RUNNING);
+                    node = dbf.updateAndRefresh(node);
+                    trigger.next();
+                }
+            }).then(new NoRollbackFlow() {
+                String __name__ = "I-join";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    nodeLifeCycle.iJoin(node.getUuid());
+                    trigger.next();
+                }
+            }).then(new NoRollbackFlow() {
+                String __name__ = "node-is-ready";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    for (ManagementNodeReadyExtensionPoint ext : pluginRgty.getExtensionList(ManagementNodeReadyExtensionPoint.class)) {
+                        ext.managementNodeReady();
+                    }
+
+                    trigger.next();
+                }
+            }).then(new NoRollbackFlow() {
+                String __name__ = "listen-node-life-cycle-events";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    evtf.on(ManagementNodeCanonicalEvent.NODE_LIFECYCLE_PATH, nodeLifeCycleCallback);
+                    trigger.next();
+                }
+            }).then(new NoRollbackFlow() {
+                String __name__ = "say-I-join";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    ManagementNodeLifeCycleData d = new ManagementNodeLifeCycleData();
+                    d.setNodeUuid(node.getUuid());
+                    d.setInventory(ManagementNodeInventory.valueOf(node));
+                    d.setLifeCycle(LifeCycle.NodeJoin.toString());
+                    evtf.fire(ManagementNodeCanonicalEvent.NODE_LIFECYCLE_PATH, d);
+                    trigger.next();
                 }
             }).done(new FlowDoneHandler() {
                 @Override
@@ -421,9 +607,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
 		installShutdownHook();
 
-        for (ManagementNodeReadyExtensionPoint ext : pluginRgty.getExtensionList(ManagementNodeReadyExtensionPoint.class)) {
-            ext.managementNodeReady();
-        }
 
         logger.info("Management node: " + getId() + " starts successfully");
 
@@ -443,7 +626,191 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 		return true;
 	}
 
-	@Override
+    private void setupHeartbeat() {
+        ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startHeartbeat();
+            }
+        });
+
+        startHeartbeat();
+    }
+
+    class HeartBeatDBSource {
+        private Connection conn;
+        private SingleConnectionDataSource source;
+        JdbcTemplate jdbc;
+
+        public HeartBeatDBSource() {
+            try {
+                conn = dbf.getExtraDataSource().getConnection();
+                source = new SingleConnectionDataSource(conn, true);
+                jdbc = new JdbcTemplate(source);
+            } catch (SQLException e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+
+        @ExceptionSafe
+        public void destroy() {
+            source.destroy();
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+    }
+
+    private HeartBeatDBSource heartBeatDBSource = new HeartBeatDBSource();
+
+    private void startHeartbeat() {
+        if (heartBeatTask != null) {
+            heartBeatTask.cancel(true);
+        }
+
+        heartBeatTask = thdf.submit(new Task<Void>() {
+            private List<ManagementNodeVO> suspects = new ArrayList<ManagementNodeVO>();
+
+            @Override
+            public String getName() {
+                return String.format("managementNode-%s-heartbeat", Platform.getManagementServerId());
+            }
+
+            private boolean amIalive() {
+                String sql = "select count(*) from ManagementNodeVO where uuid = ?";
+                long count = heartBeatDBSource.jdbc.queryForObject(sql, new Object[]{node.getUuid()}, Long.class);
+                return count != 0;
+            }
+
+            private ManagementNodeVO getNode(String uuid) {
+                try {
+                    String sql = "select * from ManagementNodeVO where uuid = ?";
+                    ManagementNodeVO vo = (ManagementNodeVO) heartBeatDBSource.jdbc.queryForObject(sql, new Object[]{uuid}, new BeanPropertyRowMapper(ManagementNodeVO.class));
+                    return vo;
+                } catch (IncorrectResultSizeDataAccessException e) {
+                    return null;
+                }
+            }
+
+            private int deleteNode(String uuid) {
+                String sql = "delete from ManagementNodeVO where uuid = ?";
+                return heartBeatDBSource.jdbc.update(sql, uuid);
+            }
+
+            @AsyncThread
+            private void nodeDie(String nodeUuid) {
+                ManagementNodeLeftEvent evt = new ManagementNodeLeftEvent(nodeUuid, node.getUuid(), true);
+                bus.publish(evt);
+                logger.debug("Node " + nodeUuid + " has gone");
+
+                notifyNodeLeft(nodeUuid);
+            }
+
+            private void fenceSuspects() {
+                for (ManagementNodeVO vo : suspects) {
+                    ManagementNodeVO n =  getNode(vo.getUuid());
+                    if (n == null) {
+                        continue;
+                    }
+
+                    long elapse = n.getHeartBeat().getTime() - vo.getHeartBeat().getTime();
+                    if (elapse != 0) {
+                        continue;
+                    }
+
+                    int ret = deleteNode(n.getUuid());
+                    if (ret > 0) {
+                        nodeDie(n.getUuid());
+                    }
+                }
+            }
+
+            private void updateHeartbeat() {
+                String sql = "update ManagementNodeVO set heartBeat = NULL where uuid = ?";
+                if (heartBeatDBSource.jdbc.update(sql, node.getUuid()) > 0) {
+                    node = getNode(node.getUuid());
+                }
+            }
+
+            private void checkAllNodesHealth() {
+                String sql = "select * from ManagementNodeVO where state = 'RUNNING'";
+                List<ManagementNodeVO> all = heartBeatDBSource.jdbc.query(sql, new BeanPropertyRowMapper(ManagementNodeVO.class));
+                suspects.clear();
+
+                List<String> nodesInDb = new ArrayList<String>();
+                for (ManagementNodeVO vo : all) {
+                    nodesInDb.add(vo.getUuid());
+
+                    if (vo.getUuid().equals(node.getUuid())) {
+                        continue;
+                    }
+
+                    Timestamp curr = dbf.getCurrentSqlTime();
+                    Timestamp lastHeartbeat = vo.getHeartBeat();
+                    long end = lastHeartbeat.getTime() + TimeUnit.SECONDS.toMillis(2 * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
+                    if (end < curr.getTime()) {
+                        suspects.add(vo);
+                        logger.warn(String.format("management node[uuid:%s, hostname: %s]'s heart beat has stopped for %s secs, add it in suspicious list",
+                                vo.getUuid(), vo.getHostName(), TimeUnit.MILLISECONDS.toSeconds(curr.getTime() - lastHeartbeat.getTime())));
+                    }
+                }
+
+                // When a node is dying, we may not receive the the dead notification because the message bus may be also dead
+                // at that moment. By checking if the node UUID is still in our hash ring, we know what nodes should be kicked out
+                for (String ourNode : destinationMaker.getManagementNodesInHashRing()) {
+                    if (!nodesInDb.contains(ourNode)) {
+                        logger.warn(String.format("found that a management node[uuid:%s] had no heartbeat in database but still in our hash ring," +
+                                "notify that it's dead", ourNode));
+                        nodeDie(ourNode);
+                    }
+                }
+            }
+
+            @Override
+            public Void call() throws Exception {
+                while (true) {
+                    try {
+                        if (!amIalive()) {
+                            logger.warn(String.format("cannot find my[uuid:%s] heartbeat in database, quit process", node.getUuid()));
+                            ManagementNodeExitMsg msg = new ManagementNodeExitMsg();
+                            msg.setServiceId(bus.makeLocalServiceId(ManagementNodeConstant.SERVICE_ID));
+                            msg.setReason(Reason.HeartBeatStopped);
+                            bus.send(msg);
+                        } else {
+                            fenceSuspects();
+                            updateHeartbeat();
+                            checkAllNodesHealth();
+                        }
+                    } catch (Throwable t) {
+                        if (t instanceof RecoverableDataAccessException || t instanceof DataAccessResourceFailureException) {
+                            logger.warn(String.format("cannot communicate to the database, it's most likely the DB stopped or rebooted;" +
+                                    "try creating a new database connection. %s", t.getMessage()), t);
+                            createJdbcTemplate();
+                        } else {
+                            logger.warn("unhandled exception happened", t);
+                        }
+                    }
+
+                    try {
+                        TimeUnit.SECONDS.sleep(ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Long.class));
+                    } catch (InterruptedException ie) {
+                    }
+
+                    if (heartBeatTask.isCancelled()) {
+                        break;
+                    }
+                }
+
+                return null;
+            }
+        });
+
+        logger.debug(String.format("started heartbeat thread for management node[uuid:%s]", Platform.getManagementServerId()));
+    }
+
+    @Override
 	public boolean stop() {
         Platform.IS_RUNNING = false;
 
@@ -455,54 +822,73 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
 	    stopped = true;
         final Service self = this;
-        throwableSafeSuppress(new Runnable() {
-            @Override
-            public void run() {
-                bus.unregisterService(apim);
-            }
-        }, AlreadyClosedException.class).throwableSafe(new Runnable() {
-            @Override
-            public void run() {
-                apim.stop();
-            }
-        }).throwableSafe(new Runnable() {
-            @Override
-            public void run() {
-                node.leave();
-            }
-        }).throwableSafe(new Runnable() {
-            @Override
-            public void run() {
+        logger.debug(String.format("start stopping the management node[uuid:%s]", node.getUuid()));
+
+        class Stopper {
+            void stop() {
+                stopApiOnCloudBus();
+                stopApi();
+                iAmDead();
                 stopComponents();
+                deleteNode();
+                notifyOtherNodes();
+                unregisterCloudBus();
+                stopCloudBus();
+                quitLoop();
+                stopThreadFacade();
             }
-        }).throwableSafe(new Runnable() {
-            @Override
-            public void run() {
-                if (!isDbDead) {
-                    removeInventory(true);
-                }
-            }
-        }).throwableSafe(new Runnable() {
-            @Override
-            public void run() {
-                bus.unregisterService(self);
-            }
-        }).throwableSafe(new Runnable() {
-            @Override
-            public void run() {
-                bus.stop();
-            }
-        }).throwableSafe(new Runnable() {
-            @Override
-            public void run() {
-                notifyStop();
-            }
-        }).throwableSafe(new Runnable() {
-            @Override
-            public void run() {
+
+            @ExceptionSafe
+            private void stopThreadFacade() {
                 thdf.stop();
             }
-        });
+
+            @ExceptionSafe
+            private void quitLoop() {
+                notifyStop();
+            }
+
+            @ExceptionSafe
+            private void stopCloudBus() {
+                bus.stop();
+            }
+
+            @ExceptionSafe
+            private void unregisterCloudBus() {
+                bus.unregisterService(self);
+            }
+
+            @ExceptionSafe
+            private void notifyOtherNodes() {
+                ManagementNodeLifeCycleData d = new ManagementNodeLifeCycleData();
+                d.setNodeUuid(node.getUuid());
+                d.setLifeCycle(LifeCycle.NodeLeft.toString());
+                d.setInventory(ManagementNodeInventory.valueOf(node));
+                evtf.fire(ManagementNodeCanonicalEvent.NODE_LIFECYCLE_PATH, d);
+            }
+
+            @ExceptionSafe
+            private void deleteNode() {
+                dbf.remove(node);
+            }
+
+            @ExceptionSafe
+            private void iAmDead() {
+                nodeLifeCycle.iAmDead(node.getUuid());
+            }
+
+            @ExceptionSafe
+            private void stopApiOnCloudBus() {
+                bus.unregisterService(apim);
+            }
+
+            @ExceptionSafe
+            private void stopApi() {
+                apim.stop();
+            }
+        }
+
+        new Stopper().stop();
 
         logger.info("Management node: " + getId() + " exits successfully");
         if (CoreGlobalProperty.EXIT_JVM_ON_STOP) {
@@ -511,68 +897,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
 
         return true;
-	}
-
-	@Override
-	public synchronized void nodeJoin(final String nodeId) {
-        if (destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
-            logger.debug(String.format("the management node[uuid:%s] is already in our hash ring, ignore this node-join call", nodeId));
-            return;
-        }
-
-        ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
-        l.nodeJoin(nodeId);
-
-        CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
-            @Override
-            public void run(ManagementNodeChangeListener arg) {
-                arg.nodeJoin(nodeId);
-            }
-        });
-	}
-
-	@Override
-	public synchronized void nodeLeft(final String nodeId) {
-        if (!destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
-            logger.debug(String.format("the management node[uuid:%s] is not in our hash ring, ignore this node-left call", nodeId));
-            return;
-        }
-
-        ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
-        l.nodeLeft(nodeId);
-
-        CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
-            @Override
-            public void run(ManagementNodeChangeListener arg) {
-                arg.nodeLeft(nodeId);
-            }
-        });
-	}
-
-	@Override
-	public void iAmDead(final String nodeId) {
-        ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
-        l.iAmDead(nodeId);
-
-        CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
-            @Override
-            public void run(ManagementNodeChangeListener arg) {
-                arg.iAmDead(nodeId);
-            }
-        });
-	}
-
-	@Override
-	public void iJoin(final String nodeId) {
-        ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
-        l.iJoin(nodeId);
-
-        CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
-            @Override
-            public void run(ManagementNodeChangeListener arg) {
-                arg.iJoin(nodeId);
-            }
-        });
 	}
 
 	public void setForceInventory(boolean forceInventory) {
