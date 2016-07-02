@@ -10,7 +10,5 @@
      	 http://www.springframework.org/schema/tx/spring-tx-3.0.xsd"
 	default-init-method="init" default-destroy-method="destroy">
 	
-	<bean id="ManagementNodeManager" class="org.zstack.portal.managementnode.ManagementNodeManagerImpl" >
-		<property name="forceInventory" value="false" />
-	</bean>
+	<bean id="ManagementNodeManager" class="org.zstack.portal.managementnode.ManagementNodeManagerImpl" />
 </beans>

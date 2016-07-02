@@ -8,7 +8,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.managementnode.ManagementNodeState;
 import org.zstack.header.managementnode.ManagementNodeVO;
-import org.zstack.portal.managementnode.ManagementNode;
 import org.zstack.portal.managementnode.ManagementNodeGlobalConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;

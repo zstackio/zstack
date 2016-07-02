@@ -10,7 +10,6 @@ import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
-import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
@@ -50,15 +49,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.ExceptionDSL.throwableSafe;
-import static org.zstack.utils.ExceptionDSL.throwableSafeSuppress;
 
 public class ManagementNodeManagerImpl extends AbstractService implements ManagementNodeManager {
 	private static final CLogger logger = Utils.getLogger(ManagementNodeManager.class);
 
-	private boolean forceInventory = false;
 	private List<ComponentWrapper> components;
 	private List<PrepareDbInitialValueExtensionPoint> prepareDbExts;
-	private ComponentLoader loader;
     private ManagementNodeVO node;
 	private volatile boolean isRunning = true;
 	private volatile int isNodeRunning = NODE_STARTING;
@@ -66,9 +62,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 	private final int INVENTORY_LOCK_TIMEOUT = 600; /* 10 mins */
 	private static boolean started = false;
 	private static boolean stopped = false;
-    private static boolean isDbDead = false;
     private Future<Void> heartBeatTask = null;
-	
+    private HeartBeatDBSource heartBeatDBSource;
+    private List<ManagementNodeChangeListener> lifeCycleExtension = new ArrayList<ManagementNodeChangeListener>();
+
 	private static int NODE_STARTING = 0;
 	private static int NODE_RUNNING = 1;
 	private static int NODE_FAILED = -1;
@@ -88,7 +85,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     @Autowired
     private EventFacade evtf;
 
-    private List<ManagementNodeChangeListener> lifeCycleExtension = new ArrayList<ManagementNodeChangeListener>();
+    void init() {
+        heartBeatDBSource = new HeartBeatDBSource();
+    }
 
     private ManagementNodeChangeListener nodeLifeCycle = new ManagementNodeChangeListener() {
         @Override
@@ -168,10 +167,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 	
 	private void handle(ManagementNodeExitMsg msg) {
 		logger.debug(getId() + " received ManagementNodeExitMsg, going to exit");
-        if (msg.getReason() == Reason.HeartBeatStopped) {
-            isDbDead = true;
-        }
-
 		notifyStop();
 	}
 
@@ -221,59 +216,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 		return bus.makeLocalServiceId(ManagementNodeConstant.SERVICE_ID);
 	}
 
-	private void saveInventory() {
-		ManagementNodeContextVO vo;
-		vo = dbf.findById(1, ManagementNodeContextVO.class);
-		if (vo == null) {
-			vo = new ManagementNodeContextVO();
-		}
-		ManagementNodeContextInventory inv = new ManagementNodeContextInventory();
-		inv.setVersion(Platform.getCodeVersion());
-		vo.setInventory(inv.toBytes());
-		dbf.updateAndRefresh(vo);
-	}
-
-	private void compareInventory() {
-		ManagementNodeContextVO vo;
-		vo = dbf.findById(1, ManagementNodeContextVO.class);
-		if (vo == null) {
-			saveInventory();
-			return;
-		}
-
-		ManagementNodeContextInventory inv = ManagementNodeContextInventory.fromBytes(vo.getInventory());
-		if (!inv.getVersion().equals(Platform.getCodeVersion())) {
-			String details = "Expected version is " + inv.getVersion() + " but our version is " + Platform.getCodeVersion();
-			throw new CloudRuntimeException(details);
-		}
-	}
-
-	private void removeInventory(boolean needLock) {
-        if (needLock) {
-            GLock lock = new GLock(INVENTORY_LOCK, INVENTORY_LOCK_TIMEOUT);
-            lock.lock();
-            try {
-                if (node != null && node.getNodes().size() == 1) {
-                    dbf.removeByPrimaryKey(1L, ManagementNodeContextVO.class);
-                }
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            if (node != null && node.getNodes().size() == 1) {
-                dbf.removeByPrimaryKey(1L, ManagementNodeContextVO.class);
-            }
-        }
-
-	}
-
-	private void checkInventory() {
-		if (forceInventory) {
-			saveInventory();
-		} else {
-			compareInventory();
-		}
-	}
 
 	private void startComponents() {
 		for (ComponentWrapper c : components) {
@@ -347,10 +289,11 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     private EventCallback nodeLifeCycleCallback = new EventCallback() {
         @Override
         protected void run(Map tokens, Object data) {
-            ManagementNodeLifeCycleData d = (ManagementNodeLifeCycleData) data;
-            if (d.getNodeUuid().equals(node.getUuid())) {
+            if (evtf.isFromThisManagementNode(tokens)) {
                 return;
             }
+
+            ManagementNodeLifeCycleData d = (ManagementNodeLifeCycleData) data;
 
             if (LifeCycle.NodeJoin.toString().equals(d.getLifeCycle())) {
                 nodeLifeCycle.nodeJoin(d.getNodeUuid());
@@ -415,7 +358,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
-                    loader = Platform.getComponentLoader();
                     populateComponents();
                     trigger.next();
                 }
@@ -445,20 +387,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 @Override
                 public void rollback(FlowRollback trigger, Map data) {
                     stopComponents();
-                    trigger.rollback();
-                }
-            }).then(new Flow() {
-                String __name__ = "check-management-node-inventory";
-
-                @Override
-                public void run(FlowTrigger trigger, Map data) {
-                    checkInventory();
-                    trigger.next();
-                }
-
-                @Override
-                public void rollback(FlowRollback trigger, Map data) {
-                    removeInventory(false);
                     trigger.rollback();
                 }
             }).then(new NoRollbackFlow() {
@@ -637,7 +565,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         startHeartbeat();
     }
 
-    class HeartBeatDBSource {
+    private class HeartBeatDBSource {
         private Connection conn;
         private SingleConnectionDataSource source;
         JdbcTemplate jdbc;
@@ -663,7 +591,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
     }
 
-    private HeartBeatDBSource heartBeatDBSource = new HeartBeatDBSource();
 
     private void startHeartbeat() {
         if (heartBeatTask != null) {
@@ -687,8 +614,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             private ManagementNodeVO getNode(String uuid) {
                 try {
                     String sql = "select * from ManagementNodeVO where uuid = ?";
-                    ManagementNodeVO vo = (ManagementNodeVO) heartBeatDBSource.jdbc.queryForObject(sql, new Object[]{uuid}, new BeanPropertyRowMapper(ManagementNodeVO.class));
-                    return vo;
+                    return (ManagementNodeVO) heartBeatDBSource.jdbc.queryForObject(sql, new Object[]{uuid}, new BeanPropertyRowMapper(ManagementNodeVO.class));
                 } catch (IncorrectResultSizeDataAccessException e) {
                     return null;
                 }
@@ -700,12 +626,15 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             }
 
             @AsyncThread
-            private void nodeDie(String nodeUuid) {
-                ManagementNodeLeftEvent evt = new ManagementNodeLeftEvent(nodeUuid, node.getUuid(), true);
-                bus.publish(evt);
-                logger.debug("Node " + nodeUuid + " has gone");
+            private void nodeDie(ManagementNodeVO n) {
+                logger.debug("Node " + n.getUuid() + " has gone because its heartbeat stopped");
+                nodeLifeCycle.nodeLeft(n.getUuid());
 
-                notifyNodeLeft(nodeUuid);
+                ManagementNodeLifeCycleData d = new ManagementNodeLifeCycleData();
+                d.setInventory(ManagementNodeInventory.valueOf(n));
+                d.setNodeUuid(n.getUuid());
+                d.setLifeCycle(LifeCycle.NodeLeft.toString());
+                evtf.fire(ManagementNodeCanonicalEvent.NODE_LIFECYCLE_PATH, d);
             }
 
             private void fenceSuspects() {
@@ -722,7 +651,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                     int ret = deleteNode(n.getUuid());
                     if (ret > 0) {
-                        nodeDie(n.getUuid());
+                        nodeDie(n);
                     }
                 }
             }
@@ -763,7 +692,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     if (!nodesInDb.contains(ourNode)) {
                         logger.warn(String.format("found that a management node[uuid:%s] had no heartbeat in database but still in our hash ring," +
                                 "notify that it's dead", ourNode));
-                        nodeDie(ourNode);
+                        nodeLifeCycle.nodeLeft(ourNode);
                     }
                 }
             }
@@ -787,7 +716,16 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         if (t instanceof RecoverableDataAccessException || t instanceof DataAccessResourceFailureException) {
                             logger.warn(String.format("cannot communicate to the database, it's most likely the DB stopped or rebooted;" +
                                     "try creating a new database connection. %s", t.getMessage()), t);
-                            createJdbcTemplate();
+
+                            if (heartBeatDBSource != null) {
+                                heartBeatDBSource.destroy();
+                            }
+
+                            try {
+                                heartBeatDBSource = new HeartBeatDBSource();
+                            } catch (Throwable t1) {
+                                logger.warn(t1.getMessage(), t1);
+                            }
                         } else {
                             logger.warn("unhandled exception happened", t);
                         }
@@ -897,10 +835,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
 
         return true;
-	}
-
-	public void setForceInventory(boolean forceInventory) {
-		this.forceInventory = forceInventory;
 	}
 
 	@AsyncThread
