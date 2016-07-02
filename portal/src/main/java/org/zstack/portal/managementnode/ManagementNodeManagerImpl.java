@@ -418,22 +418,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     trigger.rollback();
                 }
             }).then(new NoRollbackFlow() {
-                String __name__ = "delay-join";
-
-                @Override
-                public void run(FlowTrigger trigger, Map data) {
-                    int delay = ManagementNodeGlobalConfig.NODE_JOIN_DELAY.value(Integer.class);
-                    if (delay != 0) {
-                        try {
-                            TimeUnit.SECONDS.sleep(delay);
-                        } catch (InterruptedException e) {
-                            logger.warn(e.getMessage(), e);
-                        }
-                    }
-
-                    trigger.next();
-                }
-            }).then(new NoRollbackFlow() {
                 String __name__ = "start-heartbeat";
 
                 @Override
