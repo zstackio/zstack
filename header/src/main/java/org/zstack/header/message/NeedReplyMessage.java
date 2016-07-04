@@ -19,7 +19,7 @@ public abstract class NeedReplyMessage extends Message {
     }
 
     public String toErrorString() {
-        return String.format("Message[%s] timeout after %s seconds", this.getClass().getName(), TimeUnit.MILLISECONDS.toSeconds(timeout));
+        return String.format("Message[%s] timeout after %s seconds", this.getClass().getName(), TimeUnit.MILLISECONDS.toSeconds(getTimeout()));
     }
 
     public long getTimeout() {
