@@ -162,7 +162,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
 
     }
 
-    public void downloadBits(final PrimaryStorageInventory pinv, BackupStorageInventory bsinv, final String backupStorageInstallPath, final String primaryStorageInstallPath, final String hostUuid, final ReturnValueCompletion<String> completion) {
+    public void downloadBits(final PrimaryStorageInventory pinv, BackupStorageInventory bsinv, final String backupStorageInstallPath, final String primaryStorageInstallPath, final String hostUuid, final Completion completion) {
         GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
         gmsg.setBackupStorageUuid(bsinv.getUuid());
         bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsinv.getUuid());
@@ -207,7 +207,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                             return;
                         }
 
-                        completion.success(backupStorageInstallPath);
+                        completion.success();
                     }
                 });
             }
