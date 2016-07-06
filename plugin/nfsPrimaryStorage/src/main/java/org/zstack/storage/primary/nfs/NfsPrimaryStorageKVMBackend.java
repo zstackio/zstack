@@ -339,10 +339,11 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         BackupStorageVO bs = dbf.findByUuid(msg.getBackupStorageUuid(), BackupStorageVO.class);
 
         NfsPrimaryToBackupStorageMediator m = nfsFactory.getPrimaryToBackupStorageMediator(BackupStorageType.valueOf(bs.getType()), HypervisorType.valueOf(msg.getHypervisorType()));
-        m.uploadBits(inv, BackupStorageInventory.valueOf(bs), msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new Completion(completion) {
+        m.uploadBits(inv, BackupStorageInventory.valueOf(bs), msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
             @Override
-            public void success() {
+            public void success(String installPath) {
                 UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
+                reply.setBackupStorageInstallPath(installPath);
                 completion.success(reply);
             }
 

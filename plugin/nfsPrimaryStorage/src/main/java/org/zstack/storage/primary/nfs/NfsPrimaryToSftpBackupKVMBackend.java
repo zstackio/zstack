@@ -172,7 +172,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
     }
 
     @Override
-    public void uploadBits(final PrimaryStorageInventory pinv, BackupStorageInventory bsinv, final String backupStorageInstallPath, final String primaryStorageInstallPath, final Completion completion) {
+    public void uploadBits(final PrimaryStorageInventory pinv, BackupStorageInventory bsinv, final String backupStorageInstallPath, final String primaryStorageInstallPath, final ReturnValueCompletion<String> completion) {
         GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
         gmsg.setBackupStorageUuid(bsinv.getUuid());
         bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsinv.getUuid());
@@ -221,7 +221,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
                             return;
                         }
 
-                        completion.success();
+                        completion.success(backupStorageInstallPath);
                     }
                 });
             }
