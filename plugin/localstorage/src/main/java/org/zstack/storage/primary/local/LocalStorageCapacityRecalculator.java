@@ -122,7 +122,7 @@ public class LocalStorageCapacityRecalculator {
                     cap.setTotalCapacity(total);
                     cap.setTotalPhysicalCapacity(tp);
                     cap.setAvailablePhysicalCapacity(pa);
-                    return null;
+                    return cap;
                 }
             });
         }
