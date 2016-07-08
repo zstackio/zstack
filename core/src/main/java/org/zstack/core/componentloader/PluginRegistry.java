@@ -12,7 +12,11 @@ public interface PluginRegistry {
     <T, K> void saveExtensionAsMap(Class<T> clazz, Function<K, T> func);
 
     <T> T getExtensionFromMap(Object key, Class<T> clazz);
-    
+
+    <T, K> void saveExtensionListAsMap(Class<T> clazz, Function<K, T> func);
+
+    <T> List getExtensionListFromMap(Object key, Class<T> clazz);
+
     public static final String PLUGIN_REGISTRY_BEAN_NAME = "zstack.PluginRegistry";
     public static final String PLUGIN_REGISTRYIMPL_PLUGINS_FIELD_NAME = "extensions";
 }

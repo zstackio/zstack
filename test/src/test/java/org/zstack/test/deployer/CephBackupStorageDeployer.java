@@ -14,7 +14,6 @@ import org.zstack.test.deployer.schema.CephBackupStorageConfig;
 import org.zstack.test.deployer.schema.DeployerConfig;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.SizeUtils;
-import org.zstack.utils.data.SizeUnit;
 
 import java.util.List;
 

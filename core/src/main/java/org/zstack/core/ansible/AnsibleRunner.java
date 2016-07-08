@@ -234,7 +234,7 @@ public class AnsibleRunner {
                 Defer.defer(new Runnable() {
                     @Override
                     public void run() {
-                        //tempKeyFile.delete();
+                        tempKeyFile.delete();
                     }
                 });
 

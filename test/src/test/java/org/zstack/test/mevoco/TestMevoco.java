@@ -86,6 +86,7 @@ public class TestMevoco {
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/mevoco/TestMevoco.xml", con);
         deployer.addSpringConfig("mevocoRelated.xml");
+        deployer.addSpringConfig("prometheus.xml");
         deployer.load();
 
         loader = deployer.getComponentLoader();

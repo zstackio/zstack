@@ -1,0 +1,68 @@
+package org.zstack.utils;
+
+import org.apache.commons.io.FileUtils;
+import org.zstack.utils.path.PathUtil;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Created by xing5 on 2016/7/8.
+ */
+public class ProcessFinder {
+    class Proc {
+        File procFolder;
+        int pid;
+    }
+
+    private List<Proc> getAllProcessFolders() {
+        List<Proc> procs = new ArrayList<>();
+
+        File proc = new File("/proc/");
+        for (File f : proc.listFiles()) {
+            if (!f.isDirectory()) {
+                continue;
+            }
+
+            try {
+                Proc p = new Proc();
+                p.pid = Integer.valueOf(f.getName());
+                p.procFolder = f;
+                procs.add(p);
+            } catch (NumberFormatException e) {
+                // pass
+            }
+        }
+
+        return procs;
+    }
+
+    public Integer findByCommandLineKeywords(String...words) {
+        for (Proc p : getAllProcessFolders()) {
+            File cmdline = new File(PathUtil.join(p.procFolder.getAbsolutePath(), "cmdline"));
+            if (!cmdline.exists()) {
+                continue;
+            }
+
+            try {
+                String cmdlineContent = FileUtils.readFileToString(cmdline);
+                int count = 0;
+                for (String word : words) {
+                    if (cmdlineContent.contains(word)) {
+                        count ++;
+                    }
+                }
+
+                if (count == words.length) {
+                    return p.pid;
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return null;
+    }
+}

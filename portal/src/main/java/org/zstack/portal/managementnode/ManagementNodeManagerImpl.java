@@ -879,4 +879,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             throw new CloudRuntimeException("failed to start management node");
         }
     }
+
+    @Override
+    public void quit(String reason) {
+        logger.debug(String.format("stopping the management node because %s", reason));
+        stop();
+    }
 }

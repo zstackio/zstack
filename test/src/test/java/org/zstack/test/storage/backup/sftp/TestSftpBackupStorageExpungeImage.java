@@ -77,7 +77,6 @@ public class TestSftpBackupStorageExpungeImage {
         img.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
         img.setUrl("http://download/image.qcow2");
         img.setSize(size);
-        img.setUuid(Platform.getUuid());
 
         config.imageSizes.put(img.getUuid(), size);
         img = api.addImage(img, sftp.getUuid());

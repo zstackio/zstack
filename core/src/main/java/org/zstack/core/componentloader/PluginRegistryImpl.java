@@ -4,6 +4,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginDSL.ExtensionDefinition;
 import org.zstack.core.componentloader.PluginDSL.PluginDefinition;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
@@ -17,6 +18,7 @@ public class PluginRegistryImpl implements PluginRegistryIN {
     private Map<String, List<PluginExtension>> extensionsByInterfaceName = new HashMap<String, List<PluginExtension>>();
     private Map<Class, List> extensionsByInterfaceClass = new HashMap<Class, List>();
     private Map<Class, Map<Object, Object>> extensionAsMap = new HashMap<Class, Map<Object, Object>>();
+    private Map<Class, Map<Object, List>> extensionListAsMap = new HashMap<>();
 
     private void sortPlugins() {
         for (List<PluginExtension> exts : extensionsByInterfaceName.values()) {
@@ -138,12 +140,14 @@ public class PluginRegistryImpl implements PluginRegistryIN {
     public <T, K> void saveExtensionAsMap(Class<T> clazz, Function<K, T> func) {
         List<T> exts = getExtensionList(clazz);
         Map<Object, Object> m = new HashMap<Object, Object>();
+
         for (T ext : exts) {
             K key = func.call(ext);
-            if (key != null) {
-                m.put(key, ext);
-            }
+            DebugUtils.Assert(key != null, "key cannot be null");
+
+            m.put(key, ext);
         }
+
         extensionAsMap.put(clazz, m);
     }
 
@@ -155,6 +159,36 @@ public class PluginRegistryImpl implements PluginRegistryIN {
         }
 
         return (T) m.get(key);
+    }
+
+    @Override
+    public <T, K> void saveExtensionListAsMap(Class<T> clazz, Function<K, T> func) {
+        List<T> exts = getExtensionList(clazz);
+        Map<Object, List> m =  new HashMap<>();
+        for (T ext : exts) {
+            K key = func.call(ext);
+            DebugUtils.Assert(key != null, "key cannot be null");
+
+            List lst = m.get(key);
+            if (lst == null) {
+                lst = new ArrayList();
+                m.put(key, lst);
+            }
+
+            lst.add(ext);
+        }
+
+        extensionListAsMap.put(clazz, m);
+    }
+
+    @Override
+    public <T> List getExtensionListFromMap(Object key, Class<T> clazz) {
+        Map<Object, List> m = extensionListAsMap.get(clazz);
+        if (m == null) {
+            return new ArrayList();
+        }
+
+        return m.get(key);
     }
 
     @Override
