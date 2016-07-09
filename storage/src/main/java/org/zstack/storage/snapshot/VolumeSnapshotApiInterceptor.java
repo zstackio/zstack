@@ -55,6 +55,8 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             validate((APIRevertVolumeFromSnapshotMsg) msg);
         } else if (msg instanceof APIDeleteVolumeSnapshotFromBackupStorageMsg) {
             validate((APIDeleteVolumeSnapshotFromBackupStorageMsg) msg);
+        } else if (msg instanceof APICreateVolumeSnapshotSchedulerMsg) {
+            validate((APICreateVolumeSnapshotSchedulerMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotMsg) {
             validate((APICreateVolumeSnapshotMsg) msg);
         } else if (msg instanceof APIGetVolumeSnapshotTreeMsg) {
@@ -123,6 +125,37 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
                     String.format("volume[uuid:%s] is not in status Ready, current is %s, can't create snapshot", msg.getVolumeUuid(), status)
             ));
+        }
+    }
+
+    private void validate(APICreateVolumeSnapshotSchedulerMsg msg) {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.status);
+        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
+        VolumeStatus status = q.findValue();
+        if (status != VolumeStatus.Ready) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("volume[uuid:%s] is not in status Ready, current is %s, can't create snapshot", msg.getVolumeUuid(), status)
+            ));
+        }
+        if (msg.getType().equals("simple")) {
+            if (msg.getInterval() == 0) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("either interval or startTimeStamp must be set when use simple scheduler")
+                ));
+            }
+            if (msg.getStartTimeStamp() == 0) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("either interval or startTimeStamp must be set when use simple scheduler")
+                ));
+            }
+        }
+        if (msg.getType().equals("cron")) {
+            if (msg.getCron() == null || msg.getCron().isEmpty()) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("cron must be set when use cron scheduler")
+                ));
+            }
         }
     }
 

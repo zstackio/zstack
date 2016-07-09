@@ -12,6 +12,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -27,9 +28,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.volume.VolumeBeforeExpungeExtensionPoint;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.DebugUtils;
@@ -41,10 +40,8 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.sql.Timestamp;
+import java.util.*;
 
 /**
  */
@@ -62,6 +59,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
     private ErrorFacade errf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private SchedulerFacade schedulerFacade;
 
     private void passThrough(VolumeSnapshotMessage msg) {
         VolumeSnapshotVO vo = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
@@ -385,9 +384,66 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         }).start();
     }
 
+    private void handle(APICreateVolumeSnapshotSchedulerMsg msg) {
+        APICreateVolumeSnapshotSchedulerEvent evt = new APICreateVolumeSnapshotSchedulerEvent(msg.getId());
+        CreateVolumeSnapshotJob job = new CreateVolumeSnapshotJob();
+        Random rand = new Random();
+        int randValue = rand.nextInt(65535) + 1;
+        Date startDate = new Date(msg.getStartTimeStamp());
+        Date date = new Date();
+        Timestamp ts = new Timestamp(date.getTime());
+        job.setSchedulerName(msg.getSchedulerName());
+        job.setType(msg.getType());
+        if ( msg.getCron() != null && ! msg.getCron().isEmpty()) {
+           job.setCron(msg.getCron());
+        }
+        if ( msg.getStartTimeStamp() != 0) {
+            job.setStartDate(startDate);
+        }
+        if ( msg.getInterval() != 0) {
+            job.setInterval(msg.getInterval());
+        }
+        if ( msg.getRepeatCount() != 0) {
+            job.setRepeat(msg.getRepeatCount());
+        }
+        // jobName, jobGroup, triggerName, triggerGroup reserved for future API
+        if(msg.getJobName() != null && !msg.getJobName().isEmpty()) {
+            job.setJobName(msg.getJobName());
+        }
+        else {
+            job.setJobName(msg.getVolumeUuid()+ "-" + Integer.toString(randValue));
+        }
+        if(msg.getJobGroup() != null && !msg.getJobGroup().isEmpty()) {
+            job.setJobGroup(msg.getJobGroup());
+        }
+        else {
+            job.setJobGroup(msg.getVolumeUuid());
+        }
+        if(msg.getTriggerName() != null && !msg.getTriggerName().isEmpty()) {
+           job.setTriggerName(msg.getTriggerName());
+        }
+        else {
+            job.setTriggerName(msg.getVolumeUuid()+"-" + Integer.toString(randValue));
+        }
+        if (msg.getTriggerGroup() != null && !msg.getTriggerGroup().isEmpty()) {
+            job.setTriggerGroup(msg.getTriggerGroup());
+        }
+        else {
+            job.setTriggerGroup(msg.getVolumeUuid());
+        }
+        job.setVolumeUuid(msg.getVolumeUuid());
+        job.setSnapShotName(msg.getSnapShotName());
+        job.setDescription(msg.getDescription());
+        job.setCreateDate(ts);
+        schedulerFacade.schedulerRunner(job);
+        bus.publish(evt);
+    }
+
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIGetVolumeSnapshotTreeMsg) {
             handle((APIGetVolumeSnapshotTreeMsg) msg);
+        } else if (msg instanceof APICreateVolumeSnapshotSchedulerMsg) {
+            handle((APICreateVolumeSnapshotSchedulerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }

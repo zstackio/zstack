@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>core.scheduler</id>
+    <interceptor>SchedulerApiInterceptor</interceptor>
+    <message>
+      <name>org.zstack.core.scheduler.APIDeleteSchedulerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.scheduler.APIQuerySchedulerMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.core.scheduler.APIUpdateSchedulerMsg</name>
+    </message>
+
+</service>

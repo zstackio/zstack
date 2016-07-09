@@ -64,10 +64,9 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.sql.Timestamp;
+import java.util.*;
+import org.zstack.core.scheduler.SchedulerFacade;
 
 import static org.zstack.utils.CollectionDSL.*;
 
@@ -97,6 +96,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
+    @Autowired
+    private SchedulerFacade schedulerFacade;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
@@ -1984,12 +1985,16 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIStopVmInstanceMsg) {
             handle((APIStopVmInstanceMsg) msg);
+        } else if (msg instanceof APIStopVmInstanceSchedulerMsg) {
+            handle((APIStopVmInstanceSchedulerMsg) msg);
         } else if (msg instanceof APIRebootVmInstanceMsg) {
             handle((APIRebootVmInstanceMsg) msg);
         } else if (msg instanceof APIDestroyVmInstanceMsg) {
             handle((APIDestroyVmInstanceMsg) msg);
         } else if (msg instanceof APIStartVmInstanceMsg) {
             handle((APIStartVmInstanceMsg) msg);
+        } else if (msg instanceof APIStartVmInstanceSchedulerMsg) {
+            handle((APIStartVmInstanceSchedulerMsg) msg);
         } else if (msg instanceof APIMigrateVmMsg) {
             handle((APIMigrateVmMsg) msg);
         } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
@@ -3758,5 +3763,111 @@ public class VmInstanceBase extends AbstractVmInstance {
                 stopVm(msg, chain);
             }
         });
+    }
+
+    protected void handle(final APIStopVmInstanceSchedulerMsg msg) {
+        APIStopVmInstanceSchedulerEvent evt = new APIStopVmInstanceSchedulerEvent(msg.getId());
+        StopVmInstanceJob job = new StopVmInstanceJob();
+        Random rand = new Random();
+        int randValue = rand.nextInt(65535) + 1;
+        Date startDate = new Date(msg.getStartTimeStamp());
+        Date date = new Date();
+        Timestamp ts = new Timestamp(date.getTime());
+        job.setSchedulerName(msg.getSchedulerName());
+        job.setType(msg.getType());
+        if ( msg.getCron() != null && ! msg.getCron().isEmpty()) {
+            job.setCron(msg.getCron());
+        }
+        if ( msg.getStartTimeStamp() != 0) {
+            job.setStartDate(startDate);
+        }
+        if ( msg.getInterval() != 0) {
+            job.setInterval(msg.getInterval());
+        }
+        if ( msg.getRepeatCount() != 0) {
+            job.setRepeat(msg.getRepeatCount());
+        }
+        // jobName, jobGroup, triggerName, triggerGroup reserved for future API
+        if(msg.getJobName() != null && !msg.getJobName().isEmpty()) {
+            job.setJobName(msg.getJobName());
+        }
+        else {
+            job.setJobName(msg.getVmInstanceUuid() + "-" + Integer.toString(randValue));
+        }
+        if(msg.getJobGroup() != null && !msg.getJobGroup().isEmpty()) {
+            job.setJobGroup(msg.getJobGroup());
+        }
+        else {
+            job.setJobGroup(msg.getVmInstanceUuid());
+        }
+        if(msg.getTriggerName() != null && !msg.getTriggerName().isEmpty()) {
+            job.setTriggerName(msg.getTriggerName());
+        }
+        else {
+            job.setTriggerName(msg.getVmInstanceUuid()+"-" + Integer.toString(randValue));
+        }
+        if (msg.getTriggerGroup() != null && !msg.getTriggerGroup().isEmpty()) {
+            job.setTriggerGroup(msg.getTriggerGroup());
+        }
+        else {
+            job.setTriggerGroup(msg.getVmInstanceUuid());
+        }
+        job.setVmUuid(msg.getVmInstanceUuid());
+        job.setCreateDate(ts);
+        schedulerFacade.schedulerRunner(job);
+        bus.publish(evt);
+    }
+
+    protected void handle(final APIStartVmInstanceSchedulerMsg msg) {
+        APIStartVmInstanceSchedulerEvent evt = new APIStartVmInstanceSchedulerEvent(msg.getId());
+        StartVmInstanceJob job = new StartVmInstanceJob();
+        Random rand = new Random();
+        int randValue = rand.nextInt(65535) + 1;
+        Date startDate = new Date(msg.getStartTimeStamp());
+        Date date = new Date();
+        Timestamp ts = new Timestamp(date.getTime());
+        job.setSchedulerName(msg.getSchedulerName());
+        job.setType(msg.getType());
+        if ( msg.getCron() != null && ! msg.getCron().isEmpty()) {
+            job.setCron(msg.getCron());
+        }
+        if ( msg.getStartTimeStamp() != 0) {
+            job.setStartDate(startDate);
+        }
+        if ( msg.getInterval() != 0) {
+            job.setInterval(msg.getInterval());
+        }
+        if ( msg.getRepeatCount() != 0) {
+            job.setRepeat(msg.getRepeatCount());
+        }
+        // jobName, jobGroup, triggerName, triggerGroup reserved for future API
+        if(msg.getJobName() != null && !msg.getJobName().isEmpty()) {
+            job.setJobName(msg.getJobName());
+        }
+        else {
+            job.setJobName(msg.getVmInstanceUuid() + "-" + Integer.toString(randValue));
+        }
+        if(msg.getJobGroup() != null && !msg.getJobGroup().isEmpty()) {
+            job.setJobGroup(msg.getJobGroup());
+        }
+        else {
+            job.setJobGroup(msg.getVmInstanceUuid());
+        }
+        if(msg.getTriggerName() != null && !msg.getTriggerName().isEmpty()) {
+            job.setTriggerName(msg.getTriggerName());
+        }
+        else {
+            job.setTriggerName(msg.getVmInstanceUuid()+"-" + Integer.toString(randValue));
+        }
+        if (msg.getTriggerGroup() != null && !msg.getTriggerGroup().isEmpty()) {
+            job.setTriggerGroup(msg.getTriggerGroup());
+        }
+        else {
+            job.setTriggerGroup(msg.getVmInstanceUuid());
+        }
+        job.setVmUuid(msg.getVmInstanceUuid());
+        job.setCreateDate(ts);
+        schedulerFacade.schedulerRunner(job);
+        bus.publish(evt);
     }
 }

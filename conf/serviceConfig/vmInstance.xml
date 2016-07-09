@@ -13,6 +13,12 @@
         <name>org.zstack.header.vm.APIStopVmInstanceMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APIStopVmInstanceSchedulerMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIStartVmInstanceSchedulerMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIRebootVmInstanceMsg</name>
     </message>
     <message>
