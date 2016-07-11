@@ -1,6 +1,7 @@
 package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
@@ -18,10 +19,15 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
@@ -29,14 +35,13 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
-import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
-import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
@@ -44,6 +49,7 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -57,7 +63,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint {
+import static org.zstack.utils.CollectionDSL.list;
+
+public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
+        ReportQuotaExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ImageManagerImpl.class);
 
     @Autowired
@@ -78,7 +87,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     private ResourceDestinationMaker destMaker;
     @Autowired
     private ImageDeletionPolicyManager deletionPolicyMgr;
-
+    @Autowired
+    protected RESTFacade restf;
 
     private Map<String, ImageFactory> imageFactories = Collections.synchronizedMap(new HashMap<String, ImageFactory>());
     private static final Set<Class> allowedMessageAfterDeletion = new HashSet<Class>();
@@ -92,7 +102,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof ImageMessage) {
-            passThrough((ImageMessage)msg);
+            passThrough((ImageMessage) msg);
         } else if (msg instanceof APIMessage) {
             handleApiMessage(msg);
         } else {
@@ -110,9 +120,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         } else if (msg instanceof APIListImageMsg) {
             handle((APIListImageMsg) msg);
         } else if (msg instanceof APISearchImageMsg) {
-            handle((APISearchImageMsg)msg);
+            handle((APISearchImageMsg) msg);
         } else if (msg instanceof APIGetImageMsg) {
-            handle((APIGetImageMsg)msg);
+            handle((APIGetImageMsg) msg);
         } else if (msg instanceof APICreateRootVolumeTemplateFromRootVolumeMsg) {
             handle((APICreateRootVolumeTemplateFromRootVolumeMsg) msg);
         } else if (msg instanceof APICreateRootVolumeTemplateFromVolumeSnapshotMsg) {
@@ -227,7 +237,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 @Override
                                 public void run(MessageReply reply) {
                                     if (reply.isSuccess()) {
-                                        backupStorage.add(((AllocateBackupStorageReply)reply).getInventory());
+                                        backupStorage.add(((AllocateBackupStorageReply) reply).getInventory());
                                         trigger.next();
                                     } else {
                                         trigger.fail(errf.stringToOperationError("cannot find proper backup storage", reply.getError()));
@@ -253,7 +263,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     List<ErrorCode> errs = new ArrayList<ErrorCode>();
                                     for (MessageReply r : replies) {
                                         if (r.isSuccess()) {
-                                            backupStorage.add(((AllocateBackupStorageReply)r).getInventory());
+                                            backupStorage.add(((AllocateBackupStorageReply) r).getInventory());
                                         } else {
                                             errs.add(r.getError());
                                         }
@@ -328,7 +338,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     if (!r.isSuccess()) {
                                         logger.warn(String.format("failed to create data volume template from volume[uuid:%s] on backup storage[uuid:%s], %s",
                                                 msg.getVolumeUuid(), bs.getUuid(), r.getError()));
-                                        fail ++;
+                                        fail++;
                                         err = r.getError();
                                         continue;
                                     }
@@ -490,7 +500,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
         ImageFactory factory = getImageFacotry(ImageType.valueOf(vo.getType()));
         Image img = factory.getImage(vo);
-        img.handleMessage((Message)msg);
+        img.handleMessage((Message) msg);
     }
 
 
@@ -604,7 +614,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 @Override
                                 public void run(MessageReply reply) {
                                     if (reply.isSuccess()) {
-                                        targetBackupStorages.add(((AllocateBackupStorageReply)reply).getInventory());
+                                        targetBackupStorages.add(((AllocateBackupStorageReply) reply).getInventory());
                                         trigger.next();
                                     } else {
                                         trigger.fail(reply.getError());
@@ -629,7 +639,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     List<ErrorCode> errs = new ArrayList<ErrorCode>();
                                     for (MessageReply r : replies) {
                                         if (r.isSuccess()) {
-                                            targetBackupStorages.add(((AllocateBackupStorageReply)r).getInventory());
+                                            targetBackupStorages.add(((AllocateBackupStorageReply) r).getInventory());
                                         } else {
                                             errs.add(r.getError());
                                         }
@@ -824,7 +834,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setPlatform(ImagePlatform.valueOf(msg.getPlatform()));
 
         ImageFactory factory = getImageFacotry(ImageType.valueOf(imageType));
-        final ImageVO ivo = factory.createImage(vo ,msg);
+        final ImageVO ivo = factory.createImage(vo, msg);
 
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), ImageVO.class);
         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
@@ -1081,5 +1091,172 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     @Override
     public void managementNodeReady() {
         startExpungeTask();
+    }
+
+    @Override
+    public List<Quota> reportQuota() {
+        Quota.QuotaOperator checker = new Quota.QuotaOperator() {
+
+            class ImageQuota {
+                long imageNum;
+                long imageSize;
+            }
+
+            @Override
+            public void checkQuota(APIMessage msg, Map<String, Quota.QuotaPair> pairs) {
+                if (msg instanceof APIAddImageMsg) {
+                    check((APIAddImageMsg) msg, pairs);
+                } else if (msg instanceof APIRecoverImageMsg) {
+                    check((APIRecoverImageMsg) msg, pairs);
+                }
+            }
+
+            @Override
+            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
+                List<Quota.QuotaUsage> usages = new ArrayList<Quota.QuotaUsage>();
+
+                ImageQuota imageQuota = getUsed(accountUuid);
+
+                Quota.QuotaUsage usage = new Quota.QuotaUsage();
+                usage.setName(ImageConstant.QUOTA_IMAGE_NUM);
+                usage.setUsed(imageQuota.imageNum);
+                usages.add(usage);
+
+                usage = new Quota.QuotaUsage();
+                usage.setName(ImageConstant.QUOTA_IMAGE_SIZE);
+                usage.setUsed(imageQuota.imageSize);
+                usages.add(usage);
+
+                return usages;
+            }
+
+            @Transactional(readOnly = true)
+            private ImageQuota getUsed(String accountUUid) {
+                ImageQuota quota = new ImageQuota();
+
+                quota.imageSize = getUsedImageSize(accountUUid);
+                quota.imageNum = getUsedImageNum(accountUUid);
+
+                return quota;
+            }
+
+            @Transactional(readOnly = true)
+            private long getUsedImageNum(String accountUuid) {
+                String sql = "select count(image) " +
+                        " from ImageVO image, AccountResourceRefVO ref " +
+                        " where image.uuid = ref.resourceUuid " +
+                        " and ref.accountUuid = :auuid " +
+                        " and ref.resourceType = :rtype ";
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("auuid", accountUuid);
+                q.setParameter("rtype", ImageVO.class.getSimpleName());
+                Long imageNum = q.getSingleResult();
+                imageNum = imageNum == null ? 0 : imageNum;
+                return imageNum;
+            }
+
+            @Transactional(readOnly = true)
+            private long getUsedImageSize(String accountUuid) {
+                String sql = "select sum(image.size) " +
+                        " from ImageVO image, AccountResourceRefVO ref " +
+                        " where image.uuid = ref.resourceUuid " +
+                        " and ref.accountUuid = :auuid " +
+                        " and ref.resourceType = :rtype ";
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("auuid", accountUuid);
+                q.setParameter("rtype", ImageVO.class.getSimpleName());
+                Long imageSize = q.getSingleResult();
+                imageSize = imageSize == null ? 0 : imageSize;
+                return imageSize;
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APIRecoverImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
+                long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
+                long imageNumUsed = getUsedImageNum(msg.getSession().getAccountUuid());
+                long imageSizeUsed = getUsedImageSize(msg.getSession().getAccountUuid());
+
+                ImageVO image = dbf.getEntityManager().find(ImageVO.class, msg.getImageUuid());
+                long imageSizeAsked = image.getSize();
+
+                if (imageNumUsed + 1 > imageNumQuota) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
+                    ));
+                }
+
+                if (imageSizeUsed + imageSizeAsked > imageSizeQuota) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
+                    ));
+                }
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
+                long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
+                long imageNumUsed = getUsedImageNum(msg.getSession().getAccountUuid());
+                long imageSizeUsed = getUsedImageSize(msg.getSession().getAccountUuid());
+
+                long imageSizeAsked;
+                String url = msg.getUrl();
+                url = url.trim();
+                //TODO check two upload way:http download,local file upload
+                if (!url.startsWith("http") && !url.startsWith("https")) {
+                    return;
+                }
+
+                String len = "";
+                try {
+                    HttpHeaders header = restf.getRESTTemplate().headForHeaders(url);
+                    len = header.getFirst("Content-Length");
+                } catch (Exception e) {
+                    throw new OperationFailureException(errf.stringToOperationError(
+                            String.format("cannot get image.  The image url : %s. description: %s.name: %s",
+                                    url, msg.getDescription(), msg.getName())));
+                }
+
+                if (len == null) {
+                    imageSizeAsked = 0;
+                } else {
+                    imageSizeAsked = Long.valueOf(len);
+                }
+
+                if (imageNumUsed + 1 > imageNumQuota) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
+                    ));
+                }
+
+                if ((imageSizeQuota == 0) || (imageSizeUsed + imageSizeAsked > imageSizeQuota)) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
+                    ));
+                }
+            }
+        };
+
+        Quota quota = new Quota();
+        quota.setOperator(checker);
+        quota.addMessageNeedValidation(APIAddImageMsg.class);
+        quota.addMessageNeedValidation(APIRecoverImageMsg.class);
+
+        Quota.QuotaPair p = new Quota.QuotaPair();
+        p.setName(ImageConstant.QUOTA_IMAGE_NUM);
+        p.setValue(20);
+        quota.addPair(p);
+
+        p = new Quota.QuotaPair();
+        p.setName(ImageConstant.QUOTA_IMAGE_SIZE);
+        p.setValue(SizeUnit.TERABYTE.toByte(10));
+        quota.addPair(p);
+
+        return list(quota);
     }
 }
