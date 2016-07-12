@@ -3,6 +3,7 @@ package org.zstack.storage.backup.sftp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
@@ -134,6 +135,40 @@ public class SftpBackupStorage extends BackupStorageBase {
     }
 
     @Override
+    protected void handle(final GetImageSizeOnBackupStorageMsg msg) {
+        final GetImageSizeOnBackupStorageReply reply = new GetImageSizeOnBackupStorageReply();
+
+        GetImageSizeCmd cmd = new GetImageSizeCmd();
+        cmd.imageUuid = msg.getImageUuid();
+        cmd.installPath = msg.getImageUrl();
+
+        restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.GET_IMAGE_SIZE), cmd,
+                new JsonAsyncRESTCallback<GetImageSizeRsp>(msg) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        reply.setError(err);
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void success(GetImageSizeRsp rsp) {
+                        if (!rsp.isSuccess()) {
+                            reply.setError(errf.stringToOperationError(rsp.getError()));
+                        } else {
+                            reply.setSize(rsp.size);
+                        }
+
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public Class<GetImageSizeRsp> getReturnClass() {
+                        return GetImageSizeRsp.class;
+                    }
+                });
+    }
+
+    @Override
     protected void handle(final DownloadImageMsg msg) {
         final DownloadImageReply reply = new DownloadImageReply();
         final ImageInventory iinv = msg.getImageInventory();
@@ -240,7 +275,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             }
         });
     }
-    
+
     private void connect(final Completion complete) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             continueConnect(complete);

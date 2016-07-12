@@ -48,13 +48,13 @@ import java.util.Map;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class BackupStorageBase extends AbstractBackupStorage {
     private static final CLogger logger = Utils.getLogger(BackupStorageBase.class);
-    
-	protected BackupStorageVO self;
 
-	@Autowired
-	protected CloudBus bus;
-	@Autowired
-	protected DatabaseFacade dbf;
+    protected BackupStorageVO self;
+
+    @Autowired
+    protected CloudBus bus;
+    @Autowired
+    protected DatabaseFacade dbf;
     @Autowired
     protected GlobalConfigFacade gcf;
     @Autowired
@@ -72,7 +72,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     @Autowired
     protected RESTFacade restf;
 
-	abstract protected void handle(DownloadImageMsg msg);
+    abstract protected void handle(DownloadImageMsg msg);
 
     abstract protected void handle(DownloadVolumeMsg msg);
 
@@ -80,15 +80,17 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     abstract protected void handle(BackupStorageAskInstallPathMsg msg);
 
+    abstract protected void handle(GetImageSizeOnBackupStorageMsg msg);
+
     abstract protected void handle(SyncImageSizeOnBackupStorageMsg msg);
 
     abstract protected void connectHook(boolean newAdd, Completion completion);
 
     abstract protected void pingHook(Completion completion);
 
-	public BackupStorageBase(BackupStorageVO self) {
-		this.self = self;
-	}
+    public BackupStorageBase(BackupStorageVO self) {
+        this.self = self;
+    }
 
     @Override
     public void deleteHook() {
@@ -171,11 +173,11 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }
     }
 
-	protected void handleLocalMessage(Message msg) throws URISyntaxException {
-	    if (msg instanceof DownloadImageMsg) {
-	        handleBase((DownloadImageMsg) msg);
-	    } else if (msg instanceof ScanBackupStorageMsg) {
-	        handle((ScanBackupStorageMsg) msg);
+    protected void handleLocalMessage(Message msg) throws URISyntaxException {
+        if (msg instanceof DownloadImageMsg) {
+            handleBase((DownloadImageMsg) msg);
+        } else if (msg instanceof ScanBackupStorageMsg) {
+            handle((ScanBackupStorageMsg) msg);
         } else if (msg instanceof BackupStorageDeletionMsg) {
             handle((BackupStorageDeletionMsg) msg);
         } else if (msg instanceof ChangeBackupStorageStatusMsg) {
@@ -194,10 +196,12 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             handle((BackupStorageAskInstallPathMsg) msg);
         } else if (msg instanceof SyncImageSizeOnBackupStorageMsg) {
             handle((SyncImageSizeOnBackupStorageMsg) msg);
-	    } else {
-	        bus.dealWithUnknownMessage(msg);
-	    }
-	}
+        } else if (msg instanceof GetImageSizeOnBackupStorageMsg) {
+            handle((GetImageSizeOnBackupStorageMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
 
     private void handle(final PingBackupStorageMsg msg) {
         final PingBackupStorageReply reply = new PingBackupStorageReply();
@@ -357,41 +361,41 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     }
 
     private void doScanImages() {
-	    try {
-	        List<ImageInventory> images = this.scanImages();
-	    } catch (Exception e) {
-	        logger.warn(String.format("Unhandled exception happened while scanning backup storage[uuid:%s]", self.getUuid()), e);
-	    }
-	}
-	
+        try {
+            List<ImageInventory> images = this.scanImages();
+        } catch (Exception e) {
+            logger.warn(String.format("Unhandled exception happened while scanning backup storage[uuid:%s]", self.getUuid()), e);
+        }
+    }
+
     private void handle(ScanBackupStorageMsg msg) {
         doScanImages();
     }
 
     protected void handleApiMessage(APIMessage msg) {
-		try {
-			if (msg instanceof APIDeleteBackupStorageMsg) {
-				handle((APIDeleteBackupStorageMsg) msg);
-			} else if (msg instanceof APIChangeBackupStorageStateMsg) {
-				handle((APIChangeBackupStorageStateMsg)msg);
-			} else if (msg instanceof APIAttachBackupStorageToZoneMsg) {
-				handle((APIAttachBackupStorageToZoneMsg) msg);
-			} else if (msg instanceof APIDetachBackupStorageFromZoneMsg) {
-				handle((APIDetachBackupStorageFromZoneMsg)msg);
-			} else if (msg instanceof APIScanBackupStorageMsg) {
+        try {
+            if (msg instanceof APIDeleteBackupStorageMsg) {
+                handle((APIDeleteBackupStorageMsg) msg);
+            } else if (msg instanceof APIChangeBackupStorageStateMsg) {
+                handle((APIChangeBackupStorageStateMsg) msg);
+            } else if (msg instanceof APIAttachBackupStorageToZoneMsg) {
+                handle((APIAttachBackupStorageToZoneMsg) msg);
+            } else if (msg instanceof APIDetachBackupStorageFromZoneMsg) {
+                handle((APIDetachBackupStorageFromZoneMsg) msg);
+            } else if (msg instanceof APIScanBackupStorageMsg) {
                 handle((APIScanBackupStorageMsg) msg);
             } else if (msg instanceof APIUpdateBackupStorageMsg) {
                 handle((APIUpdateBackupStorageMsg) msg);
             } else if (msg instanceof APIReconnectBackupStorageMsg) {
                 handle((APIReconnectBackupStorageMsg) msg);
-			} else {
-				bus.dealWithUnknownMessage(msg);
-			}
-		} catch (Exception e) {
-			bus.logExceptionWithMessageDump(msg, e);
-			bus.replyErrorByMessageType(msg, e);
-		}
-	}
+            } else {
+                bus.dealWithUnknownMessage(msg);
+            }
+        } catch (Exception e) {
+            bus.logExceptionWithMessageDump(msg, e);
+            bus.replyErrorByMessageType(msg, e);
+        }
+    }
 
     private void handle(APIReconnectBackupStorageMsg msg) {
         final APIReconnectBackupStorageEvent evt = new APIReconnectBackupStorageEvent(msg.getId());
@@ -438,10 +442,10 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     }
 
     private void handle(APIScanBackupStorageMsg msg) {
-	    APIScanBackupStorageEvent evt = new APIScanBackupStorageEvent(msg.getId());
-	    bus.publish(evt);
-	    
-	    doScanImages();
+        APIScanBackupStorageEvent evt = new APIScanBackupStorageEvent(msg.getId());
+        bus.publish(evt);
+
+        doScanImages();
     }
 
     protected void handle(final APIDetachBackupStorageFromZoneMsg msg) {
@@ -489,7 +493,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         });
     }
 
-	protected void handle(final APIAttachBackupStorageToZoneMsg msg) {
+    protected void handle(final APIAttachBackupStorageToZoneMsg msg) {
         final APIAttachBackupStorageToZoneEvent evt = new APIAttachBackupStorageToZoneEvent(msg.getId());
         final BackupStorageVO svo = dbf.findByUuid(msg.getBackupStorageUuid(), BackupStorageVO.class);
 
@@ -527,7 +531,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         });
     }
 
-	protected void handle(APIChangeBackupStorageStateMsg msg) {
+    protected void handle(APIChangeBackupStorageStateMsg msg) {
         APIChangeBackupStorageStateEvent evt = new APIChangeBackupStorageStateEvent(msg.getId());
 
         BackupStorageState currState = self.getState();
@@ -551,7 +555,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         bus.publish(evt);
     }
 
-	protected void handle(APIDeleteBackupStorageMsg msg) {
+    protected void handle(APIDeleteBackupStorageMsg msg) {
         final APIDeleteBackupStorageEvent evt = new APIDeleteBackupStorageEvent(msg.getId());
 
         final String issuer = BackupStorageVO.class.getSimpleName();
@@ -622,16 +626,16 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                 bus.publish(evt);
             }
         }).start();
-	}
-	
-	protected void updateCapacity(Long totalCapacity, Long availableCapacity) {
+    }
+
+    protected void updateCapacity(Long totalCapacity, Long availableCapacity) {
         if (totalCapacity != null && availableCapacity != null) {
             self.setTotalCapacity(totalCapacity);
             self.setAvailableCapacity(availableCapacity);
             dbf.update(self);
         }
-	}
-	
+    }
+
     protected void changeStatus(BackupStorageStatus status) {
         if (status == self.getStatus()) {
             return;

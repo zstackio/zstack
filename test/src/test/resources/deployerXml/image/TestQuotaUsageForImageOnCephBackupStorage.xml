@@ -9,8 +9,10 @@
     </instanceOfferings>
 
     <backupStorages>
-        <simulatorBackupStorage name="TestBackupStorage"
-                                description="Test" url="nfs://test"/>
+        <cephBackupStorage name="TestCephBackupStorage" description="Test"
+                           url="/path1" fsid="7ff218d9-f525-435f-8a40-3618d1772a64"
+                           monUrl="root:password@localhost:23,root:pass@#$word@127.0.0.1:23"
+                           totalCapacity="1T" availableCapacity="500G"/>
     </backupStorages>
 
     <diskOffering name="disk50G" description="Test"
@@ -21,6 +23,16 @@
                   diskSize="10G">
         <accountRef>test</accountRef>
     </diskOffering>
+
+    <images>
+        <image name="testLocalImageFile" description="Test"
+               url="file://///home/miao/Desktop/zstack2/kairosdb-1.1.1-1.tar.gz"
+               format="simulator">
+            <backupStorageRef>TestCephBackupStorage</backupStorageRef>
+            <accountRef>test</accountRef>
+        </image>
+    </images>
+
 
     <zones>
         <zone name="TestZone" description="Test">
@@ -65,7 +77,8 @@
                                          description="Test" totalCapacity="1T" url="nfs://test"/>
             </primaryStorages>
 
-            <backupStorageRef>TestBackupStorage</backupStorageRef>
+            <backupStorageRef>TestCephBackupStorage</backupStorageRef>
+
         </zone>
     </zones>
 </deployerConfig>

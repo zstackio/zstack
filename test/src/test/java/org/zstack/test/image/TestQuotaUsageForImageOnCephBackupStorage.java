@@ -5,37 +5,44 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
+import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.QuotaInventory;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.identity.IdentityCreator;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 
 /**
  * test vm quota usage
  */
-public class TestQuotaUsageForImage {
+public class TestQuotaUsageForImageOnCephBackupStorage {
+    CLogger logger = Utils.getLogger(TestQuotaUsageForImageOnCephBackupStorage.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
+    CephBackupStorageSimulatorConfig cephConfig;
+    GlobalConfigFacade gcf;
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -43,59 +50,63 @@ public class TestQuotaUsageForImage {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        deployer = new Deployer("deployerXml/image/TestImageQuota.xml");
+        WebBeanConstructor con = new WebBeanConstructor();
+        deployer = new Deployer("deployerXml/image/TestQuotaUsageForImageOnCephBackupStorage.xml", con);
+
+        deployer.addSpringConfig("ceph.xml");
+        deployer.addSpringConfig("cephSimulator.xml");
+
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
+
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
+        cephConfig = loader.getComponent(CephBackupStorageSimulatorConfig.class);
+        gcf = loader.getComponent(GlobalConfigFacade.class);
     }
 
     @Test
     public void test() throws ApiSenderException, InterruptedException {
-        InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
-        ImageInventory img = deployer.images.get("TestImage");
-        L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
-        DiskOfferingInventory disk = deployer.diskOfferings.get("disk50G");
-
         IdentityCreator identityCreator = new IdentityCreator(api);
         AccountInventory test = identityCreator.useAccount("test");
 
+        //some image set in xml,some below,the amount should one more than the quota to get expected exceeding exception.
         api.updateQuota(test.getUuid(), ImageConstant.QUOTA_IMAGE_NUM, 2);
-        //
-        BackupStorageInventory inv = deployer.backupStorages.get("TestBackupStorage");
-        //add image
+
+        BackupStorageInventory cephBackupStorageInv = deployer.backupStorages.get("TestCephBackupStorage");
+
+        //add image by local file to cephBackupStorage
         ImageInventory iinv = new ImageInventory();
-        iinv.setName("Test Image1");
-        iinv.setDescription("Test Image1");
+        iinv.setUuid(Platform.getUuid());
+        iinv.setName("TestCephImage1");
+        iinv.setDescription("TestCephImage1");
         iinv.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString());
-        iinv.setGuestOsType("Window7");
+        iinv.setGuestOsType("Window10");
         iinv.setFormat("simulator");
-        iinv.setUrl("http://192.168.200.1/mirror/diskimages/zstack-vr.qcow2");
-        iinv = api.addImage(iinv, identityCreator.getAccountSession(), inv.getUuid());
-        //add image
+        iinv.setSize(SizeUnit.GIGABYTE.toByte(1));
+        iinv.setUrl("file://///home/miao/Desktop/zstack2/ceph.zip");
+        cephConfig.getImageSizeCmdSize.put(iinv.getUuid(), SizeUnit.GIGABYTE.toByte(1));
+        cephConfig.imageSize.put(iinv.getUuid(), SizeUnit.GIGABYTE.toByte(1));
+        logger.info(cephBackupStorageInv.getUuid());
+        iinv = api.addImage(iinv, identityCreator.getAccountSession(), cephBackupStorageInv.getUuid());
+
+        //add image by http to cephBackupStorage exceed quota:image.num
         iinv = new ImageInventory();
+        iinv.setUuid(Platform.getUuid());
         iinv.setName("Test Image2");
         iinv.setDescription("Test Image2");
         iinv.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString());
         iinv.setGuestOsType("Window7");
         iinv.setFormat("simulator");
-        iinv.setUrl("http://192.168.200.1/mirror/diskimages/blank-test.img");
-        iinv = api.addImage(iinv, identityCreator.getAccountSession(), inv.getUuid());
-        //add image
-        iinv = new ImageInventory();
-        iinv.setName("Test Image21");
-        iinv.setDescription("Test Image21");
-        iinv.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString());
-        iinv.setGuestOsType("Window7");
-        iinv.setFormat("simulator");
-        iinv.setUrl("http://192.168.200.1/mirror/diskimages/zstack-image-0.0.7.qcow2");
+        iinv.setUrl("http://192.168.200.1/mirror/diskimages/exceed.img");
 
         thrown.expect(ApiSenderException.class);
         thrown.expectMessage("The user exceeds a quota of a resource");
         thrown.expectMessage(ImageConstant.QUOTA_IMAGE_NUM);
 
-        iinv = api.addImage(iinv, identityCreator.getAccountSession(), inv.getUuid());
+        cephConfig.getImageSizeCmdSize.put(iinv.getUuid(), SizeUnit.MEGABYTE.toByte(233));
+        iinv = api.addImage(iinv, identityCreator.getAccountSession(), cephBackupStorageInv.getUuid());
         //
         List<Quota.QuotaUsage> usages = api.getQuotaUsage(test.getUuid(), null);
         //

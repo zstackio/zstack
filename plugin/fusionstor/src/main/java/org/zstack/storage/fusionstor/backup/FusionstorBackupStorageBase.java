@@ -388,6 +388,12 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
     }
 
     @Override
+    protected void handle(final GetImageSizeOnBackupStorageMsg msg){
+        //TODO
+        throw new CloudRuntimeException(String.format("not implemented"));
+    }
+
+    @Override
     protected void handle(final DeleteBitsOnBackupStorageMsg msg) {
         final DeleteBitsOnBackupStorageReply reply = new DeleteBitsOnBackupStorageReply();
         if (!canDelete(msg.getInstallPath())) {
