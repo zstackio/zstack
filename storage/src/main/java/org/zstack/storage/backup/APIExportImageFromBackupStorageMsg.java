@@ -4,16 +4,18 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.storage.backup.BackupStorageMessage;
 import org.zstack.header.storage.backup.BackupStorageVO;
 
 @Action(category = ImageConstant.ACTION_CATEGORY)
-public class APIExportImageFromBackupStorageMsg extends APIMessage {
+public class APIExportImageFromBackupStorageMsg extends APIMessage implements BackupStorageMessage {
     @APIParam(resourceType = BackupStorageVO.class, checkAccount = true, operationTarget = true)
     private String backupStorageUuid;
 
     @APIParam(nonempty = true, maxLength = 2048)
     private String installPath;
 
+    @Override
     public String getBackupStorageUuid() {
         return backupStorageUuid;
     }
