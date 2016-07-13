@@ -369,8 +369,9 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 }
 
                 for (final ImageCacheVO c : staleCache) {
-                    DeleteBitsOnPrimaryStorageMsg msg = new DeleteBitsOnPrimaryStorageMsg();
-                    msg.setInstallPath(c.getInstallUrl().split("@")[0]);
+                    DeleteImageCacheOnCephPrimaryStorageMsg msg = new DeleteImageCacheOnCephPrimaryStorageMsg();
+                    msg.setSnapshotPath(c.getInstallUrl());
+                    msg.setImagePath(c.getInstallUrl().split("@")[0]);
                     msg.setPrimaryStorageUuid(c.getPrimaryStorageUuid());
                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, c.getPrimaryStorageUuid());
                     bus.send(msg, new CloudBusCallBack() {

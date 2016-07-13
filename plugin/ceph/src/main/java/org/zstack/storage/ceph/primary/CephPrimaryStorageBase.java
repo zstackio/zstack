@@ -602,6 +602,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String fsid;
     }
 
+    public static class DeleteImageCacheCmd extends AgentCommand {
+        public String imagePath;
+        public String snapshotPath;
+    }
+
     public static final String INIT_PATH = "/ceph/primarystorage/init";
     public static final String CREATE_VOLUME_PATH = "/ceph/primarystorage/volume/createempty";
     public static final String DELETE_PATH = "/ceph/primarystorage/delete";
@@ -621,6 +626,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String KVM_HA_SETUP_SELF_FENCER = "/ha/ceph/setupselffencer";
     public static final String KVM_HA_CANCEL_SELF_FENCER = "/ha/ceph/cancelselffencer";
     public static final String GET_FACTS = "/ceph/primarystorage/facts";
+    public static final String DELETE_IMAGE_CACHE = "/ceph/primarystorage/deleteimagecache";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -2245,9 +2251,37 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((SetupSelfFencerOnKvmHostMsg) msg);
         } else if (msg instanceof CancelSelfFencerOnKvmHostMsg) {
             handle((CancelSelfFencerOnKvmHostMsg) msg);
+        } else if (msg instanceof DeleteImageCacheOnCephPrimaryStorageMsg) {
+            handle((DeleteImageCacheOnCephPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(DeleteImageCacheOnCephPrimaryStorageMsg msg) {
+        DeleteImageCacheOnCephPrimaryStorageReply reply = new DeleteImageCacheOnCephPrimaryStorageReply();
+
+        DeleteImageCacheCmd cmd = new DeleteImageCacheCmd();
+        cmd.setFsId(getSelf().getFsid());
+        cmd.setUuid(self.getUuid());
+        cmd.imagePath = msg.getImagePath();
+        cmd.snapshotPath = msg.getSnapshotPath();
+        httpCall(DELETE_IMAGE_CACHE, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
+            @Override
+            public void success(AgentResponse rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(rsp.getError()));
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(CancelSelfFencerOnKvmHostMsg msg) {
