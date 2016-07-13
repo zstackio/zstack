@@ -4,7 +4,7 @@
         <category>volumeSnapshot</category>
         <name>incrementalSnapshot.maxNum</name>
         <description>The length of a volume snapshot chain. When the lenght of a volume snapshot chain reaches this value, the next volume snapshot will be a full snapshot</description>
-        <defaultValue>16</defaultValue>
+        <defaultValue>128</defaultValue>
         <type>java.lang.Integer</type>
     </config>
 
