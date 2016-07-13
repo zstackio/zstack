@@ -1,11 +1,9 @@
-package org.zstack.storage.backup;
+package org.zstack.header.storage.backup;
 
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.storage.backup.BackupStorageMessage;
-import org.zstack.header.storage.backup.BackupStorageVO;
 
 @Action(category = ImageConstant.ACTION_CATEGORY)
 public class APIExportImageFromBackupStorageMsg extends APIMessage implements BackupStorageMessage {
