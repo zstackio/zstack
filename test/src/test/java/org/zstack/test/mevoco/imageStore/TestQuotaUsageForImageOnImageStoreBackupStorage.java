@@ -19,7 +19,7 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
+import org.zstack.storage.backup.imagestore.ImageStoreBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -41,7 +41,7 @@ public class TestQuotaUsageForImageOnImageStoreBackupStorage {
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
-    SftpBackupStorageSimulatorConfig sftpConfig;
+    ImageStoreBackupStorageSimulatorConfig iConfig;
     GlobalConfigFacade gcf;
 
     @Rule
@@ -51,10 +51,11 @@ public class TestQuotaUsageForImageOnImageStoreBackupStorage {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/image/TestQuotaUsageForImageOnSftpBackupStorage.xml", con);
+        deployer = new Deployer("deployerXml/mevoco/imageStore/TestQuotaUsageForImageOnImageStoreBackupStorage.xml", con);
 
-        deployer.addSpringConfig("SftpBackupStorage.xml");
-        deployer.addSpringConfig("SftpBackupStorageSimulator.xml");
+
+        deployer.addSpringConfig("imagestore.xml");
+        deployer.addSpringConfig("ImageStoreBackupStorageSimulator.xml");
 
         deployer.build();
         api = deployer.getApi();
@@ -62,7 +63,7 @@ public class TestQuotaUsageForImageOnImageStoreBackupStorage {
 
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
-        sftpConfig = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
+        iConfig = loader.getComponent(ImageStoreBackupStorageSimulatorConfig.class);
         gcf = loader.getComponent(GlobalConfigFacade.class);
     }
 
@@ -79,9 +80,9 @@ public class TestQuotaUsageForImageOnImageStoreBackupStorage {
         //some image set in xml,some below,the amount should one more than the quota to get expected exceeding exception.
         api.updateQuota(test.getUuid(), ImageConstant.QUOTA_IMAGE_NUM, 4);
 
-        BackupStorageInventory sftpBackupStorageInv = deployer.backupStorages.get("TestSftpBackupStorage");
+        BackupStorageInventory bsInv = deployer.backupStorages.get("TestImageStoreBackupStorage");
 
-        //add image by http to sftpBackupStorage
+        //add image by http
         ImageInventory iinv = new ImageInventory();
         iinv.setUuid(Platform.getUuid());
         iinv.setName("Test Image1");
@@ -90,9 +91,9 @@ public class TestQuotaUsageForImageOnImageStoreBackupStorage {
         iinv.setGuestOsType("Window7");
         iinv.setFormat("simulator");
         iinv.setUrl("http://192.168.200.1/mirror/diskimages/centos6-test.qcow2");
-        iinv = api.addImage(iinv, identityCreator.getAccountSession(), sftpBackupStorageInv.getUuid());
+        iinv = api.addImage(iinv, identityCreator.getAccountSession(), bsInv.getUuid());
 
-        //add image by local file to sftpBackupStorage
+        //add image by local file
         iinv = new ImageInventory();
         iinv.setUuid(Platform.getUuid());
         iinv.setName("Test Image1");
@@ -100,14 +101,14 @@ public class TestQuotaUsageForImageOnImageStoreBackupStorage {
         iinv.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString());
         iinv.setGuestOsType("Window7");
         iinv.setFormat("simulator");
-        iinv.setUrl("file://///home/miao/Desktop/zstack2/sftp1.zip");
+        iinv.setUrl("file://///home/miao/Desktop/zstack2/imageStore1.zip");
         // for getImageSize response
-        sftpConfig.getImageSizeCmdSize.put(iinv.getUuid(), SizeUnit.GIGABYTE.toByte(2));
+        iConfig.getImageSizeCmdSize.put(iinv.getUuid(), SizeUnit.GIGABYTE.toByte(2));
         // for download response
-        sftpConfig.imageSizes.put(iinv.getUuid(), SizeUnit.GIGABYTE.toByte(1));
-        iinv = api.addImage(iinv, identityCreator.getAccountSession(), sftpBackupStorageInv.getUuid());
+        iConfig.imageSizes.put(iinv.getUuid(), SizeUnit.GIGABYTE.toByte(1));
+        iinv = api.addImage(iinv, identityCreator.getAccountSession(), bsInv.getUuid());
 
-        //add image by local file to sftpBackupStorage
+        //add image by local file
         iinv = new ImageInventory();
         iinv.setUuid(Platform.getUuid());
         iinv.setName("Test Image1");
@@ -115,11 +116,11 @@ public class TestQuotaUsageForImageOnImageStoreBackupStorage {
         iinv.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString());
         iinv.setGuestOsType("Window7");
         iinv.setFormat("simulator");
-        iinv.setUrl("file://///home/miao/Desktop/zstack2/sftp2.zip");
-        sftpConfig.getImageSizeCmdSize.put(iinv.getUuid(), SizeUnit.GIGABYTE.toByte(2));
-        iinv = api.addImage(iinv, identityCreator.getAccountSession(), sftpBackupStorageInv.getUuid());
+        iinv.setUrl("file://///home/miao/Desktop/zstack2/imageStore2.zip");
+        iConfig.getImageSizeCmdSize.put(iinv.getUuid(), SizeUnit.GIGABYTE.toByte(2));
+        iinv = api.addImage(iinv, identityCreator.getAccountSession(), bsInv.getUuid());
 
-        //add image by http to sftpBackupStorage exceed quota:image.num
+        //add image by http to exceed quota:image.num
         iinv = new ImageInventory();
         iinv.setUuid(Platform.getUuid());
         iinv.setName("Test Image2");
@@ -133,8 +134,8 @@ public class TestQuotaUsageForImageOnImageStoreBackupStorage {
         thrown.expectMessage("The user exceeds a quota of a resource");
         thrown.expectMessage(ImageConstant.QUOTA_IMAGE_NUM);
 
-        sftpConfig.getImageSizeCmdSize.put(iinv.getUuid(), SizeUnit.MEGABYTE.toByte(233));
-        iinv = api.addImage(iinv, identityCreator.getAccountSession(), sftpBackupStorageInv.getUuid());
+        iConfig.getImageSizeCmdSize.put(iinv.getUuid(), SizeUnit.MEGABYTE.toByte(233));
+        iinv = api.addImage(iinv, identityCreator.getAccountSession(), bsInv.getUuid());
         //
         List<Quota.QuotaUsage> usages = api.getQuotaUsage(test.getUuid(), null);
         //

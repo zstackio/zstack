@@ -9,8 +9,8 @@
     </instanceOfferings>
 
     <backupStorages>
-        <sftpBackupStorage name="TestSftpBackupStorage" hostname="localhost" password="password"
-                                description="Test" url="/tmp/miao"/>
+        <imageStoreBackupStorage name="TestImageStoreBackupStorage" hostname="localhost" password="password"
+                               url="/path1" description="Test" />
     </backupStorages>
 
     <diskOffering name="disk50G" description="Test"
@@ -26,7 +26,7 @@
         <image name="testLocalImageFile" description="Test"
                url="file://///home/miao/Desktop/zstack2/kairosdb-1.1.1-1.tar.gz"
                format="simulator">
-            <backupStorageRef>TestSftpBackupStorage</backupStorageRef>
+            <backupStorageRef>TestImageStoreBackupStorage</backupStorageRef>
             <accountRef>test</accountRef>
         </image>
     </images>
@@ -75,7 +75,7 @@
                                          description="Test" totalCapacity="1T" url="nfs://test"/>
             </primaryStorages>
 
-            <backupStorageRef>TestSftpBackupStorage</backupStorageRef>
+            <backupStorageRef>TestImageStoreBackupStorage</backupStorageRef>
 
         </zone>
     </zones>
