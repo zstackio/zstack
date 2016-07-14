@@ -11,7 +11,7 @@ public class APIExportImageFromBackupStorageMsg extends APIMessage implements Ba
     private String backupStorageUuid;
 
     @APIParam(nonempty = true, maxLength = 2048)
-    private String installPath;
+    private String imageUuid;
 
     @Override
     public String getBackupStorageUuid() {
@@ -22,11 +22,11 @@ public class APIExportImageFromBackupStorageMsg extends APIMessage implements Ba
         this.backupStorageUuid = backupStorageUuid;
     }
 
-    public String getInstallPath() {
-        return installPath;
+    public String getImageUuid() {
+        return imageUuid;
     }
 
-    public void setInstallPath(String installPath) {
-        this.installPath = installPath;
+    public void setImageUuid(String imageUuid) {
+        this.imageUuid = imageUuid;
     }
 }
