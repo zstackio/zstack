@@ -18,10 +18,12 @@ import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
 import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
@@ -64,7 +66,7 @@ import static org.zstack.utils.CollectionDSL.map;
  */
 public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCapacityUpdateExtensionPoint, KVMStartVmExtensionPoint,
         KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
-        KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component {
+        KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -329,8 +331,6 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             asf.deployModule(CephGlobalProperty.PRIMARY_STORAGE_MODULE_PATH, CephGlobalProperty.PRIMARY_STORAGE_PLAYBOOK_NAME);
         }
 
-        startCleanupThread();
-
         CephGlobalConfig.IMAGE_CACHE_CLEANUP_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
@@ -362,6 +362,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             }
 
             @Override
+            @ExceptionSafe
             public void run() {
                 List<ImageCacheVO> staleCache = getStaleCache();
                 if (staleCache == null || staleCache.isEmpty()) {
@@ -610,5 +611,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     public void preAttachIsoExtensionPoint(KVMHostInventory host, AttachIsoCmd cmd) {
         IsoTO to = convertIsoToCephIfNeeded(cmd.iso);
         cmd.iso = to;
+    }
+
+    @Override
+    public void managementNodeReady() {
+        startCleanupThread();
     }
 }
