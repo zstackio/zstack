@@ -57,8 +57,11 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     protected static final String ANSIBLE_PLAYBOOK_NAME = "consoleproxy.py";
 
     protected abstract ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo);
+
     protected abstract ConsoleProxy getConsoleProxy(SessionInventory session, VmInstanceInventory vm);
+
     protected abstract void connectAgent();
+
     protected abstract boolean isAgentConnected();
 
     private void establishNewProxy(ConsoleProxy proxy, SessionInventory session, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleInventory> complete) {
@@ -220,7 +223,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     @Override
     public void deleteConsoleSession(SessionInventory session, final NoErrorCompletion completion) {
         SimpleQuery<ConsoleProxyVO> q = dbf.createQuery(ConsoleProxyVO.class);
-        q.add(ConsoleProxyVO_.token, Op.EQ, session.getUuid());
+        q.add(ConsoleProxyVO_.token, Op.LIKE, session.getUuid() + "%");
         List<ConsoleProxyVO> vos = q.list();
 
         if (vos.isEmpty()) {
