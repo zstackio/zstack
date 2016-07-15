@@ -27,16 +27,18 @@ import java.util.concurrent.TimeUnit;
 @Controller
 public class SftpBackupStorageSimulator {
     CLogger logger = Utils.getLogger(SftpBackupStorageSimulator.class);
-    
+
     @Autowired
     private SftpBackupStorageSimulatorConfig config;
     @Autowired
     private RESTFacade restf;
-    
+
     private AsyncRESTReplyer replyer;
-    
-    @RequestMapping(value=SftpBackupStorageConstant.CONNECT_PATH, method=RequestMethod.POST)
-    public @ResponseBody String connect(@RequestBody String body) {
+
+    @RequestMapping(value = SftpBackupStorageConstant.CONNECT_PATH, method = RequestMethod.POST)
+    public
+    @ResponseBody
+    String connect(@RequestBody String body) {
         ConnectCmd cmd = JSONObjectUtil.toObject(body, ConnectCmd.class);
         ConnectResponse rsp = new ConnectResponse();
         if (!config.connectSuccess) {
@@ -50,19 +52,21 @@ public class SftpBackupStorageSimulator {
         }
         return JSONObjectUtil.toJsonString(rsp);
     }
-    
-    @RequestMapping(value=SftpBackupStorageConstant.ECHO_PATH, method=RequestMethod.POST)
-    public @ResponseBody String echo(@RequestBody String body) {
+
+    @RequestMapping(value = SftpBackupStorageConstant.ECHO_PATH, method = RequestMethod.POST)
+    public
+    @ResponseBody
+    String echo(@RequestBody String body) {
         return "";
     }
-    
+
     private void reply(HttpEntity<String> entity, AgentResponse rsp) {
         if (replyer == null) {
             replyer = new AsyncRESTReplyer();
         }
         replyer.reply(entity, rsp);
     }
-    
+
     @AsyncThread
     private void doDownload(HttpEntity<String> entity) throws InterruptedException {
         TimeUnit.MILLISECONDS.sleep(500);
@@ -82,15 +86,17 @@ public class SftpBackupStorageSimulator {
             for (Long s : config.imageSizes.values()) {
                 usedSize += s;
             }
-            rsp.setAvailableCapacity(config.totalCapacity-usedSize);
+            rsp.setAvailableCapacity(config.totalCapacity - usedSize);
             logger.debug(String.format("Download %s", cmd.getUrl()));
         }
-        
+
         reply(entity, rsp);
     }
-    
-    @RequestMapping(value=SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH, method=RequestMethod.POST)
-    public @ResponseBody String download(HttpServletRequest req) throws InterruptedException {
+
+    @RequestMapping(value = SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH, method = RequestMethod.POST)
+    public
+    @ResponseBody
+    String download(HttpServletRequest req) throws InterruptedException {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
         if (!config.downloadSuccess1) {
             throw new CloudRuntimeException("Fail download on purpose");
@@ -100,8 +106,10 @@ public class SftpBackupStorageSimulator {
         return null;
     }
 
-    @RequestMapping(value=SftpBackupStorageConstant.GET_IMAGE_SIZE, method=RequestMethod.POST)
-    public @ResponseBody String getImageActualSize(HttpServletRequest req) throws InterruptedException {
+    @RequestMapping(value = SftpBackupStorageConstant.GET_IMAGE_SIZE, method = RequestMethod.POST)
+    public
+    @ResponseBody
+    String getImageActualSize(HttpServletRequest req) throws InterruptedException {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
         GetImageSizeCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetImageSizeCmd.class);
         GetImageSizeRsp rsp = new GetImageSizeRsp();
@@ -112,7 +120,7 @@ public class SftpBackupStorageSimulator {
         reply(entity, rsp);
         return null;
     }
-    
+
     @AsyncThread
     private void doDelete(HttpEntity<String> entity) {
         AgentResponse rsp = null;
@@ -124,9 +132,9 @@ public class SftpBackupStorageSimulator {
         } else {
             config.deleteCmds.add(cmd);
             logger.debug(String.format("Deleted %s", cmd.getInstallUrl()));
-            rsp = (AgentResponse)(new DeleteResponse());
+            rsp = (AgentResponse) (new DeleteResponse());
         }
-        
+
         String taskUuid = entity.getHeaders().getFirst(RESTConstant.TASK_UUID);
         String callbackUrl = entity.getHeaders().getFirst(RESTConstant.CALLBACK_URL);
         String rspBody = JSONObjectUtil.toJsonString(rsp);
@@ -137,16 +145,20 @@ public class SftpBackupStorageSimulator {
         HttpEntity<String> rreq = new HttpEntity<String>(rspBody, headers);
         restf.getRESTTemplate().exchange(callbackUrl, HttpMethod.POST, rreq, String.class);
     }
-    
-    @RequestMapping(value=SftpBackupStorageConstant.DELETE_PATH, method=RequestMethod.POST)
-    public @ResponseBody String delete(HttpServletRequest req) throws InterruptedException {
+
+    @RequestMapping(value = SftpBackupStorageConstant.DELETE_PATH, method = RequestMethod.POST)
+    public
+    @ResponseBody
+    String delete(HttpServletRequest req) throws InterruptedException {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
         doDelete(entity);
         return null;
     }
 
-    @RequestMapping(value=SftpBackupStorageConstant.PING_PATH, method=RequestMethod.POST)
-    public @ResponseBody String ping(HttpServletRequest req) throws InterruptedException {
+    @RequestMapping(value = SftpBackupStorageConstant.PING_PATH, method = RequestMethod.POST)
+    public
+    @ResponseBody
+    String ping(HttpServletRequest req) throws InterruptedException {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
         if (config.pingException) {
             throw new CloudRuntimeException("on purpose");

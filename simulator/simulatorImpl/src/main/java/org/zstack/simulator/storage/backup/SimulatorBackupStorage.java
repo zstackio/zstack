@@ -12,10 +12,10 @@ import org.zstack.utils.logging.CLogger;
 import java.util.List;
 
 public class SimulatorBackupStorage extends BackupStorageBase {
-	private static final CLogger logger = Utils.getLogger(SimulatorBackupStorage.class);
-	
-	public SimulatorBackupStorage(BackupStorageVO self) {
-	    super(self);
+    private static final CLogger logger = Utils.getLogger(SimulatorBackupStorage.class);
+
+    public SimulatorBackupStorage(BackupStorageVO self) {
+        super(self);
     }
 
     @Override
@@ -23,10 +23,10 @@ public class SimulatorBackupStorage extends BackupStorageBase {
         logger.debug(String.format("SimulatorBackupStorage[uuid:%s] gets deleted", self.getUuid()));
     }
 
-	@Override
-	public void changeStateHook(BackupStorageStateEvent evt, BackupStorageState nextState) {
-		logger.debug(String.format("SimulatorBackupStorage[uuid:%s] changes state from %s to %s", self.getUuid(), self.getState(), nextState));
-	}
+    @Override
+    public void changeStateHook(BackupStorageStateEvent evt, BackupStorageState nextState) {
+        logger.debug(String.format("SimulatorBackupStorage[uuid:%s] changes state from %s to %s", self.getUuid(), self.getState(), nextState));
+    }
 
     @Override
     public void detachHook(Completion completion) {
@@ -40,6 +40,12 @@ public class SimulatorBackupStorage extends BackupStorageBase {
         completion.success();
     }
 
+    @Override
+    protected void handle(GetImageSizeOnBackupStorageMsg msg) {
+        GetImageSizeOnBackupStorageReply reply = new GetImageSizeOnBackupStorageReply();
+        reply.setSize(233);
+        bus.reply(msg, reply);
+    }
 
     @Override
     protected void handle(DownloadImageMsg msg) {

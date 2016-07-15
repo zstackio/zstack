@@ -17,9 +17,9 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * <p>Java class for BackupStorageUnion complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType name="BackupStorageUnion">
  *   &lt;complexContent>
@@ -33,42 +33,40 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "BackupStorageUnion", propOrder = {
-    "simulatorBackupStorage",
-    "sftpBackupStorage",
-    "cephBackupStorage"
+        "simulatorBackupStorage",
+        "sftpBackupStorage",
+        "cephBackupStorage",
+        "imageStoreBackupStorage"
 })
 public class BackupStorageUnion {
 
     protected List<SimulatorBackupStorageConfig> simulatorBackupStorage;
     protected List<SftpBackupStorageConfig> sftpBackupStorage;
     protected List<CephBackupStorageConfig> cephBackupStorage;
+    protected List<ImageStoreBackupStorageConfig> imageStoreBackupStorage;
 
     /**
      * Gets the value of the simulatorBackupStorage property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the simulatorBackupStorage property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getSimulatorBackupStorage().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link SimulatorBackupStorageConfig }
-     * 
-     * 
      */
     public List<SimulatorBackupStorageConfig> getSimulatorBackupStorage() {
         if (simulatorBackupStorage == null) {
@@ -79,25 +77,23 @@ public class BackupStorageUnion {
 
     /**
      * Gets the value of the sftpBackupStorage property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the sftpBackupStorage property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getSftpBackupStorage().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link SftpBackupStorageConfig }
-     * 
-     * 
      */
     public List<SftpBackupStorageConfig> getSftpBackupStorage() {
         if (sftpBackupStorage == null) {
@@ -108,31 +104,36 @@ public class BackupStorageUnion {
 
     /**
      * Gets the value of the cephBackupStorage property.
-     * 
+     * <p>
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
      * This is why there is not a <CODE>set</CODE> method for the cephBackupStorage property.
-     * 
+     * <p>
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
      *    getCephBackupStorage().add(newItem);
      * </pre>
-     * 
-     * 
+     * <p>
+     * <p>
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link CephBackupStorageConfig }
-     * 
-     * 
      */
     public List<CephBackupStorageConfig> getCephBackupStorage() {
         if (cephBackupStorage == null) {
             cephBackupStorage = new ArrayList<CephBackupStorageConfig>();
         }
         return this.cephBackupStorage;
+    }
+
+    public List<ImageStoreBackupStorageConfig> getImageStoreBackupStorage() {
+        if (imageStoreBackupStorage == null) {
+            imageStoreBackupStorage = new ArrayList<ImageStoreBackupStorageConfig>();
+        }
+        return this.imageStoreBackupStorage;
     }
 
 }

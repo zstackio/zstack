@@ -325,6 +325,28 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     @Override
+    protected void handle(final GetImageSizeOnBackupStorageMsg msg) {
+        CephBackupStorageBase.GetImageSizeCmd cmd = new CephBackupStorageBase.GetImageSizeCmd();
+        cmd.imageUuid = msg.getImageUuid();
+        cmd.installPath = msg.getImageUrl();
+
+        final GetImageSizeOnBackupStorageReply reply = new GetImageSizeOnBackupStorageReply();
+        httpCall(GET_IMAGE_SIZE_PATH, cmd, GetImageSizeRsp.class, new ReturnValueCompletion<GetImageSizeRsp>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(GetImageSizeRsp ret) {
+                reply.setSize(ret.size);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
     protected void handle(final DownloadImageMsg msg) {
         final DownloadCmd cmd = new DownloadCmd();
         cmd.url = msg.getImageInventory().getUrl();
@@ -548,7 +570,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                     return;
                                 }
 
-                                StringBuilder sb =  new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\n");
+                                StringBuilder sb = new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\n");
                                 for (CephBackupStorageMonBase mon : mons) {
                                     String fsid = fsids.get(mon.getSelf().getUuid());
                                     sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
@@ -716,7 +738,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             return;
                         }
 
-                        ErrorCode err =  errf.stringToOperationError(String.format("failed to ping the ceph backup storage[uuid:%s, name:%s]",
+                        ErrorCode err = errf.stringToOperationError(String.format("failed to ping the ceph backup storage[uuid:%s, name:%s]",
                                 self.getUuid(), self.getName()), errors);
                         completion.fail(err);
                     }
@@ -749,7 +771,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 logger.warn(String.format("the ceph backup storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports" +
                                         " an operation failure[%s]", self.getUuid(), self.getName(), mon.getSelf().getUuid(), res.error));
                                 backupStorageDown();
-                            } else  {
+                            } else {
                                 // this mon is down(success == false, operationFailure == false), but the backup storage may still work as other mons may work
                                 ErrorCode errorCode = errf.stringToOperationError(res.error);
                                 thisMonIsDown(errorCode);
