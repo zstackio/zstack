@@ -74,7 +74,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         inv.setProxyHostname(mgmtIp);
         inv.setAgentIp("127.0.0.1");
         inv.setAgentType(getConsoleBackendType());
-        inv.setToken(session.getUuid());
+        inv.setToken(session.getUuid() + vm.getUuid());
         inv.setVmInstanceUuid(vm.getUuid());
         return new ConsoleProxyBase(inv, getAgentPort());
     }
@@ -86,7 +86,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         ShellUtils.run(String.format("sh %s '%s'", script, pubKeyFile.getAbsolutePath()));
     }
 
-    protected  void doConnectAgent(final Completion completion) {
+    protected void doConnectAgent(final Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
