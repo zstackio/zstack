@@ -2,6 +2,7 @@ package org.zstack.console;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -64,7 +65,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
         if (msg instanceof ConsoleProxyAgentMessage) {
             passThrough(msg);
         } else if (msg instanceof APIMessage) {
-            handleApiMessage((APIMessage)msg);
+            handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
         }
@@ -102,7 +103,11 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
                 bkd.grantConsoleAccess(msg.getSession(), VmInstanceInventory.valueOf(vmvo), new ReturnValueCompletion<ConsoleInventory>(chain) {
                     @Override
                     public void success(ConsoleInventory returnValue) {
-                        returnValue.setHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
+                        if (!"0.0.0.0".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)) {
+                            returnValue.setHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
+                        } else {
+                            returnValue.setHostname(CoreGlobalProperty.UNIT_TEST_ON ? "127.0.0.1" : Platform.getManagementServerIp());
+                        }
                         evt.setInventory(returnValue);
                         bus.publish(evt);
                         chain.next();
@@ -244,7 +249,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
         });
     }
 
-    public void cleanupNode(String nodeId){
+    public void cleanupNode(String nodeId) {
         logger.debug(String.format("Management node[uuid:%s] left, will clean the record in ConsoleProxyVO", nodeId));
         SimpleQuery<ManagementNodeVO> query = dbf.createQuery(ManagementNodeVO.class);
         query.add(ManagementNodeVO_.uuid, SimpleQuery.Op.EQ, nodeId);
@@ -269,9 +274,11 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     public void iAmDead(String nodeId) {
         cleanupNode(nodeId);
     }
+
     @Override
     public void nodeJoin(String nodeId) {
     }
+
     @Override
     public void iJoin(String nodeId) {
     }
