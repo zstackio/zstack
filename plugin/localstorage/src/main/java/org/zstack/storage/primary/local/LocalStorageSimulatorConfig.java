@@ -53,4 +53,6 @@ public class LocalStorageSimulatorConfig {
     public List<GetVolumeSizeCmd> getVolumeSizeCmds = new ArrayList<GetVolumeSizeCmd>();
     public Map<String, Long> getVolumeSizeCmdActualSize = new HashMap<String, Long>();
     public Map<String, Long> getVolumeSizeCmdSize = new HashMap<String, Long>();
+
+    public Map<String, String> getVolumeBaseImagePaths = new HashMap();
 }
