@@ -8,7 +8,7 @@ import org.zstack.core.GlobalPropertyDefinition;
 
 @GlobalPropertyDefinition
 public class SftpBackupStorageGlobalProperty {
-    @GlobalProperty(name="SftpBackupStorage.agentPackageName", defaultValue = "sftpbackupstorage-1.4.tar.gz")
+    @GlobalProperty(name="SftpBackupStorage.agentPackageName", defaultValue = "sftpbackupstorage-1.5.tar.gz")
     public static String AGENT_PACKAGE_NAME;
     @GlobalProperty(name="SftpBackupStorage.agentPort", defaultValue = "7171")
     public static int AGENT_PORT;
