@@ -10,15 +10,19 @@ public interface ConsoleProxyCommands {
     public static class AgentResponse {
         private boolean success = true;
         private String error;
+
         public boolean isSuccess() {
             return success;
         }
+
         public void setSuccess(boolean success) {
             this.success = success;
         }
+
         public String getError() {
             return error;
         }
+
         public void setError(String error) {
             this.error = error;
         }
@@ -170,6 +174,7 @@ public interface ConsoleProxyCommands {
         private String targetHostname;
         private int targetPort;
         private String proxyHostname;
+        private int proxyPort;
         private String vmUuid;
         private String scheme;
         private int idleTimeout;
@@ -192,6 +197,14 @@ public interface ConsoleProxyCommands {
 
         public String getTargetHostname() {
             return targetHostname;
+        }
+
+        public int getProxyPort() {
+            return proxyPort;
+        }
+
+        public void setProxyPort(int proxyPort) {
+            this.proxyPort = proxyPort;
         }
 
         public void setTargetHostname(String targetHostname) {

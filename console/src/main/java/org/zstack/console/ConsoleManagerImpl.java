@@ -102,9 +102,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
                 bkd.grantConsoleAccess(msg.getSession(), VmInstanceInventory.valueOf(vmvo), new ReturnValueCompletion<ConsoleInventory>(chain) {
                     @Override
                     public void success(ConsoleInventory returnValue) {
-                        if (!"0.0.0.0".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)) {
-                            returnValue.setHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
-                        }
+                        returnValue.setHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
                         evt.setInventory(returnValue);
                         bus.publish(evt);
                         chain.next();
