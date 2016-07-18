@@ -26,7 +26,7 @@ cp $base/../conf/db/upgrade/* $flyway_sql
 
 url="jdbc:mysql://localhost:3306/zstack"
 $flyway -user=$user -password=$password -url=$url clean
-$flyway -user=$user -password=$password -url=$url migrate
+$flyway -outOfOrder=true -user=$user -password=$password -url=$url migrate
 
 eval "rm -f $flyway_sql/*"
 
@@ -34,6 +34,6 @@ cp $base/../conf/db/V0.6__schema_buildin_httpserver.sql $flyway_sql
 
 url="jdbc:mysql://localhost:3306/zstack_rest"
 $flyway -user=$user -password=$password -url=$url clean
-$flyway -user=$user -password=$password -url=$url migrate
+$flyway -outOfOrder=true -user=$user -password=$password -url=$url migrate
 
 eval "rm -f $flyway_sql/*"

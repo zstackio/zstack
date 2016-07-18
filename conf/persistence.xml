@@ -119,5 +119,6 @@
         <class>org.zstack.network.service.lb.LoadBalancerListenerVmNicRefVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerVO</class>
         <class>org.zstack.header.console.ConsoleProxyAgentVO</class>
+        <class>org.zstack.header.storage.primary.ImageCacheShadowVO</class>
     </persistence-unit>
 </persistence>

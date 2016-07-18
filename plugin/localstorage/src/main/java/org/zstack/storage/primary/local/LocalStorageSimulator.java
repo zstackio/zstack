@@ -61,6 +61,16 @@ public class LocalStorageSimulator {
         restf.getRESTTemplate().exchange(callbackUrl, HttpMethod.POST, rreq, String.class);
     }
 
+    @RequestMapping(value=LocalStorageKvmBackend.GET_BASE_IMAGE_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getVolumeBaseImagePath(HttpEntity<String> entity) {
+        GetVolumeBaseImagePathCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeBaseImagePathCmd.class);
+        GetVolumeBaseImagePathRsp rsp = new GetVolumeBaseImagePathRsp();
+        rsp.path = config.getVolumeBaseImagePaths.get(cmd.volumeUuid);
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=LocalStorageKvmBackend.GET_BACKING_FILE_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String getBackingFile(HttpEntity<String> entity) {

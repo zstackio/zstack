@@ -43,6 +43,7 @@ import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
+import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -71,6 +72,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
     protected PrimaryStorageOverProvisioningManager ratioMgr;
     @Autowired
     protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
+    @Autowired
+    private LocalStorageImageCleaner imageCacheCleaner;
 
     static class FactoryCluster {
         LocalStorageHypervisorFactory factory;
@@ -92,22 +95,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
         } else {
             super.handleApiMessage(msg);
         }
-    }
-
-    @Override
-    protected void handle(APIReconnectPrimaryStorageMsg msg) {
-        final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
-        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
-        rmsg.setPrimaryStorageUuid(self.getUuid());
-        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-        bus.send(rmsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply reply) {
-                self = dbf.reload(self);
-                evt.setInventory(getSelfInventory());
-                bus.publish(evt);
-            }
-        });
     }
 
     @Transactional(readOnly = true)
@@ -392,9 +379,61 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
         } else if (msg instanceof UploadBitsFromLocalStorageToBackupStorageMsg) {
             handle((UploadBitsFromLocalStorageToBackupStorageMsg) msg);
+        } else if (msg instanceof GetVolumeRootImageUuidFromPrimaryStorageMsg) {
+            handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
+            handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+    @Override
+    protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
+        APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
+        imageCacheCleaner.cleanup();
+        bus.publish(evt);
+    }
+
+
+    private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
+        CacheInstallPath path = new CacheInstallPath();
+        path.fullPath = msg.getInstallPath();
+        path.disassemble();
+
+        LocalStorageDirectlyDeleteBitsMsg dmsg = new LocalStorageDirectlyDeleteBitsMsg();
+        dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        dmsg.setPath(path.installPath);
+        dmsg.setHostUuid(path.hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+        bus.send(dmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                DeleteImageCacheOnPrimaryStorageReply r = new DeleteImageCacheOnPrimaryStorageReply();
+                r.setSuccess(reply.isSuccess());
+                if (reply.getError() != null) {
+                    r.setError(reply.getError());
+                }
+                bus.reply(msg, r);
+            }
+        });
+    }
+
+    private void handle(final GetVolumeRootImageUuidFromPrimaryStorageMsg msg) {
+        String hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid());
+        LocalStorageHypervisorBackend bkd = getHypervisorBackendFactoryByHostUuid(hostUuid).getHypervisorBackend(self);
+        bkd.handle(msg, hostUuid, new ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply>(msg) {
+            @Override
+            public void success(GetVolumeRootImageUuidFromPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetVolumeRootImageUuidFromPrimaryStorageReply reply = new GetVolumeRootImageUuidFromPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final UploadBitsFromLocalStorageToBackupStorageMsg msg) {
@@ -1627,6 +1666,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void connectHook(final ConnectParam param, final Completion completion) {
+        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+        rmsg.setPrimaryStorageUuid(self.getUuid());
+        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+        bus.send(rmsg);
         completion.success();
     }
 
