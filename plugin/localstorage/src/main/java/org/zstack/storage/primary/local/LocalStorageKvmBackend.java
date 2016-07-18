@@ -516,6 +516,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public Long size;
     }
 
+    public static class GetVolumeBaseImagePathCmd extends AgentCommand {
+        public String volumeUuid;
+        public String installPath;
+    }
+
+    public static class GetVolumeBaseImagePathRsp extends AgentResponse {
+        public String path;
+    }
+
     public static class GetVolumeSizeCmd extends AgentCommand {
         public String volumeUuid;
         public String installPath;
@@ -525,7 +534,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public long actualSize;
         public long size;
     }
-
 
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
@@ -542,6 +550,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CHECK_MD5_PATH = "/localstorage/checkmd5";
     public static final String GET_BACKING_FILE_PATH = "/localstorage/volume/getbackingfile";
     public static final String GET_VOLUME_SIZE = "/localstorage/volume/getsize";
+    public static final String GET_BASE_IMAGE_PATH = "/localstorage/volume/getbaseimagepath";
 
 
     public LocalStorageKvmBackend(PrimaryStorageVO self) {
@@ -1583,6 +1592,34 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public void fail(ErrorCode errorCode) {
                 logger.warn(String.format("failed to upload template[%s] from local primary storage[uuid: %s] to the backup storage[uuid: %s, path: %s]",
                         msg.getPrimaryStorageInstallPath(), self.getUuid(), bs.getUuid(), msg.getBackupStorageInstallPath()));
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(GetVolumeRootImageUuidFromPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply> completion) {
+        GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
+        cmd.installPath = msg.getVolume().getInstallPath();
+        cmd.volumeUuid = msg.getVolume().getUuid();
+        new KvmCommandSender(hostUuid).send(cmd, GET_BASE_IMAGE_PATH, new KvmCommandFailureChecker() {
+            @Override
+            public ErrorCode getError(KvmResponseWrapper w) {
+                GetVolumeBaseImagePathRsp rsp = w.getResponse(GetVolumeBaseImagePathRsp.class);
+                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+            }
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper w) {
+                GetVolumeBaseImagePathRsp rsp = w.getResponse(GetVolumeBaseImagePathRsp.class);
+                String rootImageUuid = new File(rsp.path).getName().split("\\.")[0];
+                GetVolumeRootImageUuidFromPrimaryStorageReply reply = new GetVolumeRootImageUuidFromPrimaryStorageReply();
+                reply.setImageUuid(rootImageUuid);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
             }
         });

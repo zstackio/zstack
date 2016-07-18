@@ -1,28 +1,37 @@
 package org.zstack.storage.volume;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.Component;
-import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
-import org.zstack.header.storage.primary.PrimaryStorageStatus;
 import org.zstack.header.volume.*;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
 
 /**
  * Created by xing5 on 2016/5/25.
  */
 public class VolumeUpgradeExtension implements Component {
+    private static final CLogger logger = Utils.getLogger(VolumeUpgradeExtension.class);
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -32,19 +41,85 @@ public class VolumeUpgradeExtension implements Component {
 
     @Override
     public boolean start() {
-        if (!CoreGlobalProperty.IS_UPGRADE_START) {
-            return true;
+        if (VolumeGlobalProperty.SYNC_VOLUME_SIZE) {
+            syncVolumeSize();
         }
 
-        String dbVersion = dbf.getDbVersion();
-        if ("1.3".equals(dbVersion)) {
-            handle1_3();
+        if (VolumeGlobalProperty.ROOT_VOLUME_FIND_MISSING_IMAGE_UUID) {
+            rootVolumeFindMissingUuid();
         }
 
         return true;
     }
 
-    private void handle1_3() {
+    private void rootVolumeFindMissingUuid() {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.add(VolumeVO_.type, Op.EQ, VolumeType.Root);
+        q.add(VolumeVO_.rootImageUuid, Op.NULL);
+        List<VolumeVO> volumes = q.list();
+        if (volumes.isEmpty()) {
+            return;
+        }
+
+        Map<String, List<VolumeVO>> groupByPrimaryStorageUuid = new HashMap<>();
+        for (VolumeVO vo : volumes) {
+            List<VolumeVO> vos = groupByPrimaryStorageUuid.get(vo.getPrimaryStorageUuid());
+            if (vos == null) {
+                vos = new ArrayList<>();
+                groupByPrimaryStorageUuid.put(vo.getPrimaryStorageUuid(), vos);
+            }
+            vos.add(vo);
+        }
+
+        evtf.on(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_STATUS_CHANGED_PATH, new EventCallback() {
+            List<String> supportPsTypes = asList("Ceph", "NFS", "SharedMountPoint", "LocalStorage");
+
+            @Override
+            protected void run(Map tokens, Object data) {
+                PrimaryStorageStatusChangedData d = (PrimaryStorageStatusChangedData) data;
+
+                if (!PrimaryStorageStatus.Connected.toString().equals(d.getNewStatus())) {
+                    return;
+                }
+
+                List<VolumeVO> vos = groupByPrimaryStorageUuid.get(d.getPrimaryStorageUuid());
+                if (vos == null) {
+                    return;
+                }
+
+                if (!supportPsTypes.contains(d.getInventory().getType())) {
+                    return;
+                }
+
+                List<GetVolumeRootImageUuidFromPrimaryStorageMsg> msgs = vos.stream().map(vol -> {
+                    GetVolumeRootImageUuidFromPrimaryStorageMsg msg = new GetVolumeRootImageUuidFromPrimaryStorageMsg();
+                    msg.setVolume(VolumeInventory.valueOf(vol));
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
+                    return msg;
+                }).collect(Collectors.toList());
+
+                for (GetVolumeRootImageUuidFromPrimaryStorageMsg msg : msgs) {
+                    bus.send(msg, new CloudBusCallBack() {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                GetVolumeRootImageUuidFromPrimaryStorageReply r = reply.castReply();
+                                VolumeVO vol = vos.stream().filter(vo -> vo.getUuid().equals(msg.getVolume().getUuid())).findFirst().get();
+                                vol.setRootImageUuid(r.getImageUuid());
+                                dbf.update(vol);
+                                vos.remove(vol);
+                            } else  {
+                                logger.warn(String.format("unable to get the rootImageUuid for the volume[uuid:%s], %s",
+                                        msg.getVolume().getUuid(), reply.getError()));
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void syncVolumeSize() {
         evtf.on(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_STATUS_CHANGED_PATH, new EventCallback() {
             @Override
             public void run(Map tokens, Object data) {

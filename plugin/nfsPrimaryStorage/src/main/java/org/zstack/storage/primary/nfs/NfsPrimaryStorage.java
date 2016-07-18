@@ -88,9 +88,32 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
         } else if (msg instanceof UploadBitsToBackupStorageMsg) {
             handle((UploadBitsToBackupStorageMsg) msg);
+        } else if (msg instanceof GetVolumeRootImageUuidFromPrimaryStorageMsg) {
+            handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(GetVolumeRootImageUuidFromPrimaryStorageMsg msg) {
+        NfsPrimaryStorageBackend bkd = getUsableBackend();
+        if (bkd == null) {
+            throw new OperationFailureException(errf.stringToOperationError("no usable backend found"));
+        }
+
+        bkd.handle(getSelfInventory(), msg, new ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply>(msg) {
+            @Override
+            public void success(GetVolumeRootImageUuidFromPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetVolumeRootImageUuidFromPrimaryStorageReply reply = new GetVolumeRootImageUuidFromPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final UploadBitsToBackupStorageMsg msg) {

@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
@@ -15,9 +16,12 @@ import org.zstack.header.image.SyncImageSizeMsg;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStorageStatusChangedData;
 import org.zstack.header.storage.backup.BackupStorageStatus;
+import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.StringDSL;
 import org.zstack.utils.function.Function;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
@@ -35,16 +39,54 @@ public class ImageUpgradeExtension implements Component {
 
     @Override
     public boolean start() {
-        if (!CoreGlobalProperty.IS_UPGRADE_START) {
-            return true;
-        }
-
-        String dbVersion = dbf.getDbVersion();
-        if ("1.3".equals(dbVersion)) {
+        if (ImageGlobalProperty.SYNC_IMAGE_ACTUAL_SIZE_ON_START) {
             syncImageActualSize();
         }
 
+        if (ImageGlobalProperty.FIX_IMAGE_CACHE_UUID) {
+            fixImageCacheUuid();
+        }
+
         return true;
+    }
+
+    @Transactional
+    private void fixImageCacheUuid() {
+        String sql = "select c, pri.type from ImageCacheVO c, PrimaryStorageVO pri where c.primaryStorageUuid = pri.uuid" +
+                " and c.imageUuid is null";
+
+        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        List<Tuple> ts = q.getResultList();
+        for (Tuple t : ts) {
+            ImageCacheVO c = t.get(0, ImageCacheVO.class);
+            String psType = t.get(1, String.class);
+
+            String imgUuid;
+            if ("Ceph".equals(psType)) {
+                imgUuid = c.getInstallUrl().split("@")[1];
+            } else if ("NFS".equals(psType) || "SharedMountPoint".equals(psType)) {
+                String[] pair = c.getInstallUrl().split("/");
+                String last = pair[pair.length-1];
+                imgUuid = last.split("\\.")[1];
+            } else if ("LocalStorage".equals(psType)) {
+                String[] pair = c.getInstallUrl().split(";");
+                String first = pair[0];
+                pair = first.split("/");
+                String last = pair[pair.length-1];
+                imgUuid = last.split("\\.")[1];
+            } else {
+                throw new CloudRuntimeException(String.format("unknown primary storage type[%s] for the ImageCacheVO[id:%s]",
+                        psType, c.getId()));
+            }
+
+            if (!StringDSL.isZstackUuid(imgUuid)) {
+                throw new CloudRuntimeException(String.format("the image UUID[%s] parsed from the URL[%s] of the ImageCacheVO[id:%s] " +
+                        "on the primary storage[type:%s] looks no correct", imgUuid, c.getInstallUrl(), c.getId(), psType));
+            }
+
+            c.setImageUuid(imgUuid);
+            dbf.getEntityManager().merge(c);
+        }
     }
 
     private void syncImageActualSize() {
