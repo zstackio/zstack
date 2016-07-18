@@ -66,6 +66,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         EntityInfo(Class voClazz) {
             voClass = voClazz;
             voPrimaryKeyField = FieldUtils.getAnnotatedField(Id.class, voClass);
+            DebugUtils.Assert(voPrimaryKeyField!=null, String.format("%s has no primary key", voClass));
             voPrimaryKeyField.setAccessible(true);
 
             EO at = (EO) voClazz.getAnnotation(EO.class);
