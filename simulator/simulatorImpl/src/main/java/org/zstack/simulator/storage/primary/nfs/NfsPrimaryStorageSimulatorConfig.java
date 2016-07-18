@@ -52,4 +52,6 @@ public class NfsPrimaryStorageSimulatorConfig {
     public Map<String, Long> getVolumeSizeCmdSize = new HashMap<String, Long>();
     public volatile boolean pingSuccess = true;
     public List<PingCmd> pingCmds = new ArrayList<PingCmd>();
+
+    public Map<String, String> getVolumeBaseImagePaths = new HashMap<String, String>();
 }
