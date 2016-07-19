@@ -213,9 +213,26 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public void handleMessage(Message msg) {
         if (msg instanceof FlatDhcpAcquireDhcpServerIpMsg) {
             handle((FlatDhcpAcquireDhcpServerIpMsg) msg);
+        } else if (msg instanceof APIGetL3NetworkDhcpIpAddressMsg) {
+            handle((APIGetL3NetworkDhcpIpAddressMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetL3NetworkDhcpIpAddressMsg msg) {
+        APIGetL3NetworkDhcpIpAddressReply reply = new APIGetL3NetworkDhcpIpAddressReply();
+
+        UsedIpInventory ip = l3NetworkDhcpServerIp.get(msg.getL3NetworkUuid());
+        if (ip != null) {
+            reply.setIp(ip.getIp());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        logger.debug(String.format("APIGetL3NetworkDhcpIpAddressMsg[ip:%s, uuid:%s] for l3 network[uuid:%s]",
+                ip.getIp(), ip.getUuid(), ip.getL3NetworkUuid()));
+
     }
 
     private void handle(final FlatDhcpAcquireDhcpServerIpMsg msg) {
@@ -481,7 +498,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
         for (VmNicVO nic : nics) {
             DhcpInfo info = new DhcpInfo();
-            info.bridgeName =  KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+            info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
             info.namespaceName = makeNamespaceName(
                     info.bridgeName,
                     nic.getL3NetworkUuid()
@@ -746,7 +763,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private UsedIpInventory getDHCPServerIP(String l3Uuid) {
-        UsedIpInventory dhcpIp =  l3NetworkDhcpServerIp.get(l3Uuid);
+        UsedIpInventory dhcpIp = l3NetworkDhcpServerIp.get(l3Uuid);
         if (dhcpIp != null) {
             return dhcpIp;
         }
@@ -766,7 +783,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Override
     public void afterDeleteIpRange(IpRangeInventory ipRange) {
-        UsedIpInventory dhcpIp =  getDHCPServerIP(ipRange.getL3NetworkUuid());
+        UsedIpInventory dhcpIp = getDHCPServerIP(ipRange.getL3NetworkUuid());
 
         if (dhcpIp != null && NetworkUtils.isIpv4InRange(dhcpIp.getIp(), ipRange.getStartIp(), ipRange.getEndIp())) {
             deleteDhcpServerIp(dhcpIp);
@@ -915,7 +932,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public String namespaceName;
     }
 
-    public static class  DeleteNamespaceRsp extends KVMAgentCommands.AgentResponse {
+    public static class DeleteNamespaceRsp extends KVMAgentCommands.AgentResponse {
     }
 
     public NetworkServiceProviderType getProviderType() {
