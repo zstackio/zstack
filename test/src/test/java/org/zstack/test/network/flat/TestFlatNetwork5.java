@@ -8,9 +8,10 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.network.service.flat.FlatDhcpUpgradeExtension;
-import org.zstack.network.service.flat.FlatNetworkGlobalProperty;
-import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.network.service.flat.*;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -18,7 +19,9 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +31,7 @@ import java.util.concurrent.TimeUnit;
  * confirm the namespace is deleted
  */
 public class TestFlatNetwork5 {
+    CLogger logger = Utils.getLogger(TestFlatNetwork5.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -49,6 +53,7 @@ public class TestFlatNetwork5 {
         deployer.addSpringConfig("localStorage.xml");
         deployer.addSpringConfig("flatNetworkServiceSimulator.xml");
         deployer.addSpringConfig("flatNetworkProvider.xml");
+        deployer.addSpringConfig("imagestore.xml");
         deployer.load();
 
         loader = deployer.getComponentLoader();
@@ -81,5 +86,15 @@ public class TestFlatNetwork5 {
         TimeUnit.SECONDS.sleep(2);
 
         Assert.assertEquals(1, fconfig.deleteNamespaceCmds.size());
+
+
+        L3NetworkInventory l3nw = deployer.l3Networks.get("TestL3Network1");
+
+        APIGetL3NetworkDhcpIpAddressMsg msg = new APIGetL3NetworkDhcpIpAddressMsg();
+        msg.setL3NetworkUuid(l3nw.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, FlatNetworkServiceConstant.SERVICE_ID, l3nw.getUuid());
+        msg.setTimeout(TimeUnit.SECONDS.toMillis(15));
+        APIGetL3NetworkDhcpIpAddressReply reply = (APIGetL3NetworkDhcpIpAddressReply) bus.call(msg);
+        logger.info("!!!!!!APIGetL3NetworkDhcpIpAddressMsg!!!!" + reply.getIp());
     }
 }
