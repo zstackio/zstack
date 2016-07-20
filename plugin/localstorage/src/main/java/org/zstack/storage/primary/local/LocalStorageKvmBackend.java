@@ -1598,7 +1598,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    void handle(GetVolumeRootImageUuidFromPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply> completion) {
+    void handle(final GetVolumeRootImageUuidFromPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply> completion) {
         GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
         cmd.installPath = msg.getVolume().getInstallPath();
         cmd.volumeUuid = msg.getVolume().getUuid();

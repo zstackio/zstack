@@ -95,7 +95,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-    private void handle(GetVolumeRootImageUuidFromPrimaryStorageMsg msg) {
+    private void handle(final GetVolumeRootImageUuidFromPrimaryStorageMsg msg) {
         NfsPrimaryStorageBackend bkd = getUsableBackend();
         if (bkd == null) {
             throw new OperationFailureException(errf.stringToOperationError("no usable backend found"));

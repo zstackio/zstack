@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -61,28 +60,28 @@ public class VolumeUpgradeExtension implements Component {
             return;
         }
 
-        Map<String, List<VolumeVO>> groupByPrimaryStorageUuid = new HashMap<>();
+        final Map<String, List<VolumeVO>> groupByPrimaryStorageUuid = new HashMap();
         for (VolumeVO vo : volumes) {
             List<VolumeVO> vos = groupByPrimaryStorageUuid.get(vo.getPrimaryStorageUuid());
             if (vos == null) {
-                vos = new ArrayList<>();
+                vos = new ArrayList();
                 groupByPrimaryStorageUuid.put(vo.getPrimaryStorageUuid(), vos);
             }
             vos.add(vo);
         }
 
         evtf.on(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_STATUS_CHANGED_PATH, new EventCallback() {
-            List<String> supportPsTypes = asList("Ceph", "NFS", "SharedMountPoint", "LocalStorage");
+            List<String> supportPsTypes = asList("NFS", "LocalStorage");
 
             @Override
-            protected void run(Map tokens, Object data) {
+            public void run(Map tokens, Object data) {
                 PrimaryStorageStatusChangedData d = (PrimaryStorageStatusChangedData) data;
 
                 if (!PrimaryStorageStatus.Connected.toString().equals(d.getNewStatus())) {
                     return;
                 }
 
-                List<VolumeVO> vos = groupByPrimaryStorageUuid.get(d.getPrimaryStorageUuid());
+                final List<VolumeVO> vos = groupByPrimaryStorageUuid.get(d.getPrimaryStorageUuid());
                 if (vos == null) {
                     return;
                 }
@@ -91,20 +90,28 @@ public class VolumeUpgradeExtension implements Component {
                     return;
                 }
 
-                List<GetVolumeRootImageUuidFromPrimaryStorageMsg> msgs = vos.stream().map(vol -> {
-                    GetVolumeRootImageUuidFromPrimaryStorageMsg msg = new GetVolumeRootImageUuidFromPrimaryStorageMsg();
-                    msg.setVolume(VolumeInventory.valueOf(vol));
-                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
-                    return msg;
-                }).collect(Collectors.toList());
+                List<GetVolumeRootImageUuidFromPrimaryStorageMsg> msgs = CollectionUtils.transformToList(vos, new Function<GetVolumeRootImageUuidFromPrimaryStorageMsg, VolumeVO>() {
+                    @Override
+                    public GetVolumeRootImageUuidFromPrimaryStorageMsg call(VolumeVO arg) {
+                        GetVolumeRootImageUuidFromPrimaryStorageMsg msg = new GetVolumeRootImageUuidFromPrimaryStorageMsg();
+                        msg.setVolume(VolumeInventory.valueOf(arg));
+                        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg.getPrimaryStorageUuid());
+                        return msg;
+                    }
+                });
 
-                for (GetVolumeRootImageUuidFromPrimaryStorageMsg msg : msgs) {
+                for (final GetVolumeRootImageUuidFromPrimaryStorageMsg msg : msgs) {
                     bus.send(msg, new CloudBusCallBack() {
                         @Override
                         public void run(MessageReply reply) {
                             if (reply.isSuccess()) {
                                 GetVolumeRootImageUuidFromPrimaryStorageReply r = reply.castReply();
-                                VolumeVO vol = vos.stream().filter(vo -> vo.getUuid().equals(msg.getVolume().getUuid())).findFirst().get();
+                                VolumeVO vol = CollectionUtils.find(vos, new Function<VolumeVO, VolumeVO>() {
+                                    @Override
+                                    public VolumeVO call(VolumeVO arg) {
+                                        return arg.getUuid().equals(msg.getVolume().getUuid()) ? arg : null;
+                                    }
+                                });
                                 vol.setRootImageUuid(r.getImageUuid());
                                 dbf.update(vol);
                                 vos.remove(vol);
