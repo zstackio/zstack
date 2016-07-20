@@ -72,6 +72,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
     protected PrimaryStorageOverProvisioningManager ratioMgr;
     @Autowired
     protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
+    @Autowired
+    private LocalStorageImageCleaner imageCacheCleaner;
 
     static class FactoryCluster {
         LocalStorageHypervisorFactory factory;
@@ -385,6 +387,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
             super.handleLocalMessage(msg);
         }
     }
+    @Override
+    protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
+        APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
+        imageCacheCleaner.cleanup();
+        bus.publish(evt);
+    }
+
 
     private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
         CacheInstallPath path = new CacheInstallPath();
@@ -400,8 +409,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void run(MessageReply reply) {
                 DeleteImageCacheOnPrimaryStorageReply r = new DeleteImageCacheOnPrimaryStorageReply();
-                r.setError(reply.getError());
                 r.setSuccess(reply.isSuccess());
+                if (reply.getError() != null) {
+                    r.setError(reply.getError());
+                }
                 bus.reply(msg, r);
             }
         });
@@ -418,7 +429,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-
+                GetVolumeRootImageUuidFromPrimaryStorageReply reply = new GetVolumeRootImageUuidFromPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }

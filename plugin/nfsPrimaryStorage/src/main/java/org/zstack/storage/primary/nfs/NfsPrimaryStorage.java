@@ -63,6 +63,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private NfsPrimaryStorageManager nfsMgr;
     @Autowired
     private GCFacade gcf;
+    @Autowired
+    private NfsPrimaryStorageImageCacheCleaner imageCacheCleaner;
 
     public NfsPrimaryStorage(PrimaryStorageVO vo) {
         super(vo);
@@ -97,6 +99,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
+    @Override
+    protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
+        APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
+        imageCacheCleaner.cleanup();
+        bus.publish(evt);
+    }
+
     private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
         NfsPrimaryStorageBackend bkd = getUsableBackend();
         if (bkd == null) {
@@ -113,7 +122,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             public void run(MessageReply reply) {
                 DeleteImageCacheOnPrimaryStorageReply r = new DeleteImageCacheOnPrimaryStorageReply();
                 r.setSuccess(reply.isSuccess());
-                r.setError(reply.getError());
+                if (reply.getError() != null) {
+                    r.setError(reply.getError());
+                }
                 bus.reply(msg, r);
             }
         });

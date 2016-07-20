@@ -57,6 +57,39 @@ public abstract class ImageCacheCleaner {
         startGCThread();
     }
 
+    public void cleanup() {
+        List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs();
+        if (shadowVOs == null || shadowVOs.isEmpty()) {
+            return;
+        }
+
+        for (final ImageCacheShadowVO vo : shadowVOs) {
+            if (!destMaker.isManagedByUs(vo.getImageUuid())) {
+                continue;
+            }
+
+            DeleteImageCacheOnPrimaryStorageMsg msg = new DeleteImageCacheOnPrimaryStorageMsg();
+            msg.setImageUuid(vo.getImageUuid());
+            msg.setInstallPath(vo.getInstallUrl());
+            msg.setPrimaryStorageUuid(vo.getPrimaryStorageUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vo.getPrimaryStorageUuid());
+            bus.send(msg, new CloudBusCallBack() {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(String.format("failed to delete the stale image cache[%s] on the primary storage[%s], %s," +
+                                "will re-try later", vo.getInstallUrl(), vo.getPrimaryStorageUuid(), reply.getError()));
+                        return;
+                    }
+
+                    logger.debug(String.format("successfully deleted the stale image cache[%s] on the primary storage[%s]",
+                            vo.getInstallUrl(), vo.getPrimaryStorageUuid()));
+                    dbf.remove(vo);
+                }
+            });
+        }
+    }
+
     private void startGCThread() {
         logger.debug(String.format("%s starts with the interval %s secs", this.getClass().getSimpleName(), PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.value(Long.class)));
 
@@ -78,36 +111,7 @@ public abstract class ImageCacheCleaner {
 
             @Override
             public void run() {
-                List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs();
-                if (shadowVOs == null || shadowVOs.isEmpty()) {
-                    return;
-                }
-
-                for (final ImageCacheShadowVO vo : shadowVOs) {
-                    if (!destMaker.isManagedByUs(vo.getImageUuid())) {
-                        continue;
-                    }
-
-                    DeleteImageCacheOnPrimaryStorageMsg msg = new DeleteImageCacheOnPrimaryStorageMsg();
-                    msg.setImageUuid(vo.getImageUuid());
-                    msg.setInstallPath(vo.getInstallUrl());
-                    msg.setPrimaryStorageUuid(vo.getPrimaryStorageUuid());
-                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vo.getPrimaryStorageUuid());
-                    bus.send(msg, new CloudBusCallBack() {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.warn(String.format("failed to delete the stale image cache[%s] on the primary storage[%s], %s," +
-                                        "will re-try later", vo.getInstallUrl(), vo.getPrimaryStorageUuid(), reply.getError()));
-                                return;
-                            }
-
-                            logger.debug(String.format("successfully deleted the stale image cache[%s] on the primary storage[%s]",
-                                    vo.getInstallUrl(), vo.getPrimaryStorageUuid()));
-                            dbf.remove(vo);
-                        }
-                    });
-                }
+                cleanup();
             }
         });
     }
