@@ -51,7 +51,8 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     private CloudBus bus;
 
     private Map<String, NfsPrimaryStorageBackend> backends = new HashMap<String, NfsPrimaryStorageBackend>();
-    private Map<BackupStorageType, Map<HypervisorType, NfsPrimaryToBackupStorageMediator>> mediators = new HashMap<BackupStorageType, Map<HypervisorType, NfsPrimaryToBackupStorageMediator>>();
+    private Map<String, Map<String, NfsPrimaryToBackupStorageMediator>> mediators =
+            new HashMap<>();
     
 	private static final PrimaryStorageType type = new PrimaryStorageType(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE);
 
@@ -105,11 +106,11 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 
 	    for (NfsPrimaryToBackupStorageMediator extp : pluginRgty.getExtensionList(NfsPrimaryToBackupStorageMediator.class)) {
 	        if (extp.getSupportedPrimaryStorageType().equals(type)) {
-	            Map<HypervisorType, NfsPrimaryToBackupStorageMediator> map = mediators.get(extp.getSupportedBackupStorageType());
+	            Map<String, NfsPrimaryToBackupStorageMediator> map = mediators.get(extp.getSupportedBackupStorageType());
 	            if (map == null) {
-	                map = new HashMap<HypervisorType, NfsPrimaryToBackupStorageMediator>(1);
+	                map = new HashMap<>(1);
 	            }
-                for (HypervisorType hvType : extp.getSupportedHypervisorTypes()) {
+                for (String hvType : extp.getSupportedHypervisorTypes()) {
                     map.put(hvType, extp);
                 }
 	            mediators.put(extp.getSupportedBackupStorageType(), map);
@@ -118,7 +119,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 	}
 	
 	NfsPrimaryToBackupStorageMediator getPrimaryToBackupStorageMediator(BackupStorageType bsType, HypervisorType hvType) {
-	    Map<HypervisorType, NfsPrimaryToBackupStorageMediator> mediatorMap = mediators.get(bsType);
+	    Map<String, NfsPrimaryToBackupStorageMediator> mediatorMap = mediators.get(bsType);
 	    if (mediatorMap == null) {
 	        throw new CloudRuntimeException(String.format("primary storage[type:%s] wont have mediator supporting backup storage[type:%s]", type, bsType));
 	    }

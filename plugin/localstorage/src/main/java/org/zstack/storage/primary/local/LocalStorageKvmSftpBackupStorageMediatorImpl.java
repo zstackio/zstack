@@ -268,17 +268,17 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     }
 
     @Override
-    public PrimaryStorageType getSupportedPrimaryStorageType() {
-        return LocalStorageFactory.type;
+    public String getSupportedPrimaryStorageType() {
+        return LocalStorageConstants.LOCAL_STORAGE_TYPE;
     }
 
     @Override
-    public BackupStorageType getSupportedBackupStorageType() {
-        return new BackupStorageType(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE);
+    public String getSupportedBackupStorageType() {
+        return SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE;
     }
 
     @Override
-    public List<HypervisorType> getSupportedHypervisorTypes() {
-        return list(new HypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE));
+    public List<String> getSupportedHypervisorTypes() {
+        return list(KVMConstant.KVM_HYPERVISOR_TYPE);
     }
 }

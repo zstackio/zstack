@@ -56,18 +56,18 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
     public static final String DOWNLOAD_FROM_SFTP_PATH = "/nfsprimarystorage/downloadfromsftpbackupstorage";
 
     @Override
-    public PrimaryStorageType getSupportedPrimaryStorageType() {
-        return PrimaryStorageType.valueOf(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE);
+    public String getSupportedPrimaryStorageType() {
+        return NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE;
     }
 
     @Override
-    public BackupStorageType getSupportedBackupStorageType() {
-        return BackupStorageType.valueOf(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE);
+    public String getSupportedBackupStorageType() {
+        return SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE;
     }
 
     @Override
-    public List<HypervisorType> getSupportedHypervisorTypes() {
-        return list(HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE));
+    public List<String> getSupportedHypervisorTypes() {
+        return list(KVMConstant.KVM_HYPERVISOR_TYPE);
     }
 
     @Override

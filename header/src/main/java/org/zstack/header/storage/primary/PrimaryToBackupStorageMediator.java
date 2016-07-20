@@ -6,9 +6,9 @@ import org.zstack.header.storage.backup.BackupStorageType;
 import java.util.List;
 
 public interface PrimaryToBackupStorageMediator {
-    PrimaryStorageType getSupportedPrimaryStorageType();
+    String getSupportedPrimaryStorageType();
     
-    BackupStorageType getSupportedBackupStorageType();
+    String getSupportedBackupStorageType();
     
-    List<HypervisorType> getSupportedHypervisorTypes();
+    List<String> getSupportedHypervisorTypes();
 }
