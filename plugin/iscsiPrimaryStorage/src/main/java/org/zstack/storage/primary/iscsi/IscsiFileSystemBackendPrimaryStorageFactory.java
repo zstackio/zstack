@@ -47,7 +47,7 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
     @Autowired
     private AnsibleFacade asf;
 
-    private Map<BackupStorageType, IscsiFileSystemBackendPrimaryToBackupStorageMediator> mediators = new HashMap<BackupStorageType, IscsiFileSystemBackendPrimaryToBackupStorageMediator>();
+    private Map<String, IscsiFileSystemBackendPrimaryToBackupStorageMediator> mediators = new HashMap<>();
 
     @Override
     public PrimaryStorageType getPrimaryStorageType() {
