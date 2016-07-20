@@ -2,6 +2,7 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -27,6 +28,7 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -41,6 +43,7 @@ import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
+import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -376,9 +379,32 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((UploadBitsFromLocalStorageToBackupStorageMsg) msg);
         } else if (msg instanceof GetVolumeRootImageUuidFromPrimaryStorageMsg) {
             handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
+            handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
+        CacheInstallPath path = new CacheInstallPath();
+        path.fullPath = msg.getInstallPath();
+        path.disassemble();
+
+        LocalStorageDirectlyDeleteBitsMsg dmsg = new LocalStorageDirectlyDeleteBitsMsg();
+        dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        dmsg.setPath(path.installPath);
+        dmsg.setHostUuid(path.hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+        bus.send(dmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                DeleteImageCacheOnPrimaryStorageReply r = new DeleteImageCacheOnPrimaryStorageReply();
+                r.setError(reply.getError());
+                r.setSuccess(reply.isSuccess());
+                bus.reply(msg, r);
+            }
+        });
     }
 
     private void handle(final GetVolumeRootImageUuidFromPrimaryStorageMsg msg) {
@@ -392,9 +418,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                GetVolumeRootImageUuidFromPrimaryStorageReply reply = new GetVolumeRootImageUuidFromPrimaryStorageReply();
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+
             }
         });
     }

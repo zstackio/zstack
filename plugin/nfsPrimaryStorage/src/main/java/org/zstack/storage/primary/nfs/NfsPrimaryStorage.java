@@ -90,9 +90,27 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((UploadBitsToBackupStorageMsg) msg);
         } else if (msg instanceof GetVolumeRootImageUuidFromPrimaryStorageMsg) {
             handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
+            handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
+        DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
+        dmsg.setInstallPath(msg.getInstallPath());
+        dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+        bus.send(dmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                DeleteImageCacheOnPrimaryStorageReply r = new DeleteImageCacheOnPrimaryStorageReply();
+                r.setSuccess(reply.isSuccess());
+                r.setError(reply.getError());
+                bus.reply(msg, r);
+            }
+        });
     }
 
     private void handle(final GetVolumeRootImageUuidFromPrimaryStorageMsg msg) {

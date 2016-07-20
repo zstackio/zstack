@@ -2,7 +2,6 @@ package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
@@ -23,6 +22,7 @@ import org.zstack.utils.function.Function;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -65,15 +65,10 @@ public class ImageUpgradeExtension implements Component {
             if ("Ceph".equals(psType)) {
                 imgUuid = c.getInstallUrl().split("@")[1];
             } else if ("NFS".equals(psType) || "SharedMountPoint".equals(psType)) {
-                String[] pair = c.getInstallUrl().split("/");
-                String last = pair[pair.length-1];
-                imgUuid = last.split("\\.")[1];
+                imgUuid = new File(c.getInstallUrl()).getName().split("\\.")[0];
             } else if ("LocalStorage".equals(psType)) {
                 String[] pair = c.getInstallUrl().split(";");
-                String first = pair[0];
-                pair = first.split("/");
-                String last = pair[pair.length-1];
-                imgUuid = last.split("\\.")[1];
+                imgUuid = new File(pair[0]).getName().split("\\.")[0];
             } else {
                 throw new CloudRuntimeException(String.format("unknown primary storage type[%s] for the ImageCacheVO[id:%s]",
                         psType, c.getId()));

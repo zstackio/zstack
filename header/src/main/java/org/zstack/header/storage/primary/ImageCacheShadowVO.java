@@ -3,14 +3,13 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
-import org.zstack.header.vo.ShadowEntity;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
 @Table
-public class ImageCacheVO implements ShadowEntity {
+public class ImageCacheShadowVO {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column
@@ -46,16 +45,24 @@ public class ImageCacheVO implements ShadowEntity {
     @Column
     private Timestamp lastOpDate;
 
-    @Transient
-    private ImageCacheVO shadow;
-
-    public ImageCacheVO getShadow() {
-        return shadow;
-    }
-
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    public ImageCacheShadowVO(ImageCacheVO c) {
+        primaryStorageUuid = c.getPrimaryStorageUuid();
+        imageUuid = c.getImageUuid();
+        installUrl = c.getInstallUrl();
+        mediaType = c.getMediaType();
+        size = c.getSize();
+        state = c.getState();
+        md5sum = c.getMd5sum();
+        createDate = c.getCreateDate();
+        lastOpDate = c.getLastOpDate();
+    }
+
+    public ImageCacheShadowVO() {
     }
 
     public long getId() {
@@ -136,10 +143,5 @@ public class ImageCacheVO implements ShadowEntity {
 
     public void setState(ImageCacheState state) {
         this.state = state;
-    }
-
-    @Override
-    public void setShadow(Object o) {
-        shadow = (ImageCacheVO) o;
     }
 }
