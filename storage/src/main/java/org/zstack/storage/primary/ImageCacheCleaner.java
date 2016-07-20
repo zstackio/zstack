@@ -43,7 +43,7 @@ public abstract class ImageCacheCleaner {
     protected abstract String getPrimaryStorageType();
 
     protected void startGC() {
-        PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.installLocalUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+        PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
                 if (gcThread != null) {
@@ -58,6 +58,8 @@ public abstract class ImageCacheCleaner {
     }
 
     private void startGCThread() {
+        logger.debug(String.format("%s starts with the interval %s secs", this.getClass().getSimpleName(), PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.value(Long.class)));
+
         gcThread = thdf.submitPeriodicTask(new PeriodicTask() {
             @Override
             public TimeUnit getTimeUnit() {
@@ -131,7 +133,7 @@ public abstract class ImageCacheCleaner {
         cq.setParameter("ptype", getPrimaryStorageType());
         List<ImageCacheVO> deleted = cq.getResultList();
 
-        sql = "select c from ImageCacheVO c, PrimaryStorageVO pri, ImageVO img where c.imageUuid != img.uuid and" +
+        sql = "select c from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select img.uuid from ImageVO img) and" +
                 " c.primaryStorageUuid = pri.uuid and pri.type = :psType";
 
         cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
@@ -149,7 +151,7 @@ public abstract class ImageCacheCleaner {
             }
         });
 
-        sql = "select c from ImageCacheVO c, VolumeVO vol where vol.rootImageUuid != c.imageUuid and c.imageUuid in (:uuids)";
+        sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol) and c.imageUuid in (:uuids)";
         cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
         cq.setParameter("uuids", deleteImageUuids);
         List<ImageCacheVO> stale = cq.getResultList();

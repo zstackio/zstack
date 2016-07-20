@@ -98,7 +98,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
+        NfsPrimaryStorageBackend bkd = getUsableBackend();
+        if (bkd == null) {
+            throw new OperationFailureException(errf.stringToOperationError("cannot find usable backend"));
+        }
+
         DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
+        dmsg.setHypervisorType(bkd.getHypervisorType().toString());
         dmsg.setInstallPath(msg.getInstallPath());
         dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
