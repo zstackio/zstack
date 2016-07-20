@@ -313,8 +313,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public boolean start() {
         for (LocalStorageBackupStorageMediator m : pluginRgty.getExtensionList(LocalStorageBackupStorageMediator.class)) {
-            for (HypervisorType hvType : m.getSupportedHypervisorTypes()) {
-                String key = makeMediatorKey(hvType.toString(), m.getSupportedBackupStorageType().toString());
+            for (String hvType : m.getSupportedHypervisorTypes()) {
+                String key = makeMediatorKey(hvType, m.getSupportedBackupStorageType().toString());
                 LocalStorageBackupStorageMediator old = backupStorageMediatorMap.get(key);
                 if (old != null) {
                     throw new CloudRuntimeException(String.format("duplicate LocalStorageBackupStorageMediator[%s, %s] for hypervisor type[%s] and backup storage type[%s]",

@@ -185,17 +185,17 @@ public class IscsiFileSystemBackendPrimaryToSftpBackupStorageMediator implements
 
 
     @Override
-    public PrimaryStorageType getSupportedPrimaryStorageType() {
-        return IscsiFileSystemBackendPrimaryStorageFactory.type;
+    public String getSupportedPrimaryStorageType() {
+        return IscsiPrimaryStorageConstants.ISCSI_FILE_SYSTEM_BACKEND_PRIMARY_STORAGE_TYPE;
     }
 
     @Override
-    public BackupStorageType getSupportedBackupStorageType() {
-        return BackupStorageType.valueOf(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE);
+    public String getSupportedBackupStorageType() {
+        return SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE;
     }
 
     @Override
-    public List<HypervisorType> getSupportedHypervisorTypes() {
-        return list(HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE));
+    public List<String> getSupportedHypervisorTypes() {
+        return list(KVMConstant.KVM_HYPERVISOR_TYPE);
     }
 }
