@@ -1214,14 +1214,14 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 url = url.trim();
 
                 if (url.startsWith("http") || url.startsWith("https")) {
-                    String len = "";
+                    String len;
                     try {
                         HttpHeaders header = restf.getRESTTemplate().headForHeaders(url);
                         len = header.getFirst("Content-Length");
                     } catch (Exception e) {
-                        throw new OperationFailureException(errf.stringToOperationError(
-                                String.format("cannot get image.  The image url : %s. description: %s.name: %s",
-                                        url, msg.getDescription(), msg.getName())));
+                        logger.warn(String.format("cannot get image.  The image url : %s. description: %s.name: %s",
+                                url, msg.getDescription(), msg.getName()));
+                        return;
                     }
 
                     if (len == null) {

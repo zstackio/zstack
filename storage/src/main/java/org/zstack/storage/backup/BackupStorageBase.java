@@ -120,13 +120,13 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             return;
         }
 
-        String len = "";
+        String len;
         try {
             HttpHeaders header = restf.getRESTTemplate().headForHeaders(url);
             len = header.getFirst("Content-Length");
         } catch (Exception e) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot get image.  The image url : %s.", url)));
+            logger.warn(String.format("cannot get image.  The image url : %s.", url));
+            return;
         }
         if (len == null) {
             return;
