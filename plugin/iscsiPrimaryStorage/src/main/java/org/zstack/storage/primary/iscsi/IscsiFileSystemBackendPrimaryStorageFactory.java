@@ -38,7 +38,8 @@ import java.util.Map;
  */
 public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStorageFactory, KVMStartVmExtensionPoint,
         KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, Component {
-    public static final PrimaryStorageType type = new PrimaryStorageType(IscsiPrimaryStorageConstants.ISCSI_FILE_SYSTEM_BACKEND_PRIMARY_STORAGE_TYPE);
+    public static final PrimaryStorageType type =
+            new PrimaryStorageType(IscsiPrimaryStorageConstants.ISCSI_FILE_SYSTEM_BACKEND_PRIMARY_STORAGE_TYPE);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -55,16 +56,19 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
     }
 
     IscsiFileSystemBackendPrimaryToBackupStorageMediator getPrimaryToBackupStorageMediator(BackupStorageType bsType) {
-        IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = mediators.get(bsType);
+        IscsiFileSystemBackendPrimaryToBackupStorageMediator mediator = mediators.get(bsType.toString());
         if (mediator == null) {
-            throw new CloudRuntimeException(String.format("primary storage[type:%s] wont have mediator supporting backup storage[type:%s]", type, bsType));
+            throw new CloudRuntimeException(
+                    String.format("primary storage[type:%s] wont have mediator supporting backup storage[type:%s]", type, bsType));
         }
         return mediator;
     }
 
     private void populateExtensions() {
-        for (IscsiFileSystemBackendPrimaryToBackupStorageMediator extp : pluginRgty.getExtensionList(IscsiFileSystemBackendPrimaryToBackupStorageMediator.class)) {
-            if (extp.getSupportedPrimaryStorageType().equals(type) && !mediators.containsKey(extp.getSupportedBackupStorageType())) {
+        for (IscsiFileSystemBackendPrimaryToBackupStorageMediator extp : pluginRgty.getExtensionList(
+                IscsiFileSystemBackendPrimaryToBackupStorageMediator.class)) {
+            if (extp.getSupportedPrimaryStorageType().equals(type.toString()) &&
+                    !mediators.containsKey(extp.getSupportedBackupStorageType())) {
                 mediators.put(extp.getSupportedBackupStorageType(), extp);
             }
         }
@@ -151,7 +155,7 @@ public class IscsiFileSystemBackendPrimaryStorageFactory implements PrimaryStora
             return null;
         }
 
-        SimpleQuery<IscsiFileSystemBackendPrimaryStorageVO> q  = dbf.createQuery(IscsiFileSystemBackendPrimaryStorageVO.class);
+        SimpleQuery<IscsiFileSystemBackendPrimaryStorageVO> q = dbf.createQuery(IscsiFileSystemBackendPrimaryStorageVO.class);
         q.select(IscsiFileSystemBackendPrimaryStorageVO_.chapUsername, IscsiFileSystemBackendPrimaryStorageVO_.chapPassword);
         q.add(IscsiFileSystemBackendPrimaryStorageVO_.uuid, Op.EQ, vol.getPrimaryStorageUuid());
         Tuple t = q.findTuple();

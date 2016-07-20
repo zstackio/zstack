@@ -53,8 +53,8 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     private Map<String, NfsPrimaryStorageBackend> backends = new HashMap<String, NfsPrimaryStorageBackend>();
     private Map<String, Map<String, NfsPrimaryToBackupStorageMediator>> mediators =
             new HashMap<>();
-    
-	private static final PrimaryStorageType type = new PrimaryStorageType(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE);
+
+    private static final PrimaryStorageType type = new PrimaryStorageType(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE);
 
     static {
         type.setSupportHeartbeatFile(true);
@@ -62,31 +62,31 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         type.setOrder(899);
     }
 
-	@Override
-	public PrimaryStorageType getPrimaryStorageType() {
-		return type;
-	}
+    @Override
+    public PrimaryStorageType getPrimaryStorageType() {
+        return type;
+    }
 
-	@Override
-	public PrimaryStorageInventory createPrimaryStorage(PrimaryStorageVO vo, APIAddPrimaryStorageMsg msg) {
-	    String mountPathBase = NfsPrimaryStorageGlobalConfig.MOUNT_BASE.value(String.class);
-	    if (mountPathBase == null) {
-	        mountPathBase = NfsPrimaryStorageConstant.DEFAULT_NFS_MOUNT_PATH_ON_HOST;
-	    }
-	    String mountPath = PathUtil.join(mountPathBase, "prim-" + vo.getUuid());
-	    vo.setMountPath(mountPath);
-		vo = dbf.persistAndRefresh(vo);
+    @Override
+    public PrimaryStorageInventory createPrimaryStorage(PrimaryStorageVO vo, APIAddPrimaryStorageMsg msg) {
+        String mountPathBase = NfsPrimaryStorageGlobalConfig.MOUNT_BASE.value(String.class);
+        if (mountPathBase == null) {
+            mountPathBase = NfsPrimaryStorageConstant.DEFAULT_NFS_MOUNT_PATH_ON_HOST;
+        }
+        String mountPath = PathUtil.join(mountPathBase, "prim-" + vo.getUuid());
+        vo.setMountPath(mountPath);
+        vo = dbf.persistAndRefresh(vo);
 
         PrimaryStorageSystemTags.CAPABILITY_HYPERVISOR_SNAPSHOT.createTag(vo.getUuid(), map(
                 e(PrimaryStorageSystemTags.CAPABILITY_HYPERVISOR_SNAPSHOT_TOKEN, KVMConstant.KVM_HYPERVISOR_TYPE)
         ));
         return PrimaryStorageInventory.valueOf(vo);
-	}
+    }
 
-	@Override
-	public PrimaryStorage getPrimaryStorage(PrimaryStorageVO vo) {
-	    return new NfsPrimaryStorage(vo);
-	}
+    @Override
+    public PrimaryStorage getPrimaryStorage(PrimaryStorageVO vo) {
+        return new NfsPrimaryStorage(vo);
+    }
 
     @Override
     public PrimaryStorageInventory getInventory(String uuid) {
@@ -104,31 +104,33 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
             backends.put(extp.getHypervisorType().toString(), extp);
         }
 
-	    for (NfsPrimaryToBackupStorageMediator extp : pluginRgty.getExtensionList(NfsPrimaryToBackupStorageMediator.class)) {
-	        if (extp.getSupportedPrimaryStorageType().equals(type)) {
-	            Map<String, NfsPrimaryToBackupStorageMediator> map = mediators.get(extp.getSupportedBackupStorageType());
-	            if (map == null) {
-	                map = new HashMap<>(1);
-	            }
+        for (NfsPrimaryToBackupStorageMediator extp : pluginRgty.getExtensionList(NfsPrimaryToBackupStorageMediator.class)) {
+            if (extp.getSupportedPrimaryStorageType().equals(type.toString())) {
+                Map<String, NfsPrimaryToBackupStorageMediator> map = mediators.get(extp.getSupportedBackupStorageType());
+                if (map == null) {
+                    map = new HashMap<>(1);
+                }
                 for (String hvType : extp.getSupportedHypervisorTypes()) {
                     map.put(hvType, extp);
                 }
-	            mediators.put(extp.getSupportedBackupStorageType(), map);
-	        }
-	    }
-	}
-	
-	NfsPrimaryToBackupStorageMediator getPrimaryToBackupStorageMediator(BackupStorageType bsType, HypervisorType hvType) {
-	    Map<String, NfsPrimaryToBackupStorageMediator> mediatorMap = mediators.get(bsType);
-	    if (mediatorMap == null) {
-	        throw new CloudRuntimeException(String.format("primary storage[type:%s] wont have mediator supporting backup storage[type:%s]", type, bsType));
-	    }
-	    NfsPrimaryToBackupStorageMediator mediator = mediatorMap.get(hvType);
-	    if (mediator == null) {
-	        throw new CloudRuntimeException(String.format("PrimaryToBackupStorageMediator[primary storage type: %s, backup storage type: %s] doesn't have backend supporting hypervisor type[%s]" , type, bsType, hvType));
-	    }
-	    return mediator;
-	}
+                mediators.put(extp.getSupportedBackupStorageType(), map);
+            }
+        }
+    }
+
+    NfsPrimaryToBackupStorageMediator getPrimaryToBackupStorageMediator(BackupStorageType bsType, HypervisorType hvType) {
+        Map<String, NfsPrimaryToBackupStorageMediator> mediatorMap = mediators.get(bsType.toString());
+        if (mediatorMap == null) {
+            throw new CloudRuntimeException(
+                    String.format("primary storage[type:%s] wont have mediator supporting backup storage[type:%s]", type, bsType));
+        }
+        NfsPrimaryToBackupStorageMediator mediator = mediatorMap.get(hvType.toString());
+        if (mediator == null) {
+            throw new CloudRuntimeException(
+                    String.format("PrimaryToBackupStorageMediator[primary storage type: %s, backup storage type: %s] doesn't have backend supporting hypervisor type[%s]", type, bsType, hvType));
+        }
+        return mediator;
+    }
 
     @Override
     public boolean start() {
@@ -148,7 +150,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     public boolean stop() {
         return true;
     }
-    
+
     public NfsPrimaryStorageBackend getHypervisorBackend(HypervisorType hvType) {
         NfsPrimaryStorageBackend backend = backends.get(hvType.toString());
         if (backend == null) {
@@ -156,7 +158,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         }
         return backend;
     }
-    
+
     @Transactional
     public HostInventory getConnectedHostForOperation(PrimaryStorageInventory pri) {
         if (pri.getAttachedClusterUuids().isEmpty()) {
@@ -164,7 +166,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                     String.format("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid())
             ));
         }
-        
+
         String sql = "select h from HostVO h where h.state = :state and h.status = :connectionState and h.clusterUuid in (:clusterUuids)";
         TypedQuery<HostVO> q = dbf.getEntityManager().createQuery(sql, HostVO.class);
         q.setParameter("state", HostState.Enabled);
@@ -307,7 +309,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                         continue;
                     }
 
-                    String bsInstallPath = ((BackupStorageAskInstallPathReply)ar).getInstallPath();
+                    String bsInstallPath = ((BackupStorageAskInstallPathReply) ar).getInstallPath();
 
                     UploadBitsToBackupStorageMsg msg = new UploadBitsToBackupStorageMsg();
                     msg.setHypervisorType(hvtype.toString());
