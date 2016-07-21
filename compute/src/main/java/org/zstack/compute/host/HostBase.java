@@ -51,21 +51,21 @@ import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class HostBase extends AbstractHost {
-	protected static final CLogger logger = Utils.getLogger(HostBase.class);
-	protected HostVO self;
+    protected static final CLogger logger = Utils.getLogger(HostBase.class);
+    protected HostVO self;
 
-	@Autowired
-	protected CloudBus bus;
-	@Autowired
-	protected DatabaseFacade dbf;
-	@Autowired
-	protected ThreadFacade thdf;
-	@Autowired
-	protected HostExtensionPointEmitter extpEmitter;
-	@Autowired
-	protected GlobalConfigFacade gcf;
-	@Autowired
-	protected HostManager hostMgr;
+    @Autowired
+    protected CloudBus bus;
+    @Autowired
+    protected DatabaseFacade dbf;
+    @Autowired
+    protected ThreadFacade thdf;
+    @Autowired
+    protected HostExtensionPointEmitter extpEmitter;
+    @Autowired
+    protected GlobalConfigFacade gcf;
+    @Autowired
+    protected HostManager hostMgr;
     @Autowired
     protected CascadeFacade casf;
     @Autowired
@@ -77,18 +77,22 @@ public abstract class HostBase extends AbstractHost {
     @Autowired
     protected EventFacade evtf;
 
-	protected final String id;
+    protected final String id;
 
     protected abstract void pingHook(Completion completion);
+
     protected abstract int getVmMigrateQuantity();
+
     protected abstract void changeStateHook(HostState current, HostStateEvent stateEvent, HostState next);
+
     protected abstract void connectHook(ConnectHostInfo info, Completion complete);
+
     protected abstract void executeHostMessageHandlerHook(HostMessageHandlerExtensionPoint ext, Message msg);
 
-	protected HostBase(HostVO self) {
-		this.self = self;
-		id = "Host-" + self.getUuid();
-	}
+    protected HostBase(HostVO self) {
+        this.self = self;
+        id = "Host-" + self.getUuid();
+    }
 
     protected void checkStatus() {
         if (HostStatus.Connected != self.getStatus()) {
@@ -169,7 +173,7 @@ public abstract class HostBase extends AbstractHost {
         }
 
         final int quantity = getVmMigrateQuantity();
-        DebugUtils.Assert(quantity!=0, "getVmMigrateQuantity() cannot return 0");
+        DebugUtils.Assert(quantity != 0, "getVmMigrateQuantity() cannot return 0");
         final HostMaintenancePolicy finalPolicy = policy;
         chain.then(new ShareFlow() {
             List<String> vmFailedToMigrate = new ArrayList<String>();
@@ -280,7 +284,8 @@ public abstract class HostBase extends AbstractHost {
                                 for (MessageReply r : replies) {
                                     if (!r.isSuccess()) {
                                         StopVmInstanceMsg msg = msgs.get(replies.indexOf(r));
-                                        String err = String.format("\nfailed to stop vm[uuid:%s] on host[uuid:%s, name:%s, ip:%s], %s", msg.getVmInstanceUuid(), self.getUuid(), self.getName(), self.getManagementIp(), r.getError());
+                                        String err = String.format("\nfailed to stop vm[uuid:%s] on host[uuid:%s, name:%s, ip:%s], %s",
+                                                msg.getVmInstanceUuid(), self.getUuid(), self.getName(), self.getManagementIp(), r.getError());
                                         sb.append(err);
                                         success = false;
                                     }
@@ -317,7 +322,7 @@ public abstract class HostBase extends AbstractHost {
         }).start();
     }
 
-	private void handle(final APIReconnectHostMsg msg) {
+    private void handle(final APIReconnectHostMsg msg) {
         ReconnectHostMsg rmsg = new ReconnectHostMsg();
         rmsg.setHostUuid(self.getUuid());
         bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
@@ -410,26 +415,26 @@ public abstract class HostBase extends AbstractHost {
                 bus.publish(evt);
             }
         }).start();
-	}
+    }
 
-	private void handle(final APIDeleteHostMsg msg) {
+    private void handle(final APIDeleteHostMsg msg) {
         deleteHostByApiMessage(msg);
-	}
+    }
 
-	protected HostState changeState(HostStateEvent event) {
-		HostState currentState = self.getState();
-		HostState next = currentState.nextState(event);
-		changeStateHook(currentState, event, next);
+    protected HostState changeState(HostStateEvent event) {
+        HostState currentState = self.getState();
+        HostState next = currentState.nextState(event);
+        changeStateHook(currentState, event, next);
 
-		extpEmitter.beforeChange(self, event);
-		self.setState(next);
-		self = dbf.updateAndRefresh(self);
-		extpEmitter.afterChange(self, event, currentState);
-		logger.debug(String.format("Host[%s]'s state changed from %s to %s", self.getUuid(), currentState, self.getState()));
+        extpEmitter.beforeChange(self, event);
+        self.setState(next);
+        self = dbf.updateAndRefresh(self);
+        extpEmitter.afterChange(self, event, currentState);
+        logger.debug(String.format("Host[%s]'s state changed from %s to %s", self.getUuid(), currentState, self.getState()));
         return self.getState();
-	}
+    }
 
-	protected void changeStateByApiMessage(final APIChangeHostStateMsg msg, final NoErrorCompletion completion) {
+    protected void changeStateByApiMessage(final APIChangeHostStateMsg msg, final NoErrorCompletion completion) {
         thdf.chainSubmit(new ChainTask(msg, completion) {
             @Override
             public String getSyncSignature() {
@@ -499,10 +504,10 @@ public abstract class HostBase extends AbstractHost {
                 return String.format("change-host-state-%s", self.getUuid());
             }
         });
-	}
+    }
 
-	protected void handle(final APIChangeHostStateMsg msg) {
-		thdf.chainSubmit(new ChainTask() {
+    protected void handle(final APIChangeHostStateMsg msg) {
+        thdf.chainSubmit(new ChainTask() {
             @Override
             public String getName() {
                 return "change-host-state-" + self.getUuid();
@@ -528,30 +533,30 @@ public abstract class HostBase extends AbstractHost {
                 return getHostSyncLevel();
             }
         });
-	}
+    }
 
-	protected void handleLocalMessage(Message msg) {
-		if (msg instanceof ChangeHostStateMsg) {
-			handle((ChangeHostStateMsg) msg);
+    protected void handleLocalMessage(Message msg) {
+        if (msg instanceof ChangeHostStateMsg) {
+            handle((ChangeHostStateMsg) msg);
         } else if (msg instanceof HostDeletionMsg) {
             handle((HostDeletionMsg) msg);
-		} else if (msg instanceof ConnectHostMsg) {
-			handle((ConnectHostMsg) msg);
-		} else if (msg instanceof ReconnectHostMsg) {
-		    handle((ReconnectHostMsg) msg);
-		} else if (msg instanceof ChangeHostConnectionStateMsg) {
-		    handle((ChangeHostConnectionStateMsg)msg);
+        } else if (msg instanceof ConnectHostMsg) {
+            handle((ConnectHostMsg) msg);
+        } else if (msg instanceof ReconnectHostMsg) {
+            handle((ReconnectHostMsg) msg);
+        } else if (msg instanceof ChangeHostConnectionStateMsg) {
+            handle((ChangeHostConnectionStateMsg) msg);
         } else if (msg instanceof PingHostMsg) {
             handle((PingHostMsg) msg);
-		} else {
-		    HostMessageHandlerExtensionPoint ext = hostMgr.getHostMessageHandlerExtension(msg); 
-		    if (ext != null) {
-		        executeHostMessageHandlerHook(ext, msg);
-		    } else {
-		        bus.dealWithUnknownMessage(msg);
-		    }
-		}
-	}
+        } else {
+            HostMessageHandlerExtensionPoint ext = hostMgr.getHostMessageHandlerExtension(msg);
+            if (ext != null) {
+                executeHostMessageHandlerHook(ext, msg);
+            } else {
+                bus.dealWithUnknownMessage(msg);
+            }
+        }
+    }
 
     private void handle(final PingHostMsg msg) {
         final PingHostReply reply = new PingHostReply();
@@ -649,7 +654,8 @@ public abstract class HostBase extends AbstractHost {
                             logger.debug(String.format("Successfully reconnect host[uuid:%s]", self.getUuid()));
                         } else {
                             r.setError(errf.instantiateErrorCode(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError()));
-                            logger.debug(String.format("Failed to reconnect host[uuid:%s] because %s", self.getUuid(), reply.getError()));
+                            logger.debug(String.format("Failed to reconnect host[uuid:%s] because %s",
+                                    self.getUuid(), reply.getError()));
                         }
                         bus.reply(msg, r);
                         finish(chain);
@@ -694,7 +700,7 @@ public abstract class HostBase extends AbstractHost {
     }
 
     private void handle(final ChangeHostConnectionStateMsg msg) {
-	    thdf.chainSubmit(new ChainTask(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getName() {
                 return "change-host-connection-state-" + self.getUuid();
@@ -704,7 +710,8 @@ public abstract class HostBase extends AbstractHost {
                 try {
                     extpEmitter.connectionReestablished(HypervisorType.valueOf(self.getHypervisorType()), getSelfInventory());
                 } catch (HostException e) {
-                    logger.warn(String.format("unable to reestablish connection to kvm host[uuid:%s, ip:%s], %s", self.getUuid(), self.getManagementIp(), e.getMessage()), e);
+                    logger.warn(String.format("unable to reestablish connection to kvm host[uuid:%s, ip:%s], %s",
+                            self.getUuid(), self.getManagementIp(), e.getMessage()), e);
                     return false;
                 }
 
@@ -744,15 +751,16 @@ public abstract class HostBase extends AbstractHost {
     }
 
     protected boolean changeConnectionState(final HostStatusEvent event) {
-	    HostStatus before = self.getStatus();
-	    HostStatus next = before.nextStatus(event);
+        HostStatus before = self.getStatus();
+        HostStatus next = before.nextStatus(event);
         if (before == next) {
             return false;
         }
 
-	    self.setStatus(next);
-	    self = dbf.updateAndRefresh(self);
-	    logger.debug(String.format("Host %s [uuid:%s] changed connection state from %s to %s", self.getName(), self.getUuid(), before, next));
+        self.setStatus(next);
+        self = dbf.updateAndRefresh(self);
+        logger.debug(String.format("Host %s [uuid:%s] changed connection state from %s to %s",
+                self.getName(), self.getUuid(), before, next));
 
         HostStatusChangedData data = new HostStatusChangedData();
         data.setHostUuid(self.getUuid());
@@ -762,10 +770,10 @@ public abstract class HostBase extends AbstractHost {
         evtf.fire(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, data);
 
         return true;
-	}
+    }
 
-	private void handle(final ConnectHostMsg msg) {
-		thdf.chainSubmit(new ChainTask(msg) {
+    private void handle(final ConnectHostMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getName() {
                 return "host-connect-to-hypervisor-" + self.getUuid();
@@ -792,7 +800,7 @@ public abstract class HostBase extends AbstractHost {
             }
 
         });
-	}
+    }
 
     private void connectHost(final ConnectHostMsg msg, final NoErrorCompletion completion) {
         checkState();
@@ -824,6 +832,16 @@ public abstract class HostBase extends AbstractHost {
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "check-license";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        extpEmitter.postHostConnect(getSelfInventory());
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "recalculate-host-capacity";
 
                     @Override
@@ -842,12 +860,13 @@ public abstract class HostBase extends AbstractHost {
                         changeConnectionState(HostStatusEvent.connected);
                         tracker.trackHost(self.getUuid());
 
-                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class), new ForEachFunction<HostAfterConnectedExtensionPoint>() {
-                            @Override
-                            public void run(HostAfterConnectedExtensionPoint ext) {
-                                ext.afterHostConnected(getSelfInventory());
-                            }
-                        });
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class),
+                                new ForEachFunction<HostAfterConnectedExtensionPoint>() {
+                                    @Override
+                                    public void run(HostAfterConnectedExtensionPoint ext) {
+                                        ext.afterHostConnected(getSelfInventory());
+                                    }
+                                });
 
                         bus.reply(msg, reply);
                         completion.done();
@@ -903,10 +922,10 @@ public abstract class HostBase extends AbstractHost {
                 return String.format("change-host-state-%s", self.getUuid());
             }
         });
-	}
+    }
 
-	private void handle(final ChangeHostStateMsg msg) {
-		thdf.chainSubmit(new ChainTask(msg) {
+    private void handle(final ChangeHostStateMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getName() {
                 return "change-host-state-" + self.getUuid();
@@ -932,14 +951,14 @@ public abstract class HostBase extends AbstractHost {
                 return getHostSyncLevel();
             }
         });
-	}
+    }
 
-	@Override
-	public void handleMessage(Message msg) {
-		if (msg instanceof APIMessage) {
-			handleApiMessage((APIMessage) msg);
-		} else {
-			handleLocalMessage(msg);
-		}
-	}
+    @Override
+    public void handleMessage(Message msg) {
+        if (msg instanceof APIMessage) {
+            handleApiMessage((APIMessage) msg);
+        } else {
+            handleLocalMessage(msg);
+        }
+    }
 }

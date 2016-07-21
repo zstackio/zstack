@@ -45,7 +45,8 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.util.*;
 
-public class HostManagerImpl extends AbstractService implements HostManager, ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint {
+public class HostManagerImpl extends AbstractService implements HostManager, ManagementNodeChangeListener,
+        ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(HostManagerImpl.class);
 
     @Autowired
@@ -420,11 +421,11 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private Bucket getHostManagedByUs() {
         int qun = 10000;
         long amount = dbf.count(HostVO.class);
-        int times = (int)(amount / qun) + (amount % qun != 0 ? 1 : 0);
+        int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
         List<String> connected = new ArrayList<String>();
         List<String> disconnected = new ArrayList<String>();
         int start = 0;
-        for (int i=0; i<times; i++) {
+        for (int i = 0; i < times; i++) {
             SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
             q.select(HostVO_.uuid, HostVO_.status);
             q.setLimit(qun);
