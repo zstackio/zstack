@@ -37,6 +37,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -165,6 +166,76 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     private void handle(final APILocalStorageMigrateVolumeMsg msg) {
         final APILocalStorageMigrateVolumeEvent evt = new APILocalStorageMigrateVolumeEvent(msg.getId());
+        MigrateVolumeOnLocalStorageMsg mmsg = new MigrateVolumeOnLocalStorageMsg();
+        mmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        mmsg.setDestHostUuid(msg.getDestHostUuid());
+        mmsg.setVolumeUuid(msg.getVolumeUuid());
+        bus.makeTargetServiceIdByResourceUuid(mmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+
+        MigrateVolumeOverlayMsg omsg = new MigrateVolumeOverlayMsg();
+        omsg.setMessage(mmsg);
+        omsg.setVolumeUuid(msg.getVolumeUuid());
+        bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+
+        bus.send(omsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setErrorCode(reply.getError());
+                    bus.publish(evt);
+                    return;
+                }
+
+                MigrateVolumeOnLocalStorageReply mr = reply.castReply();
+                evt.setInventory(mr.getInventory());
+                bus.publish(evt);
+            }
+        });
+    }
+
+    @Override
+    protected void handleLocalMessage(Message msg) {
+        if (msg instanceof InitPrimaryStorageOnHostConnectedMsg) {
+            handle((InitPrimaryStorageOnHostConnectedMsg) msg);
+        } else if (msg instanceof RemoveHostFromLocalStorageMsg) {
+            handle((RemoveHostFromLocalStorageMsg) msg);
+        } else if (msg instanceof TakeSnapshotMsg) {
+            handle((TakeSnapshotMsg) msg);
+        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
+            handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
+            handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
+            handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
+        } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DownloadImageToPrimaryStorageCacheMsg) {
+            handle((DownloadImageToPrimaryStorageCacheMsg) msg);
+        } else if (msg instanceof LocalStorageCreateEmptyVolumeMsg) {
+            handle((LocalStorageCreateEmptyVolumeMsg) msg);
+        } else if (msg instanceof LocalStorageDirectlyDeleteBitsMsg) {
+            handle((LocalStorageDirectlyDeleteBitsMsg) msg);
+        } else if (msg instanceof LocalStorageReserveHostCapacityMsg) {
+            handle((LocalStorageReserveHostCapacityMsg) msg);
+        } else if (msg instanceof LocalStorageReturnHostCapacityMsg) {
+            handle((LocalStorageReturnHostCapacityMsg) msg);
+        } else if (msg instanceof LocalStorageHypervisorSpecificMessage) {
+            handle((LocalStorageHypervisorSpecificMessage) msg);
+        } else if (msg instanceof CreateTemporaryVolumeFromSnapshotMsg) {
+            handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
+        } else if (msg instanceof UploadBitsFromLocalStorageToBackupStorageMsg) {
+            handle((UploadBitsFromLocalStorageToBackupStorageMsg) msg);
+        } else if (msg instanceof MigrateVolumeOnLocalStorageMsg) {
+            handle((MigrateVolumeOnLocalStorageMsg) msg);
+        } else {
+            super.handleLocalMessage(msg);
+        }
+    }
+
+    private void handle(MigrateVolumeOnLocalStorageMsg msg) {
+        MigrateVolumeOnLocalStorageReply reply = new MigrateVolumeOnLocalStorageReply();
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-volume-%s-local-storage-%s-to-host-%s", msg.getVolumeUuid(), msg.getPrimaryStorageUuid(), msg.getDestHostUuid()));
@@ -340,61 +411,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        evt.setInventory(
-                                LocalStorageResourceRefInventory.valueOf(dbf.reload(volumeRefVO))
-                        );
-                        bus.publish(evt);
+                        reply.setInventory(LocalStorageResourceRefInventory.valueOf(dbf.reload(volumeRefVO)));
+                        bus.reply(msg, reply);
                     }
                 });
 
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setErrorCode(errCode);
-                        bus.publish(evt);
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
                     }
                 });
             }
         }).start();
-    }
-
-    @Override
-    protected void handleLocalMessage(Message msg) {
-        if (msg instanceof InitPrimaryStorageOnHostConnectedMsg) {
-            handle((InitPrimaryStorageOnHostConnectedMsg) msg);
-        } else if (msg instanceof RemoveHostFromLocalStorageMsg) {
-            handle((RemoveHostFromLocalStorageMsg) msg);
-        } else if (msg instanceof TakeSnapshotMsg) {
-            handle((TakeSnapshotMsg) msg);
-        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
-            handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
-            handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
-            handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
-        } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
-            handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof DownloadImageToPrimaryStorageCacheMsg) {
-            handle((DownloadImageToPrimaryStorageCacheMsg) msg);
-        } else if (msg instanceof LocalStorageCreateEmptyVolumeMsg) {
-            handle((LocalStorageCreateEmptyVolumeMsg) msg);
-        } else if (msg instanceof LocalStorageDirectlyDeleteBitsMsg) {
-            handle((LocalStorageDirectlyDeleteBitsMsg) msg);
-        } else if (msg instanceof LocalStorageReserveHostCapacityMsg) {
-            handle((LocalStorageReserveHostCapacityMsg) msg);
-        } else if (msg instanceof LocalStorageReturnHostCapacityMsg) {
-            handle((LocalStorageReturnHostCapacityMsg) msg);
-        } else if (msg instanceof LocalStorageHypervisorSpecificMessage) {
-            handle((LocalStorageHypervisorSpecificMessage) msg);
-        } else if (msg instanceof CreateTemporaryVolumeFromSnapshotMsg) {
-            handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
-        } else if (msg instanceof UploadBitsFromLocalStorageToBackupStorageMsg) {
-            handle((UploadBitsFromLocalStorageToBackupStorageMsg) msg);
-        } else {
-            super.handleLocalMessage(msg);
-        }
     }
 
     private void handle(final UploadBitsFromLocalStorageToBackupStorageMsg msg) {
