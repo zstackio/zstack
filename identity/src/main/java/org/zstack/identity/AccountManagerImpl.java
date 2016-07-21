@@ -48,6 +48,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
 import java.lang.reflect.Field;
+import java.security.Identity;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,11 +80,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private List<String> resourceTypeForAccountRef;
     private List<Class> resourceTypes;
-    private Map<String, SessionInventory> sessions = new ConcurrentHashMap<String, SessionInventory>();
-    private Map<Class, Quota> messageQuotaMap = new HashMap<Class, Quota>();
-    private HashSet<Class> accountApiControl = new HashSet<Class>();
-    private HashSet<Class> accountApiControlInternal = new HashSet<Class>();
-    private List<Quota> definedQuotas = new ArrayList<Quota>();
+    private Map<String, SessionInventory> sessions = new ConcurrentHashMap<>();
+    private Map<Class, Quota> messageQuotaMap = new HashMap<>();
+    private HashSet<Class> accountApiControl = new HashSet<>();
+    private HashSet<Class> accountApiControlInternal = new HashSet<>();
+    private List<Quota> definedQuotas = new ArrayList<>();
 
     class AccountCheckField {
         Field field;
@@ -99,7 +100,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         boolean accountControl;
     }
 
-    private Map<Class, MessageAction> actions = new HashMap<Class, MessageAction>();
+    private Map<Class, MessageAction> actions = new HashMap<>();
     private Future<Void> expiredSessionCollector;
 
     @Override
@@ -143,8 +144,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void handle(GenerateMessageIdentityCategoryMsg msg) {
-        List<String> adminMsgs = new ArrayList<String>();
-        List<String> userMsgs = new ArrayList<String>();
+        List<String> adminMsgs = new ArrayList<>();
+        List<String> userMsgs = new ArrayList<>();
 
         List<Class> apiMsgClasses = BeanUtils.scanClassByType("org.zstack", APIMessage.class);
         for (Class clz : apiMsgClasses) {
@@ -162,14 +163,14 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }
 
-        List<String> quotas = new ArrayList<String>();
+        List<String> quotas = new ArrayList<>();
         for (Quota q : messageQuotaMap.values()) {
             for (QuotaPair p : q.getQuotaPairs()) {
                 quotas.add(String.format("%s        %s", p.getName(), p.getValue()));
             }
         }
 
-        List<String> as = new ArrayList<String>();
+        List<String> as = new ArrayList<>();
         for (Map.Entry<Class, MessageAction> e : actions.entrySet()) {
             Class api = e.getKey();
             MessageAction a = e.getValue();
@@ -229,7 +230,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         } else if (msg instanceof APILogInByAccountMsg) {
             handle((APILogInByAccountMsg) msg);
         } else if (msg instanceof APILogInByUserMsg) {
-            handle((APILogInByUserMsg)msg);
+            handle((APILogInByUserMsg) msg);
         } else if (msg instanceof APILogOutMsg) {
             handle((APILogOutMsg) msg);
         } else if (msg instanceof APIValidateSessionMsg) {
@@ -265,12 +266,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         ref.setOwnerAccountUuid(msg.getAccountUuid());
         ref = dbf.updateAndRefresh(ref);
 
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(ResourceOwnerAfterChangeExtensionPoint.class), new ForEachFunction<ResourceOwnerAfterChangeExtensionPoint>() {
-            @Override
-            public void run(ResourceOwnerAfterChangeExtensionPoint ext) {
-                ext.resourceOwnerAfterChange(origin, msg.getAccountUuid());
-            }
-        });
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(ResourceOwnerAfterChangeExtensionPoint.class),
+                new ForEachFunction<ResourceOwnerAfterChangeExtensionPoint>() {
+                    @Override
+                    public void run(ResourceOwnerAfterChangeExtensionPoint ext) {
+                        ext.resourceOwnerAfterChange(origin, msg.getAccountUuid());
+                    }
+                });
 
         APIChangeResourceOwnerEvent evt = new APIChangeResourceOwnerEvent(msg.getId());
         evt.setInventory(AccountResourceRefInventory.valueOf(ref));
@@ -325,9 +327,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }
 
-        Map<String, String> ret = new HashMap<String, String>();
+        Map<String, String> ret = new HashMap<>();
 
-        SessionInventory session  = new SessionInventory();
+        SessionInventory session = new SessionInventory();
         if (msg.getUserUuid() != null) {
             UserVO user = dbf.findByUuid(msg.getUserUuid(), UserVO.class);
             session.setAccountUuid(user.getAccountUuid());
@@ -380,7 +382,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             if (session != null && current.after(session.getExpiredDate())) {
                 valid = false;
                 logOutSession(session.getUuid());
-            } else if (session == null){
+            } else if (session == null) {
                 valid = false;
             }
         }
@@ -557,12 +559,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         dbf.getEntityManager().refresh(vo);
         final AccountInventory inv = AccountInventory.valueOf(vo);
 
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterCreateAccountExtensionPoint.class), new ForEachFunction<AfterCreateAccountExtensionPoint>() {
-            @Override
-            public void run(AfterCreateAccountExtensionPoint arg) {
-                arg.afterCreateAccount(inv);
-            }
-        });
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterCreateAccountExtensionPoint.class),
+                new ForEachFunction<AfterCreateAccountExtensionPoint>() {
+                    @Override
+                    public void run(AfterCreateAccountExtensionPoint arg) {
+                        arg.afterCreateAccount(inv);
+                    }
+                });
 
         APICreateAccountEvent evt = new APICreateAccountEvent(msg.getId());
         evt.setInventory(inv);
@@ -575,7 +578,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void buildResourceTypes() throws ClassNotFoundException {
-        resourceTypes = new ArrayList<Class>();
+        resourceTypes = new ArrayList<>();
         for (String resrouceTypeName : resourceTypeForAccountRef) {
             Class<?> rs = Class.forName(resrouceTypeName);
             resourceTypes.add(rs);
@@ -704,7 +707,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void collectDefaultQuota() {
-        Map<String, Long> defaultQuota = new HashMap<String, Long>();
+        Map<String, Long> defaultQuota = new HashMap<>();
 
         for (ReportQuotaExtensionPoint ext : pluginRgty.getExtensionList(ReportQuotaExtensionPoint.class)) {
             List<Quota> quotas = ext.reportQuota();
@@ -734,7 +737,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.add(GlobalConfigVO_.category, Op.EQ, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY);
         List<String> existingQuota = q.listValue();
 
-        List<GlobalConfigVO> quotaConfigs = new ArrayList<GlobalConfigVO>();
+        List<GlobalConfigVO> quotaConfigs = new ArrayList<>();
         for (Map.Entry<String, Long> e : defaultQuota.entrySet()) {
             String rtype = e.getKey();
             Long value = e.getValue();
@@ -757,6 +760,49 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         if (!quotaConfigs.isEmpty()) {
             dbf.persistCollection(quotaConfigs);
+        }
+
+        repairAccountQuota(defaultQuota);
+    }
+
+
+    private void repairAccountQuota(Map<String, Long> defaultQuota) {
+        SimpleQuery<AccountVO> queryAccounts = dbf.createQuery(AccountVO.class);
+        queryAccounts.select(AccountVO_.uuid);
+        queryAccounts.add(AccountVO_.type, Op.EQ, AccountType.Normal);
+        List<String> normalAccounts = queryAccounts.listValue();
+
+        List<QuotaVO> quotas = new ArrayList<>();
+        for (String nA : normalAccounts) {
+            SimpleQuery<QuotaVO> queryAccountQuotas = dbf.createQuery(QuotaVO.class);
+            queryAccountQuotas.select(QuotaVO_.name);
+            queryAccountQuotas.add(QuotaVO_.identityUuid, Op.EQ, nA);
+            List<String> existingQuota = queryAccountQuotas.listValue();
+
+
+            for (Map.Entry<String, Long> e : defaultQuota.entrySet()) {
+                String rtype = e.getKey();
+                Long value = e.getValue();
+                if (existingQuota.contains(rtype)) {
+                    continue;
+                }
+
+                QuotaVO q = new QuotaVO();
+                q.setName(rtype);
+                q.setIdentityUuid(nA);
+                q.setIdentityType(AccountVO.class.getSimpleName());
+                q.setValue(value);
+                quotas.add(q);
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("create default quota[name: %s, value: %s] global config", rtype, value));
+                }
+            }
+
+        }
+
+        if (!quotas.isEmpty()) {
+            dbf.persistCollection(quotas);
         }
     }
 
@@ -838,7 +884,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
                 if (!String.class.isAssignableFrom(f.getType()) && !Collection.class.isAssignableFrom(f.getType())) {
                     throw new CloudRuntimeException(String.format("@APIParam of %s.%s has checkAccount = true, however," +
-                                    " the type of the field is not String or Collection but %s. This field must be a resource UUID or a collection(e.g. List) of UUIDs",
+                                    " the type of the field is not String or Collection but %s. " +
+                                    "This field must be a resource UUID or a collection(e.g. List) of UUIDs",
                             clz.getName(), f.getName(), f.getType()));
                 }
 
@@ -886,7 +933,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Override
     public void createAccountResourceRef(String accountUuid, String resourceUuid, Class<?> resourceClass) {
         if (!resourceTypes.contains(resourceClass)) {
-           throw new CloudRuntimeException(String.format("%s is not listed in resourceTypeForAccountRef of AccountManager.xml that is spring configuration. you forgot it???", resourceClass.getName()));
+            throw new CloudRuntimeException(String.format("%s is not listed in resourceTypeForAccountRef of AccountManager.xml that is spring configuration. you forgot it???", resourceClass.getName()));
         }
 
         AccountResourceRefVO ref = AccountResourceRefVO.newOwn(accountUuid, resourceUuid, resourceClass);
@@ -999,12 +1046,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         final SessionInventory finalSession = session;
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(SessionLogoutExtensionPoint.class), new ForEachFunction<SessionLogoutExtensionPoint>() {
-            @Override
-            public void run(SessionLogoutExtensionPoint ext) {
-                ext.sessionLogout(finalSession);
-            }
-        });
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(SessionLogoutExtensionPoint.class),
+                new ForEachFunction<SessionLogoutExtensionPoint>() {
+                    @Override
+                    public void run(SessionLogoutExtensionPoint ext) {
+                        ext.sessionLogout(finalSession);
+                    }
+                });
 
         sessions.remove(sessionUuid);
         dbf.removeByPrimaryKey(sessionUuid, SessionVO.class);
@@ -1067,9 +1115,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     }
                 } else if (Collection.class.isAssignableFrom(af.field.getType())) {
                     if (af.param.operationTarget()) {
-                        operationTargetResourceUuids.addAll((Collection)value);
+                        operationTargetResourceUuids.addAll((Collection) value);
                     } else {
-                        resourceUuids.addAll((Collection)value);
+                        resourceUuids.addAll((Collection) value);
                     }
                 }
             }
@@ -1129,15 +1177,16 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
             if (d.effect == StatementEffect.Allow) {
                 logger.debug(String.format("API[name: %s, action: %s] is approved by a %s[name: %s, uuid: %s]," +
-                        " statement[name: %s, action: %s]", msg.getClass().getSimpleName(), d.action, policyCategory, d.policy.getName(),
-                        d.policy.getUuid(), d.statement.getName(), d.actionRule));
+                                " statement[name: %s, action: %s]", msg.getClass().getSimpleName(), d.action,
+                        policyCategory, d.policy.getName(), d.policy.getUuid(), d.statement.getName(), d.actionRule));
             } else {
                 logger.debug(String.format("API[name: %s, action: %s] is denied by a %s[name: %s, uuid: %s]," +
-                                " statement[name: %s, action: %s]", msg.getClass().getSimpleName(), d.action, policyCategory, d.policy.getName(),
-                        d.policy.getUuid(), d.statement.getName(), d.actionRule));
+                                " statement[name: %s, action: %s]", msg.getClass().getSimpleName(), d.action,
+                        policyCategory, d.policy.getName(), d.policy.getUuid(), d.statement.getName(), d.actionRule));
 
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                        String.format("%s denied. user[name: %s, uuid: %s] is denied to execute API[%s]", policyCategory, username, session.getUuid(), msg.getClass().getSimpleName())
+                        String.format("%s denied. user[name: %s, uuid: %s] is denied to execute API[%s]",
+                                policyCategory, username, session.getUuid(), msg.getClass().getSimpleName())
                 ));
             }
         }
@@ -1161,7 +1210,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
                         String.format("API[%s] can only be called by an account, the current session is a user session[user uuid:%s]",
                                 msg.getClass().getSimpleName(), session.getUserUuid())
-                        ));
+                ));
             }
 
             if (action.accountCheckFields != null && !action.accountCheckFields.isEmpty()) {
@@ -1266,8 +1315,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
                             if (logger.isTraceEnabled()) {
                                 logger.trace(String.format("API[name: %s, action: %s] is not matched by policy[name: %s, uuid: %s" +
-                                        ", statement[name: %s, action: %s, effect: %s]", msg.getClass().getSimpleName(), a, p.getName(),
-                                        p.getUuid(), s.getName(), ac, s.getEffect()));
+                                                ", statement[name: %s, action: %s, effect: %s]", msg.getClass().getSimpleName(),
+                                        a, p.getName(), p.getUuid(), s.getName(), ac, s.getEffect()));
                             }
                         }
                     }
@@ -1300,7 +1349,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             if (session == null) {
                 SessionVO svo = dbf.findByUuid(msg.getSession().getUuid(), SessionVO.class);
                 if (svo == null) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.INVALID_SESSION, "Session expired"));
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.INVALID_SESSION,
+                            "Session expired"));
                 }
                 session = SessionInventory.valueOf(svo);
                 sessions.put(session.getUuid(), session);
@@ -1308,7 +1358,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
             Timestamp curr = getCurrentSqlDate();
             if (curr.after(session.getExpiredDate())) {
-                logger.debug(String.format("session expired[%s < %s] for account[uuid:%s]", curr, session.getExpiredDate(), session.getAccountUuid()));
+                logger.debug(String.format("session expired[%s < %s] for account[uuid:%s]", curr,
+                        session.getExpiredDate(), session.getAccountUuid()));
                 logOutSession(session.getUuid());
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.INVALID_SESSION, "Session expired"));
             }
@@ -1380,7 +1431,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.add(UserGroupVO_.name, Op.EQ, msg.getName());
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("unable to create a group. A group called %s is already under the account[uuid:%s]", msg.getName(), msg.getAccountUuid())
+                    String.format("unable to create a group. A group called %s is already under the account[uuid:%s]",
+                            msg.getName(), msg.getAccountUuid())
             ));
         }
     }
@@ -1391,7 +1443,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.add(UserVO_.name, Op.EQ, msg.getName());
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("unable to create a user. A user called %s is already under the account[uuid:%s]", msg.getName(), msg.getAccountUuid())
+                    String.format("unable to create a user. A user called %s is already under the account[uuid:%s]",
+                            msg.getName(), msg.getAccountUuid())
             ));
         }
     }
@@ -1420,7 +1473,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void validate(APIUpdateUserMsg msg) {
         if (msg.getUuid() == null && msg.getSession().isAccountSession()) {
-            throw new ApiMessageInterceptionException (errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                     "the current session is an account session. You need to specify the field 'uuid' of the user" +
                             " you want to update"
             ));
@@ -1510,7 +1563,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.add(UserPolicyRefVO_.userUuid, Op.EQ, msg.getUserUuid());
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("the policy[uuid:%s] is already attached to the user[uuid:%s]", msg.getPolicyUuid(), msg.getUserUuid())
+                    String.format("the policy[uuid:%s] is already attached to the user[uuid:%s]",
+                            msg.getPolicyUuid(), msg.getUserUuid())
             ));
         }
     }
@@ -1536,7 +1590,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.add(UserGroupPolicyRefVO_.policyUuid, Op.EQ, msg.getPolicyUuid());
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("the policy[uuid:%s] is already attached on the group[uuid:%s]", msg.getPolicyUuid(), msg.getGroupUuid())
+                    String.format("the policy[uuid:%s] is already attached on the group[uuid:%s]",
+                            msg.getPolicyUuid(), msg.getGroupUuid())
             ));
         }
     }
@@ -1572,7 +1627,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
             if (s.getActions().isEmpty()) {
                 throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("a statement must have a non-empty action field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s))
+                        String.format("a statement must have a non-empty action field. Invalid statement[%s]",
+                                JSONObjectUtil.toJsonString(s))
                 ));
             }
         }
