@@ -32,6 +32,7 @@ import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.CreateVolumeSnapshotReply;
@@ -83,10 +84,12 @@ public class VolumeBase implements Volume {
     @Autowired
     private VolumeDeletionPolicyManager deletionPolicyMgr;
 
-    private VolumeVO self;
+    protected String syncThreadId;
+    protected VolumeVO self;
 
     public VolumeBase(VolumeVO vo) {
         self = vo;
+        syncThreadId = String.format("volume-%s", self.getUuid());
     }
 
     protected void refreshVO() {
@@ -120,9 +123,45 @@ public class VolumeBase implements Volume {
             handle((RecoverVolumeMsg) msg);
         } else if (msg instanceof SyncVolumeSizeMsg) {
             handle((SyncVolumeSizeMsg) msg);
+        } else if (msg instanceof OverlayMessage) {
+            handle((OverlayMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(OverlayMessage msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doOverlayMessage(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "overlay-message";
+            }
+        });
+    }
+
+    private void doOverlayMessage(OverlayMessage msg, NoErrorCompletion noErrorCompletion) {
+        bus.send(msg.getMessage(), new CloudBusCallBack(msg, noErrorCompletion) {
+            @Override
+            public void run(MessageReply reply) {
+                bus.reply(msg, reply);
+                noErrorCompletion.done();
+            }
+        });
     }
 
     private void handle(final SyncVolumeSizeMsg msg) {
@@ -145,16 +184,33 @@ public class VolumeBase implements Volume {
 
     private void handle(final RecoverVolumeMsg msg) {
         final RecoverVolumeReply reply = new RecoverVolumeReply();
-        recoverVolume(new Completion(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                bus.reply(msg ,reply);
+            public String getSyncSignature() {
+                return syncThreadId;
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg ,reply);
+            public void run(SyncTaskChain chain) {
+                recoverVolume(new Completion(chain, msg) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg ,reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg ,reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return RecoverVolumeMsg.class.getName();
             }
         });
     }
@@ -220,27 +276,68 @@ public class VolumeBase implements Volume {
 
     private void handle(final ExpungeVolumeMsg msg) {
         final ExpungeVmReply reply = new ExpungeVmReply();
-        expunge(new Completion(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                bus.reply(msg, reply);
+            public String getSyncSignature() {
+                return syncThreadId;
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void run(SyncTaskChain chain) {
+                expunge(new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return ExpungeVmMsg.class.getName();
             }
         });
     }
 
     private void handle(final CreateDataVolumeTemplateFromDataVolumeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doCreateDataVolumeTemplateFromDataVolumeMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return CreateDataVolumeTemplateFromDataVolumeMsg.class.getName();
+            }
+        });
+    }
+
+    private void doCreateDataVolumeTemplateFromDataVolumeMsg(CreateDataVolumeTemplateFromDataVolumeMsg msg, NoErrorCompletion noErrorCompletion) {
         final CreateTemplateFromVolumeOnPrimaryStorageMsg cmsg = new CreateTemplateFromVolumeOnPrimaryStorageMsg();
         cmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
         cmsg.setImageInventory(ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class)));
         cmsg.setVolumeInventory(getSelfInventory());
         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-        bus.send(cmsg, new CloudBusCallBack(msg) {
+        bus.send(cmsg, new CloudBusCallBack(msg, noErrorCompletion) {
             @Override
             public void run(MessageReply r) {
                 CreateDataVolumeTemplateFromDataVolumeReply reply = new CreateDataVolumeTemplateFromDataVolumeReply();
@@ -256,6 +353,7 @@ public class VolumeBase implements Volume {
                 }
 
                 bus.reply(msg, reply);
+                noErrorCompletion.done();
             }
         });
     }
@@ -433,7 +531,7 @@ public class VolumeBase implements Volume {
         thdf.chainSubmit(new ChainTask() {
             @Override
             public String getSyncSignature() {
-                return getName();
+                return syncThreadId;
             }
 
             @Override
@@ -580,17 +678,34 @@ public class VolumeBase implements Volume {
     }
 
     private void handle(APIExpungeDataVolumeMsg msg) {
-        final APIExpungeDataVolumeEvent evt = new APIExpungeDataVolumeEvent(msg.getId());
-        expunge(new Completion(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                bus.publish(evt);
+            public String getSyncSignature() {
+                return syncThreadId;
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
-                bus.publish(evt);
+            public void run(SyncTaskChain chain) {
+                final APIExpungeDataVolumeEvent evt = new APIExpungeDataVolumeEvent(msg.getId());
+                expunge(new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setErrorCode(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return msg.getClass().getName();
             }
         });
     }
@@ -631,21 +746,39 @@ public class VolumeBase implements Volume {
     }
 
     private void handle(APIRecoverDataVolumeMsg msg) {
-        final APIRecoverDataVolumeEvent evt = new APIRecoverDataVolumeEvent(msg.getId());
-        recoverVolume(new Completion(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                evt.setInventory(getSelfInventory());
-                bus.publish(evt);
+            public String getSyncSignature() {
+                return syncThreadId;
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setInventory(getSelfInventory());
-                evt.setErrorCode(errorCode);
-                bus.publish(evt);
+            public void run(SyncTaskChain chain) {
+                final APIRecoverDataVolumeEvent evt = new APIRecoverDataVolumeEvent(msg.getId());
+                recoverVolume(new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        evt.setInventory(getSelfInventory());
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setInventory(getSelfInventory());
+                        evt.setErrorCode(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return msg.getClass().getName();
             }
         });
+
     }
 
     private void handle(APIUpdateVolumeMsg msg) {
@@ -730,54 +863,87 @@ public class VolumeBase implements Volume {
     }
 
     private void handle(final APIAttachDataVolumeToVmMsg msg) {
-        self.setVmInstanceUuid(msg.getVmInstanceUuid());
-        self = dbf.updateAndRefresh(self);
-
-        AttachDataVolumeToVmMsg amsg = new AttachDataVolumeToVmMsg();
-        amsg.setVolume(getSelfInventory());
-        amsg.setVmInstanceUuid(msg.getVmInstanceUuid());
-        bus.makeTargetServiceIdByResourceUuid(amsg, VmInstanceConstant.SERVICE_ID, amsg.getVmInstanceUuid());
-        bus.send(amsg, new CloudBusCallBack(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void run(MessageReply reply) {
-                final APIAttachDataVolumeToVmEvent evt = new APIAttachDataVolumeToVmEvent(msg.getId());
-                self = dbf.reload(self);
-                if (reply.isSuccess()) {
-                    AttachDataVolumeToVmReply ar = reply.castReply();
-                    self.setVmInstanceUuid(msg.getVmInstanceUuid());
-                    self.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(ar.getHypervisorType()).toString());
-                    self  = dbf.updateAndRefresh(self);
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
 
-                    evt.setInventory(getSelfInventory());
-                } else {
-                    self.setVmInstanceUuid(null);
-                    dbf.update(self);
-                    evt.setErrorCode(reply.getError());
-                }
+            @Override
+            public void run(SyncTaskChain chain) {
+                self.setVmInstanceUuid(msg.getVmInstanceUuid());
+                self = dbf.updateAndRefresh(self);
 
-                bus.publish(evt);
+                AttachDataVolumeToVmMsg amsg = new AttachDataVolumeToVmMsg();
+                amsg.setVolume(getSelfInventory());
+                amsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+                bus.makeTargetServiceIdByResourceUuid(amsg, VmInstanceConstant.SERVICE_ID, amsg.getVmInstanceUuid());
+                bus.send(amsg, new CloudBusCallBack(msg, chain) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        final APIAttachDataVolumeToVmEvent evt = new APIAttachDataVolumeToVmEvent(msg.getId());
+                        self = dbf.reload(self);
+                        if (reply.isSuccess()) {
+                            AttachDataVolumeToVmReply ar = reply.castReply();
+                            self.setVmInstanceUuid(msg.getVmInstanceUuid());
+                            self.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(ar.getHypervisorType()).toString());
+                            self  = dbf.updateAndRefresh(self);
+
+                            evt.setInventory(getSelfInventory());
+                        } else {
+                            self.setVmInstanceUuid(null);
+                            dbf.update(self);
+                            evt.setErrorCode(reply.getError());
+                        }
+
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return msg.getClass().getName();
             }
         });
+
     }
 
     private void handle(final APIDetachDataVolumeFromVmMsg msg) {
-        DetachDataVolumeFromVmMsg dmsg = new DetachDataVolumeFromVmMsg();
-        dmsg.setVolume(getSelfInventory());
-        bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, dmsg.getVmInstanceUuid());
-        bus.send(dmsg, new CloudBusCallBack(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void run(MessageReply reply) {
-                APIDetachDataVolumeFromVmEvent evt = new APIDetachDataVolumeFromVmEvent(msg.getId());
-                if (reply.isSuccess()) {
-                    self.setVmInstanceUuid(null);
-                    self.setDeviceId(null);
-                    self = dbf.updateAndRefresh(self);
-                    evt.setInventory(getSelfInventory());
-                } else {
-                    evt.setErrorCode(reply.getError());
-                }
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
 
-                bus.publish(evt);
+            @Override
+            public void run(SyncTaskChain chain) {
+                DetachDataVolumeFromVmMsg dmsg = new DetachDataVolumeFromVmMsg();
+                dmsg.setVolume(getSelfInventory());
+                bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, dmsg.getVmInstanceUuid());
+                bus.send(dmsg, new CloudBusCallBack(msg, chain) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        APIDetachDataVolumeFromVmEvent evt = new APIDetachDataVolumeFromVmEvent(msg.getId());
+                        if (reply.isSuccess()) {
+                            self.setVmInstanceUuid(null);
+                            self.setDeviceId(null);
+                            self = dbf.updateAndRefresh(self);
+                            evt.setInventory(getSelfInventory());
+                        } else {
+                            evt.setErrorCode(reply.getError());
+                        }
+
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return msg.getClass().getName();
             }
         });
     }
@@ -790,6 +956,7 @@ public class VolumeBase implements Volume {
         delete(forceDelete, true, completion);
     }
 
+    // don't put this in queue, it will eventually send the VolumeDeletionMsg that will be in queue
     private void delete(boolean forceDelete, boolean detachBeforeDeleting, final Completion completion) {
         final String issuer = VolumeVO.class.getSimpleName();
         VolumeDeletionStruct struct = new VolumeDeletionStruct();
@@ -884,7 +1051,7 @@ public class VolumeBase implements Volume {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("create-snapshot-for-volume-%s", self.getUuid());
+                return syncThreadId;
             }
 
             @Override
@@ -896,7 +1063,7 @@ public class VolumeBase implements Volume {
                 cmsg.setAccountUuid(msg.getSession().getAccountUuid());
                 cmsg.setVolumeUuid(msg.getVolumeUuid());
                 bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
-                bus.send(cmsg, new CloudBusCallBack(chain) {
+                bus.send(cmsg, new CloudBusCallBack(msg, chain) {
                     @Override
                     public void run(MessageReply reply) {
                         APICreateVolumeSnapshotEvent evt = new APICreateVolumeSnapshotEvent(msg.getId());
