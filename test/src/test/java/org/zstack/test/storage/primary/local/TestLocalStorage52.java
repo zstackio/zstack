@@ -9,6 +9,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.image.ImageInventory;
@@ -38,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  *
  * confirm the image is garbage collected
  */
-public class TestLocalStorage50 {
+public class TestLocalStorage52 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -52,7 +53,7 @@ public class TestLocalStorage50 {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/localStorage/TestLocalStorage50.xml", con);
+        deployer = new Deployer("deployerXml/localStorage/TestLocalStorage52.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
         deployer.addSpringConfig("localStorageSimulator.xml");
         deployer.addSpringConfig("localStorage.xml");
@@ -68,6 +69,7 @@ public class TestLocalStorage50 {
         c.avail = totalSize;
 
         config.capacityMap.put("host1", c);
+        config.capacityMap.put("host2", c);
 
         deployer.build();
         api = deployer.getApi();
@@ -80,8 +82,12 @@ public class TestLocalStorage50 {
         ImageInventory image1 = deployer.images.get("TestImage");
         api.deleteImage(image1.getUuid());
 
+        HostInventory host1 = deployer.hosts.get("host1");
+        HostInventory host2 = deployer.hosts.get("host2");
+
         SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
         q.add(ImageCacheVO_.imageUuid, Op.EQ, image1.getUuid());
+        q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%%s%%", host1.getUuid()));
         ImageCacheVO c = q.find();
 
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
@@ -102,10 +108,11 @@ public class TestLocalStorage50 {
         c = q.find();
         Assert.assertNull(c);
 
-        ImageInventory image2 = deployer.images.get("TestImage2");
         q = dbf.createQuery(ImageCacheVO.class);
-        q.add(ImageCacheVO_.imageUuid, Op.EQ, image2.getUuid());
+        q.add(ImageCacheVO_.imageUuid, Op.EQ, image1.getUuid());
+        q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%%s%%", host2.getUuid()));
         c = q.find();
+
         Assert.assertNotNull(c);
     }
 }
