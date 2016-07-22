@@ -1084,9 +1084,9 @@ public class KvmBackend extends HypervisorBackend {
                         backupStorageInstallPath = ((BackupStorageAskInstallPathReply) br).getInstallPath();
 
                         BackupStorageKvmUploader uploader = getBackupStorageKvmUploader(msg.getBackupStorageUuid());
-                        uploader.uploadBits(backupStorageInstallPath, temporaryTemplatePath, new Completion(trigger) {
+                        uploader.uploadBits(backupStorageInstallPath, temporaryTemplatePath, new ReturnValueCompletion<String>(trigger) {
                             @Override
-                            public void success() {
+                            public void success(String bsPath) {
                                 trigger.next();
                             }
 
@@ -1142,9 +1142,9 @@ public class KvmBackend extends HypervisorBackend {
     @Override
     void handle(UploadBitsToBackupStorageMsg msg, final ReturnValueCompletion<UploadBitsToBackupStorageReply> completion) {
         SftpBackupStorageKvmUploader uploader = new SftpBackupStorageKvmUploader(msg.getBackupStorageUuid());
-        uploader.uploadBits(msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new Completion(completion) {
+        uploader.uploadBits(msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
             @Override
-            public void success() {
+            public void success(String bsPath) {
                 completion.success(new UploadBitsToBackupStorageReply());
             }
 
@@ -1209,7 +1209,7 @@ public class KvmBackend extends HypervisorBackend {
         }
 
         @Override
-        public void uploadBits(final String bsPath, final String psPath, final Completion completion) {
+        public void uploadBits(final String bsPath, final String psPath, final ReturnValueCompletion<String> completion) {
             GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
             gmsg.setBackupStorageUuid(bsUuid);
             bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
@@ -1233,7 +1233,7 @@ public class KvmBackend extends HypervisorBackend {
                     new Do().go(UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
                         @Override
                         public void success(AgentRsp returnValue) {
-                            completion.success();
+                            completion.success(bsPath);
                         }
 
                         @Override
