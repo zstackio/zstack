@@ -148,6 +148,6 @@
     <TestCase class="org.zstack.test.core.gc.TestGC7" />
     <TestCase class="org.zstack.test.core.gc.TestGC10" />
 
-    <TestCase class="org.zstack.test.core.gc.TestAsyncBatch" />
-    <TestCase class="org.zstack.test.core.gc.TestAsyncBatch1" />
+    <TestCase class="org.zstack.test.core.asyncbatch.TestAsyncBatch" />
+    <TestCase class="org.zstack.test.core.asyncbatch.TestAsyncBatch1" />
 </UnitTestSuiteConfig>
