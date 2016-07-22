@@ -35,7 +35,13 @@ public class TestCreateUser {
         Assert.assertEquals("Test", vo.getPassword());
         
         SessionInventory session = api.loginByAccount(inv.getName(), vo.getPassword());
-        UserInventory uinv = api.createUser(inv.getUuid(), "TestUser", "password", session);
+        UserInventory uinv = api.createUser(inv.getUuid(), "TestTestTestTestTestTestTestTestTestTestTestTestTestTestTest"+
+                "TestTestTestTestTestTestTestTestTestTestTestTestTestTestTest"+
+                "TestTestTestTestTestTestTestTestTestTestTestTestTestTestTest"+
+                "TestTestTestTestTestTestTestTestTestTestTestTestTestTestTest"+
+                "TestTestTestTestTestTestTestTestTestTestTestTestTestTestTest"+
+                "TestTestTestTestTestTestTestTestTestTestTestTestTestTestTest"+
+                "TestTestTestTestTestTestTestTestTestTestTestTestTestTestTest", "password", session);
         UserVO uvo = dbf.findByUuid(uinv.getUuid(), UserVO.class);
         Assert.assertNotNull(uvo);
         Assert.assertEquals("password", uvo.getPassword());
