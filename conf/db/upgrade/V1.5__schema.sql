@@ -6,3 +6,6 @@ CREATE TABLE  `zstack`.`ImageStoreBackupStorageVO` (
     `sshPort` int unsigned NOT NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE AccountVO modify column name varchar(255) NOT NULL;
+ALTER TABLE UserVO modify column name varchar(255) NOT NULL;
