@@ -256,8 +256,18 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent) {
         VmInstanceState bs = self.getState();
         final VmInstanceState state = self.getState().nextState(stateEvent);
+
+        if (state == VmInstanceState.Stopped) {
+            // cleanup the hostUuid if the VM is stopped
+            if (self.getHostUuid() != null) {
+                self.setLastHostUuid(self.getHostUuid());
+            }
+            self.setHostUuid(null);
+        }
+
         self.setState(state);
         self = dbf.updateAndRefresh(self);
+
         if (bs != state) {
             logger.debug(String.format("vm[uuid:%s] changed state from %s to %s", self.getUuid(), bs, self.getState()));
 
@@ -271,6 +281,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             //TODO: remove this
             notfiyEmitter.notifyVmStateChange(VmInstanceInventory.valueOf(self), bs, state);
         }
+        
         return self;
     }
 
