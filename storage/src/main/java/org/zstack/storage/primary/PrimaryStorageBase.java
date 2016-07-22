@@ -398,16 +398,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((APIUpdatePrimaryStorageMsg) msg);
         } else if (msg instanceof APISyncPrimaryStorageCapacityMsg) {
             handle((APISyncPrimaryStorageCapacityMsg) msg);
-        } else if (msg instanceof APICleanUpImageCacheOnPrimaryStorageMsg) {
-            handle((APICleanUpImageCacheOnPrimaryStorageMsg) msg);
 		} else {
 			bus.dealWithUnknownMessage(msg);
 		}
 	}
-
-    protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
-        throw new OperationFailureException(errf.stringToOperationError("operation not supported"));
-    }
 
     private void handle(final APISyncPrimaryStorageCapacityMsg msg) {
         final APISyncPrimaryStorageCapacityEvent evt = new APISyncPrimaryStorageCapacityEvent(msg.getId());

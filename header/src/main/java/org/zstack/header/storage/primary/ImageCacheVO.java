@@ -1,6 +1,7 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.ShadowEntity;
@@ -21,6 +22,7 @@ public class ImageCacheVO implements ShadowEntity {
     private String primaryStorageUuid;
     
     @Column
+    @ForeignKey(parentEntityClass = ImageEO.class, onDeleteAction = ReferenceOption.SET_NULL)
     private String imageUuid;
     
     @Column

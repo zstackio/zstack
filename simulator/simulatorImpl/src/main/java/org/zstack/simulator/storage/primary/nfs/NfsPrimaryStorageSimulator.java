@@ -61,16 +61,6 @@ public class NfsPrimaryStorageSimulator {
         reply(entity, rsp);
     }
 
-    @RequestMapping(value=NfsPrimaryStorageKVMBackend.GET_VOLUME_BASE_IMAGE_PATH, method=RequestMethod.POST)
-    private @ResponseBody String getVolumeBaseImagePath(HttpServletRequest req) throws InterruptedException {
-        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
-        GetVolumeBaseImagePathCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeBaseImagePathCmd.class);
-        GetVolumeBaseImagePathRsp rsp = new GetVolumeBaseImagePathRsp();
-        rsp.path = config.getVolumeBaseImagePaths.get(cmd.volumeUUid);
-        reply(entity, rsp);
-        return null;
-    }
-
     @RequestMapping(value=NfsPrimaryStorageKVMBackend.UNMOUNT_PRIMARY_STORAGE_PATH, method=RequestMethod.POST)
     public @ResponseBody String nfsUnmount(@RequestBody String body) {
         if (config.unmountException) {

@@ -609,13 +609,4 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class PingCmd extends NfsPrimaryStorageAgentCommand {
     }
-
-    public static class GetVolumeBaseImagePathCmd extends NfsPrimaryStorageAgentCommand {
-        public String volumeUUid;
-        public String installPath;
-    }
-
-    public static class GetVolumeBaseImagePathRsp extends NfsPrimaryStorageAgentResponse {
-        public String path;
-    }
 }

@@ -40,10 +40,4 @@
 			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
 		</zstack:plugin>
 	</bean>
-
-	<bean id="NfsPrimaryStorageImageCacheCleaner" class="org.zstack.storage.primary.nfs.NfsPrimaryStorageImageCacheCleaner">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
-		</zstack:plugin>
-	</bean>
 </beans>

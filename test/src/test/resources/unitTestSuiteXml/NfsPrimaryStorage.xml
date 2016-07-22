@@ -10,8 +10,4 @@
     <TestCase class="org.zstack.test.storage.primary.nfs.TestReconnectNfsPrimaryStorage4"/>
     <TestCase class="org.zstack.test.storage.primary.nfs.TestNfsPrimaryStorageStatus"/>
     <TestCase class="org.zstack.test.storage.primary.nfs.TestNfsMountOptions1"/>
-    <TestCase class="org.zstack.test.storage.primary.nfs.TestNfsGetVolumeBaseImage"/>
-    <TestCase class="org.zstack.test.storage.primary.nfs.TestImageCacheMissingUuid"/>
-    <TestCase class="org.zstack.test.storage.primary.nfs.TestNfsImageCleaner"/>
-    <TestCase class="org.zstack.test.storage.primary.nfs.TestNfsImageCleaner1"/>
 </UnitTestSuiteConfig>
