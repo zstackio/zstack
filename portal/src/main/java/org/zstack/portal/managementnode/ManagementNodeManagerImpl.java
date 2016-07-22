@@ -1,9 +1,7 @@
 package org.zstack.portal.managementnode;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -29,7 +27,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.*;
 import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.LifeCycle;
 import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.ManagementNodeLifeCycleData;
-import org.zstack.header.managementnode.ManagementNodeExitMsg.Reason;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.portal.apimediator.ApiMediator;
@@ -47,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.utils.ExceptionDSL.throwableSafe;
 
@@ -553,6 +551,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         private Connection conn;
         private SingleConnectionDataSource source;
         JdbcTemplate jdbc;
+        AtomicBoolean destroyed = new AtomicBoolean(false);
 
         public HeartBeatDBSource() {
             try {
@@ -566,6 +565,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
         @ExceptionSafe
         public void destroy() {
+            if (!destroyed.compareAndSet(false, true)) {
+                return;
+            }
+
             source.destroy();
             try {
                 conn.close();
@@ -683,24 +686,44 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
             @Override
             public Void call() throws Exception {
+                int heartbeatFailure = 0;
+
                 while (true) {
                     try {
                         if (!amIalive()) {
                             logger.warn(String.format("cannot find my[uuid:%s] heartbeat in database, quit process", node.getUuid()));
-                            ManagementNodeExitMsg msg = new ManagementNodeExitMsg();
-                            msg.setServiceId(bus.makeLocalServiceId(ManagementNodeConstant.SERVICE_ID));
-                            msg.setReason(Reason.HeartBeatStopped);
-                            bus.send(msg);
+                            stop();
+                            return null;
                         } else {
                             fenceSuspects();
                             updateHeartbeat();
                             checkAllNodesHealth();
                         }
-                    } catch (Throwable t) {
-                        if (t instanceof RecoverableDataAccessException || t instanceof DataAccessResourceFailureException) {
-                            logger.warn(String.format("cannot communicate to the database, it's most likely the DB stopped or rebooted;" +
-                                    "try creating a new database connection. %s", t.getMessage()), t);
 
+                        heartbeatFailure = 0;
+                    } catch (Throwable t) {
+                        heartbeatFailure ++;
+
+                        if (heartbeatFailure > PortalGlobalProperty.MAX_HEARTBEAT_FAILURE) {
+                            logger.warn(String.format("the heartbeat has failed %s times that is greater than the max allowed value[%s]," +
+                                    " quit process", heartbeatFailure, PortalGlobalProperty.MAX_HEARTBEAT_FAILURE));
+                            stop();
+                            return null;
+                        }
+
+                        boolean databaseError = false;
+
+                        logger.warn(String.format("an error happened when doing heartbeat, %s, it's going to recover", t.getMessage()));
+
+                        try {
+                            heartBeatDBSource.jdbc.queryForObject("select 1", Integer.class);
+                        } catch (Throwable t1) {
+                            logger.warn(String.format("cannot communicate to the database, it's most likely the DB stopped or rebooted;" +
+                                    "try creating a new database connection. %s", t1.getMessage()), t1);
+                            databaseError = true;
+                        }
+
+                        if (databaseError) {
                             if (heartBeatDBSource != null) {
                                 heartBeatDBSource.destroy();
                             }
@@ -708,7 +731,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                             try {
                                 heartBeatDBSource = new HeartBeatDBSource();
                             } catch (Throwable t1) {
-                                logger.warn(t1.getMessage(), t1);
+                                logger.warn(String.format("unable to create a database connection, %s, will try it later", t1.getMessage()), t1);
                             }
                         } else {
                             logger.warn("unhandled exception happened", t);
