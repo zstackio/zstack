@@ -59,5 +59,6 @@
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage49"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage50"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage51"/>
+    <TestCase class="org.zstack.test.storage.primary.local.TestLocalStorage52"/>
     <TestCase class="org.zstack.test.storage.primary.local.TestQueryLocalStorage"/>
 </UnitTestSuiteConfig>

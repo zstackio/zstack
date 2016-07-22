@@ -44,7 +44,6 @@ import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -409,8 +408,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((UploadBitsFromLocalStorageToBackupStorageMsg) msg);
         } else if (msg instanceof GetVolumeRootImageUuidFromPrimaryStorageMsg) {
             handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
-        } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
-            handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof LocalStorageDeleteImageCacheOnPrimaryStorageMsg) {
+            handle((LocalStorageDeleteImageCacheOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -423,15 +422,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
 
-    private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
-        CacheInstallPath path = new CacheInstallPath();
-        path.fullPath = msg.getInstallPath();
-        path.disassemble();
-
+    private void handle(final LocalStorageDeleteImageCacheOnPrimaryStorageMsg msg) {
         LocalStorageDirectlyDeleteBitsMsg dmsg = new LocalStorageDirectlyDeleteBitsMsg();
         dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        dmsg.setPath(path.installPath);
-        dmsg.setHostUuid(path.hostUuid);
+        dmsg.setPath(msg.getInstallPath());
+        dmsg.setHostUuid(msg.getHostUuid());
         bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
         bus.send(dmsg, new CloudBusCallBack(msg) {
             @Override
