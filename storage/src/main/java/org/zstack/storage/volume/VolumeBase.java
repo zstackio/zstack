@@ -100,7 +100,7 @@ public class VolumeBase implements Volume {
     public void handleMessage(Message msg) {
         try {
             if (msg instanceof APIMessage) {
-                handleApiMessage((APIMessage)msg);
+                handleApiMessage((APIMessage) msg);
             } else {
                 handleLocalMessage(msg);
             }
@@ -195,14 +195,14 @@ public class VolumeBase implements Volume {
                 recoverVolume(new Completion(chain, msg) {
                     @Override
                     public void success() {
-                        bus.reply(msg ,reply);
+                        bus.reply(msg, reply);
                         chain.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
                         reply.setError(errorCode);
-                        bus.reply(msg ,reply);
+                        bus.reply(msg, reply);
                         chain.next();
                     }
                 });
@@ -887,7 +887,7 @@ public class VolumeBase implements Volume {
                             AttachDataVolumeToVmReply ar = reply.castReply();
                             self.setVmInstanceUuid(msg.getVmInstanceUuid());
                             self.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(ar.getHypervisorType()).toString());
-                            self  = dbf.updateAndRefresh(self);
+                            self = dbf.updateAndRefresh(self);
 
                             evt.setInventory(getSelfInventory());
                         } else {
@@ -919,6 +919,14 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(SyncTaskChain chain) {
+                if (self.getType().equals(VolumeType.Root.toString())) {
+                    throw new OperationFailureException(errf.stringToOperationError(
+                            String.format("the volume[uuid:%s, name:%s] is Root Volume, can't detach it",
+                                    self.getUuid(), self.getName())
+                    ));
+                }
+
+
                 DetachDataVolumeFromVmMsg dmsg = new DetachDataVolumeFromVmMsg();
                 dmsg.setVolume(getSelfInventory());
                 bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, dmsg.getVmInstanceUuid());
