@@ -70,7 +70,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private GCFacade gcf;
     @Autowired
     private EventFacade evtf;
-    private NfsPrimaryStorageImageCacheCleaner imageCacheCleaner;
 
     public NfsPrimaryStorage(PrimaryStorageVO vo) {
         super(vo);
@@ -96,65 +95,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
         } else if (msg instanceof UploadBitsToBackupStorageMsg) {
             handle((UploadBitsToBackupStorageMsg) msg);
-        } else if (msg instanceof GetVolumeRootImageUuidFromPrimaryStorageMsg) {
-            handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
-        } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
-            handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
-    }
-
-    @Override
-    protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
-        APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
-        imageCacheCleaner.cleanup();
-        bus.publish(evt);
-    }
-
-    private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
-        NfsPrimaryStorageBackend bkd = getUsableBackend();
-        if (bkd == null) {
-            throw new OperationFailureException(errf.stringToOperationError("cannot find usable backend"));
-        }
-
-        DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
-        dmsg.setHypervisorType(bkd.getHypervisorType().toString());
-        dmsg.setInstallPath(msg.getInstallPath());
-        dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
-        bus.send(dmsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply reply) {
-                DeleteImageCacheOnPrimaryStorageReply r = new DeleteImageCacheOnPrimaryStorageReply();
-                r.setSuccess(reply.isSuccess());
-                if (reply.getError() != null) {
-                    r.setError(reply.getError());
-                }
-                bus.reply(msg, r);
-            }
-        });
-    }
-
-    private void handle(final GetVolumeRootImageUuidFromPrimaryStorageMsg msg) {
-        NfsPrimaryStorageBackend bkd = getUsableBackend();
-        if (bkd == null) {
-            throw new OperationFailureException(errf.stringToOperationError("no usable backend found"));
-        }
-
-        bkd.handle(getSelfInventory(), msg, new ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply>(msg) {
-            @Override
-            public void success(GetVolumeRootImageUuidFromPrimaryStorageReply reply) {
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                GetVolumeRootImageUuidFromPrimaryStorageReply reply = new GetVolumeRootImageUuidFromPrimaryStorageReply();
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
     }
 
     private void handle(final UploadBitsToBackupStorageMsg msg) {

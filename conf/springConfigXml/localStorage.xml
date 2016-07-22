@@ -52,12 +52,6 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="LocalStorageImageCleaner" class="org.zstack.storage.primary.local.LocalStorageImageCleaner">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
-        </zstack:plugin>
-    </bean>
-
     <bean id="LocalStorageKvmFactory" class="org.zstack.storage.primary.local.LocalStorageKvmFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.storage.primary.local.LocalStorageHypervisorFactory" />
