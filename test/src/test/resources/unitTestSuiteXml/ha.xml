@@ -12,4 +12,5 @@
     <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm10"/>
     <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm11"/>
     <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm12"/>
+    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm13"/>
 </UnitTestSuiteConfig>
