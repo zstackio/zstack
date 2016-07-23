@@ -31,37 +31,27 @@ public class CephImageCacheCleaner extends ImageCacheCleaner implements Manageme
     }
 
     @Transactional
-    protected List<ImageCacheShadowVO> createShadowImageCacheVOs() {
-        String sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype";
-        TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
-        cq.setParameter("ptype", getPrimaryStorageType());
-        List<Long> deleted = cq.getResultList();
-
-        sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select img.uuid from ImageVO img) and" +
-                " c.primaryStorageUuid = pri.uuid and pri.type = :psType";
-
-        cq = dbf.getEntityManager().createQuery(sql, Long.class);
-        cq.setParameter("psType", getPrimaryStorageType());
-        deleted.addAll(cq.getResultList());
-
-        if (deleted.isEmpty()) {
+    @Override
+    protected List<ImageCacheShadowVO> createShadowImageCacheVOs(String psUuid) {
+        List<Long> staleImageCacheIds = getStaleImageCacheIds(psUuid);
+        if (staleImageCacheIds == null || staleImageCacheIds.isEmpty()) {
             return null;
         }
 
-        sql = "select ref.imageCacheId from ImageCacheVolumeRefVO ref where ref.imageCacheId in (:ids)";
+        String sql = "select ref.imageCacheId from ImageCacheVolumeRefVO ref where ref.imageCacheId in (:ids)";
         TypedQuery<Long> refq = dbf.getEntityManager().createQuery(sql, Long.class);
-        refq.setParameter("ids", deleted);
+        refq.setParameter("ids", staleImageCacheIds);
         List<Long> existing = refq.getResultList();
 
-        deleted.removeAll(existing);
+        staleImageCacheIds.removeAll(existing);
 
-        if (deleted.isEmpty()) {
+        if (staleImageCacheIds.isEmpty()) {
             return null;
         }
 
         sql = "select c from ImageCacheVO c where c.id in (:ids)";
         TypedQuery<ImageCacheVO> fq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
-        fq.setParameter("ids", deleted);
+        fq.setParameter("ids", staleImageCacheIds);
         List<ImageCacheVO> stale = fq.getResultList();
 
         logger.debug(String.format("found %s stale images in cache on the primary storage[type:%s], they are about to be cleaned up",
