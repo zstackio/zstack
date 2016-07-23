@@ -78,6 +78,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private ThreadFacade thdf;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private CephImageCacheCleaner imageCacheCleaner;
 
     class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
@@ -1061,6 +1063,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    @Override
+    protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
+        APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
+        imageCacheCleaner.cleanup();
+        bus.publish(evt);
     }
 
     @Override
