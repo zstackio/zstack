@@ -8,22 +8,17 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
 import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
@@ -56,7 +51,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -66,7 +60,7 @@ import static org.zstack.utils.CollectionDSL.map;
  */
 public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCapacityUpdateExtensionPoint, KVMStartVmExtensionPoint,
         KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
-        KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, ManagementNodeReadyExtensionPoint {
+        KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -331,99 +325,11 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             asf.deployModule(CephGlobalProperty.PRIMARY_STORAGE_MODULE_PATH, CephGlobalProperty.PRIMARY_STORAGE_PLAYBOOK_NAME);
         }
 
-        CephGlobalConfig.IMAGE_CACHE_CLEANUP_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
-            @Override
-            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
-                if (imageCacheCleanupThread != null) {
-                    imageCacheCleanupThread.cancel(true);
-                }
-                startCleanupThread();
-            }
-        });
-
         return true;
-    }
-
-    private void startCleanupThread() {
-        imageCacheCleanupThread = thdf.submitPeriodicTask(new PeriodicTask() {
-            @Override
-            public TimeUnit getTimeUnit() {
-                return TimeUnit.SECONDS;
-            }
-
-            @Override
-            public long getInterval() {
-                return CephGlobalConfig.IMAGE_CACHE_CLEANUP_INTERVAL.value(Long.class);
-            }
-
-            @Override
-            public String getName() {
-                return "ceph-primary-storage-image-cleanup-thread";
-            }
-
-            @Override
-            @ExceptionSafe
-            public void run() {
-                List<ImageCacheVO> staleCache = getStaleCache();
-                if (staleCache == null || staleCache.isEmpty()) {
-                    return;
-                }
-
-                for (final ImageCacheVO c : staleCache) {
-                    DeleteImageCacheOnCephPrimaryStorageMsg msg = new DeleteImageCacheOnCephPrimaryStorageMsg();
-                    msg.setSnapshotPath(c.getInstallUrl());
-                    msg.setImagePath(c.getInstallUrl().split("@")[0]);
-                    msg.setPrimaryStorageUuid(c.getPrimaryStorageUuid());
-                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, c.getPrimaryStorageUuid());
-                    bus.send(msg, new CloudBusCallBack() {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (reply.isSuccess()) {
-                                logger.debug(String.format("successfully cleanup a stale image cache[path:%s, primary storage uuid:%s]", c.getInstallUrl(), c.getPrimaryStorageUuid()));
-                                dbf.remove(c);
-                            } else {
-                                logger.warn(String.format("failed to cleanup a stale image cache[path:%s, primary storage uuid:%s], %s", c.getInstallUrl(), c.getPrimaryStorageUuid(), reply.getError()));
-                            }
-                        }
-                    });
-                }
-            }
-
-            @Transactional(readOnly = true)
-            private List<ImageCacheVO> getStaleCache() {
-                String sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where ((c.imageUuid is null) or (i.uuid = c.imageUuid and i.deleted is not null)) and " +
-                        "pri.type = :ptype and pri.uuid = c.primaryStorageUuid";
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("ptype", CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
-                List<Long> ids = q.getResultList();
-                if (ids.isEmpty()) {
-                    return null;
-                }
-
-                sql = "select ref.imageCacheId from ImageCacheVolumeRefVO ref where ref.imageCacheId in (:ids)";
-                TypedQuery<Long> refq = dbf.getEntityManager().createQuery(sql, Long.class);
-                refq.setParameter("ids", ids);
-                List<Long> existing = refq.getResultList();
-
-                ids.removeAll(existing);
-
-                if (ids.isEmpty()) {
-                    return null;
-                }
-
-                sql = "select c from ImageCacheVO c where c.id in (:ids)";
-                TypedQuery<ImageCacheVO> fq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
-                fq.setParameter("ids", ids);
-                return fq.getResultList();
-            }
-        });
     }
 
     @Override
     public boolean stop() {
-        if (imageCacheCleanupThread != null) {
-            imageCacheCleanupThread.cancel(true);
-        }
         return true;
     }
 
@@ -611,10 +517,5 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     public void preAttachIsoExtensionPoint(KVMHostInventory host, AttachIsoCmd cmd) {
         IsoTO to = convertIsoToCephIfNeeded(cmd.iso);
         cmd.iso = to;
-    }
-
-    @Override
-    public void managementNodeReady() {
-        startCleanupThread();
     }
 }
