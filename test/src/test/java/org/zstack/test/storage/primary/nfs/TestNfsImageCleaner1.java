@@ -31,6 +31,15 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
+
+/**
+ * 1. two NFS storage running two VMs with the same image
+ * 2. delete the image and two VMs
+ * 3. clean up image cache on the nfs
+ *
+ * confirm the image cache of the nfs get cleaned up
+ * confirm the image cache of the nfs1 doesn't get cleaned up
+ */
 public class TestNfsImageCleaner1 {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;
@@ -45,7 +54,7 @@ public class TestNfsImageCleaner1 {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/kvm/TestCreateVmOnKvm.xml", con);
+        deployer = new Deployer("deployerXml/nfsPrimaryStorage/TestNfsImageCleaner1.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
         deployer.build();
         api = deployer.getApi();
@@ -62,15 +71,20 @@ public class TestNfsImageCleaner1 {
         ImageInventory image1 = deployer.images.get("TestImage");
         api.deleteImage(image1.getUuid());
 
+        PrimaryStorageInventory nfs = deployer.primaryStorages.get("nfs");
+        PrimaryStorageInventory nfs1 = deployer.primaryStorages.get("nfs1");
+
         SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
         q.add(ImageCacheVO_.imageUuid, Op.EQ, image1.getUuid());
+        q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, nfs.getUuid());
         ImageCacheVO c = q.find();
 
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");
         api.destroyVmInstance(vm1.getUuid());
+        VmInstanceInventory vm2 = deployer.vms.get("TestVm1");
+        api.destroyVmInstance(vm2.getUuid());
 
-        PrimaryStorageInventory nfs = deployer.primaryStorages.get("nfs");
         config.deleteCmds.clear();
         api.cleanupImageCache(nfs.getUuid());
         TimeUnit.SECONDS.sleep(3);
@@ -80,5 +94,11 @@ public class TestNfsImageCleaner1 {
         Assert.assertEquals(c.getInstallUrl(), cmd.getInstallPath());
         c = q.find();
         Assert.assertNull(c);
+
+        q = dbf.createQuery(ImageCacheVO.class);
+        q.add(ImageCacheVO_.imageUuid, Op.EQ, image1.getUuid());
+        q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, nfs1.getUuid());
+        c = q.find();
+        Assert.assertNotNull(c);
 	}
 }
