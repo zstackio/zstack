@@ -836,7 +836,9 @@ public abstract class HostBase extends AbstractHost {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        extpEmitter.postHostConnect(getSelfInventory());
+                        for (PostHostConnectExtensionPoint p : pluginRgty.getExtensionList(PostHostConnectExtensionPoint.class)) {
+                            p.postHostConnect(getSelfInventory());
+                        }
                         trigger.next();
                     }
                 });

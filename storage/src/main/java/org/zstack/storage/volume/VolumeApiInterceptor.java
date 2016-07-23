@@ -7,6 +7,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -48,7 +49,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VolumeMessage) {
-            VolumeMessage vmsg = (VolumeMessage)msg;
+            VolumeMessage vmsg = (VolumeMessage) msg;
             bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, vmsg.getVolumeUuid());
         }
     }
@@ -167,10 +168,26 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                     String.format("data volume[uuid:%s] is not attached to any vm, can't detach", msg.getVolumeUuid())
             ));
         }
+
+        VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+        if (vol.getType() == VolumeType.Root) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the volume[uuid:%s, name:%s] is Root Volume, can't detach it",
+                            vol.getUuid(), vol.getName())
+            ));
+        }
     }
 
     private void validate(APIAttachDataVolumeToVmMsg msg) {
         VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+
+        if (vol.getType() == VolumeType.Root) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the volume[uuid:%s, name:%s] is Root Volume, can't attach it",
+                            vol.getUuid(), vol.getName())
+            ));
+        }
+
         if (vol.getState() == VolumeState.Disabled) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
                     String.format("data volume[uuid:%s] is Disabled, can't attach", vol.getUuid())
