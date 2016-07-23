@@ -11,11 +11,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.DeleteImageCacheOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.ImageCacheShadowVO;
+import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.volume.VolumeType;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -117,7 +118,7 @@ public abstract class ImageCacheCleaner {
     }
 
     @Transactional
-    protected List<ImageCacheShadowVO> createShadowImageCacheVOs() {
+    protected List<Long> getStaleImageCacheIds() {
         String sql = "select count(*) from VolumeVO vol, PrimaryStorageVO pri where vol.primaryStorageUuid = pri.uuid" +
                 " and vol.type = :volType and vol.rootImageUuid is null and pri.type = :psType";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
@@ -132,15 +133,15 @@ public abstract class ImageCacheCleaner {
             return null;
         }
 
-        sql = "select c from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype";
-        TypedQuery<ImageCacheVO> cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
+        sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype";
+        TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
         cq.setParameter("ptype", getPrimaryStorageType());
-        List<ImageCacheVO> deleted = cq.getResultList();
+        List<Long> deleted = cq.getResultList();
 
-        sql = "select c from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select img.uuid from ImageVO img) and" +
+        sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select img.uuid from ImageVO img) and" +
                 " c.primaryStorageUuid = pri.uuid and pri.type = :psType";
 
-        cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
+        cq = dbf.getEntityManager().createQuery(sql, Long.class);
         cq.setParameter("psType", getPrimaryStorageType());
         deleted.addAll(cq.getResultList());
 
@@ -148,16 +149,19 @@ public abstract class ImageCacheCleaner {
             return null;
         }
 
-        List<String> deleteImageUuids = CollectionUtils.transformToList(deleted, new Function<String, ImageCacheVO>() {
-            @Override
-            public String call(ImageCacheVO arg) {
-                return arg.getImageUuid();
-            }
-        });
+        return deleted;
+    }
 
-        sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol) and c.imageUuid in (:uuids)";
-        cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
-        cq.setParameter("uuids", deleteImageUuids);
+    @Transactional
+    protected List<ImageCacheShadowVO> createShadowImageCacheVOs() {
+        List<Long> staleImageCacheIds = getStaleImageCacheIds();
+        if (staleImageCacheIds == null || staleImageCacheIds.isEmpty()) {
+            return null;
+        }
+
+        String sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol) and c.id in (:ids)";
+        TypedQuery<ImageCacheVO> cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
+        cq.setParameter("ids", staleImageCacheIds);
         List<ImageCacheVO> stale = cq.getResultList();
 
         if (stale.isEmpty()) {
