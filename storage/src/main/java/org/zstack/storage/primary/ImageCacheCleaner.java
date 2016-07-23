@@ -43,7 +43,7 @@ public abstract class ImageCacheCleaner {
     protected abstract String getPrimaryStorageType();
 
     protected void startGC() {
-        PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+        cleanupIntervalConfig().installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
                 if (gcThread != null) {
@@ -55,6 +55,10 @@ public abstract class ImageCacheCleaner {
         });
 
         startGCThread();
+    }
+
+    protected GlobalConfig cleanupIntervalConfig() {
+        return PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL;
     }
 
     public void cleanup() {
@@ -101,7 +105,7 @@ public abstract class ImageCacheCleaner {
 
             @Override
             public long getInterval() {
-                return PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.value(Long.class);
+                return cleanupIntervalConfig().value(Long.class);
             }
 
             @Override

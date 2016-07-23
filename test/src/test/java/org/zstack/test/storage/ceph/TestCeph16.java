@@ -19,7 +19,6 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.image.ImageGlobalConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.ceph.CephGlobalConfig;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.DeleteImageCacheCmd;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -32,16 +31,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * 0. change the cleanup interval of image cache to 1s
  * 1. use ceph for backup storage and primary storage
- * 2. create a vm
+ * 2. create two vm
+ * 3. destroy one vm
  *
  * confirm the image cache is not cleaned up
  *
- * 3. destroy the vm
- *
- * confirm the image cache is cleaned up
- *
  */
-public class TestCeph5 {
+public class TestCeph16 {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -55,7 +51,7 @@ public class TestCeph5 {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/ceph/TestCeph1.xml", con);
+        deployer = new Deployer("deployerXml/ceph/TestCeph16.xml", con);
         deployer.addSpringConfig("ceph.xml");
         deployer.addSpringConfig("cephSimulator.xml");
         deployer.addSpringConfig("KVMRelated.xml");
@@ -91,9 +87,7 @@ public class TestCeph5 {
 
         config.deleteCmds.clear();
         TimeUnit.SECONDS.sleep(3);
-        Assert.assertFalse(q.isExists());
-        Assert.assertEquals(1, config.deleteImageCacheCmds.size());
-        DeleteImageCacheCmd cmd = config.deleteImageCacheCmds.get(0);
-        Assert.assertEquals(c.getInstallUrl(), cmd.snapshotPath);
+        Assert.assertTrue(q.isExists());
+        Assert.assertTrue(config.deleteImageCacheCmds.isEmpty());
     }
 }

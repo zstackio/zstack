@@ -317,4 +317,13 @@ public class CephPrimaryStorageSimulator {
         reply(entity, new AgentResponse());
         return null;
     }
+
+    @RequestMapping(value= CephPrimaryStorageBase.DELETE_IMAGE_CACHE, method= RequestMethod.POST)
+    public @ResponseBody
+    String deleteImageCache(HttpEntity<String> entity) {
+        DeleteImageCacheCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteImageCacheCmd.class);
+        config.deleteImageCacheCmds.add(cmd);
+        reply(entity, new AgentResponse());
+        return null;
+    }
 }

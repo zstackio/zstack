@@ -2251,21 +2251,21 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((SetupSelfFencerOnKvmHostMsg) msg);
         } else if (msg instanceof CancelSelfFencerOnKvmHostMsg) {
             handle((CancelSelfFencerOnKvmHostMsg) msg);
-        } else if (msg instanceof DeleteImageCacheOnCephPrimaryStorageMsg) {
-            handle((DeleteImageCacheOnCephPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
+            handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
     }
 
-    private void handle(DeleteImageCacheOnCephPrimaryStorageMsg msg) {
-        DeleteImageCacheOnCephPrimaryStorageReply reply = new DeleteImageCacheOnCephPrimaryStorageReply();
+    private void handle(DeleteImageCacheOnPrimaryStorageMsg msg) {
+        DeleteImageCacheOnPrimaryStorageReply reply = new DeleteImageCacheOnPrimaryStorageReply();
 
         DeleteImageCacheCmd cmd = new DeleteImageCacheCmd();
         cmd.setFsId(getSelf().getFsid());
         cmd.setUuid(self.getUuid());
-        cmd.imagePath = msg.getImagePath();
-        cmd.snapshotPath = msg.getSnapshotPath();
+        cmd.imagePath = msg.getInstallPath().split("@")[0];
+        cmd.snapshotPath = msg.getInstallPath();
         httpCall(DELETE_IMAGE_CACHE, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
             @Override
             public void success(AgentResponse rsp) {

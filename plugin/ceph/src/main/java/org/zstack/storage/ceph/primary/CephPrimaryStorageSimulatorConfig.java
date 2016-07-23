@@ -48,4 +48,5 @@ public class CephPrimaryStorageSimulatorConfig {
     public Map<String, String> getFactsCmdFsid = new HashMap<String, String>();
     public List<KvmSetupSelfFencerCmd> kvmSetupSelfFencerCmds = new ArrayList<>();
     public List<KvmCancelSelfFencerCmd> kvmCancelSelfFencerCmds = new ArrayList<>();
+    public List<DeleteImageCacheCmd> deleteImageCacheCmds = new ArrayList<>();
 }
