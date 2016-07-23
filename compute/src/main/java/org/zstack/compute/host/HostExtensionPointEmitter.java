@@ -26,8 +26,6 @@ public class HostExtensionPointEmitter implements Component {
     private List<HostChangeStateExtensionPoint> changeStateExts = new ArrayList<>();
     private List<HostConnectionReestablishExtensionPoint> connetionReestablishExts = new ArrayList<>();
     private List<HostAddExtensionPoint> addHostExts = new ArrayList<>();
-    private List<PostHostConnectExtensionPoint> postHostConnectExts = new ArrayList<>();
-
 
     public void preDelete(HostInventory hinv) throws HostException {
         for (HostDeleteExtensionPoint extp : deleteHostExts) {
@@ -186,22 +184,12 @@ public class HostExtensionPointEmitter implements Component {
         });
     }
 
-    public void postHostConnect(HostInventory hinv) {
-        CollectionUtils.safeForEach(postHostConnectExts, new ForEachFunction<PostHostConnectExtensionPoint>() {
-            @Override
-            public void run(PostHostConnectExtensionPoint extp) {
-                extp.postHostConnect(hinv);
-            }
-        });
-    }
-
     private void populateExtensions() {
         pingTaskExts = pluginRgty.getExtensionList(HostPingTaskExtensionPoint.class);
         deleteHostExts = pluginRgty.getExtensionList(HostDeleteExtensionPoint.class);
         changeStateExts = pluginRgty.getExtensionList(HostChangeStateExtensionPoint.class);
         connetionReestablishExts = pluginRgty.getExtensionList(HostConnectionReestablishExtensionPoint.class);
         addHostExts = pluginRgty.getExtensionList(HostAddExtensionPoint.class);
-        postHostConnectExts = pluginRgty.getExtensionList(PostHostConnectExtensionPoint.class);
     }
 
     @Override

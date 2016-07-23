@@ -919,14 +919,6 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(SyncTaskChain chain) {
-                if (self.getType().equals(VolumeType.Root.toString())) {
-                    throw new OperationFailureException(errf.stringToOperationError(
-                            String.format("the volume[uuid:%s, name:%s] is Root Volume, can't detach it",
-                                    self.getUuid(), self.getName())
-                    ));
-                }
-
-
                 DetachDataVolumeFromVmMsg dmsg = new DetachDataVolumeFromVmMsg();
                 dmsg.setVolume(getSelfInventory());
                 bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, dmsg.getVmInstanceUuid());
