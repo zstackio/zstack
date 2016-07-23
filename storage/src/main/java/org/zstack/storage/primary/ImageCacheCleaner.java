@@ -59,7 +59,11 @@ public abstract class ImageCacheCleaner {
     }
 
     public void cleanup() {
-        List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs();
+        cleanup(null);
+    }
+
+    public void cleanup(String psUuid) {
+        List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs(psUuid);
         if (shadowVOs == null || shadowVOs.isEmpty()) {
             return;
         }
@@ -118,12 +122,23 @@ public abstract class ImageCacheCleaner {
     }
 
     @Transactional
-    protected List<Long> getStaleImageCacheIds() {
-        String sql = "select count(*) from VolumeVO vol, PrimaryStorageVO pri where vol.primaryStorageUuid = pri.uuid" +
-                " and vol.type = :volType and vol.rootImageUuid is null and pri.type = :psType";
+    protected List<Long> getStaleImageCacheIds(String psUuid) {
+        String sql;
+        if (psUuid == null) {
+            sql = "select count(*) from VolumeVO vol, PrimaryStorageVO pri where vol.primaryStorageUuid = pri.uuid" +
+                    " and vol.type = :volType and vol.rootImageUuid is null and pri.type = :psType";
+        } else {
+            sql = "select count(*) from VolumeVO vol, PrimaryStorageVO pri where vol.primaryStorageUuid = pri.uuid" +
+                    " and vol.type = :volType and vol.rootImageUuid is null and pri.type = :psType and pri.uuid = :psUuid";
+        }
+
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("volType", VolumeType.Root);
         q.setParameter("psType", getPrimaryStorageType());
+        if (psUuid != null) {
+            q.setParameter("psUuid", psUuid);
+        }
+
         Long count = q.getSingleResult();
         if (count != 0) {
             logger.warn(String.format("found %s volumes on the primary storage[type:%s] has NULL rootImageUuid. Please do following:\n" +
@@ -133,16 +148,32 @@ public abstract class ImageCacheCleaner {
             return null;
         }
 
-        sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype";
+        if (psUuid == null) {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where c.primaryStorageUuid = pri.uuid and i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype";
+        } else  {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where c.primaryStorageUuid = pri.uuid and i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype and pri.uuid = :psUuid";
+        }
+
         TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
         cq.setParameter("ptype", getPrimaryStorageType());
+        if (psUuid != null) {
+            cq.setParameter("psUuid", psUuid);
+        }
         List<Long> deleted = cq.getResultList();
 
-        sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select img.uuid from ImageVO img) and" +
-                " c.primaryStorageUuid = pri.uuid and pri.type = :psType";
+        if (psUuid == null) {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select img.uuid from ImageVO img) and" +
+                    " c.primaryStorageUuid = pri.uuid and pri.type = :psType";
+        } else {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select img.uuid from ImageVO img) and" +
+                    " c.primaryStorageUuid = pri.uuid and pri.type = :psType and pri.uuid = :psUuid";
+        }
 
         cq = dbf.getEntityManager().createQuery(sql, Long.class);
         cq.setParameter("psType", getPrimaryStorageType());
+        if (psUuid != null) {
+            cq.setParameter("psUuid", psUuid);
+        }
         deleted.addAll(cq.getResultList());
 
         if (deleted.isEmpty()) {
@@ -153,8 +184,8 @@ public abstract class ImageCacheCleaner {
     }
 
     @Transactional
-    protected List<ImageCacheShadowVO> createShadowImageCacheVOs() {
-        List<Long> staleImageCacheIds = getStaleImageCacheIds();
+    protected List<ImageCacheShadowVO> createShadowImageCacheVOs(String psUuid) {
+        List<Long> staleImageCacheIds = getStaleImageCacheIds(psUuid);
         if (staleImageCacheIds == null || staleImageCacheIds.isEmpty()) {
             return null;
         }
