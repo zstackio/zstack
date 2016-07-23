@@ -38,8 +38,8 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
     }
 
     @Transactional
-    protected List<ImageCacheShadowVO> createShadowImageCacheVOs() {
-        List<Long> staleImageCacheIds = getStaleImageCacheIds();
+    protected List<ImageCacheShadowVO> createShadowImageCacheVOs(String psUUid) {
+        List<Long> staleImageCacheIds = getStaleImageCacheIds(psUUid);
         if (staleImageCacheIds == null || staleImageCacheIds.isEmpty()) {
             return null;
         }
@@ -102,8 +102,8 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
     }
 
     @Override
-    public void cleanup() {
-        List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs();
+    public void cleanup(String psUuid) {
+        List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs(psUuid);
         if (shadowVOs == null || shadowVOs.isEmpty()) {
             return;
         }
