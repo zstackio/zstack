@@ -1,24 +1,27 @@
 package org.zstack.core.thread;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.debug.DebugManager;
+import org.zstack.core.debug.DebugSignal;
+import org.zstack.core.debug.DebugSignalHandler;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
-class DispatchQueueImpl implements DispatchQueue {
+class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     private static final CLogger logger = Utils.getLogger(DispatchQueueImpl.class);
 
 	@Autowired
@@ -28,12 +31,38 @@ class DispatchQueueImpl implements DispatchQueue {
 	private final HashMap<String, ChainTaskQueueWrapper> chainTasks = new HashMap<String, ChainTaskQueueWrapper>();
 	private static final CLogger _logger = CLoggerImpl.getLogger(DispatchQueueImpl.class);
 
+    @Override
+    public void handleDebugSignal(DebugSignal sig) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n================= BEGIN TASK QUEUE DUMP ================");
+        sb.append("\nASYNC TASK QUEUE DUMP:");
+        sb.append(String.format("\nTASK QUEUE NUMBER: %s\n", chainTasks.size()));
+        List<String> asyncTasks = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        for (Map.Entry<String, ChainTaskQueueWrapper> e : chainTasks.entrySet()) {
+            StringBuilder tb = new StringBuilder(String.format("\nQUEUE SYNC SIGNATURE: %s", e.getKey()));
+            ChainTaskQueueWrapper w = e.getValue();
+            tb.append(String.format("\nPENDING TASK NUMBER:%s", w.queue.size()));
+            for (int i=0; i<w.queue.size(); i++) {
+                ChainFuture cf = (ChainFuture) w.queue.get(i);
+                if (i == 0) {
+                    tb.append(String.format("\nCURRENT TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s]",
+                            cf.getTask().getName(), cf.getTask().getClass(), TimeUnit.MILLISECONDS.toSeconds(now - cf.getCreatedTime()), i));
+                } else {
+                    tb.append(String.format("\nPENDING TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s]",
+                            cf.getTask().getName(), cf.getTask().getClass(), TimeUnit.MILLISECONDS.toSeconds(now - cf.getCreatedTime()), i));
+                }
+            }
+            asyncTasks.add(tb.toString());
+        }
+        sb.append(StringUtils.join(asyncTasks, "\n"));
+        sb.append("\n================= END TASK QUEUE DUMP ==================\n");
+        logger.debug(sb.toString());
+    }
 
-	public void init() {
-	}
-
-	public void destroy() {
-	}
+    public DispatchQueueImpl() {
+        DebugManager.registerDebugSignalHandler(DebugSignal.DumpTaskQueue, this);
+    }
 
     private class SyncTaskFuture<T> extends AbstractFuture<T> {
         public SyncTaskFuture(SyncTask<T> task) {
@@ -166,6 +195,11 @@ class DispatchQueueImpl implements DispatchQueue {
 
     class ChainFuture extends  AbstractFuture {
         private AtomicBoolean isNextCalled = new AtomicBoolean(false);
+        private long createdTime = System.currentTimeMillis();
+
+        public long getCreatedTime() {
+            return createdTime;
+        }
 
         public ChainFuture(ChainTask task) {
             super(task);
@@ -258,7 +292,9 @@ class DispatchQueueImpl implements DispatchQueue {
                 private void runQueue() {
                     ChainFuture cf;
                     synchronized (chainTasks) {
-                        cf = (ChainFuture) queue.poll();
+                        // use peek() instead of poll() not to remove the task from the queue
+                        // the task will be removed by poll when it is finished
+                        cf = (ChainFuture) queue.peek();
                         if (cf == null) {
                             if (counter.decrementAndGet() == 0) {
                                 chainTasks.remove(syncSignature);
@@ -271,6 +307,8 @@ class DispatchQueueImpl implements DispatchQueue {
                     cf.run(new SyncTaskChain() {
                         @Override
                         public void next() {
+                            // use poll to removes the the finished task from the queue
+                            queue.poll();
                             runQueue();
                         }
                     });

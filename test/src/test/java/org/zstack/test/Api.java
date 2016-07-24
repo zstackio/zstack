@@ -17,6 +17,9 @@ import org.zstack.core.config.*;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.debug.APIDebugSignalEvent;
+import org.zstack.core.debug.APIDebugSignalMsg;
+import org.zstack.core.debug.DebugSignal;
 import org.zstack.ha.APIDeleteVmInstanceHaLevelMsg;
 import org.zstack.ha.APISetVmInstanceHaLevelEvent;
 import org.zstack.ha.APISetVmInstanceHaLevelMsg;
@@ -4105,5 +4108,18 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIDeleteLogEvent evt = sender.send(msg, APIDeleteLogEvent.class);
+    }
+
+    public void debugSignal(DebugSignal...ds) throws ApiSenderException {
+        APIDebugSignalMsg msg = new APIDebugSignalMsg();
+        List<String> lst = new ArrayList<>();
+        for (DebugSignal sig : ds) {
+            lst.add(sig.toString());
+        }
+        msg.setSignals(lst);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDebugSignalEvent.class);
     }
 }

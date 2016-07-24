@@ -38,7 +38,8 @@ public class BeanConstructor {
             "<import resource=\"springConfigXml/jmx.xml\" />",
             "<import resource=\"springConfigXml/logFacade.xml\" />",
             "<import resource=\"springConfigXml/Error.xml\" />",
-            "<import resource=\"springConfigXml/gc.xml\" />"
+            "<import resource=\"springConfigXml/gc.xml\" />",
+            "<import resource=\"springConfigXml/debug.xml\" />"
     ).toString();
 
     public BeanConstructor() {
