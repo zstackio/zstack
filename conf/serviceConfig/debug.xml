@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>debug</id>
+
+    <message>
+        <name>org.zstack.core.debug.APIDebugSignalMsg</name>
+    </message>
+</service>

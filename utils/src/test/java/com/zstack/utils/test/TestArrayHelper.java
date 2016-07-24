@@ -26,5 +26,4 @@ public class TestArrayHelper {
             System.out.println(names[i]);
         }
     }
-
 }

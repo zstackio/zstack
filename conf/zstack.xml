@@ -85,4 +85,5 @@
     <import resource="springConfigXml/lb.xml" />
     <import resource="springConfigXml/flatNetworkProvider.xml" />
     <import resource="springConfigXml/sharedMountPointPrimaryStorage.xml" />
+    <import resource="springConfigXml/debug.xml" />
 </beans>
