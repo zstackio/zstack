@@ -115,7 +115,6 @@ public class SftpBackupStorage extends BackupStorageBase {
                         res.md5sum = ret.getMd5Sum();
                         res.size = ret.getSize();
                         res.actualSize = ret.getActualSize();
-                        res.format = ret.getFormat();
 
                         updateCapacity(ret.getTotalCapacity(), ret.getAvailableCapacity());
 
