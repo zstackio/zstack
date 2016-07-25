@@ -45,6 +45,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
 import java.util.ArrayList;
@@ -768,17 +769,20 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public void mergeSnapshotToVolume(final PrimaryStorageInventory pinv, VolumeSnapshotInventory snapshot,
                                       VolumeInventory volume, boolean fullRebase, final Completion completion) {
         boolean offline = true;
+        String hostUuid = null;
         if (volume.getVmInstanceUuid() != null) {
             SimpleQuery<VmInstanceVO> q  = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.state);
+            q.select(VmInstanceVO_.state, VmInstanceVO_.hostUuid);
             q.add(VmInstanceVO_.uuid, Op.EQ, volume.getVmInstanceUuid());
-            VmInstanceState state = q.findValue();
+            Tuple t = q.findTuple();
+            VmInstanceState state = t.get(0, VmInstanceState.class);
+            hostUuid = t.get(1, String.class);
             offline = (state == VmInstanceState.Stopped);
         }
 
-        HostInventory host = nfsFactory.getConnectedHostForOperation(pinv);
-
         if (offline) {
+            HostInventory host = nfsFactory.getConnectedHostForOperation(pinv);
+
             OfflineMergeSnapshotCmd cmd = new OfflineMergeSnapshotCmd();
             cmd.setFullRebase(fullRebase);
             cmd.setSrcPath(snapshot.getPrimaryStorageInstallPath());
@@ -812,10 +816,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         } else {
             MergeVolumeSnapshotOnKvmMsg msg = new MergeVolumeSnapshotOnKvmMsg();
             msg.setFullRebase(fullRebase);
-            msg.setHostUuid(host.getUuid());
+            msg.setHostUuid(hostUuid);
             msg.setFrom(snapshot);
             msg.setTo(volume);
-            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
             bus.send(msg, new CloudBusCallBack(completion) {
                 @Override
                 public void run(MessageReply reply) {
