@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
+import org.zstack.core.debug.APIDebugSignalMsg;
+import org.zstack.core.debug.DebugSignal;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.progressbar.InProgressEvent;
 import org.zstack.header.apimediator.ApiMediatorConstant;
@@ -13,6 +15,8 @@ import org.zstack.header.message.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.Arrays.asList;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ApiSender {
@@ -69,6 +73,13 @@ public class ApiSender {
 		try {
 			count.await(timeout, TimeUnit.SECONDS);
 			if (isTimeout) {
+				APIDebugSignalMsg dmsg = new APIDebugSignalMsg();
+				dmsg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+				dmsg.setSignals(asList(DebugSignal.DumpTaskQueue.toString()));
+                dmsg.setSession(msg.getSession());
+                bus.send(dmsg);
+				TimeUnit.SECONDS.sleep(2);
+
 				String errStr = String.format("%s[uuid:%s] timeout after %s seconds", msg.getMessageName(), msg.getId(), timeout);
 				throw new ApiSenderException(errf.stringToTimeoutError(errStr));
 			}

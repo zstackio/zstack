@@ -42,16 +42,19 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         for (Map.Entry<String, ChainTaskQueueWrapper> e : chainTasks.entrySet()) {
             StringBuilder tb = new StringBuilder(String.format("\nQUEUE SYNC SIGNATURE: %s", e.getKey()));
             ChainTaskQueueWrapper w = e.getValue();
-            tb.append(String.format("\nPENDING TASK NUMBER:%s", w.queue.size()));
-            for (int i=0; i<w.queue.size(); i++) {
-                ChainFuture cf = (ChainFuture) w.queue.get(i);
-                if (i == 0) {
-                    tb.append(String.format("\nCURRENT TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s]",
-                            cf.getTask().getName(), cf.getTask().getClass(), TimeUnit.MILLISECONDS.toSeconds(now - cf.getCreatedTime()), i));
-                } else {
-                    tb.append(String.format("\nPENDING TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s]",
-                            cf.getTask().getName(), cf.getTask().getClass(), TimeUnit.MILLISECONDS.toSeconds(now - cf.getCreatedTime()), i));
-                }
+            tb.append(String.format("\nRUNNING TASK NUMBER: %s", w.runningQueue.size()));
+            tb.append(String.format("\nPENDING TASK NUMBER: %s", w.pendingQueue.size()));
+            int index = 0;
+            for (Object obj : w.runningQueue) {
+                ChainFuture cf = (ChainFuture) obj;
+                tb.append(String.format("\nRUNNING TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s]",
+                        cf.getTask().getName(), cf.getTask().getClass(), TimeUnit.MILLISECONDS.toSeconds(now - cf.getTimestamp()), index++));
+            }
+
+            for (Object obj : w.pendingQueue) {
+                ChainFuture cf = (ChainFuture) obj;
+                tb.append(String.format("\nPENDING TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s]",
+                        cf.getTask().getName(), cf.getTask().getClass(), TimeUnit.MILLISECONDS.toSeconds(now - cf.getTimestamp()), index++));
             }
             asyncTasks.add(tb.toString());
         }
@@ -195,10 +198,12 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     class ChainFuture extends  AbstractFuture {
         private AtomicBoolean isNextCalled = new AtomicBoolean(false);
-        private long createdTime = System.currentTimeMillis();
+        // in running queue: means execution time
+        // in pending queue: means pending time
+        private long timestamp = System.currentTimeMillis();
 
-        public long getCreatedTime() {
-            return createdTime;
+        public long getTimestamp() {
+            return timestamp;
         }
 
         public ChainFuture(ChainTask task) {
@@ -260,13 +265,15 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     }
 
     private class ChainTaskQueueWrapper {
-        LinkedList queue = new LinkedList();
+        LinkedList pendingQueue = new LinkedList();
+        final LinkedList runningQueue = new LinkedList();
         AtomicInteger counter = new AtomicInteger(0);
         int maxThreadNum = -1;
         String syncSignature;
 
         void addTask(ChainFuture task) {
-            queue.offer(task);
+            pendingQueue.offer(task);
+
             if (maxThreadNum == -1) {
                 maxThreadNum = task.getSyncLevel();
             }
@@ -292,9 +299,9 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                 private void runQueue() {
                     ChainFuture cf;
                     synchronized (chainTasks) {
-                        // use peek() instead of poll() not to remove the task from the queue
-                        // the task will be removed by poll when it is finished
-                        cf = (ChainFuture) queue.peek();
+                        // remove from pending queue and add to running queue later
+                        cf = (ChainFuture) pendingQueue.poll();
+
                         if (cf == null) {
                             if (counter.decrementAndGet() == 0) {
                                 chainTasks.remove(syncSignature);
@@ -304,11 +311,18 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         }
                     }
 
+                    synchronized (runningQueue) {
+                        // add to running queue
+                        runningQueue.offer(cf);
+                    }
+
                     cf.run(new SyncTaskChain() {
                         @Override
                         public void next() {
-                            // use poll to removes the the finished task from the queue
-                            queue.poll();
+                            synchronized (runningQueue) {
+                                runningQueue.remove(cf);
+                            }
+
                             runQueue();
                         }
                     });
@@ -375,7 +389,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     wrapper.syncSignature,
                     wrapper.maxThreadNum,
                     wrapper.counter.intValue(),
-                    wrapper.queue.size()
+                    wrapper.pendingQueue.size()
             );
             ret.put(statistic.getSyncSignature(), statistic);
         }
