@@ -1,6 +1,7 @@
 package org.zstack.console;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -249,6 +250,15 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
         });
     }
 
+    @Transactional
+    private void deleteMnNode(ManagementNodeVO managementNode) {
+        String managementHostName = managementNode.getHostName();
+        String sql = "delete from ConsoleProxyVO q where q.proxyHostname = :managementHostName";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("managementHostName", managementHostName);
+        q.executeUpdate();
+    }
+
     public void cleanupNode(String nodeId) {
         logger.debug(String.format("Management node[uuid:%s] left, will clean the record in ConsoleProxyVO", nodeId));
         SimpleQuery<ManagementNodeVO> query = dbf.createQuery(ManagementNodeVO.class);
@@ -258,11 +268,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
             logger.debug("Cannot find management node: " + nodeId + ", it may have been deleted");
             return;
         }
-        String managementHostName = managementNode.getHostName();
-        String sql = "delete from ConsoleProxyVO q where q.proxyHostname = :managementHostName";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("managementHostName", managementHostName);
-        q.executeUpdate();
+        deleteMnNode(managementNode);
     }
 
     @Override
