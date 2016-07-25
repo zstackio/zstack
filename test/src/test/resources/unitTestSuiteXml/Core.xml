@@ -52,6 +52,7 @@
 	<TestCase class="org.zstack.test.core.thread.TestChainTask2"/>
 	<TestCase class="org.zstack.test.core.thread.TestChainTask3"/>
     <TestCase class="org.zstack.test.core.thread.TestChainTask4"/>
+    <TestCase class="org.zstack.test.core.thread.TestChainTask6"/>
 	<TestCase class="org.zstack.test.core.thread.TestChainTaskCancel"/>
 	<TestCase class="org.zstack.test.core.thread.TestChainTaskExceptionNotCallRunNext"/>
 	<TestCase class="org.zstack.test.core.thread.TestChainTaskExceptionCallRunNext"/>

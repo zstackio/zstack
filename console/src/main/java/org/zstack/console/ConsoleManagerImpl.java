@@ -11,7 +11,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.thread.SyncThread;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.console.*;
@@ -251,7 +250,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     }
 
     @Transactional
-    private void deleteMnNode(ManagementNodeVO managementNode) {
+    private void deleteConsoleProxyByManagementNode(ManagementNodeVO managementNode) {
         String managementHostName = managementNode.getHostName();
         String sql = "delete from ConsoleProxyVO q where q.proxyHostname = :managementHostName";
         Query q = dbf.getEntityManager().createQuery(sql);
@@ -268,7 +267,8 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
             logger.debug("Cannot find management node: " + nodeId + ", it may have been deleted");
             return;
         }
-        deleteMnNode(managementNode);
+
+        deleteConsoleProxyByManagementNode(managementNode);
     }
 
     @Override
