@@ -81,7 +81,6 @@ public class SftpBackupStorage extends BackupStorageBase {
 
     private class DownloadResult {
         String md5sum;
-        String format;
         long size;
         long actualSize;
     }
@@ -182,7 +181,6 @@ public class SftpBackupStorage extends BackupStorageBase {
                 reply.setSize(res.size);
                 reply.setActualSize(res.actualSize);
                 reply.setMd5sum(res.md5sum);
-                reply.setFormat(res.format);
                 bus.reply(msg, reply);
             }
 
