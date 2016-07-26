@@ -22,7 +22,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,11 +59,9 @@ public class DiskOfferingCascadeExtension extends AbstractAsyncCascadeExtension 
         completion.success();
     }
 
-    @Transactional
     private void deleteDiskOfferingNotReferredByVolume() {
-        String sql = "delete  from DiskOfferingEO d where d.deleted is not null and d.uuid not in (select v.diskOfferingUuid from VolumeVO v where v.diskOfferingUuid is not null)";
-        Query  q = dbf.getEntityManager().createQuery(sql);
-        q.executeUpdate();
+        String sql = "select d.uuid from DiskOfferingEO d where d.deleted is not null and d.uuid not in (select v.diskOfferingUuid from VolumeVO v where v.diskOfferingUuid is not null)";
+        dbf.hardDeleteCollectionSelectedBySQL(sql, DiskOfferingVO.class);
     }
 
     private void handleDeletion(final CascadeAction action, final Completion completion) {

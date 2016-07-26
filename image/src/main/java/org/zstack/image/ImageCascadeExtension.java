@@ -2,11 +2,12 @@ package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.cascade.*;
+import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
+import org.zstack.core.cascade.CascadeAction;
+import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
@@ -20,7 +21,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -56,11 +56,9 @@ public class ImageCascadeExtension extends AbstractAsyncCascadeExtension {
         completion.success();
     }
 
-    @Transactional
     private void cleanupImageEO() {
-        String sql = "delete from ImageEO i where i.deleted is not null and i.uuid not in (select vm.imageUuid from VmInstanceVO vm where vm.imageUuid is not null)";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.executeUpdate();
+        String sql = "select i.uuid from ImageEO i where i.deleted is not null and i.uuid not in (select vm.imageUuid from VmInstanceVO vm where vm.imageUuid is not null)";
+        dbf.hardDeleteCollectionSelectedBySQL(sql, ImageVO.class);
     }
 
     private void handleDeletion(final CascadeAction action, final Completion completion) {

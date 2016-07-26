@@ -55,7 +55,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     private Map<Class, EntityInfo> entityInfoMap = new HashMap<Class, EntityInfo>();
     private String dbVersion;
 
-    private class EntityInfo {
+    class EntityInfo {
         Field voPrimaryKeyField;
         Field eoPrimaryKeyField;
         Field eoSoftDeleteColumn;
@@ -339,13 +339,15 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         private void hardDelete(Collection ids) {
+            String tblName = hasEO() ? eoClass.getSimpleName() : voClass.getSimpleName();
+
             if (ids.size() == 1) {
-                String sql = String.format("delete from %s eo where eo.%s = :id", voClass.getSimpleName(), voPrimaryKeyField.getName());
+                String sql = String.format("delete from %s eo where eo.%s = :id", tblName, voPrimaryKeyField.getName());
                 Query q = getEntityManager().createQuery(sql);
                 q.setParameter("id", ids.iterator().next());
                 q.executeUpdate();
             } else {
-                String sql = String.format("delete from %s eo where eo.%s in (:ids)", voClass.getSimpleName(), voPrimaryKeyField.getName());
+                String sql = String.format("delete from %s eo where eo.%s in (:ids)", tblName, voPrimaryKeyField.getName());
                 Query q = getEntityManager().createQuery(sql);
                 q.setParameter("ids", ids);
                 q.executeUpdate();
@@ -461,7 +463,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         return persist(entity, false);
     }
 
-    private EntityInfo getEntityInfo(Class clz) {
+    EntityInfo getEntityInfo(Class clz) {
         EntityInfo info = entityInfoMap.get(clz);
         DebugUtils.Assert(info!=null, String.format("cannot find entity info for %s", clz.getName()));
         return info;
@@ -543,6 +545,19 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     @DeadlockAutoRestart
     public void removeByPrimaryKey(Object primaryKey, Class<?> entityClass) {
         getEntityInfo(entityClass).removeByPrimaryKey(primaryKey);
+    }
+
+    @Override
+    @Transactional
+    public void hardDeleteCollectionSelectedBySQL(String sql, Class entityClass) {
+        EntityInfo info = getEntityInfo(entityClass);
+        Query q = getEntityManager().createQuery(sql);
+        List ids = q.getResultList();
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        info.hardDelete(ids);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -694,15 +709,21 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void eoCleanup(Class VOClazz) {
-        EO at = (EO) VOClazz.getAnnotation(EO.class);
-        if (at == null) {
+        EntityInfo info  = getEntityInfo(VOClazz);
+        if (!info.hasEO()) {
             return;
         }
 
-        String deleted = at.softDeletedColumn();
-        String sql = String.format("delete from %s eo where eo.%s is not null", at.EOClazz().getSimpleName(), deleted);
+        String deleted = info.eoSoftDeleteColumn.getName();
+        String sql = String.format("select eo.%s from %s eo where eo.%s is not null", info.voPrimaryKeyField.getName(),
+                info.eoClass.getSimpleName(), deleted);
         Query q = getEntityManager().createQuery(sql);
-        q.executeUpdate();
+        List ids = q.getResultList();
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        info.hardDelete(ids);
     }
 
     @Override
