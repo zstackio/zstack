@@ -55,6 +55,7 @@ public class SimulatorBackupStorage extends BackupStorageBase {
         reply.setInstallPath(Utils.getPathUtil().join(self.getUrl(), inv.getName()));
         reply.setSize(100);
         reply.setActualSize(100L);
+        reply.setFormat("qcow2");
         bus.reply(msg, reply);
     }
 

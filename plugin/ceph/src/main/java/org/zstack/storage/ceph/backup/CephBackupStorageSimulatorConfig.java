@@ -35,4 +35,5 @@ public class CephBackupStorageSimulatorConfig {
     public Map<String, Boolean> pingCmdOperationFailure = new HashMap<String, Boolean>();
     public List<GetFactsCmd> getFactsCmds = new ArrayList<GetFactsCmd>();
     public Map<String, String> getFactsCmdFsid = new HashMap<String, String>();
+    String format = "qcow2";
 }
