@@ -253,6 +253,9 @@ public class Api implements CloudBusEventListener {
     }
 
     public ImageInventory createTemplateFromSnapshot(String snapshotUuid, List<String> backupStorageUuids, SessionInventory session) throws ApiSenderException {
+        MessageCommandRecorder.reset();
+        MessageCommandRecorder.start(APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class);
+
         APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg = new APICreateRootVolumeTemplateFromVolumeSnapshotMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setBackupStorageUuids(backupStorageUuids);
@@ -263,6 +266,8 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateRootVolumeTemplateFromVolumeSnapshotEvent evt = sender.send(msg, APICreateRootVolumeTemplateFromVolumeSnapshotEvent.class);
+
+        logger.debug(MessageCommandRecorder.endAndToString());
         return evt.getInventory();
     }
 
