@@ -9,15 +9,12 @@ import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostConstant;
-import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.storage.primary.PrimaryStorageType;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
@@ -45,7 +42,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     public static final String UPLOAD_BIT_PATH = "/localstorage/sftp/upload";
     public static final String DOWNLOAD_BIT_PATH = "/localstorage/sftp/download";
 
-    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
+    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class, APILocalStorageMigrateVolumeMsg.class})
     public static class SftpDownloadBitsCmd extends LocalStorageKvmBackend.AgentCommand {
         private String sshKey;
         private String username;

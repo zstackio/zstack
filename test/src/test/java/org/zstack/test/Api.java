@@ -3786,6 +3786,9 @@ public class Api implements CloudBusEventListener {
     }
 
     public LocalStorageResourceRefInventory localStorageMigrateVolume(String volUuid, String hostUuid, SessionInventory session) throws ApiSenderException {
+        MessageCommandRecorder.reset();
+        MessageCommandRecorder.start(APILocalStorageMigrateVolumeMsg.class);
+
         APILocalStorageMigrateVolumeMsg msg = new APILocalStorageMigrateVolumeMsg();
         msg.setVolumeUuid(volUuid);
         msg.setDestHostUuid(hostUuid);
@@ -3793,6 +3796,9 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APILocalStorageMigrateVolumeEvent evt = sender.send(msg, APILocalStorageMigrateVolumeEvent.class);
+
+        logger.debug(MessageCommandRecorder.endAndToString());
+
         return evt.getInventory();
     }
 
