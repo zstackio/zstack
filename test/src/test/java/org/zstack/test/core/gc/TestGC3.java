@@ -65,6 +65,7 @@ public class TestGC3 {
         context.setRunnerClass(TRunner.class);
         context.setInterval(1);
         context.setTimeUnit(TimeUnit.SECONDS);
+        context.setName("test");
         Data d = new Data();
         d.name = "data";
         Data1 da = new Data1();

@@ -54,6 +54,7 @@ public class TestGC2 {
         context.setRunnerClass(TRunner.class);
         context.setInterval(1);
         context.setTimeUnit(TimeUnit.SECONDS);
+        context.setName("test");
 
         gcf.scheduleImmediately(context);
 

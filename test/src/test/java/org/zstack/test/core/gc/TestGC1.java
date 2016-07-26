@@ -53,6 +53,7 @@ public class TestGC1 {
         TimeBasedGCPersistentContext<String> context = new TimeBasedGCPersistentContext<String>();
         context.setRunnerClass(TRunner.class);
         context.setInterval(1);
+        context.setName("test");
         context.setTimeUnit(TimeUnit.SECONDS);
 
         gcf.scheduleImmediately(context);
