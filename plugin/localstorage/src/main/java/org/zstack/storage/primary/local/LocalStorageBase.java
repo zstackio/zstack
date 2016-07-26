@@ -410,6 +410,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
         } else if (msg instanceof LocalStorageDeleteImageCacheOnPrimaryStorageMsg) {
             handle((LocalStorageDeleteImageCacheOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof MigrateVolumeOnLocalStorageMsg) {
+            handle((MigrateVolumeOnLocalStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
