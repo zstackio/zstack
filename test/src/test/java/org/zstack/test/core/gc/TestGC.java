@@ -51,6 +51,7 @@ public class TestGC {
         context.setTimeUnit(TimeUnit.SECONDS);
         context.setContext("this is a string");
         context.setContextClass(String.class);
+        context.setName("test");
 
         gcf.scheduleImmediately(context);
 
