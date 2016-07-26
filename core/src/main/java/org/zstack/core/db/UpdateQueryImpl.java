@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.db.DatabaseFacadeImpl.EntityInfo;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.DebugUtils;
@@ -26,7 +27,7 @@ public class UpdateQueryImpl implements UpdateQuery {
     private static CLogger logger = Utils.getLogger(UpdateQueryImpl.class);
 
     @Autowired
-    private DatabaseFacade dbf;
+    private DatabaseFacadeImpl dbf;
 
     private Class entityClass;
     private Map<SingularAttribute, Object> setValues = new HashMap<>();
@@ -101,9 +102,12 @@ public class UpdateQueryImpl implements UpdateQuery {
     @Override
     @Transactional
     public void delete() {
+        EntityInfo info = dbf.getEntityInfo(entityClass);
+
         DebugUtils.Assert(entityClass!=null, "entity class cannot be null");
 
-        StringBuilder sb = new StringBuilder(String.format("DELETE FROM %s vo", entityClass.getSimpleName()));
+        StringBuilder sb = new StringBuilder(String.format("SELECT vo.%s FROM %s vo", info.voPrimaryKeyField.getName(),
+                entityClass.getSimpleName()));
         String where = where();
         if (where != null) {
             sb.append(String.format(" WHERE %s", where));
@@ -120,7 +124,12 @@ public class UpdateQueryImpl implements UpdateQuery {
             fillConditions(q);
         }
 
-        q.executeUpdate();
+        List ids = q.getResultList();
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        info.removeByPrimaryKeys(ids);
     }
 
     @Override

@@ -42,6 +42,8 @@ public interface DatabaseFacade {
 
     void removeByPrimaryKey(Object primaryKey, Class<?> entityClass);
 
+    void hardDeleteCollectionSelectedBySQL(String sql, Class entityClass);
+
     CriteriaBuilder  getCriteriaBuilder();
     
     <T> SimpleQuery<T> createQuery(Class<T> entityClass);

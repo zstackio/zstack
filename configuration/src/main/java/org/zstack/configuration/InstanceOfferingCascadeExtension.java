@@ -8,19 +8,20 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.*;
+import org.zstack.header.configuration.ConfigurationConstant;
+import org.zstack.header.configuration.InstanceOfferingDeletionMsg;
+import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.identity.Account;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,11 +58,9 @@ public class InstanceOfferingCascadeExtension extends AbstractAsyncCascadeExtens
         completion.success();
     }
 
-    @Transactional
     private void deleteInstanceOfferingEONotReferredByVm() {
-        String sql = "delete from InstanceOfferingEO i where i.deleted is not null and i.uuid not in (select vm.instanceOfferingUuid from VmInstanceVO vm where vm.instanceOfferingUuid is not null)";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.executeUpdate();
+        String sql = "select i.uuid from InstanceOfferingEO i where i.deleted is not null and i.uuid not in (select vm.instanceOfferingUuid from VmInstanceVO vm where vm.instanceOfferingUuid is not null)";
+        dbf.hardDeleteCollectionSelectedBySQL(sql, InstanceOfferingVO.class);
     }
 
     private void handleDeletion(final CascadeAction action, final Completion completion) {
