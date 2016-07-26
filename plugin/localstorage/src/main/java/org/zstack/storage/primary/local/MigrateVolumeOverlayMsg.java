@@ -1,11 +1,13 @@
 package org.zstack.storage.primary.local;
 
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.volume.VolumeMessage;
 
 /**
  * Created by xing5 on 2016/7/21.
  */
+@ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
 public class MigrateVolumeOverlayMsg extends OverlayMessage implements VolumeMessage {
     private String volumeUuid;
 
