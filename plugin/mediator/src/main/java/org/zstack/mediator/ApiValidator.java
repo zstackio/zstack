@@ -7,7 +7,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.network.service.eip.APIAttachEipMsg;
 import org.zstack.network.service.eip.APICreateEipMsg;
@@ -17,12 +16,6 @@ import org.zstack.network.service.portforwarding.APIAttachPortForwardingRuleMsg;
 import org.zstack.network.service.portforwarding.APICreatePortForwardingRuleMsg;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO_;
-import org.zstack.storage.backup.imagestore.APIAddImageStoreBackupStorageMsg;
-import org.zstack.storage.backup.imagestore.ImageStoreBackupStorageVO;
-import org.zstack.storage.backup.imagestore.ImageStoreBackupStorageVO_;
-import org.zstack.storage.backup.sftp.APIAddSftpBackupStorageMsg;
-import org.zstack.storage.backup.sftp.SftpBackupStorageVO;
-import org.zstack.storage.backup.sftp.SftpBackupStorageVO_;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,43 +53,9 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
             validate((APICreatePortForwardingRuleMsg) msg);
         } else if (msg instanceof APIAttachPortForwardingRuleMsg) {
             validate((APIAttachPortForwardingRuleMsg) msg);
-        } else if (msg instanceof APIAddSftpBackupStorageMsg) {
-            validate((APIAddSftpBackupStorageMsg) msg);
-        } else if (msg instanceof APIAddImageStoreBackupStorageMsg) {
-            validate((APIAddImageStoreBackupStorageMsg) msg);
         }
 
         return msg;
-    }
-
-    private void validateMoreThanOneBackupStorageOnSameHost(String hostname, String newBS) {
-        SimpleQuery<SftpBackupStorageVO> q = dbf.createQuery(SftpBackupStorageVO.class);
-        q.add(SftpBackupStorageVO_.hostname, Op.EQ, hostname);
-        if (q.isExists()) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("More than one BackupStorage on the same host identified by hostname. " +
-                            "There has been a SftpBackupStorage [hostname:%s] existing. " +
-                            "The BackupStorage type to be added is %s. ", hostname, newBS)
-            ));
-        }
-
-        SimpleQuery<ImageStoreBackupStorageVO> q1 = dbf.createQuery(ImageStoreBackupStorageVO.class);
-        q1.add(ImageStoreBackupStorageVO_.hostname, Op.EQ, hostname);
-        if (q1.isExists()) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("More than one BackupStorage on the same host identified by hostname. " +
-                            "There has been a SftpBackupStorage [hostname:%s] existing. " +
-                            "The BackupStorage type to be added is %s. ", hostname, newBS)
-            ));
-        }
-    }
-
-    private void validate(APIAddImageStoreBackupStorageMsg msg) {
-        validateMoreThanOneBackupStorageOnSameHost(msg.getHostname(), msg.getType());
-    }
-
-    private void validate(APIAddSftpBackupStorageMsg msg) {
-        validateMoreThanOneBackupStorageOnSameHost(msg.getHostname(), msg.getType());
     }
 
     private void validate(APIAttachPortForwardingRuleMsg msg) {

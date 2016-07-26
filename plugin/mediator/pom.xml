@@ -22,16 +22,6 @@
             <artifactId>portForwarding</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>sftpBackupStorage</artifactId>
-            <version>1.5.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>mevoco</artifactId>
-            <version>1.5.0</version>
-        </dependency>
     </dependencies>
 
     <build>
