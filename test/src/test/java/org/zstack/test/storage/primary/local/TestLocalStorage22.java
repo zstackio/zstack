@@ -95,8 +95,12 @@ public class TestLocalStorage22 {
         PrimaryStorageVO localvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
         long avail = localvo.getCapacity().getAvailableCapacity();
 
+        long tenG = SizeUnit.GIGABYTE.toByte(10);
+        config.snapshotToVolumeSize.put(sp.getVolumeUuid(), tenG);
+        config.snapshotToVolumeActualSize.put(sp.getVolumeUuid(), tenG);
         ImageInventory img = api.createTemplateFromSnapshot(sp.getUuid());
-        Assert.assertTrue(img.getSize() != 0);
+        Assert.assertEquals(tenG, img.getSize());
+        Assert.assertEquals(tenG, img.getActualSize().longValue());
 
         localvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
         Assert.assertEquals(avail, localvo.getCapacity().getAvailableCapacity());

@@ -8,16 +8,16 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.storage.primary.local.*;
+import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVO_;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -172,6 +172,7 @@ public class TestLocalStorage44 {
 
         // reconnect should be able to correct the capacity
         api.reconnectPrimaryStorage(local.getUuid());
+        TimeUnit.SECONDS.sleep(2);
         PrimaryStorageCapacityVO pscap1 = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertTrue(pscap1.getTotalCapacity() < pscap.getTotalCapacity());
         Assert.assertTrue(pscap1.getAvailableCapacity() <= pscap1.getTotalCapacity());
