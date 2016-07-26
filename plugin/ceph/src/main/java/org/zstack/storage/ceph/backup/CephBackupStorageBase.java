@@ -177,6 +177,15 @@ public class CephBackupStorageBase extends BackupStorageBase {
     public static class DownloadRsp extends AgentResponse {
         long size;
         Long actualSize;
+        String format;
+
+        public String getFormat() {
+            return format;
+        }
+
+        public void setFormat(String format) {
+            this.format = format;
+        }
 
         public Long getActualSize() {
             return actualSize;
@@ -371,6 +380,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 long asize = ret.actualSize == null ? ret.size : ret.actualSize;
                 reply.setActualSize(asize);
                 reply.setMd5sum("not calculated");
+                reply.setFormat(ret.format);
                 bus.reply(msg, reply);
             }
         });

@@ -19,6 +19,7 @@ public class SftpBackupStorageSimulatorConfig {
     public Map<String, Long> imageSizes = new HashMap<String, Long>();
     public Map<String, Long> imageActualSizes = new HashMap<String, Long>();
     public volatile String imageMd5sum;
+    public volatile String format = "qcow2";
     public volatile boolean deleteSuccess = true;
     public volatile boolean pingSuccess = true;
     public volatile boolean pingException = false;
