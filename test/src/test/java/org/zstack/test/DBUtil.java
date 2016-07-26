@@ -106,7 +106,7 @@ public class DBUtil {
         }
 
         for (String keyspace : keyspaces) {
-            ShellUtils.run(String.format("%s -e \"drop keyspace if exists %s\"", cqlsh, keyspace), false);
+            ShellUtils.run(String.format("%s --connect-timeout=100 -e \"drop keyspace if exists %s\"", cqlsh, keyspace), false);
         }
 
         File schemaFolder = PathUtil.findFolderOnClassPath("mevoco/cassandra/db", true);
