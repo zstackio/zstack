@@ -22,6 +22,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.Map;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateHostForStoppedVmFlow implements Flow {
     @Autowired
@@ -39,43 +40,23 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
 
         AllocateHostMsg amsg;
 
-        if (spec.getRequiredClusterUuid() != null || spec.getRequiredHostUuid() != null) {
-            DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
-            msg.setVmInstance(spec.getVmInventory());
-            msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
-            msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
-            msg.setVmOperation(spec.getCurrentVmOperation().toString());
-            msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
-            msg.setL3NetworkUuids(CollectionUtils.transformToList(spec.getL3Networks(), new Function<String, L3NetworkInventory>() {
-                @Override
-                public String call(L3NetworkInventory arg) {
-                    return arg.getUuid();
-                }
-            }));
-            msg.setClusterUuid(spec.getRequiredClusterUuid());
-            msg.setHostUuid(spec.getRequiredHostUuid());
-            msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+        DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
+        msg.setVmInstance(spec.getVmInventory());
+        msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
+        msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
+        msg.setVmOperation(spec.getCurrentVmOperation().toString());
 
-            amsg = msg;
-        } else {
-            LastHostPreferredAllocateHostMsg msg = new LastHostPreferredAllocateHostMsg();
-            msg.setVmInstance(spec.getVmInventory());
-            msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
-            msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
-            msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-            msg.setVmOperation(spec.getCurrentVmOperation().toString());
-            msg.setLastHostUuid(spec.getVmInventory().getLastHostUuid());
-            msg.setAllocatorStrategy(HostAllocatorConstant.LAST_HOST_PREFERRED_ALLOCATOR_STRATEGY_TYPE);
-            msg.setL3NetworkUuids(CollectionUtils.transformToList(spec.getL3Networks(), new Function<String, L3NetworkInventory>() {
-                @Override
-                public String call(L3NetworkInventory arg) {
-                    return arg.getUuid();
-                }
-            }));
-            msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+        msg.setAllocatorStrategy(HostAllocatorConstant.LEAST_VM_PREFERRED_HOST_ALLOCATOR_STRATEGY_TYPE);
+        msg.setL3NetworkUuids(CollectionUtils.transformToList(spec.getL3Networks(), new Function<String, L3NetworkInventory>() {
+            @Override
+            public String call(L3NetworkInventory arg) {
+                return arg.getUuid();
+            }
+        }));
+        msg.setClusterUuid(spec.getRequiredClusterUuid());
+        msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
 
-            amsg = msg;
-        }
+        amsg = msg;
 
         bus.send(amsg, new CloudBusCallBack(chain) {
             @Transactional
