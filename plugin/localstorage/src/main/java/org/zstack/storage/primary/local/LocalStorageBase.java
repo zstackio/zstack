@@ -1741,7 +1741,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         new Sync().sync();
     }
 
-    private LocalStorageHypervisorFactory getHypervisorBackendFactoryByHostUuid(String hostUuid) {
+    protected LocalStorageHypervisorFactory getHypervisorBackendFactoryByHostUuid(String hostUuid) {
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.hypervisorType);
         q.add(HostVO_.uuid, Op.EQ, hostUuid);
