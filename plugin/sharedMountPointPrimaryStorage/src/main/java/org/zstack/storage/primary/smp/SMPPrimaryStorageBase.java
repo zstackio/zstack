@@ -56,7 +56,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         throw new CloudRuntimeException(String.format("cannot find HypervisorFactory[type = %s]", hvType));
     }
 
-    private HypervisorFactory getHypervisorFactoryByHostUuid(String huuid) {
+    protected HypervisorFactory getHypervisorFactoryByHostUuid(String huuid) {
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.hypervisorType);
         q.add(HostVO_.uuid, Op.EQ, huuid);

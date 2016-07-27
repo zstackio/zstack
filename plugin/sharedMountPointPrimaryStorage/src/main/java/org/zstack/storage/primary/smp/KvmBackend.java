@@ -211,7 +211,7 @@ public class KvmBackend extends HypervisorBackend {
         return hostUuids;
     }
 
-    private <T extends AgentRsp> void httpCall(String path, final String hostUuid, AgentCmd cmd, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
+    protected <T extends AgentRsp> void httpCall(String path, final String hostUuid, AgentCmd cmd, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
         httpCall(path, hostUuid, cmd, false, rspType, completion);
     }
 
