@@ -27,6 +27,15 @@ public class HostAllocatorSpec {
     private List<DiskOfferingInventory> diskOfferings = new ArrayList<DiskOfferingInventory>();
     private Map<Object, Object> extraData = new HashMap<Object, Object>();
     private boolean allowNoL3Networks;
+    private boolean listAllHosts;
+
+    public boolean isListAllHosts() {
+        return listAllHosts;
+    }
+
+    public void setListAllHosts(boolean listAllHosts) {
+        this.listAllHosts = listAllHosts;
+    }
 
     public boolean isAllowNoL3Networks() {
         return allowNoL3Networks;
@@ -144,6 +153,7 @@ public class HostAllocatorSpec {
         spec.setAvoidHostUuids(msg.getAvoidHostUuids());
         spec.setCpuCapacity(msg.getCpuCapacity());
         spec.setDiskSize(msg.getDiskSize());
+        spec.setListAllHosts(msg.isListAllHosts());
         String hvType = null;
         if (msg.getVmInstance().getHypervisorType() != null) {
             hvType = msg.getVmInstance().getHypervisorType();
