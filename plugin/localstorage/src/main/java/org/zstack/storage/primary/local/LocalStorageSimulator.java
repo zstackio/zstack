@@ -61,6 +61,17 @@ public class LocalStorageSimulator {
         restf.getRESTTemplate().exchange(callbackUrl, HttpMethod.POST, rreq, String.class);
     }
 
+    @RequestMapping(value=LocalStorageKvmBackend.GET_QCOW2_REFERENCE, method= RequestMethod.POST)
+    public @ResponseBody
+    String getQcow2Reference(HttpEntity<String> entity) {
+        GetQCOW2ReferenceCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetQCOW2ReferenceCmd.class);
+        GetQCOW2ReferenceRsp rsp = new GetQCOW2ReferenceRsp();
+        config.getQCOW2ReferenceCmds.add(cmd);
+        rsp.referencePaths = config.getQCOW2ReferenceCmdReference;
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=LocalStorageKvmBackend.GET_BASE_IMAGE_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String getVolumeBaseImagePath(HttpEntity<String> entity) {
