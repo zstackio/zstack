@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -158,6 +159,8 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     @Override
     public boolean start() {
         populateExtensions();
+        UpdateQuery q = UpdateQuery.New();
+        q.entity(ConsoleProxyVO.class).delete();
         return true;
     }
 
