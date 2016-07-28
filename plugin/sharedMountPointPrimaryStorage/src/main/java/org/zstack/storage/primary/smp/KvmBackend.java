@@ -28,6 +28,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
@@ -1391,6 +1392,40 @@ public class KvmBackend extends HypervisorBackend {
                 MergeSnapshotRsp mrsp = (MergeSnapshotRsp) rsp;
                 reply.setSize(mrsp.size);
                 reply.setActualSize(mrsp.actualSize);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg, final ReturnValueCompletion<BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply> completion) {
+        VolumeSnapshotInventory sinv = msg.getSnapshot();
+        String bsUuid = msg.getBackupStorage().getUuid();
+
+        // Get the backup storage install path
+        BackupStorageAskInstallPathMsg bmsg = new BackupStorageAskInstallPathMsg();
+        bmsg.setImageMediaType(VolumeSnapshotVO.class.getSimpleName());
+        bmsg.setBackupStorageUuid(msg.getBackupStorage().getUuid());
+        bmsg.setImageUuid(sinv.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(bmsg, BackupStorageConstant.SERVICE_ID, msg.getBackupStorage().getUuid());
+        MessageReply br = bus.call(bmsg);
+        if (!br.isSuccess()) {
+            completion.fail(br.getError());
+            return;
+        }
+
+        final String installPath = ((BackupStorageAskInstallPathReply)br).getInstallPath();
+        BackupStorageKvmUploader uploader = getBackupStorageKvmUploader(bsUuid);
+        uploader.uploadBits(installPath, sinv.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
+            @Override
+            public void success(String bsPath) {
+                BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();
+                reply.setBackupStorageInstallPath(bsPath);
                 completion.success(reply);
             }
 

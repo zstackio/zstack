@@ -49,5 +49,7 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
 
     abstract void handle(CreateTemporaryVolumeFromSnapshotMsg msg, ReturnValueCompletion<CreateTemporaryVolumeFromSnapshotReply> completion);
 
+    abstract void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg, ReturnValueCompletion<BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply> completion);
+
     abstract void downloadImageToCache(ImageInventory img, final ReturnValueCompletion<String> completion);
 }

@@ -14,7 +14,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
@@ -379,7 +378,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void syncPhysicalCapacity(ReturnValueCompletion<PhysicalCapacityUsage> completion) {
-        completion.fail(errf.stringToOperationError("no supported operation"));
+        completion.fail(errf.stringToOperationError("not supported operation"));
     }
 
     @Override
@@ -484,7 +483,20 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg) {
-        throw new OperationFailureException(errf.stringToOperationError("not supported operation"));
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getSnapshot().getVolumeUuid());
+        bkd.handle(msg, new ReturnValueCompletion<BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply>(msg) {
+            @Override
+            public void success(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
