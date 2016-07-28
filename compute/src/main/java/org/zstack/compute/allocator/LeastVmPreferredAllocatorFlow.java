@@ -44,11 +44,17 @@ public class LeastVmPreferredAllocatorFlow extends AbstractHostAllocatorFlow {
         List<String> huuids = getHostUuidsFromCandidates();
         List<Tuple> tuples = findLeastVmHost(huuids);
 
+        if (spec.isListAllHosts()) {
+            next(candidates);
+            return;
+        }
+
         // no VM running on host
         if (tuples.isEmpty()) {
             next(candidates);
             return;
         }
+
 
         // for host not having vm running, put vm number to zero
         Map<String, VmNumHost> mp = new HashMap<String, VmNumHost>();

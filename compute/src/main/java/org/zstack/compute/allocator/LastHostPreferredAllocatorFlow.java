@@ -17,6 +17,11 @@ public class LastHostPreferredAllocatorFlow extends AbstractHostAllocatorFlow {
     public void allocate() {
         throwExceptionIfIAmTheFirstFlow();
 
+        if (spec.isListAllHosts()) {
+            next(candidates);
+            return;
+        }
+
         final VmInstanceInventory vm = spec.getVmInstance();
         HostVO vo = CollectionUtils.find(candidates, new Function<HostVO, HostVO>() {
             @Override

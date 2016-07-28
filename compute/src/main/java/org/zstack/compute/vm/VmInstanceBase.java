@@ -388,6 +388,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }));
         amsg.setDryRun(true);
+        amsg.setListAllHosts(true);
 
         final APIGetVmStartingCandidateClustersHostsReply reply = new APIGetVmStartingCandidateClustersHostsReply();
         bus.send(amsg, new CloudBusCallBack(completion) {

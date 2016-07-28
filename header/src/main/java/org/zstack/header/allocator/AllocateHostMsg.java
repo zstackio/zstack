@@ -21,6 +21,15 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private boolean isDryRun;
     private List<DiskOfferingInventory> diskOfferings;
     private boolean allowNoL3Networks;
+    private boolean listAllHosts;
+
+    public boolean isListAllHosts() {
+        return listAllHosts;
+    }
+
+    public void setListAllHosts(boolean listAllHosts) {
+        this.listAllHosts = listAllHosts;
+    }
 
     public boolean isAllowNoL3Networks() {
         return allowNoL3Networks;
