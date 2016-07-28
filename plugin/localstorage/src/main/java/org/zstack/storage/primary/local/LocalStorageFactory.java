@@ -58,7 +58,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         MarshalVmOperationFlowExtensionPoint, HostDeleteExtensionPoint, VmAttachVolumeExtensionPoint,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
-        RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint {
+        RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
@@ -790,6 +790,19 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                     String.format("unable to live migrate with local storage. The vm[uuid:%s] has volumes on local storage," +
                             "to protect your data, please stop the vm and do the volume migration", vm.getUuid())
             ));
+        }
+    }
+
+    @Override
+    public void afterHostConnected(HostInventory host) {
+        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+        q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, host.getUuid());
+        LocalStorageHostRefVO ref = q.find();
+        if (ref != null) {
+            RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
+            msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
+            bus.send(msg);
         }
     }
 }

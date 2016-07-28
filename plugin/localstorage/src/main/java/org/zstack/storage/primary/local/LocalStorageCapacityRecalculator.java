@@ -69,6 +69,12 @@ public class LocalStorageCapacityRecalculator {
                 Long ncap = hostCap.get(huuid);
                 ncap = ncap == null ? isize : ncap + isize;
                 hostCap.put(huuid, ncap);
+            } else {
+                // if the host has no volume and image cache
+                // set its used capacity to zero
+                Long ncap = hostCap.get(huuid);
+                ncap = ncap == null ? 0 : ncap;
+                hostCap.put(huuid, ncap);
             }
         }
 
