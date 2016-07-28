@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -535,6 +536,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public long size;
     }
 
+    public static class GetQCOW2ReferenceCmd extends AgentCommand {
+        public String path;
+        public String searchingDir;
+    }
+
+    public static class GetQCOW2ReferenceRsp extends AgentResponse {
+        List<String> referencePaths;
+    }
+
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
@@ -551,6 +561,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String GET_BACKING_FILE_PATH = "/localstorage/volume/getbackingfile";
     public static final String GET_VOLUME_SIZE = "/localstorage/volume/getsize";
     public static final String GET_BASE_IMAGE_PATH = "/localstorage/volume/getbaseimagepath";
+    public static final String GET_QCOW2_REFERENCE = "/localstorage/getqcow2reference";
 
 
     public LocalStorageKvmBackend(PrimaryStorageVO self) {
@@ -1671,6 +1682,83 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 completion.fail(errorCode);
             }
         });
+    }
+
+    @Override
+    void handle(final LocalStorageDeleteImageCacheOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<DeleteImageCacheOnPrimaryStorageReply> completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("clean-up-image-cache-on-local-storage-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "ensure-image-is-not-referenced";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        GetQCOW2ReferenceCmd cmd = new GetQCOW2ReferenceCmd();
+                        cmd.searchingDir = self.getUrl();
+                        cmd.path = msg.getInstallPath();
+
+                        new KvmCommandSender(msg.getHostUuid()).send(cmd, GET_QCOW2_REFERENCE, new KvmCommandFailureChecker() {
+                            @Override
+                            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                                GetQCOW2ReferenceRsp rsp = wrapper.getResponse(GetQCOW2ReferenceRsp.class);
+                                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                            }
+                        }, new ReturnValueCompletion<KvmResponseWrapper>(trigger) {
+                            @Override
+                            public void success(KvmResponseWrapper w) {
+                                GetQCOW2ReferenceRsp rsp = w.getResponse(GetQCOW2ReferenceRsp.class);
+                                if (rsp.referencePaths == null || rsp.referencePaths.isEmpty()) {
+                                    trigger.next();
+                                } else  {
+                                    trigger.fail(errf.stringToInternalError(String.format("[THIS IS A BUG NEEDED TO BE FIXED RIGHT NOW, PLEASE REPORT TO US ASAP] the image cache file[%s] is still referenced by" +
+                                            " below QCOW2 files:\n%s", msg.getInstallPath(), StringUtils.join(rsp.referencePaths, "\n"))));
+                                }
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        deleteBits(msg.getInstallPath(), msg.getHostUuid(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        DeleteImageCacheOnPrimaryStorageReply reply = new DeleteImageCacheOnPrimaryStorageReply();
+                        completion.success(reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override
