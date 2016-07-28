@@ -159,9 +159,15 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     @Override
     public boolean start() {
         populateExtensions();
-        UpdateQuery q = UpdateQuery.New();
-        q.entity(ConsoleProxyVO.class).delete();
+        clean();
         return true;
+    }
+
+    @Transactional
+    public void clean(){
+        String sql = "delete from ConsoleProxyVO";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.executeUpdate();
     }
 
     @Override
