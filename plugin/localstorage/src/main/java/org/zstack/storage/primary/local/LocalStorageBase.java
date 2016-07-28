@@ -2,7 +2,6 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -28,7 +27,6 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -425,20 +423,18 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
 
     private void handle(final LocalStorageDeleteImageCacheOnPrimaryStorageMsg msg) {
-        LocalStorageDirectlyDeleteBitsMsg dmsg = new LocalStorageDirectlyDeleteBitsMsg();
-        dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        dmsg.setPath(msg.getInstallPath());
-        dmsg.setHostUuid(msg.getHostUuid());
-        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-        bus.send(dmsg, new CloudBusCallBack(msg) {
+        LocalStorageHypervisorBackend bkd = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid()).getHypervisorBackend(self);
+        bkd.handle(msg, msg.getHostUuid(), new ReturnValueCompletion<DeleteImageCacheOnPrimaryStorageReply>(msg) {
             @Override
-            public void run(MessageReply reply) {
-                DeleteImageCacheOnPrimaryStorageReply r = new DeleteImageCacheOnPrimaryStorageReply();
-                r.setSuccess(reply.isSuccess());
-                if (reply.getError() != null) {
-                    r.setError(reply.getError());
-                }
-                bus.reply(msg, r);
+            public void success(DeleteImageCacheOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                DeleteImageCacheOnPrimaryStorageReply reply = new DeleteImageCacheOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }
