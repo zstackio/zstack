@@ -740,7 +740,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
                 // check data volume size
                 long requiredVolSize;
-                String sql = "select diskSize from VolumeVO where uuid = :uuid ";
+                String sql = "select size from VolumeVO where uuid = :uuid ";
                 TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
                 dq.setParameter("uuid", msg.getVolumeUuid());
                 Long dsize = dq.getSingleResult();
