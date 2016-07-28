@@ -55,4 +55,7 @@ public class LocalStorageSimulatorConfig {
     public Map<String, Long> getVolumeSizeCmdSize = new HashMap<String, Long>();
 
     public Map<String, String> getVolumeBaseImagePaths = new HashMap();
+
+    public List<GetQCOW2ReferenceCmd> getQCOW2ReferenceCmds = new ArrayList<GetQCOW2ReferenceCmd>();
+    public List<String> getQCOW2ReferenceCmdReference = new ArrayList<String>();
 }
