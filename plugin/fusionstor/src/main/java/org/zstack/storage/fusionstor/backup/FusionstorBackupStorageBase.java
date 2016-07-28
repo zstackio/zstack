@@ -358,7 +358,11 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                 long asize = ret.actualSize == null ? ret.size : ret.actualSize;
                 reply.setActualSize(asize);
                 reply.setMd5sum("not calculated");
-                reply.setFormat(ret.format);
+                if ( msg.getFormat().equals("iso") && ret.format.equals("raw")) {
+                    reply.setFormat("iso");
+                } else {
+                    reply.setFormat(ret.format);
+                }
                 bus.reply(msg, reply);
             }
         });

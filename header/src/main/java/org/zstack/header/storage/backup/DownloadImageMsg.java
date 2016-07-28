@@ -9,8 +9,17 @@ import org.zstack.header.message.NeedReplyMessage;
 public class DownloadImageMsg extends NeedReplyMessage implements BackupStorageMessage {
 	private ImageInventory imageInventory;
     private String backupStorageUuid;
+    private String format;
 
-	public DownloadImageMsg(ImageInventory inventory) {
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
+
+    public DownloadImageMsg(ImageInventory inventory) {
 	    super();
 	    this.imageInventory = inventory;
     }
