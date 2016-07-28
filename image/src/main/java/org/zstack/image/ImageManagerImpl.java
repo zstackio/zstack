@@ -823,7 +823,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
-        vo.setMediaType(ImageMediaType.valueOf(msg.getMediaType()));
+        if (msg.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)) {
+            vo.setMediaType(ImageMediaType.ISO);
+        } else {
+            vo.setMediaType(ImageMediaType.valueOf(msg.getMediaType()));
+        }
         vo.setType(imageType);
         vo.setSystem(msg.isSystem());
         vo.setGuestOsType(msg.getGuestOsType());
