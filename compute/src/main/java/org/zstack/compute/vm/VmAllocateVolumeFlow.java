@@ -18,6 +18,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
@@ -127,6 +128,7 @@ public class VmAllocateVolumeFlow implements Flow {
             @Override
             public DeleteVolumeMsg call(VolumeInventory arg) {
                 DeleteVolumeMsg msg = new DeleteVolumeMsg();
+                msg.setDeletionPolicy(VolumeDeletionPolicy.Direct.toString());
                 msg.setUuid(arg.getUuid());
                 // don't do detach; because the VM is in state of Starting, it cannot do a detach operation.
                 msg.setDetachBeforeDeleting(false);

@@ -262,7 +262,8 @@ public class VolumeBase implements Volume {
 
     private void handle(final DeleteVolumeMsg msg) {
         final DeleteVolumeReply reply = new DeleteVolumeReply();
-        delete(true, msg.isDetachBeforeDeleting(), new Completion(msg) {
+        delete(true, VolumeDeletionPolicy.valueOf(msg.getDeletionPolicy()),
+                msg.isDetachBeforeDeleting(), new Completion(msg) {
             @Override
             public void success() {
                 logger.debug(String.format("deleted data volume[uuid: %s]", msg.getUuid()));
@@ -780,11 +781,15 @@ public class VolumeBase implements Volume {
     }
 
     private void delete(boolean forceDelete, boolean detachBeforeDeleting, final Completion completion) {
+        delete(forceDelete, null, detachBeforeDeleting, completion);
+    }
+
+    private void delete(boolean forceDelete, VolumeDeletionPolicy deletionPolicy, boolean detachBeforeDeleting, final Completion completion) {
         final String issuer = VolumeVO.class.getSimpleName();
         VolumeDeletionStruct struct = new VolumeDeletionStruct();
         struct.setInventory(getSelfInventory());
         struct.setDetachBeforeDeleting(detachBeforeDeleting);
-        struct.setDeletionPolicy(deletionPolicyMgr.getDeletionPolicy(self.getUuid()).toString());
+        struct.setDeletionPolicy(deletionPolicy != null ? deletionPolicy.toString() : deletionPolicyMgr.getDeletionPolicy(self.getUuid()).toString());
         final List<VolumeDeletionStruct> ctx = list(struct);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName("delete-data-volume");
