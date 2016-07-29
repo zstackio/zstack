@@ -3,10 +3,10 @@
     <diskOffering name="DataDiskOffering" description="Test"
                   diskSize="1"/>
     <instanceOfferings>
-        <instanceOffering name="TestInstanceOffering"
-                          description="Test" memoryCapacity="80M" cpuNum="1" cpuSpeed="1"/>
-        <instanceOffering name="TestInstanceOffering"
-                          description="Test" memoryCapacity="80M" cpuNum="1" cpuSpeed="1"/>
+        <instanceOffering name="512M1Core"
+                          description="Test" memoryCapacity="512M" cpuNum="1" cpuSpeed="1"/>
+        <instanceOffering name="2G2Core"
+                          description="Test" memoryCapacity="2G" cpuNum="2" cpuSpeed="1"/>
     </instanceOfferings>
 
     <backupStorages>
@@ -20,19 +20,28 @@
         </image>
     </images>
 
+    <vm>
+        <userVm name="TestVm" description="Test">
+            <imageRef>TestImage</imageRef>
+            <instanceOfferingRef>512M1Core</instanceOfferingRef>
+            <l3NetworkRef>TestL3Network1</l3NetworkRef>
+            <hostRef>host1</hostRef>
+        </userVm>
+    </vm>
+
     <zones>
         <zone name="Zone1" description="Test">
             <clusters>
                 <cluster name="Cluster1" description="Test" hypervisorType="KVM">
                     <hosts>
                         <kvmHost name="host1" description="Test" managementIp="localhost"
-                                 memoryCapacity="100000T" cpuNum="320000" cpuSpeed="26000"/>
+                                 memoryCapacity="3G" cpuNum="8" cpuSpeed="26000"/>
+                        <kvmHost name="host2" description="Test" managementIp="127.0.0.1"
+                                 memoryCapacity="7G" cpuNum="8" cpuSpeed="26000"/>
                     </hosts>
 
                     <primaryStorageRef>nfs1</primaryStorageRef>
                     <primaryStorageRef>nfs2</primaryStorageRef>
-                    <primaryStorageRef>nfs3</primaryStorageRef>
-                    <primaryStorageRef>nfs4</primaryStorageRef>
                     <l2NetworkRef>TestL2Network</l2NetworkRef>
                 </cluster>
             </clusters>
@@ -58,13 +67,9 @@
             <backupStorageRef>sftp</backupStorageRef>
             <primaryStorages>
                 <nfsPrimaryStorage name="nfs1" description="Test"
-                                   totalCapacity="5000T" url="nfs://test1"/>
+                                   totalCapacity="5T" url="nfs://test1"/>
                 <nfsPrimaryStorage name="nfs2" description="Test"
-                                   totalCapacity="5000T" url="nfs://test2"/>
-                <nfsPrimaryStorage name="nfs3" description="Test"
-                                   totalCapacity="5000T" url="nfs://test3"/>
-                <nfsPrimaryStorage name="nfs4" description="Test"
-                                   totalCapacity="5000T" url="nfs://test4"/>
+                                   totalCapacity="5T" url="nfs://test2"/>
             </primaryStorages>
         </zone>
     </zones>
