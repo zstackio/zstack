@@ -308,7 +308,7 @@ public class RESTFacadeImpl implements RESTFacade {
 
             ResponseEntity<String> rsp = new Retry<ResponseEntity<String>>() {
                 @Override
-                @RetryCondition(onExceptions = {IOException.class})
+                @RetryCondition(onExceptions = {IOException.class, RestClientException.class})
                 protected ResponseEntity<String> call() {
                     return template.exchange(url, HttpMethod.POST, req, String.class);
                 }
@@ -395,7 +395,7 @@ public class RESTFacadeImpl implements RESTFacade {
 
         ResponseEntity<String> rsp = new Retry<ResponseEntity<String>>() {
             @Override
-            @RetryCondition(onExceptions = {IOException.class})
+            @RetryCondition(onExceptions = {IOException.class, RestClientException.class})
             protected ResponseEntity<String> call() {
                 return template.exchange(url, HttpMethod.POST, req, String.class);
             }
