@@ -7,6 +7,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterInventory;
@@ -179,8 +181,51 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(MigrateVolumeOnLocalStorageMsg msg) {
+    private void handle(final MigrateVolumeOnLocalStorageMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("migrate-volume-%s", msg.getVolumeUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                migrateVolume(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    private void migrateVolume(MigrateVolumeOnLocalStorageMsg msg, NoErrorCompletion completion) {
         MigrateVolumeOnLocalStorageReply reply = new MigrateVolumeOnLocalStorageReply();
+
+        SimpleQuery<LocalStorageResourceRefVO> refq = dbf.createQuery(LocalStorageResourceRefVO.class);
+        refq.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolumeUuid());
+        refq.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
+        LocalStorageResourceRefVO ref = refq.find();
+        if (ref == null) {
+            reply.setError(errf.stringToOperationError(String.format("volume[uuid:%s] is not on the local storage anymore," +
+                    "it may have been deleted", msg.getVolumeUuid())));
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
+
+        if (ref.getHostUuid().equals(msg.getDestHostUuid())) {
+            logger.debug(String.format("the volume[uuid:%s] is already on the host[uuid:%s], no need to migrate", msg.getVolumeUuid(), msg.getDestHostUuid()));
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-volume-%s-local-storage-%s-to-host-%s", msg.getVolumeUuid(), msg.getPrimaryStorageUuid(), msg.getDestHostUuid()));
@@ -353,7 +398,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-                done(new FlowDoneHandler(msg) {
+                done(new FlowDoneHandler(msg, completion) {
                     @Override
                     public void handle(Map data) {
                         reply.setInventory(LocalStorageResourceRefInventory.valueOf(dbf.reload(volumeRefVO)));
@@ -361,11 +406,18 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-                error(new FlowErrorHandler(msg) {
+                error(new FlowErrorHandler(msg, completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         reply.setError(errCode);
                         bus.reply(msg, reply);
+                    }
+                });
+
+                Finally(new FlowFinallyHandler(msg, completion) {
+                    @Override
+                    public void Finally() {
+                        completion.done();
                     }
                 });
             }
