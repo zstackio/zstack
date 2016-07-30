@@ -10,6 +10,8 @@
                             <ipRange name="TestIpRange" description="Test" startIp="10.10.1.100"
                                 endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
                         </l3BasicNetwork>
+                        <l3BasicNetwork name="TestL3Network2" description="Test">
+                        </l3BasicNetwork>
                     </l3Networks>
                 </l2NoVlanNetwork>
             </l2Networks>

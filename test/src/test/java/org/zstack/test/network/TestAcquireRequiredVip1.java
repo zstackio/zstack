@@ -34,7 +34,7 @@ public class TestAcquireRequiredVip1 {
     @Test
     public void test() throws ApiSenderException {
         String rip = "192.168.1.5";
-        L3NetworkInventory l3nw = deployer.l3Networks.get("TestL3Network1");
+        L3NetworkInventory l3nw = deployer.l3Networks.get("TestL3Network2");
         api.addIpRange(l3nw.getUuid(), "192.168.1.2", "192.168.1.254", "192.168.1.1", "255.255.255.0");
         VipInventory ip = api.acquireIp(l3nw.getUuid(), rip);
         Assert.assertEquals(ip.getIp(), rip);
