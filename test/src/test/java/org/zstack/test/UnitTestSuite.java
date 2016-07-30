@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class UnitTestSuite {
     private static CLogger logger = Utils.getLogger(UnitTestSuite.class);
@@ -49,11 +50,17 @@ public class UnitTestSuite {
         }
     }
 
+    private enum Action {
+        RUN_CASES,
+        LIST_CASES
+    }
+
     private class TestSuite {
         private JAXBContext context;
         private List<UnitTestSuiteConfig> suiteConfigs = new ArrayList<UnitTestSuiteConfig>();
         private List<CaseInfo> testCases = new ArrayList<CaseInfo>();
         private File errLogFolder;
+        private Action action;
 
         private void parseUnitTestSuiteConfig(String configPath) throws JAXBException {
             Unmarshaller unmarshaller = context.createUnmarshaller();
@@ -77,6 +84,13 @@ public class UnitTestSuite {
 
 
             logger.info(String.format("use configure file: %s", configPath));
+
+            String listCases = System.getProperty("list");
+            if (listCases != null) {
+                action = Action.LIST_CASES;
+            } else {
+                action = Action.RUN_CASES;
+            }
 
             context = JAXBContext.newInstance("org.zstack.test");
             parseUnitTestSuiteConfig(configPath);
@@ -280,9 +294,25 @@ public class UnitTestSuite {
                     }
                 }
             }));
+
             parse();
-            prepareLogFolder();
-            runCases();
+
+            if (action == Action.LIST_CASES) {
+                listCases();
+            } else if (action == Action.RUN_CASES) {
+                prepareLogFolder();
+                runCases();
+            }
+        }
+
+        private void listCases() throws IOException {
+            List<String> caseNames = testCases.stream().map(info -> info.clazz.getSimpleName()).collect(Collectors.toList());
+            String listCases = System.getProperty("list").trim();
+            if (listCases.isEmpty()) {
+                System.out.println(StringUtils.join(caseNames, "\n"));
+            } else {
+                FileUtils.writeStringToFile(new File(listCases), StringUtils.join(caseNames, "\n"));
+            }
         }
     }
     
