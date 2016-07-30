@@ -7,6 +7,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
@@ -22,6 +24,8 @@ import org.zstack.header.storage.primary.InstantiateVolumeMsg;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
@@ -33,6 +37,8 @@ import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -119,6 +125,17 @@ public class TestDiskCapacityCeph2 {
         }
     }
 
+    private long getSnapshotSize(String volumeUuid) {
+        SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
+        q.add(VolumeSnapshotVO_.volumeUuid, Op.EQ, volumeUuid);
+        List<VolumeSnapshotVO> sps = q.list();
+        long s = 0;
+        for (VolumeSnapshotVO sp : sps) {
+            s += sp.getSize();
+        }
+        return s;
+    }
+
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
         AddImage addImage = new AddImage();
@@ -176,7 +193,7 @@ public class TestDiskCapacityCeph2 {
         cconfig.getVolumeSizeCmdActualSize.put(rootSp.getVolumeUuid(), templateActualSize);
         ImageInventory template = api.createTemplateFromSnapshot(rootSp.getUuid());
         Assert.assertEquals(templateSize, template.getSize());
-        Assert.assertEquals(templateActualSize, template.getActualSize().longValue());
+        Assert.assertEquals(templateActualSize + getSnapshotSize(rootSp.getVolumeUuid()), template.getActualSize().longValue());
 
         BackupStorageVO bs2 = dbf.findByUuid(cephBs.getUuid(), BackupStorageVO.class);
         Assert.assertEquals(template.getActualSize().longValue(), bs1.getAvailableCapacity() - bs2.getAvailableCapacity());
@@ -199,6 +216,6 @@ public class TestDiskCapacityCeph2 {
         cconfig.getVolumeSizeCmdActualSize.put(data.getUuid(), volumeActualSize);
         data = api.syncVolumeSize(data.getUuid(), null);
         Assert.assertEquals(volumeSize, data.getSize());
-        Assert.assertEquals(volumeActualSize, data.getActualSize().longValue());
+        Assert.assertEquals(volumeActualSize + getSnapshotSize(data.getUuid()), data.getActualSize().longValue());
 	}
 }

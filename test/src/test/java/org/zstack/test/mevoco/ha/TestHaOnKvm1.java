@@ -94,7 +94,7 @@ public class TestHaOnKvm1 {
         Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_INTERVAL.value(Long.class).longValue(), cmd.successInterval);
         Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_TIMES.value(Integer.class).intValue(), cmd.times);
 
-        Assert.assertEquals(2, hconfig.setupSelfFencerCmds.size());
+        Assert.assertFalse(hconfig.setupSelfFencerCmds.isEmpty());
         SetupSelfFencerCmd fcmd = hconfig.setupSelfFencerCmds.get(0);
         Assert.assertEquals(HaGlobalConfig.HOST_SELF_FENCER_ATTEMPTS.value(Integer.class).intValue(), fcmd.maxAttempts);
         Assert.assertEquals(HaGlobalConfig.HOST_SELF_FENCER_INTERVAL.value(Long.class).intValue(), fcmd.interval);

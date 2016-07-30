@@ -24,9 +24,11 @@
     <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy13"/>
     <TestCase class="org.zstack.test.compute.hostallocator.TestDesignatedHostAllocationStrategy14"/>
 
+    <!--
 	<TestCase class="org.zstack.test.compute.hostallocator.TestGetCpuMemoryCapacity"/>
     <TestCase class="org.zstack.test.compute.hostallocator.TestGetCpuMemoryCapacity1"/>
     <TestCase class="org.zstack.test.compute.hostallocator.TestGetCpuMemoryCapacity2"/>
+    -->
     <TestCase class="org.zstack.test.compute.hostallocator.TestGetHostAllocatorStrategies"/>
     <TestCase class="org.zstack.test.compute.hostallocator.TestHostAllocatorDryRun"/>
 

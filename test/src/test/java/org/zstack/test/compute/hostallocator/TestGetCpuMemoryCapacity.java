@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.APIGetCpuMemoryCapacityReply;
+import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.zone.ZoneInventory;
@@ -21,12 +22,14 @@ import org.zstack.utils.function.Function;
 import java.util.Arrays;
 import java.util.List;
 
+@Deprecated
 public class TestGetCpuMemoryCapacity {
     Deployer deployer;
     Api api; 
     ComponentLoader loader;
     CloudBus bus;
     DatabaseFacade dbf;
+    HostCpuOverProvisioningManager cpuMgr;
     
     @Before
     public void setUp() throws Exception {
@@ -37,6 +40,7 @@ public class TestGetCpuMemoryCapacity {
         loader = deployer.getComponentLoader();
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
+        cpuMgr = loader.getComponent(HostCpuOverProvisioningManager.class);
     }
     
     @Test
@@ -70,9 +74,9 @@ public class TestGetCpuMemoryCapacity {
         Assert.assertEquals(totalMemory, reply.getAvailableMemory());
         
         reply = api.retrieveHostCapacity(null, null, Arrays.asList(host.getUuid()));
-        Assert.assertEquals(4 * 2600, reply.getTotalCpu());
+        Assert.assertEquals(cpuMgr.calculateByRatio(host.getUuid(), 4), reply.getTotalCpu());
         Assert.assertEquals(SizeUnit.GIGABYTE.toByte(8), reply.getTotalMemory());
-        Assert.assertEquals(4 * 2600, reply.getAvailableCpu());
+        Assert.assertEquals(cpuMgr.calculateByRatio(host.getUuid(), 4), reply.getAvailableCpu());
         Assert.assertEquals(SizeUnit.GIGABYTE.toByte(8), reply.getAvailableMemory());
 
         reply = api.retrieveHostCapacity(null, null, huuids);

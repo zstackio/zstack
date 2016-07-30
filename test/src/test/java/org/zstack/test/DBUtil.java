@@ -1,5 +1,6 @@
 package org.zstack.test;
 
+import org.apache.commons.io.FileUtils;
 import org.zstack.cassandra.CassandraGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -11,9 +12,12 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.utils.StringDSL.ln;
 
 public class DBUtil {
     private static final CLogger logger = Utils.getLogger(DBUtil.class);
@@ -86,6 +90,21 @@ public class DBUtil {
         if (cqlbin.startsWith("~")) {
             String userHome = System.getProperty("user.home");
             cqlbin = cqlbin.replaceAll("~", userHome);
+        }
+
+        File cassandraHome = new File(PathUtil.join(System.getProperty("user.home"), ".cassandra"));
+        if (!cassandraHome.exists()) {
+            cassandraHome.mkdirs();
+        }
+
+        File cqlshrc = new File(PathUtil.join(cassandraHome.getAbsolutePath(), "cqlshrc"));
+        try {
+            FileUtils.writeStringToFile(cqlshrc, ln(
+                    "[connection]",
+                    "client_timeout = 1800"
+            ).toString());
+        } catch (IOException e) {
+            throw new CloudRuntimeException(e);
         }
 
         if (!PathUtil.exists(cqlbin)) {

@@ -58,6 +58,7 @@ public class TestHostCpuCapacity {
         Assert.assertEquals(cap.getTotalCpu() - vm.getCpuNum(), cap.getAvailableCpu());
 
         cpuMgr.setGlobalRatio(20);
+        api.setTimeout(100000);
         api.reconnectHost(vm.getHostUuid());
         TimeUnit.SECONDS.sleep(2);
 
