@@ -10,16 +10,19 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.core.AsyncLatch;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeReturnValueCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.DeleteImageCacheOnPrimaryStorageMsg;
-import org.zstack.header.storage.primary.ImageCacheShadowVO;
-import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.ImageCacheCleanupDetails.ImageCacheCleanupInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -59,37 +62,64 @@ public abstract class ImageCacheCleaner {
     }
 
     public void cleanup() {
-        cleanup(null);
+        cleanup(null, new NopeReturnValueCompletion());
     }
 
-    public void cleanup(String psUuid) {
+    public void cleanup(String psUuid, final ReturnValueCompletion<ImageCacheCleanupDetails> completion) {
+        final ImageCacheCleanupDetails details = new ImageCacheCleanupDetails();
+        details.setPrimaryStorageType(getPrimaryStorageType());
         List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs(psUuid);
         if (shadowVOs == null || shadowVOs.isEmpty()) {
+            details.setNumberOfCleanedImageCache(0);
+            completion.success(details);
             return;
         }
 
+        List<ImageCacheShadowVO> ours = new ArrayList<ImageCacheShadowVO>();
         for (final ImageCacheShadowVO vo : shadowVOs) {
-            if (!destMaker.isManagedByUs(vo.getImageUuid())) {
-                continue;
+            if (destMaker.isManagedByUs(vo.getImageUuid())) {
+                ours.add(vo);
             }
+        }
 
+        if (ours.isEmpty()) {
+            details.setNumberOfCleanedImageCache(0);
+            completion.success(details);
+            return;
+        }
+
+        final AsyncLatch latch = new AsyncLatch(ours.size(), new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                completion.success(details);
+            }
+        });
+
+        for (final ImageCacheShadowVO vo : ours) {
             DeleteImageCacheOnPrimaryStorageMsg msg = new DeleteImageCacheOnPrimaryStorageMsg();
             msg.setImageUuid(vo.getImageUuid());
             msg.setInstallPath(vo.getInstallUrl());
             msg.setPrimaryStorageUuid(vo.getPrimaryStorageUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vo.getPrimaryStorageUuid());
-            bus.send(msg, new CloudBusCallBack() {
+            bus.send(msg, new CloudBusCallBack(latch) {
                 @Override
                 public void run(MessageReply reply) {
+                    ImageCacheCleanupInventory inv = new ImageCacheCleanupInventory();
+                    inv.setInventory(ImageCacheInventory.valueOf(vo.toImageCacheVO()));
+                    details.addCleanupInventory(inv);
+
                     if (!reply.isSuccess()) {
                         logger.warn(String.format("failed to delete the stale image cache[%s] on the primary storage[%s], %s," +
                                 "will re-try later", vo.getInstallUrl(), vo.getPrimaryStorageUuid(), reply.getError()));
-                        return;
+                        inv.setError(reply.getError());
+                    } else {
+                        logger.debug(String.format("successfully deleted the stale image cache[%s] on the primary storage[%s]",
+                                vo.getInstallUrl(), vo.getPrimaryStorageUuid()));
+                        details.increaseNumberOfCleanedImageCache();
+                        dbf.remove(vo);
                     }
 
-                    logger.debug(String.format("successfully deleted the stale image cache[%s] on the primary storage[%s]",
-                            vo.getInstallUrl(), vo.getPrimaryStorageUuid()));
-                    dbf.remove(vo);
+                    latch.ack();
                 }
             });
         }

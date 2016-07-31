@@ -65,6 +65,20 @@ public class ImageCacheShadowVO {
     public ImageCacheShadowVO() {
     }
 
+    public ImageCacheVO toImageCacheVO() {
+        ImageCacheVO vo = new ImageCacheVO();
+        vo.setPrimaryStorageUuid(primaryStorageUuid);
+        vo.setImageUuid(imageUuid);
+        vo.setInstallUrl(installUrl);
+        vo.setMediaType(mediaType);
+        vo.setSize(size);
+        vo.setState(state);
+        vo.setMd5sum(md5sum);
+        vo.setCreateDate(createDate);
+        vo.setLastOpDate(lastOpDate);
+        return vo;
+    }
+
     public long getId() {
         return id;
     }

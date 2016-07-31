@@ -1,6 +1,5 @@
 package org.zstack.storage.primary.local;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -1713,8 +1712,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 if (rsp.referencePaths == null || rsp.referencePaths.isEmpty()) {
                                     trigger.next();
                                 } else  {
-                                    trigger.fail(errf.stringToInternalError(String.format("[THIS IS A BUG NEEDED TO BE FIXED RIGHT NOW, PLEASE REPORT TO US ASAP] the image cache file[%s] is still referenced by" +
-                                            " below QCOW2 files:\n%s", msg.getInstallPath(), StringUtils.join(rsp.referencePaths, "\n"))));
+                                    ErrorCode error = errf.stringToOperationError("there are QOCW2 still referenced to this image cache");
+                                    error.putToOpaque("referencePaths", rsp.referencePaths);
+                                    trigger.fail(error);
                                 }
                             }
 

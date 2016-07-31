@@ -12,13 +12,13 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.storage.primary.ImageCacheCleanupDetails;
 import org.zstack.header.storage.primary.ImageCacheShadowVO;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.image.ImageGlobalConfig;
-import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -28,8 +28,6 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * 1. one host, one vm
@@ -95,8 +93,8 @@ public class TestLocalStorage53 {
 
         config.getQCOW2ReferenceCmdReference.add("/test/test.qcow2");
         config.deleteBitsCmds.clear();
-        PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.updateValue(1);
-        TimeUnit.SECONDS.sleep(3);
+        ImageCacheCleanupDetails d = api.cleanupImageCache(c.getPrimaryStorageUuid());
+        Assert.assertEquals(0 ,d.getNumberOfCleanedImageCache());
 
         Assert.assertEquals(0, config.deleteBitsCmds.size());
         // image cache is cleaned

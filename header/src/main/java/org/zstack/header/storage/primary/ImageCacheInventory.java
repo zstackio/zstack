@@ -1,14 +1,13 @@
 package org.zstack.header.storage.primary;
 
 import java.sql.Timestamp;
-import java.util.Date;
 
 public class ImageCacheInventory {
-    private long id;
+    private Long id;
     private String primaryStorageUuid;
     private String imageUuid;
     private String installUrl;
-    private long size;
+    private Long size;
     private String md5sum;
     private String state;
     private Timestamp createDate;

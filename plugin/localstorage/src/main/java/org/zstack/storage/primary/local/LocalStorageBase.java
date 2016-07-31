@@ -439,9 +439,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
     @Override
     protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
-        APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
-        imageCacheCleaner.cleanup(msg.getUuid());
-        bus.publish(evt);
+        final APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
+        imageCacheCleaner.cleanup(msg.getUuid(), new ReturnValueCompletion<ImageCacheCleanupDetails>(msg) {
+            @Override
+            public void success(ImageCacheCleanupDetails returnValue) {
+                evt.setDetails(returnValue);
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
 

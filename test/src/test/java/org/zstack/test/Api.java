@@ -4008,13 +4008,14 @@ public class Api implements CloudBusEventListener {
         return reply;
     }
 
-    public void cleanupImageCache(String primaryStorageUuid) throws ApiSenderException {
+    public ImageCacheCleanupDetails cleanupImageCache(String primaryStorageUuid) throws ApiSenderException {
         APICleanUpImageCacheOnPrimaryStorageMsg msg = new APICleanUpImageCacheOnPrimaryStorageMsg();
         msg.setUuid(primaryStorageUuid);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        sender.send(msg, APICleanUpImageCacheOnPrimaryStorageEvent.class);
+        APICleanUpImageCacheOnPrimaryStorageEvent evt = sender.send(msg, APICleanUpImageCacheOnPrimaryStorageEvent.class);
+        return evt.getDetails();
     }
 
     public <T extends MessageReply> T queryCassandra(APIQueryCassandraMsg msg, Class<T> clz) throws ApiSenderException {

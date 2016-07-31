@@ -4,6 +4,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.io.Serializable;
+import java.util.LinkedHashMap;
 
 public class ErrorCode implements Serializable, Cloneable {
     private String code;
@@ -11,6 +12,22 @@ public class ErrorCode implements Serializable, Cloneable {
     private String details;
     private String elaboration;
     private ErrorCode cause;
+    private LinkedHashMap opaque;
+
+    public LinkedHashMap getOpaque() {
+        return opaque;
+    }
+
+    public void setOpaque(LinkedHashMap opaque) {
+        this.opaque = opaque;
+    }
+
+    public void putToOpaque(String key, Object value) {
+        if (opaque == null) {
+            opaque = new LinkedHashMap();
+        }
+        opaque.put(key, value);
+    }
 
     public ErrorCode() {
     }
@@ -26,6 +43,14 @@ public class ErrorCode implements Serializable, Cloneable {
         this.code = code;
         this.description = description;
         this.details = details;
+    }
+
+    public ErrorCode(ErrorCode other) {
+        this.code = other.code;
+        this.description = other.description;
+        this.details = other.details;
+        this.elaboration = other.elaboration;
+        this.cause = other.cause;
     }
 
     public void setCode(String code) {
