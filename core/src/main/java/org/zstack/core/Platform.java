@@ -75,7 +75,7 @@ public class Platform {
 
         for (Map.Entry<String, String> e : map.entrySet()) {
             String key = StringDSL.stripStart(e.getKey(), prefix).trim();
-            ret.put(key, e.getValue());
+            ret.put(key, e.getValue().trim());
         }
 
         return ret;
