@@ -12,6 +12,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
+import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -66,7 +67,6 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.util.*;
-import org.zstack.core.scheduler.SchedulerFacade;
 
 import static org.zstack.utils.CollectionDSL.*;
 

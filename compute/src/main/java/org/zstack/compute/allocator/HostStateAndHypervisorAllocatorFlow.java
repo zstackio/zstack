@@ -105,7 +105,7 @@ public class HostStateAndHypervisorAllocatorFlow extends AbstractHostAllocatorFl
             fail(error);
         } else {
             new Log(spec.getVmInstance().getUuid())
-                    .log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_SUCCESS, candidates.size(),
+                    .log(VmLabels.VM_START_ALLOCATE_HOST_STATE_HYPERVISOR_SUCCESS, ret.size(),
                             spec.getHypervisorType());
             next(ret);
         }
