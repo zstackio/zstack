@@ -88,7 +88,7 @@ public class TestSnapshotOnKvm22 {
         Assert.assertEquals(svo.getTreeUuid(), cvo.getUuid());
     }
 
-	@Test(expected = ApiSenderException.class)
+	@Test
 	public void test() throws ApiSenderException, InterruptedException {
         BackupStorageInventory bs1 = deployer.backupStorages.get("sftp1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
@@ -109,6 +109,12 @@ public class TestSnapshotOnKvm22 {
         bsvo.setAvailableCapacity(0);
         dbf.update(bsvo);
 
-        api.createTemplateFromSnapshot(inv3.getUuid(), bs1.getUuid());
+        boolean s = false;
+        try {
+            api.createTemplateFromSnapshot(inv3.getUuid(), bs1.getUuid());
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
     }
 }

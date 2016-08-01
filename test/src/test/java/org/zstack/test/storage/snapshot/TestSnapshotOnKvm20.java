@@ -21,6 +21,7 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 /*
@@ -109,6 +110,8 @@ public class TestSnapshotOnKvm20 {
         VolumeSnapshotInventory inv3 = api.createSnapshot(volUuid);
         deltaSnapshot(inv3, 3);
 
+        long size = SizeUnit.GIGABYTE.toByte(10);
+        nfsConfig.mergeSnapshotCmdSize.put(inv3.getVolumeUuid(), size);
         ImageInventory img = api.createTemplateFromSnapshot(inv3.getUuid());
         Assert.assertNotNull(img.getBackupStorageRefs().get(0).getInstallPath());
         Assert.assertTrue(img.getSize() != 0);

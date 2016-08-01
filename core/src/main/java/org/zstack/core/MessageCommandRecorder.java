@@ -33,7 +33,7 @@ public class MessageCommandRecorder {
         starter = s;
     }
 
-    public static void record(String c) {
+    public static synchronized void record(String c) {
         if (!needRun()) {
             return;
         }
@@ -45,7 +45,7 @@ public class MessageCommandRecorder {
         }
     }
 
-    public static void record(Class c) {
+    public static synchronized void record(Class c) {
         if (!needRun()) {
             return;
         }
@@ -53,7 +53,7 @@ public class MessageCommandRecorder {
         followers.add(c);
     }
 
-    public static List<Class> end() {
+    public static synchronized List<Class> end() {
         if (!needRun()) {
             return null;
         }
@@ -63,7 +63,7 @@ public class MessageCommandRecorder {
         return ret;
     }
 
-    public static void reset() {
+    public static synchronized void reset() {
         if (!needRun()) {
             return;
         }
@@ -73,7 +73,7 @@ public class MessageCommandRecorder {
         followers = new ArrayList<>();
     }
 
-    public static String endAndToString() {
+    public static synchronized String endAndToString() {
         if (!needRun()) {
             return null;
         }
