@@ -18,4 +18,8 @@ public enum BackupStorageErrors {
     public String toString() {
         return code;
     }
+
+    public enum Opaque {
+        RECONNECT_AGENT
+    }
 }

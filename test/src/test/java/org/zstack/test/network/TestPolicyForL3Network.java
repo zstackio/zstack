@@ -12,7 +12,6 @@ import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l2.APIQueryL2NetworkMsg;
 import org.zstack.header.network.l2.APIQueryL2NetworkReply;
-import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
@@ -88,7 +87,7 @@ public class TestPolicyForL3Network {
         L3NetworkInventory l3 = api.createL3BasicNetwork(l2.getUuid(), session);
         api.updateL3Network(l3, session);
         IpRangeInventory ipr1 = addIpRange(l3.getUuid(), session);
-        IpRangeInventory ipr2 = addIpRange(l3.getUuid(), "10.0.0.0/24", session);
+        //IpRangeInventory ipr2 = addIpRange(l3.getUuid(), "10.0.0.0/24", session);
 
         APIQueryNetworkServiceProviderMsg msg = new APIQueryNetworkServiceProviderMsg();
         msg.addQueryCondition("name", QueryOp.EQ, "VirtualRouter");
@@ -232,7 +231,7 @@ public class TestPolicyForL3Network {
         l3 = api.createL3BasicNetwork(l2.getUuid(), session);
         api.updateL3Network(l3, session);
         ipr1 = addIpRange(l3.getUuid(), session);
-        ipr2 = addIpRange(l3.getUuid(), "10.0.0.0/24", session);
+        //ipr2 = addIpRange(l3.getUuid(), "10.0.0.0/24", session);
 
         msg = new APIQueryNetworkServiceProviderMsg();
         msg.addQueryCondition("name", QueryOp.EQ, "VirtualRouter");

@@ -42,10 +42,10 @@ public class SftpBackupStorageSimulator {
         ConnectCmd cmd = JSONObjectUtil.toObject(body, ConnectCmd.class);
         ConnectResponse rsp = new ConnectResponse();
         if (!config.connectSuccess) {
-            config.bsUuid = cmd.getUuid();
             rsp.setSuccess(false);
             rsp.setError("Fail connect on purpose");
         } else {
+            config.bsUuid = cmd.getUuid();
             rsp.setTotalCapacity(config.totalCapacity);
             rsp.setAvailableCapacity(config.availableCapacity);
             logger.debug(String.format("Connect to path[%s], %s", cmd.getStoragePath(), JSONObjectUtil.toJsonString(rsp)));

@@ -3,7 +3,6 @@ package org.zstack.storage.backup.sftp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
@@ -23,6 +22,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
 import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.backup.BackupStoragePathMaker;
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands.*;
@@ -235,7 +235,9 @@ public class SftpBackupStorage extends BackupStorageBase {
                     logger.debug(String.format("the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it's most likely" +
                             " the agent was manually restarted. Issue a reconnect to sync the status", self.getUuid(), ret.getUuid()));
 
-                    completion.fail(errf.stringToOperationError("uuid on agent side changed"));
+                    ErrorCode err = errf.stringToOperationError("uuid on agent side changed");
+                    err.putToOpaque(Opaque.RECONNECT_AGENT.toString(), true);
+                    completion.fail(err);
                 } else if (ret.isSuccess()) {
                     completion.success();
                 } else {

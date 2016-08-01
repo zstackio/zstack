@@ -35,6 +35,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStorageStatusChangedData;
+import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -213,14 +214,18 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         final PingBackupStorageReply reply = new PingBackupStorageReply();
 
         pingHook(new Completion(msg) {
+            private void reconnect() {
+                ConnectBackupStorageMsg cmsg = new ConnectBackupStorageMsg();
+                cmsg.setBackupStorageUuid(self.getUuid());
+                cmsg.setNewAdd(false);
+                bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, self.getUuid());
+                bus.send(cmsg);
+            }
+
             @Override
             public void success() {
                 if (self.getStatus() != BackupStorageStatus.Connected) {
-                    ConnectBackupStorageMsg cmsg = new ConnectBackupStorageMsg();
-                    cmsg.setBackupStorageUuid(self.getUuid());
-                    cmsg.setNewAdd(false);
-                    bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, self.getUuid());
-                    bus.send(cmsg);
+                    reconnect();
                 }
 
                 bus.reply(msg, reply);
@@ -229,6 +234,11 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             @Override
             public void fail(ErrorCode errorCode) {
                 changeStatus(BackupStorageStatus.Disconnected);
+
+                Boolean doReconnect = (Boolean) errorCode.getFromOpaque(Opaque.RECONNECT_AGENT.toString());
+                if (doReconnect != null && doReconnect) {
+                    reconnect();
+                }
 
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
