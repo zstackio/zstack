@@ -70,6 +70,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private GCFacade gcf;
     @Autowired
     private EventFacade evtf;
+    @Autowired
     private NfsPrimaryStorageImageCacheCleaner imageCacheCleaner;
 
     public NfsPrimaryStorage(PrimaryStorageVO vo) {
