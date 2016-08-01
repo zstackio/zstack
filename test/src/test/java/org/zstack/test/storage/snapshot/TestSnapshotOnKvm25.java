@@ -35,6 +35,7 @@ import javax.persistence.Query;
 *
 * confirm template is created on sftp1
 */
+@Deprecated
 public class TestSnapshotOnKvm25 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm25.class);
     Deployer deployer;

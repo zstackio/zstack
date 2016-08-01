@@ -35,6 +35,7 @@ import java.util.List;
 *
 * confirm volume is created
 */
+@Deprecated
 public class TestSnapshotOnKvm33 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm33.class);
     Deployer deployer;

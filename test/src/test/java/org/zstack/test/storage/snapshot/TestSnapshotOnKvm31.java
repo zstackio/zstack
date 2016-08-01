@@ -24,6 +24,7 @@ import org.zstack.test.deployer.Deployer;
 import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
@@ -127,13 +128,14 @@ public class TestSnapshotOnKvm31 {
         long count = q.count();
         Assert.assertEquals(4, count);
 
+        long size = SizeUnit.GIGABYTE.toByte(10);
+        nfsConfig.mergeSnapshotCmdSize.put(inv.getVolumeUuid(), size);
         VolumeInventory vol = api.createDataVolumeFromSnapshot(inv.getUuid());
         Assert.assertEquals(VolumeType.Data.toString(), vol.getType());
         Assert.assertNotNull(vol.getInstallPath());
         Assert.assertTrue(vol.getSize() != 0);
         Assert.assertEquals(VolumeStatus.Ready.toString(), inv.getStatus());
         Assert.assertFalse(nfsConfig.mergeSnapshotCmds.isEmpty());
-        Assert.assertFalse(nfsConfig.moveBitsCmds.isEmpty());
 
         snapshotKvmSimulator.validate(root);
     }
