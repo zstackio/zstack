@@ -10,6 +10,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.Message;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -79,6 +80,11 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private void handle(APIUpdateSchedulerMsg msg) {
+        if (msg.getSchedulerType() == null) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                    String.format("schedulerType must be set")
+            ));
+        }
         SchedulerVO vo = updateScheduler(msg);
         if (vo != null) {
             self = dbf.updateAndRefresh(vo);
