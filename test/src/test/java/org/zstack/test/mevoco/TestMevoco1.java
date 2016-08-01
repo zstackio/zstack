@@ -8,7 +8,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
@@ -16,7 +15,6 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
-import org.zstack.header.message.BeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheMsg;
@@ -25,7 +23,6 @@ import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.kvm.APIAddKVMHostMsg;
 import org.zstack.mevoco.MevocoGlobalConfig;
-import org.zstack.mevoco.MevocoSystemTags;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
@@ -109,6 +106,7 @@ public class TestMevoco1 {
 
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
+	    MevocoGlobalConfig.DISTRIBUTE_IMAGE.updateValue(true);
         BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         ImageInventory img = new ImageInventory();
