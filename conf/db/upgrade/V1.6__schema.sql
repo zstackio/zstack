@@ -12,9 +12,11 @@ CREATE TABLE  `zstack`.`SchedulerVO` (
     `jobClassName` varchar(255),
     `jobData` varchar(65535),
     `status` varchar(255),
-    `createDate` timestamp DEFAULT CURRENT_TIMESTAMP,
+    `managementNodeUuid` varchar(32) DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP COMMENT 'last operation date',
     `startDate` timestamp,
     `stopDate` timestamp,
-    `lastOpDate` timestamp,
+    `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ALTER TABLE SftpBackupStorageVO change column port sshPort int unsigned DEFAULT 22;

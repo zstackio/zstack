@@ -32,6 +32,8 @@ public class SchedulerVO {
     @Column
     private String triggerGroup;
     @Column
+    private String managementNodeUuid;
+    @Column
     private Timestamp createDate;
     @Column
     private Timestamp startDate;

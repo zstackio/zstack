@@ -9,5 +9,5 @@ import javax.persistence.metamodel.StaticMetamodel;
 public class SftpBackupStorageVO_ extends BackupStorageVO_ {
 	public static volatile SingularAttribute<SftpBackupStorageVO, String> username;
 	public static volatile SingularAttribute<SftpBackupStorageVO, String> hostname;
-	public static volatile SingularAttribute<SftpBackupStorageVO, Integer> port;
+	public static volatile SingularAttribute<SftpBackupStorageVO, Integer> sshPort;
 }
