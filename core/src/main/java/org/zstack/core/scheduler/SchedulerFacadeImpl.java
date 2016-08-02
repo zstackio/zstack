@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -13,10 +14,13 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.Message;
+import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -37,11 +41,14 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     private transient ErrorFacade errf;
     @Autowired
     protected transient DatabaseFacade dbf;
+    @Autowired
+    private transient ResourceDestinationMaker destinationMaker;
 
     private Scheduler scheduler;
 
     protected SchedulerVO self;
 
+    private static final CLogger logger = Utils.getLogger(SchedulerFacadeImpl.class);
 
     protected SchedulerInventory getInventory() {
         return SchedulerInventory.valueOf(self);
@@ -190,18 +197,38 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         } catch (SchedulerException e) {
             e.printStackTrace();
         }
-        List<SchedulerVO> schedulerRecords = dbf.listAll(SchedulerVO.class);
-        Iterator<SchedulerVO> schedulerRecordsIterator = schedulerRecords.iterator();
-        while (schedulerRecordsIterator.hasNext()) {
-            SchedulerVO schedulerRecord = schedulerRecordsIterator.next();
-            try {
-                SchedulerJob rebootJob = (SchedulerJob) JSONObjectUtil.toObject(schedulerRecord.getJobData(), Class.forName(schedulerRecord.getJobClassName()));
-                schedulerRunner(rebootJob, false);
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.select(SchedulerVO_.uuid);
+        q.add(SchedulerVO_.managementNodeUuid, SimpleQuery.Op.NULL);
+        List<String> ids = q.listValue();
+
+        List<String> ours = new ArrayList<String>();
+        for (String id : ids) {
+            if (destinationMaker.isManagedByUs(id)) {
+                ours.add(id);
             }
         }
 
+        if (ours.isEmpty()) {
+            logger.debug("no Scheduler managed by us");
+        } else {
+            logger.debug(String.format("Scheduler is going to load %s jobs", ours.size()));
+            q = dbf.createQuery(SchedulerVO.class);
+            q.add(SchedulerVO_.uuid, SimpleQuery.Op.IN, ours);
+            List<SchedulerVO> schedulerRecords = q.list();
+
+            Iterator<SchedulerVO> schedulerRecordsIterator = schedulerRecords.iterator();
+            while (schedulerRecordsIterator.hasNext()) {
+                SchedulerVO schedulerRecord = schedulerRecordsIterator.next();
+                try {
+                    SchedulerJob rebootJob = (SchedulerJob) JSONObjectUtil.toObject(schedulerRecord.getJobData(), Class.forName(schedulerRecord.getJobClassName()));
+                    schedulerRunner(rebootJob, false);
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         return true;
     }
 
@@ -250,6 +277,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             vo.setTriggerName(schedulerJob.getTriggerName());
             vo.setTriggerGroup(schedulerJob.getTriggerGroup());
             vo.setJobClassName(jobClassName);
+            vo.setManagementNodeUuid(Platform.getManagementServerId());
         }
 
         try {

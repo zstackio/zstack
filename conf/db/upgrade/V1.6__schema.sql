@@ -20,3 +20,4 @@ CREATE TABLE  `zstack`.`SchedulerVO` (
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ALTER TABLE SftpBackupStorageVO change column port sshPort int unsigned DEFAULT 22;
+ALTER TABLE SchedulerVO ADD CONSTRAINT fkSchedulerVOManagementNodeVO FOREIGN KEY (managementNodeUuid) REFERENCES ManagementNodeVO (uuid) ON DELETE SET NULL;

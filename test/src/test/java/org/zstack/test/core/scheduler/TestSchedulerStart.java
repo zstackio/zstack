@@ -1,6 +1,6 @@
 package org.zstack.test.core.scheduler;
 
-import org.junit.Assert;
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.quartz.SchedulerException;
@@ -14,18 +14,17 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.DBUtil;
-import org.zstack.test.WebBeanConstructor;
+import org.zstack.test.*;
+import org.zstack.test.core.gc.TestGC9PreCase;
 import org.zstack.test.deployer.Deployer;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by root on 7/19/16.
+ * Created by root on 8/1/16.
  */
-public class TestSchedulerCron {
+public class TestSchedulerStart {
     ComponentLoader loader;
     Api api;
     @Autowired
@@ -38,7 +37,7 @@ public class TestSchedulerCron {
 
     @Before
     public void setUp() throws Exception {
-        DBUtil.reDeployDB();
+        UnitTestUtils.runTestCase(TestSchedulerCron.class);
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/kvm/TestCreateVmOnKvm.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
@@ -56,11 +55,10 @@ public class TestSchedulerCron {
     @Test
     public void test() throws InterruptedException, ApiSenderException, SchedulerException {
         Assert.assertNotNull(scheduler);
-        VmInstanceInventory vm = deployer.vms.get("TestVm");
-        String volUuid = vm.getRootVolumeUuid();
-        api.createCronScheduler(volUuid, session);
-        TimeUnit.SECONDS.sleep(8);
-        long counter = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(3,counter);
+        TimeUnit.SECONDS.sleep(5);
+        List<SchedulerVO> vos = dbf.listAll(SchedulerVO.class);
+        long record = dbf.count(VolumeSnapshotVO.class);
+        Assert.assertEquals(6,record);
+
     }
 }

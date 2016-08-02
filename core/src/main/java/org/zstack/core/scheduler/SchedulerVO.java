@@ -1,7 +1,12 @@
 package org.zstack.core.scheduler;
 
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.vo.*;
+
 import javax.persistence.*;
+import org.zstack.header.vo.ForeignKey;
 import java.sql.Timestamp;
+import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
 /**
  * Created by Mei Lei on 7/11/16.
@@ -32,6 +37,7 @@ public class SchedulerVO {
     @Column
     private String triggerGroup;
     @Column
+    @ForeignKey(parentEntityClass = ManagementNodeVO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String managementNodeUuid;
     @Column
     private Timestamp createDate;
@@ -48,6 +54,14 @@ public class SchedulerVO {
     private String jobData;
     @Column
     private String status;
+
+    public String getManagementNodeUuid() {
+        return managementNodeUuid;
+    }
+
+    public void setManagementNodeUuid(String managementNodeUuid) {
+        this.managementNodeUuid = managementNodeUuid;
+    }
 
     public String getUuid() {
         return uuid;
