@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -42,6 +43,7 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
@@ -1006,10 +1008,59 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     private void handle(RemoveHostFromLocalStorageMsg msg) {
         LocalStorageHostRefVO ref = dbf.findByUuid(msg.getHostUuid(), LocalStorageHostRefVO.class);
+        dbf.remove(ref);
+
+        deleteResourceRef(msg.getHostUuid());
+
         // on remove, substract the total capacity from every capacity
         decreaseCapacity(ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getSystemUsedCapacity());
-        dbf.remove(ref);
         bus.reply(msg, new RemoveHostFromLocalStorageReply());
+    }
+
+    private void deleteResourceRef(String hostUuid) {
+        SimpleQuery<LocalStorageResourceRefVO> rq = dbf.createQuery(LocalStorageResourceRefVO.class);
+        rq.add(LocalStorageResourceRefVO_.hostUuid, Op.EQ, hostUuid);
+        List<LocalStorageResourceRefVO> refs = rq.list();
+        if (refs.isEmpty()) {
+            return;
+        }
+
+        List<String> volumes = new ArrayList<>();
+        List<String> snapshots = new ArrayList<>();
+        for (LocalStorageResourceRefVO ref : refs) {
+            if (VolumeVO.class.getSimpleName().equals(ref.getResourceType())) {
+                volumes.add(ref.getResourceUuid());
+            } else if (VolumeSnapshotVO.class.getSimpleName().equals(ref.getResourceType())) {
+                snapshots.add(ref.getResourceUuid());
+            }
+        }
+
+        // delete items in image cache
+        UpdateQuery uq = UpdateQuery.New();
+        uq.entity(ImageCacheVO.class);
+        uq.condAnd(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+        uq.condAnd(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%%s%%", hostUuid));
+        uq.delete();
+
+        if (!volumes.isEmpty()) {
+            uq = UpdateQuery.New();
+            uq.entity(VolumeVO.class);
+            uq.condAnd(VolumeVO_.uuid, Op.IN, volumes);
+            uq.delete();
+            logger.debug(String.format("delete volumes%s because the host[uuid:%s] is removed from" +
+                    " the local storage[name:%s, uuid:%s]", volumes, hostUuid, self.getName(), self.getUuid()));
+        }
+
+        if (!snapshots.isEmpty()) {
+            uq = UpdateQuery.New();
+            uq.entity(VolumeSnapshotVO.class);
+            uq.condAnd(VolumeSnapshotVO_.uuid, Op.IN, snapshots);
+            uq.delete();
+            logger.debug(String.format("delete volume snapshots%s because the host[uuid:%s] is removed from" +
+                    " the local storage[name:%s, uuid:%s]", snapshots, hostUuid, self.getName(), self.getUuid()));
+        }
+
+        dbf.removeCollection(refs, LocalStorageResourceRefVO.class);
     }
 
     protected void handle(final InitPrimaryStorageOnHostConnectedMsg msg) {

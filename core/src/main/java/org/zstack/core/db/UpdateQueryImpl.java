@@ -14,10 +14,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import javax.persistence.metamodel.SingularAttribute;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by xing5 on 2016/6/29.
@@ -56,15 +53,19 @@ public class UpdateQueryImpl implements UpdateQuery {
     }
 
     @Override
-    public UpdateQuery condAnd(SingularAttribute attr, Op op, Object... vals) {
+    public UpdateQuery condAnd(SingularAttribute attr, Op op, Object val) {
         if (andConditions.containsKey(attr)) {
             throw new CloudRuntimeException(String.format("unable to add the same condition[%s] twice", attr.getName()));
+        }
+
+        if ((op == Op.IN || op == Op.NOT_IN) && !(val instanceof Collection)) {
+            throw new CloudRuntimeException(String.format("for operation IN or NOT IN, a Collection value is expected, but %s got", val.getClass()));
         }
 
         Cond cond = new Cond();
         cond.attr = attr;
         cond.op = op;
-        cond.val = vals;
+        cond.val = val;
 
         andConditions.put(attr, cond);
         return this;
@@ -78,7 +79,7 @@ public class UpdateQueryImpl implements UpdateQuery {
         List<String> condstrs = new ArrayList<>();
         for (Cond cond : andConditions.values()) {
             if (Op.IN == cond.op || Op.NOT_IN == cond.op) {
-                condstrs.add(String.format("vo.%s%s(:%s)", cond.attr.getName(), cond.op.toString(), cond.attr.getName()));
+                condstrs.add(String.format("vo.%s %s (:%s)", cond.attr.getName(), cond.op.toString(), cond.attr.getName()));
             } else if (Op.NULL == cond.op || Op.NOT_NULL == cond.op) {
                 condstrs.add(String.format("vo.%s %s", cond.attr.getName(), cond.op));
             } else {
@@ -86,16 +87,12 @@ public class UpdateQueryImpl implements UpdateQuery {
             }
         }
 
-        return StringUtils.join(condstrs, " ");
+        return StringUtils.join(condstrs, " AND ");
     }
 
     private void fillConditions(Query q) {
         for (Cond cond : andConditions.values()) {
-            if (Op.IN == cond.op || Op.NOT_IN == cond.op) {
-                q.setParameter(cond.attr.getName(), cond.val);
-            } else {
-                q.setParameter(cond.attr.getName(), ((Object[]) cond.val)[0]);
-            }
+            q.setParameter(cond.attr.getName(), cond.val);
         }
     }
 

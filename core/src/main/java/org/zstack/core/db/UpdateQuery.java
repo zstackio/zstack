@@ -12,7 +12,7 @@ public interface UpdateQuery {
 
     UpdateQuery set(SingularAttribute attr, Object val);
 
-    UpdateQuery condAnd(SingularAttribute attr, Op op, Object...vals);
+    UpdateQuery condAnd(SingularAttribute attr, Op op, Object val);
 
     void delete();
 

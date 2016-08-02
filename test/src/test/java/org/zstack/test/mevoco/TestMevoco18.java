@@ -14,6 +14,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.header.volume.VolumeInventory;
@@ -133,7 +134,7 @@ public class TestMevoco18 {
 
         VmInstanceInventory vm1 = deployer.vms.get("TestVm1");
         size = psRatioMgr.calculateByRatio(ps.getUuid(), vm1.getRootVolume().getSize());
-        VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicy.Direct.toString());
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         api.destroyVmInstance(vm1.getUuid());
         PrimaryStorageCapacityVO cap5 = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
         LocalStorageHostRefVO ref5 = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);

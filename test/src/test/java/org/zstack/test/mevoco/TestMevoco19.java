@@ -14,11 +14,10 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.header.vm.VmInstance;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
@@ -27,7 +26,6 @@ import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
-import org.zstack.storage.volume.VolumeGlobalConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -100,6 +98,7 @@ public class TestMevoco19 {
     
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
+	    VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmInstanceInventory vm1= deployer.vms.get("TestVm1");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm2");
@@ -120,6 +119,7 @@ public class TestMevoco19 {
         HostInventory host1 = deployer.hosts.get("host1");
         HostInventory host2 = deployer.hosts.get("host2");
         api.deleteHost(host1.getUuid());
+        TimeUnit.SECONDS.sleep(2);
         PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
 
         LocalStorageHostRefVO ref2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
@@ -128,16 +128,16 @@ public class TestMevoco19 {
         Assert.assertEquals(ref2.getTotalCapacity(), cap.getTotalCapacity());
 
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-        Assert.assertEquals(VmInstanceState.Destroyed, vmvo.getState());
+        Assert.assertNull(vmvo);
         VmInstanceVO vmvo1 = dbf.findByUuid(vm1.getUuid(), VmInstanceVO.class);
-        Assert.assertEquals(VmInstanceState.Destroyed, vmvo1.getState());
+        Assert.assertNull(vmvo1);
         VmInstanceVO vmvo2 = dbf.findByUuid(vm2.getUuid(), VmInstanceVO.class);
-        Assert.assertEquals(VmInstanceState.Destroyed, vmvo2.getState());
+        Assert.assertNull(vmvo2);
 
         VolumeVO dvo1 = dbf.findByUuid(data1.getUuid(), VolumeVO.class);
+        Assert.assertNull(dvo1);
         VolumeVO dvo11 = dbf.findByUuid(data11.getUuid(), VolumeVO.class);
-        Assert.assertEquals(VolumeStatus.Deleted, dvo1.getStatus());
-        Assert.assertEquals(VolumeStatus.Deleted, dvo11.getStatus());
+        Assert.assertNull(dvo11);
 
         VmInstanceVO vmvo3 = dbf.findByUuid(vm3.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Running, vmvo3.getState());
@@ -148,16 +148,11 @@ public class TestMevoco19 {
         Assert.assertEquals(VolumeStatus.Ready, dvo32.getStatus());
 
         api.deleteHost(host2.getUuid());
+        TimeUnit.SECONDS.sleep(2);
         cap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(0, cap.getAvailableCapacity());
         Assert.assertEquals(0, cap.getTotalCapacity());
 
-        VmGlobalConfig.VM_EXPUNGE_PERIOD.updateValue(1);
-        VmGlobalConfig.VM_EXPUNGE_INTERVAL.updateValue(1);
-        VolumeGlobalConfig.VOLUME_EXPUNGE_INTERVAL.updateValue(1);
-        VolumeGlobalConfig.VOLUME_EXPUNGE_PERIOD.updateValue(1);
-
-        TimeUnit.SECONDS.sleep(3);
         Assert.assertEquals(0, dbf.count(VmInstanceVO.class));
         Assert.assertEquals(0, dbf.count(VolumeVO.class));
     }
