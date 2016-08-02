@@ -35,7 +35,6 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
-import org.zstack.storage.backup.BackupStorageCapacityUpdater;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -136,25 +135,17 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         template.setUploadToBackupStorage(new Flow() {
             String __name__ = "upload-to-backup-storage";
 
-            @AfterDone
-            List<Runnable> returnBackupStorageCapacityWhenUploadFailure = new ArrayList<Runnable>();
-
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
-                final List<String> bsUuids = paramIn.getSelectedBackupStorageUuids();
-                final List<UploadBitsFromLocalStorageToBackupStorageMsg> msgs = new ArrayList<UploadBitsFromLocalStorageToBackupStorageMsg>();
-
-                List<ErrorCode> errors = new ArrayList<ErrorCode>();
-                for (String bsUuid : bsUuids) {
                     BackupStorageAskInstallPathMsg ask = new BackupStorageAskInstallPathMsg();
-                    ask.setBackupStorageUuid(bsUuid);
+                    ask.setBackupStorageUuid(paramIn.getBackupStorageUuid());
                     ask.setImageMediaType(paramIn.getImage().getMediaType());
                     ask.setImageUuid(paramIn.getImage().getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(ask, BackupStorageConstant.SERVICE_ID, bsUuid);
+                    bus.makeTargetServiceIdByResourceUuid(ask, BackupStorageConstant.SERVICE_ID, paramIn.getBackupStorageUuid());
                     MessageReply areply = bus.call(ask);
                     if (!areply.isSuccess()) {
-                        errors.add(areply.getError());
-                        continue;
+                        trigger.fail(areply.getError());
+                        return;
                     }
 
                     String bsInstallPath = ((BackupStorageAskInstallPathReply)areply).getInstallPath();
@@ -162,57 +153,19 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                     msg.setHostUuid(ctx.hostUuid);
                     msg.setPrimaryStorageInstallPath(ctx.temporaryInstallPath);
                     msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
-                    msg.setBackupStorageUuid(bsUuid);
+                    msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
                     msg.setBackupStorageInstallPath(bsInstallPath);
                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
-                    msgs.add(msg);
-                }
 
-                if (msgs.isEmpty()) {
-                    trigger.fail(errf.stringToOperationError(
-                            String.format("failed to get install path on all backup storage%s", bsUuids), errors
-                    ));
-
-                    return;
-                }
-
-                bus.send(msgs, new CloudBusListCallBack(trigger) {
+                bus.send(msg, new CloudBusCallBack(trigger) {
                     @Override
-                    public void run(List<MessageReply> replies) {
-                        List<ErrorCode> errors = new ArrayList<ErrorCode>();
-                        final ParamOut out = (ParamOut) data.get(ParamOut.class);
+                    public void run(MessageReply reply) {
+                        ParamOut out = (ParamOut) data.get(ParamOut.class);
 
-                        for (MessageReply reply : replies) {
-                            final UploadBitsFromLocalStorageToBackupStorageMsg msg = msgs.get(replies.indexOf(reply));
-                            if (!reply.isSuccess()) {
-                                errors.add(errf.stringToOperationError(
-                                        String.format("failed to upload the temporary volume to the backup storage[uuid:%s]", msg.getBackupStorageUuid()), reply.getError()
-                                ));
-
-                                returnBackupStorageCapacityWhenUploadFailure.add(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        // return the capacity to backup storage
-                                        BackupStorageCapacityUpdater updater = new BackupStorageCapacityUpdater(msg.getBackupStorageUuid());
-                                        updater.increaseAvailableCapacity(out.getActualSize());
-                                    }
-                                });
-
-                                continue;
-                            }
-
-
-                            BackupStorageResult ret = new BackupStorageResult();
-                            ret.setBackupStorageUuid(msg.getBackupStorageUuid());
-                            ret.setInstallPath(msg.getBackupStorageInstallPath());
-                            out.getBackupStorageResult().add(ret);
-                        }
-
-                        if (out.getBackupStorageResult().isEmpty()) {
-                            trigger.fail(errf.stringToOperationError(
-                                    String.format("failed to upload temporary volume to backup storage%s", bsUuids), errors
-                            ));
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
                         } else {
+                            out.setBackupStorageInstallPath(bsInstallPath);
                             trigger.next();
                         }
                     }
@@ -222,14 +175,12 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 ParamOut out = (ParamOut) data.get(ParamOut.class);
-                if (!out.getBackupStorageResult().isEmpty()) {
-                    for (BackupStorageResult res : out.getBackupStorageResult()) {
-                        DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
-                        msg.setBackupStorageUuid(res.getBackupStorageUuid());
-                        msg.setInstallPath(res.getInstallPath());
-                        bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, res.getBackupStorageUuid());
-                        bus.send(msg);
-                    }
+                if (out.getBackupStorageInstallPath() != null) {
+                    DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
+                    msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
+                    msg.setInstallPath(out.getBackupStorageInstallPath());
+                    bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, paramIn.getBackupStorageUuid());
+                    bus.send(msg);
                 }
 
                 trigger.rollback();

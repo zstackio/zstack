@@ -37,7 +37,6 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint.BackupStorageResult;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint.ParamIn;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint.ParamOut;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint.WorkflowTemplate;
@@ -46,7 +45,6 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotTree.SnapshotLeaf;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.storage.backup.BackupStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -55,7 +53,6 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.message.OperationChecker;
 
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 import java.util.*;
 
 import static org.zstack.utils.CollectionDSL.e;
@@ -666,84 +663,41 @@ public class VolumeSnapshotTreeBase {
         );
         chain.then(workflowTemplate.getCreateTemporaryTemplate());
         chain.then(new Flow() {
-            String __name__ = "select-backup-storage";
+            String __name__ = "allocate-backup-storage";
 
-            @Transactional(readOnly = true)
-            private List<String> getCandidateBackupStorage() {
-                if (msg.getBackupStorageUuids() == null || msg.getBackupStorageUuids().isEmpty()) {
-                    String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO ref, PrimaryStorageVO pri" +
-                            " where bs.uuid = ref.backupStorageUuid and ref.zoneUuid = pri.zoneUuid and pri.uuid = :psUuid";
-                    TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                    q.setParameter("psUuid", currentRoot.getPrimaryStorageUuid());
-                    return q.getResultList();
-                } else {
-                    String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO ref, PrimaryStorageVO pri" +
-                            " where bs.uuid = ref.backupStorageUuid and ref.zoneUuid = pri.zoneUuid and pri.uuid = :psUuid" +
-                            " and bs.uuid in (:bsUuids)";
-                    TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                    q.setParameter("psUuid", currentRoot.getPrimaryStorageUuid());
-                    q.setParameter("bsUuids", msg.getBackupStorageUuids());
-                    List<String> bsUuids = q.getResultList();
-                    if (!bsUuids.containsAll(msg.getBackupStorageUuids())) {
-                        for (String bsUuid : msg.getBackupStorageUuids()) {
-                            if (!bsUuids.contains(bsUuid)) {
-                                //TODO
-                                logger.warn(String.format("the backup storage[uuid:%s] is not attached to the zone of the primary storage[uuid:%s] that" +
-                                                " the snapshot[uuid:%s, name:%s] is on", bsUuid, currentRoot.getPrimaryStorageUuid(),
-                                        currentLeaf.getUuid(), currentLeaf.getInventory().getName()));
-                            }
-                        }
-                    }
-
-                    return bsUuids;
-                }
-            }
-
+            String allocateBackupStorageUuid;
+            Long allocatedSize;
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 ParamOut out = (ParamOut) data.get(ParamOut.class);
-                ParamIn in = (ParamIn) data.get(ParamIn.class);
-                List<String> targetBackupStorageUuids = new ArrayList<String>();
-
-                List<String> bsUuids = getCandidateBackupStorage();
-                if (bsUuids.isEmpty()) {
-                    throw new OperationFailureException(errf.stringToOperationError(
-                            String.format("cannot find any backup storage to upload the template created from the snapshot[uuid:%s, name:%s]",
-                                    currentLeaf.getUuid(), currentLeaf.getInventory().getName())
-                    ));
-                }
-
-                for (String bsUuid : bsUuids) {
-                    BackupStorageCapacityUpdater updater = new BackupStorageCapacityUpdater(bsUuid);
-                    if (updater.reserveCapacity(out.getActualSize(), false)) {
-                        targetBackupStorageUuids.add(bsUuid);
-                    } else {
-                        //TODO
-                        logger.warn(String.format("unable to reserve the capacity[%s bytes] on the backup storage[uuid:%s], it's short of capacity",
-                                out.getActualSize(), bsUuid));
+                allocatedSize = out.getActualSize();
+                AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
+                amsg.setBackupStorageUuid(msg.getBackupStorageUuid());
+                amsg.setSize(allocatedSize);
+                bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
+                bus.send(amsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            allocateBackupStorageUuid = msg.getBackupStorageUuid();
+                            paramIn.setBackupStorageUuid(allocateBackupStorageUuid);
+                            trigger.next();
+                        } else {
+                            trigger.fail(reply.getError());
+                        }
                     }
-                }
-
-                if (targetBackupStorageUuids.isEmpty()) {
-                    throw new OperationFailureException(errf.stringToOperationError(String.format("cannot reserve the capacity[%s bytes] on" +
-                            " all backup storage%s", out.getActualSize(), targetBackupStorageUuids)));
-                }
-
-                in.setSelectedBackupStorageUuids(targetBackupStorageUuids);
-                trigger.next();
+                });
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                ParamIn in = (ParamIn) data.get(ParamIn.class);
-                ParamOut out = (ParamOut) data.get(ParamOut.class);
-
-                if (in.getSelectedBackupStorageUuids() != null) {
-                    for (String bs : in.getSelectedBackupStorageUuids()) {
-                        BackupStorageCapacityUpdater updater = new BackupStorageCapacityUpdater(bs);
-                        updater.increaseAvailableCapacity(out.getActualSize());
-                    }
+                if (allocateBackupStorageUuid != null) {
+                    ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
+                    rmsg.setSize(allocatedSize);
+                    rmsg.setBackupStorageUuid(allocateBackupStorageUuid);
+                    bus.makeLocalServiceId(rmsg, BackupStorageConstant.SERVICE_ID);
+                    bus.send(rmsg);
                 }
 
                 trigger.rollback();
@@ -757,13 +711,8 @@ public class VolumeSnapshotTreeBase {
                 ParamOut out = (ParamOut) data.get(ParamOut.class);
                 reply.setActualSize(out.getActualSize());
                 reply.setSize(out.getSize());
-
-                Map<String, String> m = new HashMap<String, String>();
-                for (BackupStorageResult res : out.getBackupStorageResult()) {
-                    m.put(res.getBackupStorageUuid(), res.getInstallPath());
-                }
-
-                reply.setOnBackupStorage(m);
+                reply.setBackupStorageInstallPath(out.getBackupStorageInstallPath());
+                reply.setBackupStorageUuid(paramIn.getBackupStorageUuid());
                 bus.reply(msg, reply);
             }
         }).error(new FlowErrorHandler(msg, completion) {

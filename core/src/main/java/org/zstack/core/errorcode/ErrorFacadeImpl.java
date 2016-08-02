@@ -51,8 +51,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
         return instantiateErrorCode(code.toString(), details);
     }
 
-    @Override
-    public ErrorCode instantiateErrorCode(String code, String details) {
+    private ErrorCode doInstantiateErrorCode(String code, String details, List<ErrorCode> causes) {
         ErrorCodeInfo info = codes.get(code);
         if (info == null) {
             throw new CloudRuntimeException(String.format("cannot find error code[%s]", code));
@@ -63,12 +62,18 @@ public class ErrorFacadeImpl implements ErrorFacade {
         }
         ErrorCodeList err = (ErrorCodeList) info.code.copy();
         err.setDetails(details);
+        err.setCauses(causes);
 
         if (dumpOnError) {
             DebugUtils.dumpStackTrace(String.format("An error code%s is instantiated, for tracing the place error happened, dump stack as below", err));
         }
 
         return err;
+    }
+
+    @Override
+    public ErrorCode instantiateErrorCode(String code, String details) {
+        return doInstantiateErrorCode(code, details, null);
     }
 
     @Override
@@ -118,9 +123,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
 
     @Override
     public ErrorCodeList instantiateErrorCode(String code, String details, List<ErrorCode> causes) {
-        ErrorCodeList err = (ErrorCodeList) instantiateErrorCode(code, details);
-        err.setCauses(causes);
-        return err;
+        return  (ErrorCodeList) doInstantiateErrorCode(code, details, causes);
     }
 
     @Override

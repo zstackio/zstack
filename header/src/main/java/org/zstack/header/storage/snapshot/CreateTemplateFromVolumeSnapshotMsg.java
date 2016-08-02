@@ -4,18 +4,24 @@ import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
 import org.zstack.header.message.NeedReplyMessage;
 
-import java.util.List;
-
 @ApiTimeout(apiClasses = {APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class})
 public class CreateTemplateFromVolumeSnapshotMsg extends NeedReplyMessage implements VolumeSnapshotMessage {
     private String imageUuid;
     private String snapshotUuid;
-    private List<String> backupStorageUuids;
+    private String backupStorageUuid;
     private String volumeUuid;
     /**
      * @ignore
      */
     private String treeUuid;
+
+    public String getBackupStorageUuid() {
+        return backupStorageUuid;
+    }
+
+    public void setBackupStorageUuid(String backupStorageUuid) {
+        this.backupStorageUuid = backupStorageUuid;
+    }
 
     @Override
     public String getTreeUuid() {
@@ -49,13 +55,5 @@ public class CreateTemplateFromVolumeSnapshotMsg extends NeedReplyMessage implem
 
     public void setSnapshotUuid(String snapshotUuid) {
         this.snapshotUuid = snapshotUuid;
-    }
-
-    public List<String> getBackupStorageUuids() {
-        return backupStorageUuids;
-    }
-
-    public void setBackupStorageUuids(List<String> backupStorageUuids) {
-        this.backupStorageUuids = backupStorageUuids;
     }
 }

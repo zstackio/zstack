@@ -22,6 +22,7 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
@@ -114,6 +115,8 @@ public class TestSnapshotOnKvm46 {
         VolumeSnapshotInventory inv3 = api.createSnapshot(volUuid);
         deltaSnapshot(inv3, 3);
 
+        long size = SizeUnit.GIGABYTE.toByte(10);
+        nfsConfig.mergeSnapshotCmdSize.put(inv3.getVolumeUuid(), size);
         api.changeBackupStorageState(sftp.getUuid(), BackupStorageStateEvent.disable);
         ImageInventory img = api.createTemplateFromSnapshot(inv3.getUuid(), Arrays.asList(sftp.getUuid(), sftp1.getUuid()));
         Assert.assertEquals(1, img.getBackupStorageRefs().size());

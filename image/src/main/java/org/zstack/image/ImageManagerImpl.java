@@ -20,14 +20,18 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.AsyncLatch;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.image.*;
+import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent.Failure;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -49,6 +53,7 @@ import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.RunOnce;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.ForEachFunction;
@@ -63,6 +68,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -442,47 +448,79 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         String volumeUuid = t.get(0, String.class);
         String treeUuid = t.get(1, String.class);
 
-        CreateTemplateFromVolumeSnapshotMsg cmsg = new CreateTemplateFromVolumeSnapshotMsg();
-        cmsg.setSnapshotUuid(msg.getSnapshotUuid());
-        cmsg.setImageUuid(vo.getUuid());
-        cmsg.setVolumeUuid(volumeUuid);
-        cmsg.setTreeUuid(treeUuid);
-        cmsg.setBackupStorageUuids(msg.getBackupStorageUuids());
-        String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
-        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
-        bus.send(cmsg, new CloudBusCallBack(msg) {
+        List<CreateTemplateFromVolumeSnapshotMsg> cmsgs = msg.getBackupStorageUuids().stream().map(bsUuid -> {
+            CreateTemplateFromVolumeSnapshotMsg cmsg = new CreateTemplateFromVolumeSnapshotMsg();
+            cmsg.setSnapshotUuid(msg.getSnapshotUuid());
+            cmsg.setImageUuid(vo.getUuid());
+            cmsg.setVolumeUuid(volumeUuid);
+            cmsg.setTreeUuid(treeUuid);
+            cmsg.setBackupStorageUuid(bsUuid);
+            String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
+            bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
+            return cmsg;
+        }).collect(Collectors.toList());
+
+
+        List<Failure> failures = new ArrayList<>();
+        AsyncLatch latch = new AsyncLatch(cmsgs.size(), new NoErrorCompletion(msg) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    evt.setErrorCode(reply.getError());
+            public void done() {
+                if (failures.size() == cmsgs.size()) {
+                    // failed on all
+                    ErrorCodeList error = errf.stringToOperationError(String.format("failed to create template from" +
+                            " the volume snapshot[uuid:%s] on backup storage[uuids:%s]", msg.getSnapshotUuid(),
+                            msg.getBackupStorageUuids()), failures.stream().map(f->f.error).collect(Collectors.toList()));
+                    evt.setErrorCode(error);
                     dbf.remove(vo);
                 } else {
-                    CreateTemplateFromVolumeSnapshotReply creply = reply.castReply();
-                    List<ImageBackupStorageRefVO> refs = new ArrayList<ImageBackupStorageRefVO>();
-                    for (Map.Entry<String, String> e : creply.getOnBackupStorage().entrySet()) {
-                        ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
-                        ref.setBackupStorageUuid(e.getKey());
-                        ref.setInstallPath(e.getValue());
-                        ref.setStatus(ImageStatus.Ready);
-                        ref.setImageUuid(vo.getUuid());
-                        refs.add(ref);
-                    }
-
-                    dbf.persistCollection(refs);
-
-                    vo.setSize(creply.getSize());
-                    vo.setActualSize(creply.getActualSize());
-                    vo.setStatus(ImageStatus.Ready);
-                    dbf.update(vo);
                     ImageVO imvo = dbf.reload(vo);
                     evt.setInventory(ImageInventory.valueOf(imvo));
+
                     logger.debug(String.format("successfully created image[uuid:%s, name:%s] from volume snapshot[uuid:%s]",
                             imvo.getUuid(), imvo.getName(), msg.getSnapshotUuid()));
+                }
+
+                if (!failures.isEmpty()) {
+                    evt.setFailuresOnBackupStorage(failures);
                 }
 
                 bus.publish(evt);
             }
         });
+
+        RunOnce once = new RunOnce();
+        for (CreateTemplateFromVolumeSnapshotMsg cmsg : cmsgs) {
+            bus.send(cmsg, new CloudBusCallBack(latch) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        synchronized (failures) {
+                            Failure failure = new Failure();
+                            failure.error = reply.getError();
+                            failure.backupStorageUuid = cmsg.getBackupStorageUuid();
+                            failures.add(failure);
+                        }
+                    } else {
+                        CreateTemplateFromVolumeSnapshotReply cr = reply.castReply();
+                        ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
+                        ref.setBackupStorageUuid(cr.getBackupStorageUuid());
+                        ref.setInstallPath(cr.getBackupStorageInstallPath());
+                        ref.setStatus(ImageStatus.Ready);
+                        ref.setImageUuid(vo.getUuid());
+                        dbf.persist(ref);
+
+                        once.run(() -> {
+                            vo.setSize(cr.getSize());
+                            vo.setActualSize(cr.getActualSize());
+                            vo.setStatus(ImageStatus.Ready);
+                            dbf.update(vo);
+                        });
+                    }
+
+                    latch.ack();
+                }
+            });
+        }
     }
 
     private void passThrough(ImageMessage msg) {
@@ -596,6 +634,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         if (imageVO != null) {
                             dbf.remove(imageVO);
                         }
+
                         trigger.rollback();
                     }
                 });

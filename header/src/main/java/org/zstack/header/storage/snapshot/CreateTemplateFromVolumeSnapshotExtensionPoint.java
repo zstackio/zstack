@@ -3,9 +3,6 @@ package org.zstack.header.storage.snapshot;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.image.ImageInventory;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Created by xing5 on 2016/4/29.
  */
@@ -44,14 +41,14 @@ public interface CreateTemplateFromVolumeSnapshotExtensionPoint {
         private VolumeSnapshotInventory snapshot;
         private ImageInventory image;
         private String primaryStorageUuid;
-        private List<String> selectedBackupStorageUuids;
+        private String backupStorageUuid;
 
-        public List<String> getSelectedBackupStorageUuids() {
-            return selectedBackupStorageUuids;
+        public String getBackupStorageUuid() {
+            return backupStorageUuid;
         }
 
-        public void setSelectedBackupStorageUuids(List<String> selectedBackupStorageUuids) {
-            this.selectedBackupStorageUuids = selectedBackupStorageUuids;
+        public void setBackupStorageUuid(String backupStorageUuid) {
+            this.backupStorageUuid = backupStorageUuid;
         }
 
         public VolumeSnapshotInventory getSnapshot() {
@@ -79,38 +76,17 @@ public interface CreateTemplateFromVolumeSnapshotExtensionPoint {
         }
     }
 
-    class BackupStorageResult {
-        private String backupStorageUuid;
-        private String installPath;
-
-        public String getBackupStorageUuid() {
-            return backupStorageUuid;
-        }
-
-        public void setBackupStorageUuid(String backupStorageUuid) {
-            this.backupStorageUuid = backupStorageUuid;
-        }
-
-        public String getInstallPath() {
-            return installPath;
-        }
-
-        public void setInstallPath(String installPath) {
-            this.installPath = installPath;
-        }
-    }
-
     class ParamOut {
         private long actualSize;
         private long size;
-        private List<BackupStorageResult> backupStorageResult = new ArrayList<BackupStorageResult>();
+        private String backupStorageInstallPath;
 
-        public List<BackupStorageResult> getBackupStorageResult() {
-            return backupStorageResult;
+        public String getBackupStorageInstallPath() {
+            return backupStorageInstallPath;
         }
 
-        public void setBackupStorageResult(List<BackupStorageResult> backupStorageResult) {
-            this.backupStorageResult = backupStorageResult;
+        public void setBackupStorageInstallPath(String backupStorageInstallPath) {
+            this.backupStorageInstallPath = backupStorageInstallPath;
         }
 
         public long getActualSize() {

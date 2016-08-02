@@ -2,22 +2,28 @@ package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.message.MessageReply;
 
-import java.util.Map;
-
 /**
  */
 public class CreateTemplateFromVolumeSnapshotReply extends MessageReply {
     private long actualSize;
     private long size;
-    // key = backup storage uuid, value = install path
-    private Map<String, String> onBackupStorage;
+    private String backupStorageUuid;
+    private String backupStorageInstallPath;
 
-    public Map<String, String> getOnBackupStorage() {
-        return onBackupStorage;
+    public String getBackupStorageUuid() {
+        return backupStorageUuid;
     }
 
-    public void setOnBackupStorage(Map<String, String> onBackupStorage) {
-        this.onBackupStorage = onBackupStorage;
+    public void setBackupStorageUuid(String backupStorageUuid) {
+        this.backupStorageUuid = backupStorageUuid;
+    }
+
+    public String getBackupStorageInstallPath() {
+        return backupStorageInstallPath;
+    }
+
+    public void setBackupStorageInstallPath(String backupStorageInstallPath) {
+        this.backupStorageInstallPath = backupStorageInstallPath;
     }
 
     public long getActualSize() {
