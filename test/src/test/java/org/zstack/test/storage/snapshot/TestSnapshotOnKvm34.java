@@ -36,6 +36,7 @@ import java.util.List;
 *
 * confirm volume is created on specified primary storage
 */
+@Deprecated
 public class TestSnapshotOnKvm34{
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm34.class);
     Deployer deployer;
