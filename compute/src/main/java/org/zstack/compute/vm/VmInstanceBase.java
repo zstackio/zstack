@@ -2021,9 +2021,17 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIRecoverVmInstanceMsg) msg);
         } else if (msg instanceof APISetVmBootOrderMsg) {
             handle((APISetVmBootOrderMsg) msg);
-        } else if (msg instanceof APIGetVmBootOrderMsg) {
+        }else if(msg instanceof APISetVmConsolePasswordMsg){
+            handle((APISetVmConsolePasswordMsg)msg);
+        }else if (msg instanceof APIGetVmBootOrderMsg) {
             handle((APIGetVmBootOrderMsg) msg);
-        } else if (msg instanceof APIGetVmConsoleAddressMsg) {
+        }
+        else if(msg instanceof APIDeleteVmConsolePasswordMsg){
+            handle((APIDeleteVmConsolePasswordMsg) msg);
+        }
+        else if(msg instanceof APIGetVmConsolePasswordMsg){
+            handle((APIGetVmConsolePasswordMsg) msg);
+        }else if (msg instanceof APIGetVmConsoleAddressMsg) {
             handle((APIGetVmConsoleAddressMsg) msg);
         } else if (msg instanceof APISetVmHostnameMsg) {
             handle((APISetVmHostnameMsg) msg);
@@ -2201,6 +2209,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
         bus.reply(msg, reply);
     }
+    private void handle(APIGetVmConsolePasswordMsg msg){
+        APIGetVmConsolePasswordReply reply = new APIGetVmConsolePasswordReply();
+        String consolePassword = VmSystemTags.CONSOLE_PASSWORD.getTokenByResourceUuid(self.getUuid(),VmSystemTags.CONSOLE_PASSWORD_TOKEN);
+        reply.setConsolePassword(consolePassword);
+        bus.reply(msg,reply);
+    }
 
     private void handle(APISetVmBootOrderMsg msg) {
         APISetVmBootOrderEvent evt = new APISetVmBootOrderEvent(msg.getId());
@@ -2209,6 +2223,23 @@ public class VmInstanceBase extends AbstractVmInstance {
         } else {
             VmSystemTags.BOOT_ORDER.deleteInherentTag(self.getUuid());
         }
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
+    }
+    private void handle(APISetVmConsolePasswordMsg msg){
+        APISetVmConsolePasswordEvent evt = new APISetVmConsolePasswordEvent(msg.getId());
+        if(msg.getConsolePassword() != null){
+            VmSystemTags.CONSOLE_PASSWORD.recreateInherentTag(self.getUuid(),map(e(VmSystemTags.CONSOLE_PASSWORD_TOKEN,msg.getConsolePassword())));
+        }else{
+            VmSystemTags.CONSOLE_PASSWORD.deleteInherentTag(self.getUuid());
+        }
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
+    }
+
+    private void handle(APIDeleteVmConsolePasswordMsg msg){
+        APIDeleteVmConsolePasswordEvent evt = new APIDeleteVmConsolePasswordEvent(msg.getId());
+        VmSystemTags.CONSOLE_PASSWORD.deleteInherentTag(self.getUuid());
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }
@@ -3553,7 +3584,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         spec.setCurrentVmOperation(operation);
         selectBootOrder(spec);
-
+        spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
         return spec;
     }
 

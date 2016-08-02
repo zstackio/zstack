@@ -1,4 +1,5 @@
 #!/bin/sh
+
 set -e
 
 user="$1"

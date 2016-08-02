@@ -587,6 +587,7 @@ public class KVMAgentCommands {
     	private long cpuSpeed;
         private int socketNum;
         private int cpuOnSocket;
+        private String consolePassword;
     	private List<String> bootDev;
     	private VolumeTO rootVolume;
         private IsoTO bootIso;
@@ -664,6 +665,13 @@ public class KVMAgentCommands {
             this.bootDev = bootDev;
         }
 
+        public String getConsolePassword(){
+            return consolePassword;
+        }
+
+        public void setConsolePassword(String consolePassword){
+            this.consolePassword = consolePassword;
+        }
         public IsoTO getBootIso() {
             return bootIso;
         }

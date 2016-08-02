@@ -3831,6 +3831,26 @@ public class Api implements CloudBusEventListener {
         APISetVmBootOrderEvent evt = sender.send(msg, APISetVmBootOrderEvent.class);
         return evt.getInventory();
     }
+    public VmInstanceInventory setVmConsolePassword(String vmUuid,String vncPassword,SessionInventory session) throws ApiSenderException{
+        APISetVmConsolePasswordMsg msg = new APISetVmConsolePasswordMsg();
+        msg.setUuid(vmUuid);
+        msg.setConsolePassword(vncPassword);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISetVmConsolePasswordEvent evt = sender.send(msg,APISetVmConsolePasswordEvent.class);
+        return evt.getInventory();
+    }
+
+    public VmInstanceInventory deleteVmConsolePassword(String vmUuid,SessionInventory session) throws ApiSenderException{
+        APIDeleteVmConsolePasswordMsg msg = new APIDeleteVmConsolePasswordMsg();
+        msg.setUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIDeleteVmConsolePasswordEvent evt = sender.send(msg,APIDeleteVmConsolePasswordEvent.class);
+        return evt.getInventory();
+    }
 
     public List<String> getVmBootOrder(String vmUuid, SessionInventory session) throws ApiSenderException {
         APIGetVmBootOrderMsg msg = new APIGetVmBootOrderMsg();
@@ -3841,6 +3861,16 @@ public class Api implements CloudBusEventListener {
         APIGetVmBootOrderReply reply = sender.call(msg, APIGetVmBootOrderReply.class);
         return reply.getOrder();
     }
+    public String getVmConsolePassword(String vmUuid,SessionInventory session) throws ApiSenderException{
+        APIGetVmConsolePasswordMsg msg = new APIGetVmConsolePasswordMsg();
+        msg.setUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVmConsolePasswordReply reply = sender.call(msg,APIGetVmConsolePasswordReply.class);
+        return reply.getConsolePassword();
+    }
+
 
     public LicenseInventory getLicenseInfo() throws ApiSenderException {
         APIGetLicenseInfoMsg msg = new APIGetLicenseInfoMsg();

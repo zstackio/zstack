@@ -177,6 +177,8 @@ public class VmInstanceSpec implements Serializable {
     private String userdata;
     private List<String> bootOrders;
     private boolean gcOnStopFailure;
+    private String consolePassword;
+
 
     public String getRequiredClusterUuid() {
         return requiredClusterUuid;
@@ -208,6 +210,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setBootOrders(List<String> bootOrders) {
         this.bootOrders = bootOrders;
+    }
+
+    public String getConsolePassword(){
+        return consolePassword;
+    }
+
+    public void setConsolePassword(String consolePassword){
+        this.consolePassword = consolePassword;
     }
 
     public String getUserdata() {
