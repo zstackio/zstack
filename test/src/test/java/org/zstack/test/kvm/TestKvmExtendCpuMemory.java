@@ -10,6 +10,7 @@ import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -58,10 +59,12 @@ public class TestKvmExtendCpuMemory {
     
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
         long expandedMem = SizeUnit.GIGABYTE.toGigaByte(10);
         config.totalMemory += expandedMem;
         int expandedCpuNum = 10;
         config.cpuNum += expandedCpuNum;
+        config.usedCpu = vm.getCpuNum();
 
         HostInventory host1 = deployer.hosts.get("host1");
         HostCapacityVO cap1 = dbf.findByUuid(host1.getUuid(), HostCapacityVO.class);
@@ -69,8 +72,8 @@ public class TestKvmExtendCpuMemory {
         api.reconnectHost(host1.getUuid());
         TimeUnit.SECONDS.sleep(3);
         HostCapacityVO cap = dbf.findByUuid(host1.getUuid(), HostCapacityVO.class);
-        Assert.assertEquals(cap.getTotalCpu(), cpuMgr.calculateByRatio(host1.getUuid(), (int) config.cpuNum));
-        Assert.assertEquals(cap.getAvailableCpu(), cap1.getAvailableCpu() + expandedCpuNum);
+        Assert.assertEquals(cap.getTotalCpu(), cpuMgr.calculateHostCpuByRatio(host1.getUuid(), (int) config.cpuNum));
+        Assert.assertEquals(cap.getAvailableCpu(), cap1.getAvailableCpu() + cpuMgr.calculateHostCpuByRatio(host1.getUuid(), expandedCpuNum));
         Assert.assertEquals(cap.getTotalMemory(), config.totalMemory);
         Assert.assertEquals(cap.getAvailableMemory(), cap1.getAvailableMemory() + expandedMem);
         Assert.assertEquals(cap.getTotalPhysicalMemory(), config.totalMemory);

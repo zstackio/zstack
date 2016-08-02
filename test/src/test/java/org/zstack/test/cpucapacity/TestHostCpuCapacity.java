@@ -12,6 +12,7 @@ import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -31,6 +32,7 @@ public class TestHostCpuCapacity {
     DatabaseFacade dbf;
     SessionInventory session;
     HostCpuOverProvisioningManager cpuMgr;
+    KVMSimulatorConfig kconfig;
 
     @Before
     public void setUp() throws Exception {
@@ -44,6 +46,7 @@ public class TestHostCpuCapacity {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         cpuMgr = loader.getComponent(HostCpuOverProvisioningManager.class);
+        kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
     
@@ -57,8 +60,8 @@ public class TestHostCpuCapacity {
         Assert.assertEquals(cpuMgr.calculateHostCpuByRatio(vm.getHostUuid(), 4), cap.getTotalCpu());
         Assert.assertEquals(cap.getTotalCpu() - vm.getCpuNum(), cap.getAvailableCpu());
 
+        kconfig.usedCpu = 4;
         cpuMgr.setGlobalRatio(20);
-        api.setTimeout(100000);
         api.reconnectHost(vm.getHostUuid());
         TimeUnit.SECONDS.sleep(2);
 

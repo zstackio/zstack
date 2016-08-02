@@ -585,6 +585,7 @@ public class KVMSimulatorController {
         return null;
     }
 
+    @AsyncThread
     private void destroyVm(HttpEntity<String> entity) {
         DestroyVmCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DestroyVmCmd.class);
         DestroyVmResponse rsp = new DestroyVmResponse();

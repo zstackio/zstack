@@ -695,7 +695,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
                 try {
                     restoreFromSchema(msg, data);
-                } catch (ClassNotFoundException e) {
+                } catch (Exception e) {
+                    logger.warn(String.format("error to restore the msg:\n%s", JSONObjectUtil.toJsonString(msg)), e);
                     throw new CloudRuntimeException(e);
                 }
 

@@ -51,7 +51,7 @@ public class TestKvmHostCapacityOnFailure {
 	KVMSimulatorConfig kconfig;
     ThreadFacade thdf;
     int total = 100;
-    int syncLevel = 100;
+    int syncLevel = 50;
     int timeout = 1200;
 
 	@Before
@@ -157,6 +157,8 @@ public class TestKvmHostCapacityOnFailure {
                 }
             }.run();
         }
+
+        latch1.await(10, TimeUnit.MINUTES);
 
         TimeUnit.SECONDS.sleep(5);
         HostCapacityVO hcap1 = dbf.findByUuid(host.getUuid(), HostCapacityVO.class);
