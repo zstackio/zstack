@@ -7,7 +7,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.scheduler.APIDeleteSchedulerMsg;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -80,10 +79,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APISetVmStaticIpMsg) msg);
         } else if (msg instanceof APIStartVmInstanceMsg) {
             validate((APIStartVmInstanceMsg) msg);
-        } else if (msg instanceof APIStopVmInstanceSchedulerMsg) {
-            validate((APIStopVmInstanceSchedulerMsg) msg);
-        } else if (msg instanceof APIStartVmInstanceSchedulerMsg) {
-            validate((APIStartVmInstanceSchedulerMsg) msg);
+        } else if (msg instanceof APICreateStopVmInstanceSchedulerMsg) {
+            validate((APICreateStopVmInstanceSchedulerMsg) msg);
+        } else if (msg instanceof APICreateStartVmInstanceSchedulerMsg) {
+            validate((APICreateStartVmInstanceSchedulerMsg) msg);
         }
 
         setServiceId(msg);
@@ -97,14 +96,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validate(APIStopVmInstanceSchedulerMsg msg) {
+    private void validate(APICreateStopVmInstanceSchedulerMsg msg) {
         if (msg.getType().equals("simple")) {
-            if (msg.getInterval() == 0) {
+            if (msg.getInterval() == null) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("either interval or startTimeStamp must be set when use simple scheduler")
                 ));
             }
-            if (msg.getStartTimeStamp() == 0) {
+            if (msg.getStartDate() == null) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("either interval or startTimeStamp must be set when use simple scheduler")
                 ));
@@ -120,14 +119,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
 
-    private void validate(APIStartVmInstanceSchedulerMsg msg) {
+    private void validate(APICreateStartVmInstanceSchedulerMsg msg) {
         if (msg.getType().equals("simple")) {
-            if (msg.getInterval() == 0) {
+            if (msg.getInterval() == null) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("either interval or startTimeStamp must be set when use simple scheduler")
                 ));
             }
-            if (msg.getStartTimeStamp() == 0) {
+            if (msg.getStartDate() == null) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("either interval or startTimeStamp must be set when use simple scheduler")
                 ));

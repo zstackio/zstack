@@ -1,6 +1,5 @@
 package org.zstack.core.scheduler;
 
-import javax.persistence.EnumType;
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 import java.sql.Timestamp;
@@ -12,6 +11,7 @@ import java.sql.Timestamp;
 public class SchedulerVO_ {
     public static volatile SingularAttribute<SchedulerVO, String> uuid;
     public static volatile SingularAttribute<SchedulerVO, String> schedulerName;
+    public static volatile SingularAttribute<SchedulerVO, String> schedulerDescription;
     public static volatile SingularAttribute<SchedulerVO, String> schedulerType;
     public static volatile SingularAttribute<SchedulerVO, Integer> schedulerInterval;
     public static volatile SingularAttribute<SchedulerVO, Integer> repeatCount;

@@ -12,16 +12,15 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.scheduler.*;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryCondition;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.search.QueryTestValidator;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by root on 7/20/16.
@@ -67,7 +66,6 @@ public class TestQueryScheduler {
         vo.setSchedulerName("test-query");
         vo.setSchedulerType("cron");
         vo.setCronScheduler("1 * * * * ?");
-        vo.setStartDate(new Timestamp(1234567));
         vo.setUuid(Platform.getUuid());
         vo = dbf.persistAndRefresh(vo);
 

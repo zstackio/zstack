@@ -1,9 +1,10 @@
 CREATE TABLE  `zstack`.`SchedulerVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `schedulerName` varchar(255) NOT NULL,
+    `schedulerDescription` varchar(2048) DEFAULT NULL,
     `schedulerType` varchar(255) NOT NULL,
-    `schedulerInterval` int unsigned DEFAULT 0,
-    `repeatCount` int unsigned DEFAULT 0,
+    `schedulerInterval` int unsigned DEFAULT NULL,
+    `repeatCount` int unsigned DEFAULT NULL,
     `cronScheduler` varchar(255),
     `jobName` varchar(255),
     `jobGroup` varchar(255),

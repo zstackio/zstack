@@ -4199,7 +4199,7 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIDebugSignalEvent.class);
     }
 
-    public void createScheduler(String volUuid, SessionInventory session, int interval, int repeatCount) throws ApiSenderException {
+    public void createScheduler(String volUuid, SessionInventory session, Integer interval, Integer repeatCount) throws ApiSenderException {
         //DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = new Date();
         APICreateVolumeSnapshotSchedulerMsg msg = new APICreateVolumeSnapshotSchedulerMsg();
@@ -4208,9 +4208,9 @@ public class Api implements CloudBusEventListener {
         msg.setInterval(interval);
         msg.setRepeatCount(repeatCount);
         msg.setType("simple");
-        msg.setStartTimeStamp(date.getTime() + 2000);
+        msg.setStartDate(date.getTime() + 2000);
         msg.setSnapShotName("Snapshot-" + volUuid);
-        msg.setDescription("Test snapshot");
+        msg.setVolumeSnapshotDescription("Test snapshot");
         msg.setVolumeUuid(volUuid);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
@@ -4219,15 +4219,15 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public void createCronScheduler(String volUuid, SessionInventory session) throws ApiSenderException {
+    public void createCronScheduler(String volUuid, String type, String cronTask, SessionInventory session) throws ApiSenderException {
         APICreateVolumeSnapshotSchedulerMsg msg = new APICreateVolumeSnapshotSchedulerMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("testCron");
         // fire every 3 seconds
-        msg.setCron("0/3 * * * * ?");
-        msg.setType("cron");
+        msg.setCron(cronTask);
+        msg.setType(type);
         msg.setSnapShotName("Snapshot-" + volUuid);
-        msg.setDescription("Test snapshot");
+        msg.setVolumeSnapshotDescription("Test snapshot");
         msg.setVolumeUuid(volUuid);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
@@ -4262,14 +4262,14 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public void stopVmInstanceScheduler(String vmUuid, String type, long startDate, int interval, int repeatCount ) throws ApiSenderException {
-        APIStopVmInstanceSchedulerMsg msg = new APIStopVmInstanceSchedulerMsg();
+    public void stopVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount ) throws ApiSenderException {
+        APICreateStopVmInstanceSchedulerMsg msg = new APICreateStopVmInstanceSchedulerMsg();
         msg.setSession(adminSession);
         msg.setSchedulerName("stopvm");
         msg.setInterval(interval);
         msg.setRepeatCount(repeatCount);
         msg.setType(type);
-        msg.setStartTimeStamp(startDate);
+        msg.setStartDate(startDate);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setVmUuid(vmUuid);
         ApiSender sender = new ApiSender();
@@ -4278,14 +4278,14 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public void startVmInstanceScheduler(String vmUuid, String type, long startDate, int interval, int repeatCount ) throws ApiSenderException {
-        APIStartVmInstanceSchedulerMsg msg = new APIStartVmInstanceSchedulerMsg();
+    public void startVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount ) throws ApiSenderException {
+        APICreateStartVmInstanceSchedulerMsg msg = new APICreateStartVmInstanceSchedulerMsg();
         msg.setSession(adminSession);
         msg.setSchedulerName("startvm");
         msg.setInterval(interval);
         msg.setRepeatCount(repeatCount);
         msg.setType(type);
-        msg.setStartTimeStamp(startDate);
+        msg.setStartDate(startDate);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setVmUuid(vmUuid);
         ApiSender sender = new ApiSender();

@@ -1,27 +1,25 @@
-package org.zstack.header.vm;
+package org.zstack.header.core.scheduler;
 
-import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.identity.Action;
-import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
 
 /**
- * Created by root on 7/30/16.
+ * Created by root on 8/3/16.
  */
-@Action(category = VmInstanceConstant.ACTION_CATEGORY)
-public class APIStartVmInstanceSchedulerMsg extends APIMessage implements VmInstanceMessage{
-    @APIParam
+public class APICreateSchedulerMessage extends APICreateMessage {
+    @APIParam(maxLength = 255)
     private String schedulerName;
-    @APIParam
+    @APIParam(maxLength = 2048, required = false)
+    private String schedulerDescription;
+    @APIParam(validValues = {"simple", "cron"})
     private String type;
     @APIParam (required = false)
-    private int interval;
+    private Integer interval;
     @APIParam (required = false)
-    private int repeatCount;
+    private Integer repeatCount;
     @APIParam (required = false)
-    private long startTimeStamp;
+    private Long startDate;
     @APIParam (required = false)
     private String cron;
 
@@ -34,16 +32,13 @@ public class APIStartVmInstanceSchedulerMsg extends APIMessage implements VmInst
     @APINoSee
     private String triggerName;
 
-    /**
-     * @desc vm uuid
-     */
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
-    private String vmUuid;
+    public String getSchedulerDescription() {
+        return schedulerDescription;
+    }
 
-    @APIParam(resourceType = ClusterVO.class, required = false)
-    private String clusterUuid;
-    @APIParam(resourceType = HostVO.class, required = false)
-    private String hostUuid;
+    public void setSchedulerDescription(String schedulerDescription) {
+        this.schedulerDescription = schedulerDescription;
+    }
 
     public String getSchedulerName() {
         return schedulerName;
@@ -61,28 +56,28 @@ public class APIStartVmInstanceSchedulerMsg extends APIMessage implements VmInst
         this.type = type;
     }
 
-    public int getInterval() {
+    public Integer getInterval() {
         return interval;
     }
 
-    public void setInterval(int interval) {
+    public void setInterval(Integer interval) {
         this.interval = interval;
     }
 
-    public int getRepeatCount() {
+    public Integer getRepeatCount() {
         return repeatCount;
     }
 
-    public void setRepeatCount(int repeatCount) {
+    public void setRepeatCount(Integer repeatCount) {
         this.repeatCount = repeatCount;
     }
 
-    public long getStartTimeStamp() {
-        return startTimeStamp;
+    public Long getStartDate() {
+        return startDate;
     }
 
-    public void setStartTimeStamp(long startTimeStamp) {
-        this.startTimeStamp = startTimeStamp;
+    public void setStartDate(Long startDate) {
+        this.startDate = startDate;
     }
 
     public String getCron() {
@@ -124,34 +119,4 @@ public class APIStartVmInstanceSchedulerMsg extends APIMessage implements VmInst
     public void setTriggerName(String triggerName) {
         this.triggerName = triggerName;
     }
-
-    public String getClusterUuid() {
-        return clusterUuid;
-    }
-
-    public void setClusterUuid(String clusterUuid) {
-        this.clusterUuid = clusterUuid;
-    }
-
-    public String getHostUuid() {
-        return hostUuid;
-    }
-
-    public void setHostUuid(String hostUuid) {
-        this.hostUuid = hostUuid;
-    }
-
-    public String getVmUuid() {
-        return vmUuid;
-    }
-
-    public void setVmUuid(String vmUuid) {
-        this.vmUuid = vmUuid;
-    }
-
-    @Override
-    public String getVmInstanceUuid() {
-        return getVmUuid();
-    }
-
 }

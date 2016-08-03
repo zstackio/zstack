@@ -1,12 +1,11 @@
 package org.zstack.core.scheduler;
 
 import org.zstack.header.managementnode.ManagementNodeVO;
-import org.zstack.header.vo.*;
+import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
 import javax.persistence.*;
-import org.zstack.header.vo.ForeignKey;
 import java.sql.Timestamp;
-import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
 /**
  * Created by Mei Lei on 7/11/16.
@@ -21,11 +20,13 @@ public class SchedulerVO {
     @Column
     private String schedulerName;
     @Column
+    private String schedulerDescription;
+    @Column
     private String schedulerType;
     @Column
-    private int schedulerInterval;
+    private Integer schedulerInterval;
     @Column
-    private int repeatCount;
+    private Integer repeatCount;
     @Column
     private String cronScheduler;
     @Column
@@ -55,6 +56,14 @@ public class SchedulerVO {
     @Column
     private String status;
 
+    public String getSchedulerDescription() {
+        return schedulerDescription;
+    }
+
+    public void setSchedulerDescription(String schedulerDescription) {
+        this.schedulerDescription = schedulerDescription;
+    }
+
     public String getManagementNodeUuid() {
         return managementNodeUuid;
     }
@@ -79,11 +88,11 @@ public class SchedulerVO {
         this.startDate = startDate;
     }
 
-    public int getSchedulerInterval() {
+    public Integer getSchedulerInterval() {
         return schedulerInterval;
     }
 
-    public void setSchedulerInterval(int schedulerInterval) {
+    public void setSchedulerInterval(Integer schedulerInterval) {
         this.schedulerInterval = schedulerInterval;
     }
 
@@ -165,11 +174,11 @@ public class SchedulerVO {
         this.schedulerType = schedulerType;
     }
 
-    public int getRepeatCount() {
+    public Integer getRepeatCount() {
         return repeatCount;
     }
 
-    public void setRepeatCount(int repeatCount) {
+    public void setRepeatCount(Integer repeatCount) {
         this.repeatCount = repeatCount;
     }
 

@@ -3,14 +3,13 @@ package org.zstack.core.scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.volume.APICreateVolumeSnapshotSchedulerEvent;
-import org.zstack.header.volume.APICreateVolumeSnapshotSchedulerMsg;
-import org.zstack.header.zone.ZoneConstant;
-import org.zstack.header.zone.ZoneMessage;
 
 /**
  * Created by Mei Lei on 7/5/16.
@@ -20,6 +19,9 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ErrorFacade errf;
+
     private void setServiceId(APIMessage msg) {
         if (msg instanceof SchedulerMessage) {
             SchedulerMessage schedmsg = (SchedulerMessage) msg;
@@ -32,9 +34,10 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
         setServiceId(msg);
         if (msg instanceof APIDeleteSchedulerMsg) {
             validate((APIDeleteSchedulerMsg) msg);
-        }
-        if (msg instanceof APIUpdateSchedulerMsg) {
+        } else if (msg instanceof APIUpdateSchedulerMsg) {
             validate((APIUpdateSchedulerMsg) msg);
+        } else if (msg instanceof APICreateSchedulerMessage ) {
+            validate((APICreateSchedulerMessage) msg);
         }
         return msg;
     }
@@ -46,11 +49,47 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             throw new StopRoutingException();
         }
     }
+
     private void validate(APIUpdateSchedulerMsg msg) {
         if (!dbf.isExist(msg.getUuid(), SchedulerVO.class)) {
             APIDeleteSchedulerEvent evt = new APIDeleteSchedulerEvent(msg.getId());
             bus.publish(evt);
             throw new StopRoutingException();
+        }
+    }
+
+    private void validate(APICreateSchedulerMessage msg) {
+        if (msg.getStartDate() != null && msg.getStartDate() < 0) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                    String.format("startDate must be positive integer")
+            ));
+        }
+
+        if (msg.getType().equals("simple")) {
+            if (msg.getInterval() == null) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("interval and startDate must be set when use simple scheduler")
+                ));
+            }
+            if (msg.getStartDate() == null) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("interval and startDate must be set when use simple scheduler")
+                ));
+            }
+        }
+
+        if (msg.getType().equals("cron")) {
+            if (msg.getCron() == null || msg.getCron().isEmpty()) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("cron must be set when use cron scheduler")
+                ));
+            }
+            if ( ! msg.getCron().contains("?") || msg.getCron().split(" ").length != 6) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("cron task must follow format like this : \"0 0/3 17-23 * * ?\" ")
+                ));
+
+            }
         }
     }
 

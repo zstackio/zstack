@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
-    <TestCase class="org.zstack.test.core.scheduler.TestSchedulerStart"/>
+    <TestCase class="org.zstack.test.core.scheduler.TestSchedulerReload"/>
     <TestCase class="org.zstack.test.core.scheduler.TestSchedulerCron"/>
     <TestCase class="org.zstack.test.core.scheduler.TestSchedulerUpdate"/>
     <TestCase class="org.zstack.test.core.scheduler.TestSchedulerDelete"/>

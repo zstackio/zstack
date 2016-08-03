@@ -10,15 +10,16 @@ import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -34,7 +35,9 @@ import static org.quartz.TriggerKey.triggerKey;
 /**
  * Created by Mei Lei on 6/22/16.
  */
-public class SchedulerFacadeImpl extends AbstractService implements SchedulerFacade {
+public class SchedulerFacadeImpl extends AbstractService implements SchedulerFacade, ManagementNodeReadyExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(SchedulerFacadeImpl.class);
+
     @Autowired
     private transient CloudBus bus;
     @Autowired
@@ -47,8 +50,6 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     private Scheduler scheduler;
 
     protected SchedulerVO self;
-
-    private static final CLogger logger = Utils.getLogger(SchedulerFacadeImpl.class);
 
     protected SchedulerInventory getInventory() {
         return SchedulerInventory.valueOf(self);
@@ -81,7 +82,9 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             bus.publish(evt);
         } catch (SchedulerException e) {
             evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, e.getMessage()));
-            e.printStackTrace();
+            bus.publish(evt);
+            logger.warn("Delete Scheduler trigger failed!");
+            throw new RuntimeException(e);
         }
 
     }
@@ -133,7 +136,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             try {
                 oldTrigger = scheduler.getTrigger(triggerKey(triggerName, triggerGroup));
             } catch (SchedulerException e) {
-                e.printStackTrace();
+                logger.warn("Get Scheduler trigger failed!");
+                throw new RuntimeException(e);
             }
             TriggerBuilder tb = oldTrigger != null ? oldTrigger.getTriggerBuilder() : null;
             Trigger newTrigger = null;
@@ -156,7 +160,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 scheduler.rescheduleJob(oldTrigger != null ? oldTrigger.getKey() : null, newTrigger);
                 update = true;
             } catch (SchedulerException e) {
-                e.printStackTrace();
+                logger.warn("Reschedule simple Scheduler job failed!");
+                throw new RuntimeException(e);
             }
 
         }
@@ -169,7 +174,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             try {
                 oldTrigger = scheduler.getTrigger(triggerKey(triggerName, triggerGroup));
             } catch (SchedulerException e) {
-                e.printStackTrace();
+                logger.warn("Get Scheduler trigger failed!");
+                throw new RuntimeException(e);
             }
             TriggerBuilder tb = oldTrigger.getTriggerBuilder();
             Trigger newTrigger = tb.withSchedule(cronSchedule(msg.getCronScheduler()))
@@ -178,7 +184,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 scheduler.rescheduleJob(oldTrigger.getKey(), newTrigger);
                 update = true;
             } catch (SchedulerException e) {
-                e.printStackTrace();
+                logger.warn("Reschedule cron Scheduler job failed!");
+                throw new RuntimeException(e);
             }
         }
 
@@ -187,16 +194,11 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
 
     public String getId() {
+
         return bus.makeLocalServiceId(SchedulerConstant.SERVICE_ID);
     }
 
-    public boolean start() {
-        try {
-            scheduler = StdSchedulerFactory.getDefaultScheduler();
-            scheduler.start();
-        } catch (SchedulerException e) {
-            e.printStackTrace();
-        }
+    private void loadSchedulerJobs() {
 
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.select(SchedulerVO_.uuid);
@@ -225,9 +227,22 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                     SchedulerJob rebootJob = (SchedulerJob) JSONObjectUtil.toObject(schedulerRecord.getJobData(), Class.forName(schedulerRecord.getJobClassName()));
                     schedulerRunner(rebootJob, false);
                 } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                    logger.warn("Load Scheduler job failed!");
+                    throw new RuntimeException(e);
                 }
             }
+        }
+    }
+
+
+    public boolean start() {
+
+        try {
+            scheduler = StdSchedulerFactory.getDefaultScheduler();
+            scheduler.start();
+        } catch (SchedulerException e) {
+            logger.warn("Start Scheduler failed!");
+            throw new RuntimeException(e);
         }
         return true;
     }
@@ -236,9 +251,17 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         try {
             scheduler.shutdown();
         } catch (SchedulerException e) {
-            e.printStackTrace();
+            logger.warn("Stop Scheduler failed!");
+            throw new RuntimeException(e);
         }
         return true;
+    }
+
+    @AsyncThread
+    @Override
+    public void managementNodeReady() {
+        logger.debug(String.format("Management node[uuid:%s] joins, start loading Scheduler jobs...", Platform.getManagementServerId()));
+        loadSchedulerJobs();
     }
 
     public void schedulerRunner(SchedulerJob schedulerJob) {
@@ -246,6 +269,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private void schedulerRunner(SchedulerJob schedulerJob, boolean saveDB) {
+        logger.debug(String.format("Starting to run Scheduler job %s", schedulerJob.getClass().getName()));
         Timestamp start = null;
         SchedulerVO vo = new SchedulerVO();
         Timestamp create = new Timestamp(System.currentTimeMillis());
@@ -258,17 +282,26 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             if ( start != null) {
                 vo.setStartDate(start);
             }
+
             if ( schedulerJob.getSchedulerInterval() != 0 ) {
                 vo.setSchedulerInterval(schedulerJob.getSchedulerInterval());
             }
+
             if ( schedulerJob.getCron() != null ) {
                 vo.setCronScheduler(schedulerJob.getCron());
             }
+
             if ( schedulerJob.getRepeat() != 0 ) {
                 vo.setRepeatCount(schedulerJob.getRepeat());
             }
             vo.setJobData(jobData);
-            vo.setUuid(Platform.getUuid());
+
+            if (schedulerJob.getResourceUuid() != null) {
+                vo.setUuid(schedulerJob.getResourceUuid());
+            } else {
+                vo.setUuid(Platform.getUuid());
+            }
+
             vo.setSchedulerType(schedulerJob.getType());
             vo.setSchedulerName(schedulerJob.getSchedulerName());
             vo.setCreateDate(create);
@@ -317,7 +350,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 scheduler.scheduleJob(job, trigger);
             }
         } catch (SchedulerException se) {
-            se.printStackTrace();
+            logger.warn("Stop Scheduler failed!");
+            throw new RuntimeException(se);
         }
 
         if (saveDB) {

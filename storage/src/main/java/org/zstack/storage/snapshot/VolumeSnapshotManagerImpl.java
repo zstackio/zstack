@@ -40,8 +40,10 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  */
@@ -386,55 +388,10 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
 
     private void handle(APICreateVolumeSnapshotSchedulerMsg msg) {
         APICreateVolumeSnapshotSchedulerEvent evt = new APICreateVolumeSnapshotSchedulerEvent(msg.getId());
-        CreateVolumeSnapshotJob job = new CreateVolumeSnapshotJob();
-        Random rand = new Random();
-        int randValue = rand.nextInt(65535) + 1;
-        Date startDate = new Date(msg.getStartTimeStamp());
-        Date date = new Date();
-        Timestamp ts = new Timestamp(date.getTime());
-        job.setSchedulerName(msg.getSchedulerName());
-        job.setType(msg.getType());
-        if ( msg.getCron() != null && ! msg.getCron().isEmpty()) {
-           job.setCron(msg.getCron());
-        }
-        if ( msg.getStartTimeStamp() != 0) {
-            job.setStartDate(startDate);
-        }
-        if ( msg.getInterval() != 0) {
-            job.setInterval(msg.getInterval());
-        }
-        if ( msg.getRepeatCount() != 0) {
-            job.setRepeat(msg.getRepeatCount());
-        }
-        // jobName, jobGroup, triggerName, triggerGroup reserved for future API
-        if(msg.getJobName() != null && !msg.getJobName().isEmpty()) {
-            job.setJobName(msg.getJobName());
-        }
-        else {
-            job.setJobName(msg.getVolumeUuid()+ "-" + Integer.toString(randValue));
-        }
-        if(msg.getJobGroup() != null && !msg.getJobGroup().isEmpty()) {
-            job.setJobGroup(msg.getJobGroup());
-        }
-        else {
-            job.setJobGroup(msg.getVolumeUuid());
-        }
-        if(msg.getTriggerName() != null && !msg.getTriggerName().isEmpty()) {
-           job.setTriggerName(msg.getTriggerName());
-        }
-        else {
-            job.setTriggerName(msg.getVolumeUuid()+"-" + Integer.toString(randValue));
-        }
-        if (msg.getTriggerGroup() != null && !msg.getTriggerGroup().isEmpty()) {
-            job.setTriggerGroup(msg.getTriggerGroup());
-        }
-        else {
-            job.setTriggerGroup(msg.getVolumeUuid());
-        }
+        CreateVolumeSnapshotJob job = new CreateVolumeSnapshotJob(msg);
         job.setVolumeUuid(msg.getVolumeUuid());
         job.setSnapShotName(msg.getSnapShotName());
-        job.setDescription(msg.getDescription());
-        job.setCreateDate(ts);
+        job.setSnapShotDescription(msg.getVolumeSnapshotDescription());
         schedulerFacade.schedulerRunner(job);
         bus.publish(evt);
     }

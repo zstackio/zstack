@@ -1,17 +1,18 @@
 package org.zstack.core.scheduler;
 
-import org.quartz.*;
-import org.quartz.impl.StdSchedulerFactory;
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
-
-import static org.quartz.JobBuilder.newJob;
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
-import static org.quartz.TriggerBuilder.newTrigger;
+import org.zstack.utils.logging.CLogger;
 
 /**
  * Created by Mei Lei on 7/14/16.
  */
 public class SchedulerRunner implements Job {
+    private static final CLogger logger = Utils.getLogger(SchedulerRunner.class);
     private  String jobData;
     private String jobClassName;
     private SchedulerJob runnerJob;
@@ -26,7 +27,8 @@ public class SchedulerRunner implements Job {
             runnerJob = (SchedulerJob) JSONObjectUtil.toObject(jobData, Class.forName(jobClassName));
             runnerJob.run();
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            logger.warn(String.format("Class %s Not found error", jobClassName));
+            throw new RuntimeException(e);
         }
     }
 

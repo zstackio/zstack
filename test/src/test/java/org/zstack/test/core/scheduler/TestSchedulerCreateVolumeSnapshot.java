@@ -1,7 +1,6 @@
 package org.zstack.test.core.scheduler;
 
 import junit.framework.Assert;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.quartz.SchedulerException;
@@ -10,16 +9,15 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.scheduler.SchedulerFacade;
-import org.zstack.core.scheduler.SchedulerFacadeImpl;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.storage.volume.TestCreateDataVolume;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
@@ -59,8 +57,8 @@ public class TestSchedulerCreateVolumeSnapshot {
         Assert.assertNotNull(scheduler);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
-        int interval = 3;
-        int repeatCount = 1;
+        Integer interval = 3;
+        Integer repeatCount = 1;
         api.createScheduler(volUuid, session, interval, repeatCount);
         TimeUnit.SECONDS.sleep(8);
         long record = dbf.count(VolumeSnapshotVO.class);

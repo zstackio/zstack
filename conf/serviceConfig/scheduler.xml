@@ -15,4 +15,8 @@
         <name>org.zstack.core.scheduler.APIUpdateSchedulerMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.header.core.scheduler.APICreateSchedulerMessage</name>
+    </message>
+
 </service>

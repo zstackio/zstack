@@ -45,9 +45,9 @@ public class TestStopVmScheduler {
         Date date = new Date();
         VmInstanceInventory inv = api.listVmInstances(null).get(0);
         String type = "simple";
-        long startDate = date.getTime() + 1000;
-        int interval = 3;
-        int repeatCount = 2;
+        Long startDate = date.getTime() + 1000;
+        Integer interval = 3;
+        Integer repeatCount = 2;
         String uuid = inv.getUuid();
         // stopvm
         api.stopVmInstanceScheduler(uuid, type, startDate, interval, repeatCount);

@@ -9,7 +9,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.scheduler.SchedulerFacade;
-import org.zstack.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -58,7 +57,9 @@ public class TestSchedulerCron {
         Assert.assertNotNull(scheduler);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
-        api.createCronScheduler(volUuid, session);
+        String type = "cron";
+        String cronTask = "*/3 * * * * ?";
+        api.createCronScheduler(volUuid, type, cronTask, session);
         TimeUnit.SECONDS.sleep(8);
         long counter = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(3,counter);

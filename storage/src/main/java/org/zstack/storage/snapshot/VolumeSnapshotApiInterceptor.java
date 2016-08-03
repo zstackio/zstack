@@ -139,12 +139,12 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             ));
         }
         if (msg.getType().equals("simple")) {
-            if (msg.getInterval() == 0) {
+            if (msg.getInterval() == null) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("either interval or startTimeStamp must be set when use simple scheduler")
                 ));
             }
-            if (msg.getStartTimeStamp() == 0) {
+            if (msg.getStartDate() == null) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("either interval or startTimeStamp must be set when use simple scheduler")
                 ));

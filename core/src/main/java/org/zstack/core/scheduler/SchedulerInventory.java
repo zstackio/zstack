@@ -18,8 +18,8 @@ public class SchedulerInventory implements Serializable {
     private String uuid;
     private String schedulerName;
     private String schedulerType;
-    private int schedulerInterval;
-    private int repeatCount;
+    private Integer schedulerInterval;
+    private Integer repeatCount;
     private String cronScheduler;
     private Timestamp createDate;
     private Timestamp startDate;

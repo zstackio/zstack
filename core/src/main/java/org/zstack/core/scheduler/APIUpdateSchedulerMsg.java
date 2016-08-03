@@ -1,15 +1,12 @@
 package org.zstack.core.scheduler;
 
-import org.zstack.header.identity.AccountMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-
-import java.sql.Timestamp;
 
 /**
  * Created by root on 7/18/16.
  */
-public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessage{
+public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessage {
     @APIParam(resourceType = SchedulerVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false, emptyString = false)
