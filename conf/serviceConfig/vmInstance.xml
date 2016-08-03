@@ -96,6 +96,9 @@
         <name>org.zstack.header.vm.APISetVmConsolePasswordMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APIGetVmConsoleAddressMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIDeleteVmHostnameMsg</name>
     </message>
     <message>
