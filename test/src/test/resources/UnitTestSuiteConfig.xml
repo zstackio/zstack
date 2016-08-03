@@ -40,9 +40,9 @@
 	<Import resource="unitTestSuiteXml/diskCapacity.xml"/>
 	<Import resource="unitTestSuiteXml/hostCpuCapacity.xml"/>
 	<Import resource="unitTestSuiteXml/flatNetwork.xml"/>
-	<Import resource="unitTestSuiteXml/scheduler.xml"/>
 
 	<!--
+	<Import resource="unitTestSuiteXml/scheduler.xml"/>
 	<Import resource="unitTestSuiteXml/console.xml"/>
     <Import resource="unitTestSuiteXml/MultiNodes.xml"/>
     -->
