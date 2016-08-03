@@ -53,7 +53,6 @@ public class TestFlatNetwork5 {
         deployer.addSpringConfig("localStorage.xml");
         deployer.addSpringConfig("flatNetworkServiceSimulator.xml");
         deployer.addSpringConfig("flatNetworkProvider.xml");
-        deployer.addSpringConfig("imagestore.xml");
         deployer.load();
 
         loader = deployer.getComponentLoader();

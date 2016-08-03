@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>network.flat</id>
+
+    <message>
+        <name>org.zstack.network.service.flat.APIGetL3NetworkDhcpIpAddressMsg</name>
+    </message>
+
+</service>
