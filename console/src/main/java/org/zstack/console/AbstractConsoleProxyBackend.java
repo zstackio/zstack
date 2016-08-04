@@ -125,25 +125,8 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         if (vo.getTargetHostname().equals(hostIp)) {
             // vm is on the same host
             final ConsoleProxy proxy = getConsoleProxy(vm, vo);
-            proxy.checkAvailability(new ReturnValueCompletion<Boolean>() {
-                @Override
-                public void success(Boolean returnValue) {
-                    if (returnValue) {
-                        ConsoleInventory retInv = ConsoleInventory.valueOf(vo);
-                        complete.success(retInv);
-                    } else {
-                        //TODO: run cleanup on agent side
-                        dbf.remove(vo);
-
-                        establishNewProxy(proxy, session, vm, complete);
-                    }
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    complete.fail(errorCode);
-                }
-            });
+            dbf.remove(vo);
+            establishNewProxy(proxy, session, vm, complete);
         } else {
             // vm is on another host
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
