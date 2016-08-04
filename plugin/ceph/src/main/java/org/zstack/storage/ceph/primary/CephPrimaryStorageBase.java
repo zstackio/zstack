@@ -1712,9 +1712,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         final List<CephPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
                             @Override
                             public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
-                                return new CephPrimaryStorageMonBase(arg);
+                                return arg.getStatus() == MonStatus.Connected ? new CephPrimaryStorageMonBase(arg) : null;
                             }
                         });
+
+                        DebugUtils.Assert(!mons.isEmpty(), "how can be no connected MON !!!???");
 
                         final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion(trigger) {
                             @Override

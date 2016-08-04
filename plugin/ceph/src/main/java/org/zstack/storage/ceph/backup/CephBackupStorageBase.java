@@ -26,6 +26,7 @@ import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -569,9 +570,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
                         final List<CephBackupStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephBackupStorageMonBase, CephBackupStorageMonVO>() {
                             @Override
                             public CephBackupStorageMonBase call(CephBackupStorageMonVO arg) {
-                                return new CephBackupStorageMonBase(arg);
+                                return arg.getStatus() == MonStatus.Connected ? new CephBackupStorageMonBase(arg) : null;
                             }
                         });
+
+                        DebugUtils.Assert(!mons.isEmpty(), "how can be no connected MON!!! ???");
 
                         final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion(trigger) {
                             @Override
