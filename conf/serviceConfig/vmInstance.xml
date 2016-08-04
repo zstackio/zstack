@@ -119,4 +119,13 @@
     <message>
         <name>org.zstack.header.vm.APIGetVmCapabilitiesMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APISetVmSshKeyMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIGetVmSshKeyMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIDeleteVmSshKeyMsg</name>
+    </message>
 </service>

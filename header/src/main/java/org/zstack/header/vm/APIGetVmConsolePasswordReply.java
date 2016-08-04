@@ -1,11 +1,12 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.message.APIReply;
+
+
 /**
  * Created by root on 7/29/16.
  */
-import org.zstack.header.message.APIReply;
 
-import java.util.List;
 
 
 public class APIGetVmConsolePasswordReply extends APIReply {

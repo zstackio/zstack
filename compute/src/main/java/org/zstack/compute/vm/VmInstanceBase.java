@@ -2025,11 +2025,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmConsolePasswordMsg)msg);
         }else if (msg instanceof APIGetVmBootOrderMsg) {
             handle((APIGetVmBootOrderMsg) msg);
-        }
-        else if(msg instanceof APIDeleteVmConsolePasswordMsg){
+        }else if(msg instanceof APIDeleteVmConsolePasswordMsg){
             handle((APIDeleteVmConsolePasswordMsg) msg);
-        }
-        else if(msg instanceof APIGetVmConsolePasswordMsg){
+        }else if(msg instanceof APIGetVmConsolePasswordMsg){
             handle((APIGetVmConsolePasswordMsg) msg);
         }else if (msg instanceof APIGetVmConsoleAddressMsg) {
             handle((APIGetVmConsoleAddressMsg) msg);
@@ -2047,7 +2045,14 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIGetVmStartingCandidateClustersHostsMsg) msg);
         } else if (msg instanceof APIGetVmCapabilitiesMsg) {
             handle((APIGetVmCapabilitiesMsg) msg);
-        } else {
+        }else if (msg instanceof APISetVmSshKeyMsg){
+            handle((APISetVmSshKeyMsg) msg);
+        } else if (msg instanceof APIGetVmSshKeyMsg){
+            handle((APIGetVmSshKeyMsg) msg);
+        }else if (msg instanceof APIDeleteVmSshKeyMsg){
+            handle((APIDeleteVmSshKeyMsg) msg);
+        }
+        else {
             bus.dealWithUnknownMessage(msg);
         }
     }
@@ -2209,12 +2214,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
         bus.reply(msg, reply);
     }
-    private void handle(APIGetVmConsolePasswordMsg msg){
-        APIGetVmConsolePasswordReply reply = new APIGetVmConsolePasswordReply();
-        String consolePassword = VmSystemTags.CONSOLE_PASSWORD.getTokenByResourceUuid(self.getUuid(),VmSystemTags.CONSOLE_PASSWORD_TOKEN);
-        reply.setConsolePassword(consolePassword);
-        bus.reply(msg,reply);
-    }
 
     private void handle(APISetVmBootOrderMsg msg) {
         APISetVmBootOrderEvent evt = new APISetVmBootOrderEvent(msg.getId());
@@ -2228,18 +2227,42 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
     private void handle(APISetVmConsolePasswordMsg msg){
         APISetVmConsolePasswordEvent evt = new APISetVmConsolePasswordEvent(msg.getId());
-        if(msg.getConsolePassword() != null){
-            VmSystemTags.CONSOLE_PASSWORD.recreateInherentTag(self.getUuid(),map(e(VmSystemTags.CONSOLE_PASSWORD_TOKEN,msg.getConsolePassword())));
-        }else{
-            VmSystemTags.CONSOLE_PASSWORD.deleteInherentTag(self.getUuid());
-        }
+        VmSystemTags.CONSOLE_PASSWORD.recreateInherentTag(self.getUuid(),map(e(VmSystemTags.CONSOLE_PASSWORD_TOKEN,msg.getConsolePassword())));
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
+    }
+
+    private void handle(APIGetVmConsolePasswordMsg msg){
+        APIGetVmConsolePasswordReply reply = new APIGetVmConsolePasswordReply();
+        String consolePassword = VmSystemTags.CONSOLE_PASSWORD.getTokenByResourceUuid(self.getUuid(),VmSystemTags.CONSOLE_PASSWORD_TOKEN);
+        reply.setConsolePassword(consolePassword);
+        bus.reply(msg,reply);
     }
 
     private void handle(APIDeleteVmConsolePasswordMsg msg){
         APIDeleteVmConsolePasswordEvent evt = new APIDeleteVmConsolePasswordEvent(msg.getId());
         VmSystemTags.CONSOLE_PASSWORD.deleteInherentTag(self.getUuid());
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
+    }
+
+    private void handle(APISetVmSshKeyMsg msg){
+        APISetVmSshKeyEvent evt = new APISetVmSshKeyEvent(msg.getId());
+        VmSystemTags.SSHKEY.recreateInherentTag(self.getUuid(),map(e(VmSystemTags.SSHKEY_TOKEN,msg.getSshKey())));
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
+    }
+
+    private void handle(APIGetVmSshKeyMsg msg){
+        APIGetVmSshKeyReply reply = new APIGetVmSshKeyReply();
+        String sshKey = VmSystemTags.SSHKEY.getTokenByResourceUuid(self.getUuid(),VmSystemTags.SSHKEY_TOKEN);
+        reply.setSshKey(sshKey);
+        bus.reply(msg,reply);
+    }
+
+    private void handle(APIDeleteVmSshKeyMsg msg){
+        APIDeleteVmSshKeyEvent evt = new APIDeleteVmSshKeyEvent(msg.getId());
+        VmSystemTags.SSHKEY.deleteInherentTag(self.getUuid());
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }

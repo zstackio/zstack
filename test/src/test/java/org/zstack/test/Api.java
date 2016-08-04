@@ -3831,6 +3831,18 @@ public class Api implements CloudBusEventListener {
         APISetVmBootOrderEvent evt = sender.send(msg, APISetVmBootOrderEvent.class);
         return evt.getInventory();
     }
+
+
+    public List<String> getVmBootOrder(String vmUuid, SessionInventory session) throws ApiSenderException {
+        APIGetVmBootOrderMsg msg = new APIGetVmBootOrderMsg();
+        msg.setUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVmBootOrderReply reply = sender.call(msg, APIGetVmBootOrderReply.class);
+        return reply.getOrder();
+    }
+
     public VmInstanceInventory setVmConsolePassword(String vmUuid,String vncPassword,SessionInventory session) throws ApiSenderException{
         APISetVmConsolePasswordMsg msg = new APISetVmConsolePasswordMsg();
         msg.setUuid(vmUuid);
@@ -3842,25 +3854,6 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public VmInstanceInventory deleteVmConsolePassword(String vmUuid,SessionInventory session) throws ApiSenderException{
-        APIDeleteVmConsolePasswordMsg msg = new APIDeleteVmConsolePasswordMsg();
-        msg.setUuid(vmUuid);
-        msg.setSession(session == null ? adminSession : session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIDeleteVmConsolePasswordEvent evt = sender.send(msg,APIDeleteVmConsolePasswordEvent.class);
-        return evt.getInventory();
-    }
-
-    public List<String> getVmBootOrder(String vmUuid, SessionInventory session) throws ApiSenderException {
-        APIGetVmBootOrderMsg msg = new APIGetVmBootOrderMsg();
-        msg.setUuid(vmUuid);
-        msg.setSession(session == null ? adminSession : session);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIGetVmBootOrderReply reply = sender.call(msg, APIGetVmBootOrderReply.class);
-        return reply.getOrder();
-    }
     public String getVmConsolePassword(String vmUuid,SessionInventory session) throws ApiSenderException{
         APIGetVmConsolePasswordMsg msg = new APIGetVmConsolePasswordMsg();
         msg.setUuid(vmUuid);
@@ -3871,8 +3864,46 @@ public class Api implements CloudBusEventListener {
         return reply.getConsolePassword();
     }
 
+    public VmInstanceInventory deleteVmConsolePassword(String vmUuid,SessionInventory session) throws ApiSenderException{
+        APIDeleteVmConsolePasswordMsg msg = new APIDeleteVmConsolePasswordMsg();
+        msg.setUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIDeleteVmConsolePasswordEvent evt = sender.send(msg,APIDeleteVmConsolePasswordEvent.class);
+        return evt.getInventory();
+    }
+    public VmInstanceInventory setVmSshKey(String vmUuid,String sshKey,SessionInventory session) throws  ApiSenderException{
+        APISetVmSshKeyMsg msg = new APISetVmSshKeyMsg();
+        msg.setUuid(vmUuid);
+        msg.setSshKey(sshKey);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APISetVmSshKeyEvent evt = sender.send(msg, APISetVmSshKeyEvent.class);
+        return evt.getInventory();
+    }
 
-    public LicenseInventory getLicenseInfo() throws ApiSenderException {
+    public String getVmSshKey(String vmUuid,SessionInventory session) throws  ApiSenderException{
+        APIGetVmSshKeyMsg msg = new APIGetVmSshKeyMsg();
+        msg.setUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetVmSshKeyReply reply = sender.call(msg,APIGetVmSshKeyReply.class);
+        return reply.getSshKey();
+    }
+
+    public VmInstanceInventory deleteVmSshKey(String vmUuid,SessionInventory session) throws ApiSenderException{
+        APIDeleteVmSshKeyMsg msg = new APIDeleteVmSshKeyMsg();
+        msg.setUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIDeleteVmSshKeyEvent evt = sender.send(msg,APIDeleteVmSshKeyEvent.class);
+        return evt.getInventory();
+    }
+     public LicenseInventory getLicenseInfo() throws ApiSenderException {
         APIGetLicenseInfoMsg msg = new APIGetLicenseInfoMsg();
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();

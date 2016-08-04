@@ -1,22 +1,25 @@
 package org.zstack.header.vm;
 
+
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-
-
 /**
- * Created by luchukun on 7/29/16.
+ * Created by luchukun on 8/4/16.
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
-public class APISetVmConsolePasswordMsg extends APIMessage implements VmInstanceMessage{
+public class APISetVmSshKeyMsg extends APIMessage implements VmInstanceMessage{
     @APIParam(resourceType = VmInstanceVO.class,checkAccount = true,operationTarget = true)
     private String uuid;
     @APIParam
-    private String consolePassword;
+    private String SshKey;
 
     @Override
     public String getVmInstanceUuid(){
+        return uuid;
+    }
+
+    public String getUuid(){
         return uuid;
     }
 
@@ -24,16 +27,12 @@ public class APISetVmConsolePasswordMsg extends APIMessage implements VmInstance
         this.uuid = uuid;
     }
 
-    public String getUuid(){
-        return uuid;
+    public void setSshKey(String SshKey){
+        this.SshKey = SshKey;
     }
 
-    public void setConsolePassword(String consolePassword){
-        this.consolePassword = consolePassword;
-    }
-
-    public String getConsolePassword(){
-        return consolePassword;
+    public String getSshKey(){
+        return SshKey;
     }
 
 }
