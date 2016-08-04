@@ -16,7 +16,7 @@ public class UserVmFactory implements VmInstanceFactory {
     }
 
     @Override
-    public VmInstanceVO createVmInstance(VmInstanceVO vo, APICreateVmInstanceMsg msg) {
+    public VmInstanceVO createVmInstance(VmInstanceVO vo, CreateVmInstanceMsg msg) {
         vo.setType(type.toString());
         vo = dbf.persistAndRefresh(vo);
         return vo;

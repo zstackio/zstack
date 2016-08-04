@@ -33,7 +33,7 @@ public class ApplianceVmFactory implements VmInstanceFactory, Component {
     }
 
     @Override
-    public VmInstanceVO createVmInstance(VmInstanceVO vo, APICreateVmInstanceMsg msg) {
+    public VmInstanceVO createVmInstance(VmInstanceVO vo, CreateVmInstanceMsg msg) {
         return dbf.persistAndRefresh(vo);
     }
 

@@ -21,7 +21,9 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
@@ -159,7 +161,9 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     }
 
     private void handleLocalMessage(Message msg) {
-        if (msg instanceof VmInstanceMessage) {
+        if (msg instanceof CreateVmInstanceMsg) {
+            handle((CreateVmInstanceMsg)msg);
+        } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage)msg);
         } else {
             bus.dealWithUnknownMessage(msg);
@@ -221,8 +225,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         bus.reply(msg, reply);
     }
 
-
-    private void handle(final APICreateVmInstanceMsg msg) {
+    private void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<CreateVmInstanceReply> completion) {
         VmInstanceVO vo = new VmInstanceVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -252,14 +255,16 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         vo.setMemorySize(iovo.getMemorySize());
         vo.setAllocatorStrategy(iovo.getAllocatorStrategy());
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VmInstanceVO.class);
+        acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VmInstanceVO.class);
 
         String vmType = msg.getType() == null ? VmInstanceConstant.USER_VM_TYPE : msg.getType();
         VmInstanceType type = VmInstanceType.valueOf(vmType);
         VmInstanceFactory factory = getVmInstanceFactory(type);
         vo = factory.createVmInstance(vo, msg);
 
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), VmInstanceVO.class.getSimpleName());
+        if (cmsg != null) {
+            tagMgr.createTagsFromAPICreateMessage(cmsg, vo.getUuid(), VmInstanceVO.class.getSimpleName());
+        }
         tagMgr.copySystemTag(iovo.getUuid(), InstanceOfferingVO.class.getSimpleName(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
 
         StartNewCreatedVmInstanceMsg smsg = new StartNewCreatedVmInstanceMsg();
@@ -272,19 +277,52 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             @Override
             public void run(MessageReply reply) {
                 try {
-                    APICreateVmInstanceEvent evt = new APICreateVmInstanceEvent(msg.getId());
+                    CreateVmInstanceReply cr = new CreateVmInstanceReply();
                     if (reply.isSuccess()) {
                         StartNewCreatedVmInstanceReply r = (StartNewCreatedVmInstanceReply) reply;
-                        evt.setInventory(r.getVmInventory());
+                        cr.setInventory(r.getVmInventory());
+                        completion.success(cr);
                     } else {
-                        evt.setErrorCode(reply.getError());
-                        evt.setSuccess(false);
+                        completion.fail(reply.getError());
                     }
-                    bus.publish(evt);
                 } catch (Exception e) {
                     bus.logExceptionWithMessageDump(msg, e);
                     bus.replyErrorByMessageType(msg, e);
                 }
+            }
+        });
+    }
+
+    private void handle(final CreateVmInstanceMsg msg) {
+        doCreateVmInstance(msg, null, new ReturnValueCompletion<CreateVmInstanceReply>() {
+            @Override
+            public void success(CreateVmInstanceReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                CreateVmInstanceReply r = new CreateVmInstanceReply();
+                r.setError(errorCode);
+                bus.reply(msg, r);
+            }
+        });
+    }
+
+    private void handle(final APICreateVmInstanceMsg msg) {
+        doCreateVmInstance(CreateVmInstanceMsg.valueOf(msg), msg, new ReturnValueCompletion<CreateVmInstanceReply>() {
+            APICreateVmInstanceEvent evt = new APICreateVmInstanceEvent(msg.getId());
+
+            @Override
+            public void success(CreateVmInstanceReply returnValue) {
+                evt.setInventory(returnValue.getInventory());
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
             }
         });
     }
