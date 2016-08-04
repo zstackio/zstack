@@ -21,6 +21,8 @@ public class CreateVmInstanceMsg extends NeedReplyMessage {
     private String hostUuid;
     private String description;
     private String resourceUuid;
+    private String defaultL3NetworkUuid;
+
 
     public String getDefaultL3NetworkUuid() {
         return defaultL3NetworkUuid;
@@ -94,6 +96,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage {
         this.l3NetworkUuids = l3NetworkUuids;
     }
 
+
     public String getImageUuid() {
         return imageUuid;
     }
@@ -117,8 +120,6 @@ public class CreateVmInstanceMsg extends NeedReplyMessage {
     public void setName(String name) {
         this.name = name;
     }
-
-    private String defaultL3NetworkUuid;
 
     public String getAccountUuid() {
         return accountUuid;
@@ -152,6 +153,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage {
         cmsg.setHostUuid(msg.getHostUuid());
         cmsg.setDescription(msg.getDescription());
         cmsg.setResourceUuid(msg.getResourceUuid());
+        cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
         return cmsg;
     }
 }
