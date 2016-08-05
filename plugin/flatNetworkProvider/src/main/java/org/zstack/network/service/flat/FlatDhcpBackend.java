@@ -29,6 +29,7 @@ import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.host.HostStatus;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkVO;
@@ -211,10 +212,25 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
+        if (msg instanceof APIMessage) {
+            handleApiMessage((APIMessage) msg);
+        } else {
+            handleLocalMessage(msg);
+        }
+
+    }
+
+    private void handleApiMessage(APIMessage msg) {
+        if (msg instanceof APIGetL3NetworkDhcpIpAddressMsg) {
+            handle((APIGetL3NetworkDhcpIpAddressMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handleLocalMessage(Message msg) {
         if (msg instanceof FlatDhcpAcquireDhcpServerIpMsg) {
             handle((FlatDhcpAcquireDhcpServerIpMsg) msg);
-        } else if (msg instanceof APIGetL3NetworkDhcpIpAddressMsg) {
-            handle((APIGetL3NetworkDhcpIpAddressMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
