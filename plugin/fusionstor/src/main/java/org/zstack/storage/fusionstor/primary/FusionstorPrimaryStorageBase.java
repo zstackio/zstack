@@ -1687,9 +1687,11 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                         final List<FusionstorPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<FusionstorPrimaryStorageMonBase, FusionstorPrimaryStorageMonVO>() {
                             @Override
                             public FusionstorPrimaryStorageMonBase call(FusionstorPrimaryStorageMonVO arg) {
-                                return new FusionstorPrimaryStorageMonBase(arg);
+                                return arg.getStatus() == MonStatus.Connected ? new FusionstorPrimaryStorageMonBase(arg) : null;
                             }
                         });
+
+                        DebugUtils.Assert(!mons.isEmpty(), "how can be no connected MON !!!???");
 
                         final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion(trigger) {
                             @Override

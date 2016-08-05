@@ -27,6 +27,7 @@ import org.zstack.storage.fusionstor.*;
 import org.zstack.storage.fusionstor.FusionstorMonBase.PingResult;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -553,9 +554,11 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                         final List<FusionstorBackupStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<FusionstorBackupStorageMonBase, FusionstorBackupStorageMonVO>() {
                             @Override
                             public FusionstorBackupStorageMonBase call(FusionstorBackupStorageMonVO arg) {
-                                return new FusionstorBackupStorageMonBase(arg);
+                                return arg.getStatus() == MonStatus.Connected ? new FusionstorBackupStorageMonBase(arg) : null;
                             }
                         });
+
+                        DebugUtils.Assert(!mons.isEmpty(), "how can be no connected MON!!! ???");
 
                         final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion(trigger) {
                             @Override
