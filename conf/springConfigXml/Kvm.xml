@@ -66,7 +66,7 @@
     <bean id="KvmVmSyncPingTask" class="org.zstack.kvm.KvmVmSyncPingTask">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.host.HostPingTaskExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMPingAgentNoFailureExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
