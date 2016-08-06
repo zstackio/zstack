@@ -15,6 +15,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -36,7 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtensionPoint, KVMHostConnectExtensionPoint,
+public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailureExtensionPoint, KVMHostConnectExtensionPoint,
         HostConnectionReestablishExtensionPoint, HostAfterConnectedExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(KvmVmSyncPingTask.class);
     
@@ -91,21 +92,6 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
             }
         });
     }
-
-    @Override
-    public void executeTaskAlongWithPingTask(final HostInventory inv) {
-        if (!KVMGlobalConfig.VM_SYNC_ON_HOST_PING.value(Boolean.class)) {
-            return;
-        }
-
-        syncVm(inv, new NopeCompletion());
-    }
-
-    @Override
-    public HypervisorType getHypervisorType() {
-        return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
-    }
-
 
     @Override
     public void connectionReestablished(HostInventory inv) throws HostException {
@@ -239,5 +225,28 @@ public class KvmVmSyncPingTask extends VmTracer implements HostPingTaskExtension
                 });
             }
         };
+    }
+
+    @Override
+    public void kvmPingAgentNoFailure(KVMHostInventory host, NoErrorCompletion completion) {
+        if (!KVMGlobalConfig.VM_SYNC_ON_HOST_PING.value(Boolean.class)) {
+            completion.done();
+            return;
+        }
+
+        syncVm(host, new Completion(completion) {
+            @Override
+            public void success() {
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                //TODO
+                logger.warn(String.format("failed to sync VM states on the KVM host[uuid:%s, name:%s, ip:%s], %s",
+                        host.getUuid(), host.getName(), host.getManagementIp(), errorCode));
+                completion.done();
+            }
+        });
     }
 }

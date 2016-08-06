@@ -11,7 +11,12 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.kvm.KVMConstant.KvmVmState;
+import org.zstack.kvm.KVMGlobalConfig;
+import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -43,8 +48,8 @@ public class TestKvmPingAgentExtension {
     CloudBus bus;
     DatabaseFacade dbf;
     SessionInventory session;
-    SftpBackupStorageSimulatorConfig config;
     KVMPingAgentExtensionForTest ext;
+    KVMSimulatorConfig kconfig;
 
     @Before
     public void setUp() throws Exception {
@@ -58,7 +63,7 @@ public class TestKvmPingAgentExtension {
         loader = deployer.getComponentLoader();
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
-        config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
+        kconfig = loader.getComponent(KVMSimulatorConfig.class);
         ext = loader.getComponent(KVMPingAgentExtensionForTest.class);
         session = api.loginAsAdmin();
     }
@@ -66,8 +71,11 @@ public class TestKvmPingAgentExtension {
 	@Test
 	public void test() throws ApiSenderException, InterruptedException {
         HostInventory host = deployer.hosts.get("host1");
+        VmInstanceInventory vm = deployer.vms.get("TestVm");
 
+        kconfig.vms.put(vm.getUuid(), KvmVmState.Running);
         HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1);
+        KVMGlobalConfig.VM_SYNC_ON_HOST_PING.updateValue(true);
         TimeUnit.SECONDS.sleep(3);
 
         HostVO vo = dbf.findByUuid(host.getUuid(), HostVO.class);
@@ -75,8 +83,12 @@ public class TestKvmPingAgentExtension {
 
         ext.success = false;
         TimeUnit.SECONDS.sleep(3);
+        kconfig.vms.clear();
+        TimeUnit.SECONDS.sleep(3);
 
         vo = dbf.findByUuid(host.getUuid(), HostVO.class);
         Assert.assertEquals(HostStatus.Disconnected, vo.getStatus());
+        VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
+        Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
     }
 }

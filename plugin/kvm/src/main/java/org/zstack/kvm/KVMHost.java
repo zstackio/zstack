@@ -22,6 +22,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
@@ -1974,6 +1975,36 @@ public class KVMHost extends HostBase implements Host {
                                 return PingResponse.class;
                             }
                         });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "call-ping-no-failure-plugins";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<KVMPingAgentNoFailureExtensionPoint> exts = pluginRgty.getExtensionList(KVMPingAgentNoFailureExtensionPoint.class);
+                        if (exts.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        AsyncLatch latch = new AsyncLatch(exts.size(), new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                trigger.next();
+                            }
+                        });
+
+                        KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
+                        for (KVMPingAgentNoFailureExtensionPoint ext : exts) {
+                            ext.kvmPingAgentNoFailure(inv, new NoErrorCompletion(latch) {
+                                @Override
+                                public void done() {
+                                    latch.ack();
+                                }
+                            });
+                        }
                     }
                 });
 
