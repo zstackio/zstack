@@ -136,4 +136,5 @@
   <TestCase class="org.zstack.test.kvm.TestStartVmOnTargetHost"/>
   <TestCase class="org.zstack.test.kvm.TestStartVmOnTargetHost1"/>
   <TestCase class="org.zstack.test.kvm.TestVmErrorRootVolumeRollback"/>
+  <TestCase class="org.zstack.test.kvm.TestKvmPingAgentExtension"/>
 </UnitTestSuiteConfig>

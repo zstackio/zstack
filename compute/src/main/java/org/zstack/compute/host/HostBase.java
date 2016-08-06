@@ -32,6 +32,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.*;
 import org.zstack.header.host.HostCanonicalEvents.HostDeletedData;
 import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
+import org.zstack.header.host.HostErrors.Opaque;
 import org.zstack.header.host.HostMaintenancePolicyExtensionPoint.HostMaintenancePolicy;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
@@ -582,6 +583,9 @@ public abstract class HostBase extends AbstractHost {
                 reply.setCurrentHostStatus(self.getStatus().toString());
                 reply.setError(errorCode);
                 reply.setSuccess(true);
+
+                Boolean noReconnect = (Boolean) errorCode.getFromOpaque(Opaque.NO_RECONNECT_AFTER_PING_FAILURE.toString());
+                reply.setNoReconnect(noReconnect != null && noReconnect);
 
                 if (changeConnectionState(HostStatusEvent.disconnected)) {
                     new Event().log(HostLogLabel.HOST_STATUS_DISCONNECTED, self.getUuid(), self.getName(), errorCode.toString());

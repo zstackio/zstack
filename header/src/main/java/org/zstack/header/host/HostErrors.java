@@ -30,4 +30,8 @@ public enum HostErrors {
     public String toString() {
         return code;
     }
+
+    public enum Opaque {
+        NO_RECONNECT_AFTER_PING_FAILURE;
+    }
 }
