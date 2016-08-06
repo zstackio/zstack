@@ -719,6 +719,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                         mediator.uploadBits(pinv, bsinv, templateBackupStorageInstallPath, templatePrimaryStorageInstallPath, new ReturnValueCompletion<String>(trigger) {
                             @Override
                             public void success(String installPath) {
+                                templateBackupStorageInstallPath = installPath;
                                 trigger.next();
                             }
 

@@ -7,7 +7,7 @@
     </backupStorages>
 
     <images>
-        <image name="TestImage" description="Test">
+	    <image name="TestImage" description="Test" url="http://my/test-image.qcow2" >
             <backupStorageRef>imagestore</backupStorageRef>
             <accountRef>test</accountRef>
         </image>
