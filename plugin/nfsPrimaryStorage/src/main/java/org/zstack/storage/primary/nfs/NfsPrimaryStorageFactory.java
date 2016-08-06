@@ -121,7 +121,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         }
     }
 
-    NfsPrimaryToBackupStorageMediator getPrimaryToBackupStorageMediator(BackupStorageType bsType, HypervisorType hvType) {
+    public NfsPrimaryToBackupStorageMediator getPrimaryToBackupStorageMediator(BackupStorageType bsType, HypervisorType hvType) {
         Map<String, NfsPrimaryToBackupStorageMediator> mediatorMap = mediators.get(bsType.toString());
         if (mediatorMap == null) {
             throw new CloudRuntimeException(

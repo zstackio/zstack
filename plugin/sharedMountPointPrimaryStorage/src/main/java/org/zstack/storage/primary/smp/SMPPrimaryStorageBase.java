@@ -382,7 +382,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handleLocalMessage(Message msg) {
+    public void handleLocalMessage(Message msg) {
         if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
         } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {

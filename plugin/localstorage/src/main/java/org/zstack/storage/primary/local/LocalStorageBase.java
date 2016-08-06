@@ -89,7 +89,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handleApiMessage(APIMessage msg) {
+    public void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIGetLocalStorageHostDiskCapacityMsg) {
             handle((APIGetLocalStorageHostDiskCapacityMsg) msg);
         } else if (msg instanceof APILocalStorageMigrateVolumeMsg) {
@@ -427,7 +427,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handleLocalMessage(Message msg) {
+    public void handleLocalMessage(Message msg) {
         if (msg instanceof InitPrimaryStorageOnHostConnectedMsg) {
             handle((InitPrimaryStorageOnHostConnectedMsg) msg);
         } else if (msg instanceof RemoveHostFromLocalStorageMsg) {
