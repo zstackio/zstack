@@ -1927,38 +1927,103 @@ public class KVMHost extends HostBase implements Host {
     }
 
     protected void pingHook(final Completion completion) {
-        PingCmd cmd = new PingCmd();
-        cmd.hostUuid = self.getUuid();
-        restf.asyncJsonPost(pingPath, cmd, new JsonAsyncRESTCallback<PingResponse>(completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("ping-kvm-host-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
             @Override
-            public void fail(ErrorCode err) {
-                completion.fail(err);
-            }
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "ping-host";
 
-            @Override
-            public void success(PingResponse ret) {
-                if (!ret.isSuccess()) {
-                    completion.fail(errf.stringToOperationError(ret.getError()));
-                } else {
-                    if (!self.getUuid().equals(ret.getHostUuid())) {
-                        String info = String.format("detected abnormal status[host uuid change, expected: %s but: %s] of kvmagent," +
-                                "it's mainly caused by kvmagent restarts behind zstack management server. Report this to ping task, it will issue a reconnect soon", self.getUuid(), ret.getHostUuid());
-                        logger.warn(info);
-                        ReconnectHostMsg rmsg = new ReconnectHostMsg();
-                        rmsg.setHostUuid(self.getUuid());
-                        bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
-                        bus.send(rmsg);
+                    @AfterDone
+                    List<Runnable> afterDone = new ArrayList<>();
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        PingCmd cmd = new PingCmd();
+                        cmd.hostUuid = self.getUuid();
+                        restf.asyncJsonPost(pingPath, cmd, new JsonAsyncRESTCallback<PingResponse>(trigger) {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                trigger.fail(err);
+                            }
+
+                            @Override
+                            public void success(PingResponse ret) {
+                                if (ret.isSuccess()) {
+                                    if (!self.getUuid().equals(ret.getHostUuid())) {
+                                        afterDone.add(() -> {
+                                            String info = String.format("detected abnormal status[host uuid change, expected: %s but: %s] of kvmagent," +
+                                                    "it's mainly caused by kvmagent restarts behind zstack management server. Report this to ping task, it will issue a reconnect soon", self.getUuid(), ret.getHostUuid());
+                                            logger.warn(info);
+                                            ReconnectHostMsg rmsg = new ReconnectHostMsg();
+                                            rmsg.setHostUuid(self.getUuid());
+                                            bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
+                                            bus.send(rmsg);
+                                        });
+                                    }
+
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(errf.stringToOperationError(ret.getError()));
+                                }
+                            }
+
+                            @Override
+                            public Class<PingResponse> getReturnClass() {
+                                return PingResponse.class;
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "call-ping-plugins";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<KVMPingAgentExtensionPoint> exts = pluginRgty.getExtensionList(KVMPingAgentExtensionPoint.class);
+                        Iterator<KVMPingAgentExtensionPoint> it = exts.iterator();
+                        callPlugin(it, trigger);
                     }
 
-                    completion.success();
-                }
-            }
+                    private void callPlugin(Iterator<KVMPingAgentExtensionPoint> it, FlowTrigger trigger) {
+                        if (!it.hasNext()) {
+                            trigger.next();
+                            return;
+                        }
 
-            @Override
-            public Class<PingResponse> getReturnClass() {
-                return PingResponse.class;
+                        KVMPingAgentExtensionPoint ext = it.next();
+                        logger.debug(String.format("calling KVMPingAgentExtensionPoint[%s]", ext.getClass()));
+                        ext.kvmPingAgent((KVMHostInventory) getSelfInventory(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                callPlugin(it, trigger);
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     @Override
