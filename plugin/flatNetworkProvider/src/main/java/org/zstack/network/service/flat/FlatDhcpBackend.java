@@ -239,6 +239,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private void handle(APIGetL3NetworkDhcpIpAddressMsg msg) {
         APIGetL3NetworkDhcpIpAddressReply reply = new APIGetL3NetworkDhcpIpAddressReply();
 
+        if (msg.getL3NetworkUuid() == null) {
+            reply.setError(errf.stringToOperationError("l3 network uuid cannot be null"));
+            bus.reply(msg, reply);
+            return;
+        }
+
         UsedIpInventory ip = l3NetworkDhcpServerIp.get(msg.getL3NetworkUuid());
         if (ip != null) {
             reply.setIp(ip.getIp());

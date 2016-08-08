@@ -1,11 +1,11 @@
 package org.zstack.network.service.flat;
 
-import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.APIReply;
 
 /**
  * Created by miao on 16-7-19.
  */
-public class APIGetL3NetworkDhcpIpAddressReply extends MessageReply {
+public class APIGetL3NetworkDhcpIpAddressReply extends APIReply {
     private String ip;
 
     public String getIp() {
