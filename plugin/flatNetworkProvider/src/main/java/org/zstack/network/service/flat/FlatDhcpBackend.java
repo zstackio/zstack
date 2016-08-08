@@ -246,9 +246,27 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
-        logger.debug(String.format("APIGetL3NetworkDhcpIpAddressMsg[ip:%s, uuid:%s] for l3 network[uuid:%s]",
-                ip.getIp(), ip.getUuid(), ip.getL3NetworkUuid()));
+        String tag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(msg.getL3NetworkUuid());
+        if (tag != null) {
+            Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
+            String ipUuid = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN);
+            UsedIpVO vo = dbf.findByUuid(ipUuid, UsedIpVO.class);
+            if (vo == null) {
+                throw new CloudRuntimeException(String.format("cannot find used ip [uuid:%s]", ipUuid));
+            }
 
+            ip = UsedIpInventory.valueOf(vo);
+            l3NetworkDhcpServerIp.put(msg.getL3NetworkUuid(), ip);
+            reply.setIp(ip.getIp());
+            bus.reply(msg, reply);
+            logger.debug(String.format("APIGetL3NetworkDhcpIpAddressMsg[ip:%s, uuid:%s] for l3 network[uuid:%s]",
+                    ip.getIp(), ip.getUuid(), ip.getL3NetworkUuid()));
+            return;
+        }
+
+        reply.setError(errf.stringToOperationError(
+                String.format("Cannot find DhcpIp for l3 network[uuid:%s]", msg.getL3NetworkUuid())));
+        bus.reply(msg, reply);
     }
 
     private void handle(final FlatDhcpAcquireDhcpServerIpMsg msg) {
