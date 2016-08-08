@@ -60,7 +60,7 @@ public class TestSchedulerUpdate {
         String volUuid = vm.getRootVolumeUuid();
         // createScheduler test case will start 2s later
         int interval = 3;
-        int repeatCount = 2;
+        int repeatCount = 3;
         api.createScheduler(volUuid, session, interval, repeatCount);
         TimeUnit.SECONDS.sleep(3);
         long record = dbf.count(VolumeSnapshotVO.class);

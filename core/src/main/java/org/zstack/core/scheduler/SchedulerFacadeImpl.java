@@ -22,6 +22,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -271,10 +272,16 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     private void schedulerRunner(SchedulerJob schedulerJob, boolean saveDB) {
         logger.debug(String.format("Starting to run Scheduler job %s", schedulerJob.getClass().getName()));
         Timestamp start = null;
+        Boolean startNow = false;
         SchedulerVO vo = new SchedulerVO();
         Timestamp create = new Timestamp(System.currentTimeMillis());
         if ( schedulerJob.getStartDate() != null ) {
-            start = new Timestamp(schedulerJob.getStartDate().getTime());
+            if ( ! schedulerJob.getStartDate().equals(new Date(0))) {
+                start = new Timestamp(schedulerJob.getStartDate().getTime());
+            } else {
+                startNow = true;
+                start = create;
+            }
         }
         String jobData = JSONObjectUtil.toJsonString(schedulerJob);
         String jobClassName = schedulerJob.getClass().getName();
@@ -321,24 +328,58 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                     .usingJobData("jobData", jobData)
                     .build();
             if ( schedulerJob.getType().equals("simple")) {
-                Trigger trigger = null;
+                Trigger trigger;
                 if ( schedulerJob.getRepeat() != 0 ) {
-                    trigger = newTrigger()
-                            .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-                            .startAt(schedulerJob.getStartDate())
-                            .withSchedule(simpleSchedule()
-                                    .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
-                                    .withRepeatCount(schedulerJob.getRepeat()))
-                            .build();
+                    if ( schedulerJob.getRepeat() == 1) {
+                        if ( startNow ) {
+                            trigger = newTrigger()
+                                    .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
+                                    .withSchedule(simpleSchedule())
+                                    .build();
+                        } else {
+                            trigger = newTrigger()
+                                    .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
+                                    .startAt(schedulerJob.getStartDate())
+                                    .withSchedule(simpleSchedule())
+                                    .build();
+                        }
+
+                    } else {
+                        if ( startNow ) {
+                            trigger = newTrigger()
+                                    .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
+                                    .withSchedule(simpleSchedule()
+                                            .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
+                                            .withRepeatCount(schedulerJob.getRepeat() - 1))
+                                    .build();
+                        } else {
+                            trigger = newTrigger()
+                                    .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
+                                    .startAt(schedulerJob.getStartDate())
+                                    .withSchedule(simpleSchedule()
+                                            .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
+                                            .withRepeatCount(schedulerJob.getRepeat() - 1))
+                                    .build();
+                        }
+                    }
                 }
                 else {
-                    trigger = newTrigger()
-                            .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-                            .startAt(schedulerJob.getStartDate())
-                            .withSchedule(simpleSchedule()
-                                    .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
-                                    .repeatForever())
-                            .build();
+                    if ( startNow ) {
+                        trigger = newTrigger()
+                                .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
+                                .withSchedule(simpleSchedule()
+                                        .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
+                                        .repeatForever())
+                                .build();
+                    } else {
+                        trigger = newTrigger()
+                                .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
+                                .startAt(schedulerJob.getStartDate())
+                                .withSchedule(simpleSchedule()
+                                        .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
+                                        .repeatForever())
+                                .build();
+                    }
                 }
                 scheduler.scheduleJob(job, trigger);
             }

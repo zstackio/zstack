@@ -52,7 +52,7 @@ public class TestStartVmScheduler {
         String type = "simple";
         Long startDate = date.getTime() + 1000;
         Integer interval = 3;
-        Integer repeatCount = 2;
+        Integer repeatCount = 3;
         String vmUuid = inv.getUuid();
         api.startVmInstanceScheduler(vmUuid, type, startDate, interval, repeatCount);
         TimeUnit.SECONDS.sleep(2);

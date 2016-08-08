@@ -10,7 +10,7 @@ import org.zstack.header.message.APIParam;
  * Created by root on 7/30/16.
  */
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
-public class APICreateStartVmInstanceSchedulerMsg extends APICreateSchedulerMessage implements VmInstanceMessage{
+public class APICreateStartVmInstanceSchedulerMsg extends APICreateSchedulerMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid
      */

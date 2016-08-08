@@ -58,7 +58,7 @@ public class TestSchedulerCreateVolumeSnapshot {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
         Integer interval = 3;
-        Integer repeatCount = 1;
+        Integer repeatCount = 2;
         api.createScheduler(volUuid, session, interval, repeatCount);
         TimeUnit.SECONDS.sleep(8);
         long record = dbf.count(VolumeSnapshotVO.class);

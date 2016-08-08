@@ -1,7 +1,7 @@
 package org.zstack.test.core.scheduler;
 
-import org.junit.Before;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,6 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -60,9 +59,9 @@ public class TestSchedulerDelete {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
         int interval = 3;
-        int repeatCount = 5;
+        int repeatCount = 6;
         api.createScheduler(volUuid, session, interval, repeatCount);
-        TimeUnit.SECONDS.sleep(10);
+        TimeUnit.SECONDS.sleep(8);
         long counter = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(3,counter);
         SchedulerVO firstRecord = dbf.listAll(SchedulerVO.class).get(0);

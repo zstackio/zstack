@@ -4208,7 +4208,8 @@ public class Api implements CloudBusEventListener {
         msg.setInterval(interval);
         msg.setRepeatCount(repeatCount);
         msg.setType("simple");
-        msg.setStartDate(date.getTime() + 2000);
+        //msg.setStartDate(date.getTime() + 2000);
+        msg.setStartDate(0L);
         msg.setSnapShotName("Snapshot-" + volUuid);
         msg.setVolumeSnapshotDescription("Test snapshot");
         msg.setVolumeUuid(volUuid);
