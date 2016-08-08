@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.scheduler.APIUpdateSchedulerEvent;
+import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -14,10 +16,7 @@ import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
-import org.zstack.test.Api;
-import org.zstack.test.ApiSenderException;
-import org.zstack.test.DBUtil;
-import org.zstack.test.WebBeanConstructor;
+import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
@@ -27,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. delete a flat network
- *
+ * <p>
  * confirm the namespace is deleted
  */
 public class TestFlatNetwork5 {
@@ -74,8 +73,8 @@ public class TestFlatNetwork5 {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         FlatNetworkGlobalProperty.DELETE_DEPRECATED_DHCP_NAME_SPACE = true;
         dhcpUpgradeExtension.start();
 
@@ -86,14 +85,17 @@ public class TestFlatNetwork5 {
 
         Assert.assertEquals(1, fconfig.deleteNamespaceCmds.size());
 
-
+//
         L3NetworkInventory l3nw = deployer.l3Networks.get("TestL3Network1");
 
         APIGetL3NetworkDhcpIpAddressMsg msg = new APIGetL3NetworkDhcpIpAddressMsg();
+        msg.setSession(session);
         msg.setL3NetworkUuid(l3nw.getUuid());
-        bus.makeTargetServiceIdByResourceUuid(msg, FlatNetworkServiceConstant.SERVICE_ID, l3nw.getUuid());
-        msg.setTimeout(TimeUnit.SECONDS.toMillis(15));
-        APIGetL3NetworkDhcpIpAddressReply reply = (APIGetL3NetworkDhcpIpAddressReply) bus.call(msg);
-        logger.info("!!!!!!APIGetL3NetworkDhcpIpAddressMsg!!!!" + reply.getIp());
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(15000);
+        APIGetL3NetworkDhcpIpAddressReply re = sender.call(msg, APIGetL3NetworkDhcpIpAddressReply.class);
+
+        logger.info("!!!!!!APIGetL3NetworkDhcpIpAddressMsg!!!!" + re.getIp());
     }
 }
