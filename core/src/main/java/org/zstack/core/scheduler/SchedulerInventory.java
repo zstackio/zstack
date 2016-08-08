@@ -32,25 +32,6 @@ public class SchedulerInventory implements Serializable {
     private String status;
 
     protected SchedulerInventory(SchedulerVO vo) {
-//        uuid = vo.getUuid();
-//
-//        schedulerName = vo.getSchedulerName();
-//        this.setSchedulerType(vo.getSchedulerType());
-//        if (vo.getSchedulerType().equals("simple")) {
-//            schedulerInterval = vo.getSchedulerInterval();
-//            startDate = vo.getStartDate();
-//            if (vo.getRepeatCount() != 0) {
-//                repeatCount = vo.getRepeatCount();
-//            }
-//        }
-//        else if (vo.getSchedulerType().equals("cron")) {
-//            cronScheduler = vo.getCronScheduler();
-//        }
-//        createDate = vo.getCreateDate();
-//        lastOpDate = vo.getLastOpDate();
-//        if ( vo.getStatus() != null) {
-//            status = vo.getStatus();
-//        }
         uuid = vo.getUuid();
         schedulerName = vo.getSchedulerName();
         schedulerType = vo.getSchedulerType();

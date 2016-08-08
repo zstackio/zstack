@@ -226,7 +226,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 SchedulerVO schedulerRecord = schedulerRecordsIterator.next();
                 try {
                     SchedulerJob rebootJob = (SchedulerJob) JSONObjectUtil.toObject(schedulerRecord.getJobData(), Class.forName(schedulerRecord.getJobClassName()));
-                    schedulerRunner(rebootJob, false);
+                    runScheduler(rebootJob, false);
                 } catch (ClassNotFoundException e) {
                     logger.warn("Load Scheduler job failed!");
                     throw new RuntimeException(e);
@@ -265,11 +265,11 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         loadSchedulerJobs();
     }
 
-    public void schedulerRunner(SchedulerJob schedulerJob) {
-        schedulerRunner(schedulerJob, true);
+    public void runScheduler(SchedulerJob schedulerJob) {
+        runScheduler(schedulerJob, true);
     }
 
-    private void schedulerRunner(SchedulerJob schedulerJob, boolean saveDB) {
+    private void runScheduler(SchedulerJob schedulerJob, boolean saveDB) {
         logger.debug(String.format("Starting to run Scheduler job %s", schedulerJob.getClass().getName()));
         Timestamp start = null;
         Boolean startNow = false;
@@ -391,7 +391,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 scheduler.scheduleJob(job, trigger);
             }
         } catch (SchedulerException se) {
-            logger.warn("Stop Scheduler failed!");
+            logger.warn("Run Scheduler failed!");
             throw new RuntimeException(se);
         }
 

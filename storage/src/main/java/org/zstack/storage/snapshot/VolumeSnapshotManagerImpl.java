@@ -392,7 +392,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         job.setVolumeUuid(msg.getVolumeUuid());
         job.setSnapShotName(msg.getSnapShotName());
         job.setSnapShotDescription(msg.getVolumeSnapshotDescription());
-        schedulerFacade.schedulerRunner(job);
+        schedulerFacade.runScheduler(job);
         bus.publish(evt);
     }
 

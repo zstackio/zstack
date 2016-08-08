@@ -3822,7 +3822,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIStopVmInstanceSchedulerEvent evt = new APIStopVmInstanceSchedulerEvent(msg.getId());
         StopVmInstanceJob job = new StopVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
-        schedulerFacade.schedulerRunner(job);
+        schedulerFacade.runScheduler(job);
         bus.publish(evt);
     }
 
@@ -3830,7 +3830,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIStartVmInstanceSchedulerEvent evt = new APIStartVmInstanceSchedulerEvent(msg.getId());
         StartVmInstanceJob job = new StartVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
-        schedulerFacade.schedulerRunner(job);
+        schedulerFacade.runScheduler(job);
         bus.publish(evt);
     }
 }
