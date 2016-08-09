@@ -60,7 +60,7 @@ public class AbstractSchedulerJob implements SchedulerJob {
         }
 
         if ( msg.getStartDate() != null) {
-            startDate = new Date(msg.getStartDate());
+            startDate = new Date(msg.getStartDate() * 1000);
         }
 
         if ( msg.getInterval() != null) {
