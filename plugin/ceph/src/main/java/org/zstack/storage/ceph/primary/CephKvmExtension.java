@@ -33,7 +33,7 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  * Created by frank on 8/17/2015.
  */
-public class CephKvmExternsion implements KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
+public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
     @Autowired
     private CloudBus bus;
     @Autowired

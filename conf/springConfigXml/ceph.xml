@@ -39,7 +39,7 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="CephKvmExternsion" class="org.zstack.storage.ceph.primary.CephKvmExternsion">
+    <bean id="CephKvmExtension" class="org.zstack.storage.ceph.primary.CephKvmExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
