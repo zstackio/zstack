@@ -180,18 +180,18 @@ public class KvmBackend extends HypervisorBackend {
         public Long size;
     }
 
-    public static final String CONNECT_PATH = "/sharedmountpointpirmarystorage/connect";
-    public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/sharedmountpointpirmarystorage/createrootvolume";
-    public static final String DELETE_BITS_PATH = "/sharedmountpointpirmarystorage/bits/delete";
-    public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/sharedmountpointpirmarystorage/createtemplatefromvolume";
-    public static final String UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointpirmarystorage/sftp/upload";
-    public static final String DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointpirmarystorage/sftp/download";
-    public static final String REVERT_VOLUME_FROM_SNAPSHOT_PATH = "/sharedmountpointpirmarystorage/volume/revertfromsnapshot";
-    public static final String MERGE_SNAPSHOT_PATH = "/sharedmountpointpirmarystorage/snapshot/merge";
-    public static final String OFFLINE_MERGE_SNAPSHOT_PATH = "/sharedmountpointpirmarystorage/snapshot/offlinemerge";
-    public static final String CREATE_EMPTY_VOLUME_PATH = "/sharedmountpointpirmarystorage/volume/createempty";
-    public static final String CHECK_BITS_PATH = "/sharedmountpointpirmarystorage/bits/check";
-    public static final String GET_VOLUME_SIZE_PATH = "/sharedmountpointpirmarystorage/volume/getsize";
+    public static final String CONNECT_PATH = "/sharedmountpointprimarystorage/connect";
+    public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/sharedmountpointprimarystorage/createrootvolume";
+    public static final String DELETE_BITS_PATH = "/sharedmountpointprimarystorage/bits/delete";
+    public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/sharedmountpointprimarystorage/createtemplatefromvolume";
+    public static final String UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/upload";
+    public static final String DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/download";
+    public static final String REVERT_VOLUME_FROM_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/volume/revertfromsnapshot";
+    public static final String MERGE_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/snapshot/merge";
+    public static final String OFFLINE_MERGE_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/snapshot/offlinemerge";
+    public static final String CREATE_EMPTY_VOLUME_PATH = "/sharedmountpointprimarystorage/volume/createempty";
+    public static final String CHECK_BITS_PATH = "/sharedmountpointprimarystorage/bits/check";
+    public static final String GET_VOLUME_SIZE_PATH = "/sharedmountpointprimarystorage/volume/getsize";
 
     public KvmBackend(PrimaryStorageVO self) {
         super(self);
