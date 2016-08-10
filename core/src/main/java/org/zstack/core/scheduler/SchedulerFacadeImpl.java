@@ -129,8 +129,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 self.setRepeatCount(msg.getRepeatCount());
                 reSchedule = true;
             }
-            if ( msg.getStartTimeStamp() != 0 ) {
-                self.setStartDate(new Timestamp(msg.getStartTimeStamp()));
+            if ( msg.getStartDate() != 0 ) {
+                self.setStartDate(new Timestamp(msg.getStartDate()));
                 reSchedule = true;
             }
             Trigger oldTrigger = null;
