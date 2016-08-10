@@ -1,4 +1,4 @@
-package org.zstack.core.scheduler;
+package org.zstack.header.core.scheduler;
 
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;

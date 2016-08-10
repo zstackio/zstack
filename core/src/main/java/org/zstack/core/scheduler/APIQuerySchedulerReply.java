@@ -1,5 +1,6 @@
 package org.zstack.core.scheduler;
 
+import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.query.APIQueryReply;
 
 import java.util.List;

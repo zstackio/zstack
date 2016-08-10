@@ -1,7 +1,7 @@
 package org.zstack.core.scheduler;
 
+import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**

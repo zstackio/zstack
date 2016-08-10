@@ -9,7 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.scheduler.SchedulerFacade;
-import org.zstack.core.scheduler.SchedulerVO;
+import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;

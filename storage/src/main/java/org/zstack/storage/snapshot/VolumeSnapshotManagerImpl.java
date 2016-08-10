@@ -16,6 +16,8 @@ import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.scheduler.SchedulerInventory;
+import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -392,7 +394,12 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         job.setVolumeUuid(msg.getVolumeUuid());
         job.setSnapShotName(msg.getSnapShotName());
         job.setSnapShotDescription(msg.getVolumeSnapshotDescription());
-        schedulerFacade.runScheduler(job);
+        SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
+        if ( schedulerVO != null) {
+            schedulerVO = dbf.reload(schedulerVO);
+            SchedulerInventory sinv = SchedulerInventory.valueOf(schedulerVO);
+            evt.setInventory(sinv);
+        }
         bus.publish(evt);
     }
 

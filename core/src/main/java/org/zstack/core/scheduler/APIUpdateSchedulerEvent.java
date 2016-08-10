@@ -1,5 +1,6 @@
 package org.zstack.core.scheduler;
 
+import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.message.APIEvent;
 /**
  * Created by root on 7/18/16.

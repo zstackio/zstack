@@ -1,4 +1,4 @@
-package org.zstack.core.scheduler;
+package org.zstack.header.core.scheduler;
 
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.search.Inventory;

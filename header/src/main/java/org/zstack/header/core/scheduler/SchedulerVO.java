@@ -1,4 +1,4 @@
-package org.zstack.core.scheduler;
+package org.zstack.header.core.scheduler;
 
 import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.vo.ForeignKey;

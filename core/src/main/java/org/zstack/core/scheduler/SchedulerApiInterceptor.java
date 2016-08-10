@@ -8,6 +8,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 

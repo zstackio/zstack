@@ -30,6 +30,8 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.scheduler.SchedulerInventory;
+import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -65,7 +67,10 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.*;
 
@@ -3822,7 +3827,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIStopVmInstanceSchedulerEvent evt = new APIStopVmInstanceSchedulerEvent(msg.getId());
         StopVmInstanceJob job = new StopVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
-        schedulerFacade.runScheduler(job);
+        SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
+        if ( schedulerVO != null) {
+            schedulerVO = dbf.reload(schedulerVO);
+            SchedulerInventory sinv = SchedulerInventory.valueOf(schedulerVO);
+            evt.setInventory(sinv);
+        }
         bus.publish(evt);
     }
 
@@ -3830,7 +3840,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIStartVmInstanceSchedulerEvent evt = new APIStartVmInstanceSchedulerEvent(msg.getId());
         StartVmInstanceJob job = new StartVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
-        schedulerFacade.runScheduler(job);
+        SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
+        if ( schedulerVO != null) {
+            schedulerVO = dbf.reload(schedulerVO);
+            SchedulerInventory sinv = SchedulerInventory.valueOf(schedulerVO);
+            evt.setInventory(sinv);
+        }
         bus.publish(evt);
     }
 }

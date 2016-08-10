@@ -13,6 +13,10 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.scheduler.SchedulerInventory;
+import org.zstack.header.core.scheduler.SchedulerStatus;
+import org.zstack.header.core.scheduler.SchedulerVO;
+import org.zstack.header.core.scheduler.SchedulerVO_;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
@@ -265,11 +269,11 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         loadSchedulerJobs();
     }
 
-    public void runScheduler(SchedulerJob schedulerJob) {
-        runScheduler(schedulerJob, true);
+    public SchedulerVO runScheduler(SchedulerJob schedulerJob) {
+        return runScheduler(schedulerJob, true);
     }
 
-    private void runScheduler(SchedulerJob schedulerJob, boolean saveDB) {
+    private SchedulerVO runScheduler(SchedulerJob schedulerJob, boolean saveDB) {
         logger.debug(String.format("Starting to run Scheduler job %s", schedulerJob.getClass().getName()));
         Timestamp start = null;
         Boolean startNow = false;
@@ -398,6 +402,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         if (saveDB) {
             vo.setStatus(SchedulerStatus.Enabled.toString());
             dbf.persist(vo);
+            return vo;
         }
+        return null;
     }
 }
