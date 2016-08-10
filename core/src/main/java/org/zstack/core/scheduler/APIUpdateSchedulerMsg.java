@@ -15,19 +15,19 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
     @APIParam(maxLength = 255, required = false, emptyString = false)
     private String schedulerType;
     @APIParam(maxLength = 255, required = false)
-    private int schedulerInterval;
+    private Integer schedulerInterval;
     @APIParam(maxLength = 255, required = false)
-    private int repeatCount;
+    private Integer repeatCount;
     @APIParam(maxLength = 255, required = false)
     private String cronScheduler;
     @APIParam(required = false)
-    private long startDate;
+    private Long startDate;
 
-    public long getStartDate() {
+    public Long getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(long startDate) {
+    public void setStartDate(Long startDate) {
         this.startDate = startDate;
     }
 
@@ -55,19 +55,19 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
         this.schedulerType = schedulerType;
     }
 
-    public int getSchedulerInterval() {
+    public Integer getSchedulerInterval() {
         return schedulerInterval;
     }
 
-    public void setSchedulerInterval(int schedulerInterval) {
+    public void setSchedulerInterval(Integer schedulerInterval) {
         this.schedulerInterval = schedulerInterval;
     }
 
-    public int getRepeatCount() {
+    public Integer getRepeatCount() {
         return repeatCount;
     }
 
-    public void setRepeatCount(int repeatCount) {
+    public void setRepeatCount(Integer repeatCount) {
         this.repeatCount = repeatCount;
     }
 
