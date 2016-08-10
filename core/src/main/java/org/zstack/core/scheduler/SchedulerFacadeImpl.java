@@ -12,7 +12,6 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.core.scheduler.SchedulerStatus;
 import org.zstack.header.core.scheduler.SchedulerVO;
@@ -95,11 +94,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private void handle(APIUpdateSchedulerMsg msg) {
-        if (msg.getSchedulerType() == null) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("schedulerType must be set")
-            ));
-        }
+
         SchedulerVO vo = updateScheduler(msg);
         if (vo != null) {
             self = dbf.updateAndRefresh(vo);
@@ -110,7 +105,6 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private SchedulerVO updateScheduler(APIUpdateSchedulerMsg msg) {
-        boolean update = false;
         boolean reSchedule = false;
         self = dbf.findByUuid(msg.getUuid(), SchedulerVO.class);
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
@@ -121,22 +115,36 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         q2.select(SchedulerVO_.triggerGroup);
         q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
         String triggerGroup = q2.findValue();
-        if (msg.getSchedulerName() != null ) {
+        if ( msg.getSchedulerName() != null ) {
             self.setSchedulerName(msg.getSchedulerName());
         }
-        if (msg.getSchedulerType().equals("simple")) {
-            if (msg.getSchedulerInterval() != null ) {
-                self.setSchedulerInterval(msg.getSchedulerInterval());
-                reSchedule = true;
-            }
-            if (msg.getRepeatCount() != null ) {
-                self.setRepeatCount(msg.getRepeatCount());
-                reSchedule = true;
-            }
-            if ( msg.getStartDate() != null ) {
-                self.setStartDate(new Timestamp(msg.getStartDate() * 1000));
-                reSchedule = true;
-            }
+
+        if ( msg.getSchedulerType() != null ) {
+            reSchedule = true;
+            self.setSchedulerType(msg.getSchedulerType());
+        }
+
+        if ( msg.getSchedulerInterval() != null ) {
+            reSchedule = true;
+            self.setSchedulerInterval(msg.getSchedulerInterval());
+        }
+
+        if ( msg.getRepeatCount() != null ) {
+            reSchedule = true;
+            self.setRepeatCount(msg.getRepeatCount());
+        }
+
+        if ( msg.getStartDate() != null ) {
+            reSchedule = true;
+            self.setStartDate(new Timestamp(msg.getStartDate() * 1000));
+        }
+
+        if ( msg.getCronScheduler() != null ) {
+            reSchedule = true;
+            self.setCronScheduler(msg.getCronScheduler());
+        }
+
+        if (self.getSchedulerType().equals("simple") && reSchedule) {
             Trigger oldTrigger = null;
             try {
                 oldTrigger = scheduler.getTrigger(triggerKey(triggerName, triggerGroup));
@@ -144,35 +152,33 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 logger.warn("Get Scheduler trigger failed!");
                 throw new RuntimeException(e);
             }
-            TriggerBuilder tb = oldTrigger != null ? oldTrigger.getTriggerBuilder() : null;
+            TriggerBuilder tb =  oldTrigger.getTriggerBuilder();
             Trigger newTrigger = null;
-            if (tb != null && reSchedule) {
-                if ( msg.getRepeatCount() != 0 ) {
+            if (tb != null) {
+                if ( self.getRepeatCount() != 0 ) {
                     newTrigger = tb.withSchedule(simpleSchedule()
-                            .withIntervalInSeconds(msg.getSchedulerInterval())
-                            .withRepeatCount(msg.getRepeatCount()))
+                            .withIntervalInSeconds(self.getSchedulerInterval())
+                            .withRepeatCount(self.getRepeatCount()))
                             .build();
                 }
                 else {
                     newTrigger = tb.withSchedule(simpleSchedule()
-                            .withIntervalInSeconds(msg.getSchedulerInterval())
+                            .withIntervalInSeconds(self.getSchedulerInterval())
                             .repeatForever())
                             .build();
                 }
             }
 
             try {
-                scheduler.rescheduleJob(oldTrigger != null ? oldTrigger.getKey() : null, newTrigger);
-                update = true;
+                scheduler.rescheduleJob(oldTrigger.getKey(), newTrigger);
             } catch (SchedulerException e) {
                 logger.warn("Reschedule simple Scheduler job failed!");
                 throw new RuntimeException(e);
             }
 
-        }
-        else if (msg.getSchedulerType().equals("cron")) {
-            if ( msg.getCronScheduler() != null ) {
-                self.setCronScheduler(msg.getCronScheduler());
+        } else if (self.getSchedulerType().equals("cron") && reSchedule) {
+            if ( self.getCronScheduler() != null ) {
+                self.setCronScheduler(self.getCronScheduler());
             }
             // retrieve the trigger
             Trigger oldTrigger = null;
@@ -183,18 +189,17 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 throw new RuntimeException(e);
             }
             TriggerBuilder tb = oldTrigger.getTriggerBuilder();
-            Trigger newTrigger = tb.withSchedule(cronSchedule(msg.getCronScheduler()))
+            Trigger newTrigger = tb.withSchedule(cronSchedule(self.getCronScheduler()))
                     .build();
             try {
                 scheduler.rescheduleJob(oldTrigger.getKey(), newTrigger);
-                update = true;
             } catch (SchedulerException e) {
                 logger.warn("Reschedule cron Scheduler job failed!");
                 throw new RuntimeException(e);
             }
         }
 
-        return update ? self : null;
+        return self;
     }
 
 
