@@ -9,8 +9,8 @@ import java.util.Date;
 public interface SchedulerJob {
     Date getStartDate();
     Timestamp getCreateDate();
-    int getSchedulerInterval();
-    int getRepeat();
+    Integer getSchedulerInterval();
+    Integer getRepeat();
     String getSchedulerName();
     String getJobName();
     String getJobGroup();

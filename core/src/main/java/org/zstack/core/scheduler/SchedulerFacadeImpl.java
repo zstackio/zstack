@@ -155,14 +155,22 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             TriggerBuilder tb =  oldTrigger.getTriggerBuilder();
             Trigger newTrigger = null;
             if (tb != null) {
-                if ( self.getRepeatCount() != 0 ) {
-                    newTrigger = tb.withSchedule(simpleSchedule()
-                            .withIntervalInSeconds(self.getSchedulerInterval())
-                            .withRepeatCount(self.getRepeatCount()))
-                            .build();
-                }
-                else {
-                    newTrigger = tb.withSchedule(simpleSchedule()
+                if ( self.getRepeatCount() != null ) {
+                    if ( self.getRepeatCount() == 1 ) {
+                        // repeat only once
+                        newTrigger = tb.startAt(self.getStartDate()).withSchedule(simpleSchedule()
+                                .withIntervalInSeconds(self.getSchedulerInterval()))
+                                .build();
+                    } else {
+                        // repeat multiple times
+                        newTrigger = tb.startAt(self.getStartDate()).withSchedule(simpleSchedule()
+                                .withIntervalInSeconds(self.getSchedulerInterval())
+                                .withRepeatCount(self.getRepeatCount() -1 ))
+                                .build();
+                    }
+                } else {
+                    // repeatCount null means repeat forever
+                    newTrigger = tb.startAt(self.getStartDate()).withSchedule(simpleSchedule()
                             .withIntervalInSeconds(self.getSchedulerInterval())
                             .repeatForever())
                             .build();
@@ -299,7 +307,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 vo.setStartDate(start);
             }
 
-            if ( schedulerJob.getSchedulerInterval() != 0 ) {
+            if ( schedulerJob.getSchedulerInterval() != null ) {
                 vo.setSchedulerInterval(schedulerJob.getSchedulerInterval());
             }
 
@@ -307,7 +315,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 vo.setCronScheduler(schedulerJob.getCron());
             }
 
-            if ( schedulerJob.getRepeat() != 0 ) {
+            if ( schedulerJob.getRepeat() != null ) {
                 vo.setRepeatCount(schedulerJob.getRepeat());
             }
             vo.setJobData(jobData);
@@ -338,8 +346,9 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                     .build();
             if ( schedulerJob.getType().equals("simple")) {
                 Trigger trigger;
-                if ( schedulerJob.getRepeat() != 0 ) {
+                if ( schedulerJob.getRepeat() != null ) {
                     if ( schedulerJob.getRepeat() == 1) {
+                        //repeat only once
                         if ( startNow ) {
                             trigger = newTrigger()
                                     .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
@@ -354,6 +363,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                         }
 
                     } else {
+                        //repeat more than once
                         if ( startNow ) {
                             trigger = newTrigger()
                                     .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())

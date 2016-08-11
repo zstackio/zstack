@@ -121,7 +121,7 @@ public class AbstractSchedulerJob implements SchedulerJob {
         return interval;
     }
 
-    public int getSchedulerInterval() {
+    public Integer getSchedulerInterval() {
         return interval;
     }
 
@@ -129,7 +129,7 @@ public class AbstractSchedulerJob implements SchedulerJob {
         this.interval = interval;
     }
 
-    public int getRepeat() {
+    public Integer getRepeat() {
         return repeat;
     }
 

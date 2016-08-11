@@ -62,7 +62,13 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateSchedulerMessage msg) {
         if (msg.getStartDate() != null && msg.getStartDate() < 0) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("startDate must be positive integer")
+                    String.format("startDate must be positive integer or 0")
+            ));
+        }
+
+        if (msg.getRepeatCount() != null && msg.getRepeatCount() <= 0) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                    String.format("repeatCount must be positive integer")
             ));
         }
 
