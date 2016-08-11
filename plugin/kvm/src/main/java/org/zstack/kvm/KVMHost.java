@@ -23,6 +23,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.AsyncLatch;
+import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
@@ -94,6 +95,7 @@ public class KVMHost extends HostBase implements Host {
     private String detachIsoPath;
     private String checkVmStatePath;
     private String getConsolePortPath;
+    private String changeCpuMemoryPath;
     private String deleteConsoleFirewall;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
@@ -185,6 +187,11 @@ public class KVMHost extends HostBase implements Host {
         getConsolePortPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_CHANGE_CPUMEMORY);
+        changeCpuMemoryPath = ub.build().toString();
+
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
         deleteConsoleFirewall = ub.build().toString();
     }
@@ -238,7 +245,10 @@ public class KVMHost extends HostBase implements Host {
             handle((KvmRunShellMsg) msg);
         } else if (msg instanceof VmDirectlyDestroyOnHypervisorMsg) {
             handle((VmDirectlyDestroyOnHypervisorMsg) msg);
-        } else {
+        } else if (msg instanceof OnlineChangeVmCpuMemoryMsg){
+            handle((OnlineChangeVmCpuMemoryMsg) msg);
+        }
+        else {
             super.handleLocalMessage(msg);
         }
     }
@@ -324,7 +334,42 @@ public class KVMHost extends HostBase implements Host {
 
         bus.reply(msg, reply);
     }
+    private void handle(final OnlineChangeVmCpuMemoryMsg msg){
+        final OnlineChangeCpuMemoryReply reply= new OnlineChangeCpuMemoryReply();
 
+        OnlineChangeCpuMemoryCmd cmd = new OnlineChangeCpuMemoryCmd();
+        cmd.setVmUuid(msg.getVmInstanceUuid());
+        cmd.setCpuNum(msg.getInstanceOfferingInventory().getCpuNum());
+        cmd.setMemorySize(msg.getInstanceOfferingInventory().getMemorySize());
+        restf.asyncJsonPost(changeCpuMemoryPath, cmd, new JsonAsyncRESTCallback<OnlineChangeCpuMemoryResponse>() {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(OnlineChangeCpuMemoryResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                } else {
+                    InstanceOfferingInventory inventory = new InstanceOfferingInventory();
+                    inventory.setCpuNum(ret.getCpuNum());
+                    inventory.setMemorySize(ret.getMemorySize());
+                    reply.setInstanceOfferingInventory(inventory);
+
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<OnlineChangeCpuMemoryResponse> getReturnClass() {
+                return OnlineChangeCpuMemoryResponse.class;
+            }
+        });
+        reply.setInstanceOfferingInventory(msg.getInstanceOfferingInventory());
+        bus.reply(msg,reply);
+    }
     private void handle(final GetVmConsoleAddressFromHostMsg msg) {
         final GetVmConsoleAddressFromHostReply reply = new GetVmConsoleAddressFromHostReply();
 

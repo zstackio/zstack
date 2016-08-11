@@ -28,6 +28,7 @@ public interface KVMConstant {
     public static final String KVM_DESTROY_VM_PATH = "/vm/destroy";
     public static final String KVM_MIGRATE_VM_PATH = "/vm/migrate";
     public static final String KVM_GET_VNC_PORT_PATH = "/vm/getvncport";
+    public static final String KVM_VM_CHANGE_CPUMEMORY = "/vm/changecpumem";
     public static final String KVM_VM_SYNC_PATH = "/vm/vmsync";
     public static final String KVM_ATTACH_VOLUME = "/vm/attachdatavolume";
     public static final String KVM_DETACH_VOLUME = "/vm/detachdatavolume";

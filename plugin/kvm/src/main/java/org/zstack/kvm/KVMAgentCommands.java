@@ -1,6 +1,8 @@
 package org.zstack.kvm;
 
 import org.zstack.core.validation.ConditionalValidation;
+import org.zstack.header.configuration.InstanceOffering;
+import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
@@ -763,7 +765,54 @@ public class KVMAgentCommands {
     }
     public static class StartVmResponse extends AgentResponse {
     }
-    
+    public static class OnlineChangeCpuMemoryCmd extends AgentCommand{
+        private String vmUuid;
+        private int cpuNum;
+        private long memorySize;
+
+        public void setVmUuid(String vmUuid){
+            this.vmUuid = vmUuid;
+        }
+        public String getVmUuid(){
+            return  vmUuid;
+        }
+
+        public void setCpuNum(int cpuNum){
+            this.cpuNum = cpuNum;
+        }
+
+        public int getCpuNum(){
+            return cpuNum;
+        }
+
+        public void setMemorySize(long memorySize){
+            this.memorySize = memorySize;
+        }
+
+        public long getMemorySize(){
+            return memorySize;
+        }
+    }
+    public static class OnlineChangeCpuMemoryResponse extends AgentResponse{
+        private int cpuNum;
+        private long memorySize;
+
+        public void setCpuNum(int cpuNum){
+            this.cpuNum = cpuNum;
+        }
+
+        public int getCpuNum(){
+            return cpuNum;
+        }
+
+        public void setMemorySize(long memorySize){
+            this.memorySize = memorySize;
+        }
+
+        public long getMemorySize(){
+            return memorySize;
+        }
+    }
     public static class GetVncPortCmd extends AgentCommand {
     	private String vmUuid;
 
@@ -790,7 +839,7 @@ public class KVMAgentCommands {
                         return protocol;
                 }
 
-                public void setProtocol(String protocol) {
+        public void setProtocol(String protocol) {
                         this.protocol = protocol;
                 }
     }
