@@ -1993,6 +1993,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APICreateStopVmInstanceSchedulerMsg) msg);
         } else if (msg instanceof APIRebootVmInstanceMsg) {
             handle((APIRebootVmInstanceMsg) msg);
+        } else if (msg instanceof APICreateRebootVmInstanceSchedulerMsg) {
+            handle((APICreateRebootVmInstanceSchedulerMsg) msg);
         } else if (msg instanceof APIDestroyVmInstanceMsg) {
             handle((APIDestroyVmInstanceMsg) msg);
         } else if (msg instanceof APIStartVmInstanceMsg) {
@@ -3824,7 +3826,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void handle(final APICreateStopVmInstanceSchedulerMsg msg) {
-        APIStopVmInstanceSchedulerEvent evt = new APIStopVmInstanceSchedulerEvent(msg.getId());
+        APICreateStopVmInstanceSchedulerEvent evt = new APICreateStopVmInstanceSchedulerEvent(msg.getId());
         StopVmInstanceJob job = new StopVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
         SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
@@ -3837,8 +3839,21 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void handle(final APICreateStartVmInstanceSchedulerMsg msg) {
-        APIStartVmInstanceSchedulerEvent evt = new APIStartVmInstanceSchedulerEvent(msg.getId());
+        APICreateStartVmInstanceSchedulerEvent evt = new APICreateStartVmInstanceSchedulerEvent(msg.getId());
         StartVmInstanceJob job = new StartVmInstanceJob(msg);
+        job.setVmUuid(msg.getVmInstanceUuid());
+        SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
+        if ( schedulerVO != null) {
+            schedulerVO = dbf.reload(schedulerVO);
+            SchedulerInventory sinv = SchedulerInventory.valueOf(schedulerVO);
+            evt.setInventory(sinv);
+        }
+        bus.publish(evt);
+    }
+
+    protected void handle(final APICreateRebootVmInstanceSchedulerMsg msg) {
+        APICreateRebootVmInstanceSchedulerEvent evt = new APICreateRebootVmInstanceSchedulerEvent(msg.getId());
+        RebootVmInstanceJob job = new RebootVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
         SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
         if ( schedulerVO != null) {

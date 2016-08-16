@@ -41,13 +41,6 @@ public class TestQueryScheduler {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        //BeanConstructor con = new BeanConstructor();
-        //con.addXml("SchedulerFacade.xml");
-        //loader = con.build();
-        //dbf = loader.getComponent(DatabaseFacade.class);
-        //api = new Api();
-        //api.startServer();
-        //session = api.loginAsAdmin();
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/kvm/TestCreateVmOnKvm.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
@@ -70,18 +63,6 @@ public class TestQueryScheduler {
         vo.setCronScheduler("1 * * * * ?");
         vo.setUuid(Platform.getUuid());
         vo = dbf.persistAndRefresh(vo);
-
-
-       // Assert.assertNotNull(scheduler);
-       // VmInstanceInventory vm = deployer.vms.get("TestVm");
-       // String volUuid = vm.getRootVolumeUuid();
-       // api.createScheduler(volUuid, session);
-       // TimeUnit.SECONDS.sleep(30);
-       // long record = dbf.count(VolumeSnapshotVO.class);
-       // Assert.assertEquals(3,record);
-       // SchedulerVO vo = new SchedulerVO();
-
-
         SchedulerInventory inv = SchedulerInventory.valueOf(vo);
         APIQuerySchedulerMsg msg = new APIQuerySchedulerMsg();
         QueryTestValidator.validateEQ(msg, api, APIQuerySchedulerReply.class, inv);

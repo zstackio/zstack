@@ -7,4 +7,5 @@
     <TestCase class="org.zstack.test.core.scheduler.TestSchedulerCreateVolumeSnapshot"/>
     <TestCase class="org.zstack.test.compute.vm.TestStartVmScheduler"/>
     <TestCase class="org.zstack.test.compute.vm.TestStopVmScheduler"/>
+    <TestCase class="org.zstack.test.compute.vm.TestRebootVmScheduler"/>
 </UnitTestSuiteConfig>

@@ -287,7 +287,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private SchedulerVO runScheduler(SchedulerJob schedulerJob, boolean saveDB) {
-        logger.debug(String.format("Starting to run Scheduler job %s", schedulerJob.getClass().getName()));
+        logger.debug(String.format("Starting to generate Scheduler job %s", schedulerJob.getClass().getName()));
         Timestamp start = null;
         Boolean startNow = false;
         SchedulerVO vo = new SchedulerVO();

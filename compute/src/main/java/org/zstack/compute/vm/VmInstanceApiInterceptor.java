@@ -14,7 +14,6 @@ import org.zstack.header.cluster.ClusterState;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
@@ -79,8 +78,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APISetVmStaticIpMsg) msg);
         } else if (msg instanceof APIStartVmInstanceMsg) {
             validate((APIStartVmInstanceMsg) msg);
-        } else if (msg instanceof APICreateStopVmInstanceSchedulerMsg) {
-            validate((APICreateStopVmInstanceSchedulerMsg) msg);
         } else if (msg instanceof APICreateStartVmInstanceSchedulerMsg) {
             validate((APICreateStartVmInstanceSchedulerMsg) msg);
         }
@@ -96,48 +93,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validate(APICreateStopVmInstanceSchedulerMsg msg) {
-        if (msg.getType().equals("simple")) {
-            if (msg.getInterval() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("either interval or startTimeStamp must be set when use simple scheduler")
-                ));
-            }
-            if (msg.getStartDate() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("either interval or startTimeStamp must be set when use simple scheduler")
-                ));
-            }
-        }
-        if (msg.getType().equals("cron")) {
-            if (msg.getCron() == null || msg.getCron().isEmpty()) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("cron must be set when use cron scheduler")
-                ));
-            }
-        }
-    }
-
-
     private void validate(APICreateStartVmInstanceSchedulerMsg msg) {
-        if (msg.getType().equals("simple")) {
-            if (msg.getInterval() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("either interval or startTimeStamp must be set when use simple scheduler")
-                ));
-            }
-            if (msg.getStartDate() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("either interval or startTimeStamp must be set when use simple scheduler")
-                ));
-            }
-        }
-        if (msg.getType().equals("cron")) {
-            if (msg.getCron() == null || msg.getCron().isEmpty()) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("cron must be set when use cron scheduler")
-                ));
-            }
+        // host uuid overrides cluster uuid
+        if (msg.getHostUuid() != null) {
+            msg.setClusterUuid(null);
         }
     }
 

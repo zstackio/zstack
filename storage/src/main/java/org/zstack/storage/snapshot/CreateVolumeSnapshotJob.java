@@ -39,7 +39,7 @@ public class CreateVolumeSnapshotJob extends AbstractSchedulerJob {
 
     @Override
     public void run() {
-
+        logger.debug(String.format("run scheduler for job: CreateVolumeSnapshotJob; volume uuid is %s", getVolumeUuid()));
         CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
         cmsg.setName(getSnapShotName());
         cmsg.setDescription(getSnapShotDescription());

@@ -59,9 +59,11 @@ public class TestSchedulerUpdate {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
         // createScheduler test case will start 2s later
-        int interval = 3;
-        int repeatCount = 3;
-        api.createScheduler(volUuid, session, interval, repeatCount);
+        Integer interval = 3;
+        Integer repeatCount = 3;
+        String type = "simple";
+        Long startDate = 0L;
+        api.createVolumeSnapshotScheduler(volUuid, session, type, startDate, interval, repeatCount);
         TimeUnit.SECONDS.sleep(3);
         long record = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(1,record);
@@ -70,6 +72,5 @@ public class TestSchedulerUpdate {
         TimeUnit.SECONDS.sleep(7);
         long record2 = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(4, record2);
-
     }
 }

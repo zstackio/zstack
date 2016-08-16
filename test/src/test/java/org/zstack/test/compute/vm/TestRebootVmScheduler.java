@@ -17,9 +17,9 @@ import org.zstack.test.deployer.Deployer;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by root on 7/30/16.
+ * Created by root on 8/16/16.
  */
-public class TestStartVmScheduler {
+public class TestRebootVmScheduler {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -40,37 +40,18 @@ public class TestStartVmScheduler {
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory inv = api.listVmInstances(null).get(0);
-        api.stopVmInstance(inv.getUuid());
-        VmInstanceVO vm = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
-        Assert.assertNotNull(vm);
-        Assert.assertEquals(VmInstanceState.Stopped, vm.getState());
-        Assert.assertEquals(null, vm.getHostUuid());
-        //inv = api.startVmInstance(inv.getUuid());
-
         String type = "simple";
         Long startDate = 0L;
         Integer interval = 3;
-        Integer repeatCount = 3;
+        Integer repeatCount = 1;
         String vmUuid = inv.getUuid();
-        api.startVmInstanceScheduler(vmUuid, type, startDate, interval, repeatCount);
-        TimeUnit.SECONDS.sleep(2);
+        Assert.assertEquals(VmInstanceState.Running.toString(), inv.getState());
+        api.rebootVmInstanceScheduler(vmUuid, type, startDate, interval, repeatCount);
+        TimeUnit.SECONDS.sleep(10);
+        VmInstanceVO vm = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
+        Assert.assertNotNull(vm);
+        Assert.assertEquals(VmInstanceState.Running, vm.getState());
+        Assert.assertNotNull(vm.getHostUuid());
 
-        VmInstanceVO vm2 = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
-        Assert.assertNotNull(vm2);
-        Assert.assertEquals(VmInstanceState.Running, vm2.getState());
-        Assert.assertNotNull(vm2.getHostUuid());
-
-        api.stopVmInstance(inv.getUuid());
-        VmInstanceVO vm3 = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
-        Assert.assertNotNull(vm3);
-        Assert.assertEquals(VmInstanceState.Stopped, vm3.getState());
-        Assert.assertEquals(null, vm3.getHostUuid());
-
-        TimeUnit.SECONDS.sleep(3);
-
-        VmInstanceVO vm4 = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
-        Assert.assertNotNull(vm4);
-        Assert.assertEquals(VmInstanceState.Running, vm4.getState());
-        Assert.assertNotNull(vm4.getHostUuid());
     }
 }

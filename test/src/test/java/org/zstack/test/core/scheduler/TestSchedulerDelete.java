@@ -58,9 +58,11 @@ public class TestSchedulerDelete {
         Assert.assertNotNull(scheduler);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
-        int interval = 3;
-        int repeatCount = 6;
-        api.createScheduler(volUuid, session, interval, repeatCount);
+        Integer interval = 3;
+        Integer repeatCount = 6;
+        String type="simple";
+        Long startDate = 0L;
+        api.createVolumeSnapshotScheduler(volUuid, session, type, startDate, interval, repeatCount);
         TimeUnit.SECONDS.sleep(8);
         long counter = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(3,counter);
