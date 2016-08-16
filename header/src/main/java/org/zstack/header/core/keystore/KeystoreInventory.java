@@ -4,11 +4,14 @@ import org.zstack.header.search.Inventory;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Created by miao on 16-8-15.
  */
-@Inventory(mappingVOClass = KeystoreVO.class)
+@Inventory(mappingVOClass = KeystoreVO.class, collectionValueOfMethod = "valueOfList")
 public class KeystoreInventory implements Serializable {
     private String uuid;
     private String resourceUuid;
@@ -28,6 +31,14 @@ public class KeystoreInventory implements Serializable {
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
+    }
+
+    public static List<KeystoreInventory> valueOfList(Collection<KeystoreVO> vos) {
+        List<KeystoreInventory> invs = new ArrayList<KeystoreInventory>(vos.size());
+        for (KeystoreVO vo : vos) {
+            invs.add(KeystoreInventory.valueOf(vo));
+        }
+        return invs;
     }
 
     public String getUuid() {
