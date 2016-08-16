@@ -389,11 +389,12 @@ public class NetworkUtils {
         }
     }
 
-    public static List<String> getFreeIpInRange(String startIp, String endIp, List<String> usedIps, int limit) {
+    public static List<String> getFreeIpInRange(String startIp, String endIp, List<String> usedIps, int limit, String start) {
         long s = ipv4StringToLong(startIp);
         long e = ipv4StringToLong(endIp);
+        long f = ipv4StringToLong(start);
         List<String> res = new ArrayList<String>();
-        for (long i=s; i<=e; i++) {
+        for (long i = s > f ? s : f; i<=e; i++) {
             String ip = longToIpv4String(i);
             if (!usedIps.contains(ip)) {
                 res.add(ip);

@@ -14,6 +14,8 @@ public class APIGetFreeIpMsg extends APISyncCallMessage implements L3NetworkMess
     private String l3NetworkUuid;
     @APIParam(resourceType = IpRangeVO.class, required = false, checkAccount = true)
     private String ipRangeUuid;
+    @APIParam(required = false)
+    private String start = "0.0.0.0";
 
     private int limit = 100;
 
@@ -31,6 +33,14 @@ public class APIGetFreeIpMsg extends APISyncCallMessage implements L3NetworkMess
 
     public void setIpRangeUuid(String ipRangeUuid) {
         this.ipRangeUuid = ipRangeUuid;
+    }
+
+    public void setStartIp(String start){
+        this.start = start;
+    }
+
+    public String getStart(){
+        return start;
     }
 
     public int getLimit() {

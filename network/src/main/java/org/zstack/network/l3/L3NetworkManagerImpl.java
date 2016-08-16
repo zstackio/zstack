@@ -107,7 +107,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             handle((APIGetL3NetworkTypesMsg) msg);
         } else if (msg instanceof APIGetIpAddressCapacityMsg) {
             handle((APIGetIpAddressCapacityMsg) msg);
-        } else {
+        }else {
             bus.dealWithUnknownMessage(msg);
         }
     }

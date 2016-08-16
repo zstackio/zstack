@@ -10,7 +10,7 @@ import java.util.List;
 /**
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
-public class APIGetIpAddressCapacityMsg extends APISyncCallMessage {
+public class   APIGetIpAddressCapacityMsg extends APISyncCallMessage {
     @APIParam(required = false, resourceType = ZoneVO.class)
     private List<String> zoneUuids;
     @APIParam(required = false, resourceType = L3NetworkVO.class, checkAccount = true)

@@ -338,14 +338,14 @@ public class L3BasicNetwork implements L3Network {
         bus.publish(evt);
     }
 
-    private List<FreeIpInventory> getFreeIp(final IpRangeVO ipr, int limit) {
+    private List<FreeIpInventory> getFreeIp(final IpRangeVO ipr, int limit, String start) {
         SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
         q.select(UsedIpVO_.ip);
         q.add(UsedIpVO_.ipRangeUuid, Op.EQ, ipr.getUuid());
 
         List<String> used = q.listValue();
 
-        List<String> spareIps = NetworkUtils.getFreeIpInRange(ipr.getStartIp(), ipr.getEndIp(), used, limit);
+        List<String> spareIps = NetworkUtils.getFreeIpInRange(ipr.getStartIp(), ipr.getEndIp(), used, limit, start);
         return CollectionUtils.transformToList(spareIps, new Function<FreeIpInventory, String>() {
             @Override
             public FreeIpInventory call(String arg) {
@@ -364,7 +364,7 @@ public class L3BasicNetwork implements L3Network {
 
         if (msg.getIpRangeUuid() != null) {
             final IpRangeVO ipr = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
-            List<FreeIpInventory> free = getFreeIp(ipr, msg.getLimit());
+            List<FreeIpInventory> free = getFreeIp(ipr, msg.getLimit(),msg.getStart());
             reply.setInventories(free);
         } else {
             SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
@@ -373,7 +373,7 @@ public class L3BasicNetwork implements L3Network {
             List<FreeIpInventory> res = new ArrayList<FreeIpInventory>();
             int limit = msg.getLimit();
             for (IpRangeVO ipr : iprs) {
-                List<FreeIpInventory> i = getFreeIp(ipr, limit);
+                List<FreeIpInventory> i = getFreeIp(ipr, limit,msg.getStart());
                 res.addAll(i);
                 if (res.size() >= msg.getLimit()) {
                     break;
