@@ -8,6 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.keystore.KeystoreInventory;
@@ -27,7 +28,7 @@ import javax.persistence.TypedQuery;
 /**
  * Created by miao on 16-8-15.
  */
-public class KeystoreManagerImpl extends AbstractService implements KeystoreManager {
+public class KeystoreManagerImpl extends AbstractService implements KeystoreManager, ManagementNodeReadyExtensionPoint {
 
     private static final CLogger logger = Utils.getLogger(KeystoreManagerImpl.class);
 
@@ -180,4 +181,10 @@ public class KeystoreManagerImpl extends AbstractService implements KeystoreMana
         return true;
     }
 
+    @AsyncThread
+    @Override
+    public void managementNodeReady() {
+        logger.debug(String.format("Management node[uuid:%s] joins, start KeystoreManager...",
+                Platform.getManagementServerId()));
+    }
 }
