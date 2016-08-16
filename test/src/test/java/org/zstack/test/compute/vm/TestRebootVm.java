@@ -35,8 +35,8 @@ public class TestRebootVm {
     @Test
     public void test() throws ApiSenderException {
         VmInstanceInventory inv = api.listVmInstances(null).get(0);
-        inv = api.rebootVmInstance(inv.getUuid());
         Assert.assertEquals(VmInstanceState.Running.toString(), inv.getState());
+        inv = api.rebootVmInstance(inv.getUuid());
         VmInstanceVO vm = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
         Assert.assertNotNull(vm);
         Assert.assertEquals(VmInstanceState.Running, vm.getState());

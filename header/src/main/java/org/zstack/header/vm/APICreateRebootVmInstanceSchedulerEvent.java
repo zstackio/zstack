@@ -4,9 +4,9 @@ import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.message.APIEvent;
 
 /**
- * Created by root on 7/30/16.
+ * Created by root on 8/16/16.
  */
-public class APIStopVmInstanceSchedulerEvent extends APIEvent {
+public class APICreateRebootVmInstanceSchedulerEvent extends APIEvent {
     private SchedulerInventory inventory;
 
     public SchedulerInventory getInventory() {
@@ -17,10 +17,10 @@ public class APIStopVmInstanceSchedulerEvent extends APIEvent {
         this.inventory = inventory;
     }
 
-    public APIStopVmInstanceSchedulerEvent(String apiId) {
+    public APICreateRebootVmInstanceSchedulerEvent(String apiId) {
         super(apiId);
     }
-    public APIStopVmInstanceSchedulerEvent() {
+    public APICreateRebootVmInstanceSchedulerEvent() {
         super(null);
     }
 }

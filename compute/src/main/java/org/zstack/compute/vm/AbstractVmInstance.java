@@ -25,6 +25,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIStopVmInstanceMsg.class.getName(),
                 StopVmInstanceMsg.class.getName(),
                 APIRebootVmInstanceMsg.class.getName(),
+                RebootVmInstanceMsg.class.getName(),
                 APIDestroyVmInstanceMsg.class.getName(),
                 DestroyVmInstanceMsg.class.getName(),
                 APIMigrateVmMsg.class.getName(),

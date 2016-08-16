@@ -17,8 +17,8 @@ public class AbstractSchedulerJob implements SchedulerJob {
     protected transient CloudBus bus;
 
     private Date startDate;
-    private int interval;
-    private int repeat;
+    private Integer interval;
+    private Integer repeat;
     private String type;
     private String cron;
     private String schedulerName;
@@ -117,7 +117,7 @@ public class AbstractSchedulerJob implements SchedulerJob {
         this.startDate = startDate;
     }
 
-    public int getInterval() {
+    public Integer getInterval() {
         return interval;
     }
 
@@ -125,7 +125,7 @@ public class AbstractSchedulerJob implements SchedulerJob {
         return interval;
     }
 
-    public void setInterval(int interval) {
+    public void setInterval(Integer interval) {
         this.interval = interval;
     }
 
@@ -133,7 +133,7 @@ public class AbstractSchedulerJob implements SchedulerJob {
         return repeat;
     }
 
-    public void setRepeat(int repeat) {
+    public void setRepeat(Integer repeat) {
         this.repeat = repeat;
     }
 

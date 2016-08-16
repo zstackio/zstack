@@ -4199,17 +4199,15 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIDebugSignalEvent.class);
     }
 
-    public void createScheduler(String volUuid, SessionInventory session, Integer interval, Integer repeatCount) throws ApiSenderException {
-        //DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    public void createVolumeSnapshotScheduler(String volUuid, SessionInventory session, String type, Long startDate, Integer interval, Integer repeatCount) throws ApiSenderException {
         Date date = new Date();
         APICreateVolumeSnapshotSchedulerMsg msg = new APICreateVolumeSnapshotSchedulerMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("test");
         msg.setInterval(interval);
         msg.setRepeatCount(repeatCount);
-        msg.setType("simple");
-        //msg.setStartDate(date.getTime() + 2000);
-        msg.setStartDate(0L);
+        msg.setType(type);
+        msg.setStartDate(startDate);
         msg.setSnapShotName("Snapshot-" + volUuid);
         msg.setVolumeSnapshotDescription("Test snapshot");
         msg.setVolumeUuid(volUuid);
@@ -4242,7 +4240,6 @@ public class Api implements CloudBusEventListener {
         msg.setSchedulerType("simple");
         msg.setSchedulerName("update-test");
         msg.setSchedulerInterval(2);
-        msg.setRepeatCount(2);
         msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
@@ -4268,14 +4265,16 @@ public class Api implements CloudBusEventListener {
         msg.setSession(adminSession);
         msg.setSchedulerName("stopvm");
         msg.setInterval(interval);
-        msg.setRepeatCount(repeatCount);
+        if ( repeatCount != null) {
+            msg.setRepeatCount(repeatCount);
+        }
         msg.setType(type);
         msg.setStartDate(startDate);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setVmUuid(vmUuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIStopVmInstanceSchedulerEvent evt = sender.send(msg, APIStopVmInstanceSchedulerEvent.class);
+        APICreateStopVmInstanceSchedulerEvent evt = sender.send(msg, APICreateStopVmInstanceSchedulerEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
@@ -4284,14 +4283,34 @@ public class Api implements CloudBusEventListener {
         msg.setSession(adminSession);
         msg.setSchedulerName("startvm");
         msg.setInterval(interval);
-        msg.setRepeatCount(repeatCount);
+        if ( repeatCount != null) {
+            msg.setRepeatCount(repeatCount);
+        }
         msg.setType(type);
         msg.setStartDate(startDate);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setVmUuid(vmUuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIStartVmInstanceSchedulerEvent evt = sender.send(msg, APIStartVmInstanceSchedulerEvent.class);
+        APICreateStartVmInstanceSchedulerEvent evt = sender.send(msg, APICreateStartVmInstanceSchedulerEvent.class);
+        logger.debug(MessageCommandRecorder.endAndToString());
+    }
+
+    public void rebootVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount ) throws ApiSenderException {
+        APICreateRebootVmInstanceSchedulerMsg msg = new APICreateRebootVmInstanceSchedulerMsg();
+        msg.setSession(adminSession);
+        msg.setSchedulerName("rebootvm");
+        msg.setInterval(interval);
+        if ( repeatCount != null) {
+            msg.setRepeatCount(repeatCount);
+        }
+        msg.setType(type);
+        msg.setStartDate(startDate);
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        msg.setVmUuid(vmUuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICreateRebootVmInstanceSchedulerEvent evt = sender.send(msg, APICreateRebootVmInstanceSchedulerEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 }
