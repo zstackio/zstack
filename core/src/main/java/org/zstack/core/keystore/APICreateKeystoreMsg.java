@@ -1,12 +1,13 @@
 package org.zstack.core.keystore;
 
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**
  * Created by miao on 16-8-15.
  */
-public class APICreateKeystoreMsg extends APICreateMessage {
+public class APICreateKeystoreMsg extends APIMessage {
     @APIParam
     private String resourceUuid;
 
@@ -20,12 +21,10 @@ public class APICreateKeystoreMsg extends APICreateMessage {
     private String content;
 
 
-    @Override
     public String getResourceUuid() {
         return resourceUuid;
     }
 
-    @Override
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
     }
