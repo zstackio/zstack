@@ -87,4 +87,5 @@
     <import resource="springConfigXml/sharedMountPointPrimaryStorage.xml" />
     <import resource="springConfigXml/debug.xml" />
     <import resource="springConfigXml/SchedulerFacade.xml" />
+    <import resource="springConfigXml/KeystoreManager.xml" />
 </beans>
