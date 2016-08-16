@@ -4,11 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.scheduler.APIDeleteSchedulerMsg;
-import org.zstack.core.scheduler.APIUpdateSchedulerMsg;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
-import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
 import org.zstack.header.message.APIMessage;
 
 /**
