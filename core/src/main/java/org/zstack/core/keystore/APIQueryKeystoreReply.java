@@ -9,13 +9,13 @@ import java.util.List;
  * Created by miao on 16-8-15.
  */
 public class APIQueryKeystoreReply extends APIQueryReply {
-    private KeystoreInventory inventory;
+    private List<KeystoreInventory> inventories;
 
-    public KeystoreInventory getInventory() {
-        return inventory;
+    public List<KeystoreInventory> getInventories() {
+        return inventories;
     }
 
-    public void setInventory(KeystoreInventory inventory) {
-        this.inventory = inventory;
+    public void setInventories(List<KeystoreInventory> inventories) {
+        this.inventories = inventories;
     }
 }

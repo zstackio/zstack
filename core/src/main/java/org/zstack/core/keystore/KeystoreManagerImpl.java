@@ -101,7 +101,9 @@ public class KeystoreManagerImpl extends AbstractService implements KeystoreMana
     }
 
     private void handle(APIDeleteKeystoreMsg msg) {
+        APIDeleteKeystoreEvent evt = new APIDeleteKeystoreEvent();
         deleteKeystore(msg.getUuid());
+        bus.publish(evt);
     }
 
     private void handle(CreateKeystoreMsg msg) {
