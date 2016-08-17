@@ -17,10 +17,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  */
@@ -90,6 +87,20 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         }
 
         List<PrimaryStorageVO> vos = query.getResultList();
+
+        if (spec.getRequiredPrimaryStorageTypes() != null && !spec.getRequiredPrimaryStorageTypes().isEmpty()) {
+            Iterator<PrimaryStorageVO> it = vos.iterator();
+            while (it.hasNext()) {
+                PrimaryStorageVO psvo = it.next();
+                if (!spec.getRequiredPrimaryStorageTypes().contains(psvo.getType())) {
+                    logger.debug(String.format("the primary storage[name:%s, uuid:%s, type:%s] is not in required primary storage types[%s]," +
+                            " remove it", psvo.getName(), psvo.getUuid(), psvo.getType(), spec.getRequiredPrimaryStorageTypes()));
+                    it.remove();
+                }
+            }
+        }
+
+
         List<PrimaryStorageVO> res = new ArrayList<PrimaryStorageVO>();
         if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose())) {
             res.addAll(considerImageCache(spec, vos));

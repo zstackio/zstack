@@ -28,6 +28,16 @@ public class HostAllocatorSpec {
     private Map<Object, Object> extraData = new HashMap<Object, Object>();
     private boolean allowNoL3Networks;
     private boolean listAllHosts;
+    private String requiredBackupStorageUuid;
+    private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
+
+    public String getRequiredBackupStorageUuid() {
+        return requiredBackupStorageUuid;
+    }
+
+    public void setRequiredBackupStorageUuid(String requiredBackupStorageUuid) {
+        this.requiredBackupStorageUuid = requiredBackupStorageUuid;
+    }
 
     public boolean isListAllHosts() {
         return listAllHosts;
@@ -172,6 +182,15 @@ public class HostAllocatorSpec {
         spec.setVmOperation(msg.getVmOperation());
         spec.setDiskOfferings(msg.getDiskOfferings());
         spec.setAllowNoL3Networks(msg.isAllowNoL3Networks());
+        spec.setRequiredBackupStorageUuid(msg.getRequiredBackupStorageUuid());
         return spec;
+    }
+
+    public Map<String, List<String>> getBackupStoragePrimaryStorageMetrics() {
+        return backupStoragePrimaryStorageMetrics;
+    }
+
+    public void setBackupStoragePrimaryStorageMetrics(Map<String, List<String>> backupStoragePrimaryStorageMetrics) {
+        this.backupStoragePrimaryStorageMetrics = backupStoragePrimaryStorageMetrics;
     }
 }

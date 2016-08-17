@@ -14,12 +14,14 @@ import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.CollectionUtils;
@@ -93,14 +95,19 @@ public class VmAllocateHostFlow implements Flow {
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setTimeout(TimeUnit.MINUTES.toMillis(60));
         msg.setVmInstance(spec.getVmInventory());
+        msg.setRequiredBackupStorageUuid(spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
         return msg;
     }
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        AllocateHostMsg msg = this.prepareMsg(data);
 
+        if (VmOperation.NewCreate != spec.getCurrentVmOperation()) {
+            throw new CloudRuntimeException("VmAllocateHostFlow is only for creating new VM");
+        }
+
+        AllocateHostMsg msg = this.prepareMsg(data);
         new Log(spec.getVmInventory().getUuid()).log(VmLabels.VM_START_ALLOCATE_HOST);
 
         bus.send(msg, new CloudBusCallBack(chain) {

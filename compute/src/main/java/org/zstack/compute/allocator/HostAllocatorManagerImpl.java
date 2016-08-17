@@ -41,6 +41,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 	private static final CLogger logger = Utils.getLogger(HostAllocatorManagerImpl.class);
 
 	private Map<String, HostAllocatorStrategyFactory> factories = Collections.synchronizedMap(new HashMap<String, HostAllocatorStrategyFactory>());
+    private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
 
 	@Autowired
 	private CloudBus bus;
@@ -231,6 +232,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
 	private void handle(final AllocateHostMsg msg) {
         HostAllocatorSpec spec = HostAllocatorSpec.fromAllocationMsg(msg);
+        spec.setBackupStoragePrimaryStorageMetrics(backupStoragePrimaryStorageMetrics);
+
         String allocatorStrategyType = null;
         for (HostAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(HostAllocatorStrategyExtensionPoint.class)) {
             allocatorStrategyType = ext.getHostAllocatorStrategyName(spec);
@@ -380,6 +383,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 	@Override
 	public boolean start() {
 		populateHostAllocatorStrategyFactory();
+
 		return true;
 	}
 
@@ -540,5 +544,13 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 trigger.rollback();
             }
         };
+    }
+
+    public void setBackupStoragePrimaryStorageMetrics(Map<String, List<String>> backupStoragePrimaryStorageMetrics) {
+        this.backupStoragePrimaryStorageMetrics = backupStoragePrimaryStorageMetrics;
+    }
+
+    public Map<String, List<String>> getBackupStoragePrimaryStorageMetrics() {
+        return backupStoragePrimaryStorageMetrics;
     }
 }

@@ -18,6 +18,15 @@ public class PrimaryStorageAllocationSpec {
     private String imageUuid;
     private boolean noOverProvisioning;
     private String purpose;
+    private List<String> requiredPrimaryStorageTypes;
+
+    public List<String> getRequiredPrimaryStorageTypes() {
+        return requiredPrimaryStorageTypes;
+    }
+
+    public void setRequiredPrimaryStorageTypes(List<String> requiredPrimaryStorageTypes) {
+        this.requiredPrimaryStorageTypes = requiredPrimaryStorageTypes;
+    }
 
     public String getPurpose() {
         return purpose;
