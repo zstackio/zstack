@@ -26,6 +26,12 @@
 	<value>LocalStorage</value>
     </util:list>
 
+    <util:list id="ImageStoreBackupStorageMetric">
+	<value>NFS</value>
+	<value>SharedMountPoint</value>
+	<value>LocalStorage</value>
+    </util:list>
+
     <util:list id="CephMetric">
 	<value>Ceph</value>
     </util:list>
@@ -38,6 +44,7 @@
 	<entry key="SftpBackupStorage" value-ref="SftpBackupStorageMetric"/>
 	<entry key="Fusionstor" value-ref="FusionstorMetric"/>
 	<entry key="Ceph" value-ref="CephMetric"/>
+	<entry key="ImageStoreBackupStorage" value-ref="ImageStoreBackupStorageMetric"/>
     </util:map>
 
     <bean id="HostAllocatorManager" class="org.zstack.compute.allocator.HostAllocatorManagerImpl">
