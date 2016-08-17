@@ -12,6 +12,9 @@ import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 /**
  * Created by Mei Lei on 7/5/16.
  */
@@ -64,6 +67,15 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                     String.format("startDate must be positive integer or 0")
             ));
+        } else if (msg.getStartDate() > 0 ){
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
+                sdf.parse(msg.getStartDate().toString());
+            } catch (ParseException e) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("startDate is not a valid timestamp")
+                ));
+            }
         }
 
         if (msg.getRepeatCount() != null && msg.getRepeatCount() <= 0) {
