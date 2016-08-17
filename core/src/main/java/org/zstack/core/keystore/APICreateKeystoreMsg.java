@@ -1,6 +1,5 @@
 package org.zstack.core.keystore;
 
-import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
