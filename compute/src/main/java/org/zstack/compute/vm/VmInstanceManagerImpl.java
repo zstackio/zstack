@@ -19,8 +19,13 @@ import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
+import org.zstack.header.allocator.AllocateHostDryRunReply;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.configuration.*;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.errorcode.ErrorCode;
@@ -30,11 +35,13 @@ import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
@@ -50,15 +57,15 @@ import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.volume.*;
+import org.zstack.header.zone.ZoneInventory;
+import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.TagUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -72,6 +79,7 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -181,11 +189,111 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             handle((APIGetVmInstanceMsg) msg);
         } else if (msg instanceof APIListVmNicMsg) {
             handle((APIListVmNicMsg) msg);
+        } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
+            handle((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage)msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {
+        DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
+
+        ImageVO image = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
+        if (image.getMediaType() == ImageMediaType.ISO && msg.getRootDiskOfferingUuid() == null) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                    String.format("the image[name:%s, uuid:%s] is an ISO, rootDiskOfferingUuid must be set",
+                            image.getName(), image.getUuid())
+            ));
+        }
+
+        amsg.setImage(ImageInventory.valueOf(image));
+        amsg.setZoneUuid(msg.getZoneUuid());
+        amsg.setClusterUuid(msg.getClusterUuid());
+
+        InstanceOfferingVO insvo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
+        amsg.setCpuCapacity(insvo.getCpuNum());
+        amsg.setMemoryCapacity(insvo.getMemorySize());
+
+        long diskSize = 0;
+        List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
+        if (msg.getDataDiskOfferingUuids() != null) {
+            SimpleQuery<DiskOfferingVO> q = dbf.createQuery(DiskOfferingVO.class);
+            q.add(DiskOfferingVO_.uuid, Op.IN, msg.getDataDiskOfferingUuids());
+            List<DiskOfferingVO> dvos = q.list();
+            diskOfferings.addAll(DiskOfferingInventory.valueOf(dvos));
+        }
+
+        if (image.getMediaType() == ImageMediaType.ISO) {
+            DiskOfferingVO rootDiskOffering = dbf.findByUuid(msg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
+            diskOfferings.add(DiskOfferingInventory.valueOf(rootDiskOffering));
+        } else {
+            diskSize = image.getSize();
+        }
+
+        diskSize += diskOfferings.stream().mapToLong(DiskOfferingInventory::getDiskSize).sum();
+        amsg.setDiskSize(diskSize);
+        amsg.setL3NetworkUuids(msg.getL3NetworkUuids());
+        amsg.setVmOperation(VmOperation.NewCreate.toString());
+        amsg.setDryRun(true);
+        amsg.setListAllHosts(true);
+        amsg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
+
+        if (image.getBackupStorageRefs().size() == 1) {
+            amsg.setRequiredBackupStorageUuid(image.getBackupStorageRefs().iterator().next().getBackupStorageUuid());
+        } else {
+            if (msg.getZoneUuid() == null) {
+                throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                        String.format("zoneUuid must be set because the image[name:%s, uuid:%s] is on multiple backup storage", image.getName(), image.getUuid())
+                ));
+            }
+
+            ImageBackupStorageSelector selector  = new ImageBackupStorageSelector();
+            selector.setZoneUuid(msg.getZoneUuid());
+            selector.setImageUuid(image.getUuid());
+            amsg.setRequiredBackupStorageUuid(selector.select());
+        }
+
+        VmInstanceInventory vm = new VmInstanceInventory();
+        vm.setUuid(Platform.FAKE_UUID);
+        vm.setInstanceOfferingUuid(insvo.getUuid());
+        vm.setImageUuid(image.getUuid());
+        vm.setCpuNum(insvo.getCpuNum());
+        vm.setMemorySize(insvo.getMemorySize());
+        vm.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid() == null ? msg.getL3NetworkUuids().get(0) : msg.getDefaultL3NetworkUuid());
+        vm.setName("for-getting-candidates-zones-clusters-hosts");
+        amsg.setVmInstance(vm);
+
+        APIGetCandidateZonesClustersHostsForCreatingVmReply areply = new APIGetCandidateZonesClustersHostsForCreatingVmReply();
+        bus.makeLocalServiceId(amsg, HostAllocatorConstant.SERVICE_ID);
+        bus.send(amsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    areply.setError(reply.getError());
+                } else {
+                    AllocateHostDryRunReply re = reply.castReply();
+
+                    if (!re.getHosts().isEmpty()) {
+                        areply.setHosts(re.getHosts());
+
+                        List<String> clusterUuids = re.getHosts().stream().map(HostInventory::getClusterUuid).collect(Collectors.toList());
+                        areply.setClusters(ClusterInventory.valueOf(dbf.listByPrimaryKeys(clusterUuids, ClusterVO.class)));
+
+                        List<String> zoneUuids = re.getHosts().stream().map(HostInventory::getZoneUuid).collect(Collectors.toList());
+                        areply.setZones(ZoneInventory.valueOf(dbf.listByPrimaryKeys(zoneUuids, ZoneVO.class)));
+                    } else {
+                        areply.setHosts(new ArrayList<>());
+                        areply.setClusters(new ArrayList<>());
+                        areply.setZones(new ArrayList<>());
+                    }
+                }
+
+                bus.reply(msg, areply);
+            }
+        });
     }
 
     private void handle(APIListVmNicMsg msg) {
