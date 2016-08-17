@@ -14,9 +14,9 @@ import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
-import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
-import org.zstack.utils.SizeUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -26,6 +26,8 @@ import java.util.*;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
+    private static final CLogger logger = Utils.getLogger(LocalStorageMainAllocatorFlow.class);
+
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -151,6 +153,18 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             TypedQuery<PrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             q.setParameter("psUuids", candidates);
             res = q.getResultList();
+        }
+
+        if (spec.getRequiredPrimaryStorageTypes() != null && !spec.getRequiredPrimaryStorageTypes().isEmpty()) {
+            Iterator<PrimaryStorageVO> it = res.iterator();
+            while (it.hasNext()) {
+                PrimaryStorageVO psvo = it.next();
+                if (!spec.getRequiredPrimaryStorageTypes().contains(psvo.getType())) {
+                    logger.debug(String.format("the primary storage[name:%s, uuid:%s, type:%s] is not in required primary storage types[%s]," +
+                            " remove it", psvo.getName(), psvo.getUuid(), psvo.getType(), spec.getRequiredPrimaryStorageTypes()));
+                    it.remove();
+                }
+            }
         }
 
         Result ret = new Result();

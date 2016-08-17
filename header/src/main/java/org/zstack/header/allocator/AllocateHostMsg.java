@@ -22,6 +22,15 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private List<DiskOfferingInventory> diskOfferings;
     private boolean allowNoL3Networks;
     private boolean listAllHosts;
+    private String requiredBackupStorageUuid;
+
+    public String getRequiredBackupStorageUuid() {
+        return requiredBackupStorageUuid;
+    }
+
+    public void setRequiredBackupStorageUuid(String requiredBackupStorageUuid) {
+        this.requiredBackupStorageUuid = requiredBackupStorageUuid;
+    }
 
     public boolean isListAllHosts() {
         return listAllHosts;

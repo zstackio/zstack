@@ -19,6 +19,7 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.Map;
@@ -33,9 +34,14 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
     private ErrorFacade errf;
 
     private String findBackupStorage(VmInstanceSpec spec, String imageUuid) {
-        String zoneUuid = spec.getDestHost().getZoneUuid();
+        if (spec.getImageSpec().getInventory().getBackupStorageRefs().size() == 1) {
+            return spec.getImageSpec().getInventory().getBackupStorageRefs().iterator().next().getBackupStorageUuid();
+        }
+
+        DebugUtils.Assert(spec.getVmInventory().getZoneUuid() != null, "zone uuid must be set if the image is on multiple backup storage");
+
         ImageBackupStorageSelector selector = new ImageBackupStorageSelector();
-        selector.setZoneUuid(zoneUuid);
+        selector.setZoneUuid(spec.getVmInventory().getZoneUuid());
         selector.setImageUuid(imageUuid);
         String bsUuid = selector.select();
 
@@ -64,13 +70,23 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
             }
         }
 
-        throw new OperationFailureException(errf.stringToOperationError(
-                String.format("cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n" +
-                                "1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n" +
-                                "2. if the backup storage is in connected status, if not, try reconnecting it",
-                        imageUuid, zoneUuid, spec.getVmInventory().getName(), spec.getVmInventory().getUuid())
-        ));
+        if (spec.getVmInventory().getZoneUuid() != null) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n" +
+                                    "1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n" +
+                                    "2. if the backup storage is in connected status, if not, try reconnecting it",
+                            imageUuid, spec.getVmInventory().getZoneUuid(), spec.getVmInventory().getName(), spec.getVmInventory().getUuid())
+            ));
+        } else {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("cannot find the image[uuid:%s] in any connected backup storage. check below:\n" +
+                                    "1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n" +
+                                    "2. if the backup storage is in connected status, if not, try reconnecting it",
+                            imageUuid, spec.getVmInventory().getName(), spec.getVmInventory().getUuid())
+            ));
+        }
     }
+
 
     @Override
     public void run(FlowTrigger trigger, Map data) {

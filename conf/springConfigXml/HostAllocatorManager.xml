@@ -2,12 +2,15 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
     xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
+    xmlns:util="http://www.springframework.org/schema/util"
     xsi:schemaLocation="http://www.springframework.org/schema/beans
     http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
     http://www.springframework.org/schema/aop
     http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
     http://www.springframework.org/schema/tx 
     http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+    http://www.springframework.org/schema/util
+    http://www.springframework.org/schema/util/spring-util-3.0.xsd
     http://zstack.org/schema/zstack 
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
@@ -16,12 +19,35 @@
 
     <bean id="HostCapacityOverProvisioningManager" class="org.zstack.compute.allocator.HostCapacityOverProvisioningManagerImpl" />
 
+    <util:list id="SftpBackupStorageMetric">
+	<value>NFS</value>
+	<value>Ceph</value>
+	<value>SharedMountPoint</value>
+	<value>LocalStorage</value>
+    </util:list>
+
+    <util:list id="CephMetric">
+	<value>Ceph</value>
+    </util:list>
+
+    <util:list id="FusionstorMetric">
+	<value>Fusionstor</value>
+    </util:list>
+
+    <util:map id="BackupStoragePrimaryStorageMetrics" value-type="java.util.List">
+	<entry key="SftpBackupStorage" value-ref="SftpBackupStorageMetric"/>
+	<entry key="Fusionstor" value-ref="FusionstorMetric"/>
+	<entry key="Ceph" value-ref="CephMetric"/>
+    </util:map>
+
     <bean id="HostAllocatorManager" class="org.zstack.compute.allocator.HostAllocatorManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint" />
         </zstack:plugin>
+
+        <property name="backupStoragePrimaryStorageMetrics" ref="BackupStoragePrimaryStorageMetrics" />
     </bean>
 
     <bean id="HostCapacityReserveManager" class="org.zstack.compute.allocator.HostCapacityReserveManagerImpl">
@@ -45,6 +71,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostCapacityAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.ImageBackupStorageAllocatorFlow</value>
@@ -66,6 +93,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostCapacityAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.ImageBackupStorageAllocatorFlow</value>
@@ -86,6 +114,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.DesignatedHostAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostCapacityAllocatorFlow</value>
@@ -108,6 +137,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostCapacityAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.AttachedVolumePrimaryStorageAllocatorFlow</value>
@@ -129,6 +159,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostCapacityAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.AttachedVolumePrimaryStorageAllocatorFlow</value>

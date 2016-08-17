@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.storage.backup.BackupStorageStatus;
@@ -46,6 +47,7 @@ public class ImageBackupStorageSelector {
         this.zoneUuid = zoneUuid;
     }
 
+    @Transactional(readOnly = true)
     public String select() {
         assert imageUuid != null : "imageUuid cannot be null";
         assert zoneUuid != null : "zoneUuid cannot be null";

@@ -3,24 +3,30 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.utils.Bucket;
+import org.zstack.utils.DebugUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +40,8 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
     protected CloudBus bus;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    protected HostAllocatorManager hostAllocatorMgr;
 
     private static final String SUCCESS = VmAllocatePrimaryStorageFlow.class.getName();
 
@@ -43,6 +51,15 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory destHost = spec.getDestHost();
         final ImageInventory iminv = spec.getImageSpec().getInventory();
+
+        SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
+        q.select(BackupStorageVO_.type);
+        q.add(BackupStorageVO_.uuid, Op.EQ, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
+        String bsType = q.findValue();
+
+        List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
+        DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
+
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
@@ -56,8 +73,8 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             rmsg.setSize(iminv.getSize());
             rmsg.setRequiredHostUuid(destHost.getUuid());
         }
-
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
+        rmsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
 
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
@@ -68,6 +85,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             amsg.setRequiredHostUuid(destHost.getUuid());
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setDiskOfferingUuid(dinv.getUuid());
+            amsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }

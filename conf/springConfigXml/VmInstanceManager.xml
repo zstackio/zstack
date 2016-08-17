@@ -15,9 +15,9 @@
     <bean id="VmInstanceManager" class="org.zstack.compute.vm.VmInstanceManagerImpl">
         <property name="createVmWorkFlowElements">
             <list>
+                <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateHostFlow</value>
                 <value>org.zstack.compute.vm.VmAllocatePrimaryStorageFlow</value>
-                <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>

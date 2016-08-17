@@ -5,10 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.allocator.*;
-import org.zstack.header.host.HostStatus;
+import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
@@ -18,7 +17,6 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
