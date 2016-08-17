@@ -82,6 +82,7 @@ public class KeystoreManagerImpl extends AbstractService implements KeystoreMana
         }
     }
 
+    @Transactional
     private void handle(APICreateKeystoreMsg msg) {
         APICreateKeystoreReply reply = new APICreateKeystoreReply();
 
@@ -106,6 +107,7 @@ public class KeystoreManagerImpl extends AbstractService implements KeystoreMana
         bus.publish(evt);
     }
 
+    @Transactional
     private void handle(CreateKeystoreMsg msg) {
         CreateKeystoreReply reply = new CreateKeystoreReply();
 
@@ -124,6 +126,7 @@ public class KeystoreManagerImpl extends AbstractService implements KeystoreMana
         bus.reply(msg, reply);
     }
 
+    @Transactional
     private void handle(QueryKeystoreMsg msg) {
         QueryKeystoreReply reply = new QueryKeystoreReply();
         KeystoreInventory kinv = new KeystoreInventory();
