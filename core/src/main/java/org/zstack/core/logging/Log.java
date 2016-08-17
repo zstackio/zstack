@@ -163,7 +163,10 @@ public class Log {
     }
 
     protected Log write() {
-        logf.getBackend().writeLog(this);
+        if (getResourceUuid() != null && !getResourceUuid().equals(Platform.FAKE_UUID)) {
+            logf.getBackend().writeLog(this);
+        }
+
         return this;
     }
 

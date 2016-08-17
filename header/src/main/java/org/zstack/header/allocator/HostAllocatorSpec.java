@@ -30,6 +30,15 @@ public class HostAllocatorSpec {
     private boolean listAllHosts;
     private String requiredBackupStorageUuid;
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
+    private boolean dryRun;
+
+    public boolean isDryRun() {
+        return dryRun;
+    }
+
+    public void setDryRun(boolean dryRun) {
+        this.dryRun = dryRun;
+    }
 
     public String getRequiredBackupStorageUuid() {
         return requiredBackupStorageUuid;
@@ -164,8 +173,9 @@ public class HostAllocatorSpec {
         spec.setCpuCapacity(msg.getCpuCapacity());
         spec.setDiskSize(msg.getDiskSize());
         spec.setListAllHosts(msg.isListAllHosts());
+        spec.setDryRun(msg.isDryRun());
         String hvType = null;
-        if (msg.getVmInstance().getHypervisorType() != null) {
+        if (msg.getVmInstance() != null && msg.getVmInstance().getHypervisorType() != null) {
             hvType = msg.getVmInstance().getHypervisorType();
         }
         if (hvType == null && msg.getImage() != null) {

@@ -53,6 +53,7 @@ public class Platform {
     private static MessageSource messageSource;
 
     public static final String COMPONENT_CLASSPATH_HOME = "componentsHome";
+    public static final String FAKE_UUID = "THIS_IS_IS_A_FAKE_UUID";
 
     private static final Map<String, String> globalProperties = new HashMap<String, String>();
 

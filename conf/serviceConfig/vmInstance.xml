@@ -135,4 +135,7 @@
     <message>
         <name>org.zstack.header.vm.APIDeleteVmSshKeyMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmMsg</name>
+    </message>
 </service>
