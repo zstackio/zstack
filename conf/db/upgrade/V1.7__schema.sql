@@ -8,3 +8,5 @@ CREATE TABLE  `zstack`.`KeystoreVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE zstack.AccountResourceRefVO ADD UNIQUE INDEX(resourceUuid,resourceType);
