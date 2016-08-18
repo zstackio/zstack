@@ -20,3 +20,7 @@ ALTER TABLE `zstack`.`VipVO` column description varchar(2048) DEFAULT NULL;
 ALTER TABLE `zstack`.`GlobalConfigVO` column description varchar(2048) DEFAULT NULL;
 ALTER TABLE `zstack`.`NetworkServiceProviderVO` column description varchar(2048) DEFAULT NULL;
 ALTER TABLE `zstack`.`SecurityGroupVO` column description varchar(2048) DEFAULT NULL;
+
+ALTER TABLE `zstack`.`PolicyVO` column description varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`person` column description varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`UserGroupVO` column description varchar(2048) DEFAULT NULL;
