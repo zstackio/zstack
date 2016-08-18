@@ -59,6 +59,10 @@ class HostExtensionToCluster implements ClusterChangeStateExtensionPoint {
 		List<HostVO> vos = findHostUnderClusterByUuid(inventory.getUuid());
 		if (!vos.isEmpty()) {
 			for (HostVO h : vos) {
+				if (h.getState() == HostState.Maintenance || h.getState() == HostState.PreMaintenance) {
+				    continue;
+				}
+
 				ChangeHostStateMsg msg = new ChangeHostStateMsg(h.getUuid(), hostEvent.toString());
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, h.getUuid());
 				ChangeHostStateReply r = (ChangeHostStateReply) bus.call(msg);
