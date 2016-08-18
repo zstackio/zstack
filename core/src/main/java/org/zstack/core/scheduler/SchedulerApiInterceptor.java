@@ -12,6 +12,7 @@ import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
@@ -70,7 +71,8 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
         } else if (msg.getStartDate() > 0 ){
             try {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
-                sdf.parse(msg.getStartDate().toString());
+                Timestamp ts = new Timestamp(msg.getStartDate());
+                sdf.parse(ts.toString());
             } catch (ParseException e) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("startDate is not a valid timestamp")
