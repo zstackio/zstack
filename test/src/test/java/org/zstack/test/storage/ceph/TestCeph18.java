@@ -13,14 +13,17 @@ import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.ceph.CephConstants;
 import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.utils.data.SizeUnit;
 
 /**
- * 1. has both ceph/nfs primary storage but only ceph backup storage
+ * 1. has both ceph/nfs/local primary storage but only ceph backup storage
  * 2. create a vm
  *
  * confirm the vm is created on ceph primary storage
@@ -35,6 +38,7 @@ public class TestCeph18 {
     CephPrimaryStorageSimulatorConfig config;
     KVMSimulatorConfig kconfig;
     CephBackupStorageSimulatorConfig bconfig;
+    LocalStorageSimulatorConfig lconfig;
 
     @Before
     public void setUp() throws Exception {
@@ -44,9 +48,22 @@ public class TestCeph18 {
         deployer.addSpringConfig("ceph.xml");
         deployer.addSpringConfig("cephSimulator.xml");
         deployer.addSpringConfig("KVMRelated.xml");
+        deployer.addSpringConfig("localStorageSimulator.xml");
+        deployer.addSpringConfig("localStorage.xml");
+        deployer.load();
+        loader = deployer.getComponentLoader();
+
+        lconfig = loader.getComponent(LocalStorageSimulatorConfig.class);
+
+        long totalSize = SizeUnit.GIGABYTE.toByte(100);
+        Capacity c = new Capacity();
+        c.total = totalSize;
+        c.avail = totalSize;
+
+        lconfig.capacityMap.put("host1", c);
+
         deployer.build();
         api = deployer.getApi();
-        loader = deployer.getComponentLoader();
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(CephPrimaryStorageSimulatorConfig.class);

@@ -82,6 +82,8 @@
                     totalCapacity="1T" availableCapacity="500G" url="ceph://test" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost/?monPort=7777,root:password@127.0.0.1/?monPort=7777"/>
                 <nfsPrimaryStorage name="nfs" description="Test"
                                    totalCapacity="1T" url="nfs://test" />
+                <localPrimaryStorage name="local" description="Test"
+                                     url="/test" />
             </primaryStorages>
         </zone>
     </zones>
