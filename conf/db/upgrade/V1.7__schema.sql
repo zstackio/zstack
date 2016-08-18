@@ -13,14 +13,14 @@ ALTER TABLE `zstack`.`AccountResourceRefVO` ADD UNIQUE INDEX(resourceUuid,resour
 
 ALTER TABLE `zstack`.`ConsoleProxyAgentVO` modify column description varchar(2048) DEFAULT NULL;
 ALTER TABLE `zstack`.`ImageEO` modify column description varchar(2048) DEFAULT NULL COMMENT 'image description';
-ALTER TABLE `zstack`.`InstanceOfferingEO` column description varchar(2048) DEFAULT NULL  COMMENT 'instance offering description';
-ALTER TABLE `zstack`.`DiskOfferingEO` column description varchar(2048) DEFAULT NULL COMMENT 'disk offering description';
-ALTER TABLE `zstack`.`VolumeEO` column description varchar(2048) DEFAULT NULL;
-ALTER TABLE `zstack`.`VipVO` column description varchar(2048) DEFAULT NULL;
-ALTER TABLE `zstack`.`GlobalConfigVO` column description varchar(2048) DEFAULT NULL;
-ALTER TABLE `zstack`.`NetworkServiceProviderVO` column description varchar(2048) DEFAULT NULL;
-ALTER TABLE `zstack`.`SecurityGroupVO` column description varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`InstanceOfferingEO` modify column description varchar(2048) DEFAULT NULL COMMENT 'instance offering description';
+ALTER TABLE `zstack`.`DiskOfferingEO` modify column description varchar(2048) DEFAULT NULL COMMENT 'disk offering description';
+ALTER TABLE `zstack`.`VolumeEO` modify column description varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`VipVO` modify column description varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`GlobalConfigVO` modify column description varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`NetworkServiceProviderVO` modify column description varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`SecurityGroupVO` modify column description varchar(2048) DEFAULT NULL;
 
-ALTER TABLE `zstack`.`PolicyVO` column description varchar(2048) DEFAULT NULL;
-ALTER TABLE `zstack`.`person` column description varchar(2048) DEFAULT NULL;
-ALTER TABLE `zstack`.`UserGroupVO` column description varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`PolicyVO` modify column description varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`person` modify column description varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`UserGroupVO` modify column description varchar(2048) DEFAULT NULL;
