@@ -92,6 +92,13 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
                         String.format("interval and startDate must be set when use simple scheduler")
                 ));
             }
+
+            if (msg.getInterval() <= 0) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("interval must be positive integer")
+                ));
+            }
+
             if (msg.getStartDate() == null) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("interval and startDate must be set when use simple scheduler")
