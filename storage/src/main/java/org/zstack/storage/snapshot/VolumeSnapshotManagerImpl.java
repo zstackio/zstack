@@ -230,37 +230,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         }
     }
 
-    @Transactional
     private VolumeSnapshotStruct saveIndividualTypeSnapshot(VolumeSnapshotVO vo) {
-        String sql = "select c from VolumeSnapshotTreeVO c where c.volumeUuid = :volUuid and c.current = true";
-        TypedQuery<VolumeSnapshotTreeVO> cq = dbf.getEntityManager().createQuery(sql, VolumeSnapshotTreeVO.class);
-        cq.setParameter("volUuid", vo.getVolumeUuid());
-        List<VolumeSnapshotTreeVO> rets = cq.getResultList();
-        DebugUtils.Assert(rets.size() < 2, "can not have more than one VolumeSnapshotTreeVO with current=1");
-        VolumeSnapshotTreeVO chain = rets.isEmpty() ? null : rets.get(0);
-        if (chain == null) {
-            return newChain(vo);
-        }
-
-        sql = "select s from VolumeSnapshotVO s where s.latest = true and s.volumeUuid = :volUuid and s.treeUuid = :chainUuid";
-        TypedQuery<VolumeSnapshotVO> q = dbf.getEntityManager().createQuery(sql, VolumeSnapshotVO.class);
-        q.setParameter("volUuid", vo.getVolumeUuid());
-        q.setParameter("chainUuid", chain.getUuid());
-        VolumeSnapshotVO latest = q.getSingleResult();
-
-        latest.setLatest(false);
-        latest = dbf.getEntityManager().merge(latest);
-
-        vo.setTreeUuid(latest.getTreeUuid());
-        vo.setLatest(true);
-        vo.setParentUuid(latest.getUuid());
-        vo.setDistance(0);
-        vo = dbf.getEntityManager().merge(vo);
-
-        VolumeSnapshotStruct struct = new VolumeSnapshotStruct();
-        struct.setParent(VolumeSnapshotInventory.valueOf(latest));
-        struct.setCurrent(VolumeSnapshotInventory.valueOf(vo));
-        return struct;
+        return newChain(vo);
     }
 
     @Transactional
