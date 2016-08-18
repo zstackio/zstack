@@ -87,13 +87,13 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getType().equals("simple")) {
-            if (msg.getInterval() == null) {
+            if (msg.getInterval() == null && msg.getRepeatCount() != 1) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("interval and startDate must be set when use simple scheduler")
+                        String.format("interval must be set when use simple scheduler when repeat more than once")
                 ));
             }
 
-            if (msg.getInterval() <= 0) {
+            if (msg.getInterval() != null && msg.getInterval() <= 0) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("interval must be positive integer")
                 ));
@@ -101,7 +101,7 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
 
             if (msg.getStartDate() == null) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("interval and startDate must be set when use simple scheduler")
+                        String.format("startDate must be set when use simple scheduler")
                 ));
             }
         }
