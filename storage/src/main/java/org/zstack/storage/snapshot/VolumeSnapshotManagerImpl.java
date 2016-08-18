@@ -230,7 +230,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         }
     }
 
+    @Transactional
     private VolumeSnapshotStruct saveIndividualTypeSnapshot(VolumeSnapshotVO vo) {
+        String sql = "update VolumeSnapshotVO s set s.latest = false where s.latest = true and s.volumeUuid = :volUuid";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("volUuid", vo.getVolumeUuid());
+        q.executeUpdate();
+
         return newChain(vo);
     }
 

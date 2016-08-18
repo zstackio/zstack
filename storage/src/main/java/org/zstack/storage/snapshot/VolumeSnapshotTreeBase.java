@@ -1183,11 +1183,36 @@ public class VolumeSnapshotTreeBase {
         chain.setName(String.format("revert-volume-%s-from-snapshot-%s", currentRoot.getVolumeUuid(), currentRoot.getUuid()));
         chain.then(new ShareFlow() {
             String newVolumeInstallPath;
+            VolumeSnapshotCapability capability;
             VolumeVO volume = dbf.findByUuid(currentRoot.getVolumeUuid(), VolumeVO.class);
             VolumeInventory volumeInventory = VolumeInventory.valueOf(volume);
 
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("ask-volume-snapshot-capability-for-volume-%s", volume.getUuid());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        AskVolumeSnapshotCapabilityMsg askMsg = new AskVolumeSnapshotCapabilityMsg();
+                        askMsg.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
+                        askMsg.setVolume(volumeInventory);
+                        bus.makeTargetServiceIdByResourceUuid(askMsg, PrimaryStorageConstant.SERVICE_ID, volume.getPrimaryStorageUuid());
+                        bus.send(askMsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    AskVolumeSnapshotCapabilityReply capabilityReply = reply.castReply();
+                                    capability = capabilityReply.getCapability();
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "revert-volume-from-volume-snapshot-on-primary-storage";
 
@@ -1215,9 +1240,19 @@ public class VolumeSnapshotTreeBase {
                 done(new FlowDoneHandler(msg, completion) {
                     @Transactional
                     private void updateLatest() {
-                        String sql = "update VolumeSnapshotVO s set s.latest = false where s.latest = true and s.treeUuid = :treeUuid";
-                        Query q = dbf.getEntityManager().createQuery(sql);
-                        q.setParameter("treeUuid", currentRoot.getTreeUuid());
+                        String sql;
+                        Query q;
+
+                        if (capability.getArrangementType() == VolumeSnapshotCapability.VolumeSnapshotArrangementType.CHAIN) {
+                            sql = "update VolumeSnapshotVO s set s.latest = false where s.latest = true and s.treeUuid = :treeUuid";
+                            q = dbf.getEntityManager().createQuery(sql);
+                            q.setParameter("treeUuid", currentRoot.getTreeUuid());
+                        } else {
+                            sql = "update VolumeSnapshotVO s set s.latest = false where s.latest = true and s.volumeUuid = :volUuid and s.uuid != :uuid";
+                            q = dbf.getEntityManager().createQuery(sql);
+                            q.setParameter("volUuid", volume.getUuid());
+                            q.setParameter("uuid", msg.getSnapshotUuid());
+                        }
                         q.executeUpdate();
 
                         currentRoot.setLatest(true);
