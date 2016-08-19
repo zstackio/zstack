@@ -118,9 +118,9 @@ public class TestMevoco21 {
                 effect, JSONObjectUtil.toJsonString(PolicyInventory.valueOf(ps))));
     }
     */
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         IdentityCreator creator = new IdentityCreator(api);
         AccountInventory test = creator.createAccount("test", "test");
 
@@ -185,6 +185,30 @@ public class TestMevoco21 {
         validate(ps, "EIP.UPDATE", "eip:APIUpdateEipMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "EIP.ATTACH", "eip:APIAttachEipMsg", AccountConstant.StatementEffect.Allow);
         validate(ps, "EIP.DETACH", "eip:APIDetachEipMsg", AccountConstant.StatementEffect.Allow);
+
+        validate(ps, "VM.SSH-KEY.SET", "instance:APISetVmSshKeyMsg",
+                AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.SSH-KEY.DELETE", "instance:APIDeleteVmSshKeyMsg",
+                AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.CONSOLE-PASSWORD.SET", "instance:APISetVmConsolePasswordMsg",
+                AccountConstant.StatementEffect.Allow);
+        validate(ps, "VM.CONSOLE-PASSWORD.DELETE", "instance:APIDeleteVmConsolePasswordMsg",
+                AccountConstant.StatementEffect.Allow);
+
+        validate(ps, "SCHEDULER.CREATE", "scheduler:APICreateRebootVmInstanceSchedulerMsg",
+                AccountConstant.StatementEffect.Allow);
+        validate(ps, "SCHEDULER.CREATE", "scheduler:APICreateStartVmInstanceSchedulerMsg",
+                AccountConstant.StatementEffect.Allow);
+        validate(ps, "SCHEDULER.CREATE", "scheduler:APICreateStopVmInstanceSchedulerMsg",
+                AccountConstant.StatementEffect.Allow);
+        validate(ps, "SCHEDULER.CREATE", "scheduler:APICreateVolumeSnapshotSchedulerMsg",
+                AccountConstant.StatementEffect.Allow);
+
+        validate(ps, "SCHEDULER.DELETE", "scheduler:APIDeleteSchedulerMsg",
+                AccountConstant.StatementEffect.Allow);
+        validate(ps, "SCHEDULER.UPDATE", "scheduler:APIUpdateSchedulerMsg",
+                AccountConstant.StatementEffect.Allow);
+
 
         APIQueryPolicyMsg qmsg = new APIQueryPolicyMsg();
         qmsg.addQueryCondition("accountUuid", QueryOp.EQ, test.getUuid());
