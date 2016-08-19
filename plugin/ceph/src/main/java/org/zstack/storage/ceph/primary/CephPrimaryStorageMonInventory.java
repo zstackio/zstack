@@ -20,8 +20,7 @@ public class CephPrimaryStorageMonInventory {
     private String sshUsername;
     private String sshPassword;
     private Integer sshPort;
-
-
+    private String status;
     private String monUuid;
 
     public static CephPrimaryStorageMonInventory valueOf(CephPrimaryStorageMonVO vo) {
@@ -35,6 +34,7 @@ public class CephPrimaryStorageMonInventory {
         inv.setSshUsername(vo.getSshUsername());
         inv.setSshPassword(vo.getSshPassword());
         inv.setMonUuid(vo.getUuid());
+        inv.setStatus(vo.getStatus().toString());
         return inv;
     }
 
@@ -45,6 +45,14 @@ public class CephPrimaryStorageMonInventory {
         }
 
         return invs;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getSshPassword() {
