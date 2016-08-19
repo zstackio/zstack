@@ -1,12 +1,14 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
 
 /**
  * Created by root on 7/11/16.
  */
-public class APICreateVolumeSnapshotSchedulerMsg extends APICreateSchedulerMessage implements  VolumeMessage {
+@Action(category = VolumeConstant.ACTION_CATEGORY)
+public class APICreateVolumeSnapshotSchedulerMsg extends APICreateSchedulerMessage implements VolumeMessage {
     /**
      * @desc volume uuid. See :ref:`VolumeInventory`
      */
@@ -24,7 +26,7 @@ public class APICreateVolumeSnapshotSchedulerMsg extends APICreateSchedulerMessa
     private String volumeSnapshotDescription;
 
     @Override
-    public String getVolumeUuid(){
+    public String getVolumeUuid() {
         return volumeUuid;
     }
 
