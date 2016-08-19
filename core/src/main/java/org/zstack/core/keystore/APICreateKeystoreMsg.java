@@ -1,11 +1,13 @@
 package org.zstack.core.keystore;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 
 /**
  * Created by miao on 16-8-15.
  */
+@Action(category = KeystoreConstant.ACTION_CATEGORY)
 public class APICreateKeystoreMsg extends APISyncCallMessage {
     @APIParam
     private String resourceUuid;

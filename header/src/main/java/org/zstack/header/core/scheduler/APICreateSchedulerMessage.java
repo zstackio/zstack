@@ -1,5 +1,6 @@
 package org.zstack.header.core.scheduler;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
@@ -14,13 +15,13 @@ public class APICreateSchedulerMessage extends APICreateMessage {
     private String schedulerDescription;
     @APIParam(validValues = {"simple", "cron"})
     private String type;
-    @APIParam (required = false)
+    @APIParam(required = false)
     private Integer interval;
-    @APIParam (required = false)
+    @APIParam(required = false)
     private Integer repeatCount;
-    @APIParam (required = false)
+    @APIParam(required = false)
     private Long startDate;
-    @APIParam (required = false)
+    @APIParam(required = false)
     private String cron;
 
     @APINoSee

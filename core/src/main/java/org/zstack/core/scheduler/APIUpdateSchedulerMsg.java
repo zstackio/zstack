@@ -1,12 +1,14 @@
 package org.zstack.core.scheduler;
 
 import org.zstack.header.core.scheduler.SchedulerVO;
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**
  * Created by root on 7/18/16.
  */
+@Action(category = SchedulerConstant.ACTION_CATEGORY)
 public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessage {
     @APIParam(resourceType = SchedulerVO.class)
     private String uuid;
@@ -82,7 +84,7 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
 
     @Override
     public String getSchedulerUuid() {
-       return  uuid;
+        return uuid;
     }
 
 

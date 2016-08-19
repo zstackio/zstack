@@ -5,4 +5,6 @@ package org.zstack.core.scheduler;
  */
 public interface SchedulerConstant {
     public static final String SERVICE_ID = "core.scheduler";
+    public static final String ACTION_CATEGORY = "scheduler";
+
 }
