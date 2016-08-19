@@ -79,6 +79,7 @@
     <TestCase class="org.zstack.test.core.workflow.TestShareFlow1"/>
     <TestCase class="org.zstack.test.core.workflow.TestShareFlow2"/>
     <TestCase class="org.zstack.test.core.workflow.TestShareFlow3"/>
+    <TestCase class="org.zstack.test.core.workflow.TestShareFlow4"/>
 
 	<TestCase class="org.zstack.test.core.rest.TestRestAsyncCallback"/>
 	<TestCase class="org.zstack.test.core.rest.TestRestAsyncCallback1"/>
