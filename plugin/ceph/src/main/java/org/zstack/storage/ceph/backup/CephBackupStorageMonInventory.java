@@ -18,6 +18,7 @@ public class CephBackupStorageMonInventory {
     private Timestamp lastOpDate;
     private String backupStorageUuid;
     private Integer sshPort;
+    private String status;
     private String sshUsername;
     private String sshPassword;
     private String monUuid;
@@ -33,6 +34,7 @@ public class CephBackupStorageMonInventory {
         inv.setSshUsername(vo.getSshUsername());
         inv.setSshPassword(vo.getSshPassword());
         inv.setMonUuid(vo.getUuid());
+        inv.setStatus(vo.getStatus().toString());
         return inv;
     }
 
@@ -43,6 +45,14 @@ public class CephBackupStorageMonInventory {
         }
 
         return invs;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getSshUsername() {
