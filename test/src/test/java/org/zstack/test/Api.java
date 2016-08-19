@@ -3221,6 +3221,7 @@ public class Api implements CloudBusEventListener {
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
         msg.setUuid(inv.getUuid());
+        msg.setUrl(inv.getUrl());
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIUpdatePrimaryStorageEvent evt = sender.send(msg, APIUpdatePrimaryStorageEvent.class);

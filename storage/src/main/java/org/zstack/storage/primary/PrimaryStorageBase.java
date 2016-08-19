@@ -35,7 +35,10 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.ChangeVolumeSnapshotStatusReply;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageReply;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
@@ -195,10 +198,28 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((PingPrimaryStorageMsg) msg);
         } else if (msg instanceof ChangePrimaryStorageStatusMsg) {
             handle((ChangePrimaryStorageStatusMsg) msg);
+        } else if (msg instanceof ReconnectPrimaryStorageMsg) {
+            handle((ReconnectPrimaryStorageMsg) msg);
 	    } else {
 	        bus.dealWithUnknownMessage(msg);
 	    }
 	}
+
+    protected void handle(ReconnectPrimaryStorageMsg msg) {
+        ReconnectPrimaryStorageReply reply = new ReconnectPrimaryStorageReply();
+        doConnect(new ConnectParam(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 
     private void handle(ChangePrimaryStorageStatusMsg msg) {
         changeStatus(PrimaryStorageStatus.valueOf(msg.getStatus()));
@@ -236,28 +257,45 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     }
 
     private void doConnect(ConnectParam param, final Completion completion) {
-        changeStatus(PrimaryStorageStatus.Connecting);
-
-        connectHook(param, new Completion(completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
             @Override
-            public void success() {
-                self = dbf.reload(self);
-                changeStatus(PrimaryStorageStatus.Connected);
-                logger.debug(String.format("successfully connected primary storage[uuid:%s]", self.getUuid()));
-
-                tracker.track(self.getUuid());
-
-                completion.success();
+            public String getSyncSignature() {
+                return String.format("reconnect-primary-storage-%s", self.getUuid());
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                tracker.track(self.getUuid());
+            public void run(SyncTaskChain chain) {
+                changeStatus(PrimaryStorageStatus.Connecting);
 
-                self = dbf.reload(self);
-                changeStatus(PrimaryStorageStatus.Disconnected);
-                logger.debug(String.format("failed to connect primary storage[uuid:%s], %s", self.getUuid(), errorCode));
-                completion.fail(errorCode);
+                connectHook(param, new Completion(chain, completion) {
+                    @Override
+                    public void success() {
+                        self = dbf.reload(self);
+                        changeStatus(PrimaryStorageStatus.Connected);
+                        logger.debug(String.format("successfully connected primary storage[uuid:%s]", self.getUuid()));
+
+                        tracker.track(self.getUuid());
+
+                        completion.success();
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        tracker.track(self.getUuid());
+
+                        self = dbf.reload(self);
+                        changeStatus(PrimaryStorageStatus.Disconnected);
+                        logger.debug(String.format("failed to connect primary storage[uuid:%s], %s", self.getUuid(), errorCode));
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
             }
         });
     }

@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.nfs;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
@@ -56,6 +57,7 @@ import javax.persistence.TypedQuery;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class NfsPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorage.class);
@@ -103,6 +105,46 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
+        }
+    }
+
+    @Override
+    protected PrimaryStorageVO updatePrimaryStorage(APIUpdatePrimaryStorageMsg msg) {
+        PrimaryStorageVO vo = super.updatePrimaryStorage(msg);
+        vo = vo == null ? self : vo;
+
+        if (msg.getUrl() != null && !self.getUrl().equals(msg.getUrl())) {
+            ErrorCode err = new NfsApiParamChecker().checkUrl(self.getZoneUuid(), msg.getUrl());
+            if (err != null) {
+                throw new OperationFailureException(err);
+            }
+
+            checkRunningVmForUpdateUrl();
+            vo.setUrl(msg.getUrl());
+            dbf.update(vo);
+
+            ReconnectPrimaryStorageMsg rmsg = new ReconnectPrimaryStorageMsg();
+            rmsg.setPrimaryStorageUuid(self.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+            bus.send(rmsg);
+        }
+
+        return vo;
+    }
+
+    @Transactional(readOnly = true)
+    private void checkRunningVmForUpdateUrl() {
+        String sql = "select vm.name, vm.uuid from VmInstanceVO vm, VolumeVO vol where vm.uuid = vol.vmInstanceUuid and" +
+                " vol.primaryStorageUuid = :psUuid and vm.state = :vmState";
+        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        q.setParameter("psUuid", self.getUuid());
+        q.setParameter("vmState", VmInstanceState.Running);
+        List<Tuple> ts = q.getResultList();
+
+        if (!ts.isEmpty()) {
+            List<String> vms = ts.stream().map(v -> String.format("VM[name:%s, uuid:%s]", v.get(0, String.class), v.get(1, String.class))).collect(Collectors.toList());
+            throw new OperationFailureException(errf.stringToOperationError(String.format("there are %s running VMs on the NFS primary storage, please" +
+                    " stop them and try again:\n%s\n", vms.size(), StringUtils.join(vms, "\n"))));
         }
     }
 
