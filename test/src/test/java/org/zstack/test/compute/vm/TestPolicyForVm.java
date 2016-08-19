@@ -102,10 +102,11 @@ public class TestPolicyForVm {
         vmCreator.hostUuid = host1.getUuid();
         VmInstanceInventory vm = vmCreator.create();
 
-        api.stopVmInstance(vm.getUuid(), session);
-        api.startVmInstance(vm.getUuid(), session);
-        api.rebootVmInstance(vm.getUuid(), session);
-        api.migrateVmInstance(vm.getUuid(), host2.getUuid(), session);
+        vm = api.stopVmInstance(vm.getUuid(), session);
+        vm = api.startVmInstance(vm.getUuid(), session);
+        vm = api.rebootVmInstance(vm.getUuid(), session);
+        String targetHostUuid = vm.getHostUuid().equals(host1.getUuid()) ? host2.getUuid() : host1.getUuid();
+        api.migrateVmInstance(vm.getUuid(), targetHostUuid, session);
         api.destroyVmInstance(vm.getUuid(), session);
 
         identityCreator.detachPolicyFromUser("user", "allow");
@@ -202,8 +203,9 @@ public class TestPolicyForVm {
         vm = vmCreator.create();
         api.stopVmInstance(vm.getUuid(), session);
         api.startVmInstance(vm.getUuid(), session);
-        api.rebootVmInstance(vm.getUuid(), session);
-        api.migrateVmInstance(vm.getUuid(), host2.getUuid(), session);
+        vm = api.rebootVmInstance(vm.getUuid(), session);
+        targetHostUuid = vm.getHostUuid().equals(host1.getUuid()) ? host2.getUuid() : host1.getUuid();
+        api.migrateVmInstance(vm.getUuid(), targetHostUuid, session);
         api.destroyVmInstance(vm.getUuid(), session);
 
         // User1 and Group
@@ -217,8 +219,9 @@ public class TestPolicyForVm {
         vm = vmCreator.create();
         api.stopVmInstance(vm.getUuid(), session);
         api.startVmInstance(vm.getUuid(), session);
-        api.rebootVmInstance(vm.getUuid(), session);
-        api.migrateVmInstance(vm.getUuid(), host2.getUuid(), session);
+        vm = api.rebootVmInstance(vm.getUuid(), session);
+        targetHostUuid = vm.getHostUuid().equals(host1.getUuid()) ? host2.getUuid() : host1.getUuid();
+        api.migrateVmInstance(vm.getUuid(), targetHostUuid, session);
         api.destroyVmInstance(vm.getUuid(), session);
 
         vm = vmCreator.create();
