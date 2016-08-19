@@ -6,9 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.allocator.*;
-import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
@@ -32,7 +30,8 @@ public class AttachedVolumePrimaryStorageAllocatorFlow extends AbstractHostAlloc
         throwExceptionIfIAmTheFirstFlow();
 
         if (VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
-            throw new CloudRuntimeException("AttachedVolumePrimaryStorageAllocatorFlow can not be used for creating new vm. It's for starting/migrating vm");
+            next(candidates);
+            return;
         }
 
         VmInstanceInventory vm = spec.getVmInstance();
