@@ -461,8 +461,13 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             hostsToLoad.addAll(connected);
             hostsToLoad.addAll(disconnected);
         } else {
-            hostsToLoad.addAll(disconnected);
-            tracker.trackHost(connected);
+            if (HostGlobalConfig.RECONNECT_ALL_ON_BOOT.value(Boolean.class)) {
+                hostsToLoad.addAll(connected);
+                hostsToLoad.addAll(disconnected);
+            } else {
+                hostsToLoad.addAll(disconnected);
+                tracker.trackHost(connected);
+            }
         }
 
         if (hostsToLoad.isEmpty()) {

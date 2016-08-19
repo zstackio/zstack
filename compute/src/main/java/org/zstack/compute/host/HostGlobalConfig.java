@@ -24,4 +24,6 @@ public class HostGlobalConfig {
     public static GlobalConfig IGNORE_ERROR_ON_MAINTENANCE_MODE = new GlobalConfig(CATEGORY, "maintenanceMode.ignoreError");
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = Integer.MAX_VALUE)
     public static GlobalConfig HOST_CPU_OVER_PROVISIONING_RATIO = new GlobalConfig(CATEGORY, "cpu.overProvisioning.ratio");
+    @GlobalConfigValidation
+    public static GlobalConfig RECONNECT_ALL_ON_BOOT = new GlobalConfig(CATEGORY, "reconnectAllOnBoot");
 }

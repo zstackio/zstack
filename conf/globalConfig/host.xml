@@ -49,4 +49,11 @@
         <defaultValue>10</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+    <config>
+        <category>host</category>
+        <name>reconnectAllOnBoot</name>
+        <description>Whether to reconnect all hosts when the management node starts</description>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>
