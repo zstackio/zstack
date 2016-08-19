@@ -62,7 +62,7 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
             ));
         }
 
-        next(candidates);
+        next(result);
     }
 
     @Transactional(readOnly = true)
