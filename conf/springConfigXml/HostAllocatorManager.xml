@@ -81,6 +81,7 @@
                 <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostCapacityAllocatorFlow</value>
+		<value>org.zstack.compute.allocator.AttachedVolumePrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.ImageBackupStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.AvoidHostAllocatorFlow</value>
