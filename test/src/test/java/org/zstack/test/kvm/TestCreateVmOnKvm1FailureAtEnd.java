@@ -3,10 +3,6 @@ package org.zstack.test.kvm;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.transaction.annotation.Transactional;
-import org.zstack.appliancevm.ApplianceVmConstant;
-import org.zstack.appliancevm.ApplianceVmVO;
-import org.zstack.appliancevm.ApplianceVmVO_;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -18,24 +14,13 @@ import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeVO_;
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
-import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
-
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
 
 /**
  * Created by miao on 16-7-26.
@@ -79,6 +64,7 @@ public class TestCreateVmOnKvm1FailureAtEnd {
         ImageInventory img = deployer.images.get("TestImage");
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
+        DiskOfferingInventory diskoffering = deployer.diskOfferings.get("DataOffering");
 
         kconfig.startVmSuccess = false;
         //kconfig.totalMemory = SizeUnit.GIGABYTE.toByte(7);
@@ -87,6 +73,8 @@ public class TestCreateVmOnKvm1FailureAtEnd {
         creator.name = "vm";
         creator.imageUuid = img.getUuid();
         creator.instanceOfferingUuid = ioinv.getUuid();
+        creator.addDisk(diskoffering.getUuid());
+        creator.addDisk(diskoffering.getUuid());
         boolean s = false;
         try {
             creator.create();
@@ -98,9 +86,6 @@ public class TestCreateVmOnKvm1FailureAtEnd {
         SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
         q.add(AccountResourceRefVO_.resourceType, SimpleQuery.Op.EQ, "VolumeVO");
         long count = q.count();
-        logger.debug(String.valueOf(count));
         Assert.assertEquals(0, count);
     }
-
-
 }

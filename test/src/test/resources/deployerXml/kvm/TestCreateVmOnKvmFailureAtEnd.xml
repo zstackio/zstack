@@ -14,6 +14,9 @@
         </image>
     </images>
 
+    <diskOffering name="DataOffering" description="Test"
+                  diskSize="20G" />
+
     <instanceOfferings>
         <instanceOffering name="TestInstanceOffering"
                           description="Test" memoryCapacity="8G" cpuNum="1" cpuSpeed="3000">
