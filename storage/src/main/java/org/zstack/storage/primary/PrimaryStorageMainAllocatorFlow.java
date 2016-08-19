@@ -121,6 +121,9 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
     @Transactional(readOnly = true)
     private Collection<? extends PrimaryStorageVO> considerImageCache(PrimaryStorageAllocationSpec spec, List<PrimaryStorageVO> vos) {
         List<PrimaryStorageVO> res = new ArrayList<PrimaryStorageVO>();
+        if (vos.isEmpty()) {
+            return res;
+        }
 
         List<String> psUuids = CollectionUtils.transformToList(vos, new Function<String, PrimaryStorageVO>() {
             @Override
