@@ -54,9 +54,9 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private boolean allowEmptyFlow;
     private FlowMarshaller flowMarshaller;
     private List<FlowChainProcessor> processers;
-    private List<Runnable> afterDone = new ArrayList<Runnable>();
-    private List<Runnable> afterError = new ArrayList<Runnable>();
-    private List<Runnable> afterFinal = new ArrayList<Runnable>();
+    private List<List<Runnable>> afterDone = new ArrayList<>();
+    private List<List<Runnable>> afterError = new ArrayList<>();
+    private List<List<Runnable>> afterFinal = new ArrayList<>();
 
     private boolean isFailCalled;
 
@@ -251,7 +251,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         for (Field f : ad) {
             List lst = FieldUtils.getFieldValue(f.getName(), flow);
             if (lst != null) {
-                afterDone.addAll(lst);
+                afterDone.add(lst);
             }
         }
 
@@ -259,7 +259,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         for (Field f : ad) {
             List lst = FieldUtils.getFieldValue(f.getName(), flow);
             if (lst != null) {
-                afterError.addAll(lst);
+                afterError.add(lst);
             }
         }
 
@@ -267,7 +267,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         for (Field f : ad) {
             List lst = FieldUtils.getFieldValue(f.getName(), flow);
             if (lst != null) {
-                afterFinal.addAll(lst);
+                afterFinal.add(lst);
             }
         }
     }
@@ -336,15 +336,17 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         if (!afterError.isEmpty()) {
             Collections.reverse(afterError);
 
-            CollectionUtils.safeForEach(afterError, new ForEachFunction<Runnable>() {
-                @Override
-                public void run(Runnable arg) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("call after error handler %s", arg.getClass()));
+            for (List errors : afterError) {
+                CollectionUtils.safeForEach(errors, new ForEachFunction<Runnable>() {
+                    @Override
+                    public void run(Runnable arg) {
+                        if (logger.isTraceEnabled()) {
+                            logger.trace(String.format("call after error handler %s", arg.getClass()));
+                        }
+                        arg.run();
                     }
-                    arg.run();
-                }
-            });
+                });
+            }
         }
 
         callFinallyHandler();
@@ -441,15 +443,18 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         if (!afterFinal.isEmpty()) {
             Collections.reverse(afterFinal);
 
-            CollectionUtils.safeForEach(afterFinal, new ForEachFunction<Runnable>() {
-                @Override
-                public void run(Runnable arg) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("call after final handler %s", arg.getClass()));
+            for (List finals : afterFinal) {
+                CollectionUtils.safeForEach(finals, new ForEachFunction<Runnable>() {
+                    @Override
+                    public void run(Runnable arg) {
+                        if (logger.isTraceEnabled()) {
+                            logger.trace(String.format("call after final handler %s", arg.getClass()));
+                        }
+
+                        arg.run();
                     }
-                    arg.run();
-                }
-            });
+                });
+            }
         }
     }
 
@@ -471,15 +476,17 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         if (!afterDone.isEmpty()) {
             Collections.reverse(afterDone);
 
-            CollectionUtils.safeForEach(afterDone, new ForEachFunction<Runnable>() {
-                @Override
-                public void run(Runnable arg) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("call after done handler %s", arg.getClass()));
+            for (List dones : afterDone) {
+                CollectionUtils.safeForEach(dones, new ForEachFunction<Runnable>() {
+                    @Override
+                    public void run(Runnable arg) {
+                        if (logger.isTraceEnabled()) {
+                            logger.trace(String.format("call after done handler %s", arg.getClass()));
+                        }
+                        arg.run();
                     }
-                    arg.run();
-                }
-            });
+                });
+            }
         }
 
         callFinallyHandler();
