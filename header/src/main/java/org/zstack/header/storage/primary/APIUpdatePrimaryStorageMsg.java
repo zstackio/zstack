@@ -13,6 +13,16 @@ public class APIUpdatePrimaryStorageMsg extends APIMessage implements PrimarySto
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
+    @APIParam(maxLength = 2048, required = false)
+    private String url;
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
 
     public String getUuid() {
         return uuid;
