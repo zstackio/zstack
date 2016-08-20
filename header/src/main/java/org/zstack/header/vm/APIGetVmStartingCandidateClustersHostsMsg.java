@@ -1,11 +1,13 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 
 /**
  * Created by xing5 on 2016/5/14.
  */
+@Action(category = VmInstanceConstant.ACTION_CATEGORY)
 public class APIGetVmStartingCandidateClustersHostsMsg extends APISyncCallMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
