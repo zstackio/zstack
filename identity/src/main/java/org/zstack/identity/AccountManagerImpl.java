@@ -347,7 +347,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     new Auth().check(api);
                     ret.put(apiName, StatementEffect.Allow.toString());
                 } catch (ApiMessageInterceptionException e) {
-                    logger.trace(e.getMessage());
+                    logger.debug(e.getMessage());
                     ret.put(apiName, StatementEffect.Deny.toString());
                 }
             } catch (ClassNotFoundException e) {
