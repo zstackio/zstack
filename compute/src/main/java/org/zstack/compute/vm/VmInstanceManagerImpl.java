@@ -334,6 +334,12 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     }
 
     private void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<CreateVmInstanceReply> completion) {
+        final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
+        if (instanceOfferingUuid == null) {
+            completion.fail(errf.stringToInvalidArgumentError("missing instance offering uuid"));
+            return;
+        }
+
         VmInstanceVO vo = new VmInstanceVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -345,7 +351,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         vo.setDescription(msg.getDescription());
         vo.setHostUuid(msg.getHostUuid());
         vo.setImageUuid(msg.getImageUuid());
-        vo.setInstanceOfferingUuid(msg.getInstanceOfferingUuid());
+        vo.setInstanceOfferingUuid(instanceOfferingUuid);
         vo.setState(VmInstanceState.Created);
         vo.setZoneUuid(msg.getZoneUuid());
         vo.setInternalId(dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
@@ -357,7 +363,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         ImagePlatform platform = imgq.findValue();
         vo.setPlatform(platform.toString());
 
-        InstanceOfferingVO iovo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
+        InstanceOfferingVO iovo = dbf.findByUuid(instanceOfferingUuid, InstanceOfferingVO.class);
         vo.setCpuNum(iovo.getCpuNum());
         vo.setCpuSpeed(iovo.getCpuSpeed());
         vo.setMemorySize(iovo.getMemorySize());
