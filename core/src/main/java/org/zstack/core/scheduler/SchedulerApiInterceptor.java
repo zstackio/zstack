@@ -80,9 +80,15 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.getType().equals("simple")) {
             if (msg.getInterval() == null) {
-                if (msg.getRepeatCount() != null && msg.getRepeatCount() != 1) {
+                if (msg.getRepeatCount() != null) {
+                    if (msg.getRepeatCount() != 1) {
+                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                                String.format("interval must be set when use simple scheduler when repeat more than once")
+                        ));
+                    }
+                } else {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("interval must be set when use simple scheduler when repeat more than once")
+                            String.format("interval must be set when use simple scheduler when repeat forever")
                     ));
                 }
             } else if (msg.getInterval() != null && msg.getInterval() <= 0) {
