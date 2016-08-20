@@ -12,10 +12,6 @@ import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 
-import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-
 /**
  * Created by Mei Lei on 7/5/16.
  */
@@ -68,16 +64,12 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                     String.format("startDate must be positive integer or 0")
             ));
-        } else if (msg.getStartDate() > 0 ){
-            try {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
-                Timestamp ts = new Timestamp(msg.getStartDate());
-                sdf.parse(ts.toString());
-            } catch (ParseException e) {
+        } else if (msg.getStartDate() > 2147454847 ){
+            //  mysql timestamp range is '1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
+            //  we accept 0 as startDate means start from current time
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("startDate is not a valid timestamp")
+                        String.format("startDate out of range")
                 ));
-            }
         }
 
         if (msg.getRepeatCount() != null && msg.getRepeatCount() <= 0) {
