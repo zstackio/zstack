@@ -9,7 +9,6 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.tag.TagConstant;
 import org.zstack.header.zone.ZoneVO;
 
-@Action(category = VirtualRouterConstant.ACTION_CATEGORY)
 public class APICreateVirtualRouterOfferingMsg extends APICreateInstanceOfferingMsg {
 	@APIParam(resourceType = ZoneVO.class)
 	private String zoneUuid;

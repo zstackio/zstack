@@ -4,7 +4,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 
-@Action(category = ConfigurationConstant.ACTION_CATEGORY)
 public class APICreateDiskOfferingMsg extends APICreateMessage {
 	@APIParam(maxLength = 255)
     private String name;
