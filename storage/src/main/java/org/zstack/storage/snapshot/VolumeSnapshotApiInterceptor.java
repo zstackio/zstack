@@ -138,25 +138,6 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
                     String.format("volume[uuid:%s] is not in status Ready, current is %s, can't create snapshot", msg.getVolumeUuid(), status)
             ));
         }
-        if (msg.getType().equals("simple")) {
-            if (msg.getInterval() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("either interval or startTimeStamp must be set when use simple scheduler")
-                ));
-            }
-            if (msg.getStartDate() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("either interval or startTimeStamp must be set when use simple scheduler")
-                ));
-            }
-        }
-        if (msg.getType().equals("cron")) {
-            if (msg.getCron() == null || msg.getCron().isEmpty()) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("cron must be set when use cron scheduler")
-                ));
-            }
-        }
     }
 
     private void validate(APIDeleteVolumeSnapshotFromBackupStorageMsg msg) {
