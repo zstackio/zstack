@@ -1070,10 +1070,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bkd.handle(msg, new ReturnValueCompletion<PhysicalCapacityUsage>(msg) {
             @Override
             public void success(PhysicalCapacityUsage c) {
-                SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
-                q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getHostUuid());
-                q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-                LocalStorageHostRefVO ref = q.find();
+                LocalStorageHostRefVO ref = dbf.findByUuid(self.getUuid(), LocalStorageHostRefVO.class);
 
                 if (ref == null) {
                     ref = new LocalStorageHostRefVO();
