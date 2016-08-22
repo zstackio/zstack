@@ -566,18 +566,32 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                                 Set<String> set = new HashSet<String>();
                                 set.addAll(fsids.values());
 
-                                if (set.size() == 1) {
-                                    trigger.next();
-                                    return;
+                                if (set.size() != 1) {
+                                    StringBuilder sb =  new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different fusionstor clusters:\n");
+                                    for (FusionstorBackupStorageMonBase mon : mons) {
+                                        String fsid = fsids.get(mon.getSelf().getUuid());
+                                        sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
+                                    }
+
+                                    throw new OperationFailureException(errf.stringToOperationError(sb.toString()));
                                 }
 
-                                StringBuilder sb =  new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different fusionstor clusters:\n");
-                                for (FusionstorBackupStorageMonBase mon : mons) {
-                                    String fsid = fsids.get(mon.getSelf().getUuid());
-                                    sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
+                                // check if there is another fusion setup having the same fsid
+                                String fsId = set.iterator().next();
+
+                                SimpleQuery<FusionstorBackupStorageVO>  q = dbf.createQuery(FusionstorBackupStorageVO.class);
+                                q.add(FusionstorBackupStorageVO_.fsid, Op.EQ, fsId);
+                                q.add(FusionstorBackupStorageVO_.uuid, Op.NOT_EQ, self.getUuid());
+                                FusionstorBackupStorageVO otherfusion = q.find();
+                                if (otherfusion != null) {
+                                    throw new OperationFailureException(errf.stringToOperationError(
+                                            String.format("there is another Fusionstor backup storage[name:%s, uuid:%s] with the same" +
+                                                            " FSID[%s], you cannot add the same Fusionstor setup as two different backup storage",
+                                                    otherfusion.getName(), otherfusion.getUuid(), fsId)
+                                    ));
                                 }
 
-                                trigger.fail(errf.stringToOperationError(sb.toString()));
+                                trigger.next();
                             }
                         });
 

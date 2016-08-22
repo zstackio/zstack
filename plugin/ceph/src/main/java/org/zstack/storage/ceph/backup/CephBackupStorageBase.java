@@ -582,18 +582,32 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 Set<String> set = new HashSet<String>();
                                 set.addAll(fsids.values());
 
-                                if (set.size() == 1) {
-                                    trigger.next();
-                                    return;
+                                if (set.size() != 1) {
+                                    StringBuilder sb = new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\n");
+                                    for (CephBackupStorageMonBase mon : mons) {
+                                        String fsid = fsids.get(mon.getSelf().getUuid());
+                                        sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
+                                    }
+
+                                    throw new OperationFailureException(errf.stringToOperationError(sb.toString()));
                                 }
 
-                                StringBuilder sb = new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\n");
-                                for (CephBackupStorageMonBase mon : mons) {
-                                    String fsid = fsids.get(mon.getSelf().getUuid());
-                                    sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
+                                // check if there is another ceph setup having the same fsid
+                                String fsId = set.iterator().next();
+
+                                SimpleQuery<CephBackupStorageVO>  q = dbf.createQuery(CephBackupStorageVO.class);
+                                q.add(CephBackupStorageVO_.fsid, Op.EQ, fsId);
+                                q.add(CephBackupStorageVO_.uuid, Op.NOT_EQ, self.getUuid());
+                                CephBackupStorageVO otherCeph = q.find();
+                                if (otherCeph != null) {
+                                    throw new OperationFailureException(errf.stringToOperationError(
+                                            String.format("there is another CEPH backup storage[name:%s, uuid:%s] with the same" +
+                                                            " FSID[%s], you cannot add the same CEPH setup as two different backup storage",
+                                                    otherCeph.getName(), otherCeph.getUuid(), fsId)
+                                    ));
                                 }
 
-                                trigger.fail(errf.stringToOperationError(sb.toString()));
+                                trigger.next();
                             }
                         });
 
