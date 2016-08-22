@@ -1,7 +1,6 @@
 package org.zstack.header.message;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class APICreateMessage extends APIMessage {
     /**
@@ -12,30 +11,12 @@ public class APICreateMessage extends APIMessage {
      * is raised if the uuid conflicted with any existing resource uuid
      */
     private String resourceUuid;
-    private List<String> userTags;
-    private List<String> systemTags;
 
     public void addSystemTag(String tag) {
         if (systemTags == null) {
             systemTags = new ArrayList<String>();
         }
         systemTags.add(tag);
-    }
-
-    public List<String> getUserTags() {
-        return userTags;
-    }
-
-    public void setUserTags(List<String> userTags) {
-        this.userTags = userTags;
-    }
-
-    public List<String> getSystemTags() {
-        return systemTags;
-    }
-
-    public void setSystemTags(List<String> systemTags) {
-        this.systemTags = systemTags;
     }
 
     public String getResourceUuid() {

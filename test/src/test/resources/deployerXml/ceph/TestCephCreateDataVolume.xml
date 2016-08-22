@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+
+    <backupStorages>
+        <cephBackupStorage name="ceph-bk1" description="Test"
+                           url="/path1" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost,root:password@127.0.0.1"
+                           totalCapacity="1T" availableCapacity="500G"/>
+        <cephBackupStorage name="ceph-bk2" description="Test"
+                           url="/path1" fsid="7ff218d9-f525-435f-8a40-3618d1772a65" monUrl="root:password@127.0.0.2,root:password@127.0.0.3"
+                           totalCapacity="1T" availableCapacity="500G"/>
+    </backupStorages>
+
+    <images>
+        <image name="TestImage" description="Test">
+            <backupStorageRef>ceph-bk1</backupStorageRef>
+        </image>
+    </images>
+
+    <diskOffering name="DataOffering" description="Test"
+                  diskSize="30G" />
+
+    <instanceOfferings>
+        <instanceOffering name="TestInstanceOffering"
+            description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000">
+        </instanceOffering>
+    </instanceOfferings>
+
+    <zones>
+        <zone name="Zone1" description="Test">
+            <clusters>
+                <cluster name="Cluster1" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host1" description="Test" managementIp="localhost"
+                            memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                        <kvmHost name="host2" description="Test" managementIp="127.0.0.1"
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                    </hosts>
+                    <primaryStorageRef>ceph-pri1</primaryStorageRef>
+                    <primaryStorageRef>ceph-pri2</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network</l2NetworkRef>
+                </cluster>
+            </clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="TestL2Network" description="Test"
+                    physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network1" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+
+            <backupStorageRef>ceph-bk1</backupStorageRef>
+            <backupStorageRef>ceph-bk2</backupStorageRef>
+            <primaryStorages>
+                <cephPrimaryStorage name="ceph-pri1" description="Test"
+                                    totalCapacity="1T" availableCapacity="500G" url="ceph://test" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost/?monPort=7777,root:password@127.0.0.1/?monPort=7777"/>
+                <cephPrimaryStorage name="ceph-pri2" description="Test"
+                                    totalCapacity="1T" availableCapacity="500G" url="ceph://test2" fsid="7ff218d9-f525-435f-8a40-3618d1772a65" monUrl="root:password@127.0.0.2/?monPort=7777,root:password@127.0.0.3/?monPort=7777"/>
+            </primaryStorages>
+        </zone>
+    </zones>
+</deployerConfig>

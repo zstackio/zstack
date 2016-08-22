@@ -24,4 +24,5 @@
     <TestCase class="org.zstack.test.storage.ceph.TestPingCephBs1"/>
     <TestCase class="org.zstack.test.storage.ceph.TestUpdateCephPrimaryStorageMon"/>
     <TestCase class="org.zstack.test.storage.ceph.TestUpdateCephBackupStorageMon"/>
+    <TestCase class="org.zstack.test.storage.ceph.TestCephCreateDataVolume"/>
 </UnitTestSuiteConfig>

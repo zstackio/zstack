@@ -33,6 +33,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
@@ -600,6 +601,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 }
 
                 volume.setInstallPath(cmd.getInstallUrl());
+                volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
 
                 nfsMgr.reportCapacityIfNeeded(pinv.getUuid(), rsp);
                 complete.success(volume);

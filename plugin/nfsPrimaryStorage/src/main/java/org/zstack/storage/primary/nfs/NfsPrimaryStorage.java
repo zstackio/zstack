@@ -626,8 +626,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-    private void handle(final InstantiateRootVolumeFromTemplateMsg msg) throws PrimaryStorageException {
-        final InstantiateVolumeReply reply = new InstantiateVolumeReply();
+    private void handle(final InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) throws PrimaryStorageException {
+        final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         final ImageSpec ispec = msg.getTemplateSpec();
 
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
@@ -699,6 +699,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                         @Override
                         public void handle(Map data) {
                             volume.setInstallPath(volumeInstallPath);
+                            volume.setFormat(image.getFormat());
                             reply.setVolume(volume);
                             bus.reply(msg, reply);
                         }
@@ -718,10 +719,23 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-    private void createEmptyVolume(final InstantiateVolumeMsg msg) {
-        NfsPrimaryStorageBackend backend = getBackend(HypervisorType.valueOf(msg.getDestHost().getHypervisorType()));
+    private void createEmptyVolume(final InstantiateVolumeOnPrimaryStorageMsg msg) {
+        NfsPrimaryStorageBackend backend;
+        if (msg.getDestHost() != null) {
+            backend = getBackend(HypervisorType.valueOf(msg.getDestHost().getHypervisorType()));
+        } else {
+            backend = getUsableBackend();
+            if (backend == null) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        String.format("the NFS primary storage[uuid:%s, name:%s] cannot find any usable host to" +
+                                " create the data volume[uuid:%s, name:%s]", self.getUuid(), self.getName(),
+                                msg.getVolume().getUuid(), msg.getVolume().getName())
+                ));
+            }
+        }
+
         VolumeInventory vol = msg.getVolume();
-        final InstantiateVolumeReply reply = new InstantiateVolumeReply();
+        final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         backend.instantiateVolume(PrimaryStorageInventory.valueOf(self), vol, new ReturnValueCompletion<VolumeInventory>(msg) {
             @Override
             public void success(VolumeInventory returnValue) {
@@ -739,16 +753,16 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(InstantiateVolumeMsg msg) {
+    protected void handle(InstantiateVolumeOnPrimaryStorageMsg msg) {
         try {
-            if (msg.getClass() == InstantiateRootVolumeFromTemplateMsg.class) {
-                handle((InstantiateRootVolumeFromTemplateMsg) msg);
+            if (msg.getClass() == InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg.class) {
+                handle((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
             } else {
                 createEmptyVolume(msg);
             }
         } catch (PrimaryStorageException e) {
             logger.warn(e.getMessage(), e);
-            InstantiateVolumeReply reply = new InstantiateVolumeReply();
+            InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
             reply.setError(errf.throwableToOperationError(e));
             bus.reply(msg, reply);
         }

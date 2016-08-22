@@ -99,7 +99,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
     }
 
-	protected abstract void handle(InstantiateVolumeMsg msg);
+	protected abstract void handle(InstantiateVolumeOnPrimaryStorageMsg msg);
 	
 	protected abstract void handle(DeleteVolumeOnPrimaryStorageMsg msg);
 	
@@ -170,8 +170,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 	protected void handleLocalMessage(Message msg) {
 	    if (msg instanceof PrimaryStorageReportPhysicalCapacityMsg) {
 	        handle((PrimaryStorageReportPhysicalCapacityMsg) msg);
-	    } else if (msg instanceof InstantiateVolumeMsg) {
-	        handle((InstantiateVolumeMsg)msg);
+	    } else if (msg instanceof InstantiateVolumeOnPrimaryStorageMsg) {
+	        handle((InstantiateVolumeOnPrimaryStorageMsg)msg);
 	    } else if (msg instanceof DeleteVolumeOnPrimaryStorageMsg) {
 	        handle((DeleteVolumeOnPrimaryStorageMsg)msg);
 	    } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {

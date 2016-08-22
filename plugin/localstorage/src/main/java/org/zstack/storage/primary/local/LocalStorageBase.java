@@ -1217,7 +1217,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final InstantiateVolumeMsg msg) {
+    protected void handle(final InstantiateVolumeOnPrimaryStorageMsg msg) {
         String hostUuid = msg.getDestHost().getUuid();
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
@@ -1226,7 +1226,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         chain.setName(String.format("instantiate-volume-%s-local-primary-storage-%s", msg.getVolume().getUuid(), self.getUuid()));
         final String finalHostUuid = hostUuid;
         chain.then(new ShareFlow() {
-            InstantiateVolumeReply reply;
+            InstantiateVolumeOnPrimaryStorageReply reply;
 
             @Override
             public void setup() {
@@ -1253,9 +1253,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        bkd.handle(msg, new ReturnValueCompletion<InstantiateVolumeReply>(msg) {
+                        bkd.handle(msg, new ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply>(msg) {
                             @Override
-                            public void success(InstantiateVolumeReply returnValue) {
+                            public void success(InstantiateVolumeOnPrimaryStorageReply returnValue) {
                                 reply = returnValue;
                                 trigger.next();
                             }
@@ -1280,7 +1280,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        InstantiateVolumeReply reply = new InstantiateVolumeReply();
+                        InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
                         reply.setError(errCode);
                         bus.reply(msg, reply);
                     }

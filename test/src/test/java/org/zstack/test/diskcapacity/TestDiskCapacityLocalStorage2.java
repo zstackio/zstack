@@ -19,7 +19,7 @@ import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.primary.InstantiateVolumeMsg;
+import org.zstack.header.storage.primary.InstantiateVolumeOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
@@ -134,13 +134,13 @@ public class TestDiskCapacityLocalStorage2 {
                 bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
                     @Override
                     public void intercept(Message msg) {
-                        InstantiateVolumeMsg imsg = (InstantiateVolumeMsg) msg;
+                        InstantiateVolumeOnPrimaryStorageMsg imsg = (InstantiateVolumeOnPrimaryStorageMsg) msg;
                         VolumeInventory vol = imsg.getVolume();
                         if (VolumeType.Root.toString().equals(vol.getType())) {
                             lconfig.getVolumeSizeCmdActualSize.put(vol.getUuid(), rootVolumeActualSize);
                         }
                     }
-                }, InstantiateVolumeMsg.class);
+                }, InstantiateVolumeOnPrimaryStorageMsg.class);
 
                 creator.session = session;
                 creator.name = name;

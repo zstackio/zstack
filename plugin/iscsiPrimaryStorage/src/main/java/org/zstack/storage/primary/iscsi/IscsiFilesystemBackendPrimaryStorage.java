@@ -88,9 +88,9 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(InstantiateVolumeMsg msg) {
-        if (msg instanceof InstantiateRootVolumeFromTemplateMsg) {
-            handle((InstantiateRootVolumeFromTemplateMsg) msg);
+    protected void handle(InstantiateVolumeOnPrimaryStorageMsg msg) {
+        if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            handle((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else {
             createEmptyVolume(msg);
         }
@@ -413,7 +413,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-    private void handle(final InstantiateRootVolumeFromTemplateMsg msg) {
+    private void handle(final InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final InstantiateVolumeReply reply = new InstantiateVolumeReply();
         final ImageSpec ispec = msg.getTemplateSpec();
 
@@ -531,7 +531,7 @@ public class IscsiFilesystemBackendPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-    private void createEmptyVolume(final InstantiateVolumeMsg msg) {
+    private void createEmptyVolume(final InstantiateVolumeOnPrimaryStorageMsg msg) {
         final VolumeInventory vol = msg.getVolume();
         CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         final InstantiateVolumeReply reply = new InstantiateVolumeReply();

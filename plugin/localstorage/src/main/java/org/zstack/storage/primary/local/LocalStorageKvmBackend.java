@@ -43,10 +43,7 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
@@ -711,16 +708,17 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    protected void handle(final InstantiateVolumeMsg msg, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
-        if (msg instanceof  InstantiateRootVolumeFromTemplateMsg) {
-            createRootVolume((InstantiateRootVolumeFromTemplateMsg) msg, completion);
+    protected void handle(final InstantiateVolumeOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
+        if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            createRootVolume((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg, completion);
         } else {
             createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<String>(completion) {
                 @Override
                 public void success(String returnValue) {
-                    InstantiateVolumeReply r = new InstantiateVolumeReply();
+                    InstantiateVolumeOnPrimaryStorageReply r = new InstantiateVolumeOnPrimaryStorageReply();
                     VolumeInventory vol = msg.getVolume();
                     vol.setInstallPath(returnValue);
+                    vol.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
                     r.setVolume(vol);
                     completion.success(r);
                 }
@@ -1011,7 +1009,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    private void createRootVolume(final InstantiateRootVolumeFromTemplateMsg msg, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
+    private void createRootVolume(final InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
         final ImageSpec ispec = msg.getTemplateSpec();
         final ImageInventory image = ispec.getInventory();
 
@@ -1019,9 +1017,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<String>(completion) {
                 @Override
                 public void success(String returnValue) {
-                    InstantiateVolumeReply r = new InstantiateVolumeReply();
+                    InstantiateVolumeOnPrimaryStorageReply r = new InstantiateVolumeOnPrimaryStorageReply();
                     VolumeInventory vol = msg.getVolume();
                     vol.setInstallPath(returnValue);
+                    vol.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
                     r.setVolume(vol);
                     completion.success(r);
                 }
@@ -1106,7 +1105,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        InstantiateVolumeReply reply = new InstantiateVolumeReply();
+                        InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
                         volume.setInstallPath(installPath);
                         reply.setVolume(volume);
                         completion.success(reply);

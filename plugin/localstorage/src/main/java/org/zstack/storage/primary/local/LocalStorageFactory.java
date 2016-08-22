@@ -15,6 +15,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.FutureCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -57,7 +58,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         MarshalVmOperationFlowExtensionPoint, HostDeleteExtensionPoint, VmAttachVolumeExtensionPoint,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
-        RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint {
+        RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
+        InstantiateDataVolumeOnCreationExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
@@ -755,5 +757,64 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
             bus.send(msg);
         }
+    }
+
+    @Override
+    public String getPrimaryStorageTypeForInstantiateDataVolumeOnCreationExtensionPoint() {
+        return LocalStorageConstants.LOCAL_STORAGE_TYPE;
+    }
+
+    @Override
+    public void instantiateDataVolumeOnCreation(InstantiateVolumeMsg msg, VolumeInventory volume, ReturnValueCompletion<VolumeInventory> completion) {
+        String hostUuid = null;
+        for (String stag : msg.getSystemTags()) {
+            if (LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.isMatch(stag)) {
+                hostUuid = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTokenByTag(
+                        stag,
+                        LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN
+                );
+                break;
+            }
+        }
+
+        if (hostUuid == null) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                    String.format("To create data volume on the local primary storage, you must specify the host that" +
+                            " the data volume is going to be created using the system tag [%s]", LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat())
+            ));
+        }
+
+        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+        q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, hostUuid);
+        q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
+        if (!q.isExists()) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                    String.format("the host[uuid:%s] doesn't belong to the local primary storage[uuid:%s]", hostUuid, msg.getPrimaryStorageUuid())
+            ));
+        }
+
+        InstantiateVolumeOnPrimaryStorageMsg imsg;
+        if (msg instanceof InstantiateRootVolumeMsg) {
+            InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg irmsg = new InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg();
+            irmsg.setTemplateSpec(((InstantiateRootVolumeMsg) msg).getTemplateSpec());
+            imsg = irmsg;
+        } else {
+            imsg = new InstantiateVolumeOnPrimaryStorageMsg();
+        }
+
+        imsg.setVolume(volume);
+        imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class)));
+        bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+        bus.send(imsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                } else {
+                    completion.success(((InstantiateVolumeOnPrimaryStorageReply)reply).getVolume());
+                }
+            }
+        });
     }
 }

@@ -4,11 +4,16 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.volume.VolumeInventory;
 
-public class InstantiateVolumeMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+public class InstantiateVolumeOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private HostInventory destHost;
 	private VolumeInventory volume;
-	
-	public VolumeInventory getVolume() {
+    private String primaryStorageUuid;
+
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
+    }
+
+    public VolumeInventory getVolume() {
     	return volume;
     }
 	public void setVolume(VolumeInventory volume) {
@@ -16,7 +21,7 @@ public class InstantiateVolumeMsg extends NeedReplyMessage implements PrimarySto
     }
     @Override
     public String getPrimaryStorageUuid() {
-        return volume.getPrimaryStorageUuid();
+        return primaryStorageUuid;
     }
     public HostInventory getDestHost() {
         return destHost;

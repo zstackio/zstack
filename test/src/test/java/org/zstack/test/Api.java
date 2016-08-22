@@ -900,10 +900,15 @@ public class Api implements CloudBusEventListener {
     }
 
     public VolumeInventory createDataVolume(String name, String diskOfferingUuid, SessionInventory session) throws ApiSenderException {
+        return createDataVolume(name, diskOfferingUuid, null, session);
+    }
+
+    public VolumeInventory createDataVolume(String name, String diskOfferingUuid, String primaryStorageUuid, SessionInventory session) throws ApiSenderException {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateDataVolumeMsg msg = new APICreateDataVolumeMsg();
         msg.setSession(session == null ? adminSession : session);
+        msg.setPrimaryStorageUuid(primaryStorageUuid);
         msg.setName(name);
         msg.setDiskOfferingUuid(diskOfferingUuid);
         APICreateDataVolumeEvent e = sender.send(msg, APICreateDataVolumeEvent.class);

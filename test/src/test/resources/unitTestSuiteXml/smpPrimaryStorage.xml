@@ -6,4 +6,5 @@
     <TestCase class="org.zstack.test.storage.primary.smp.TestSmpPrimaryStorage4"/>
     <TestCase class="org.zstack.test.storage.primary.smp.TestSmpPrimaryStorage5"/>
     <TestCase class="org.zstack.test.storage.primary.smp.TestSmpPrimaryStorage6"/>
+    <TestCase class="org.zstack.test.storage.primary.smp.TestSmpPrimaryStorageCreateDataVolume"/>
 </UnitTestSuiteConfig>

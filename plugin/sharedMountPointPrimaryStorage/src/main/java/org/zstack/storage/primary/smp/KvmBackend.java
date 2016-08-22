@@ -34,10 +34,7 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.kvm.*;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
@@ -285,9 +282,9 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    void handle(InstantiateVolumeMsg msg, ReturnValueCompletion<InstantiateVolumeReply> completion) {
-        if (msg instanceof InstantiateRootVolumeFromTemplateMsg) {
-            createRootVolume((InstantiateRootVolumeFromTemplateMsg)msg, completion);
+    void handle(InstantiateVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
+        if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            createRootVolume((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg)msg, completion);
         } else {
             createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), completion);
         }
@@ -504,7 +501,7 @@ public class KvmBackend extends HypervisorBackend {
         }
     }
 
-    private void createEmptyVolume(final VolumeInventory volume, String hostUuid, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
+    private void createEmptyVolume(final VolumeInventory volume, String hostUuid, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         cmd.installPath = VolumeType.Root.toString().equals(volume.getType()) ? makeRootVolumeInstallUrl(volume) : makeDataVolumeInstallUrl(volume.getUuid());
         cmd.name = volume.getName();
@@ -514,8 +511,9 @@ public class KvmBackend extends HypervisorBackend {
         new Do(hostUuid).go(CREATE_EMPTY_VOLUME_PATH, cmd, new ReturnValueCompletion<AgentRsp>() {
             @Override
             public void success(AgentRsp returnValue) {
-                InstantiateVolumeReply reply = new InstantiateVolumeReply();
+                InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
                 volume.setInstallPath(cmd.installPath);
+                volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
                 reply.setVolume(volume);
                 completion.success(reply);
             }
@@ -527,7 +525,7 @@ public class KvmBackend extends HypervisorBackend {
         });
     }
 
-    private void createRootVolume(InstantiateRootVolumeFromTemplateMsg msg, final ReturnValueCompletion<InstantiateVolumeReply> completion) {
+    private void createRootVolume(InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
         final ImageSpec ispec = msg.getTemplateSpec();
         final ImageInventory image = ispec.getInventory();
 
@@ -601,8 +599,9 @@ public class KvmBackend extends HypervisorBackend {
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        InstantiateVolumeReply reply = new InstantiateVolumeReply();
+                        InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
                         volume.setInstallPath(installPath);
+                        volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
                         reply.setVolume(volume);
                         completion.success(reply);
                     }

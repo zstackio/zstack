@@ -19,7 +19,7 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void syncPhysicalCapacityInCluster(List<ClusterInventory> clusters, ReturnValueCompletion<PhysicalCapacityUsage> completion);
 
-    abstract void handle(InstantiateVolumeMsg msg, ReturnValueCompletion<InstantiateVolumeReply> completion);
+    abstract void handle(InstantiateVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion);
 
     abstract void handle(DeleteVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply> completion);
 

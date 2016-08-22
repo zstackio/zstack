@@ -28,6 +28,7 @@
             <zstack:extension interface="org.zstack.header.vm.VmPreMigrationExtensionPoint" />
             <zstack:extension interface="org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.storage.primary.InstantiateDataVolumeOnCreationExtensionPoint" />
         </zstack:plugin>
     </bean>
 

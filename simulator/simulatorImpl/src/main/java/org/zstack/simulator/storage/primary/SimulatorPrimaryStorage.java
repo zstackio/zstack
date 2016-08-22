@@ -2,6 +2,7 @@ package org.zstack.simulator.storage.primary;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.volume.VolumeInventory;
@@ -47,9 +48,10 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
         return vol;
     }
 
-    private void handle(InstantiateRootVolumeFromTemplateMsg msg) {
-        InstantiateVolumeReply reply = new InstantiateVolumeReply();
+    private void handle(InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+        InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         VolumeInventory vol = instantiateVolume(msg.getVolume());
+        vol.setFormat(SimulatorConstant.SIMULATOR_VOLUME_FORMAT_STRING);
         reply.setVolume(vol);
         logger.debug(String.format("Successfully created root volume[uuid:%s] on primary storage[uuid:%s]", msg.getVolume().getUuid(),
                 msg.getPrimaryStorageUuid()));
@@ -64,12 +66,13 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(InstantiateVolumeMsg msg) {
-        if (msg.getClass() == InstantiateRootVolumeFromTemplateMsg.class) {
-            handle((InstantiateRootVolumeFromTemplateMsg) msg);
+    protected void handle(InstantiateVolumeOnPrimaryStorageMsg msg) {
+        if (msg.getClass() == InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg.class) {
+            handle((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else {
-            InstantiateVolumeReply reply = new InstantiateVolumeReply();
+            InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
             VolumeInventory vol = instantiateVolume(msg.getVolume());
+            vol.setFormat(SimulatorConstant.SIMULATOR_VOLUME_FORMAT_STRING);
             reply.setVolume(vol);
             logger.debug(String.format("Successfully created data volume[uuid:%s] on primary storage[uuid:%s]", msg.getVolume().getUuid(),
                     msg.getPrimaryStorageUuid()));

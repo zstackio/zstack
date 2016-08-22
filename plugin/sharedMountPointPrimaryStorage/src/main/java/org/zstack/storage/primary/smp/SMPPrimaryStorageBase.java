@@ -14,11 +14,9 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
-import org.zstack.header.host.HypervisorType;
+import org.zstack.header.host.*;
 import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
@@ -30,6 +28,7 @@ import org.zstack.storage.primary.PrimaryStorageBase;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -150,18 +149,30 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final InstantiateVolumeMsg msg) {
+    protected void handle(final InstantiateVolumeOnPrimaryStorageMsg msg) {
+        if (msg.getDestHost() == null) {
+            String hostUuid = getAvailableHostUuidForOperation();
+            if (hostUuid == null) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        String.format("the shared mount point primary storage[uuid:%s, name:%s] cannot find any " +
+                                "available host in attached clusters for instantiating the volume", self.getUuid(), self.getName())
+                ));
+            }
+
+            msg.setDestHost(HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class)));
+        }
+
         HypervisorFactory f = getHypervisorFactoryByHostUuid(msg.getDestHost().getUuid());
         HypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, new ReturnValueCompletion<InstantiateVolumeReply>(msg) {
+        bkd.handle(msg, new ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply>(msg) {
             @Override
-            public void success(InstantiateVolumeReply reply) {
+            public void success(InstantiateVolumeOnPrimaryStorageReply reply) {
                 bus.reply(msg, reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                InstantiateVolumeReply reply = new InstantiateVolumeReply();
+                InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
@@ -531,6 +542,24 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    @Transactional(readOnly = true)
+    private String getAvailableHostUuidForOperation() {
+        String sql = "select host.uuid from PrimaryStorageClusterRefVO ref, HostVO host where" +
+                " ref.clusterUuid = host.clusterUuid and ref.primaryStorageUuid = :psUuid and host.status = :hstatus" +
+                " and host.state = :hstate";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("psUuid", self.getUuid());
+        q.setParameter("hstatus", HostStatus.Connected);
+        q.setParameter("hstate", HostState.Enabled);
+        List<String> hostUuids = q.getResultList();
+        if (hostUuids.isEmpty()) {
+            return null;
+        }
+
+        Collections.shuffle(hostUuids);
+        return hostUuids.get(0);
     }
 
     private HypervisorBackend getHypervisorBackendByVolumeUuid(String volUuid) {

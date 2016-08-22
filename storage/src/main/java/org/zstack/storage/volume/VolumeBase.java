@@ -27,6 +27,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
@@ -124,11 +126,227 @@ public class VolumeBase implements Volume {
             handle((RecoverVolumeMsg) msg);
         } else if (msg instanceof SyncVolumeSizeMsg) {
             handle((SyncVolumeSizeMsg) msg);
+        } else if (msg instanceof InstantiateVolumeMsg) {
+            handle((InstantiateVolumeMsg) msg);
         } else if (msg instanceof OverlayMessage) {
             handle((OverlayMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(InstantiateVolumeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doInstantiateVolume(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "instantiate-volume";
+            }
+        });
+    }
+
+    private void doInstantiateVolume(InstantiateVolumeMsg msg, NoErrorCompletion completion) {
+        InstantiateVolumeReply reply = new InstantiateVolumeReply();
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("instantiate-volume-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            String installPath;
+            String format;
+
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "allocate-primary-storage";
+
+                    boolean success;
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                        amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                        amsg.setSize(self.getSize());
+                        bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                        bus.send(amsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    success =  true;
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (success) {
+                            ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+                            rmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                            rmsg.setDiskSize(self.getSize());
+                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                            bus.send(rmsg);
+                        }
+
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "instantiate-volume-on-primary-storage";
+
+                    boolean success;
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
+                        q.select(PrimaryStorageVO_.type);
+                        q.add(PrimaryStorageVO_.uuid, Op.EQ, msg.getPrimaryStorageUuid());
+                        String psType = q.findValue();
+
+                        InstantiateDataVolumeOnCreationExtensionPoint ext = pluginRgty.getExtensionFromMap(psType, InstantiateDataVolumeOnCreationExtensionPoint.class);
+                        if (ext != null) {
+                            ext.instantiateDataVolumeOnCreation(msg, getSelfInventory(), new ReturnValueCompletion<VolumeInventory>(trigger) {
+                                @Override
+                                public void success(VolumeInventory ret) {
+                                    success = true;
+                                    installPath = ret.getInstallPath();
+                                    format = ret.getFormat();
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        } else {
+                            if (msg instanceof InstantiateRootVolumeMsg) {
+                                instantiateRootVolume((InstantiateRootVolumeMsg) msg, trigger);
+                            } else {
+                                instantiateDataVolume(msg, trigger);
+                            }
+
+                        }
+                    }
+
+                    private void instantiateRootVolume(InstantiateRootVolumeMsg msg, FlowTrigger trigger) {
+                        InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg imsg = new InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg();
+                        imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                        imsg.setVolume(getSelfInventory());
+                        if (msg.getHostUuid() != null) {
+                            imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
+                        }
+                        imsg.setTemplateSpec(msg.getTemplateSpec());
+                        bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                        bus.send(imsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                success = true;
+                                InstantiateVolumeOnPrimaryStorageReply ir = reply.castReply();
+                                installPath = ir.getVolume().getInstallPath();
+                                format = ir.getVolume().getFormat();
+                                trigger.next();
+                            }
+                        });
+                    }
+
+                    private void instantiateDataVolume(InstantiateVolumeMsg msg, FlowTrigger trigger) {
+                        InstantiateVolumeOnPrimaryStorageMsg imsg = new InstantiateVolumeOnPrimaryStorageMsg();
+                        imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                        imsg.setVolume(getSelfInventory());
+                        if (msg.getHostUuid() != null) {
+                            imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
+                        }
+                        bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                        bus.send(imsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                success = true;
+                                InstantiateVolumeOnPrimaryStorageReply ir = reply.castReply();
+                                installPath = ir.getVolume().getInstallPath();
+                                format = ir.getVolume().getFormat();
+                                trigger.next();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (success) {
+                            DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
+                            dmsg.setUuid(msg.getPrimaryStorageUuid());
+                            dmsg.setVolume(getSelfInventory());
+                            bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                            bus.send(dmsg);
+                        }
+
+                        trigger.rollback();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg, completion) {
+                    @Override
+                    public void handle(Map data) {
+                        VolumeStatus oldStatus = self.getStatus();
+                        self.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                        self.setInstallPath(installPath);
+                        DebugUtils.Assert(format != null, "format cannot be null");
+                        self.setFormat(format);
+                        self.setStatus(VolumeStatus.Ready);
+                        self = dbf.updateAndRefresh(self);
+
+                        VolumeInventory vol = getSelfInventory();
+                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, vol);
+
+                        reply.setVolume(vol);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg, completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                Finally(new FlowFinallyHandler(msg, completion) {
+                    @Override
+                    public void Finally() {
+                        completion.done();
+                    }
+                });
+            }
+
+        }).start();
     }
 
     private void handle(OverlayMessage msg) {

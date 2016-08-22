@@ -1,5 +1,6 @@
 package org.zstack.header.message;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public abstract class NeedReplyMessage extends Message {
@@ -9,7 +10,25 @@ public abstract class NeedReplyMessage extends Message {
      * @optional
      */
     protected long timeout = -1;
-    
+    protected List<String> systemTags;
+    protected List<String> userTags;
+
+    public List<String> getSystemTags() {
+        return systemTags;
+    }
+
+    public void setSystemTags(List<String> systemTags) {
+        this.systemTags = systemTags;
+    }
+
+    public List<String> getUserTags() {
+        return userTags;
+    }
+
+    public void setUserTags(List<String> userTags) {
+        this.userTags = userTags;
+    }
+
     public NeedReplyMessage() {
         super();
     }

@@ -103,13 +103,13 @@ public class TestDiskCapacityNfs6 {
             bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
                 @Override
                 public void intercept(Message msg) {
-                    InstantiateVolumeMsg imsg = (InstantiateVolumeMsg) msg;
+                    InstantiateVolumeOnPrimaryStorageMsg imsg = (InstantiateVolumeOnPrimaryStorageMsg) msg;
                     VolumeInventory vol = imsg.getVolume();
                     if (VolumeType.Root.toString().equals(vol.getType())) {
                         nconfig.getVolumeSizeCmdActualSize.put(vol.getUuid(), rootVolumeActualSize);
                     }
                 }
-            }, InstantiateVolumeMsg.class);
+            }, InstantiateVolumeOnPrimaryStorageMsg.class);
 
             creator.name = name;
             creator.imageUuid = imageUuid;
