@@ -30,10 +30,9 @@ import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.ManagementN
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.portal.apimediator.ApiMediator;
-import org.zstack.utils.BootErrorLog;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.sql.Connection;
@@ -657,6 +656,13 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 List<String> nodesInDb = new ArrayList<String>();
                 for (ManagementNodeVO vo : all) {
+                    if (!StringDSL.isZstackUuid(vo.getUuid())) {
+                        logger.warn(String.format("found a weird management node, it's UUID not a ZStack uuid, delete it. %s",
+                                JSONObjectUtil.toJsonString(ManagementNodeInventory.valueOf(vo))));
+                        dbf.remove(vo);
+                        continue;
+                    }
+
                     nodesInDb.add(vo.getUuid());
 
                     if (vo.getUuid().equals(node.getUuid())) {
