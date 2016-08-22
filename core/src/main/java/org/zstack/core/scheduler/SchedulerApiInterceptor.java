@@ -60,24 +60,6 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateSchedulerMessage msg) {
-        if (msg.getStartDate() != null && msg.getStartDate() < 0) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("startDate must be positive integer or 0")
-            ));
-        } else if (msg.getStartDate() > 2147454847 ){
-            //  mysql timestamp range is '1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
-            //  we accept 0 as startDate means start from current time
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("startDate out of range")
-                ));
-        }
-
-        if (msg.getRepeatCount() != null && msg.getRepeatCount() <= 0) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("repeatCount must be positive integer")
-            ));
-        }
-
         if (msg.getType().equals("simple")) {
             if (msg.getInterval() == null) {
                 if (msg.getRepeatCount() != null) {
@@ -101,11 +83,27 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("startDate must be set when use simple scheduler")
                 ));
+            } else if (msg.getStartDate() != null && msg.getStartDate() < 0) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("startDate must be positive integer or 0")
+                ));
+            } else if (msg.getStartDate() != null && msg.getStartDate() > 2147454847 ){
+                //  mysql timestamp range is '1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
+                //  we accept 0 as startDate means start from current time
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("startDate out of range")
+                ));
+            }
+
+            if (msg.getRepeatCount() != null && msg.getRepeatCount() <= 0) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("repeatCount must be positive integer")
+                ));
             }
         }
 
         if (msg.getType().equals("cron")) {
-            if (msg.getCron() == null || ( msg.getCron() !=null && msg.getCron().isEmpty())) {
+            if (msg.getCron() == null || ( msg.getCron() != null && msg.getCron().isEmpty())) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("cron must be set when use cron scheduler")
                 ));
@@ -114,7 +112,11 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                         String.format("cron task must follow format like this : \"0 0/3 17-23 * * ?\" ")
                 ));
-
+            }
+            if (msg.getInterval() != null || msg.getRepeatCount() != null || msg.getStartDate() != null) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("cron scheduler only need to specify cron task")
+                ));
             }
         }
     }
