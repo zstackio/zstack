@@ -335,11 +335,6 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
     private void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<CreateVmInstanceReply> completion) {
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
-        if (instanceOfferingUuid == null) {
-            completion.fail(errf.stringToInvalidArgumentError("missing instance offering uuid"));
-            return;
-        }
-
         VmInstanceVO vo = new VmInstanceVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -363,11 +358,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         ImagePlatform platform = imgq.findValue();
         vo.setPlatform(platform.toString());
 
-        InstanceOfferingVO iovo = dbf.findByUuid(instanceOfferingUuid, InstanceOfferingVO.class);
-        vo.setCpuNum(iovo.getCpuNum());
-        vo.setCpuSpeed(iovo.getCpuSpeed());
-        vo.setMemorySize(iovo.getMemorySize());
-        vo.setAllocatorStrategy(iovo.getAllocatorStrategy());
+        vo.setCpuNum(msg.getCpuNum());
+        vo.setCpuSpeed(msg.getCpuSpeed());
+        vo.setMemorySize(msg.getMemorySize());
+        vo.setAllocatorStrategy(msg.getAllocatorStrategy());
 
         acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VmInstanceVO.class);
 
@@ -379,7 +373,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         if (cmsg != null) {
             tagMgr.createTagsFromAPICreateMessage(cmsg, vo.getUuid(), VmInstanceVO.class.getSimpleName());
         }
-        tagMgr.copySystemTag(iovo.getUuid(), InstanceOfferingVO.class.getSimpleName(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
+
+        if (instanceOfferingUuid != null) {
+            tagMgr.copySystemTag(instanceOfferingUuid, InstanceOfferingVO.class.getSimpleName(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
+        }
 
         StartNewCreatedVmInstanceMsg smsg = new StartNewCreatedVmInstanceMsg();
         smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
@@ -423,8 +420,34 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         });
     }
 
+    private CreateVmInstanceMsg fromAPICreateVmInstanceMsg(APICreateVmInstanceMsg msg) {
+        CreateVmInstanceMsg cmsg = new CreateVmInstanceMsg();
+
+        InstanceOfferingVO iovo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
+        cmsg.setInstanceOfferingUuid(iovo.getUuid());
+        cmsg.setCpuNum(iovo.getCpuNum());
+        cmsg.setCpuSpeed(iovo.getCpuSpeed());
+        cmsg.setMemorySize(iovo.getMemorySize());
+        cmsg.setAllocatorStrategy(iovo.getAllocatorStrategy());
+
+        cmsg.setAccountUuid(msg.getSession().getAccountUuid());
+        cmsg.setName(msg.getName());
+        cmsg.setImageUuid(msg.getImageUuid());
+        cmsg.setL3NetworkUuids(msg.getL3NetworkUuids());
+        cmsg.setType(msg.getType());
+        cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+        cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        cmsg.setZoneUuid(msg.getZoneUuid());
+        cmsg.setClusterUuid(msg.getClusterUuid());
+        cmsg.setHostUuid(msg.getHostUuid());
+        cmsg.setDescription(msg.getDescription());
+        cmsg.setResourceUuid(msg.getResourceUuid());
+        cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
+        return cmsg;
+    }
+
     private void handle(final APICreateVmInstanceMsg msg) {
-        doCreateVmInstance(CreateVmInstanceMsg.valueOf(msg), msg, new ReturnValueCompletion<CreateVmInstanceReply>() {
+        doCreateVmInstance(fromAPICreateVmInstanceMsg(msg), msg, new ReturnValueCompletion<CreateVmInstanceReply>() {
             APICreateVmInstanceEvent evt = new APICreateVmInstanceEvent(msg.getId());
 
             @Override
