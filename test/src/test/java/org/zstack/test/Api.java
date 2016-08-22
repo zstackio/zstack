@@ -4208,7 +4208,7 @@ public class Api implements CloudBusEventListener {
         msg.setInterval(interval);
         msg.setRepeatCount(repeatCount);
         msg.setType(type);
-        msg.setStartDate(startDate);
+        msg.setStartTime(startDate);
         msg.setSnapShotName("Snapshot-" + volUuid);
         msg.setVolumeSnapshotDescription("Test snapshot");
         msg.setVolumeUuid(volUuid);
@@ -4270,7 +4270,7 @@ public class Api implements CloudBusEventListener {
             msg.setRepeatCount(repeatCount);
         }
         msg.setType(type);
-        msg.setStartDate(startDate);
+        msg.setStartTime(startDate);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setVmUuid(vmUuid);
         ApiSender sender = new ApiSender();
@@ -4288,7 +4288,7 @@ public class Api implements CloudBusEventListener {
             msg.setRepeatCount(repeatCount);
         }
         msg.setType(type);
-        msg.setStartDate(startDate);
+        msg.setStartTime(startDate);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setVmUuid(vmUuid);
         ApiSender sender = new ApiSender();
@@ -4306,7 +4306,7 @@ public class Api implements CloudBusEventListener {
             msg.setRepeatCount(repeatCount);
         }
         msg.setType(type);
-        msg.setStartDate(startDate);
+        msg.setStartTime(startDate);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setVmUuid(vmUuid);
         ApiSender sender = new ApiSender();

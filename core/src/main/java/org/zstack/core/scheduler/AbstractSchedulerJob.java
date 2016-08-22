@@ -59,8 +59,8 @@ public class AbstractSchedulerJob implements SchedulerJob {
             cron = msg.getCron();
         }
 
-        if ( msg.getStartDate() != null) {
-            startDate = new Date(msg.getStartDate() * 1000);
+        if ( msg.getStartTime() != null) {
+            startDate = new Date(msg.getStartTime() * 1000);
         }
 
         if ( msg.getInterval() != null) {

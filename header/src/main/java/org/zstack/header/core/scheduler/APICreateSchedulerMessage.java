@@ -1,6 +1,5 @@
 package org.zstack.header.core.scheduler;
 
-import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
@@ -20,7 +19,7 @@ public class APICreateSchedulerMessage extends APICreateMessage {
     @APIParam(required = false)
     private Integer repeatCount;
     @APIParam(required = false)
-    private Long startDate;
+    private Long startTime;
     @APIParam(required = false)
     private String cron;
 
@@ -73,12 +72,12 @@ public class APICreateSchedulerMessage extends APICreateMessage {
         this.repeatCount = repeatCount;
     }
 
-    public Long getStartDate() {
-        return startDate;
+    public Long getStartTime() {
+        return startTime;
     }
 
-    public void setStartDate(Long startDate) {
-        this.startDate = startDate;
+    public void setStartTime(Long startTime) {
+        this.startTime = startTime;
     }
 
     public String getCron() {
