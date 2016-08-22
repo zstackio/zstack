@@ -30,7 +30,7 @@ public class RESTApiController {
     @Autowired
     private RESTFacade restf;
 
-    @RequestMapping(value = RESTConstant.REST_API_RESULT + "{uuid}", method = { RequestMethod.GET, RequestMethod.PUT })
+    @RequestMapping(value = RESTConstant.REST_API_RESULT + "{uuid}", method = {RequestMethod.GET, RequestMethod.PUT})
     public void queryResult(@PathVariable String uuid, HttpServletResponse rsp) throws IOException {
         try {
             RestAPIResponse apiRsp = restApi.getResult(uuid);
@@ -50,7 +50,13 @@ public class RESTApiController {
     }
 
     private String handleByMessageType(String body) {
-        APIMessage amsg = (APIMessage) RESTApiDecoder.loads(body);
+        APIMessage amsg = null;
+        try {
+            amsg = (APIMessage) RESTApiDecoder.loads(body);
+        } catch (Throwable t) {
+            return t.getMessage();
+        }
+
         RestAPIResponse rsp = null;
         if (amsg instanceof APISyncCallMessage) {
             rsp = restApi.call(amsg);
@@ -60,7 +66,7 @@ public class RESTApiController {
         return JSONObjectUtil.toJsonString(rsp);
     }
 
-    @RequestMapping(value = RESTConstant.REST_API_CALL, method = { RequestMethod.POST, RequestMethod.PUT })
+    @RequestMapping(value = RESTConstant.REST_API_CALL, method = {RequestMethod.POST, RequestMethod.PUT})
     public void post(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(request);
         try {
