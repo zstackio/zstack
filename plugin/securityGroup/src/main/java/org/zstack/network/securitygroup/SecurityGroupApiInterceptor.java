@@ -124,7 +124,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             msg.getVmNicUuids().removeAll(uuids);
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
                     String.format("cannot find vm nics[uuids:%s]", msg.getVmNicUuids())
-                    ));
+            ));
         }
 
         checkIfVmNicFromAttachedL3Networks(msg.getSecurityGroupUuid(), uuids);
@@ -156,7 +156,60 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private boolean checkSecurityGroupRuleEqual(SecurityGroupRuleAO rule1, SecurityGroupRuleAO rule2) {
+        if (rule1 == rule2) {
+            return true;
+        }
+
+        if (rule1.getStartPort().equals(rule2.getStartPort()) &&
+                rule1.getEndPort().equals(rule2.getEndPort()) &&
+                rule1.getAllowedCidr().equals(rule2.getAllowedCidr()) &&
+                rule1.getProtocol().equals(rule2.getProtocol()) &&
+                rule1.getType().equals(rule2.getType())) {
+            return true;
+        }
+
+        return false;
+    }
+
     private void validate(APIAddSecurityGroupRuleMsg msg) {
+        // Deduplicate in msg
+        for (int i = 0; i < msg.getRules().size() - 1; i++) {
+            for (int j = msg.getRules().size() - 1; j > i; j--) {
+                if (checkSecurityGroupRuleEqual(msg.getRules().get(j), msg.getRules().get(i))) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                            String.format("rule should not be duplicated. rule dump: %s",
+                                    JSONObjectUtil.toJsonString(msg.getRules().get(j)))
+                    ));
+                }
+            }
+        }
+
+        // Deduplicate in database
+        SimpleQuery<SecurityGroupRuleVO> lsquery = dbf.createQuery(SecurityGroupRuleVO.class);
+        lsquery.add(SecurityGroupRuleVO_.uuid, Op.EQ, msg.getSecurityGroupUuid());
+        List<SecurityGroupRuleVO> vos = lsquery.list();
+        for (SecurityGroupRuleVO svo : vos) {
+            SecurityGroupRuleAO ao = new SecurityGroupRuleAO();
+            ao.setType(svo.getType().toString());
+            ao.setAllowedCidr(svo.getAllowedCidr());
+            ao.setProtocol(svo.getProtocol().toString());
+            ao.setStartPort(svo.getStartPort());
+            ao.setEndPort(svo.getEndPort());
+
+            for (SecurityGroupRuleAO sao : msg.getRules()) {
+                if (checkSecurityGroupRuleEqual(ao, sao)) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                            String.format("rule exist. rule dump: %s",
+                                    JSONObjectUtil.toJsonString(sao))
+                    ));
+                }
+            }
+
+        }
+
+
+        // Basic check
         for (SecurityGroupRuleAO ao : msg.getRules()) {
             if (ao.getType() == null) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
