@@ -1699,18 +1699,32 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 Set<String> set = new HashSet<String>();
                                 set.addAll(fsids.values());
 
-                                if (set.size() == 1) {
-                                    trigger.next();
-                                    return;
+                                if (set.size() != 1) {
+                                    StringBuilder sb =  new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different fusionstor clusters:\n");
+                                    for (FusionstorPrimaryStorageMonBase mon : mons) {
+                                        String fsid = fsids.get(mon.getSelf().getUuid());
+                                        sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
+                                    }
+
+                                    throw new OperationFailureException(errf.stringToOperationError(sb.toString()));
                                 }
 
-                                StringBuilder sb =  new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different fusionstor clusters:\n");
-                                for (FusionstorPrimaryStorageMonBase mon : mons) {
-                                    String fsid = fsids.get(mon.getSelf().getUuid());
-                                    sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
+                                // check if there is another fusionstor setup having the same fsid
+                                String fsId = set.iterator().next();
+
+                                SimpleQuery<FusionstorPrimaryStorageVO>  q = dbf.createQuery(FusionstorPrimaryStorageVO.class);
+                                q.add(FusionstorPrimaryStorageVO_.fsid, Op.EQ, fsId);
+                                q.add(FusionstorPrimaryStorageVO_.uuid, Op.NOT_EQ, self.getUuid());
+                                FusionstorPrimaryStorageVO otherFusion = q.find();
+                                if (otherFusion != null) {
+                                    throw new OperationFailureException(errf.stringToOperationError(
+                                            String.format("there is another Fusionstor primary storage[name:%s, uuid:%s] with the same" +
+                                                            " FSID[%s], you cannot add the same Fusionstor setup as two different primary storage",
+                                                    otherFusion.getName(), otherFusion.getUuid(), fsId)
+                                    ));
                                 }
 
-                                trigger.fail(errf.stringToOperationError(sb.toString()));
+                                trigger.next();
                             }
                         });
 
