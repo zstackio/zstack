@@ -28,16 +28,7 @@ public class AbstractSchedulerJob implements SchedulerJob {
     private String triggerGroup;
     private String triggerName;
     private String resourceUuid;
-
-    @Override
-    public String getResourceUuid() {
-        return resourceUuid;
-    }
-
-    public void setResourceUuid(String resourceUuid) {
-        this.resourceUuid = resourceUuid;
-    }
-
+    private String targetResourceUuid;
     private Timestamp createDate;
 
     public AbstractSchedulerJob() {
@@ -200,6 +191,23 @@ public class AbstractSchedulerJob implements SchedulerJob {
     public void setCreateDate(Timestamp createDate) {
 
         this.createDate = createDate;
+    }
+
+    public String getTargetResourceUuid() {
+        return targetResourceUuid;
+    }
+
+    public void setTargetResourceUuid(String targetResourceUuid) {
+        this.targetResourceUuid = targetResourceUuid;
+    }
+
+    @Override
+    public String getResourceUuid() {
+        return resourceUuid;
+    }
+
+    public void setResourceUuid(String resourceUuid) {
+        this.resourceUuid = resourceUuid;
     }
 
     public void run() {}

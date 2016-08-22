@@ -398,6 +398,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         APICreateVolumeSnapshotSchedulerEvent evt = new APICreateVolumeSnapshotSchedulerEvent(msg.getId());
         CreateVolumeSnapshotJob job = new CreateVolumeSnapshotJob(msg);
         job.setVolumeUuid(msg.getVolumeUuid());
+        job.setTargetResourceUuid(msg.getVolumeUuid());
         job.setSnapShotName(msg.getSnapShotName());
         job.setSnapShotDescription(msg.getVolumeSnapshotDescription());
         SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);

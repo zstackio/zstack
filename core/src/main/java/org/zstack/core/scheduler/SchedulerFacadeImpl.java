@@ -335,6 +335,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             vo.setTriggerGroup(schedulerJob.getTriggerGroup());
             vo.setJobClassName(jobClassName);
             vo.setManagementNodeUuid(Platform.getManagementServerId());
+            vo.setTargetResourceUuid(schedulerJob.getTargetResourceUuid());
         }
 
         try {

@@ -1,5 +1,6 @@
 CREATE TABLE  `zstack`.`SchedulerVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
+    `targetResourceUuid` varchar(32) NOT NULL,
     `schedulerName` varchar(255) NOT NULL,
     `schedulerDescription` varchar(2048) DEFAULT NULL,
     `schedulerType` varchar(255) NOT NULL,
