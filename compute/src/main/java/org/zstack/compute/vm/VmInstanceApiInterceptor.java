@@ -80,6 +80,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIStartVmInstanceMsg) msg);
         } else if (msg instanceof APICreateStartVmInstanceSchedulerMsg) {
             validate((APICreateStartVmInstanceSchedulerMsg) msg);
+        } else if (msg instanceof APICreateStopVmInstanceSchedulerMsg) {
+            validate((APICreateStopVmInstanceSchedulerMsg) msg);
+        } else if (msg instanceof APICreateRebootVmInstanceSchedulerMsg) {
+            validate((APICreateRebootVmInstanceSchedulerMsg) msg);
         }
 
         setServiceId(msg);
@@ -97,6 +101,41 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         // host uuid overrides cluster uuid
         if (msg.getHostUuid() != null) {
             msg.setClusterUuid(null);
+        }
+
+        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+        q.select(VmInstanceVO_.state);
+        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
+        VmInstanceState state = q.findValue();
+        if (state == VmInstanceState.Destroyed) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid())
+            ));
+        }
+
+    }
+
+    private void validate(APICreateStopVmInstanceSchedulerMsg msg) {
+        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+        q.select(VmInstanceVO_.state);
+        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
+        VmInstanceState state = q.findValue();
+        if (state == VmInstanceState.Destroyed) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid())
+            ));
+        }
+    }
+
+    private void validate(APICreateRebootVmInstanceSchedulerMsg msg) {
+        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+        q.select(VmInstanceVO_.state);
+        q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
+        VmInstanceState state = q.findValue();
+        if (state == VmInstanceState.Destroyed) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("vm[uuid:%s] can only create scheduler when state is not Destroyed", msg.getVmInstanceUuid())
+            ));
         }
     }
 
