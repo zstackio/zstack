@@ -30,7 +30,6 @@ public class CreateVolumeSnapshotJob extends AbstractSchedulerJob {
 
     public CreateVolumeSnapshotJob(APICreateSchedulerMessage msg) {
         super(msg);
-        setTargetResourceUuid(volumeUuid);
     }
 
     public CreateVolumeSnapshotJob() {

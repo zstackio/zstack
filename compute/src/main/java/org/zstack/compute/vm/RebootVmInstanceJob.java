@@ -28,7 +28,6 @@ public class RebootVmInstanceJob  extends AbstractSchedulerJob {
 
     public RebootVmInstanceJob(APICreateSchedulerMessage msg) {
         super(msg);
-        setTargetResourceUuid(vmUuid);
     }
 
     public RebootVmInstanceJob() {
