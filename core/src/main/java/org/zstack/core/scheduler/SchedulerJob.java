@@ -19,5 +19,6 @@ public interface SchedulerJob {
     String getType();
     String getCron();
     String getResourceUuid();
+    String getTargetResourceUuid();
     void run();
 }

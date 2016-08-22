@@ -3829,6 +3829,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         APICreateStopVmInstanceSchedulerEvent evt = new APICreateStopVmInstanceSchedulerEvent(msg.getId());
         StopVmInstanceJob job = new StopVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
+        job.setTargetResourceUuid(msg.getVmInstanceUuid());
         SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
         if ( schedulerVO != null) {
             schedulerVO = dbf.reload(schedulerVO);
@@ -3842,6 +3843,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         APICreateStartVmInstanceSchedulerEvent evt = new APICreateStartVmInstanceSchedulerEvent(msg.getId());
         StartVmInstanceJob job = new StartVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
+        job.setTargetResourceUuid(msg.getVmInstanceUuid());
         SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
         if ( schedulerVO != null) {
             schedulerVO = dbf.reload(schedulerVO);
@@ -3855,6 +3857,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         APICreateRebootVmInstanceSchedulerEvent evt = new APICreateRebootVmInstanceSchedulerEvent(msg.getId());
         RebootVmInstanceJob job = new RebootVmInstanceJob(msg);
         job.setVmUuid(msg.getVmInstanceUuid());
+        job.setTargetResourceUuid(msg.getVmInstanceUuid());
         SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
         if ( schedulerVO != null) {
             schedulerVO = dbf.reload(schedulerVO);

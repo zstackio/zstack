@@ -32,6 +32,7 @@ public class StopVmInstanceJob extends AbstractSchedulerJob {
 
     public StopVmInstanceJob(APICreateSchedulerMessage msg) {
         super(msg);
+        setTargetResourceUuid(vmUuid);
 
     }
 

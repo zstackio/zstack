@@ -18,6 +18,8 @@ public class SchedulerVO {
     @Column
     private String uuid;
     @Column
+    private String targetResourceUuid;
+    @Column
     private String schedulerName;
     @Column
     private String schedulerDescription;
@@ -196,5 +198,13 @@ public class SchedulerVO {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getTargetResourceUuid() {
+        return targetResourceUuid;
+    }
+
+    public void setTargetResourceUuid(String targetResourceUuid) {
+        this.targetResourceUuid = targetResourceUuid;
     }
 }

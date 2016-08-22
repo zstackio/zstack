@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 @StaticMetamodel(SchedulerVO.class)
 public class SchedulerVO_ {
     public static volatile SingularAttribute<SchedulerVO, String> uuid;
+    public static volatile SingularAttribute<SchedulerVO, String> targetResourceUuid;
     public static volatile SingularAttribute<SchedulerVO, String> schedulerName;
     public static volatile SingularAttribute<SchedulerVO, String> schedulerDescription;
     public static volatile SingularAttribute<SchedulerVO, String> schedulerType;
