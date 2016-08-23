@@ -33,7 +33,7 @@ public class TestImageStoreCloneVm {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/kvm/TestImageStoreCreateVmOnKvm.xml", con);
-        deployer.addSpringConfig("KVMRelated.xml");
+        deployer.addSpringConfig("mevocoRelated.xml");
         deployer.addSpringConfig("imagestore.xml");
         deployer.addSpringConfig("ImageStoreBackupStorageSimulator.xml");
         deployer.addSpringConfig("ImageStorePrimaryStorageSimulator.xml");
