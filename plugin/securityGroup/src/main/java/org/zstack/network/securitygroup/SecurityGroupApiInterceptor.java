@@ -187,7 +187,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
         // Deduplicate in database
         SimpleQuery<SecurityGroupRuleVO> lsquery = dbf.createQuery(SecurityGroupRuleVO.class);
-        lsquery.add(SecurityGroupRuleVO_.uuid, Op.EQ, msg.getSecurityGroupUuid());
+        lsquery.add(SecurityGroupRuleVO_.securityGroupUuid, Op.EQ, msg.getSecurityGroupUuid());
         List<SecurityGroupRuleVO> vos = lsquery.list();
         for (SecurityGroupRuleVO svo : vos) {
             SecurityGroupRuleAO ao = new SecurityGroupRuleAO();
