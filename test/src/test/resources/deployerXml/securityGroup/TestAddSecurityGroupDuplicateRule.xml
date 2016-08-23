@@ -17,6 +17,13 @@
 				<endPort>10</endPort>
 				<allowedCidr>192.168.0.1/0</allowedCidr>
 			</rule>
+			<rule>
+				<type>Ingress</type>
+				<protocol>UDP</protocol>
+				<startPort>10</startPort>
+				<endPort>10</endPort>
+				<allowedCidr>192.168.0.1/0</allowedCidr>
+			</rule>
 		</securityGroup>
 	</securityGroups>
 	
