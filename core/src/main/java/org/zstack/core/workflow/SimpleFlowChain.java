@@ -365,7 +365,10 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             try {
                 ClassPool pool = ClassPool.getDefault();
                 CtClass cc = pool.get(flow.getClass().getName());
-                CtMethod m = cc.getDeclaredMethod("run");
+                CtMethod m = cc.getDeclaredMethod("run", new CtClass[] {
+                        pool.get(FlowTrigger.class.getName()),
+                        pool.get(Map.class.getName())
+                });
                 int line = m.getMethodInfo().getLineNumber(0);
 
                 String className = flow.getClass().getName();
