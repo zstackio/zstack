@@ -66,6 +66,7 @@ public class TestLocalStorage1 {
         c.avail = totalSize;
 
         config.capacityMap.put("host1", c);
+        config.capacityMap.put("host4", c);
 
         deployer.build();
         api = deployer.getApi();

@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -25,7 +26,10 @@ import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.configuration.*;
+import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.configuration.DiskOfferingVO_;
+import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.errorcode.ErrorCode;
@@ -65,7 +69,10 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.TagUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -139,6 +146,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private VmInstanceDeletionPolicyManager deletionPolicyMgr;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private HostAllocatorManager hostAllocatorMgr;
 
     @Override
     @MessageSafe
@@ -191,11 +200,112 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             handle((APIListVmNicMsg) msg);
         } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
             handle((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
+        } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
+            handle((APIGetInterdependentL3NetworksImagesMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage)msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetInterdependentL3NetworksImagesMsg msg) {
+        if (msg.getImageUuid() != null) {
+            getInterdependentL3NetworksByImageUuid(msg);
+        } else {
+            getInterdependentImagesByL3NetworkUuids(msg);
+        }
+    }
+
+    private List<String> listIntersection(List<String> a, List<String> b) {
+        List<String> ret = new ArrayList<>();
+        for (String s : a) {
+            if (b.contains(s)) {
+                ret.add(s);
+            }
+        }
+
+        return ret;
+    }
+
+    @Transactional(readOnly = true)
+    private void getInterdependentImagesByL3NetworkUuids(APIGetInterdependentL3NetworksImagesMsg msg) {
+        APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
+
+        List<List<String>> listBsTypes = new ArrayList<>();
+        List<String> allBsTypes = new ArrayList<>();
+        for (String l3uuid : msg.getL3NetworkUuids()) {
+            String sql = "select ps.type from PrimaryStorageVO ps, L2NetworkClusterRefVO l2ref, L3NetworkVO l3, PrimaryStorageClusterRefVO psref" +
+                    " where ps.uuid = psref.primaryStorageUuid and psref.clusterUuid = l2ref.clusterUuid" +
+                    " and l2ref.l2NetworkUuid = l3.l2NetworkUuid and l3.uuid = :l3uuid";
+            TypedQuery<String> psq = dbf.getEntityManager().createQuery(sql, String.class);
+            psq.setParameter("l3uuid", l3uuid);
+            List<String> l = psq.getResultList();
+
+            List<String> bsTypes = new ArrayList<>();
+            for (String psType : l) {
+                bsTypes.addAll(hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(psType));
+            }
+            listBsTypes.add(bsTypes);
+            allBsTypes.addAll(bsTypes);
+        }
+
+        List<String> bsTypes = allBsTypes;
+        for (List<String> bss : listBsTypes) {
+            bsTypes = listIntersection(bsTypes, bss);
+        }
+
+        if (bsTypes.isEmpty()) {
+            reply.setInventories(new ArrayList());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        String sql = "select img from ImageVO img, ImageBackupStorageRefVO iref, BackupStorageZoneRefVO zref, BackupStorageVO bs where" +
+                " img.uuid = iref.imageUuid and iref.backupStorageUuid = zref.backupStorageUuid" +
+                " and bs.uuid = zref.backupStorageUuid and bs.type in (:bsTypes) and zref.zoneUuid = :zoneUuid group by img.uuid";
+        TypedQuery<ImageVO> iq = dbf.getEntityManager().createQuery(sql, ImageVO.class);
+        iq.setParameter("bsTypes", bsTypes);
+        iq.setParameter("zoneUuid", msg.getZoneUuid());
+        List<ImageVO> vos = iq.getResultList();
+        reply.setInventories(ImageInventory.valueOf(vos));
+        bus.reply(msg, reply);
+    }
+
+    @Transactional(readOnly = true)
+    private void getInterdependentL3NetworksByImageUuid(APIGetInterdependentL3NetworksImagesMsg msg) {
+        APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
+
+        String sql = "select bs.type from BackupStorageVO bs, ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zref" +
+                " where bs.uuid = ref.backupStorageUuid and ref.imageUuid = :imgUuid and ref.backupStorageUuid = zref.backupStorageUuid" +
+                " and zref.zoneUuid = :zoneUuid";
+        TypedQuery<String> bsq = dbf.getEntityManager().createQuery(sql, String.class);
+        bsq.setParameter("imgUuid", msg.getImageUuid());
+        bsq.setParameter("zoneUuid", msg.getZoneUuid());
+        List<String> bssTypes = bsq.getResultList();
+        if (bssTypes.isEmpty()) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                    String.format("the image[uuid:%s] is not on any backup storage that has been attached to the zone[uuid:%s]",
+                            msg.getImageUuid(), msg.getZoneUuid())
+            ));
+        }
+
+        List<String> possiblePrimaryStorageTypes = new ArrayList<>();
+        for (String bsType : bssTypes) {
+            List<String> psTypes = hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics(bsType);
+            possiblePrimaryStorageTypes.addAll(psTypes);
+        }
+
+        sql = "select l3 from L3NetworkVO l3, L2NetworkClusterRefVO l2ref, PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                " where l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid = psref.clusterUuid" +
+                " and psref.primaryStorageUuid = ps.uuid and ps.type in (:psTypes) and ps.zoneUuid = l3.zoneUuid" +
+                " and l3.zoneUuid = :zoneUuid group by l3.uuid";
+        TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
+        l3q.setParameter("psTypes", possiblePrimaryStorageTypes);
+        l3q.setParameter("zoneUuid", msg.getZoneUuid());
+        List<L3NetworkVO> l3s = l3q.getResultList();
+        reply.setInventories(L3NetworkInventory.valueOf(l3s));
+        bus.reply(msg, reply);
     }
 
     private void handle(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {

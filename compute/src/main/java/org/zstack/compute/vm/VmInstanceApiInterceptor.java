@@ -84,10 +84,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateStopVmInstanceSchedulerMsg) msg);
         } else if (msg instanceof APICreateRebootVmInstanceSchedulerMsg) {
             validate((APICreateRebootVmInstanceSchedulerMsg) msg);
+        } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
+            validate((APIGetInterdependentL3NetworksImagesMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIGetInterdependentL3NetworksImagesMsg msg) {
+        if (msg.getL3NetworkUuids() == null && msg.getImageUuid() == null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    "either l3NetworkUuids or imageUuid must be set"
+            ));
+        }
     }
 
     private void validate(APIStartVmInstanceMsg msg) {

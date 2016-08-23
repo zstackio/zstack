@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+
+    <backupStorages>
+        <sftpBackupStorage name="sftp" description="Test"
+            url="nfs://test" />
+        <cephBackupStorage name="ceph-bk" description="Test"
+                           url="/path1" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost:23,root:pass@#$word@127.0.0.1:23"
+                           totalCapacity="1T" availableCapacity="500G"/>
+    </backupStorages>
+
+    <images>
+        <image name="TestImage" description="Test">
+            <backupStorageRef>sftp</backupStorageRef>
+        </image>
+
+        <image name="TestImage1" description="Test">
+            <backupStorageRef>ceph-bk</backupStorageRef>
+        </image>
+    </images>
+
+    <instanceOfferings>
+        <instanceOffering name="TestInstanceOffering"
+            description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000">
+        </instanceOffering>
+    </instanceOfferings>
+
+    <zones>
+        <zone name="Zone1" description="Test">
+            <clusters>
+                <cluster name="Cluster1" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host1" description="Test" managementIp="localhost"
+                            memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                    </hosts>
+
+                    <primaryStorageRef>nfs</primaryStorageRef>
+                    <primaryStorageRef>ceph-pri</primaryStorageRef>
+                    <primaryStorageRef>local</primaryStorageRef>
+                    <primaryStorageRef>smp</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network1</l2NetworkRef>
+                </cluster>
+
+                <cluster name="Cluster2" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host2" description="Test" managementIp="127.0.0.1"
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                    </hosts>
+                    <primaryStorageRef>nfs</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network2</l2NetworkRef>
+                </cluster>
+
+                <cluster name="Cluster3" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host3" description="Test" managementIp="127.0.0.3"
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                    </hosts>
+                    <primaryStorageRef>ceph-pri</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network3</l2NetworkRef>
+                </cluster>
+
+                <cluster name="Cluster4" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host4" description="Test" managementIp="127.0.0.4"
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                    </hosts>
+                    <primaryStorageRef>local</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network4</l2NetworkRef>
+                </cluster>
+            </clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="TestL2Network1" description="Test"
+                    physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network1" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+
+                <l2NoVlanNetwork name="TestL2Network2" description="Test"
+                                 physicalInterface="eth1">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network2" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                     endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+
+                <l2NoVlanNetwork name="TestL2Network3" description="Test"
+                                 physicalInterface="eth2">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network3" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                     endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+
+                <l2NoVlanNetwork name="TestL2Network4" description="Test"
+                                 physicalInterface="eth3">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network4" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                     endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+
+            <backupStorageRef>sftp</backupStorageRef>
+            <backupStorageRef>ceph-bk</backupStorageRef>
+
+            <primaryStorages>
+                <nfsPrimaryStorage name="nfs" description="Test"
+                    totalCapacity="1T" url="nfs://test" />
+                <cephPrimaryStorage name="ceph-pri" description="Test"
+                                    totalCapacity="1T" availableCapacity="500G" url="ceph://test" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost/?monPort=7777,root:password@127.0.0.1/?monPort=7777"/>
+                <localPrimaryStorage name="local" description="Test"
+                                     url="/test" />
+                <sharedMountPointPrimaryStorage name="smp" description="Test"
+                                                url="/test" />
+            </primaryStorages>
+        </zone>
+    </zones>
+</deployerConfig>
