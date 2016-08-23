@@ -11,12 +11,15 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.core.scheduler.SchedulerVO;
+import org.zstack.header.core.scheduler.SchedulerVO_;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -52,7 +55,8 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint {
+public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
+        VolumeDeletionExtensionPoint, VolumeBeforeExpungeExtensionPoint, RecoverDataVolumeExtensionPoint {
 	private static final CLogger logger = Utils.getLogger(VolumeManagerImpl.class);
 
 	@Autowired
@@ -75,6 +79,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     private VolumeDeletionPolicyManager deletionPolicyMgr;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private SchedulerFacade schedulerFacade;
 
     private Future<Void> volumeExpungeTask;
 
@@ -643,4 +649,56 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     public void managementNodeReady() {
         startExpungeTask();
     }
+
+    public void preDeleteVolume(VolumeInventory volume) {
+
+    }
+
+    public void beforeDeleteVolume(VolumeInventory volume) {
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, volume.getUuid());
+        q.select(SchedulerVO_.uuid);
+        List<String> uuids = q.listValue();
+        for (String uuid : uuids) {
+           schedulerFacade.pauseSchedulerJob(uuid);
+        }
+    }
+
+    public void afterDeleteVolume(VolumeInventory volume) {
+
+    }
+
+    public void failedToDeleteVolume(VolumeInventory volume, ErrorCode errorCode) {
+
+    }
+
+    public void volumeBeforeExpunge(VolumeInventory volume) {
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, volume.getUuid());
+        q.select(SchedulerVO_.uuid);
+        List<String> uuids = q.listValue();
+        for (String uuid : uuids) {
+            schedulerFacade.deleteSchedulerJob(uuid);
+        }
+    }
+
+    public void preRecoverDataVolume(VolumeInventory volume) {
+
+    }
+
+    public void beforeRecoverDataVolume(VolumeInventory volume) {
+
+    }
+
+    public void afterRecoverDataVolume(VolumeInventory volume) {
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, volume.getUuid());
+        q.select(SchedulerVO_.uuid);
+        List<String> uuids = q.listValue();
+        for (String uuid : uuids) {
+            schedulerFacade.resumeSchedulerJob(uuid);
+        }
+
+    }
+
 }

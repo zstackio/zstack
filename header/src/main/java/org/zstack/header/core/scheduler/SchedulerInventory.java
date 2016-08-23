@@ -16,6 +16,7 @@ import java.util.List;
 @PythonClassInventory
 public class SchedulerInventory implements Serializable {
     private String uuid;
+    private String targetResourceUuid;
     private String schedulerName;
     private String schedulerType;
     private Integer schedulerInterval;
@@ -33,6 +34,7 @@ public class SchedulerInventory implements Serializable {
 
     protected SchedulerInventory(SchedulerVO vo) {
         uuid = vo.getUuid();
+        targetResourceUuid = vo.getTargetResourceUuid();
         schedulerName = vo.getSchedulerName();
         schedulerType = vo.getSchedulerType();
         schedulerInterval = vo.getSchedulerInterval();
@@ -154,5 +156,21 @@ public class SchedulerInventory implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getTargetResourceUuid() {
+        return targetResourceUuid;
+    }
+
+    public void setTargetResourceUuid(String targetResourceUuid) {
+        this.targetResourceUuid = targetResourceUuid;
+    }
+
+    public void setSchedulerInterval(Integer schedulerInterval) {
+        this.schedulerInterval = schedulerInterval;
+    }
+
+    public void setRepeatCount(Integer repeatCount) {
+        this.repeatCount = repeatCount;
     }
 }
