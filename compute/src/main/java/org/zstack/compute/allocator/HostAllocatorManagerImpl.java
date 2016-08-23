@@ -42,6 +42,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
 	private Map<String, HostAllocatorStrategyFactory> factories = Collections.synchronizedMap(new HashMap<String, HostAllocatorStrategyFactory>());
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
+    private Map<String, List<String>> primaryStorageBackupStorageMetrics = new HashMap<>();
 
 	@Autowired
 	private CloudBus bus;
@@ -383,11 +384,26 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 	@Override
 	public boolean start() {
 		populateHostAllocatorStrategyFactory();
-
+        populatePrimaryStorageBackupStorageMetrics();
 		return true;
 	}
 
-	@Override
+    private void populatePrimaryStorageBackupStorageMetrics() {
+        for (Map.Entry<String, List<String>> e : backupStoragePrimaryStorageMetrics.entrySet()) {
+            String bsType = e.getKey();
+            List<String> psTypes = e.getValue();
+            for (String psType : psTypes) {
+                List<String> bsTypes = primaryStorageBackupStorageMetrics.get(psType);
+                if (bsTypes == null) {
+                    bsTypes = new ArrayList<>();
+                    primaryStorageBackupStorageMetrics.put(psType, bsTypes);
+                }
+                bsTypes.add(bsType);
+            }
+        }
+    }
+
+    @Override
 	public boolean stop() {
 		return true;
 	}
@@ -552,5 +568,25 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
     public Map<String, List<String>> getBackupStoragePrimaryStorageMetrics() {
         return backupStoragePrimaryStorageMetrics;
+    }
+
+    @Override
+    public List<String> getPrimaryStorageTypesByBackupStorageTypeFromMetrics(String backupStorageType) {
+        List<String> psTypes =  backupStoragePrimaryStorageMetrics.get(backupStorageType);
+        if (psTypes == null) {
+            throw new CloudRuntimeException(String.format("cannot find supported primary storage types by the backup storage type[%s]", backupStorageType));
+        }
+
+        return psTypes;
+    }
+
+    @Override
+    public List<String> getBackupStorageTypesByPrimaryStorageTypeFromMetrics(String psType) {
+        List<String> bsTypes = primaryStorageBackupStorageMetrics.get(psType);
+        if (bsTypes == null) {
+            throw new CloudRuntimeException(String.format("cannot find supported backup storage types by the primary storage type[%s]", psType));
+        }
+
+        return bsTypes;
     }
 }

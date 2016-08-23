@@ -2027,15 +2027,15 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIRecoverVmInstanceMsg) msg);
         } else if (msg instanceof APISetVmBootOrderMsg) {
             handle((APISetVmBootOrderMsg) msg);
-        }else if(msg instanceof APISetVmConsolePasswordMsg){
+        } else if(msg instanceof APISetVmConsolePasswordMsg){
             handle((APISetVmConsolePasswordMsg)msg);
-        }else if (msg instanceof APIGetVmBootOrderMsg) {
+        } else if (msg instanceof APIGetVmBootOrderMsg) {
             handle((APIGetVmBootOrderMsg) msg);
-        }else if(msg instanceof APIDeleteVmConsolePasswordMsg){
+        } else if(msg instanceof APIDeleteVmConsolePasswordMsg){
             handle((APIDeleteVmConsolePasswordMsg) msg);
-        }else if(msg instanceof APIGetVmConsolePasswordMsg){
+        } else if(msg instanceof APIGetVmConsolePasswordMsg){
             handle((APIGetVmConsolePasswordMsg) msg);
-        }else if (msg instanceof APIGetVmConsoleAddressMsg) {
+        } else if (msg instanceof APIGetVmConsoleAddressMsg) {
             handle((APIGetVmConsoleAddressMsg) msg);
         } else if (msg instanceof APISetVmHostnameMsg) {
             handle((APISetVmHostnameMsg) msg);
@@ -2051,14 +2051,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIGetVmStartingCandidateClustersHostsMsg) msg);
         } else if (msg instanceof APIGetVmCapabilitiesMsg) {
             handle((APIGetVmCapabilitiesMsg) msg);
-        }else if (msg instanceof APISetVmSshKeyMsg){
+        } else if (msg instanceof APISetVmSshKeyMsg){
             handle((APISetVmSshKeyMsg) msg);
         } else if (msg instanceof APIGetVmSshKeyMsg){
             handle((APIGetVmSshKeyMsg) msg);
-        }else if (msg instanceof APIDeleteVmSshKeyMsg){
+        } else if (msg instanceof APIDeleteVmSshKeyMsg) {
             handle((APIDeleteVmSshKeyMsg) msg);
-        }
-        else {
+        } else {
             bus.dealWithUnknownMessage(msg);
         }
     }

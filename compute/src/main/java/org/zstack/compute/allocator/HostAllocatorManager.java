@@ -10,6 +10,10 @@ public interface HostAllocatorManager {
 	HostAllocatorStrategyFactory getHostAllocatorStrategyFactory(HostAllocatorStrategyType type);
 
 	Map<String, List<String>> getBackupStoragePrimaryStorageMetrics();
-	
+
+    List<String> getPrimaryStorageTypesByBackupStorageTypeFromMetrics(String backupStorageType);
+
+    List<String> getBackupStorageTypesByPrimaryStorageTypeFromMetrics(String psType);
+
 	void returnCapacity(String uuid, long cpu, long memory);
 }

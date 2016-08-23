@@ -16,7 +16,6 @@ import org.zstack.storage.backup.sftp.SftpBackupStorageGlobalProperty;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 
 public class WebBeanConstructor extends BeanConstructor {
     private Tomcat tomcat;
@@ -61,7 +60,8 @@ public class WebBeanConstructor extends BeanConstructor {
         nioConnector.setScheme("http");
         nioConnector.setProtocol("HTTP/1.1");
         try {
-            nioConnector.setProperty("address", InetAddress.getByName("localhost").getHostAddress());
+            //nioConnector.setProperty("address", InetAddress.getByName("localhost").getHostAddress());
+            nioConnector.setProperty("address", "0.0.0.0");
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
