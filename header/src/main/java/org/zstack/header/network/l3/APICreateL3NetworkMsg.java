@@ -48,7 +48,7 @@ import org.zstack.header.network.l2.L2NetworkVO;
  * @result
  * see :ref:`APICreateL3NetworkEvent`
  */
-
+@Action(category = L3NetworkConstant.ACTION_CATEGORY)
 public class APICreateL3NetworkMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters

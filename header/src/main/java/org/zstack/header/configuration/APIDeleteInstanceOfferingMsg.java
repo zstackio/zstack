@@ -4,6 +4,7 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 
+@Action(category = ConfigurationConstant.ACTION_CATEGORY)
 public class APIDeleteInstanceOfferingMsg extends APIDeleteMessage implements InstanceOfferingMessage {
 	@APIParam(checkAccount = true, operationTarget = true)
 	private String uuid;
