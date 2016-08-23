@@ -1,9 +1,5 @@
 package org.zstack.core.workflow;
 
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.NotFoundException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -362,27 +358,15 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         }
 
         if (logger.isTraceEnabled()) {
-            try {
-                ClassPool pool = ClassPool.getDefault();
-                CtClass cc = pool.get(flow.getClass().getName());
-                CtMethod m = cc.getDeclaredMethod("run", new CtClass[] {
-                        pool.get(FlowTrigger.class.getName()),
-                        pool.get(Map.class.getName())
-                });
-                int line = m.getMethodInfo().getLineNumber(0);
-
-                String className = flow.getClass().getName();
-                String[] ff = className.split("\\.");
-                String filename = ff[ff.length-1];
-                if (filename.contains("$")) {
-                    int index = filename.indexOf("$");
-                    filename = filename.substring(0, index);
-                }
-
-                name = String.format("%s.java:%s:%s", filename, line, name);
-            } catch (NotFoundException e) {
-                logger.warn(String.format("cannot find the flow[%s] line number, %s", name, e.getMessage()));
+            String className = flow.getClass().getName();
+            String[] ff = className.split("\\.");
+            String filename = ff[ff.length-1];
+            if (filename.contains("$")) {
+                int index = filename.indexOf("$");
+                filename = filename.substring(0, index);
             }
+
+            name = String.format("%s.java:%s", filename, name);
         }
 
         return name;
