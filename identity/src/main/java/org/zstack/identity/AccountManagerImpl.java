@@ -133,6 +133,42 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     @Override
+    @Transactional
+    public AccountResourceRefInventory changeResourceOwner(String resourceUuid, String newOwnerUuid) {
+        String sql = "select ref from AccountResourceRefVO ref where ref.resourceUuid = :resUuid";
+        TypedQuery<AccountResourceRefVO> q = dbf.getEntityManager().createQuery(sql, AccountResourceRefVO.class);
+        q.setParameter("resUuid", resourceUuid);
+        List<AccountResourceRefVO> refs = q.getResultList();
+        if (refs.isEmpty()) {
+            throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                    String.format("cannot find the resource[uuid:%s]; wrong resourceUuid or the resource is admin resource",
+                            resourceUuid)
+            ));
+        }
+
+        AccountResourceRefVO ref = refs.get(0);
+        final AccountResourceRefInventory origin = AccountResourceRefInventory.valueOf(ref);
+
+        for (ResourceOwnerPreChangeExtensionPoint ext : pluginRgty.getExtensionList(ResourceOwnerPreChangeExtensionPoint.class)) {
+            ext.resourceOwnerPreChange(origin, newOwnerUuid);
+        }
+
+        ref.setAccountUuid(newOwnerUuid);
+        ref.setOwnerAccountUuid(newOwnerUuid);
+        ref = dbf.getEntityManager().merge(ref);
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(ResourceOwnerAfterChangeExtensionPoint.class),
+                new ForEachFunction<ResourceOwnerAfterChangeExtensionPoint>() {
+                    @Override
+                    public void run(ResourceOwnerAfterChangeExtensionPoint ext) {
+                        ext.resourceOwnerAfterChange(origin, newOwnerUuid);
+                    }
+                });
+
+        return AccountResourceRefInventory.valueOf(ref);
+    }
+
+    @Override
     public void checkApiMessagePermission(APIMessage msg) {
         new Auth().check(msg);
     }
@@ -246,35 +282,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void handle(final APIChangeResourceOwnerMsg msg) {
-        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-        q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
-        AccountResourceRefVO ref = q.find();
-        if (ref == null) {
-            throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                    String.format("cannot find the resource[uuid:%s]; wrong resourceUuid or the resource is admin resource", msg.getResourceUuid())
-            ));
-        }
-
-        final AccountResourceRefInventory origin = AccountResourceRefInventory.valueOf(ref);
-
-        for (ResourceOwnerPreChangeExtensionPoint ext : pluginRgty.getExtensionList(ResourceOwnerPreChangeExtensionPoint.class)) {
-            ext.resourceOwnerPreChange(origin, msg.getAccountUuid());
-        }
-
-        ref.setAccountUuid(msg.getAccountUuid());
-        ref.setOwnerAccountUuid(msg.getAccountUuid());
-        ref = dbf.updateAndRefresh(ref);
-
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(ResourceOwnerAfterChangeExtensionPoint.class),
-                new ForEachFunction<ResourceOwnerAfterChangeExtensionPoint>() {
-                    @Override
-                    public void run(ResourceOwnerAfterChangeExtensionPoint ext) {
-                        ext.resourceOwnerAfterChange(origin, msg.getAccountUuid());
-                    }
-                });
-
         APIChangeResourceOwnerEvent evt = new APIChangeResourceOwnerEvent(msg.getId());
-        evt.setInventory(AccountResourceRefInventory.valueOf(ref));
+        evt.setInventory(changeResourceOwner(msg.getResourceUuid(), msg.getAccountUuid()));
         bus.publish(evt);
     }
 
