@@ -524,21 +524,14 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         changeVolumeSnapshotOwner(ref, newOwnerUuid);
     }
 
-    @Transactional
     private void changeVolumeSnapshotOwner(AccountResourceRefInventory ref, String newOwnerUuid) {
-        String sql = "select sp.uuid from VolumeSnapshotVO sp where sp.volumeUuid = :volUuid";
-        TypedQuery<String> sq = dbf.getEntityManager().createQuery(sql, String.class);
-        sq.setParameter("volUuid", ref.getResourceUuid());
-        List<String> spUuids = sq.getResultList();
+        SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
+        q.select(VolumeSnapshotVO_.uuid);
+        q.add(VolumeSnapshotVO_.volumeUuid, Op.EQ, ref.getResourceUuid());
+        List<String> spUuids = q.listValue();
 
-        if (!spUuids.isEmpty()) {
-            sql = "update AccountResourceRefVO ref set ref.accountUuid = :acntUuid, ref.ownerAccountUuid = :acntUuid" +
-                    " where ref.resourceUuid in (:uuids) and ref.resourceType = :type";
-            Query rq = dbf.getEntityManager().createQuery(sql);
-            rq.setParameter("acntUuid", newOwnerUuid);
-            rq.setParameter("uuids", spUuids);
-            rq.setParameter("type", VolumeSnapshotVO.class.getSimpleName());
-            rq.executeUpdate();
+        for (String spUuid : spUuids) {
+            acntMgr.changeResourceOwner(spUuid, newOwnerUuid);
         }
     }
 }

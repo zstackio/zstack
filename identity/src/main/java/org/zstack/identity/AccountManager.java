@@ -1,5 +1,6 @@
 package org.zstack.identity;
 
+import org.zstack.header.identity.AccountResourceRefInventory;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.APIMessage;
@@ -19,6 +20,8 @@ public interface AccountManager {
     Map<Class, Quota> getMessageQuotaMap();
 
     List<Quota> getQuotas();
+
+    AccountResourceRefInventory changeResourceOwner(String resourceUuid, String newOwnerUuid);
 
     void checkApiMessagePermission(APIMessage msg);
 

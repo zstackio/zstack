@@ -24,6 +24,7 @@ import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.DiskOfferingInventory;
@@ -56,7 +57,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.search.SearchOp;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagValidator;
@@ -79,7 +79,6 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
@@ -88,11 +87,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager,
         ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint,
-        ResourceOwnerPreChangeExtensionPoint, ResourceOwnerAfterChangeExtensionPoint {
+        ResourceOwnerAfterChangeExtensionPoint, GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<String, VmInstanceFactory>());
     private List<String> createVmWorkFlowElements;
@@ -1432,62 +1432,55 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         new StaticIpOperator().deleteStaticIpByL3NetworkUuid(inventory.getUuid());
     }
 
-
-    @Transactional
-    private void changeOwnerOfRootVolume(AccountResourceRefInventory ref, String newOwnerUuid) {
-        String sql = "select vm.rootVolumeUuid from VmInstanceVO vm where vm.uuid = :uuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("uuid", ref.getResourceUuid());
-        List<String> ret = q.getResultList();
-        if (q.getResultList().isEmpty()) {
-            // an VM in an intermediate state
-            return;
-        }
-
-        String rootVolumeUuid = ret.get(0);
-        sql = "update AccountResourceRefVO ref set ref.accountUuid = :acntUuid, ref.ownerAccountUuid = :acntUuid" +
-                " where ref.resourceUuid = :uuid and ref.resourceType = :type";
-        Query rq = dbf.getEntityManager().createQuery(sql);
-        rq.setParameter("acntUuid", newOwnerUuid);
-        rq.setParameter("uuid", rootVolumeUuid);
-        rq.setParameter("type", VolumeVO.class.getSimpleName());
-        rq.executeUpdate();
-
-        sql = "select sp.uuid from VolumeSnapshotVO sp where sp.volumeUuid = :volUuid";
-        TypedQuery<String> sq = dbf.getEntityManager().createQuery(sql, String.class);
-        sq.setParameter("volUuid", rootVolumeUuid);
-        List<String> spUuids = sq.getResultList();
-
-        if (!spUuids.isEmpty()) {
-            sql = "update AccountResourceRefVO ref set ref.accountUuid = :acntUuid, ref.ownerAccountUuid = :acntUuid" +
-                    " where ref.resourceUuid in (:uuids) and ref.resourceType = :type";
-            rq = dbf.getEntityManager().createQuery(sql);
-            rq.setParameter("acntUuid", newOwnerUuid);
-            rq.setParameter("uuids", spUuids);
-            rq.setParameter("type", VolumeSnapshotVO.class.getSimpleName());
-            rq.executeUpdate();
-        }
-    }
-
     @Override
     public void resourceOwnerAfterChange(AccountResourceRefInventory ref, String newOwnerUuid) {
         if (!VmInstanceVO.class.getSimpleName().equals(ref.getResourceType())) {
             return;
         }
 
-        changeOwnerOfRootVolume(ref, newOwnerUuid);
-    }
-
-    @Override
-    public void resourceOwnerPreChange(AccountResourceRefInventory ref, String newOwnerUuid) {
-        if (!VolumeVO.class.getSimpleName().equals(ref.getResourceType())) {
+        SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+        q.select(VmInstanceVO_.rootVolumeUuid);
+        q.add(VmInstanceVO_.uuid, Op.EQ, ref.getResourceUuid());
+        String rootVolumeUuid = q.findValue();
+        if (rootVolumeUuid == null) {
             return;
         }
 
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.add(VolumeVO_.uuid, Op.EQ, ref.getResourceUuid());
-        q.add(VolumeVO_.type, Op.EQ, VolumeType.Root);
-        if (q.isExists()) {
+        acntMgr.changeResourceOwner(rootVolumeUuid, newOwnerUuid);
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return asList(APIChangeResourceOwnerMsg.class);
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.END;
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof APIChangeResourceOwnerMsg) {
+            validateAPIChangeResourceOwnerMsg((APIChangeResourceOwnerMsg)msg);
+        }
+
+        return msg;
+    }
+
+    private void validateAPIChangeResourceOwnerMsg(APIChangeResourceOwnerMsg msg) {
+        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
+        q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
+        AccountResourceRefVO ref = q.find();
+
+        if (ref == null || !VolumeVO.class.getSimpleName().equals(ref.getResourceType())) {
+            return;
+        }
+
+        SimpleQuery<VolumeVO> vq = dbf.createQuery(VolumeVO.class);
+        vq.add(VolumeVO_.uuid, Op.EQ, ref.getResourceUuid());
+        vq.add(VolumeVO_.type, Op.EQ, VolumeType.Root);
+        if (vq.isExists()) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("the resource[uuid:%s] is a ROOT volume, you cannot change its owner, instead," +
                             "change the owner of the VM the root volume belongs to", ref.getResourceUuid())

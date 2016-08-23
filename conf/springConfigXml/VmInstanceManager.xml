@@ -101,7 +101,7 @@
             <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint" />
         </zstack:plugin>
     </bean>
