@@ -3,10 +3,7 @@ package org.zstack.test;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.vm.APICreateVmInstanceEvent;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -78,5 +75,24 @@ public class VmCreator {
         logger.debug(callingChain);
 
         return evt.getInventory();
+    }
+
+    public CloneVmInstanceResults cloneVm(List<String> names, String instanceUuid) throws ApiSenderException {
+        MessageCommandRecorder.reset();
+        MessageCommandRecorder.start(APICloneVmInstanceMsg.class);
+
+        APICloneVmInstanceMsg msg = new APICloneVmInstanceMsg();
+        msg.setNames(names);
+        msg.setVmInstanceUuid(instanceUuid);
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        msg.setSession(session == null ? api.getAdminSession() : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICloneVmInstanceEvent evt = sender.send(msg, APICloneVmInstanceEvent.class);
+
+        String callingChain = MessageCommandRecorder.endAndToString();
+        logger.debug(callingChain);
+
+        return evt.getResult();
     }
 }
