@@ -5,6 +5,7 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.tag.TagResourceType;
 
+@Action(category = ConfigurationConstant.ACTION_CATEGORY)
 @TagResourceType(InstanceOfferingVO.class)
 public class APICreateInstanceOfferingMsg extends APICreateMessage {
 	@APIParam(maxLength = 255)
