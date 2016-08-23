@@ -698,7 +698,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         for (String uuid : uuids) {
             schedulerFacade.resumeSchedulerJob(uuid);
         }
-
     }
 
 }
