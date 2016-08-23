@@ -216,6 +216,60 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         return bus.makeLocalServiceId(SchedulerConstant.SERVICE_ID);
     }
 
+    public void pauseSchedulerJob (String uuid) {
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.select(SchedulerVO_.jobName);
+        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+        String jobName = q.findValue();
+        SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
+        q2.select(SchedulerVO_.jobGroup);
+        q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+        String jobGroup = q2.findValue();
+        try {
+            scheduler.pauseJob(jobKey(jobName, jobGroup));
+            dbf.removeByPrimaryKey(uuid, SchedulerVO.class);
+        } catch (SchedulerException e) {
+            logger.warn("Pause Scheduler trigger failed!");
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void resumeSchedulerJob(String uuid) {
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.select(SchedulerVO_.jobName);
+        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+        String jobName = q.findValue();
+        SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
+        q2.select(SchedulerVO_.jobGroup);
+        q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+        String jobGroup = q2.findValue();
+        try {
+            scheduler.resumeJob(jobKey(jobName, jobGroup));
+            dbf.removeByPrimaryKey(uuid, SchedulerVO.class);
+        } catch (SchedulerException e) {
+            logger.warn("Resume Scheduler trigger failed!");
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void deleteSchedulerJob(String uuid) {
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.select(SchedulerVO_.jobName);
+        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+        String jobName = q.findValue();
+        SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
+        q2.select(SchedulerVO_.jobGroup);
+        q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+        String jobGroup = q2.findValue();
+        try {
+            scheduler.deleteJob(jobKey(jobName, jobGroup));
+            dbf.removeByPrimaryKey(uuid, SchedulerVO.class);
+        } catch (SchedulerException e) {
+            logger.warn("Delete Scheduler trigger failed!");
+            throw new RuntimeException(e);
+        }
+    }
+
     private void loadSchedulerJobs() {
 
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
@@ -254,7 +308,6 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
 
     public boolean start() {
-
         try {
             scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();
@@ -262,8 +315,10 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             logger.warn("Start Scheduler failed!");
             throw new RuntimeException(e);
         }
+
         return true;
     }
+
 
     public boolean stop() {
         try {
@@ -282,11 +337,14 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         loadSchedulerJobs();
     }
 
+
+
     public SchedulerVO runScheduler(SchedulerJob schedulerJob) {
         return runScheduler(schedulerJob, true);
     }
 
     private SchedulerVO runScheduler(SchedulerJob schedulerJob, boolean saveDB) {
+
         logger.debug(String.format("Starting to generate Scheduler job %s", schedulerJob.getClass().getName()));
         Timestamp start = null;
         Boolean startNow = false;
@@ -349,7 +407,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 Trigger trigger;
                 if ( schedulerJob.getRepeat() != null ) {
                     if ( schedulerJob.getRepeat() == 1) {
-                        //repeat only once
+                        //repeat only once, ignore interval
                         if ( startNow ) {
                             trigger = newTrigger()
                                     .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
