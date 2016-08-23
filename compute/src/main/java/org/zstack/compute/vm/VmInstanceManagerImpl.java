@@ -15,6 +15,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.gc.*;
+import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -32,6 +33,8 @@ import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.scheduler.SchedulerVO;
+import org.zstack.header.core.scheduler.SchedulerVO_;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -92,7 +95,8 @@ import static org.zstack.utils.CollectionDSL.list;
 
 public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager,
         ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint,
-        ResourceOwnerAfterChangeExtensionPoint, GlobalApiMessageInterceptor {
+        ResourceOwnerAfterChangeExtensionPoint, GlobalApiMessageInterceptor, VmInstanceDestroyExtensionPoint,
+        RecoverVmExtensionPoint, VmBeforeExpungeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<String, VmInstanceFactory>());
     private List<String> createVmWorkFlowElements;
@@ -147,7 +151,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     @Autowired
     private EventFacade evtf;
     @Autowired
+<<<<<<< HEAD
     private HostAllocatorManager hostAllocatorMgr;
+=======
+    private SchedulerFacade schedulerFacade;
+>>>>>>> change scheduler status with vm status changed
 
     @Override
     @MessageSafe
@@ -1485,6 +1493,57 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     String.format("the resource[uuid:%s] is a ROOT volume, you cannot change its owner, instead," +
                             "change the owner of the VM the root volume belongs to", ref.getResourceUuid())
             ));
+        }
+    }
+
+    public String preDestroyVm(VmInstanceInventory inv) {
+        return null;
+    }
+
+    public void beforeDestroyVm(VmInstanceInventory inv) {
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, inv.getUuid());
+        q.select(SchedulerVO_.uuid);
+        List<String> uuids = q.listValue();
+        for (String uuid : uuids) {
+            schedulerFacade.pauseSchedulerJob(uuid);
+        }
+
+    }
+
+    public void afterDestroyVm(VmInstanceInventory inv) {
+
+    }
+
+    public void failedToDestroyVm(VmInstanceInventory inv, ErrorCode reason) {
+
+    }
+    public void preRecoverVm(VmInstanceInventory vm) {
+
+    }
+
+    public void beforeRecoverVm(VmInstanceInventory vm) {
+
+    }
+
+    public void afterRecoverVm(VmInstanceInventory vm) {
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, vm.getUuid());
+        q.select(SchedulerVO_.uuid);
+        List<String> uuids = q.listValue();
+        for (String uuid : uuids) {
+            schedulerFacade.resumeSchedulerJob(uuid);
+        }
+
+    }
+
+    public void vmBeforeExpunge(VmInstanceInventory inv) {
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, inv.getUuid());
+        q.select(SchedulerVO_.uuid);
+        List<String> uuids = q.listValue();
+        for (String uuid : uuids) {
+            schedulerFacade.deleteSchedulerJob(uuid);
         }
     }
 }

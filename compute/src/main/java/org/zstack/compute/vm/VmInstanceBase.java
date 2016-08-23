@@ -647,12 +647,19 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void expunge(Message msg, final Completion completion) {
         refreshVO();
+        final VmInstanceInventory inv = getSelfInventory();
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeExpungeExtensionPoint.class), new ForEachFunction<VmBeforeExpungeExtensionPoint>() {
+            @Override
+            public void run(VmBeforeExpungeExtensionPoint arg) {
+                arg.vmBeforeExpunge(inv);
+            }
+        });
+
         ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
         if (error != null) {
             throw new OperationFailureException(error);
         }
 
-        VmInstanceInventory inv = getSelfInventory();
         if (inv.getAllVolumes().size() > 1) {
             throw new CloudRuntimeException(String.format("why the deleted vm[uuid:%s] has data volumes??? %s",
                     self.getUuid(), JSONObjectUtil.toJsonString(inv.getAllVolumes())));
