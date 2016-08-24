@@ -1501,6 +1501,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     }
 
     public void beforeDestroyVm(VmInstanceInventory inv) {
+        logger.debug(String.format("will pause scheduler before destroy vm"));
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.add(SchedulerVO_.targetResourceUuid, Op.EQ, inv.getUuid());
         q.select(SchedulerVO_.uuid);
@@ -1527,17 +1528,21 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     }
 
     public void afterRecoverVm(VmInstanceInventory vm) {
+        logger.debug(String.format("will resume scheduler after recover vm"));
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.add(SchedulerVO_.targetResourceUuid, Op.EQ, vm.getUuid());
+        logger.debug(String.format("target resource uuid is %s", vm.getUuid()));
         q.select(SchedulerVO_.uuid);
         List<String> uuids = q.listValue();
         for (String uuid : uuids) {
+            logger.debug(String.format("scheduler uuid is %s", uuid));
             schedulerFacade.resumeSchedulerJob(uuid);
         }
 
     }
 
     public void vmBeforeExpunge(VmInstanceInventory inv) {
+        logger.debug(String.format("will delete scheduler before expunge vm"));
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.add(SchedulerVO_.targetResourceUuid, Op.EQ, inv.getUuid());
         q.select(SchedulerVO_.uuid);

@@ -23,14 +23,14 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
     @APIParam(maxLength = 255, required = false)
     private String cronScheduler;
     @APIParam(required = false)
-    private Long startDate;
+    private Long startTime;
 
-    public Long getStartDate() {
-        return startDate;
+    public Long getStartTime() {
+        return startTime;
     }
 
-    public void setStartDate(Long startDate) {
-        this.startDate = startDate;
+    public void setStartTime(Long startTime) {
+        this.startTime = startTime;
     }
 
     public String getUuid() {
