@@ -207,9 +207,9 @@ public class VolumeSnapshotKvmSimulator {
 
     public synchronized TakeSnapshotResponse takeSnapshot(TakeSnapshotCmd cmd) {
         Qcow2 current = findByInstallPath(cmd.getVolumeInstallPath());
-        if (!cmd.isFullSnapshot() && current == null) {
+        if (cmd.isFullSnapshot() && current == null) {
             dumpAllQcow2();
-            String err = String.format("cannot find snapshot[%s] and it's not full snapshot", cmd.getVolumeInstallPath());
+            String err = String.format("cannot find snapshot[%s] and it's full snapshot", cmd.getVolumeInstallPath());
             DebugUtils.dumpStackTrace(err);
             Assert.fail(err);
         }

@@ -57,7 +57,7 @@ public class TestSnapshotOnKvm {
         VolumeVO vol = dbf.findByUuid(volUuid, VolumeVO.class);
         VolumeSnapshotVO svo = dbf.findByUuid(inv.getUuid(), VolumeSnapshotVO.class);
         Assert.assertNotNull(svo);
-        Assert.assertTrue(svo.isFullSnapshot());
+        Assert.assertFalse(svo.isFullSnapshot());
         Assert.assertTrue(svo.isLatest());
         Assert.assertNull(svo.getParentUuid());
         Assert.assertEquals(0, svo.getDistance());
