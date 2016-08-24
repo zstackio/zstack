@@ -21,6 +21,7 @@ import org.zstack.header.console.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.managementnode.ManagementNodeVO;
@@ -29,10 +30,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ShellUtils;
-import org.zstack.utils.URLBuilder;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -118,6 +116,8 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                 });
 
                 try {
+                    ShellUtils.run("rm -rf /var/lib/zstack/consoleProxy/*");
+
                     setupPublicKey();
                     File privKeyFile = PathUtil.findFileOnClassPath("ansible/rsaKeys/id_rsa");
                     String privKey = FileUtils.readFileToString(privKeyFile);
