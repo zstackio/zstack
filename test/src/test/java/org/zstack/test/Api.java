@@ -4100,6 +4100,18 @@ public class Api implements CloudBusEventListener {
         return;
     }
 
+    public ImageInventory commitVolumeAsImage(String volumeUuid, String imageName, List<String> bsUuids) throws ApiSenderException {
+        APICommitVolumeAsImageMsg msg = new APICommitVolumeAsImageMsg();
+        msg.setBackupStorageUuids(bsUuids);
+        msg.setVolumeUuid(volumeUuid);
+        msg.setName(imageName);
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICommitVolumeAsImageEvent evt = sender.send(msg, APICommitVolumeAsImageEvent.class);
+        return evt.getInventory();
+    }
+
     public Map<String, AccountInventory> getResourceAccount(List<String> resUuids) throws ApiSenderException {
         APIGetResourceAccountMsg msg = new APIGetResourceAccountMsg();
         msg.setResourceUuids(resUuids);
