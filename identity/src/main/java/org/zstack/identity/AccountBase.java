@@ -590,11 +590,20 @@ public class AccountBase extends AbstractAccount {
         bus.publish(evt);
     }
 
+    @Transactional
     private void handle(APIAttachPolicyToUserGroupMsg msg) {
-        UserGroupPolicyRefVO grvo = new UserGroupPolicyRefVO();
-        grvo.setGroupUuid(msg.getGroupUuid());
-        grvo.setPolicyUuid(msg.getPolicyUuid());
-        dbf.persist(grvo);
+        String sql = "select count(ref) from UserGroupPolicyRefVO ref where ref.groupUuid = :guuid and ref.policyUuid = :puuid";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("guuid", msg.getGroupUuid());
+        q.setParameter("puuid", msg.getPolicyUuid());
+        long count = q.getSingleResult();
+        if (count == 0) {
+            UserGroupPolicyRefVO grvo = new UserGroupPolicyRefVO();
+            grvo.setGroupUuid(msg.getGroupUuid());
+            grvo.setPolicyUuid(msg.getPolicyUuid());
+            dbf.getEntityManager().persist(grvo);
+        }
+
         APIAttachPolicyToUserGroupEvent evt = new APIAttachPolicyToUserGroupEvent(msg.getId());
         bus.publish(evt);
     }
