@@ -168,7 +168,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
 
 
     @Transactional
-    private VolumeSnapshotStruct newChain(VolumeSnapshotVO vo) {
+    private VolumeSnapshotStruct newChain(VolumeSnapshotVO vo, boolean fullsnapshot) {
         VolumeSnapshotTreeVO chain = new VolumeSnapshotTreeVO();
         chain.setCurrent(true);
         chain.setVolumeUuid(vo.getVolumeUuid());
@@ -182,12 +182,12 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         vo.setDistance(0);
         vo.setParentUuid(null);
         vo.setLatest(true);
-        vo.setFullSnapshot(true);
+        vo.setFullSnapshot(fullsnapshot);
         vo = dbf.getEntityManager().merge(vo);
 
         VolumeSnapshotStruct struct = new VolumeSnapshotStruct();
         struct.setCurrent(VolumeSnapshotInventory.valueOf(vo));
-        struct.setFullSnapshot(true);
+        struct.setFullSnapshot(fullsnapshot);
         return struct;
     }
 
@@ -200,7 +200,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         DebugUtils.Assert(rets.size() < 2, "can not have more than one VolumeSnapshotTreeVO with current=1");
         VolumeSnapshotTreeVO chain = rets.isEmpty() ? null : rets.get(0);
         if (chain == null) {
-            return newChain(vo);
+            return newChain(vo, false);
         } else {
             sql = "select s from VolumeSnapshotVO s where s.latest = true and s.volumeUuid = :volUuid and s.treeUuid = :chainUuid";
             TypedQuery<VolumeSnapshotVO> q = dbf.getEntityManager().createQuery(sql, VolumeSnapshotVO.class);
@@ -211,7 +211,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
             if (VolumeSnapshotGlobalConfig.MAX_INCREMENTAL_SNAPSHOT_NUM.value(Integer.class) == latest.getDistance()) {
                 chain.setCurrent(false);
                 dbf.getEntityManager().merge(chain);
-                return newChain(vo);
+                return newChain(vo, true);
             }
 
             latest.setLatest(false);
@@ -237,7 +237,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         q.setParameter("volUuid", vo.getVolumeUuid());
         q.executeUpdate();
 
-        return newChain(vo);
+        return newChain(vo, false);
     }
 
     @Transactional
