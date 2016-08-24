@@ -37,7 +37,14 @@ public class TestAddSecurityGroupDuplicateRule2 {
     @Test
     public void test() {
         /*
-        <rule>
+            <rule>
+				<type>Ingress</type>
+				<protocol>TCP</protocol>
+				<startPort>22</startPort>
+				<endPort>100</endPort>
+				<allowedCidr>0.0.0.0/0</allowedCidr>
+			</rule>
+            <rule>
 				<type>Ingress</type>
 				<protocol>UDP</protocol>
 				<startPort>10</startPort>
@@ -45,6 +52,7 @@ public class TestAddSecurityGroupDuplicateRule2 {
 				<allowedCidr>192.168.0.1/0</allowedCidr>
 			</rule>
          */
+        //
         SecurityGroupInventory scinv = deployer.securityGroups.get("test");
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO sao = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
         sao.setType("Ingress");
@@ -57,6 +65,20 @@ public class TestAddSecurityGroupDuplicateRule2 {
         } catch (Exception e) {
             logger.debug(e.getMessage());
         }
+        //
+        SecurityGroupInventory scinv1 = deployer.securityGroups.get("test");
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO sao1 = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
+        sao1.setType("Ingress");
+        sao1.setProtocol("TCP");
+        sao1.setStartPort(22);
+        sao1.setEndPort(100);
+        //sao1.setAllowedCidr("");
+        try {
+            api.addSecurityGroupRuleByFullConfig(scinv1.getUuid(), sao1);
+        } catch (Exception e) {
+            logger.debug(e.getMessage());
+        }
+        //
         long count = dbf.count(SecurityGroupRuleVO.class);
         Assert.assertEquals(2, count);
     }
