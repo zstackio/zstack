@@ -4212,13 +4212,15 @@ public class Api implements CloudBusEventListener {
         sender.send(msg, APIDebugSignalEvent.class);
     }
 
-    public void createVolumeSnapshotScheduler(String volUuid, SessionInventory session, String type, Long startDate, Integer interval, Integer repeatCount) throws ApiSenderException {
+    public String createVolumeSnapshotScheduler(String volUuid, SessionInventory session, String type, Long startDate, Integer interval, Integer repeatCount) throws ApiSenderException {
         Date date = new Date();
         APICreateVolumeSnapshotSchedulerMsg msg = new APICreateVolumeSnapshotSchedulerMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("test");
         msg.setInterval(interval);
-        msg.setRepeatCount(repeatCount);
+        if (repeatCount != null) {
+            msg.setRepeatCount(repeatCount);
+        }
         msg.setType(type);
         msg.setStartTime(startDate);
         msg.setSnapShotName("Snapshot-" + volUuid);
@@ -4229,6 +4231,7 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APICreateVolumeSnapshotSchedulerEvent evt = sender.send(msg, APICreateVolumeSnapshotSchedulerEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
+        return evt.getInventory().getUuid();
     }
 
     public void createCronScheduler(String volUuid, String type, String cronTask, SessionInventory session) throws ApiSenderException {

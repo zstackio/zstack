@@ -151,11 +151,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     @Autowired
     private EventFacade evtf;
     @Autowired
-<<<<<<< HEAD
     private HostAllocatorManager hostAllocatorMgr;
-=======
     private SchedulerFacade schedulerFacade;
->>>>>>> change scheduler status with vm status changed
 
     @Override
     @MessageSafe
