@@ -96,7 +96,7 @@ public class TestSchedulerCreateVolumeSnapshot {
 
         //recover volume
         api.recoverVolume(vinv.getUuid(), null);
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(1);
         long record3 = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(3,record3);
 
