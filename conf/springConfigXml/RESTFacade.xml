@@ -23,15 +23,20 @@
     </bean>
     
     <bean id="RESTApiDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+        <property name="initialPoolSize" value="10" />
         <property name="driverClass" value="com.mysql.jdbc.Driver" />
-        <property name="jdbcUrl" value="${RESTApiDataSource.jdbcUrl:jdbc:mysql://localhost:3306/zstack_rest}" />
-        <property name="user" value="${RESTApiDataSource.user:root}" />
-        <property name="password" value="${RESTApiDataSource.password:}" />
-        <property name="maxPoolSize" value="${RESTApiDataSource.maxPoolSize:20}" />
-        <property name="idleConnectionTestPeriod" value="${RESTApiDataSource.idleConnectionTestPeriod:3000}" />
-        <property name="loginTimeout" value="${RESTApiDataSource.loginTimeout:300}" />
+        <property name="jdbcUrl" value="${DbFacadeDataSource.jdbcUrl:jdbc:mysql://localhost:3306/zstack_rest}" />
+        <property name="user" value="${DbFacadeDataSource.user:root}" />
+        <property name="password" value="${DbFacadeDataSource.password:}" />
+        <property name="maxPoolSize" value="${DbFacadeDataSource.maxPoolSize:20}" />
+        <property name="idleConnectionTestPeriod" value="${DbFacadeDataSource.idleConnectionTestPeriod:3000}" />
+        <property name="loginTimeout" value="${DbFacadeDataSource.loginTimeout:300}" />
         <property name="connectionCustomizerClassName" value="org.zstack.core.db.TransactionIsolationLevelSetter" />
-        <property name="maxIdleTime" value="${RESTApiDataSource.maxIdleTime:3600}"/>
+        <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}"/>
+        <property name="numHelperThreads" value="${DbFacadeDataSource.numHelperThreads:15}" />
+        <property name="testConnectionOnCheckout" value="${DbFacadeDataSource.testConnectionOnCheckout:false}"/>
+        <property name="acquireIncrement" value="50" />
+        <property name="preferredTestQuery" value="SELECT 1"/>
     </bean>
     
     <bean id="RESTApiEntityManagerFactory"
