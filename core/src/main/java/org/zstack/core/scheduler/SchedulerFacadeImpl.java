@@ -3,6 +3,7 @@ package org.zstack.core.scheduler;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -23,6 +24,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Query;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -134,9 +136,9 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             self.setRepeatCount(msg.getRepeatCount());
         }
 
-        if ( msg.getStartDate() != null ) {
+        if ( msg.getStartTime() != null ) {
             reSchedule = true;
-            self.setStartDate(new Timestamp(msg.getStartDate() * 1000));
+            self.setStartDate(new Timestamp(msg.getStartTime() * 1000));
         }
 
         if ( msg.getCronScheduler() != null ) {
@@ -216,7 +218,17 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         return bus.makeLocalServiceId(SchedulerConstant.SERVICE_ID);
     }
 
+   @Transactional
+   private void updateSchedulerStatus(String uuid, String status) {
+        String sql = "update SchedulerVO scheduler set scheduler.status = :status where scheduler.uuid= :schedulerUuid";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("status", status);
+        q.setParameter("schedulerUuid", uuid);
+        q.executeUpdate();
+    }
+
     public void pauseSchedulerJob (String uuid) {
+        logger.debug(String.format("Scheduler %s will change status to Disabled", uuid));
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.select(SchedulerVO_.jobName);
         q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
@@ -227,7 +239,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         String jobGroup = q2.findValue();
         try {
             scheduler.pauseJob(jobKey(jobName, jobGroup));
-            dbf.removeByPrimaryKey(uuid, SchedulerVO.class);
+            updateSchedulerStatus(uuid, SchedulerStatus.Disabled.toString());
         } catch (SchedulerException e) {
             logger.warn("Pause Scheduler trigger failed!");
             throw new RuntimeException(e);
@@ -235,6 +247,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     public void resumeSchedulerJob(String uuid) {
+        logger.debug(String.format("Scheduler %s will change status to Enabled", uuid));
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.select(SchedulerVO_.jobName);
         q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
@@ -245,7 +258,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         String jobGroup = q2.findValue();
         try {
             scheduler.resumeJob(jobKey(jobName, jobGroup));
-            dbf.removeByPrimaryKey(uuid, SchedulerVO.class);
+            updateSchedulerStatus(uuid, SchedulerStatus.Enabled.toString());
         } catch (SchedulerException e) {
             logger.warn("Resume Scheduler trigger failed!");
             throw new RuntimeException(e);
@@ -253,6 +266,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     public void deleteSchedulerJob(String uuid) {
+        logger.debug(String.format("Scheduler %s will be deleted", uuid));
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.select(SchedulerVO_.jobName);
         q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
@@ -474,6 +488,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         }
 
         if (saveDB) {
+            logger.debug(String.format("save Scheduler job %s to database", schedulerJob.getClass().getName()));
             vo.setStatus(SchedulerStatus.Enabled.toString());
             dbf.persist(vo);
             return vo;

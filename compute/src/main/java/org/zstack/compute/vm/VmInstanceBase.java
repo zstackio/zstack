@@ -2325,7 +2325,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         self = changeVmStateInDb(VmInstanceStateEvent.stopped);
-
                         CollectionUtils.forEach(exts, new ForEachFunction<RecoverVmExtensionPoint>() {
                             @Override
                             public void run(RecoverVmExtensionPoint ext) {

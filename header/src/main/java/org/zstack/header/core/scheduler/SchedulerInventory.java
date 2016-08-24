@@ -23,7 +23,7 @@ public class SchedulerInventory implements Serializable {
     private Integer repeatCount;
     private String cronScheduler;
     private Timestamp createDate;
-    private Timestamp startDate;
+    private Timestamp startTime;
     private Timestamp lastOpDate;
     /**
      * @desc jobClassName define the job
@@ -41,7 +41,7 @@ public class SchedulerInventory implements Serializable {
         repeatCount = vo.getRepeatCount();
         cronScheduler = vo.getCronScheduler();
         createDate = vo.getCreateDate();
-        startDate = vo.getStartDate();
+        startTime = vo.getStartDate();
         lastOpDate = vo.getLastOpDate();
         jobClassName = vo.getJobClassName();
         jobData = vo.getJobData();
@@ -118,12 +118,12 @@ public class SchedulerInventory implements Serializable {
         this.createDate = createDate;
     }
 
-    public Timestamp getStartDate() {
-        return startDate;
+    public Timestamp getStartTime() {
+        return startTime;
     }
 
-    public void setStartDate(Timestamp startDate) {
-        this.startDate = startDate;
+    public void setStartTime(Timestamp startTime) {
+        this.startTime = startTime;
     }
 
     public Timestamp getLastOpDate() {
