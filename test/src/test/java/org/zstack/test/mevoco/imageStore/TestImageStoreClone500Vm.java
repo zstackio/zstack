@@ -16,11 +16,11 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
 
-public class TestImageStoreClone1000Vm {
-    private CLogger logger = Utils.getLogger(TestImageStoreClone1000Vm.class);
+public class TestImageStoreClone500Vm {
+    private CLogger logger = Utils.getLogger(TestImageStoreClone500Vm.class);
     private Deployer deployer;
     private Api api;
-    private static final int numOfVm = 1000;
+    private static final int numOfVm = 500;
 
     @Before
     public void setUp() throws Exception {
@@ -53,6 +53,7 @@ public class TestImageStoreClone1000Vm {
         }
 
         try {
+            creator.timeout = 360;
             CloneVmInstanceResults res = creator.cloneVm(Arrays.asList(names), vm.getUuid());
             numOfClonedVm = res.getNumberOfClonedVm();
         } catch (ApiSenderException e) {

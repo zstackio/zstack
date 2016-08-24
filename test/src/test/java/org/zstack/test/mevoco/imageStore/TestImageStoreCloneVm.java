@@ -3,9 +3,11 @@ package org.zstack.test.mevoco.imageStore;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.vm.APICloneVmInstanceMsg;
 import org.zstack.header.vm.CloneVmInstanceResults;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.storage.backup.imagestore.ImageStoreBackupStorageSimulatorConfig;
@@ -50,7 +52,14 @@ public class TestImageStoreCloneVm {
         List<String> names = Collections.singletonList("cloned");
 
         try {
+	    MessageCommandRecorder.reset();
+	    MessageCommandRecorder.start(APICloneVmInstanceMsg.class);
+
             CloneVmInstanceResults res = creator.cloneVm(names, vm.getUuid());
+
+	    String callingChain = MessageCommandRecorder.endAndToString();
+	    logger.debug(callingChain);
+
             numOfClonedVm = res.getNumberOfClonedVm();
         } catch (ApiSenderException e) {
             logger.debug("[bug] " + e.getMessage());

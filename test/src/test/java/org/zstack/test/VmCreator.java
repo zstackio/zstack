@@ -78,9 +78,6 @@ public class VmCreator {
     }
 
     public CloneVmInstanceResults cloneVm(List<String> names, String instanceUuid) throws ApiSenderException {
-        MessageCommandRecorder.reset();
-        MessageCommandRecorder.start(APICloneVmInstanceMsg.class);
-
         APICloneVmInstanceMsg msg = new APICloneVmInstanceMsg();
         msg.setNames(names);
         msg.setVmInstanceUuid(instanceUuid);
@@ -89,9 +86,6 @@ public class VmCreator {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICloneVmInstanceEvent evt = sender.send(msg, APICloneVmInstanceEvent.class);
-
-        String callingChain = MessageCommandRecorder.endAndToString();
-        logger.debug(callingChain);
 
         return evt.getResult();
     }
