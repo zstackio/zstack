@@ -163,16 +163,115 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
         if (rule1.getStartPort().equals(rule2.getStartPort()) &&
                 rule1.getEndPort().equals(rule2.getEndPort()) &&
-                rule1.getAllowedCidr().equals(rule2.getAllowedCidr()) &&
                 rule1.getProtocol().equals(rule2.getProtocol()) &&
                 rule1.getType().equals(rule2.getType())) {
-            return true;
+            //
+            if (rule1.getAllowedCidr() == null) {
+                if (rule2.getAllowedCidr() == null ||
+                        rule2.getAllowedCidr().equals("") ||
+                        rule2.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR)) {
+                    return true;
+                }
+            }
+            if (rule2.getAllowedCidr() == null) {
+                if (rule1.getAllowedCidr() == null ||
+                        rule1.getAllowedCidr().equals("") ||
+                        rule1.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR)) {
+                    return true;
+                }
+            }
+            if (rule1.getAllowedCidr().equals(rule2.getAllowedCidr())) {
+                return true;
+            }
         }
 
         return false;
     }
 
     private void validate(APIAddSecurityGroupRuleMsg msg) {
+        // Basic check
+        for (SecurityGroupRuleAO ao : msg.getRules()) {
+            if (ao.getType() == null) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("rule type can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao))
+                ));
+            }
+
+            if (!ao.getType().equals(SecurityGroupRuleType.Egress.toString()) &&
+                    !ao.getType().equals(SecurityGroupRuleType.Ingress.toString())) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("unknown rule type[%s], rule can only be Ingress/Egress. rule dump: %s",
+                                ao.getType(), JSONObjectUtil.toJsonString(ao))
+                ));
+            }
+
+
+            if (ao.getProtocol() == null) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("protocol can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao))
+                ));
+            }
+
+            try {
+                SecurityGroupRuleProtocolType.valueOf(ao.getProtocol());
+            } catch (Exception e) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("invalid protocol[%s]. Valid protocols are [TCP, UDP, ICMP]. rule dump: %s",
+                                ao.getProtocol(), JSONObjectUtil.toJsonString(ao))
+                ));
+            }
+
+            if (ao.getStartPort() == null) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("startPort can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao))
+                ));
+            }
+
+            if (SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
+                if (ao.getStartPort() < -1 || ao.getStartPort() > 255) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                            String.format("invalid ICMP type[%s]. Valid type is [-1, 255]. rule dump: %s",
+                                    ao.getStartPort(), JSONObjectUtil.toJsonString(ao))
+                    ));
+                }
+            } else {
+                if (ao.getStartPort() < 0 || ao.getStartPort() > 65535) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                            String.format("invalid startPort[%s]. Valid range is [0, 65535]. rule dump: %s",
+                                    ao.getStartPort(), JSONObjectUtil.toJsonString(ao))
+                    ));
+                }
+            }
+
+
+            if (ao.getEndPort() == null) {
+                ao.setEndPort(ao.getStartPort());
+            }
+
+            if (SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
+                if (ao.getEndPort() < -1 || ao.getEndPort() > 3) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                            String.format("invalid ICMP code[%s]. Valid range is [-1, 3]. rule dump: %s",
+                                    ao.getEndPort(), JSONObjectUtil.toJsonString(ao))
+                    ));
+                }
+            } else {
+                if (ao.getEndPort() < 0 || ao.getEndPort() > 65535) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                            String.format("invalid endPort[%s]. Valid range is [0, 65535]. rule dump: %s",
+                                    ao.getEndPort(), JSONObjectUtil.toJsonString(ao))
+                    ));
+                }
+            }
+
+
+            if (ao.getAllowedCidr() != null && !NetworkUtils.isCidr(ao.getAllowedCidr())) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("invalid CIDR[%s]. rule dump: %s", ao.getAllowedCidr(), JSONObjectUtil.toJsonString(ao))
+                ));
+            }
+        }
+
         // Deduplicate in msg
         for (int i = 0; i < msg.getRules().size() - 1; i++) {
             for (int j = msg.getRules().size() - 1; j > i; j--) {
@@ -208,82 +307,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
         }
 
-
-        // Basic check
+        // fin
         for (SecurityGroupRuleAO ao : msg.getRules()) {
-            if (ao.getType() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("rule type can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao))
-                ));
-            }
-
-            if (!ao.getType().equals(SecurityGroupRuleType.Egress.toString()) && !ao.getType().equals(SecurityGroupRuleType.Ingress.toString())) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("unknown rule type[%s], rule can only be Ingress/Egress. rule dump: %s", ao.getType(), JSONObjectUtil.toJsonString(ao))
-                ));
-            }
-
-
-            if (ao.getProtocol() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("protocol can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao))
-                ));
-            }
-
-            try {
-                SecurityGroupRuleProtocolType.valueOf(ao.getProtocol());
-            } catch (Exception e) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("invalid protocol[%s]. Valid protocols are [TCP, UDP, ICMP]. rule dump: %s", ao.getProtocol(), JSONObjectUtil.toJsonString(ao))
-                ));
-            }
-
-            if (ao.getStartPort() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("startPort can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao))
-                ));
-            }
-
-            if (SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
-                if (ao.getStartPort() < -1 || ao.getStartPort() > 255) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("invalid ICMP type[%s]. Valid type is [-1, 255]. rule dump: %s", ao.getStartPort(), JSONObjectUtil.toJsonString(ao))
-                    ));
-                }
-            } else {
-                if (ao.getStartPort() < 0 || ao.getStartPort() > 65535) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("invalid startPort[%s]. Valid range is [0, 65535]. rule dump: %s", ao.getStartPort(), JSONObjectUtil.toJsonString(ao))
-                    ));
-                }
-            }
-
-
-            if (ao.getEndPort() == null) {
-                ao.setEndPort(ao.getStartPort());
-            }
-
-            if (SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
-                if (ao.getEndPort() < -1 || ao.getEndPort() > 3) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("invalid ICMP code[%s]. Valid range is [-1, 3]. rule dump: %s", ao.getEndPort(), JSONObjectUtil.toJsonString(ao))
-                    ));
-                }
-            } else {
-                if (ao.getEndPort() < 0 || ao.getEndPort() > 65535) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                            String.format("invalid endPort[%s]. Valid range is [0, 65535]. rule dump: %s", ao.getEndPort(), JSONObjectUtil.toJsonString(ao))
-                    ));
-                }
-            }
-
-
-            if (ao.getAllowedCidr() != null && !NetworkUtils.isCidr(ao.getAllowedCidr())) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("invalid CIDR[%s]. rule dump: %s", ao.getAllowedCidr(), JSONObjectUtil.toJsonString(ao))
-                ));
-            }
-
             int start = Math.min(ao.getStartPort(), ao.getEndPort());
             int end = Math.max(ao.getStartPort(), ao.getEndPort());
             ao.setStartPort(start);
