@@ -397,7 +397,13 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             q.setLimit(qun);
             q.setStart(start);
             List<String> uuids = q.listValue();
-            loadWorker(uuids);
+            List<String> ours = new ArrayList<String>();
+            for (String id : uuids) {
+                if (destinationMaker.isManagedByUs(id)) {
+                    ours.add(id);
+                }
+            }
+            loadWorker(ours);
             start += qun;
         }
     }
