@@ -618,4 +618,13 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class GetVolumeBaseImagePathRsp extends NfsPrimaryStorageAgentResponse {
         public String path;
     }
+
+    public static class UpdateMountPointCmd extends NfsPrimaryStorageAgentCommand {
+        public String oldMountPoint;
+        public String newMountPoint;
+        public String mountPath;
+    }
+
+    public static class UpdateMountPointRsp extends NfsPrimaryStorageAgentResponse {
+    }
 }

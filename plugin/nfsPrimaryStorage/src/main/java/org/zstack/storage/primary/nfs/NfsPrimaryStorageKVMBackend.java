@@ -3,6 +3,8 @@ package org.zstack.storage.primary.nfs;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.asyncbatch.AsyncBatchRunner;
+import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
@@ -13,6 +15,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.logging.Log;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -49,6 +52,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -89,6 +93,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String GET_VOLUME_SIZE_PATH = "/nfsprimarystorage/getvolumesize";
     public static final String PING_PATH = "/nfsprimarystorage/ping";
     public static final String GET_VOLUME_BASE_IMAGE_PATH = "/nfsprimarystorage/getvolumebaseimage";
+    public static final String UPDATE_MOUNT_POINT_PATH = "/nfsprimarystorage/updatemountpoint";
 
     //////////////// For unit test //////////////////////////
     private boolean syncGetCapacity = false;
@@ -915,6 +920,70 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 }
             }
         });
+    }
+
+    @Override
+    public void updateMountPoint(PrimaryStorageInventory pinv, String clusterUuid, String oldMountPoint,
+                                 String newMountPoint, Completion completion) {
+        SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
+        q.select(HostVO_.uuid);
+        q.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
+        q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
+        final List<String> huuids = q.listValue();
+        if (huuids.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new LoopAsyncBatch<String>() {
+            @Override
+            protected Collection<String> collect() {
+                return huuids;
+            }
+
+            @Override
+            protected AsyncBatchRunner forEach(String hostUuid) {
+                return new AsyncBatchRunner() {
+                    @Override
+                    public void run(NoErrorCompletion completion) {
+                        UpdateMountPointCmd cmd = new UpdateMountPointCmd();
+                        cmd.setUuid(pinv.getUuid());
+                        cmd.mountPath = pinv.getMountPath();
+                        cmd.newMountPoint = newMountPoint;
+                        cmd.oldMountPoint = oldMountPoint;
+                        new KvmCommandSender(hostUuid).send(cmd, UPDATE_MOUNT_POINT_PATH, new KvmCommandFailureChecker() {
+                            @Override
+                            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                                UpdateMountPointRsp rsp = wrapper.getResponse(UpdateMountPointRsp.class);
+                                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                            }
+                        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+                            @Override
+                            public void success(KvmResponseWrapper w) {
+                                UpdateMountPointRsp rsp = w.getResponse(UpdateMountPointRsp.class);
+                                new PrimaryStorageCapacityUpdater(pinv.getUuid()).update(
+                                        rsp.getTotalCapacity(), rsp.getAvailableCapacity(), rsp.getTotalCapacity(), rsp.getAvailableCapacity()
+                                );
+                                completion.done();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format("failed to update the nfs[uuid:%s, name:%s] mount point" +
+                                                " from %s to %s in the cluster[uuid:%s], %s", pinv.getUuid(), pinv.getName(),
+                                        oldMountPoint, newMountPoint, hostUuid, errorCode));
+                                completion.done();
+                            }
+                        });
+                    }
+                };
+            }
+
+            @Override
+            protected void done() {
+                completion.success();
+            }
+        }.start();
     }
 
     @Override
