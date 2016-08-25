@@ -223,6 +223,7 @@ public class Api implements CloudBusEventListener {
         return createTemplateFromSnapshot(snapshotUuid, (SessionInventory) null);
     }
 
+    @Deprecated
     public ImageInventory createTemplateFromSnapshot(String snapshotUuid, SessionInventory session) throws ApiSenderException {
         return createTemplateFromSnapshot(snapshotUuid, (List) null, session);
     }
