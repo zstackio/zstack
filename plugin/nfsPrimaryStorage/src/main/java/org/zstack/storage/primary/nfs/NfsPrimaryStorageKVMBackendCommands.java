@@ -623,6 +623,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String oldMountPoint;
         public String newMountPoint;
         public String mountPath;
+        public String options;
     }
 
     public static class UpdateMountPointRsp extends NfsPrimaryStorageAgentResponse {
