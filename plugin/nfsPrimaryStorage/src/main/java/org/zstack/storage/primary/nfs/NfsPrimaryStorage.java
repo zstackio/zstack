@@ -13,6 +13,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.gc.GCFacade;
 import org.zstack.core.gc.TimeBasedGCPersistentContext;
+import org.zstack.core.thread.SyncTask;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterVO;
@@ -21,6 +22,7 @@ import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
@@ -57,6 +59,8 @@ import javax.persistence.TypedQuery;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public class NfsPrimaryStorage extends PrimaryStorageBase {
@@ -105,6 +109,56 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
+        }
+    }
+
+    protected void updateMountPoint(PrimaryStorageVO vo, String newUrl) {
+        Future<ErrorCode> future = thdf.syncSubmit(new SyncTask<ErrorCode>() {
+            @Override
+            public ErrorCode call() throws Exception {
+                ErrorCode err = new NfsApiParamChecker().checkUrl(self.getZoneUuid(), newUrl);
+                if (err != null) {
+                    return err;
+                }
+
+                checkRunningVmForUpdateUrl();
+                vo.setUrl(newUrl);
+                dbf.update(vo);
+
+                ReconnectPrimaryStorageMsg rmsg = new ReconnectPrimaryStorageMsg();
+                rmsg.setPrimaryStorageUuid(self.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                MessageReply reply = bus.call(rmsg);
+                if (!reply.isSuccess()) {
+                    return reply.getError();
+                }
+
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return String.format("nfs-update-url-%s", self.getUuid());
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return 1;
+            }
+        });
+
+        try {
+            ErrorCode err = future.get();
+            if (err != null) {
+                throw new OperationFailureException(err);
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            throw new CloudRuntimeException(e);
         }
     }
 
