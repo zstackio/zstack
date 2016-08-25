@@ -18,6 +18,7 @@ import org.zstack.header.core.scheduler.SchedulerStatus;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.scheduler.SchedulerVO_;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.utils.Utils;
@@ -41,7 +42,8 @@ import static org.quartz.TriggerKey.triggerKey;
 /**
  * Created by Mei Lei on 6/22/16.
  */
-public class SchedulerFacadeImpl extends AbstractService implements SchedulerFacade, ManagementNodeReadyExtensionPoint {
+public class SchedulerFacadeImpl extends AbstractService implements SchedulerFacade, ManagementNodeReadyExtensionPoint,
+        ManagementNodeChangeListener {
     private static final CLogger logger = Utils.getLogger(SchedulerFacadeImpl.class);
 
     @Autowired
@@ -220,7 +222,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
    @Transactional
    private void updateSchedulerStatus(String uuid, String status) {
-        String sql = "update SchedulerVO scheduler set scheduler.status = :status where scheduler.uuid= :schedulerUuid";
+        String sql = "update SchedulerVO scheduler set scheduler.status = :status where scheduler.uuid = :schedulerUuid";
         Query q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("status", status);
         q.setParameter("schedulerUuid", uuid);
@@ -349,6 +351,22 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     public void managementNodeReady() {
         logger.debug(String.format("Management node[uuid:%s] joins, start loading Scheduler jobs...", Platform.getManagementServerId()));
         loadSchedulerJobs();
+    }
+
+    public void nodeJoin(String nodeId) {
+
+    }
+
+    public void nodeLeft(String nodeId) {
+
+    }
+
+    public  void iAmDead(String nodeId) {
+
+    }
+
+    public void iJoin(String nodeId) {
+
     }
 
 

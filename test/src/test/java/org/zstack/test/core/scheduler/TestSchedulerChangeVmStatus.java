@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.core.scheduler.SchedulerStatus;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -53,23 +54,27 @@ public class TestSchedulerChangeVmStatus {
             api.startVmInstanceScheduler(uuid,type,startDate,interval,repeatCount);
             // destroy vm
             api.destroyVmInstance(uuid);
-            TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(5);
             VmInstanceVO vm = dbf.findByUuid(uuid, VmInstanceVO.class);
             Assert.assertNotNull(vm);
             Assert.assertEquals(VmInstanceState.Destroyed, vm.getState());
             SchedulerVO firstRecord = dbf.listAll(SchedulerVO.class).get(0);
-            String schedulerUuid  = firstRecord.getUuid();
-            SchedulerVO sch = dbf.findByUuid(schedulerUuid, SchedulerVO.class);
-            Assert.assertNotNull(sch);
+            Assert.assertNotNull(firstRecord);
+            SchedulerVO scheduler = dbf.findByUuid(firstRecord.getUuid(), SchedulerVO.class);
+            Assert.assertNotNull(scheduler);
+            Assert.assertEquals(SchedulerStatus.Disabled.toString(), scheduler.getStatus());
             // recover vm
             inv = api.recoverVm(inv.getUuid(), null);
-            TimeUnit.SECONDS.sleep(10);
+            TimeUnit.SECONDS.sleep(5);
             VmInstanceVO vm2 = dbf.findByUuid(uuid, VmInstanceVO.class);
             Assert.assertNotNull(vm2);
             Assert.assertEquals(VmInstanceState.Running, vm2.getState());
+            SchedulerVO scheduler2 = dbf.findByUuid(firstRecord.getUuid(), SchedulerVO.class);
+            Assert.assertNotNull(scheduler2);
+            Assert.assertEquals(SchedulerStatus.Enabled.toString(), scheduler2.getStatus());
             // expunge vm
             api.destroyVmInstance(inv.getUuid(), null);
-            TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(2);
             api.expungeVm(inv.getUuid(), null);
             TimeUnit.SECONDS.sleep(3);
             VmInstanceVO vm3 = dbf.findByUuid(uuid, VmInstanceVO.class);
