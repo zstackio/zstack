@@ -7,9 +7,9 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.storage.backup.APIExportImageFromBackupStorageMsg;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.primary.APICommitVolumeAsImageMsg;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.storage.backup.imagestore.ImageStoreBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -19,11 +19,8 @@ import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Collections;
-import java.util.List;
-
-public class TestImageStoreCommitVolume {
-    private CLogger logger = Utils.getLogger(TestImageStoreCommitVolume.class);
+public class TestImageStoreExportImage {
+    private CLogger logger = Utils.getLogger(TestImageStoreExportImage.class);
     private Deployer deployer;
     private Api api;
 
@@ -47,20 +44,13 @@ public class TestImageStoreCommitVolume {
 
     @Test
     public void test() throws ApiSenderException {
-        VmInstanceInventory vm = deployer.vms.get("TestVm");
-
-        // Commit a volume as image
         try {
             MessageCommandRecorder.reset();
-            MessageCommandRecorder.start(APICommitVolumeAsImageMsg.class);
+            MessageCommandRecorder.start(APIExportImageFromBackupStorageMsg.class);
 
             BackupStorageInventory bs = deployer.backupStorages.get("imagestore");
-            List<String> bsUuids = Collections.singletonList(bs.getUuid());
-            api.commitVolumeAsImage(
-                    vm.getRootVolumeUuid(),
-                    "test-image",
-                    bsUuids
-            );
+            ImageInventory img = deployer.images.get("TestImage");
+            api.exportImage(bs.getUuid(), img.getUuid());
 
             String callingChain = MessageCommandRecorder.endAndToString();
             logger.debug(callingChain);

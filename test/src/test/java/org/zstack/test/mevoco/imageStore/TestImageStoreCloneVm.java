@@ -62,7 +62,7 @@ public class TestImageStoreCloneVm {
 
             numOfClonedVm = res.getNumberOfClonedVm();
         } catch (ApiSenderException e) {
-            logger.debug("[bug] " + e.getMessage());
+            logger.debug("[bug] " + e);
         }
 
         Assert.assertTrue(numOfClonedVm == names.toArray().length);

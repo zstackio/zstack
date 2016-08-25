@@ -3937,6 +3937,18 @@ public class Api implements CloudBusEventListener {
         return reply.getCapabilities();
     }
 
+    public String exportImage(String bsUuid, String imageUuid) throws ApiSenderException {
+        APIExportImageFromBackupStorageMsg msg = new APIExportImageFromBackupStorageMsg();
+        msg.setBackupStorageUuid(bsUuid);
+        msg.setImageUuid(imageUuid);
+
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIExportImageFromBackupStorageEvent evt = sender.send(msg, APIExportImageFromBackupStorageEvent.class);
+        return evt.getImageUrl();
+    }
+
     public void detachNetworkServicesFromL3Network(String l3Uuid, Map<String, List<String>> services) throws ApiSenderException {
         APIDetachNetworkServiceFromL3NetworkMsg msg = new APIDetachNetworkServiceFromL3NetworkMsg();
         msg.setL3NetworkUuid(l3Uuid);
