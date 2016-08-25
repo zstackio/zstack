@@ -935,6 +935,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             return;
         }
 
+        String options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(pinv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
+
         new LoopAsyncBatch<String>() {
             @Override
             protected Collection<String> collect() {
@@ -951,6 +953,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         cmd.mountPath = pinv.getMountPath();
                         cmd.newMountPoint = newMountPoint;
                         cmd.oldMountPoint = oldMountPoint;
+                        cmd.options = options;
+
                         new KvmCommandSender(hostUuid).send(cmd, UPDATE_MOUNT_POINT_PATH, new KvmCommandFailureChecker() {
                             @Override
                             public ErrorCode getError(KvmResponseWrapper wrapper) {
