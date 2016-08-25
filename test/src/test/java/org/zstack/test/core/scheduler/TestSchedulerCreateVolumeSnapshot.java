@@ -10,6 +10,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -72,6 +73,8 @@ public class TestSchedulerCreateVolumeSnapshot {
 
         //test change volume status
         api.deleteScheduler(schedulerUuid, null);
+        long record0 = dbf.count(SchedulerVO.class);
+        Assert.assertEquals(0,record0);
         DiskOfferingInventory dinv = new DiskOfferingInventory();
         dinv.setDiskSize(SizeUnit.GIGABYTE.toByte(10));
         dinv.setName("Test");
@@ -96,16 +99,21 @@ public class TestSchedulerCreateVolumeSnapshot {
 
         //recover volume
         api.recoverVolume(vinv.getUuid(), null);
-        TimeUnit.SECONDS.sleep(1);
+        TimeUnit.SECONDS.sleep(2);
         long record3 = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(3,record3);
+        Assert.assertEquals(4,record3);
 
         //expunge volume
         api.deleteDataVolume(vinv.getUuid());
         api.expungeDataVolume(vinv.getUuid(), null);
-        TimeUnit.SECONDS.sleep(4);
+        TimeUnit.SECONDS.sleep(3);
         long record4 = dbf.count(VolumeSnapshotVO.class);
+        //only leave the first root volume record
         Assert.assertEquals(1,record4);
+
+        // check schedulerVO
+        long record5 = dbf.count(SchedulerVO.class);
+        Assert.assertEquals(0,record5);
 
 
     }
