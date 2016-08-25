@@ -434,4 +434,16 @@ public class NfsPrimaryStorageSimulator {
         reply(entity, rsp);
         return null;
     }
+
+    @RequestMapping(value=NfsPrimaryStorageKVMBackend.UPDATE_MOUNT_POINT_PATH, method=RequestMethod.POST)
+    private @ResponseBody String updateMountPoint(HttpServletRequest req) throws InterruptedException {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        UpdateMountPointCmd cmd = JSONObjectUtil.toObject(entity.getBody(), UpdateMountPointCmd.class);
+        UpdateMountPointRsp rsp = new UpdateMountPointRsp();
+        config.updateMountPointCmds.add(cmd);
+        rsp.setTotalCapacity(config.totalCapacity);
+        rsp.setAvailableCapacity(config.availableCapacity);
+        reply(entity, rsp);
+        return null;
+    }
 }

@@ -78,4 +78,6 @@ public interface NfsPrimaryStorageBackend {
     void mergeSnapshotToVolume(PrimaryStorageInventory pinv, VolumeSnapshotInventory snapshot, VolumeInventory volume, boolean fullRebase, Completion completion);
 
     void remount(PrimaryStorageInventory pinv, String clusterUuid, Completion completion);
+
+    void updateMountPoint(PrimaryStorageInventory pinv, String clusterUuid, String oldMountPoint, String newMountPoint, Completion completion);
 }

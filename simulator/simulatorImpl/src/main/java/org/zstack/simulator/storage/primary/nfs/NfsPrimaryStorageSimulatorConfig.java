@@ -54,4 +54,5 @@ public class NfsPrimaryStorageSimulatorConfig {
     public List<PingCmd> pingCmds = new ArrayList<PingCmd>();
 
     public Map<String, String> getVolumeBaseImagePaths = new HashMap<String, String>();
+    public List<UpdateMountPointCmd> updateMountPointCmds = new ArrayList<>();
 }

@@ -121,19 +121,68 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     return err;
                 }
 
+                String oldUrl = self.getUrl();
+
                 checkRunningVmForUpdateUrl();
                 vo.setUrl(newUrl);
                 dbf.update(vo);
 
-                ReconnectPrimaryStorageMsg rmsg = new ReconnectPrimaryStorageMsg();
-                rmsg.setPrimaryStorageUuid(self.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-                MessageReply reply = bus.call(rmsg);
-                if (!reply.isSuccess()) {
-                    return reply.getError();
+                SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
+                q.select(PrimaryStorageClusterRefVO_.clusterUuid);
+                q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+                List<String> cuuids = q.listValue();
+                if (cuuids.isEmpty()) {
+                    return null;
                 }
 
-                return null;
+                FutureCompletion completion = new FutureCompletion();
+
+                PrimaryStorageInventory psinv = getSelfInventory();
+
+                new LoopAsyncBatch<String>(completion) {
+                    @Override
+                    protected Collection<String> collect() {
+                        return cuuids;
+                    }
+
+                    @Override
+                    protected AsyncBatchRunner forEach(String item) {
+                        return new AsyncBatchRunner() {
+                            @Override
+                            public void run(NoErrorCompletion completion) {
+                                NfsPrimaryStorageBackend bkd = getBackendByClusterUuid(item);
+                                bkd.updateMountPoint(psinv, item, oldUrl, newUrl, new Completion(completion) {
+                                    @Override
+                                    public void success() {
+                                        completion.done();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        //TODO: bring the host to an error state
+                                        logger.warn(String.format("failed to update the nfs[uuid:%s, name:%s] mount point" +
+                                                " from %s to %s in the cluster[uuid:%s], %s", self.getUuid(), self.getName(),
+                                                oldUrl, newUrl, item, errorCode));
+                                        completion.done();
+                                    }
+                                });
+                            }
+                        };
+                    }
+
+                    @Override
+                    protected void done() {
+                        completion.success();
+                    }
+                }.start();
+
+                completion.await();
+
+                if (completion.isSuccess()) {
+                    return null;
+                } else {
+                    return completion.getErrorCode();
+                }
             }
 
             @Override
@@ -168,19 +217,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         vo = vo == null ? self : vo;
 
         if (msg.getUrl() != null && !self.getUrl().equals(msg.getUrl())) {
-            ErrorCode err = new NfsApiParamChecker().checkUrl(self.getZoneUuid(), msg.getUrl());
-            if (err != null) {
-                throw new OperationFailureException(err);
-            }
-
-            checkRunningVmForUpdateUrl();
-            vo.setUrl(msg.getUrl());
-            dbf.update(vo);
-
-            ReconnectPrimaryStorageMsg rmsg = new ReconnectPrimaryStorageMsg();
-            rmsg.setPrimaryStorageUuid(self.getUuid());
-            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-            bus.send(rmsg);
+            updateMountPoint(vo, msg.getUrl());
         }
 
         return vo;
