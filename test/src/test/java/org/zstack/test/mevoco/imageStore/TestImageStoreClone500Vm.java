@@ -57,7 +57,7 @@ public class TestImageStoreClone500Vm {
             CloneVmInstanceResults res = creator.cloneVm(Arrays.asList(names), vm.getUuid());
             numOfClonedVm = res.getNumberOfClonedVm();
         } catch (ApiSenderException e) {
-            logger.debug("[bug] " + e.getMessage());
+            logger.debug("[bug] " + e);
         }
 
         Assert.assertTrue(numOfClonedVm == names.length);

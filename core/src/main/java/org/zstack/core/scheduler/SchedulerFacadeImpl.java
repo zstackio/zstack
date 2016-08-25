@@ -1,5 +1,4 @@
 package org.zstack.core.scheduler;
-
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,12 +11,14 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.SyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.core.scheduler.SchedulerStatus;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.scheduler.SchedulerVO_;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.utils.Utils;
@@ -41,7 +42,8 @@ import static org.quartz.TriggerKey.triggerKey;
 /**
  * Created by Mei Lei on 6/22/16.
  */
-public class SchedulerFacadeImpl extends AbstractService implements SchedulerFacade, ManagementNodeReadyExtensionPoint {
+public class SchedulerFacadeImpl extends AbstractService implements SchedulerFacade, ManagementNodeReadyExtensionPoint,
+        ManagementNodeChangeListener {
     private static final CLogger logger = Utils.getLogger(SchedulerFacadeImpl.class);
 
     @Autowired
@@ -89,7 +91,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         } catch (SchedulerException e) {
             evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, e.getMessage()));
             bus.publish(evt);
-            logger.warn("Delete Scheduler trigger failed!");
+            logger.warn(String.format("Delete Scheduler %s failed!", msg.getUuid()));
             throw new RuntimeException(e);
         }
 
@@ -151,7 +153,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             try {
                 oldTrigger = scheduler.getTrigger(triggerKey(triggerName, triggerGroup));
             } catch (SchedulerException e) {
-                logger.warn("Get Scheduler trigger failed!");
+                logger.warn(String.format("Get simple Scheduler %s failed!", msg.getUuid()));
                 throw new RuntimeException(e);
             }
             TriggerBuilder tb =  oldTrigger.getTriggerBuilder();
@@ -182,7 +184,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             try {
                 scheduler.rescheduleJob(oldTrigger.getKey(), newTrigger);
             } catch (SchedulerException e) {
-                logger.warn("Reschedule simple Scheduler job failed!");
+                logger.warn(String.format("Reschedule simple Scheduler %s failed!", msg.getUuid()));
                 throw new RuntimeException(e);
             }
 
@@ -195,7 +197,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             try {
                 oldTrigger = scheduler.getTrigger(triggerKey(triggerName, triggerGroup));
             } catch (SchedulerException e) {
-                logger.warn("Get Scheduler trigger failed!");
+                logger.warn(String.format("Get Scheduler trigger %s-%s failed!", triggerName, triggerGroup));
                 throw new RuntimeException(e);
             }
             TriggerBuilder tb = oldTrigger.getTriggerBuilder();
@@ -204,7 +206,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             try {
                 scheduler.rescheduleJob(oldTrigger.getKey(), newTrigger);
             } catch (SchedulerException e) {
-                logger.warn("Reschedule cron Scheduler job failed!");
+                logger.warn(String.format("Reschedule cron Scheduler %s failed!", msg.getUuid()));
                 throw new RuntimeException(e);
             }
         }
@@ -220,7 +222,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
    @Transactional
    private void updateSchedulerStatus(String uuid, String status) {
-        String sql = "update SchedulerVO scheduler set scheduler.status = :status where scheduler.uuid= :schedulerUuid";
+        String sql = "update SchedulerVO scheduler set scheduler.status = :status where scheduler.uuid = :schedulerUuid";
         Query q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("status", status);
         q.setParameter("schedulerUuid", uuid);
@@ -241,7 +243,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             scheduler.pauseJob(jobKey(jobName, jobGroup));
             updateSchedulerStatus(uuid, SchedulerStatus.Disabled.toString());
         } catch (SchedulerException e) {
-            logger.warn("Pause Scheduler trigger failed!");
+            logger.warn(String.format("Pause Scheduler %s failed!", uuid));
             throw new RuntimeException(e);
         }
     }
@@ -260,7 +262,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             scheduler.resumeJob(jobKey(jobName, jobGroup));
             updateSchedulerStatus(uuid, SchedulerStatus.Enabled.toString());
         } catch (SchedulerException e) {
-            logger.warn("Resume Scheduler trigger failed!");
+            logger.warn(String.format("Resume Scheduler %s failed!", uuid));
             throw new RuntimeException(e);
         }
     }
@@ -279,13 +281,12 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             scheduler.deleteJob(jobKey(jobName, jobGroup));
             dbf.removeByPrimaryKey(uuid, SchedulerVO.class);
         } catch (SchedulerException e) {
-            logger.warn("Delete Scheduler trigger failed!");
+            logger.warn(String.format("Delete Scheduler %s failed!", uuid));
             throw new RuntimeException(e);
         }
     }
 
-    private void loadSchedulerJobs() {
-
+    private List<String> getSchedulerManagedByUs() {
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.select(SchedulerVO_.uuid);
         q.add(SchedulerVO_.managementNodeUuid, SimpleQuery.Op.NULL);
@@ -297,12 +298,15 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 ours.add(id);
             }
         }
+        return ours;
+    }
 
+    private void loadWorker(List<String> ours) {
         if (ours.isEmpty()) {
             logger.debug("no Scheduler managed by us");
         } else {
+            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
             logger.debug(String.format("Scheduler is going to load %s jobs", ours.size()));
-            q = dbf.createQuery(SchedulerVO.class);
             q.add(SchedulerVO_.uuid, SimpleQuery.Op.IN, ours);
             List<SchedulerVO> schedulerRecords = q.list();
 
@@ -311,13 +315,21 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 SchedulerVO schedulerRecord = schedulerRecordsIterator.next();
                 try {
                     SchedulerJob rebootJob = (SchedulerJob) JSONObjectUtil.toObject(schedulerRecord.getJobData(), Class.forName(schedulerRecord.getJobClassName()));
-                    runScheduler(rebootJob, false);
+                    if (schedulerRecord.getStatus().equals(SchedulerStatus.Enabled.toString())) {
+                        runScheduler(rebootJob, false);
+                    }
                 } catch (ClassNotFoundException e) {
-                    logger.warn("Load Scheduler job failed!");
+                    logger.warn(String.format("Load Scheduler %s failed!", schedulerRecord.getUuid()));
                     throw new RuntimeException(e);
                 }
             }
         }
+
+    }
+
+    private void loadSchedulerJobs() {
+        List<String> ours = getSchedulerManagedByUs();
+        loadWorker(ours);
     }
 
 
@@ -351,7 +363,50 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         loadSchedulerJobs();
     }
 
+    @Override
+    public void nodeJoin(String nodeId) {
 
+    }
+
+    @Override
+    @SyncThread
+    public void nodeLeft(String nodeId) {
+        logger.debug(String.format("Management node[uuid:%s] left, node[uuid:%s] starts to take over schedulers", nodeId, Platform.getManagementServerId()));
+        takeOverScheduler();
+    }
+
+    @Override
+    public  void iAmDead(String nodeId) {
+
+    }
+
+    @Override
+    public void iJoin(String nodeId) {
+
+    }
+
+    private void takeOverScheduler() {
+        int qun = 10000;
+        long amount = dbf.count(SchedulerVO.class);
+        int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
+        int start = 0;
+        for (int i = 0; i < times; i++) {
+            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+            q.select(SchedulerVO_.uuid);
+            q.add(SchedulerVO_.managementNodeUuid, SimpleQuery.Op.NULL);
+            q.setLimit(qun);
+            q.setStart(start);
+            List<String> uuids = q.listValue();
+            List<String> ours = new ArrayList<String>();
+            for (String id : uuids) {
+                if (destinationMaker.isManagedByUs(id)) {
+                    ours.add(id);
+                }
+            }
+            loadWorker(ours);
+            start += qun;
+        }
+    }
 
     public SchedulerVO runScheduler(SchedulerJob schedulerJob) {
         return runScheduler(schedulerJob, true);
@@ -405,7 +460,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             vo.setJobGroup(schedulerJob.getJobGroup());
             vo.setTriggerName(schedulerJob.getTriggerName());
             vo.setTriggerGroup(schedulerJob.getTriggerGroup());
-            vo.setJobClassName(jobClassName);
+            vo.setJobClassName(jobClassName.substring(jobClassName.lastIndexOf(".")+1));
             vo.setManagementNodeUuid(Platform.getManagementServerId());
             vo.setTargetResourceUuid(schedulerJob.getTargetResourceUuid());
         }
@@ -483,12 +538,12 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 scheduler.scheduleJob(job, trigger);
             }
         } catch (SchedulerException se) {
-            logger.warn("Run Scheduler failed!");
+            logger.warn(String.format("Run Scheduler  %s failed", vo.getUuid()));
             throw new RuntimeException(se);
         }
 
         if (saveDB) {
-            logger.debug(String.format("save Scheduler job %s to database", schedulerJob.getClass().getName()));
+            logger.debug(String.format("Save Scheduler job %s to database", schedulerJob.getClass().getName()));
             vo.setStatus(SchedulerStatus.Enabled.toString());
             dbf.persist(vo);
             return vo;

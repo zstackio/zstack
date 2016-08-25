@@ -152,6 +152,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private EventFacade evtf;
     @Autowired
     private HostAllocatorManager hostAllocatorMgr;
+    @Autowired
     private SchedulerFacade schedulerFacade;
 
     @Override
@@ -1498,7 +1499,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     }
 
     public void beforeDestroyVm(VmInstanceInventory inv) {
-        logger.debug(String.format("will pause scheduler before destroy vm"));
+        logger.debug(String.format("will pause scheduler before destroy vm %s", inv.getUuid()));
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.add(SchedulerVO_.targetResourceUuid, Op.EQ, inv.getUuid());
         q.select(SchedulerVO_.uuid);
@@ -1509,11 +1510,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
     }
 
-    public void afterDestroyVm(VmInstanceInventory inv) {
+    public void afterDestroyVm(VmInstanceInventory vm) {
 
     }
 
-    public void failedToDestroyVm(VmInstanceInventory inv, ErrorCode reason) {
+    public void failedToDestroyVm(VmInstanceInventory vm, ErrorCode reason) {
 
     }
     public void preRecoverVm(VmInstanceInventory vm) {
@@ -1525,7 +1526,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     }
 
     public void afterRecoverVm(VmInstanceInventory vm) {
-        logger.debug(String.format("will resume scheduler after recover vm"));
+        logger.debug(String.format("will resume scheduler after recover vm %s", vm.getUuid()));
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.add(SchedulerVO_.targetResourceUuid, Op.EQ, vm.getUuid());
         logger.debug(String.format("target resource uuid is %s", vm.getUuid()));

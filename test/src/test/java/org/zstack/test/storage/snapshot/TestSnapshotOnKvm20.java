@@ -63,7 +63,7 @@ public class TestSnapshotOnKvm20 {
         VolumeVO vol = dbf.findByUuid(inv.getVolumeUuid(), VolumeVO.class);
         VolumeSnapshotVO svo = dbf.findByUuid(inv.getUuid(), VolumeSnapshotVO.class);
         Assert.assertNotNull(svo);
-        Assert.assertTrue(svo.isFullSnapshot());
+        Assert.assertFalse(svo.isFullSnapshot());
         Assert.assertTrue(svo.isLatest());
         Assert.assertNull(svo.getParentUuid());
         Assert.assertEquals(distance, svo.getDistance());
@@ -112,7 +112,7 @@ public class TestSnapshotOnKvm20 {
 
         long size = SizeUnit.GIGABYTE.toByte(10);
         nfsConfig.mergeSnapshotCmdSize.put(inv3.getVolumeUuid(), size);
-        ImageInventory img = api.createTemplateFromSnapshot(inv3.getUuid());
+        ImageInventory img = api.createTemplateFromSnapshot(inv3.getUuid(), bs.getUuid());
         Assert.assertNotNull(img.getBackupStorageRefs().get(0).getInstallPath());
         Assert.assertTrue(img.getSize() != 0);
         Assert.assertEquals(ImageMediaType.RootVolumeTemplate.toString(), img.getMediaType());

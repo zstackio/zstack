@@ -223,6 +223,7 @@ public class Api implements CloudBusEventListener {
         return createTemplateFromSnapshot(snapshotUuid, (SessionInventory) null);
     }
 
+    @Deprecated
     public ImageInventory createTemplateFromSnapshot(String snapshotUuid, SessionInventory session) throws ApiSenderException {
         return createTemplateFromSnapshot(snapshotUuid, (List) null, session);
     }
@@ -3934,6 +3935,18 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIGetLicenseCapabilitiesReply reply = sender.call(msg, APIGetLicenseCapabilitiesReply.class);
         return reply.getCapabilities();
+    }
+
+    public String exportImage(String bsUuid, String imageUuid) throws ApiSenderException {
+        APIExportImageFromBackupStorageMsg msg = new APIExportImageFromBackupStorageMsg();
+        msg.setBackupStorageUuid(bsUuid);
+        msg.setImageUuid(imageUuid);
+
+        msg.setSession(adminSession);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIExportImageFromBackupStorageEvent evt = sender.send(msg, APIExportImageFromBackupStorageEvent.class);
+        return evt.getImageUrl();
     }
 
     public void detachNetworkServicesFromL3Network(String l3Uuid, Map<String, List<String>> services) throws ApiSenderException {
