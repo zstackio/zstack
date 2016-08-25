@@ -52,13 +52,13 @@ public class TestSnapshotOnKvm3 {
         VolumeSnapshotGlobalConfig.MAX_INCREMENTAL_SNAPSHOT_NUM.updateValue(1);
     }
 
-    private void fullSnapshot(VolumeSnapshotInventory inv, int distance) {
+    private void fullSnapshot(VolumeSnapshotInventory inv, int distance, boolean isFullSnapshot) {
         Assert.assertEquals(VolumeSnapshotState.Enabled.toString(), inv.getState());
         Assert.assertEquals(VolumeSnapshotStatus.Ready.toString(), inv.getStatus());
         VolumeVO vol = dbf.findByUuid(inv.getVolumeUuid(), VolumeVO.class);
         VolumeSnapshotVO svo = dbf.findByUuid(inv.getUuid(), VolumeSnapshotVO.class);
         Assert.assertNotNull(svo);
-        Assert.assertTrue(svo.isFullSnapshot());
+        Assert.assertEquals(isFullSnapshot, svo.isFullSnapshot());
         Assert.assertTrue(svo.isLatest());
         Assert.assertNull(svo.getParentUuid());
         Assert.assertEquals(distance, svo.getDistance());
@@ -93,14 +93,14 @@ public class TestSnapshotOnKvm3 {
         String volUuid = vm.getRootVolumeUuid();
         VolumeSnapshotInventory inv = api.createSnapshot(volUuid);
         VolumeSnapshotInventory root1 = inv;
-        fullSnapshot(inv, 0);
+        fullSnapshot(inv, 0, false);
 
         inv = api.createSnapshot(volUuid);
         deltaSnapshot(inv, 1);
 
         inv = api.createSnapshot(volUuid);
         VolumeSnapshotInventory root2 = inv;
-        fullSnapshot(inv, 0);
+        fullSnapshot(inv, 0, true);
 
         inv = api.createSnapshot(volUuid);
         deltaSnapshot(inv, 1);
