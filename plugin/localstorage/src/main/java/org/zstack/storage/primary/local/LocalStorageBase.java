@@ -470,6 +470,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             super.handleLocalMessage(msg);
         }
     }
+
     @Override
     protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
         APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
@@ -1866,6 +1867,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     private LocalStorageHypervisorFactory getHypervisorBackendFactory(String hvType) {
+        if (hvType == null) {
+            throw new CloudRuntimeException("hvType is null!!!");
+        }
         for (LocalStorageHypervisorFactory f : pluginRgty.getExtensionList(LocalStorageHypervisorFactory.class)) {
             if (hvType.equals(f.getHypervisorType())) {
                 return f;
@@ -1890,7 +1894,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 if (count > 0) {
                     throw new OperationFailureException(errf.stringToOperationError(
                             String.format("unable to attach the local storage[uuid:%s, name: %s] to the cluster[uuid:%s]," +
-                                    "there has been a local storage attached on the cluster already", self.getUuid(), self.getName(),
+                                            "there has been a local storage attached on the cluster already", self.getUuid(), self.getName(),
                                     clusterUuid)
                     ));
                 }

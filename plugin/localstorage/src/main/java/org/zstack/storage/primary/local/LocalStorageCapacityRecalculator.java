@@ -115,7 +115,7 @@ public class LocalStorageCapacityRecalculator {
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("psUuid", psUuid);
         List<Tuple> ts = q.getResultList();
-        if (!ts.isEmpty()) {
+        if (!ts.isEmpty() && ts.get(0) != null) {
             Tuple t = ts.get(0);
             final long total = t.get(0, Long.class);
             final long tp = t.get(1, Long.class);
