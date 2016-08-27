@@ -527,6 +527,24 @@ public class KVMHostLabel {
     public static final String UNARCHIVE_SUCC = "ansible.unarchive.succ";
 
     @LogLabel(messages = {
+            "en_US = starting change kernel module [{0}] status to [{1}]",
+            "zh_CN = 开始改变内核模块 {0} 状态为 {1} ... "
+    })
+    public static final String KERNEL_MODE_PROBE= "ansible.modprobe";
+
+    @LogLabel(messages = {
+            "en_US = change kernel module [{0}] status to [{1}] successfully",
+            "zh_CN = 改变内核模块 {0} 状态为 {1} 成功 "
+    })
+    public static final String KERNEL_MODE_PROBE_SUCC = "ansible.modprobe.succ";
+
+    @LogLabel(messages = {
+            "en_US = change kernel module [{0}] status to [{1}] failed",
+            "zh_CN = 改变内核模块 {0} 状态为 {1} 失败 "
+    })
+    public static final String KERNEL_MODE_PROBE_FAIL = "ansible.modprobe.fail";
+
+    @LogLabel(messages = {
             "en_US = remove [{0}] ...",
             "zh_CN = 删除 {0} ..."
     })
