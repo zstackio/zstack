@@ -532,7 +532,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     public <T> T find(Query q) {
         List<T> ret = q.getResultList();
         if (ret.size() > 1) {
