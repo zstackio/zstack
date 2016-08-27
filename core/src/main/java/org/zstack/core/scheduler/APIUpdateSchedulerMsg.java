@@ -14,24 +14,8 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
     private String uuid;
     @APIParam(maxLength = 255, required = false, emptyString = false)
     private String schedulerName;
-    @APIParam(maxLength = 255, required = false, emptyString = false)
-    private String schedulerType;
-    @APIParam(maxLength = 255, required = false)
-    private Integer schedulerInterval;
-    @APIParam(maxLength = 255, required = false)
-    private Integer repeatCount;
-    @APIParam(maxLength = 255, required = false)
-    private String cronScheduler;
-    @APIParam(required = false)
-    private Long startTime;
-
-    public Long getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(Long startTime) {
-        this.startTime = startTime;
-    }
+    @APIParam(maxLength = 2048, required = false)
+    private String schedulerDescription;
 
     public String getUuid() {
         return uuid;
@@ -49,38 +33,13 @@ public class APIUpdateSchedulerMsg extends APIMessage implements SchedulerMessag
         this.schedulerName = schedulerName;
     }
 
-    public String getSchedulerType() {
-        return schedulerType;
+    public String getSchedulerDescription() {
+        return schedulerDescription;
     }
 
-    public void setSchedulerType(String schedulerType) {
-        this.schedulerType = schedulerType;
+    public void setSchedulerDescription(String schedulerDescription) {
+        this.schedulerDescription = schedulerDescription;
     }
-
-    public Integer getSchedulerInterval() {
-        return schedulerInterval;
-    }
-
-    public void setSchedulerInterval(Integer schedulerInterval) {
-        this.schedulerInterval = schedulerInterval;
-    }
-
-    public Integer getRepeatCount() {
-        return repeatCount;
-    }
-
-    public void setRepeatCount(Integer repeatCount) {
-        this.repeatCount = repeatCount;
-    }
-
-    public String getCronScheduler() {
-        return cronScheduler;
-    }
-
-    public void setCronScheduler(String cronScheduler) {
-        this.cronScheduler = cronScheduler;
-    }
-
 
     @Override
     public String getSchedulerUuid() {

@@ -39,6 +39,7 @@ import org.zstack.header.configuration.*;
 import org.zstack.header.console.APIRequestConsoleAccessEvent;
 import org.zstack.header.console.APIRequestConsoleAccessMsg;
 import org.zstack.header.console.ConsoleInventory;
+import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.identity.*;
@@ -4264,11 +4265,16 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public void updateSimpleScheduler(String uuid, SessionInventory session) throws ApiSenderException {
+    public SchedulerInventory updateScheduler(String uuid, String schedulerName, String schedulerDescription, SessionInventory session) throws ApiSenderException {
         APIUpdateSchedulerMsg msg = new APIUpdateSchedulerMsg();
-        msg.setSchedulerType("simple");
-        msg.setSchedulerName("update-test");
-        msg.setSchedulerInterval(2);
+        if ( schedulerName != null ) {
+            msg.setSchedulerName(schedulerName);
+        }
+
+        if ( schedulerDescription != null ) {
+            msg.setSchedulerDescription(schedulerDescription);
+        }
+
         msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
@@ -4276,6 +4282,7 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIUpdateSchedulerEvent evt = sender.send(msg, APIUpdateSchedulerEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
+        return evt.getInventory();
     }
 
     public void deleteScheduler(String uuid, SessionInventory session) throws ApiSenderException {

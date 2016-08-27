@@ -20,6 +20,7 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -55,22 +56,35 @@ public class TestSchedulerUpdate {
 
     @Test
     public void test() throws InterruptedException, ApiSenderException, SchedulerException {
+        Date date = new Date();
         Assert.assertNotNull(scheduler);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
-        // createScheduler test case will start 2s later
         Integer interval = 3;
-        Integer repeatCount = 3;
+        Integer repeatCount = 10;
         String type = "simple";
-        Long startDate = 0L;
+        Long startDate = date.getTime()/1000;
         api.createVolumeSnapshotScheduler(volUuid, session, type, startDate, interval, repeatCount);
-        TimeUnit.SECONDS.sleep(3);
+        TimeUnit.SECONDS.sleep(1);
         long record = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(1,record);
         SchedulerVO firstRecord = dbf.listAll(SchedulerVO.class).get(0);
-        api.updateSimpleScheduler(firstRecord.getUuid(), session);
-        TimeUnit.SECONDS.sleep(7);
-        long record2 = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(4, record2);
+        api.updateScheduler(firstRecord.getUuid(),"test update", "new description", session);
+        SchedulerVO secondRecord= dbf.listAll(SchedulerVO.class).get(0);
+        Assert.assertEquals(secondRecord.getSchedulerDescription(), "new description");
+        Assert.assertEquals(secondRecord.getSchedulerName(), "test update");
+
+       // api.updateScheduler(firstRecord.getUuid(), startDate, "test2", "new description", 2, 2, null, session);
+       // TimeUnit.SECONDS.sleep(10);
+       // long record2 = dbf.count(VolumeSnapshotVO.class);
+       // Assert.assertEquals(6, record2);
+
+       // api.updateScheduler(firstRecord.getUuid(), startDate, "test2", "new description 2", null, 2, null , session);
+       // TimeUnit.SECONDS.sleep(7);
+       // long record3 = dbf.count(VolumeSnapshotVO.class);
+       // SchedulerVO scheduler_record = dbf.listAll(SchedulerVO.class).get(0);
+       // Assert.assertEquals(scheduler_record.getSchedulerDescription(), "new description 2");
+       // Assert.assertEquals(scheduler_record.getRepeatCount().toString(), "1");
+       // Assert.assertEquals(3, record3);
     }
 }
