@@ -199,12 +199,19 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         for (String id : ids) {
             if (destinationMaker.isManagedByUs(id)) {
                 ours.add(id);
+                q = dbf.createQuery(SchedulerVO.class);
+                q.add(SchedulerVO_.uuid, SimpleQuery.Op.IN, ours);
+                List<SchedulerVO> vos = q.list();
+                for (SchedulerVO vo : vos) {
+                   vo.setManagementNodeUuid(Platform.getManagementServerId());
+                   dbf.update(vo);
+                }
             }
         }
         return ours;
     }
 
-    private void loadWorker(List<String> ours) {
+    private void jobLoader(List<String> ours) {
         if (ours.isEmpty()) {
             logger.debug("no Scheduler managed by us");
         } else {
@@ -232,7 +239,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
     private void loadSchedulerJobs() {
         List<String> ours = getSchedulerManagedByUs();
-        loadWorker(ours);
+        jobLoader(ours);
     }
 
 
@@ -289,6 +296,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private void takeOverScheduler() {
+        logger.debug(String.format("Starting to take over Scheduler job "));
         int qun = 10000;
         long amount = dbf.count(SchedulerVO.class);
         int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
@@ -304,9 +312,16 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             for (String id : uuids) {
                 if (destinationMaker.isManagedByUs(id)) {
                     ours.add(id);
+                    q = dbf.createQuery(SchedulerVO.class);
+                    q.add(SchedulerVO_.uuid, SimpleQuery.Op.IN, ours);
+                    List<SchedulerVO> vos = q.list();
+                    for (SchedulerVO vo : vos) {
+                        vo.setManagementNodeUuid(Platform.getManagementServerId());
+                        dbf.update(vo);
+                    }
                 }
             }
-            loadWorker(ours);
+            jobLoader(ours);
             start += qun;
         }
     }
