@@ -15,7 +15,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.NetworkServiceProviderType;
@@ -47,6 +46,8 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private FlatDhcpBackend dhcpBackend;
 
     public static final String APPLY_USER_DATA = "/flatnetworkprovider/userdata/apply";
     public static final String BATCH_APPLY_USER_DATA = "/flatnetworkprovider/userdata/batchapply";
@@ -112,37 +113,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 Map<String, VmIpL3Uuid> vmipl3 = getVmIpL3Uuid(vmUuids);
                 Set<String> l3Uuids = new HashSet<String>();
                 for (VmIpL3Uuid l : vmipl3.values()) {
-                    l3Uuids.add(l.l3Uuid);
-                }
-
-                List<FlatDhcpAcquireDhcpServerIpMsg> msgs = CollectionUtils.transformToList(l3Uuids, new Function<FlatDhcpAcquireDhcpServerIpMsg, String>() {
-                    @Override
-                    public FlatDhcpAcquireDhcpServerIpMsg call(String l3uuid) {
-                        FlatDhcpAcquireDhcpServerIpMsg msg = new FlatDhcpAcquireDhcpServerIpMsg();
-                        msg.setL3NetworkUuid(l3uuid);
-                        bus.makeTargetServiceIdByResourceUuid(msg, FlatNetworkServiceConstant.SERVICE_ID, l3uuid);
-                        return msg;
-                    }
-                });
-
-                List<MessageReply> replies = bus.call(msgs);
-                for (MessageReply reply : replies) {
-                    FlatDhcpAcquireDhcpServerIpMsg msg = msgs.get(replies.indexOf(reply));
-                    String l3uuid = msg.getL3NetworkUuid();
-
-                    if (!reply.isSuccess()) {
-                        throw new OperationFailureException(errf.stringToOperationError(
-                                String.format("cannot get DHCP server IP of the L3 network[uuid:%s], %s", l3uuid, reply.getError())
-                        ));
-                    }
-
-                    FlatDhcpAcquireDhcpServerIpReply r = reply.castReply();
-
-                    for (VmIpL3Uuid l : vmipl3.values()) {
-                        if (l.l3Uuid.equals(l3uuid)) {
-                            l.dhcpServerIp = r.getIp();
-                        }
-                    }
+                    l.dhcpServerIp = dhcpBackend.allocateDhcpIp(l.l3Uuid).getIp();
                 }
 
                 Map<String, String> bridgeNames = new BridgeNameFinder().findByL3Uuids(l3Uuids);

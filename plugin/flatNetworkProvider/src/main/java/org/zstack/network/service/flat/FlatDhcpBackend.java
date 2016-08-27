@@ -7,6 +7,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.GLock;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.gc.EventBasedGCPersistentContext;
 import org.zstack.core.gc.GCEventTrigger;
@@ -275,6 +278,56 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         bus.reply(msg, reply);
     }
 
+    @Deferred
+    public UsedIpInventory allocateDhcpIp(String l3Uuid) {
+        UsedIpInventory ip = l3NetworkDhcpServerIp.get(l3Uuid);
+        if (ip != null) {
+            return ip;
+        }
+
+        // TODO: static allocate the IP to avoid the lock
+        GLock lock = new GLock(String.format("l3-%s-allocate-dhcp-ip", l3Uuid), TimeUnit.MINUTES.toSeconds(30));
+        lock.lock();
+        Defer.defer(lock::unlock);
+
+        String tag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(l3Uuid);
+        if (tag != null) {
+            Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
+            String ipUuid = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN);
+            UsedIpVO vo = dbf.findByUuid(ipUuid, UsedIpVO.class);
+            if (vo == null) {
+                throw new CloudRuntimeException(String.format("cannot find used ip [uuid:%s]", ipUuid));
+            }
+
+            ip = UsedIpInventory.valueOf(vo);
+            l3NetworkDhcpServerIp.put(l3Uuid, ip);
+            return ip;
+        }
+
+        AllocateIpMsg amsg = new AllocateIpMsg();
+        amsg.setL3NetworkUuid(l3Uuid);
+        bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
+        MessageReply reply = bus.call(amsg);
+        if (!reply.isSuccess()) {
+            throw new OperationFailureException(reply.getError());
+        }
+
+        AllocateIpReply r = reply.castReply();
+        ip = r.getIpInventory();
+
+        FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.createInherentTag(
+                l3Uuid,
+                map(
+                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, ip.getIp()),
+                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, ip.getUuid())
+                )
+        );
+
+        l3NetworkDhcpServerIp.put(l3Uuid, ip);
+        logger.debug(String.format("allocate DHCP server IP[ip:%s, uuid:%s] for l3 network[uuid:%s]", ip.getIp(), ip.getUuid(), ip.getL3NetworkUuid()));
+        return ip;
+    }
+
     private void handle(final FlatDhcpAcquireDhcpServerIpMsg msg) {
         thdf.syncSubmit(new SyncTask<Void>() {
             @Override
@@ -286,55 +339,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             @MessageSafe
             private void dealMessage(FlatDhcpAcquireDhcpServerIpMsg msg) {
                 FlatDhcpAcquireDhcpServerIpReply reply = new FlatDhcpAcquireDhcpServerIpReply();
-                UsedIpInventory ip = getIp();
+                UsedIpInventory ip = allocateDhcpIp(msg.getL3NetworkUuid());
                 reply.setIp(ip.getIp());
                 reply.setNetmask(ip.getNetmask());
                 reply.setUsedIpUuid(ip.getUuid());
                 bus.reply(msg, reply);
-            }
-
-            private UsedIpInventory getIp() {
-                UsedIpInventory ip = l3NetworkDhcpServerIp.get(msg.getL3NetworkUuid());
-                if (ip != null) {
-                    return ip;
-                }
-
-                String tag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(msg.getL3NetworkUuid());
-                if (tag != null) {
-                    Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
-                    String ipUuid = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN);
-                    UsedIpVO vo = dbf.findByUuid(ipUuid, UsedIpVO.class);
-                    if (vo == null) {
-                        throw new CloudRuntimeException(String.format("cannot find used ip [uuid:%s]", ipUuid));
-                    }
-
-                    ip = UsedIpInventory.valueOf(vo);
-                    l3NetworkDhcpServerIp.put(msg.getL3NetworkUuid(), ip);
-                    return ip;
-                }
-
-                AllocateIpMsg amsg = new AllocateIpMsg();
-                amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
-                bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
-                MessageReply reply = bus.call(amsg);
-                if (!reply.isSuccess()) {
-                    throw new OperationFailureException(reply.getError());
-                }
-
-                AllocateIpReply r = reply.castReply();
-                ip = r.getIpInventory();
-
-                FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.createInherentTag(
-                        msg.getL3NetworkUuid(),
-                        map(
-                                e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, ip.getIp()),
-                                e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, ip.getUuid())
-                        )
-                );
-
-                l3NetworkDhcpServerIp.put(msg.getL3NetworkUuid(), ip);
-                logger.debug(String.format("allocate DHCP server IP[ip:%s, uuid:%s] for l3 network[uuid:%s]", ip.getIp(), ip.getUuid(), ip.getL3NetworkUuid()));
-                return ip;
             }
 
             @Override
@@ -895,14 +904,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         for (L3NetworkInventory l3 : spec.getL3Networks()) {
             List<String> serviceTypes = l3.getNetworkServiceTypesFromProvider(providerUuid);
             if (serviceTypes.contains(NetworkServiceType.DHCP.toString())) {
-                FlatDhcpAcquireDhcpServerIpMsg msg = new FlatDhcpAcquireDhcpServerIpMsg();
-                msg.setL3NetworkUuid(l3.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, FlatNetworkServiceConstant.SERVICE_ID, l3.getUuid());
-                MessageReply reply = bus.call(msg);
-                if (!reply.isSuccess()) {
-                    // TODO
-                    logger.warn(String.format("failed to acquire DHCP server IP for L3 network[uuid:%s], %s", msg.getL3NetworkUuid(), reply.getError()));
-                }
+                allocateDhcpIp(l3.getUuid());
             }
         }
     }

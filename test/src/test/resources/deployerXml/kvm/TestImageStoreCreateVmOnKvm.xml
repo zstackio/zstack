@@ -52,6 +52,13 @@
                         <l3BasicNetwork name="TestL3Network1" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
                                 endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+
+                            <dns>1.1.1.1</dns>
+                            <networkService provider="Flat">
+                                <serviceType>DHCP</serviceType>
+                                <serviceType>Userdata</serviceType>
+                            </networkService>
+
                             <accountRef>test</accountRef>
                         </l3BasicNetwork>
                         <l3BasicNetwork name="TestL3Network2" description="Test">
