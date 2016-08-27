@@ -708,6 +708,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @DeadlockAutoRestart
     public void eoCleanup(Class VOClazz) {
         EntityInfo info  = getEntityInfo(VOClazz);
         if (!info.hasEO()) {
