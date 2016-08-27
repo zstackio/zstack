@@ -68,14 +68,15 @@
         <property name="jpaProperties">
             <props>
                 <prop key="hibernate.dialect">org.hibernate.dialect.MySQLInnoDBDialect</prop>
+                <prop key="hibernate.temp.use_jdbc_metadata_defaults">false</prop>
             </props>
         </property>
     </bean>
 
     <bean id="databaseFacade" class="org.zstack.core.db.DatabaseFacadeImpl">
     	<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.Component" />
-		</zstack:plugin>
+		<zstack:extension interface="org.zstack.header.Component" />
+	</zstack:plugin>
 
         <property name="dataSource" ref="DbFacadeDataSource" />
         <property name="extraDataSource" ref="ExtraDataSource" />
