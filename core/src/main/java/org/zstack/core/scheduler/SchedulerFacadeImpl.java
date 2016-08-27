@@ -37,7 +37,6 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.JobKey.jobKey;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
-import static org.quartz.TriggerKey.triggerKey;
 
 /**
  * Created by Mei Lei on 6/22/16.
@@ -98,7 +97,6 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private void handle(APIUpdateSchedulerMsg msg) {
-
         SchedulerVO vo = updateScheduler(msg);
         if (vo != null) {
             self = dbf.updateAndRefresh(vo);
@@ -109,108 +107,13 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private SchedulerVO updateScheduler(APIUpdateSchedulerMsg msg) {
-        boolean reSchedule = false;
-        self = dbf.findByUuid(msg.getUuid(), SchedulerVO.class);
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.select(SchedulerVO_.triggerName);
-        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
-        String triggerName = q.findValue();
-        SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
-        q2.select(SchedulerVO_.triggerGroup);
-        q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
-        String triggerGroup = q2.findValue();
+        SchedulerVO self = dbf.findByUuid(msg.getSchedulerUuid(), SchedulerVO.class);
         if ( msg.getSchedulerName() != null ) {
             self.setSchedulerName(msg.getSchedulerName());
         }
-
-        if ( msg.getSchedulerType() != null ) {
-            reSchedule = true;
-            self.setSchedulerType(msg.getSchedulerType());
+        if ( msg.getSchedulerDescription() != null ) {
+            self.setSchedulerDescription(msg.getSchedulerDescription());
         }
-
-        if ( msg.getSchedulerInterval() != null ) {
-            reSchedule = true;
-            self.setSchedulerInterval(msg.getSchedulerInterval());
-        }
-
-        if ( msg.getRepeatCount() != null ) {
-            reSchedule = true;
-            self.setRepeatCount(msg.getRepeatCount());
-        }
-
-        if ( msg.getStartTime() != null ) {
-            reSchedule = true;
-            self.setStartDate(new Timestamp(msg.getStartTime() * 1000));
-        }
-
-        if ( msg.getCronScheduler() != null ) {
-            reSchedule = true;
-            self.setCronScheduler(msg.getCronScheduler());
-        }
-
-        if (self.getSchedulerType().equals("simple") && reSchedule) {
-            Trigger oldTrigger = null;
-            try {
-                oldTrigger = scheduler.getTrigger(triggerKey(triggerName, triggerGroup));
-            } catch (SchedulerException e) {
-                logger.warn(String.format("Get simple Scheduler %s failed!", msg.getUuid()));
-                throw new RuntimeException(e);
-            }
-            TriggerBuilder tb =  oldTrigger.getTriggerBuilder();
-            Trigger newTrigger = null;
-            if (tb != null) {
-                if ( self.getRepeatCount() != null ) {
-                    if ( self.getRepeatCount() == 1 ) {
-                        // repeat only once
-                        newTrigger = tb.startAt(self.getStartDate()).withSchedule(simpleSchedule()
-                                .withIntervalInSeconds(self.getSchedulerInterval()))
-                                .build();
-                    } else {
-                        // repeat multiple times
-                        newTrigger = tb.startAt(self.getStartDate()).withSchedule(simpleSchedule()
-                                .withIntervalInSeconds(self.getSchedulerInterval())
-                                .withRepeatCount(self.getRepeatCount() -1 ))
-                                .build();
-                    }
-                } else {
-                    // repeatCount null means repeat forever
-                    newTrigger = tb.startAt(self.getStartDate()).withSchedule(simpleSchedule()
-                            .withIntervalInSeconds(self.getSchedulerInterval())
-                            .repeatForever())
-                            .build();
-                }
-            }
-
-            try {
-                scheduler.rescheduleJob(oldTrigger.getKey(), newTrigger);
-            } catch (SchedulerException e) {
-                logger.warn(String.format("Reschedule simple Scheduler %s failed!", msg.getUuid()));
-                throw new RuntimeException(e);
-            }
-
-        } else if (self.getSchedulerType().equals("cron") && reSchedule) {
-            if ( self.getCronScheduler() != null ) {
-                self.setCronScheduler(self.getCronScheduler());
-            }
-            // retrieve the trigger
-            Trigger oldTrigger = null;
-            try {
-                oldTrigger = scheduler.getTrigger(triggerKey(triggerName, triggerGroup));
-            } catch (SchedulerException e) {
-                logger.warn(String.format("Get Scheduler trigger %s-%s failed!", triggerName, triggerGroup));
-                throw new RuntimeException(e);
-            }
-            TriggerBuilder tb = oldTrigger.getTriggerBuilder();
-            Trigger newTrigger = tb.withSchedule(cronSchedule(self.getCronScheduler()))
-                    .build();
-            try {
-                scheduler.rescheduleJob(oldTrigger.getKey(), newTrigger);
-            } catch (SchedulerException e) {
-                logger.warn(String.format("Reschedule cron Scheduler %s failed!", msg.getUuid()));
-                throw new RuntimeException(e);
-            }
-        }
-
         return self;
     }
 

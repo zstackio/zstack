@@ -53,10 +53,11 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIUpdateSchedulerMsg msg) {
         if (!dbf.isExist(msg.getUuid(), SchedulerVO.class)) {
-            APIDeleteSchedulerEvent evt = new APIDeleteSchedulerEvent(msg.getId());
+            APIUpdateSchedulerEvent evt = new APIUpdateSchedulerEvent(msg.getId());
             bus.publish(evt);
             throw new StopRoutingException();
         }
+
     }
 
     private void validate(APICreateSchedulerMessage msg) {
