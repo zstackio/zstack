@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="120">
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="300">
 	<TestCase class="org.zstack.test.compute.vm.TestVmAllocatePrimaryStorageFlow"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmAllocateNicFlow"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmCreateOnHypervisorFlow"/>
