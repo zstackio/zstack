@@ -26,6 +26,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
@@ -362,18 +363,18 @@ public class VolumeBase implements Volume {
         final DeleteVolumeReply reply = new DeleteVolumeReply();
         delete(true, VolumeDeletionPolicy.valueOf(msg.getDeletionPolicy()),
                 msg.isDetachBeforeDeleting(), new Completion(msg) {
-            @Override
-            public void success() {
-                logger.debug(String.format("deleted data volume[uuid: %s]", msg.getUuid()));
-                bus.reply(msg, reply);
-            }
+                    @Override
+                    public void success() {
+                        logger.debug(String.format("deleted data volume[uuid: %s]", msg.getUuid()));
+                        bus.reply(msg, reply);
+                    }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
     }
 
     private void deleteVolume(final VolumeDeletionMsg msg, final NoErrorCompletion completion) {
@@ -482,16 +483,22 @@ public class VolumeBase implements Volume {
                         VolumeStatus oldStatus = self.getStatus();
 
                         if (deletionPolicy == VolumeDeletionPolicy.Direct) {
+                            self.setStatus(VolumeStatus.Deleted);
+                            self = dbf.updateAndRefresh(self);
+                            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
                             dbf.remove(self);
                         } else if (deletionPolicy == VolumeDeletionPolicy.Delay) {
                             self.setStatus(VolumeStatus.Deleted);
                             self = dbf.updateAndRefresh(self);
+                            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
                         } else if (deletionPolicy == VolumeDeletionPolicy.Never) {
                             self.setStatus(VolumeStatus.Deleted);
                             self = dbf.updateAndRefresh(self);
+                            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
+                        } else {
+                            throw new CloudRuntimeException(String.format("Invalid deletionPolicy:%s", deletionPolicy));
                         }
 
-                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
 
                         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class), new ForEachFunction<VolumeDeletionExtensionPoint>() {
                             @Override
