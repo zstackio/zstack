@@ -28,6 +28,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String resourceUuid;
     private String defaultL3NetworkUuid;
     private String allocatorStrategy;
+    private String consolePassword;
 
     @Override
     public String getInstanceOfferingUuid() {
@@ -119,7 +120,14 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
         this.l3NetworkUuids = l3NetworkUuids;
     }
 
-    @Override
+
+    public void setConsolePassword(String consolePassword){
+        this.consolePassword = consolePassword;
+    }
+    public String getConsolePassword(){
+        return consolePassword;
+    }
+
     public String getImageUuid() {
         return imageUuid;
     }
@@ -189,5 +197,26 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
+    }
+
+    public static CreateVmInstanceMsg valueOf(final APICreateVmInstanceMsg msg) {
+        CreateVmInstanceMsg cmsg = new CreateVmInstanceMsg();
+
+        cmsg.setAccountUuid(msg.getSession().getAccountUuid());
+        cmsg.setName(msg.getName());
+        cmsg.setInstanceOfferingUuid(msg.getInstanceOfferingUuid());
+        cmsg.setImageUuid(msg.getImageUuid());
+        cmsg.setL3NetworkUuids(msg.getL3NetworkUuids());
+        cmsg.setType(msg.getType());
+        cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+        cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        cmsg.setZoneUuid(msg.getZoneUuid());
+        cmsg.setClusterUuid(msg.getClusterUuid());
+        cmsg.setHostUuid(msg.getHostUuid());
+        cmsg.setDescription(msg.getDescription());
+        cmsg.setResourceUuid(msg.getResourceUuid());
+        cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
+        cmsg.setConsolePassword(msg.getConsolePassword());
+        return cmsg;
     }
 }

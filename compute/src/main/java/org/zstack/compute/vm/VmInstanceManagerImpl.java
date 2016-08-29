@@ -91,7 +91,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 
 public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager,
         ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint,
@@ -457,6 +459,9 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         } else {
             vo.setUuid(Platform.getUuid());
         }
+        if(msg.getConsolePassword() != null){
+            VmSystemTags.CONSOLE_PASSWORD.recreateInherentTag(vo.getUuid(),map(e(VmSystemTags.CONSOLE_PASSWORD_TOKEN,msg.getConsolePassword())));
+        }
         vo.setName(msg.getName());
         vo.setClusterUuid(msg.getClusterUuid());
         vo.setDescription(msg.getDescription());
@@ -559,6 +564,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         cmsg.setDescription(msg.getDescription());
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
+        cmsg.setConsolePassword(msg.getConsolePassword());
         return cmsg;
     }
 

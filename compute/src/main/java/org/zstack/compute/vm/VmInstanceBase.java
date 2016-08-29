@@ -1905,6 +1905,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 DiskOfferingVO rootDisk = dbf.findByUuid(msg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
                 spec.setRootDiskOffering(DiskOfferingInventory.valueOf(rootDisk));
             }
+
             ImageVO imvo = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
             if (imvo.getMediaType() == ImageMediaType.ISO) {
                 new IsoOperator().attachIsoToVm(self.getUuid(), imvo.getUuid());
@@ -1922,6 +1923,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             spec.setUserdata(buildUserdata());
             selectBootOrder(spec);
+            spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
 
             changeVmStateInDb(VmInstanceStateEvent.starting);
 
