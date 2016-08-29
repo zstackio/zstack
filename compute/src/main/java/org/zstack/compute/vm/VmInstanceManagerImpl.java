@@ -174,20 +174,20 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
         if (vo == null) {
             String err = String.format("Cannot find VmInstance[uuid:%s], it may have been deleted", msg.getVmInstanceUuid());
-            bus.replyErrorByMessageType((Message)msg, err);
+            bus.replyErrorByMessageType((Message) msg, err);
             return;
         }
 
         VmInstanceFactory factory = getVmInstanceFactory(VmInstanceType.valueOf(vo.getType()));
         VmInstance vm = factory.getVmInstance(vo);
-        vm.handleMessage((Message)msg);
+        vm.handleMessage((Message) msg);
     }
 
     private void handleLocalMessage(Message msg) {
         if (msg instanceof CreateVmInstanceMsg) {
-            handle((CreateVmInstanceMsg)msg);
+            handle((CreateVmInstanceMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
-            passThrough((VmInstanceMessage)msg);
+            passThrough((VmInstanceMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -197,7 +197,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         if (msg instanceof APICreateVmInstanceMsg) {
             handle((APICreateVmInstanceMsg) msg);
         } else if (msg instanceof APIListVmInstanceMsg) {
-            handle((APIListVmInstanceMsg)msg);
+            handle((APIListVmInstanceMsg) msg);
         } else if (msg instanceof APISearchVmInstanceMsg) {
             handle((APISearchVmInstanceMsg) msg);
         } else if (msg instanceof APIGetVmInstanceMsg) {
@@ -209,7 +209,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
             handle((APIGetInterdependentL3NetworksImagesMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
-            passThrough((VmInstanceMessage)msg);
+            passThrough((VmInstanceMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -366,7 +366,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 ));
             }
 
-            ImageBackupStorageSelector selector  = new ImageBackupStorageSelector();
+            ImageBackupStorageSelector selector = new ImageBackupStorageSelector();
             selector.setZoneUuid(msg.getZoneUuid());
             selector.setImageUuid(image.getUuid());
             amsg.setRequiredBackupStorageUuid(selector.select());
@@ -681,7 +681,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 int hostnameCount = 0;
                 for (String sysTag : msg.getSystemTags()) {
                     if (VmSystemTags.HOSTNAME.isMatch(sysTag)) {
-                        if (++ hostnameCount > 1) {
+                        if (++hostnameCount > 1) {
                             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                                     String.format("only one hostname system tag is allowed, but %s got", hostnameCount)
                             ));
@@ -924,9 +924,9 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
                 if (msg instanceof APICreateVmInstanceMsg) {
                     check((APICreateVmInstanceMsg) msg, pairs);
-                }  else if (msg instanceof APIRecoverVmInstanceMsg) {
+                } else if (msg instanceof APIRecoverVmInstanceMsg) {
                     check((APIRecoverVmInstanceMsg) msg, pairs);
-                }else if (msg instanceof APICreateDataVolumeMsg) {
+                } else if (msg instanceof APICreateDataVolumeMsg) {
                     check((APICreateDataVolumeMsg) msg, pairs);
                 } else if (msg instanceof APIRecoverDataVolumeMsg) {
                     check((APIRecoverDataVolumeMsg) msg, pairs);
@@ -1200,27 +1200,27 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         };
 
         Quota quota = new Quota();
-        QuotaPair p  = new QuotaPair();
+        QuotaPair p = new QuotaPair();
         p.setName(VmInstanceConstant.QUOTA_VM_NUM);
         p.setValue(20);
         quota.addPair(p);
 
-        p  = new QuotaPair();
+        p = new QuotaPair();
         p.setName(VmInstanceConstant.QUOTA_CPU_NUM);
         p.setValue(80);
         quota.addPair(p);
 
-        p  = new QuotaPair();
+        p = new QuotaPair();
         p.setName(VmInstanceConstant.QUOTA_VM_MEMORY);
         p.setValue(SizeUnit.GIGABYTE.toByte(80));
         quota.addPair(p);
 
-        p  = new QuotaPair();
+        p = new QuotaPair();
         p.setName(VolumeConstant.QUOTA_DATA_VOLUME_NUM);
         p.setValue(40);
         quota.addPair(p);
 
-        p  = new QuotaPair();
+        p = new QuotaPair();
         p.setName(VolumeConstant.QUOTA_VOLUME_SIZE);
         p.setValue(SizeUnit.TERABYTE.toByte(10));
         quota.addPair(p);
@@ -1239,10 +1239,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         SimpleQuery q = dbf.createQuery(VmInstanceVO.class);
         q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
         long amount = q.count();
-        int times = (int)(amount / qun) + (amount % qun != 0 ? 1 : 0);
+        int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
         int start = 0;
         List<String> ret = new ArrayList<String>();
-        for (int i=0; i<times; i++) {
+        for (int i = 0; i < times; i++) {
             q = dbf.createQuery(VmInstanceVO.class);
             q.select(VmInstanceVO_.uuid, VmInstanceVO_.hostUuid);
             q.add(VmInstanceVO_.state, Op.EQ, VmInstanceState.Unknown);
@@ -1468,7 +1468,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIChangeResourceOwnerMsg) {
-            validateAPIChangeResourceOwnerMsg((APIChangeResourceOwnerMsg)msg);
+            validateAPIChangeResourceOwnerMsg((APIChangeResourceOwnerMsg) msg);
         }
 
         return msg;
@@ -1517,6 +1517,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     public void failedToDestroyVm(VmInstanceInventory vm, ErrorCode reason) {
 
     }
+
     public void preRecoverVm(VmInstanceInventory vm) {
 
     }
