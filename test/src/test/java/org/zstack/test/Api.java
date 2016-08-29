@@ -114,7 +114,7 @@ public class Api implements CloudBusEventListener {
     private static ComponentLoader loader;
     private ManagementNodeManager mgr;
     private SessionInventory adminSession;
-    private int timeout = 15000;
+    private int timeout = 15;
 
     @Autowired
     private CloudBus bus;

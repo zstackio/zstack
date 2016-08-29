@@ -139,7 +139,7 @@ public class VolumeBase implements Volume {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadId;
+                return String.format("instantiate-volume-%s", self.getUuid());
             }
 
             @Override
