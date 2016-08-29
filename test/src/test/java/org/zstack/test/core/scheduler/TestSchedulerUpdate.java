@@ -74,6 +74,23 @@ public class TestSchedulerUpdate {
         Assert.assertEquals(secondRecord.getSchedulerDescription(), "new description");
         Assert.assertEquals(secondRecord.getSchedulerName(), "test update");
 
+        api.pauseScheduler(firstRecord.getUuid(),session);
+        SchedulerVO pause_record = dbf.listAll(SchedulerVO.class).get(0);
+        Assert.assertEquals(pause_record.getStatus(), "Disabled");
+        TimeUnit.SECONDS.sleep(3);
+        long pause_count = dbf.count(VolumeSnapshotVO.class);
+        Assert.assertEquals(1,pause_count);
+
+        api.resumeScheduler(firstRecord.getUuid(),session);
+        SchedulerVO resume_record = dbf.listAll(SchedulerVO.class).get(0);
+        Assert.assertEquals(resume_record.getStatus(), "Enabled");
+        TimeUnit.SECONDS.sleep(6);
+        long resume_count = dbf.count(VolumeSnapshotVO.class);
+        //resume will trigger immediately, so
+        Assert.assertEquals(4,resume_count);
+
+
+
        // api.updateScheduler(firstRecord.getUuid(), startDate, "test2", "new description", 2, 2, null, session);
        // TimeUnit.SECONDS.sleep(10);
        // long record2 = dbf.count(VolumeSnapshotVO.class);

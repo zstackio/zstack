@@ -68,9 +68,27 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             handle((APIDeleteSchedulerMsg) msg);
         } else  if (msg instanceof  APIUpdateSchedulerMsg) {
             handle((APIUpdateSchedulerMsg) msg);
+        } else  if (msg instanceof  APIPauseSchedulerMsg) {
+            handle((APIPauseSchedulerMsg) msg);
+        } else  if (msg instanceof  APIResumeSchedulerMsg) {
+            handle((APIResumeSchedulerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIPauseSchedulerMsg msg) {
+        pauseSchedulerJob(msg.getUuid());
+        APIPauseSchedulerEvent evt = new APIPauseSchedulerEvent(  msg.getId());
+        evt.setInventory(getInventory());
+        bus.publish(evt);
+    }
+
+    private void handle(APIResumeSchedulerMsg msg) {
+        resumeSchedulerJob(msg.getUuid());
+        APIResumeSchedulerEvent evt = new APIResumeSchedulerEvent( msg.getId());
+        evt.setInventory(getInventory());
+        bus.publish(evt);
     }
 
     private void handle(APIDeleteSchedulerMsg msg) {

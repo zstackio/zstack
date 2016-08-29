@@ -3,12 +3,15 @@ package org.zstack.core.scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
+import org.zstack.header.core.scheduler.SchedulerStatus;
 import org.zstack.header.core.scheduler.SchedulerVO;
+import org.zstack.header.core.scheduler.SchedulerVO_;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 
@@ -39,6 +42,10 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateSchedulerMsg) msg);
         } else if (msg instanceof APICreateSchedulerMessage ) {
             validate((APICreateSchedulerMessage) msg);
+        } else if (msg instanceof APIPauseSchedulerMsg) {
+            validate((APIPauseSchedulerMsg) msg);
+        } else if (msg instanceof APIResumeSchedulerMsg) {
+            validate((APIResumeSchedulerMsg) msg);
         }
         return msg;
     }
@@ -56,6 +63,42 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             APIUpdateSchedulerEvent evt = new APIUpdateSchedulerEvent(msg.getId());
             bus.publish(evt);
             throw new StopRoutingException();
+        }
+
+    }
+
+    private void validate(APIPauseSchedulerMsg msg) {
+        if (!dbf.isExist(msg.getUuid(), SchedulerVO.class)) {
+            APIUpdateSchedulerEvent evt = new APIUpdateSchedulerEvent(msg.getId());
+            bus.publish(evt);
+            throw new StopRoutingException();
+        }
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.select(SchedulerVO_.status);
+        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
+        String state = q.findValue();
+        if (state.equals(SchedulerStatus.Disabled.toString())) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("can not pause a Disabled scheduler" )
+            ));
+        }
+
+    }
+
+    private void validate(APIResumeSchedulerMsg msg) {
+        if (!dbf.isExist(msg.getUuid(), SchedulerVO.class)) {
+            APIUpdateSchedulerEvent evt = new APIUpdateSchedulerEvent(msg.getId());
+            bus.publish(evt);
+            throw new StopRoutingException();
+        }
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.select(SchedulerVO_.status);
+        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
+        String state = q.findValue();
+        if (state.equals(SchedulerStatus.Enabled.toString())) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("can not resume a Enabled scheduler" )
+            ));
         }
 
     }

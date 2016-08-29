@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="300">
-    <TestCase class="org.zstack.test.core.scheduler.TestSchedulerReload"/>
+    <TestCase class="org.zstack.test.core.scheduler.TestSchedulerCreateVolumeSnapshot"/>
+    <TestCase class="org.zstack.test.core.scheduler.TestQueryScheduler"/>
     <TestCase class="org.zstack.test.core.scheduler.TestSchedulerCron"/>
     <TestCase class="org.zstack.test.core.scheduler.TestSchedulerUpdate"/>
     <TestCase class="org.zstack.test.core.scheduler.TestSchedulerDelete"/>
-    <TestCase class="org.zstack.test.core.scheduler.TestSchedulerCreateVolumeSnapshot"/>
+    <TestCase class="org.zstack.test.core.scheduler.TestSchedulerChangeVmStatus"/>
+    <TestCase class="org.zstack.test.core.scheduler.TestSchedulerReload"/>
     <TestCase class="org.zstack.test.compute.vm.TestStartVmScheduler"/>
     <TestCase class="org.zstack.test.compute.vm.TestStopVmScheduler"/>
     <TestCase class="org.zstack.test.compute.vm.TestRebootVmScheduler"/>

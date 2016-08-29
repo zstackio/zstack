@@ -20,10 +20,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.debug.APIDebugSignalEvent;
 import org.zstack.core.debug.APIDebugSignalMsg;
 import org.zstack.core.debug.DebugSignal;
-import org.zstack.core.scheduler.APIDeleteSchedulerEvent;
-import org.zstack.core.scheduler.APIDeleteSchedulerMsg;
-import org.zstack.core.scheduler.APIUpdateSchedulerEvent;
-import org.zstack.core.scheduler.APIUpdateSchedulerMsg;
+import org.zstack.core.scheduler.*;
 import org.zstack.ha.APIDeleteVmInstanceHaLevelMsg;
 import org.zstack.ha.APISetVmInstanceHaLevelEvent;
 import org.zstack.ha.APISetVmInstanceHaLevelMsg;
@@ -4354,4 +4351,25 @@ public class Api implements CloudBusEventListener {
         APICreateRebootVmInstanceSchedulerEvent evt = sender.send(msg, APICreateRebootVmInstanceSchedulerEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
     }
+
+    public void pauseScheduler(String uuid, SessionInventory session) throws ApiSenderException {
+        APIPauseSchedulerMsg msg = new APIPauseSchedulerMsg();
+        msg.setSession(session == null ? adminSession : session);
+        msg.setUuid(uuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIPauseSchedulerEvent evt = sender.send(msg, APIPauseSchedulerEvent.class);
+        logger.debug(MessageCommandRecorder.endAndToString());
+    }
+
+    public void resumeScheduler(String uuid, SessionInventory session) throws ApiSenderException {
+        APIResumeSchedulerMsg msg = new APIResumeSchedulerMsg();
+        msg.setSession(session == null ? adminSession : session);
+        msg.setUuid(uuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIResumeSchedulerEvent evt = sender.send(msg, APIResumeSchedulerEvent.class);
+        logger.debug(MessageCommandRecorder.endAndToString());
+    }
+
 }

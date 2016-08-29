@@ -19,4 +19,12 @@
         <name>org.zstack.header.core.scheduler.APICreateSchedulerMessage</name>
     </message>
 
+    <message>
+        <name>org.zstack.core.scheduler.APIPauseSchedulerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.scheduler.APIResumeSchedulerMsg</name>
+    </message>
+
 </service>
