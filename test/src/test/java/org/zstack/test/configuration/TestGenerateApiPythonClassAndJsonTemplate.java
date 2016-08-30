@@ -30,6 +30,7 @@ public class TestGenerateApiPythonClassAndJsonTemplate {
     
     @Test
     public void test() throws ApiSenderException {
+        api.setTimeout(120);
         api.generateApiJsonTemplate();
     }
 

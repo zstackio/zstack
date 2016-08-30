@@ -4326,6 +4326,7 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
+    /*
     public void pauseScheduler(String uuid, SessionInventory session) throws ApiSenderException {
         APIPauseSchedulerMsg msg = new APIPauseSchedulerMsg();
         msg.setSession(session == null ? adminSession : session);
@@ -4345,6 +4346,7 @@ public class Api implements CloudBusEventListener {
         APIResumeSchedulerEvent evt = sender.send(msg, APIResumeSchedulerEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
     }
+    */
 
     public List<BackupStorageInventory> getCandidateBackupStorageForCreatingImage(String volUuid, String spUuid, SessionInventory session) throws ApiSenderException {
         APIGetCandidateBackupStorageForCreatingImageMsg msg = new APIGetCandidateBackupStorageForCreatingImageMsg();
