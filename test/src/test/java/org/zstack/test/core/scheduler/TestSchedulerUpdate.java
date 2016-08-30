@@ -10,6 +10,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.header.core.scheduler.SchedulerVO;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -75,19 +76,26 @@ public class TestSchedulerUpdate {
         Assert.assertEquals(secondRecord.getSchedulerName(), "test update");
 
         api.pauseScheduler(firstRecord.getUuid(),session);
-        SchedulerVO pause_record = dbf.listAll(SchedulerVO.class).get(0);
-        Assert.assertEquals(pause_record.getStatus(), "Disabled");
+        SchedulerVO pauseRecord = dbf.listAll(SchedulerVO.class).get(0);
+        Assert.assertEquals(pauseRecord.getStatus(), "Disabled");
         TimeUnit.SECONDS.sleep(3);
-        long pause_count = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(1,pause_count);
+        long pauseCount = dbf.count(VolumeSnapshotVO.class);
+        Assert.assertEquals(1,pauseCount);
 
         api.resumeScheduler(firstRecord.getUuid(),session);
-        SchedulerVO resume_record = dbf.listAll(SchedulerVO.class).get(0);
-        Assert.assertEquals(resume_record.getStatus(), "Enabled");
+        SchedulerVO resumeRecord = dbf.listAll(SchedulerVO.class).get(0);
+        Assert.assertEquals(resumeRecord.getStatus(), "Enabled");
         TimeUnit.SECONDS.sleep(6);
-        long resume_count = dbf.count(VolumeSnapshotVO.class);
+        long resumeCount = dbf.count(VolumeSnapshotVO.class);
         //resume will trigger immediately, so
-        Assert.assertEquals(4,resume_count);
+        Assert.assertEquals(4,resumeCount);
+
+        api.changeResourceOwner(vm.getUuid(), AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+        TimeUnit.SECONDS.sleep(4);
+        long changeCount = dbf.count(VolumeSnapshotVO.class);
+        Assert.assertEquals(4,changeCount);
+        SchedulerVO changeRecord = dbf.listAll(SchedulerVO.class).get(0);
+        Assert.assertEquals(changeRecord.getStatus(), "Disabled");
 
 
 

@@ -1,4 +1,5 @@
 package org.zstack.core.scheduler;
+
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,8 @@ import org.zstack.header.core.scheduler.SchedulerStatus;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.scheduler.SchedulerVO_;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.identity.AccountResourceRefInventory;
+import org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
@@ -29,7 +32,6 @@ import javax.persistence.Query;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
@@ -42,7 +44,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
  * Created by Mei Lei on 6/22/16.
  */
 public class SchedulerFacadeImpl extends AbstractService implements SchedulerFacade, ManagementNodeReadyExtensionPoint,
-        ManagementNodeChangeListener {
+        ManagementNodeChangeListener, ResourceOwnerPreChangeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SchedulerFacadeImpl.class);
 
     @Autowired
@@ -170,40 +172,49 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     public void resumeSchedulerJob(String uuid) {
-        logger.debug(String.format("Scheduler %s will change status to Enabled", uuid));
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.select(SchedulerVO_.jobName);
-        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-        String jobName = q.findValue();
-        SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
-        q2.select(SchedulerVO_.jobGroup);
-        q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-        String jobGroup = q2.findValue();
-        try {
-            scheduler.resumeJob(jobKey(jobName, jobGroup));
-            updateSchedulerStatus(uuid, SchedulerStatus.Enabled.toString());
-        } catch (SchedulerException e) {
-            logger.warn(String.format("Resume Scheduler %s failed!", uuid));
-            throw new RuntimeException(e);
+        if ( ! destinationMaker.isManagedByUs(uuid)) {
+            logger.debug(String.format("Scheduler %s not managed by us, will not be resume", uuid));
+        } else {
+            logger.debug(String.format("Scheduler %s will change status to Enabled", uuid));
+            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+            q.select(SchedulerVO_.jobName);
+            q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+            String jobName = q.findValue();
+            SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
+            q2.select(SchedulerVO_.jobGroup);
+            q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+            String jobGroup = q2.findValue();
+            try {
+                scheduler.resumeJob(jobKey(jobName, jobGroup));
+                updateSchedulerStatus(uuid, SchedulerStatus.Enabled.toString());
+            } catch (SchedulerException e) {
+                logger.warn(String.format("Resume Scheduler %s failed!", uuid));
+                throw new RuntimeException(e);
+            }
+
         }
     }
 
     public void deleteSchedulerJob(String uuid) {
-        logger.debug(String.format("Scheduler %s will be deleted", uuid));
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.select(SchedulerVO_.jobName);
-        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-        String jobName = q.findValue();
-        SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
-        q2.select(SchedulerVO_.jobGroup);
-        q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
-        String jobGroup = q2.findValue();
-        try {
-            scheduler.deleteJob(jobKey(jobName, jobGroup));
-            dbf.removeByPrimaryKey(uuid, SchedulerVO.class);
-        } catch (SchedulerException e) {
-            logger.warn(String.format("Delete Scheduler %s failed!", uuid));
-            throw new RuntimeException(e);
+        if ( ! destinationMaker.isManagedByUs(uuid)) {
+            logger.debug(String.format("Scheduler %s not managed by us, will not be deleted", uuid));
+        } else {
+            logger.debug(String.format("Scheduler %s will be deleted", uuid));
+            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+            q.select(SchedulerVO_.jobName);
+            q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+            String jobName = q.findValue();
+            SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
+            q2.select(SchedulerVO_.jobGroup);
+            q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+            String jobGroup = q2.findValue();
+            try {
+                scheduler.deleteJob(jobKey(jobName, jobGroup));
+                dbf.removeByPrimaryKey(uuid, SchedulerVO.class);
+            } catch (SchedulerException e) {
+                logger.warn(String.format("Delete Scheduler %s failed!", uuid));
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -233,14 +244,11 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         if (ours.isEmpty()) {
             logger.debug("no Scheduler managed by us");
         } else {
-            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
             logger.debug(String.format("Scheduler is going to load %s jobs", ours.size()));
+            SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
             q.add(SchedulerVO_.uuid, SimpleQuery.Op.IN, ours);
             List<SchedulerVO> schedulerRecords = q.list();
-
-            Iterator<SchedulerVO> schedulerRecordsIterator = schedulerRecords.iterator();
-            while (schedulerRecordsIterator.hasNext()) {
-                SchedulerVO schedulerRecord = schedulerRecordsIterator.next();
+            for (SchedulerVO schedulerRecord : schedulerRecords) {
                 try {
                     SchedulerJob rebootJob = (SchedulerJob) JSONObjectUtil.toObject(schedulerRecord.getJobData(), Class.forName(schedulerRecord.getJobClassName()));
                     if (schedulerRecord.getStatus().equals(SchedulerStatus.Enabled.toString())) {
@@ -311,6 +319,26 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     @Override
     public void iJoin(String nodeId) {
 
+    }
+
+    @Override
+    public void resourceOwnerPreChange(AccountResourceRefInventory ref, String newOwnerUuid) {
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.select(SchedulerVO_.uuid);
+        q.add(SchedulerVO_.targetResourceUuid, SimpleQuery.Op.EQ, ref.getResourceUuid());
+        List<String> uuids = q.listValue();
+        if (! uuids.isEmpty()) {
+            for (String uuid : uuids) {
+                if ( ! destinationMaker.isManagedByUs(uuid)) {
+                    logger.debug(String.format("Scheduler %s not managed by us, will not to pause it", uuid ));
+                } else {
+                    logger.debug(String.format("resource %s: %s scheduler %s will be paused", ref.getResourceType(), ref.getResourceUuid(), uuid));
+                    pauseSchedulerJob(uuid);
+                }
+            }
+        } else {
+            logger.debug(String.format("resource %s: %s not set any scheduler", ref.getResourceType(), ref.getResourceUuid()));
+        }
     }
 
     private void takeOverScheduler() {
