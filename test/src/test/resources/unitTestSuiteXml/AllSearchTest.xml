@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack"
-	timeout="300">
+	timeout="600">
 	<TestCase class="org.zstack.test.identity.TestSearchAccount" />
 	<TestCase class="org.zstack.test.identity.TestSearchPolicy" />
 	<TestCase class="org.zstack.test.identity.TestSearchUser" />

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="300">
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPortForwarding"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPortForwarding2"/>
 	<TestCase class="org.zstack.test.virtualrouter.TestVirtualRouterPortForwarding3"/>
