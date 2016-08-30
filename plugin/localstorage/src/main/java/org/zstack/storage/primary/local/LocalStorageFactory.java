@@ -767,21 +767,26 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public void instantiateDataVolumeOnCreation(InstantiateVolumeMsg msg, VolumeInventory volume, ReturnValueCompletion<VolumeInventory> completion) {
         String hostUuid = null;
-        for (String stag : msg.getSystemTags()) {
-            if (LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.isMatch(stag)) {
-                hostUuid = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTokenByTag(
-                        stag,
-                        LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN
-                );
-                break;
+        if (msg.getHostUuid() != null) {
+            hostUuid = msg.getHostUuid();
+        } else {
+            for (String stag : msg.getSystemTags()) {
+                if (LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.isMatch(stag)) {
+                    hostUuid = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTokenByTag(
+                            stag,
+                            LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN
+                    );
+                    break;
+                }
             }
-        }
 
-        if (hostUuid == null) {
-            throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                    String.format("To create data volume on the local primary storage, you must specify the host that" +
-                            " the data volume is going to be created using the system tag [%s]", LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat())
-            ));
+
+            if (hostUuid == null) {
+                throw new OperationFailureException(errf.stringToInvalidArgumentError(
+                        String.format("To create data volume on the local primary storage, you must specify the host that" +
+                                " the data volume is going to be created using the system tag [%s]", LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat())
+                ));
+            }
         }
 
         SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
