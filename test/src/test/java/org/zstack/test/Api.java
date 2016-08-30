@@ -4372,4 +4372,14 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
+    public List<BackupStorageInventory> getCandidateBackupStorageForCreatingImage(String volUuid, String spUuid, SessionInventory session) throws ApiSenderException {
+        APIGetCandidateBackupStorageForCreatingImageMsg msg = new APIGetCandidateBackupStorageForCreatingImageMsg();
+        msg.setVolumeUuid(volUuid);
+        msg.setVolumeSnapshotUuid(spUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetCandidateBackupStorageForCreatingImageReply reply = sender.call(msg, APIGetCandidateBackupStorageForCreatingImageReply.class);
+        return reply.getInventories();
+    }
 }

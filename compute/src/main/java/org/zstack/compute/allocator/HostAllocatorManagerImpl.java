@@ -19,8 +19,15 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageMsg;
+import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageReply;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.backup.BackupStorageState;
+import org.zstack.header.storage.backup.BackupStorageStatus;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
@@ -82,6 +89,48 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 			bus.dealWithUnknownMessage(msg);
 		}
 	}
+
+	@Transactional(readOnly = true)
+    private void handle(APIGetCandidateBackupStorageForCreatingImageMsg msg) {
+        PrimaryStorageVO ps;
+        if (msg.getVolumeUuid() != null) {
+            String sql = "select ps from PrimaryStorageVO ps, VolumeVO vol where ps.uuid = vol.primaryStorageUuid" +
+                    " and vol.uuid = :uuid";
+            TypedQuery<PrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
+            q.setParameter("uuid", msg.getVolumeUuid());
+            List<PrimaryStorageVO> pss = q.getResultList();
+            ps = pss.isEmpty() ? null : pss.get(0);
+        } else if (msg.getVolumeSnapshotUuid() != null){
+            String sql = "select ps from PrimaryStorageVO ps, VolumeSnapshotVO sp where ps.uuid = sp.primaryStorageUuid" +
+                    " and sp.uuid = :uuid";
+            TypedQuery<PrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
+            q.setParameter("uuid", msg.getVolumeSnapshotUuid());
+            List<PrimaryStorageVO> pss = q.getResultList();
+            ps = pss.isEmpty() ? null : pss.get(0);
+        } else {
+            throw new CloudRuntimeException("cannot be there");
+        }
+
+        if (ps == null) {
+            throw new CloudRuntimeException("cannot find primary storage");
+        }
+
+        List<String> backupStorageTypes = getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType());
+
+        String sql = "select bs from BackupStorageVO bs, BackupStorageZoneRefVO ref, PrimaryStorageVO ps" +
+                " where bs.uuid = ref.backupStorageUuid and ps.zoneUuid = ref.zoneUuid and ps.uuid = :psUuid" +
+                " and bs.type in (:bsTypes) and bs.state = :bsState and bs.status = :bsStatus";
+
+        TypedQuery<BackupStorageVO> q = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
+        q.setParameter("psUuid", ps.getUuid());
+        q.setParameter("bsTypes", backupStorageTypes);
+        q.setParameter("bsState", BackupStorageState.Enabled);
+        q.setParameter("bsStatus", BackupStorageStatus.Connected);
+
+        APIGetCandidateBackupStorageForCreatingImageReply reply = new APIGetCandidateBackupStorageForCreatingImageReply();
+        reply.setInventories(BackupStorageInventory.valueOf(q.getResultList()));
+        bus.reply(msg, reply);
+    }
 
     private void handle(RecalculateHostCapacityMsg msg) {
         final List<String> hostUuids = new ArrayList<String>();
@@ -290,6 +339,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 	        handle((APIGetCpuMemoryCapacityMsg) msg);
         } else  if (msg instanceof APIGetHostAllocatorStrategiesMsg) {
             handle((APIGetHostAllocatorStrategiesMsg) msg);
+        } else if (msg instanceof APIGetCandidateBackupStorageForCreatingImageMsg) {
+            handle((APIGetCandidateBackupStorageForCreatingImageMsg) msg);
 	    } else {
 	        bus.dealWithUnknownMessage(msg);
 	    }
