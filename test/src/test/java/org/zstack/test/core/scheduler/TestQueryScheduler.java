@@ -69,6 +69,10 @@ public class TestQueryScheduler {
         msg.setConditions(new ArrayList<QueryCondition>());
         APIQuerySchedulerReply reply = api.query(msg, APIQuerySchedulerReply.class);
         Assert.assertEquals(1, reply.getInventories().size());
+        for (SchedulerInventory inv2 : reply.getInventories()) {
+            Assert.assertNull(inv2.getJobData());
+            Assert.assertEquals("cron", inv2.getSchedulerType());
+        }
 
     }
 

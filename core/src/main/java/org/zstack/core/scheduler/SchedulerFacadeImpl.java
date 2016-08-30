@@ -416,7 +416,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             } else {
                 vo.setUuid(Platform.getUuid());
             }
-
+            vo.setSchedulerJob(jobClassName.substring(jobClassName.lastIndexOf(".")+1));
             vo.setSchedulerType(schedulerJob.getType());
             vo.setSchedulerName(schedulerJob.getSchedulerName());
             vo.setCreateDate(create);

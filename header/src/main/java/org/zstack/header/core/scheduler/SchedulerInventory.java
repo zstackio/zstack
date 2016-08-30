@@ -1,6 +1,7 @@
 package org.zstack.header.core.scheduler;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 
 import java.io.Serializable;
@@ -18,6 +19,7 @@ public class SchedulerInventory implements Serializable {
     private String uuid;
     private String targetResourceUuid;
     private String schedulerName;
+    private String schedulerJob;
     private String schedulerType;
     private Integer schedulerInterval;
     private Integer repeatCount;
@@ -28,7 +30,9 @@ public class SchedulerInventory implements Serializable {
     /**
      * @desc jobClassName define the job
      */
+    @APINoSee
     private String jobClassName;
+    @APINoSee
     private String jobData;
     private String status;
 
@@ -172,5 +176,13 @@ public class SchedulerInventory implements Serializable {
 
     public void setRepeatCount(Integer repeatCount) {
         this.repeatCount = repeatCount;
+    }
+
+    public String getSchedulerJob() {
+        return schedulerJob;
+    }
+
+    public void setSchedulerJob(String schedulerJob) {
+        this.schedulerJob = schedulerJob;
     }
 }

@@ -22,6 +22,8 @@ public class SchedulerVO {
     @Column
     private String schedulerName;
     @Column
+    private String schedulerJob;
+    @Column
     private String schedulerDescription;
     @Column
     private String schedulerType;
@@ -206,5 +208,13 @@ public class SchedulerVO {
 
     public void setTargetResourceUuid(String targetResourceUuid) {
         this.targetResourceUuid = targetResourceUuid;
+    }
+
+    public String getSchedulerJob() {
+        return schedulerJob;
+    }
+
+    public void setSchedulerJob(String schedulerJob) {
+        this.schedulerJob = schedulerJob;
     }
 }

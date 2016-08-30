@@ -24,3 +24,4 @@ ALTER TABLE `zstack`.`SecurityGroupVO` modify column description varchar(2048) D
 ALTER TABLE `zstack`.`PolicyVO` modify column description varchar(2048) DEFAULT NULL;
 ALTER TABLE `zstack`.`person` modify column description varchar(2048) DEFAULT NULL;
 ALTER TABLE `zstack`.`UserGroupVO` modify column description varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`SchedulerVO` add column jobName varchar(2048) DEFAULT NULL;
