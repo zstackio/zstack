@@ -10,4 +10,8 @@
     <message>
         <name>org.zstack.header.allocator.APIGetHostAllocatorStrategiesMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageMsg</name>
+    </message>
 </service>

@@ -4325,4 +4325,35 @@ public class Api implements CloudBusEventListener {
         APICreateRebootVmInstanceSchedulerEvent evt = sender.send(msg, APICreateRebootVmInstanceSchedulerEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
     }
+
+    public void pauseScheduler(String uuid, SessionInventory session) throws ApiSenderException {
+        APIPauseSchedulerMsg msg = new APIPauseSchedulerMsg();
+        msg.setSession(session == null ? adminSession : session);
+        msg.setUuid(uuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIPauseSchedulerEvent evt = sender.send(msg, APIPauseSchedulerEvent.class);
+        logger.debug(MessageCommandRecorder.endAndToString());
+    }
+
+    public void resumeScheduler(String uuid, SessionInventory session) throws ApiSenderException {
+        APIResumeSchedulerMsg msg = new APIResumeSchedulerMsg();
+        msg.setSession(session == null ? adminSession : session);
+        msg.setUuid(uuid);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIResumeSchedulerEvent evt = sender.send(msg, APIResumeSchedulerEvent.class);
+        logger.debug(MessageCommandRecorder.endAndToString());
+    }
+
+    public List<BackupStorageInventory> getCandidateBackupStorageForCreatingImage(String volUuid, String spUuid, SessionInventory session) throws ApiSenderException {
+        APIGetCandidateBackupStorageForCreatingImageMsg msg = new APIGetCandidateBackupStorageForCreatingImageMsg();
+        msg.setVolumeUuid(volUuid);
+        msg.setVolumeSnapshotUuid(spUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetCandidateBackupStorageForCreatingImageReply reply = sender.call(msg, APIGetCandidateBackupStorageForCreatingImageReply.class);
+        return reply.getInventories();
+    }
 }
