@@ -22,11 +22,9 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
-import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
-import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -57,7 +55,7 @@ import java.util.concurrent.TimeUnit;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class SecurityGroupManagerImpl extends AbstractService implements SecurityGroupManager, ManagementNodeReadyExtensionPoint,
-          VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
+        VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
     private static CLogger logger = Utils.getLogger(SecurityGroupManagerImpl.class);
 
     @Autowired
@@ -89,8 +87,15 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                if (msg instanceof APICreateSecurityGroupMsg) {
-                    check((APICreateSecurityGroupMsg)msg, pairs);
+                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+                q.select(AccountVO_.type);
+                q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
+                AccountType type = q.findValue();
+
+                if (type != AccountType.SystemAdmin) {
+                    if (msg instanceof APICreateSecurityGroupMsg) {
+                        check((APICreateSecurityGroupMsg) msg, pairs);
+                    }
                 }
             }
 
@@ -116,7 +121,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
             private void check(APICreateSecurityGroupMsg msg, Map<String, QuotaPair> pairs) {
                 long sgNum = pairs.get(SecurityGroupConstant.QUOTA_SG_NUM).getValue();
-                long sgn =getUsedSg(msg.getSession().getAccountUuid());
+                long sgn = getUsedSg(msg.getSession().getAccountUuid());
 
                 if (sgn + 1 > sgNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
@@ -213,7 +218,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             return null;
         }
 
-        List<HostRuleTO> mergeMultiHostRuleTO(Collection<HostRuleTO>...htos) {
+        List<HostRuleTO> mergeMultiHostRuleTO(Collection<HostRuleTO>... htos) {
             Map<String, HostRuleTO> hostRuleTOMap = new HashMap<String, HostRuleTO>();
             for (Collection<HostRuleTO> lst : htos) {
                 for (HostRuleTO hto : lst) {
@@ -425,7 +430,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     private void handleLocalMessage(Message msg) {
         if (msg instanceof RefreshSecurityGroupRulesOnHostMsg) {
             handle((RefreshSecurityGroupRulesOnHostMsg) msg);
-        } else if (msg instanceof RefreshSecurityGroupRulesOnVmMsg){
+        } else if (msg instanceof RefreshSecurityGroupRulesOnVmMsg) {
             handle((RefreshSecurityGroupRulesOnVmMsg) msg);
         } else if (msg instanceof RemoveVmNicFromSecurityGroupMsg) {
             handle((RemoveVmNicFromSecurityGroupMsg) msg);
@@ -501,17 +506,17 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         } else if (msg instanceof APIListSecurityGroupMsg) {
             handle((APIListSecurityGroupMsg) msg);
         } else if (msg instanceof APIAddSecurityGroupRuleMsg) {
-            handle((APIAddSecurityGroupRuleMsg)msg);
+            handle((APIAddSecurityGroupRuleMsg) msg);
         } else if (msg instanceof APIAddVmNicToSecurityGroupMsg) {
-            handle((APIAddVmNicToSecurityGroupMsg)msg);
+            handle((APIAddVmNicToSecurityGroupMsg) msg);
         } else if (msg instanceof APIDeleteSecurityGroupRuleMsg) {
-            handle((APIDeleteSecurityGroupRuleMsg)msg);
+            handle((APIDeleteSecurityGroupRuleMsg) msg);
         } else if (msg instanceof APIDeleteSecurityGroupMsg) {
-            handle((APIDeleteSecurityGroupMsg)msg);
+            handle((APIDeleteSecurityGroupMsg) msg);
         } else if (msg instanceof APIDeleteVmNicFromSecurityGroupMsg) {
-            handle((APIDeleteVmNicFromSecurityGroupMsg)msg);
+            handle((APIDeleteVmNicFromSecurityGroupMsg) msg);
         } else if (msg instanceof APIListVmNicInSecurityGroupMsg) {
-            handle((APIListVmNicInSecurityGroupMsg)msg);
+            handle((APIListVmNicInSecurityGroupMsg) msg);
         } else if (msg instanceof APIAttachSecurityGroupToL3NetworkMsg) {
             handle((APIAttachSecurityGroupToL3NetworkMsg) msg);
         } else if (msg instanceof APIQueryVmNicInSecurityGroupMsg) {
@@ -561,7 +566,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         List<String> nicUuidsToExclued = nq.getResultList();
 
         TypedQuery<VmNicVO> q;
-        if (nicUuidsToInclude == null)  {
+        if (nicUuidsToInclude == null) {
             // accessed by an admin
             if (nicUuidsToExclued.isEmpty()) {
                 sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
@@ -575,7 +580,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
                 q.setParameter("nicUuids", nicUuidsToExclued);
             }
-        } else  {
+        } else {
             // accessed by a normal account
             if (nicUuidsToExclued.isEmpty()) {
                 sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
@@ -773,7 +778,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             if (!vmNicUuids.isEmpty()) {
                 // these vm nics are no longer in any security group, delete their chains on host
                 Collection<HostRuleTO> toRemove = cal.createRulePlaceHolder(vmNicUuids);
-                for (HostRuleTO hto : toRemove)  {
+                for (HostRuleTO hto : toRemove) {
                     hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
                 }
 
@@ -1091,7 +1096,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             q.setLockMode(LockModeType.PESSIMISTIC_READ);
             q.setParameter("hostConnectionState", HostStatus.Connected);
             q.setMaxResults(failureHostEachTimeTake);
-            List<SecurityGroupFailureHostVO> lst =  q.getResultList();
+            List<SecurityGroupFailureHostVO> lst = q.getResultList();
             if (lst.isEmpty()) {
                 return lst;
             }

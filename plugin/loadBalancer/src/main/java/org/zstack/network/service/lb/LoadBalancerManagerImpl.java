@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -16,11 +17,9 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
-import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
@@ -408,8 +407,15 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                if (msg instanceof APICreateLoadBalancerMsg) {
-                    check((APICreateLoadBalancerMsg) msg, pairs);
+                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+                q.select(AccountVO_.type);
+                q.add(AccountVO_.uuid, SimpleQuery.Op.EQ, msg.getSession().getAccountUuid());
+                AccountType type = q.findValue();
+
+                if (type != AccountType.SystemAdmin) {
+                    if (msg instanceof APICreateLoadBalancerMsg) {
+                        check((APICreateLoadBalancerMsg) msg, pairs);
+                    }
                 }
             }
 

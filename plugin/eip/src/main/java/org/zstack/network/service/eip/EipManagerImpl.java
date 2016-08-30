@@ -21,11 +21,9 @@ import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
-import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -639,8 +637,15 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                if (msg instanceof APICreateEipMsg) {
-                    check((APICreateEipMsg)msg, pairs);
+                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+                q.select(AccountVO_.type);
+                q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
+                AccountType type = q.findValue();
+
+                if (type != AccountType.SystemAdmin) {
+                    if (msg instanceof APICreateEipMsg) {
+                        check((APICreateEipMsg) msg, pairs);
+                    }
                 }
             }
 

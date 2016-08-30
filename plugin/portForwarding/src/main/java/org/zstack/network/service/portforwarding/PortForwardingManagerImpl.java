@@ -20,11 +20,9 @@ import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
-import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -56,7 +54,7 @@ import static org.zstack.utils.CollectionDSL.list;
 public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager,
         VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
     private static CLogger logger = Utils.getLogger(PortForwardingManagerImpl.class);
-    
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -351,7 +349,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         final PortForwardingStruct struct = makePortForwardingStruct(inv);
         final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(),
                 NetworkServiceType.PortForwarding);
-        
+
         for (RevokePortForwardingRuleExtensionPoint extp : revokeRuleExts) {
             try {
                 extp.preRevokePortForwardingRule(inv, providerType);
@@ -428,11 +426,11 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             }
         });
     }
-    
-    
+
+
     private void handle(APICreatePortForwardingRuleMsg msg) {
         final APICreatePortForwardingRuleEvent evt = new APICreatePortForwardingRuleEvent(msg.getId());
-        
+
         int vipPortEnd = msg.getVipPortEnd() == null ? msg.getVipPortStart() : msg.getVipPortEnd();
         int privatePortEnd = msg.getPrivatePortEnd() == null ? msg.getPrivatePortStart() : msg.getPrivatePortEnd();
 
@@ -582,7 +580,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     public boolean stop() {
         return true;
     }
-    
+
     public PortForwardingBackend getPortForwardingBackend(NetworkServiceProviderType nspType) {
         return getPortForwardingBackend(nspType.toString());
     }
@@ -627,7 +625,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     public void releaseServicesOnVip(VipInventory vip, Completion complete) {
         SimpleQuery<PortForwardingRuleVO> q = dbf.createQuery(PortForwardingRuleVO.class);
         q.add(PortForwardingRuleVO_.vipUuid, Op.EQ, vip.getUuid());
-        List<PortForwardingRuleVO>  rules = q.list();
+        List<PortForwardingRuleVO> rules = q.list();
         releaseServicesOnVip(rules.iterator(), complete);
     }
 
@@ -653,7 +651,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     @Override
     public PortForwardingBackend getPortForwardingBackend(String providerType) {
         PortForwardingBackend bkd = backends.get(providerType);
-        DebugUtils.Assert(bkd!=null, String.format("cannot find PortForwardingBackend[type:%s]", providerType));
+        DebugUtils.Assert(bkd != null, String.format("cannot find PortForwardingBackend[type:%s]", providerType));
         return bkd;
     }
 
@@ -773,8 +771,15 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                if (msg instanceof APICreatePortForwardingRuleMsg) {
-                    check((APICreatePortForwardingRuleMsg) msg, pairs);
+                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+                q.select(AccountVO_.type);
+                q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
+                AccountType type = q.findValue();
+
+                if (type != AccountType.SystemAdmin) {
+                    if (msg instanceof APICreatePortForwardingRuleMsg) {
+                        check((APICreatePortForwardingRuleMsg) msg, pairs);
+                    }
                 }
             }
 

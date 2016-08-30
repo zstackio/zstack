@@ -24,11 +24,9 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.Quota;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
-import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -77,7 +75,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     private void populateExtensions() {
         List<PluginExtension> exts = pluginRgty.getExtensionByInterfaceName(VipReleaseExtensionPoint.class.getName());
         for (PluginExtension ext : exts) {
-            VipReleaseExtensionPoint extp = (VipReleaseExtensionPoint)ext.getInstance();
+            VipReleaseExtensionPoint extp = (VipReleaseExtensionPoint) ext.getInstance();
             VipReleaseExtensionPoint old = vipReleaseExts.get(extp.getVipUse());
             if (old != null) {
                 throw new CloudRuntimeException(String.format("duplicate VirtualRouterVipReleaseExtensionPoint for %s, old[%s], new[%s]", old.getClass().getName(), extp.getClass().getName(), old.getVipUse()));
@@ -91,7 +89,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             VipBackend old = vipBackends.get(extp.getServiceProviderTypeForVip());
             if (old != null) {
                 throw new CloudRuntimeException(
-                    String.format("duplicate VipBackend[%s, %s] for provider type[%s]", old.getClass().getName(), extp.getClass().getName(), extp.getServiceProviderTypeForVip())
+                        String.format("duplicate VipBackend[%s, %s] for provider type[%s]", old.getClass().getName(), extp.getClass().getName(), extp.getServiceProviderTypeForVip())
                 );
             }
             vipBackends.put(extp.getServiceProviderTypeForVip(), extp);
@@ -434,7 +432,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     @Override
     public VipBackend getVipBackend(String providerType) {
         VipBackend backend = vipBackends.get(providerType);
-        DebugUtils.Assert(backend!=null, String.format("cannot find VipBackend for provider type[%s]", providerType));
+        DebugUtils.Assert(backend != null, String.format("cannot find VipBackend for provider type[%s]", providerType));
         return backend;
     }
 
@@ -553,7 +551,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     }
 
     @Override
-    public void lockVip(VipInventory vip,  String networkServiceType) {
+    public void lockVip(VipInventory vip, String networkServiceType) {
         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
         q.add(VipVO_.uuid, SimpleQuery.Op.EQ, vip.getUuid());
         VipVO vipvo = q.find();
@@ -591,8 +589,15 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                if (msg instanceof APICreateVipMsg) {
-                    check((APICreateVipMsg)msg, pairs);
+                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+                q.select(AccountVO_.type);
+                q.add(AccountVO_.uuid, SimpleQuery.Op.EQ, msg.getSession().getAccountUuid());
+                AccountType type = q.findValue();
+
+                if (type != AccountType.SystemAdmin) {
+                    if (msg instanceof APICreateVipMsg) {
+                        check((APICreateVipMsg) msg, pairs);
+                    }
                 }
             }
 
