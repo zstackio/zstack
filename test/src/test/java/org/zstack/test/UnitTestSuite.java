@@ -32,6 +32,7 @@ public class UnitTestSuite {
     private static final String LOG_FOLDER = "logs";
     private static final String ERR_LOG_FOLDER = "errLogs";
     private static final String SUMMARY = "summary";
+    private static final String TIME_SUMMARY = "time";
     private static final String RERUN_FAILURE_CASE = "rerunFailures";
     private static final int DOT_LEN = 50;
     private static int maxCaseNameLen;
@@ -44,6 +45,7 @@ public class UnitTestSuite {
         private long timeout;
         private int index;
         private boolean isFailedByTimeout;
+        private int timeCost;
 
         String caseNameWithIndex() {
             return String.format("%s.%s", index, clazz.getSimpleName());
@@ -280,7 +282,21 @@ public class UnitTestSuite {
 
         private void generateReport() throws IOException {
             mergeErrorCaseLog();
+            generateTimeSummary();
             generateSummary();
+        }
+
+
+        private void generateTimeSummary() throws IOException {
+            List<String> timeCosts = new ArrayList<>();
+            for (CaseInfo info : testCases) {
+                timeCosts.add(String.format("%s.java %s", info.clazz.getSimpleName(), info.timeCost));
+            }
+
+            FileUtils.writeStringToFile(
+                    new File(PathUtil.join(REPORT_FOLDER, TIME_SUMMARY)),
+                    StringUtils.join(timeCosts, "\n")
+            );
         }
 
         void run() throws Exception {
@@ -315,7 +331,7 @@ public class UnitTestSuite {
             }
         }
     }
-    
+
     private String colorResult(boolean ret) {
         return ret ? String.format(ANSI_GREEN + "Success" + ANSI_RESET) : String.format(ANSI_RED + "Failure" + ANSI_RESET);
     }
@@ -401,6 +417,7 @@ public class UnitTestSuite {
                         }
                         String fmt = "\r%-" + maxCaseNameLen + "s" + StringUtils.repeat(".", DOT_LEN) + String.format(" [ %%-7s %s ]", formatSeconds());
                         System.out.println(String.format(fmt, caseInfo.caseNameWithIndex(), colorResult(caseInfo.success)));
+                        caseInfo.timeCost = seconds;
                     } catch (Exception e) {
                         logger.warn(e.getMessage(), e);
                     }
