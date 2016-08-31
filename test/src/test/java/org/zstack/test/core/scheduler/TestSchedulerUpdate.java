@@ -75,14 +75,14 @@ public class TestSchedulerUpdate {
         Assert.assertEquals(secondRecord.getSchedulerDescription(), "new description");
         Assert.assertEquals(secondRecord.getSchedulerName(), "test update");
 
-        api.pauseScheduler(firstRecord.getUuid(),session);
+        api.changeSchedulerState(firstRecord.getUuid(), "disable", session);
         SchedulerVO pauseRecord = dbf.listAll(SchedulerVO.class).get(0);
         Assert.assertEquals(pauseRecord.getStatus(), "Disabled");
         TimeUnit.SECONDS.sleep(3);
         long pauseCount = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(1,pauseCount);
 
-        api.resumeScheduler(firstRecord.getUuid(),session);
+        api.changeSchedulerState(firstRecord.getUuid(), "enable", session);
         SchedulerVO resumeRecord = dbf.listAll(SchedulerVO.class).get(0);
         Assert.assertEquals(resumeRecord.getStatus(), "Enabled");
         TimeUnit.SECONDS.sleep(6);
@@ -98,18 +98,5 @@ public class TestSchedulerUpdate {
         Assert.assertEquals(changeRecord.getStatus(), "Disabled");
 
 
-
-       // api.updateScheduler(firstRecord.getUuid(), startDate, "test2", "new description", 2, 2, null, session);
-       // TimeUnit.SECONDS.sleep(10);
-       // long record2 = dbf.count(VolumeSnapshotVO.class);
-       // Assert.assertEquals(6, record2);
-
-       // api.updateScheduler(firstRecord.getUuid(), startDate, "test2", "new description 2", null, 2, null , session);
-       // TimeUnit.SECONDS.sleep(7);
-       // long record3 = dbf.count(VolumeSnapshotVO.class);
-       // SchedulerVO scheduler_record = dbf.listAll(SchedulerVO.class).get(0);
-       // Assert.assertEquals(scheduler_record.getSchedulerDescription(), "new description 2");
-       // Assert.assertEquals(scheduler_record.getRepeatCount().toString(), "1");
-       // Assert.assertEquals(3, record3);
     }
 }

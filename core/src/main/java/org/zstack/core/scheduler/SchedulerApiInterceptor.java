@@ -42,10 +42,8 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateSchedulerMsg) msg);
         } else if (msg instanceof APICreateSchedulerMessage ) {
             validate((APICreateSchedulerMessage) msg);
-        } else if (msg instanceof APIPauseSchedulerMsg) {
-            validate((APIPauseSchedulerMsg) msg);
-        } else if (msg instanceof APIResumeSchedulerMsg) {
-            validate((APIResumeSchedulerMsg) msg);
+        } else if (msg instanceof APIChangeSchedulerStateMsg) {
+            validate((APIChangeSchedulerStateMsg) msg);
         }
         return msg;
     }
@@ -67,7 +65,7 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
 
     }
 
-    private void validate(APIPauseSchedulerMsg msg) {
+    private void validate(APIChangeSchedulerStateMsg msg) {
         if (!dbf.isExist(msg.getUuid(), SchedulerVO.class)) {
             APIUpdateSchedulerEvent evt = new APIUpdateSchedulerEvent(msg.getId());
             bus.publish(evt);
@@ -77,30 +75,16 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
         q.select(SchedulerVO_.status);
         q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
         String state = q.findValue();
-        if (state.equals(SchedulerStatus.Disabled.toString())) {
+        if (msg.getStateEvent().equals("enable") && state.equals(SchedulerStatus.Enabled)) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("can not pause a Disabled scheduler" )
+                    String.format("can not enable a Enabled scheduler" )
             ));
         }
-
-    }
-
-    private void validate(APIResumeSchedulerMsg msg) {
-        if (!dbf.isExist(msg.getUuid(), SchedulerVO.class)) {
-            APIUpdateSchedulerEvent evt = new APIUpdateSchedulerEvent(msg.getId());
-            bus.publish(evt);
-            throw new StopRoutingException();
-        }
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.select(SchedulerVO_.status);
-        q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
-        String state = q.findValue();
-        if (state.equals(SchedulerStatus.Enabled.toString())) {
+        if (msg.getStateEvent().equals("disable") && state.equals(SchedulerStatus.Disabled)) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("can not resume a Enabled scheduler" )
+                    String.format("can not disable a Disabled scheduler")
             ));
         }
-
     }
 
     private void validate(APICreateSchedulerMessage msg) {

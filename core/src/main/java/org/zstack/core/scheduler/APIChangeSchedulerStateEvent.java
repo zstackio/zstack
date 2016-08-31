@@ -4,17 +4,17 @@ import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.message.APIEvent;
 
 /**
- * Created by Mei Lei on 7/15/16.
+ * Created by Mei Lei on 8/31/16.
  */
-public class APIPauseSchedulerEvent extends APIEvent{
+public class APIChangeSchedulerStateEvent extends APIEvent {
     private SchedulerInventory inventory;
 
-    public APIPauseSchedulerEvent(String apiId) {
-        super(apiId);
+    public APIChangeSchedulerStateEvent() {
+        super(null);
     }
 
-    public APIPauseSchedulerEvent() {
-        super(null);
+    public APIChangeSchedulerStateEvent(String apiId) {
+        super(apiId);
     }
 
     public SchedulerInventory getInventory() {
