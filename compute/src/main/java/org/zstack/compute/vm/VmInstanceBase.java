@@ -283,6 +283,14 @@ public class VmInstanceBase extends AbstractVmInstance {
             data.setInventory(getSelfInventory());
             evtf.fire(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, data);
 
+            VmInstanceInventory inv = getSelfInventory();
+            CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmStateChangedExtensionPoint.class), new ForEachFunction<VmStateChangedExtensionPoint>() {
+                @Override
+                public void run(VmStateChangedExtensionPoint ext) {
+                    ext.vmStateChanged(inv, bs, self.getState());
+                }
+            });
+
             //TODO: remove this
             notfiyEmitter.notifyVmStateChange(VmInstanceInventory.valueOf(self), bs, state);
         }
