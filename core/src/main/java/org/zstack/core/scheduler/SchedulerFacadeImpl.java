@@ -24,6 +24,9 @@ import org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmStateChangedExtensionPoint;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -44,7 +47,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
  * Created by Mei Lei on 6/22/16.
  */
 public class SchedulerFacadeImpl extends AbstractService implements SchedulerFacade, ManagementNodeReadyExtensionPoint,
-        ManagementNodeChangeListener, ResourceOwnerPreChangeExtensionPoint {
+        ManagementNodeChangeListener, ResourceOwnerPreChangeExtensionPoint, VmStateChangedExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SchedulerFacadeImpl.class);
 
     @Autowired
@@ -337,6 +340,24 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             }
         } else {
             logger.debug(String.format("resource %s: %s not set any scheduler", ref.getResourceType(), ref.getResourceUuid()));
+        }
+    }
+
+    public void vmStateChanged(VmInstanceInventory vm, VmInstanceState oldState, VmInstanceState newState) {
+        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
+        q.select(SchedulerVO_.uuid);
+        q.add(SchedulerVO_.targetResourceUuid, SimpleQuery.Op.EQ, vm.getUuid());
+        List<String> uuids = q.listValue();
+        if (! uuids.isEmpty()) {
+            for (String uuid : uuids) {
+                if (oldState.toString().equals("Running") && newState.toString().equals("Unknown")) {
+                    pauseSchedulerJob(uuid);
+                } else if (oldState.toString().equals("Unknown") && newState.toString().equals("Running") ) {
+                    resumeSchedulerJob(uuid);
+                }
+            }
+        } else {
+            logger.debug(String.format("vm %s not set any scheduler", vm.getUuid()));
         }
     }
 
