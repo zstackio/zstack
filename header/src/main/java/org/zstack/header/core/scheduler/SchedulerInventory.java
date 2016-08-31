@@ -40,6 +40,7 @@ public class SchedulerInventory implements Serializable {
         uuid = vo.getUuid();
         targetResourceUuid = vo.getTargetResourceUuid();
         schedulerName = vo.getSchedulerName();
+        schedulerJob = vo.getSchedulerJob();
         schedulerType = vo.getSchedulerType();
         schedulerInterval = vo.getSchedulerInterval();
         repeatCount = vo.getRepeatCount();
