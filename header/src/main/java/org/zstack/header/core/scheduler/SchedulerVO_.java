@@ -24,7 +24,7 @@ public class SchedulerVO_ {
     public static volatile SingularAttribute<SchedulerVO, String> triggerGroup;
     public static volatile SingularAttribute<SchedulerVO, String> jobClassName;
     public static volatile SingularAttribute<SchedulerVO, String> jobData;
-    public static volatile SingularAttribute<SchedulerVO, SchedulerStatus> status;
+    public static volatile SingularAttribute<SchedulerVO, SchedulerState> state;
     public static volatile SingularAttribute<SchedulerVO, String> managementNodeUuid;
     public static volatile SingularAttribute<SchedulerVO, Timestamp> createDate;
     public static volatile SingularAttribute<SchedulerVO, Timestamp> startDate;

@@ -50,7 +50,7 @@ public class SchedulerInventory implements Serializable {
         lastOpDate = vo.getLastOpDate();
         jobClassName = vo.getJobClassName();
         jobData = vo.getJobData();
-        status = vo.getStatus();
+        status = vo.getState();
     }
     public SchedulerInventory() {
 

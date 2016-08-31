@@ -77,14 +77,14 @@ public class TestSchedulerUpdate {
 
         api.changeSchedulerState(firstRecord.getUuid(), "disable", session);
         SchedulerVO pauseRecord = dbf.listAll(SchedulerVO.class).get(0);
-        Assert.assertEquals(pauseRecord.getStatus(), "Disabled");
+        Assert.assertEquals(pauseRecord.getState(), "Disabled");
         TimeUnit.SECONDS.sleep(3);
         long pauseCount = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(1,pauseCount);
 
         api.changeSchedulerState(firstRecord.getUuid(), "enable", session);
         SchedulerVO resumeRecord = dbf.listAll(SchedulerVO.class).get(0);
-        Assert.assertEquals(resumeRecord.getStatus(), "Enabled");
+        Assert.assertEquals(resumeRecord.getState(), "Enabled");
         TimeUnit.SECONDS.sleep(6);
         long resumeCount = dbf.count(VolumeSnapshotVO.class);
         //resume will trigger immediately, so
@@ -95,7 +95,7 @@ public class TestSchedulerUpdate {
         long changeCount = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(4,changeCount);
         SchedulerVO changeRecord = dbf.listAll(SchedulerVO.class).get(0);
-        Assert.assertEquals(changeRecord.getStatus(), "Disabled");
+        Assert.assertEquals(changeRecord.getState(), "Disabled");
 
 
     }

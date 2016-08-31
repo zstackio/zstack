@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.core.scheduler.SchedulerStatus;
+import org.zstack.header.core.scheduler.SchedulerState;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -62,7 +62,7 @@ public class TestSchedulerChangeVmStatus {
             Assert.assertNotNull(firstRecord);
             SchedulerVO scheduler = dbf.findByUuid(firstRecord.getUuid(), SchedulerVO.class);
             Assert.assertNotNull(scheduler);
-            Assert.assertEquals(SchedulerStatus.Disabled.toString(), scheduler.getStatus());
+            Assert.assertEquals(SchedulerState.Disabled.toString(), scheduler.getState());
             // recover vm
             inv = api.recoverVm(inv.getUuid(), null);
             TimeUnit.SECONDS.sleep(5);
@@ -71,7 +71,7 @@ public class TestSchedulerChangeVmStatus {
             Assert.assertEquals(VmInstanceState.Running, vm2.getState());
             SchedulerVO scheduler2 = dbf.findByUuid(firstRecord.getUuid(), SchedulerVO.class);
             Assert.assertNotNull(scheduler2);
-            Assert.assertEquals(SchedulerStatus.Enabled.toString(), scheduler2.getStatus());
+            Assert.assertEquals(SchedulerState.Enabled.toString(), scheduler2.getState());
             // expunge vm
             api.destroyVmInstance(inv.getUuid(), null);
             TimeUnit.SECONDS.sleep(2);

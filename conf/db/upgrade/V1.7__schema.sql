@@ -25,6 +25,7 @@ ALTER TABLE `zstack`.`PolicyVO` modify column description varchar(2048) DEFAULT 
 ALTER TABLE `zstack`.`person` modify column description varchar(2048) DEFAULT NULL;
 ALTER TABLE `zstack`.`UserGroupVO` modify column description varchar(2048) DEFAULT NULL;
 ALTER TABLE `zstack`.`SchedulerVO` add column schedulerJob varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`SchedulerVO` change column status state varchar(128) DEFAULT NULL;
 
  CREATE TABLE  `zstack`.`AlarmVO` (
      `uuid` varchar(32) NOT NULL UNIQUE,

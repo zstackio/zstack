@@ -9,7 +9,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
-import org.zstack.header.core.scheduler.SchedulerStatus;
+import org.zstack.header.core.scheduler.SchedulerState;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.scheduler.SchedulerVO_;
 import org.zstack.header.errorcode.SysErrors;
@@ -72,15 +72,15 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             throw new StopRoutingException();
         }
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.select(SchedulerVO_.status);
+        q.select(SchedulerVO_.state);
         q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, msg.getUuid());
         String state = q.findValue();
-        if (msg.getStateEvent().equals("enable") && state.equals(SchedulerStatus.Enabled)) {
+        if (msg.getStateEvent().equals("enable") && state.equals(SchedulerState.Enabled)) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
                     String.format("can not enable a Enabled scheduler" )
             ));
         }
-        if (msg.getStateEvent().equals("disable") && state.equals(SchedulerStatus.Disabled)) {
+        if (msg.getStateEvent().equals("disable") && state.equals(SchedulerState.Disabled)) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
                     String.format("can not disable a Disabled scheduler")
             ));

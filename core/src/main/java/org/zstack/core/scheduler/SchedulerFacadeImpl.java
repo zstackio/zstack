@@ -15,7 +15,7 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.scheduler.SchedulerInventory;
-import org.zstack.header.core.scheduler.SchedulerStatus;
+import org.zstack.header.core.scheduler.SchedulerState;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.scheduler.SchedulerVO_;
 import org.zstack.header.errorcode.SysErrors;
@@ -144,9 +144,9 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
    @Transactional
    private void updateSchedulerStatus(String uuid, String status) {
-        String sql = "update SchedulerVO scheduler set scheduler.status = :status where scheduler.uuid = :schedulerUuid";
+        String sql = "update SchedulerVO scheduler set scheduler.state= :state where scheduler.uuid = :schedulerUuid";
         Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("status", status);
+        q.setParameter("state", status);
         q.setParameter("schedulerUuid", uuid);
         q.executeUpdate();
     }
@@ -163,7 +163,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         String jobGroup = q2.findValue();
         try {
             scheduler.pauseJob(jobKey(jobName, jobGroup));
-            updateSchedulerStatus(uuid, SchedulerStatus.Disabled.toString());
+            updateSchedulerStatus(uuid, SchedulerState.Disabled.toString());
         } catch (SchedulerException e) {
             logger.warn(String.format("Pause Scheduler %s failed!", uuid));
             throw new RuntimeException(e);
@@ -185,7 +185,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             String jobGroup = q2.findValue();
             try {
                 scheduler.resumeJob(jobKey(jobName, jobGroup));
-                updateSchedulerStatus(uuid, SchedulerStatus.Enabled.toString());
+                updateSchedulerStatus(uuid, SchedulerState.Enabled.toString());
             } catch (SchedulerException e) {
                 logger.warn(String.format("Resume Scheduler %s failed!", uuid));
                 throw new RuntimeException(e);
@@ -250,7 +250,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             for (SchedulerVO schedulerRecord : schedulerRecords) {
                 try {
                     SchedulerJob rebootJob = (SchedulerJob) JSONObjectUtil.toObject(schedulerRecord.getJobData(), Class.forName(schedulerRecord.getJobClassName()));
-                    if (schedulerRecord.getStatus().equals(SchedulerStatus.Enabled.toString())) {
+                    if (schedulerRecord.getState().equals(SchedulerState.Enabled.toString())) {
                         runScheduler(rebootJob, false);
                     }
                 } catch (ClassNotFoundException e) {
@@ -507,7 +507,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
         if (saveDB) {
             logger.debug(String.format("Save Scheduler job %s to database", schedulerJob.getClass().getName()));
-            vo.setStatus(SchedulerStatus.Enabled.toString());
+            vo.setState(SchedulerState.Enabled.toString());
             dbf.persist(vo);
             return vo;
         }

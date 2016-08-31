@@ -58,7 +58,7 @@ public class SchedulerVO {
     @Column
     private String jobData;
     @Column
-    private String status;
+    private String state;
 
     public String getSchedulerDescription() {
         return schedulerDescription;
@@ -148,12 +148,12 @@ public class SchedulerVO {
         this.jobClassName = jobClassName;
     }
 
-    public String getStatus() {
-        return status;
+    public String getState() {
+        return state;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setState(String state) {
+        this.state = state;
     }
     public String getJobData() {
         return jobData;
