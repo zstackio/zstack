@@ -34,7 +34,7 @@ public class SchedulerInventory implements Serializable {
     private String jobClassName;
     @APINoSee
     private String jobData;
-    private String status;
+    private String state;
 
     protected SchedulerInventory(SchedulerVO vo) {
         uuid = vo.getUuid();
@@ -50,7 +50,7 @@ public class SchedulerInventory implements Serializable {
         lastOpDate = vo.getLastOpDate();
         jobClassName = vo.getJobClassName();
         jobData = vo.getJobData();
-        status = vo.getState();
+        state = vo.getState();
     }
     public SchedulerInventory() {
 
@@ -155,12 +155,12 @@ public class SchedulerInventory implements Serializable {
         this.jobData = jobData;
     }
 
-    public String getStatus() {
-        return status;
+    public String getState() {
+        return state;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setState(String state) {
+        this.state = state;
     }
 
     public String getTargetResourceUuid() {
