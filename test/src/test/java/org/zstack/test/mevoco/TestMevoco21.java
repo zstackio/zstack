@@ -209,12 +209,6 @@ public class TestMevoco21 {
         validate(ps, "SCHEDULER.UPDATE", "scheduler:APIUpdateSchedulerMsg",
                 AccountConstant.StatementEffect.Allow);
 
-        validate(ps, "KEYSTORE.CREATE", "keystore:APICreateKeystoreMsg",
-                AccountConstant.StatementEffect.Allow);
-        validate(ps, "KEYSTORE.DELETE", "keystore:APIDeleteKeystoreMsg",
-                AccountConstant.StatementEffect.Allow);
-
-
         APIQueryPolicyMsg qmsg = new APIQueryPolicyMsg();
         qmsg.addQueryCondition("accountUuid", QueryOp.EQ, test.getUuid());
         APIQueryPolicyReply r = api.query(qmsg, APIQueryPolicyReply.class, creator.getAccountSession());
