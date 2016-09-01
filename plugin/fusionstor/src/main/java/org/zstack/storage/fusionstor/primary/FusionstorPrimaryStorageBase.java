@@ -1041,6 +1041,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             public void success(CreateEmptyVolumeRsp ret) {
                 VolumeInventory vol = msg.getVolume();
                 vol.setInstallPath(cmd.getInstallPath());
+                vol.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 reply.setVolume(vol);
                 bus.reply(msg, reply);
             }
