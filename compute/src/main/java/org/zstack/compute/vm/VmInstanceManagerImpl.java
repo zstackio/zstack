@@ -1415,6 +1415,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         quota.addMessageNeedValidation(APICreateDataVolumeMsg.class);
         quota.addMessageNeedValidation(APIRecoverDataVolumeMsg.class);
         quota.addMessageNeedValidation(APIStartVmInstanceMsg.class);
+        quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
         quota.setOperator(checker);
 
         return list(quota);

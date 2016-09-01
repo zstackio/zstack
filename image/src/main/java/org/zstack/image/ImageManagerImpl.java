@@ -1362,6 +1362,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         quota.setOperator(checker);
         quota.addMessageNeedValidation(APIAddImageMsg.class);
         quota.addMessageNeedValidation(APIRecoverImageMsg.class);
+        quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
 
         Quota.QuotaPair p = new Quota.QuotaPair();
         p.setName(ImageConstant.QUOTA_IMAGE_NUM);

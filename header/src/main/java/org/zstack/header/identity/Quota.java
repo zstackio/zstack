@@ -2,18 +2,36 @@ package org.zstack.header.identity;
 
 import org.zstack.header.message.APIMessage;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 7/13/2015.
  */
 public class Quota {
+    public Set<QuotaValidator> getQuotaValidators() {
+        return quotaValidators;
+    }
+
+    public void addQuotaValidators(Set<QuotaValidator> quotaValidators) {
+        if (quotaValidators == null) {
+            quotaValidators = new HashSet<>();
+        }
+        for (QuotaValidator q : quotaValidators) {
+            quotaValidators.add(q);
+        }
+    }
+
     public interface QuotaOperator {
         void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs);
 
         List<QuotaUsage> getQuotaUsageByAccount(String accountUuid);
+    }
+
+    public interface QuotaValidator {
+        void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs);
+
+        List<Class<? extends APIMessage>> getMessagesNeedValidation();
     }
 
     public static class QuotaUsage {
@@ -70,6 +88,7 @@ public class Quota {
     private List<QuotaPair> quotaPairs;
     private List<Class<? extends APIMessage>> messagesNeedValidation = new ArrayList<Class<? extends APIMessage>>();
     private QuotaOperator operator;
+    private Set<QuotaValidator> quotaValidators;
 
     public void addPair(QuotaPair p) {
         if (quotaPairs == null) {

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 7/30/2015.
@@ -42,13 +43,13 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
             return msg;
         }
 
-        Quota quota = acntMgr.getMessageQuotaMap().get(msg.getClass());
-        if (quota == null) {
+        List<Quota> quotas = acntMgr.getMessageQuotaMap().get(msg.getClass());
+        if (quotas == null || quotas.size() == 0) {
             return msg;
         }
-
-        check(msg, quota);
-
+        for (Quota q : quotas) {
+            check(msg, q);
+        }
         return msg;
     }
 
@@ -81,5 +82,11 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
     private void check(APIMessage msg, Quota quota) {
         Map<String, QuotaPair> pairs = makeQuotaPairs(quota, msg.getSession());
         quota.getOperator().checkQuota(msg, pairs);
+
+        if (quota.getQuotaValidators() != null) {
+            for (Quota.QuotaValidator q : quota.getQuotaValidators()) {
+                q.checkQuota(msg, pairs);
+            }
+        }
     }
 }

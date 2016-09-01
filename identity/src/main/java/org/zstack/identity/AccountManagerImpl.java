@@ -80,7 +80,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private List<String> resourceTypeForAccountRef;
     private List<Class> resourceTypes;
     private Map<String, SessionInventory> sessions = new ConcurrentHashMap<>();
-    private Map<Class, Quota> messageQuotaMap = new HashMap<>();
+    private Map<Class, List<Quota>> messageQuotaMap = new HashMap<>();
+    private Map<String, Quota> nameQuotaMap = new HashMap<>();
     private HashSet<Class> accountApiControl = new HashSet<>();
     private HashSet<Class> accountApiControlInternal = new HashSet<>();
     private List<Quota> definedQuotas = new ArrayList<>();
@@ -123,7 +124,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     @Override
-    public Map<Class, Quota> getMessageQuotaMap() {
+    public Map<Class, List<Quota>> getMessageQuotaMap() {
         return messageQuotaMap;
     }
 
@@ -199,9 +200,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         List<String> quotas = new ArrayList<>();
-        for (Quota q : messageQuotaMap.values()) {
-            for (QuotaPair p : q.getQuotaPairs()) {
-                quotas.add(String.format("%s        %s", p.getName(), p.getValue()));
+        for (List<Quota> quotaList : messageQuotaMap.values()) {
+            for (Quota q : quotaList) {
+                for (QuotaPair p : q.getQuotaPairs()) {
+                    quotas.add(String.format("%s        %s", p.getName(), p.getValue()));
+                }
             }
         }
 
@@ -718,6 +721,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void collectDefaultQuota() {
         Map<String, Long> defaultQuota = new HashMap<>();
 
+        // Add quota and quota checker
         for (ReportQuotaExtensionPoint ext : pluginRgty.getExtensionList(ReportQuotaExtensionPoint.class)) {
             List<Quota> quotas = ext.reportQuota();
             DebugUtils.Assert(quotas != null, String.format("%s.getQuotaPairs() returns null", ext.getClass()));
@@ -725,7 +729,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             definedQuotas.addAll(quotas);
 
             for (Quota quota : quotas) {
-                DebugUtils.Assert(quota.getQuotaPairs() != null, String.format("%s reports a quota containing a null quotaPairs", ext.getClass()));
+                DebugUtils.Assert(quota.getQuotaPairs() != null,
+                        String.format("%s reports a quota containing a null quotaPairs", ext.getClass()));
 
                 for (QuotaPair p : quota.getQuotaPairs()) {
                     if (defaultQuota.containsKey(p.getName())) {
@@ -733,14 +738,44 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     }
 
                     defaultQuota.put(p.getName(), p.getValue());
+                    nameQuotaMap.put(p.getName(), quota);
                 }
 
                 for (Class clz : quota.getMessagesNeedValidation()) {
-                    messageQuotaMap.put(clz, quota);
+                    if (messageQuotaMap.containsKey(clz)) {
+                        messageQuotaMap.get(clz).add(quota);
+                    } else {
+                        ArrayList<Quota> quotaArrayList = new ArrayList<>();
+                        quotaArrayList.add(quota);
+                        messageQuotaMap.put(clz, quotaArrayList);
+                    }
+
                 }
             }
         }
 
+        // Add additional quota checker to quota
+        for (RegisterQuotaCheckerExtensionPoint ext : pluginRgty.getExtensionList(RegisterQuotaCheckerExtensionPoint.class)) {
+            Map<String, Set<Quota.QuotaValidator>> m = ext.registerQuotaValidator();
+            for (Map.Entry<String, Set<Quota.QuotaValidator>> entry : m.entrySet()) {
+                Quota quota = nameQuotaMap.get(entry.getKey());
+                quota.addQuotaValidators(entry.getValue());
+                for (Quota.QuotaValidator q : entry.getValue()) {
+                    for (Class clz : q.getMessagesNeedValidation()) {
+                        if (messageQuotaMap.containsKey(clz)) {
+                            messageQuotaMap.get(clz).add(quota);
+                        } else {
+                            ArrayList<Quota> quotaArrayList = new ArrayList<>();
+                            quotaArrayList.add(quota);
+                            messageQuotaMap.put(clz, quotaArrayList);
+                        }
+                    }
+                }
+            }
+
+        }
+
+        // complete default quota
         SimpleQuery<GlobalConfigVO> q = dbf.createQuery(GlobalConfigVO.class);
         q.select(GlobalConfigVO_.name);
         q.add(GlobalConfigVO_.category, Op.EQ, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY);
@@ -771,6 +806,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             dbf.persistCollection(quotaConfigs);
         }
 
+        //
         repairAccountQuota(defaultQuota);
     }
 

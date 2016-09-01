@@ -17,7 +17,7 @@ public interface AccountManager {
 
     List<String> getResourceUuidsCanAccessByAccount(String accountUuid, Class resourceType);
 
-    Map<Class, Quota> getMessageQuotaMap();
+    Map<Class, List<Quota>> getMessageQuotaMap();
 
     List<Quota> getQuotas();
 
