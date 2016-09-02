@@ -146,9 +146,9 @@ public class CephBackupStorageMonBase extends CephMonBase {
                             checker.setTargetIp(getSelf().getHostname());
                             checker.setUsername(getSelf().getSshUsername());
                             checker.setPassword(getSelf().getSshPassword());
-                            checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/cephb/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
+                            checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/cephb/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                             checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/cephb/%s", CephGlobalProperty.BACKUP_STORAGE_PACKAGE_NAME), true).getAbsolutePath(),
-                                    String.format("/var/lib/zstack/cephb/%s", CephGlobalProperty.BACKUP_STORAGE_PACKAGE_NAME));
+                                    String.format("/var/lib/zstack/cephb/package/%s", CephGlobalProperty.BACKUP_STORAGE_PACKAGE_NAME));
                             AnsibleRunner runner = new AnsibleRunner();
                             runner.installChecker(checker);
                             runner.setPassword(getSelf().getSshPassword());

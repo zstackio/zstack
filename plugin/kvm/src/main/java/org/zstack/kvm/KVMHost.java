@@ -2225,13 +2225,13 @@ public class KVMHost extends HostBase implements Host {
                             new Log(self.getUuid()).log(KVMHostLabel.CALL_ANSIBLE);
 
                             String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", agentPackageName), true).getAbsolutePath();
-                            String destPath = String.format("/var/lib/zstack/kvm/%s", agentPackageName);
+                            String destPath = String.format("/var/lib/zstack/kvm/package/%s", agentPackageName);
                             SshFileMd5Checker checker = new SshFileMd5Checker();
                             checker.setUsername(getSelf().getUsername());
                             checker.setPassword(getSelf().getPassword());
                             checker.setSshPort(getSelf().getPort());
                             checker.setTargetIp(getSelf().getManagementIp());
-                            checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
+                            checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                             checker.addSrcDestPair(srcPath, destPath);
 
                             AnsibleRunner runner = new AnsibleRunner();
