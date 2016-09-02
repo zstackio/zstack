@@ -13,15 +13,13 @@ import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.core.workflow.*;
-import org.zstack.header.configuration.ConfigurationConstant;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
@@ -177,9 +175,9 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         checker.setTargetIp(mgmtIp);
         checker.setUsername(username);
         checker.setPrivateKey(privKey);
-        checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/appliancevm/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
+        checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/appliancevm/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
         checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/appliancevm/%s", ApplianceVmGlobalProperty.AGENT_PACKAGE_NAME), true).getAbsolutePath(),
-                String.format("/var/lib/zstack/appliancevm/%s", ApplianceVmGlobalProperty.AGENT_PACKAGE_NAME));
+                String.format("/var/lib/zstack/appliancevm/package/%s", ApplianceVmGlobalProperty.AGENT_PACKAGE_NAME));
 
         AnsibleRunner runner = new AnsibleRunner();
         runner.installChecker(checker);

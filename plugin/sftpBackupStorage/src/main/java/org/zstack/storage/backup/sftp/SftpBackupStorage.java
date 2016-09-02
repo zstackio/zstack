@@ -292,9 +292,9 @@ public class SftpBackupStorage extends BackupStorageBase {
         checker.setUsername(getSelf().getUsername());
         checker.setPassword(getSelf().getPassword());
         checker.setSshPort(getSelf().getSshPort());
-        checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/sftpbackupstorage/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
+        checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/sftpbackupstorage/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
         checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/sftpbackupstorage/%s", agentPackageName), true).getAbsolutePath(),
-                String.format("/var/lib/zstack/sftpbackupstorage/%s", agentPackageName));
+                String.format("/var/lib/zstack/sftpbackupstorage/package/%s", agentPackageName));
 
         AnsibleRunner runner = new AnsibleRunner();
         runner.installChecker(checker);

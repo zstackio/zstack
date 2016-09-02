@@ -21,7 +21,6 @@ import org.zstack.header.console.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.managementnode.ManagementNodeVO;
@@ -30,7 +29,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ShellUtils;
+import org.zstack.utils.URLBuilder;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -123,12 +125,12 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     String privKey = FileUtils.readFileToString(privKeyFile);
 
                     String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/consoleproxy/%s", agentPackageName), true).getAbsolutePath();
-                    String destPath = String.format("/var/lib/zstack/console/%s", agentPackageName);
+                    String destPath = String.format("/var/lib/zstack/console/package/%s", agentPackageName);
                     SshFileMd5Checker checker = new SshFileMd5Checker();
                     checker.setTargetIp("127.0.0.1");
                     checker.setUsername("root");
                     checker.setPrivateKey(privKey);
-                    checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/console/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
+                    checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/console/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                     checker.addSrcDestPair(srcPath, destPath);
 
                     AnsibleRunner runner = new AnsibleRunner();
