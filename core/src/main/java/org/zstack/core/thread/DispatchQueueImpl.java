@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.debug.DebugManager;
 import org.zstack.core.debug.DebugSignal;
 import org.zstack.core.debug.DebugSignalHandler;
+import org.zstack.header.core.AsyncBackup;
+import org.zstack.header.message.Message;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -47,20 +49,41 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             int index = 0;
             for (Object obj : w.runningQueue) {
                 ChainFuture cf = (ChainFuture) obj;
-                tb.append(String.format("\nRUNNING TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s]",
-                        cf.getTask().getName(), cf.getTask().getClass(), TimeUnit.MILLISECONDS.toSeconds(now - cf.getTimestamp()), index++));
+                tb.append(String.format("\nRUNNING TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s] %s",
+                        cf.getTask().getName(), cf.getTask().getClass(),
+                        TimeUnit.MILLISECONDS.toSeconds(now - cf.getTimestamp()), index++,
+                        getChainContext(cf.getTask())
+                ));
             }
 
             for (Object obj : w.pendingQueue) {
                 ChainFuture cf = (ChainFuture) obj;
-                tb.append(String.format("\nPENDING TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s]",
-                        cf.getTask().getName(), cf.getTask().getClass(), TimeUnit.MILLISECONDS.toSeconds(now - cf.getTimestamp()), index++));
+                tb.append(String.format("\nPENDING TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s] %s",
+                        cf.getTask().getName(), cf.getTask().getClass(),
+                        TimeUnit.MILLISECONDS.toSeconds(now - cf.getTimestamp()), index++,
+                        getChainContext(cf.getTask())
+                ));
             }
             asyncTasks.add(tb.toString());
         }
         sb.append(StringUtils.join(asyncTasks, "\n"));
         sb.append("\n================= END TASK QUEUE DUMP ==================\n");
         logger.debug(sb.toString());
+    }
+
+    private String getChainContext(ChainTask task) {
+        List<String> context = new ArrayList<>();
+        for (AsyncBackup backup : task.getBackups()) {
+            if (backup instanceof Message) {
+                context.add(JSONObjectUtil.toJsonString(backup));
+            }
+        }
+
+        if (!context.isEmpty()) {
+            return String.format("CONTEXT: %s", StringUtils.join(context, "\n"));
+        }
+
+        return "";
     }
 
     public DispatchQueueImpl() {
