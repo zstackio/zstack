@@ -1449,11 +1449,43 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APILogInByUserMsg) msg);
         } else if (msg instanceof APIGetAccountQuotaUsageMsg) {
             validate((APIGetAccountQuotaUsageMsg) msg);
+        } else if (msg instanceof APIChangeResourceOwnerMsg) {
+            validate((APIChangeResourceOwnerMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIChangeResourceOwnerMsg msg) {
+        for (Quota quota : messageQuotaMap.get(APIChangeResourceOwnerMsg.class)) {
+            // make quota pairs
+            List<String> names = new ArrayList<>();
+            for (QuotaPair p : quota.getQuotaPairs()) {
+                names.add(p.getName());
+            }
+
+            SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
+            q.select(QuotaVO_.name, QuotaVO_.value);
+            q.add(QuotaVO_.identityType, Op.EQ, AccountVO.class.getSimpleName());
+            q.add(QuotaVO_.identityUuid, Op.EQ, msg.getAccountUuid());
+            q.add(QuotaVO_.name, Op.IN, names);
+            List<Tuple> ts = q.listTuple();
+
+            Map<String, QuotaPair> pairs = new HashMap<>();
+            for (Tuple t : ts) {
+                String name = t.get(0, String.class);
+                long value = t.get(1, Long.class);
+                QuotaPair p = new QuotaPair();
+                p.setName(name);
+                p.setValue(value);
+                pairs.put(name, p);
+            }
+
+            // check quota
+            quota.getOperator().checkQuota(msg, pairs);
+        }
     }
 
     private void validate(APIGetAccountQuotaUsageMsg msg) {

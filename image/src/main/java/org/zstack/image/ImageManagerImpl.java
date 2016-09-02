@@ -1229,15 +1229,42 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
             @Transactional(readOnly = true)
             private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                AccountResourceRefVO accResRefVO = dbf.findByUuid(msg.getResourceUuid(), AccountResourceRefVO.class);
-                if (accResRefVO.getResourceType().equals(ImageVO.class.getSimpleName())) {
-                    String targetAccUuid = msg.getAccountUuid();
+                SimpleQuery<AccountVO> q1 = dbf.createQuery(AccountVO.class);
+                q1.select(AccountVO_.type);
+                q1.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
+                AccountType type = q1.findValue();
+                if (type == AccountType.SystemAdmin && (pairs == null || pairs.size() == 0)) {
+                    logger.debug("APIChangeResourceOwnerMsg:(pairs == null || pairs.size() == 0)." +
+                            "Skip quota check for being called by QuotaChecker with admin account session." +
+                            "Another quota check would be executed by message interceptor.");
+                    return;
+                }
 
+                SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
+                q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
+                AccountResourceRefVO accResRefVO = q.find();
+
+                String resourceOriginalOwnerAccountUuid = accResRefVO.getOwnerAccountUuid();
+                String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
+                if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_INVALID_OP,
+                            String.format("Invalid ChangerResourceOwner operation." +
+                                            "Original owner is the same as target owner." +
+                                            "Current account is [uuid: %s]." +
+                                            "The resource target owner account[uuid: %s]." +
+                                            "The resource original owner account[uuid:%s].",
+                                    currentAccountUuid, resourceTargetOwnerAccountUuid, resourceOriginalOwnerAccountUuid)
+                    ));
+                }
+
+
+                if (accResRefVO.getResourceType().equals(ImageVO.class.getSimpleName())) {
                     long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
                     long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
 
-                    long imageNumUsed = getUsedImageNum(targetAccUuid);
-                    long imageSizeUsed = getUsedImageSize(targetAccUuid);
+                    long imageNumUsed = getUsedImageNum(resourceTargetOwnerAccountUuid);
+                    long imageSizeUsed = getUsedImageSize(resourceTargetOwnerAccountUuid);
 
                     ImageVO image = dbf.getEntityManager().find(ImageVO.class, msg.getResourceUuid());
                     long imageSizeAsked = image.getSize();
@@ -1245,14 +1272,14 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     if (imageNumUsed + 1 > imageNumQuota) {
                         throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                                 String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                        targetAccUuid, ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
+                                        resourceTargetOwnerAccountUuid, ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
                         ));
                     }
 
                     if (imageSizeUsed + imageSizeAsked > imageSizeQuota) {
                         throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                                 String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                        targetAccUuid, ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
+                                        resourceTargetOwnerAccountUuid, ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
                         ));
                     }
                 }
