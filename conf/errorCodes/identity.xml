@@ -20,5 +20,11 @@
         <id>1003</id>
         <description>The user exceeds a quota of a resource</description>
     </code>
+
+    <code>
+        <id>1004</id>id>
+        <description>Invalid quota operation</description>>
+    </code>
+    >
 </error>
 
