@@ -3,6 +3,8 @@ package org.zstack.test;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.alert.APIDeleteAlarmEvent;
+import org.zstack.alert.APIDeleteAlarmMsg;
 import org.zstack.appliancevm.APIListApplianceVmMsg;
 import org.zstack.appliancevm.APIListApplianceVmReply;
 import org.zstack.appliancevm.ApplianceVmInventory;
@@ -43,9 +45,7 @@ import org.zstack.header.identity.*;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.image.*;
 import org.zstack.header.managementnode.*;
-import org.zstack.header.message.APIReply;
-import org.zstack.header.message.Event;
-import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.*;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
@@ -4388,5 +4388,28 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIGetCandidateBackupStorageForCreatingImageReply reply = sender.call(msg, APIGetCandidateBackupStorageForCreatingImageReply.class);
         return reply.getInventories();
+    }
+
+    public <T> T sendApiMessage(APIMessage msg, Class retClass) throws ApiSenderException {
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        if (msg.getSession() == null) {
+            msg.setSession(adminSession);
+        }
+
+        if (msg instanceof APISyncCallMessage) {
+            return (T)sender.call(msg, retClass);
+        } else {
+            return (T)sender.send(msg, retClass);
+        }
+    }
+
+    public void deleteAlarm(String alarmUuid, SessionInventory session) throws ApiSenderException {
+        APIDeleteAlarmMsg msg = new APIDeleteAlarmMsg();
+        msg.setUuid(alarmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteAlarmEvent.class);
     }
 }

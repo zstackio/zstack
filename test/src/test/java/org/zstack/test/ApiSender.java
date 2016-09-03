@@ -29,7 +29,7 @@ public class ApiSender {
     @Autowired
     private ErrorFacade errf;
 
-    public <T extends MessageReply> T call(APIMessage msg, Class<T> clazz) throws ApiSenderException {
+    public <T extends MessageReply> T call(APIMessage msg, Class clazz) throws ApiSenderException {
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         MessageReply r = bus.call(msg);
         if (!r.isSuccess()) {
@@ -73,10 +73,11 @@ public class ApiSender {
 		try {
 			count.await(timeout, TimeUnit.SECONDS);
 			if (isTimeout) {
+				Api api = new Api();
 				APIDebugSignalMsg dmsg = new APIDebugSignalMsg();
 				dmsg.setServiceId(ApiMediatorConstant.SERVICE_ID);
 				dmsg.setSignals(asList(DebugSignal.DumpTaskQueue.toString()));
-                dmsg.setSession(msg.getSession());
+                dmsg.setSession(api.loginAsAdmin());
                 bus.send(dmsg);
 				TimeUnit.SECONDS.sleep(2);
 
