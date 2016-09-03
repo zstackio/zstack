@@ -320,6 +320,9 @@ public class AnsibleRunner {
 
             logger.debug(String.format("agent port[%s] on target ip[%s] is opened, ansible module[%s] is not changed, skip to run ansible", agentPort, targetIp, playBookName));
             return false;
+        } else if ( playBookName.equals("imagestorebackupstorage.py")) {
+            logger.debug("image store client will not check agent port");
+            return false;
         }
 
         logger.debug("agent port is not set, run ansible anyway");
