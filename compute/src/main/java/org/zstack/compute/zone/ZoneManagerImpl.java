@@ -15,7 +15,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.zone.*;
-import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ObjectUtils;
@@ -23,6 +22,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+
+import static java.util.Arrays.asList;
 
 
 public class ZoneManagerImpl extends AbstractService implements ZoneManager {
@@ -84,10 +85,15 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
     }
 
     private void handle(APIGetZoneMsg msg) {
-        GetQuery query = new GetQuery();
-        String inv = query.getAsString(msg.getUuid(), ZoneInventory.class);
         APIGetZoneReply reply = new APIGetZoneReply();
-        reply.setInventory(inv);
+
+        if (msg.getUuid() != null) {
+            ZoneVO vo = dbf.findByUuid(msg.getUuid(), ZoneVO.class);
+            reply.setInventories(asList(ZoneInventory.valueOf(vo)));
+        } else {
+            reply.setInventories(ZoneInventory.valueOf(dbf.listAll(ZoneVO.class)));
+        }
+
         bus.reply(msg, reply);
     }
 
