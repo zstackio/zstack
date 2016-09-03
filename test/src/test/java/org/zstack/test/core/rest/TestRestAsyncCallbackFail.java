@@ -65,7 +65,7 @@ public class TestRestAsyncCallbackFail {
     
     @After
     public void tearDown() {
-        wbean.stopTomcat();
+        wbean.stopJetty();
     }
 
 }

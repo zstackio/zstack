@@ -70,7 +70,7 @@ public class TestRestAsyncCallbackMissingTaskUuid {
     
     @After
     public void tearDown() {
-        wbean.stopTomcat();
+        wbean.stopJetty();
     }
 
 }

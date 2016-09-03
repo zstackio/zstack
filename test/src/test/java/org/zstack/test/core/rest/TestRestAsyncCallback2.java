@@ -73,7 +73,7 @@ public class TestRestAsyncCallback2 {
     
     @After
     public void tearDown() {
-        wbean.stopTomcat();
+        wbean.stopJetty();
     }
 
 }
