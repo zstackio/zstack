@@ -1122,7 +1122,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
                 if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_INVALID_OP,
                             String.format("Invalid ChangerResourceOwner operation." +
                                             "Original owner is the same as target owner." +
                                             "Current account is [uuid: %s]." +
@@ -1176,7 +1176,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     VmQuota vmQuota = getUsedVmCpuMemory(resourceTargetOwnerAccountUuid);
 
                     if (vmQuota.vmNum + 1 > vmNum) {
-                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_INVALID_OP,
+                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                                 String.format("quota exceeding. Current account is [uuid: %s]. " +
                                                 "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
                                         currentAccountUuid, resourceTargetOwnerAccountUuid,
