@@ -52,7 +52,8 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  */
 public class EipManagerImpl extends AbstractService implements EipManager, VipReleaseExtensionPoint,
-        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VmPreAttachL3NetworkExtensionPoint, VmIpChangedExtensionPoint {
+        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VmPreAttachL3NetworkExtensionPoint,
+        VmIpChangedExtensionPoint, ResourceOwnerAfterChangeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(EipManagerImpl.class);
 
     @Autowired
@@ -744,5 +745,36 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
         logger.debug(String.format("update the EIP[uuid:%s, name:%s]'s guest IP from %s to %s for the nic[uuid:%s]",
                 eip.getUuid(), eip.getName(), oldIp.getIp(), newIp.getIp(), nic.getUuid()));
+    }
+
+
+    @Override
+    public void resourceOwnerAfterChange(AccountResourceRefInventory ref, String newOwnerUuid) {
+        if (!VmInstanceVO.class.getSimpleName().equals(ref.getResourceType())) {
+            return;
+        }
+
+        changeEipOwner(ref, newOwnerUuid);
+    }
+
+    @Transactional
+    private void changeEipOwner(AccountResourceRefInventory ref, String newOwnerUuid) {
+        String sql = "select eip.uuid" +
+                " from VmInstanceVO vm, VmNicVO nic, EipVO eip" +
+                " where vm.uuid = nic.vmInstanceUuid" +
+                " and nic.uuid = eip.vmNicUuid" +
+                " and vm.uuid = :uuid";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("uuid", ref.getResourceUuid());
+        List<String> eipUuids = q.getResultList();
+        if (eipUuids.isEmpty()) {
+            logger.debug(String.format("Vm[uuid:%s] doesn't have any eip, there is no need to change owner of eip.",
+                    ref.getResourceUuid()));
+            return;
+        }
+
+        for (String uuid : eipUuids) {
+            acntMgr.changeResourceOwner(uuid, newOwnerUuid);
+        }
     }
 }
