@@ -323,10 +323,13 @@ public class AnsibleRunner {
             logger.debug(String.format("agent port[%s] on target ip[%s] is opened, ansible module[%s] is not changed, skip to run ansible", agentPort, targetIp, playBookName));
             return false;
         } else if ( ignoreAgentPortModule.contains(playBookName) ) {
-            logger.debug(String.format("modlue %s will not check agent port, only check md5sum", playBookName));
+            logger.debug(String.format("module %s will not check agent port, only check md5sum", playBookName));
             if (runChecker()) {
                 logger.debug(String.format("module %s md5sum changed, run ansible", playBookName));
                 return true;
+            } else {
+                logger.debug(String.format("module %s md5sum not change, skip to run ansible", playBookName));
+                return false;
             }
         }
 
