@@ -6,10 +6,8 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.PolicyInventory;
-import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.identity.*;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.query.QueryCondition;
@@ -30,6 +28,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by miao on 16-9-2.
@@ -62,13 +62,28 @@ public class TestChangeOwnerOfVm {
         IdentityCreator identityCreator = new IdentityCreator(api);
         identityCreator.useAccount("test");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
+        DiskOfferingInventory dinv = deployer.diskOfferings.get("TestDataDiskOffering1");
+        VolumeInventory vi = api.createDataVolume("data", dinv.getUuid());
+        api.attachVolumeToVm(vm.getUuid(), vi.getUuid());
         try {
             api.changeResourceOwner(vm.getUuid(), identityCreator.getAccountSession().getAccountUuid());
         } catch (Exception e) {
 
         }
         identityCreator.useAccount("test2");
-        api.changeResourceOwner(vm.getUuid(), identityCreator.getAccountSession().getAccountUuid());
+        String targetAccountUuid = identityCreator.getAccountSession().getAccountUuid();
+        api.changeResourceOwner(vm.getUuid(), targetAccountUuid);
+        ArrayList<String> volumeUuids = new ArrayList<>();
+        volumeUuids.add(vm.getRootVolumeUuid());
+        volumeUuids.add(vi.getUuid());
+        Map<String, AccountInventory> resAccMap = api.getResourceAccount(volumeUuids);
+        assert (resAccMap.size() == 2);
+        for (AccountInventory ai : resAccMap.values()) {
+            logger.debug(ai.getUuid());
+            logger.debug(ai.getType());
+            logger.debug("targetAccountUuid:" + targetAccountUuid);
+            assert (ai.getUuid().equals(targetAccountUuid));
+        }
     }
 }
 

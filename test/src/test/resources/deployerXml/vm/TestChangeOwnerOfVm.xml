@@ -8,6 +8,13 @@
                            url="nfs://test"/>
     </backupStorages>
 
+    <diskOffering name="TestRootDiskOffering" description="Test"
+                  diskSize="50G"/>
+    <diskOffering name="TestDataDiskOffering1" description="Test"
+                  diskSize="120G"/>
+    <diskOffering name="TestDataDiskOffering2" description="Test"
+                  diskSize="100G"/>
+
     <images>
         <image name="TestImage" description="Test">
             <backupStorageRef>sftp</backupStorageRef>
