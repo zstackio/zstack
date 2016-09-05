@@ -292,6 +292,8 @@ public class AnsibleRunner {
     }
 
     private boolean isNeedRun() {
+        List<String> ignoreAgentPortModule = new ArrayList<String>();
+        ignoreAgentPortModule.add("imagestorebackupstorage.py");
         if (isFullDeploy()) {
             logger.debug("Ansible.fullDeploy is set, run ansible anyway");
             return true;
@@ -320,9 +322,12 @@ public class AnsibleRunner {
 
             logger.debug(String.format("agent port[%s] on target ip[%s] is opened, ansible module[%s] is not changed, skip to run ansible", agentPort, targetIp, playBookName));
             return false;
-        } else if ( playBookName.equals("imagestorebackupstorage.py")) {
-            logger.debug("image store client will not check agent port");
-            return false;
+        } else if ( ignoreAgentPortModule.contains(playBookName) ) {
+            logger.debug(String.format("modlue %s will not check agent port, only check md5sum", playBookName));
+            if (runChecker()) {
+                logger.debug(String.format("module %s md5sum changed, run ansible", playBookName));
+                return true;
+            }
         }
 
         logger.debug("agent port is not set, run ansible anyway");
