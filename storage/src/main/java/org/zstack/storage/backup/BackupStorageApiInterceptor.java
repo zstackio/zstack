@@ -44,12 +44,33 @@ public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APIDetachBackupStorageFromZoneMsg) msg);
         } else if (msg instanceof APIDeleteBackupStorageMsg) {
             validate((APIDeleteBackupStorageMsg) msg);
+        } else if (msg instanceof APIExportImageFromBackupStorageMsg) {
+            validate((APIExportImageFromBackupStorageMsg) msg);
+        } else if (msg instanceof APIDeleteExportedImageFromBackupStorageMsg) {
+            validate((APIDeleteExportedImageFromBackupStorageMsg) msg);
         } else if (msg instanceof APIGetBackupStorageCapacityMsg) {
             validate((APIGetBackupStorageCapacityMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void checkNull(final String name, final String val) {
+        if (val == null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("%s should not be null", name)
+            ));
+        }
+    }
+    private void validate(APIDeleteExportedImageFromBackupStorageMsg msg) {
+        checkNull("backup storage uuid", msg.getBackupStorageUuid());
+        checkNull("image uuid", msg.getImageUuid());
+    }
+
+    private void validate(APIExportImageFromBackupStorageMsg msg) {
+        checkNull("backup storage uuid", msg.getBackupStorageUuid());
+        checkNull("image uuid", msg.getImageUuid());
     }
 
     private void validate(APIGetBackupStorageCapacityMsg msg) {

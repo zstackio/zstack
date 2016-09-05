@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.backup.APIExportImageFromBackupStorageMsg;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.storage.backup.imagestore.ImageStoreBackupStorageSimulatorConfig;
@@ -23,6 +24,7 @@ public class TestImageStoreExportImage {
     private CLogger logger = Utils.getLogger(TestImageStoreExportImage.class);
     private Deployer deployer;
     private Api api;
+    private DatabaseFacade dbf;
 
     @Before
     public void setUp() throws Exception {
@@ -37,7 +39,7 @@ public class TestImageStoreExportImage {
         api = deployer.getApi();
         ComponentLoader loader = deployer.getComponentLoader();
         loader.getComponent(CloudBus.class);
-        loader.getComponent(DatabaseFacade.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
         loader.getComponent(ImageStoreBackupStorageSimulatorConfig.class);
         api.loginAsAdmin();
     }
@@ -54,6 +56,9 @@ public class TestImageStoreExportImage {
 
             String callingChain = MessageCommandRecorder.endAndToString();
             logger.debug(callingChain);
+
+            ImageVO imageVO = dbf.findByUuid(img.getUuid(), ImageVO.class);
+            Assert.assertTrue(imageVO.getExportUrl() != null);
         } catch (ApiSenderException e) {
             Assert.fail(e.toString());
         }

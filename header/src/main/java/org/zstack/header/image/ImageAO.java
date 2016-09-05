@@ -19,7 +19,10 @@ public class ImageAO implements ShadowEntity {
     
     @Column
     private String description;
-    
+
+    @Column
+    private String exportUrl;
+
     @Column
     @Enumerated(EnumType.STRING)
     private ImageStatus status;
@@ -122,7 +125,15 @@ public class ImageAO implements ShadowEntity {
     	return description;
     }
 
-	public void setDescription(String description) {
+    public String getExportUrl() {
+        return exportUrl;
+    }
+
+    public void setExportUrl(String exportUrl) {
+        this.exportUrl = exportUrl;
+    }
+
+    public void setDescription(String description) {
     	this.description = description;
     }
 
