@@ -81,7 +81,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     private void handle(APIChangeSchedulerStateMsg msg) {
-        SchedulerVO self = dbf.findByUuid(msg.getSchedulerUuid(), SchedulerVO.class);
+        self = dbf.findByUuid(msg.getSchedulerUuid(), SchedulerVO.class);
         if (msg.getStateEvent().equals("enable")) {
             resumeSchedulerJob(msg.getUuid());
             APIChangeSchedulerStateEvent evt = new APIChangeSchedulerStateEvent( msg.getId());

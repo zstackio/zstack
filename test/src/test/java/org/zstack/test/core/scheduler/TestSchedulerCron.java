@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.scheduler.SchedulerFacade;
+import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -63,5 +64,10 @@ public class TestSchedulerCron {
         TimeUnit.SECONDS.sleep(8);
         long counter = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(3,counter);
+        SchedulerVO vo = dbf.listAll(SchedulerVO.class).get(0);
+        api.changeSchedulerState(vo.getUuid(),"disable",session);
+        SchedulerVO changeRecord = dbf.listAll(SchedulerVO.class).get(0);
+        Assert.assertEquals(changeRecord.getState(), "Disabled");
+
     }
 }
