@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
@@ -29,11 +30,11 @@ import org.zstack.utils.data.SizeUnit;
 /**
  * 1. use ceph for backup storage and primary storage
  * 2. create a vm
- *
+ * <p>
  * confirm the vm created successfully
- *
+ * <p>
  * 3. delete the ps
- *
+ * <p>
  * confirm pools are deleted.
  */
 public class TestCeph1 {
@@ -65,9 +66,9 @@ public class TestCeph1 {
         bconfig = loader.getComponent(CephBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         BackupStorageInventory bs = deployer.backupStorages.get("ceph-bk");
         SimpleQuery<CephBackupStorageMonVO> q = dbf.createQuery(CephBackupStorageMonVO.class);
@@ -88,6 +89,8 @@ public class TestCeph1 {
         Assert.assertFalse(config.deleteCmds.isEmpty());
 
         PrimaryStorageInventory ps = deployer.primaryStorages.get("ceph-pri");
+        ClusterInventory ci = deployer.clusters.get("Cluster1");
+        api.detachPrimaryStorage(ps.getUuid(), ci.getUuid());
         api.deletePrimaryStorage(ps.getUuid());
 
         Assert.assertTrue(config.deletePoolCmds.isEmpty());
