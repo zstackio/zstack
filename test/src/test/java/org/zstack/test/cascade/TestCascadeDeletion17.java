@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
@@ -61,6 +62,8 @@ public class TestCascadeDeletion17 {
 	    vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
 	    Assert.assertEquals(true, vol.isAttached());
         PrimaryStorageInventory ps = deployer.primaryStorages.get("nfs");
+        ClusterInventory ci = deployer.clusters.get("Cluster1");
+        api.detachPrimaryStorage(ps.getUuid(), ci.getUuid());
         api.deletePrimaryStorage(ps.getUuid());
         Assert.assertFalse(dbf.isExist(vol.getUuid(), VolumeVO.class));
 	}

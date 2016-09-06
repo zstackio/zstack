@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.cluster.ClusterEO;
+import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
@@ -71,6 +72,8 @@ public class TestCascadeDeletion5 {
         BackupStorageInventory bs = deployer.backupStorages.get("TestBackupStorage");
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
 
+        ClusterInventory ci = deployer.clusters.get("TestCluster");
+        api.detachPrimaryStorage(prinv.getUuid(), ci.getUuid());
         api.deletePrimaryStorage(prinv.getUuid());
         long count = dbf.count(ZoneVO.class);
         Assert.assertTrue(0 != count);

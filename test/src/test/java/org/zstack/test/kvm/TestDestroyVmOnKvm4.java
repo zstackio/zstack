@@ -9,6 +9,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.gc.GCStatus;
 import org.zstack.core.gc.GarbageCollectorVO;
+import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
@@ -96,6 +97,8 @@ public class TestDestroyVmOnKvm4 {
         api.destroyVmInstance(vm.getUuid());
         Assert.assertEquals(0, config.deleteBitsCmds.size());
 
+        ClusterInventory ci = deployer.clusters.get("Cluster1");
+        api.detachPrimaryStorage(local.getUuid(), ci.getUuid());
         api.deletePrimaryStorage(local.getUuid());
         TimeUnit.SECONDS.sleep(2);
 
