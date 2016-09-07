@@ -16,7 +16,12 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Service"/>
         </zstack:plugin>
+    </bean>
 
+    <bean id="LdapApiInterceptor" class="org.zstack.ldap.LdapApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
+        </zstack:plugin>
     </bean>
 
 </beans>
