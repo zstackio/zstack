@@ -88,5 +88,5 @@
     <import resource="springConfigXml/sharedMountPointPrimaryStorage.xml"/>
     <import resource="springConfigXml/debug.xml"/>
     <import resource="springConfigXml/SchedulerFacade.xml"/>
-    <import resource="springConfigXml/LdapManagerImpl"/>
+    <import resource="springConfigXml/LdapManagerImpl.xml"/>
 </beans>

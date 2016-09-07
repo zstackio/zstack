@@ -110,5 +110,12 @@ public class TestLdap {
         msg3.setServiceId(bus.makeLocalServiceId(LdapConstant.SERVICE_ID));
         APILogInReply reply3 = sender.call(msg3, APILogInReply.class);
         logger.debug(reply3.getInventory().getAccountUuid());
+
+        // unbind account
+        APIUnbindLdapAccountMsg msg4 = new APIUnbindLdapAccountMsg();
+        msg4.setUuid(evt2.getInventory().getUuid());
+        msg4.setSession(session);
+        APIUnbindLdapAccountEvent evt4 = sender.send(msg4, APIUnbindLdapAccountEvent.class);
+        Assert.assertTrue(evt4.getErrorCode() == null);
     }
 }
