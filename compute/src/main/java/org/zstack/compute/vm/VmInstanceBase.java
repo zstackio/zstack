@@ -2270,7 +2270,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(APISetVmSshKeyMsg msg){
         APISetVmSshKeyEvent evt = new APISetVmSshKeyEvent(msg.getId());
-        VmSystemTags.SSHKEY.recreateInherentTag(self.getUuid(),map(e(VmSystemTags.SSHKEY_TOKEN,msg.getSshKey())));
+        VmSystemTags.SSHKEY.recreateTag(self.getUuid(),map(e(VmSystemTags.SSHKEY_TOKEN,msg.getSshKey())));
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }
@@ -2284,7 +2284,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(APIDeleteVmSshKeyMsg msg){
         APIDeleteVmSshKeyEvent evt = new APIDeleteVmSshKeyEvent(msg.getId());
-        VmSystemTags.SSHKEY.deleteInherentTag(self.getUuid());
+        VmSystemTags.SSHKEY.delete(self.getUuid());
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }
