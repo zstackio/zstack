@@ -1,9 +1,7 @@
 package org.zstack.ldap;
 
 import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.identity.*;
-import org.zstack.header.query.ExpandedQueries;
-import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -12,16 +10,6 @@ import java.util.Collection;
 import java.util.List;
 
 @Inventory(mappingVOClass = AccountVO.class)
-@ExpandedQueries({
-        @ExpandedQuery(expandedField = "user", inventoryClass = UserInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "accountUuid"),
-        @ExpandedQuery(expandedField = "group", inventoryClass = UserGroupInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "accountUuid"),
-        @ExpandedQuery(expandedField = "policy", inventoryClass = PolicyInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "accountUuid"),
-        @ExpandedQuery(expandedField = "quota", inventoryClass = QuotaInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "identityUuid")
-})
 @PythonClassInventory
 public class LdapServerInventory {
     private String uuid;
@@ -30,7 +18,7 @@ public class LdapServerInventory {
     private String type;
     private Timestamp createDate;
     private Timestamp lastOpDate;
-    
+
     public static LdapServerInventory valueOf(AccountVO vo) {
         LdapServerInventory inv = new LdapServerInventory();
         inv.setUuid(vo.getUuid());
@@ -41,7 +29,7 @@ public class LdapServerInventory {
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
     }
-    
+
     public static List<LdapServerInventory> valueOf(Collection<AccountVO> vos) {
         List<LdapServerInventory> lst = new ArrayList<LdapServerInventory>(vos.size());
         for (AccountVO vo : vos) {

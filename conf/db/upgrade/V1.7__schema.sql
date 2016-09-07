@@ -107,3 +107,9 @@ ALTER TABLE `zstack`.`SchedulerVO` change column status state varchar(128) DEFAU
       `createDate` timestamp,
       PRIMARY KEY  (`uuid`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ ALTER TABLE `zstack`.`LdapAccountRefVO` ADD CONSTRAINT fkLdapAccountRefVOLdapServerVO FOREIGN KEY (ldapServerUuid) REFERENCES LdapServerVO (uuid) ON DELETE CASCADE;
+
+ ALTER TABLE `zstack`.`LdapAccountRefVO` ADD CONSTRAINT fkLdapAccountRefVOAccountVO FOREIGN KEY (accountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;
+
+ ALTER TABLE `zstack`.`LdapAccountRefVO` ADD UNIQUE INDEX(ldapUid,ldapServerUuid);

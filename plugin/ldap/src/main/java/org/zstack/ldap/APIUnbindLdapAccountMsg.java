@@ -4,13 +4,14 @@ import org.zstack.header.host.APIAddHostMsg;
 import org.zstack.header.message.APIParam;
 
 public class APIUnbindLdapAccountMsg extends APIAddHostMsg {
-    @APIParam(maxLength = 255)
-    private String username;
+    @APIParam(maxLength = 32)
+    private String uuid;
 
-    @APIParam(maxLength = 255)
-    private String password;
+    public String getUuid() {
+        return uuid;
+    }
 
-    @APIParam(numberRange = {1, 65535}, required = false)
-    private int sshPort = 22;
-
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

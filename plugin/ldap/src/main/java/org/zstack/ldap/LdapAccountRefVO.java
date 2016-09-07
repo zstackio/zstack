@@ -1,6 +1,8 @@
 package org.zstack.ldap;
 
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.tag.AutoDeleteTag;
+import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.Index;
 
 import javax.persistence.Column;
@@ -24,9 +26,11 @@ public class LdapAccountRefVO {
     private String ldapUid;
 
     @Column
+    @ForeignKey(parentEntityClass = LdapServerVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String ldapServerUuid;
 
     @Column
+    @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String accountUuid;
 
     @Column

@@ -18,6 +18,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
@@ -54,7 +55,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private LdapContextSource ldapContextSource;
 
     @Transactional(readOnly = true)
-    public void readLdapServerConfiguration() {
+    public LdapServerVO getLdapServer() {
         SimpleQuery<LdapServerVO> sq = dbf.createQuery(LdapServerVO.class);
         List<LdapServerVO> ldapServers = sq.list();
         if (ldapServers.isEmpty()) {
@@ -63,12 +64,17 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         if (ldapServers.size() > 1) {
             throw new CloudRuntimeException("More than one ldap server record in database.");
         }
+        return ldapServers.get(0);
+    }
+
+    public void readLdapServerConfiguration() {
+        LdapServerVO ldapServer = getLdapServer();
 
         ldapContextSource = new LdapContextSource();
-        ldapContextSource.setUrl(ldapServers.get(0).getUrl());
-        ldapContextSource.setBase(ldapServers.get(0).getBase());
-        ldapContextSource.setUserDn(ldapServers.get(0).getUsername());
-        ldapContextSource.setPassword(ldapServers.get(0).getPassword());
+        ldapContextSource.setUrl(ldapServer.getUrl());
+        ldapContextSource.setBase(ldapServer.getBase());
+        ldapContextSource.setUserDn(ldapServer.getUsername());
+        ldapContextSource.setPassword(ldapServer.getPassword());
 
         ldapTemplate = new LdapTemplate();
         ldapTemplate.setContextSource(ldapContextSource);
@@ -132,8 +138,13 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     }
 
     @Transactional
-    private void bindLdapAccount(String accountUuid, String ldapUid) {
-
+    private LdapAccountRefInventory bindLdapAccount(String accountUuid, String ldapUid) {
+        LdapAccountRefVO ref = new LdapAccountRefVO();
+        ref.setAccountUuid(accountUuid);
+        ref.setLdapServerUuid(getLdapServer().getUuid());
+        ref.setLdapUid(ldapUid);
+        ref = dbf.persistAndRefresh(ref);
+        return LdapAccountRefInventory.valueOf(ref);
     }
 
     public String getDnByUid(String uid) {
@@ -228,20 +239,42 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private void handle(APIAddLdapServerMsg msg) {
         APIAddLdapServerEvent evt = new APIAddLdapServerEvent();
 
+        LdapServerVO ldapServerVO = new LdapServerVO();
+        ldapServerVO.setUuid(Platform.getUuid());
+        ldapServerVO.setUrl(msg.getUrl());
+        ldapServerVO.setBase(msg.getBase());
+        ldapServerVO.setUsername(msg.getUsername());
+        ldapServerVO.setPassword(msg.getPassword());
+        dbf.persistAndRefresh(ldapServerVO);
 
         bus.publish(evt);
     }
 
     private void handle(APIDeleteLdapServerMsg msg) {
+        APIDeleteLdapServerEvent evt = new APIDeleteLdapServerEvent();
 
+        dbf.removeByPrimaryKey(msg.getUuid(), LdapServerVO.class);
+
+        bus.publish(evt);
     }
 
     private void handle(APIBindLdapAccountMsg msg) {
+        APIBindLdapAccountEvent evt = new APIBindLdapAccountEvent();
 
+        if (getDnByUid(msg.getLdapUid()).equals("")) {
+            throw new OperationFailureException(errf.stringToOperationError("cannot find uid on ldap server."));
+        }
+        evt.setInventory(bindLdapAccount(msg.getAccountUuid(), msg.getLdapUid()));
+
+        bus.publish(evt);
     }
 
     private void handle(APIUnbindLdapAccountMsg msg) {
+        APIUnbindLdapAccountEvent evt = new APIUnbindLdapAccountEvent();
 
+        dbf.removeByPrimaryKey(msg.getUuid(), LdapAccountRefVO.class);
+
+        bus.publish(evt);
     }
 
 
