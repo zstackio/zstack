@@ -1,9 +1,9 @@
 package org.zstack.ldap;
 
-import org.zstack.header.host.APIAddHostMsg;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
-public class APIAddLdapServerMsg extends APIAddHostMsg {
+public class APIAddLdapServerMsg extends APIMessage {
     @APIParam(maxLength = 255)
     private String name;
 
@@ -22,22 +22,18 @@ public class APIAddLdapServerMsg extends APIAddHostMsg {
     @APIParam(maxLength = 1024)
     private String password;
 
-    @Override
     public String getName() {
         return name;
     }
 
-    @Override
     public void setName(String name) {
         this.name = name;
     }
 
-    @Override
     public String getDescription() {
         return description;
     }
 
-    @Override
     public void setDescription(String description) {
         this.description = description;
     }

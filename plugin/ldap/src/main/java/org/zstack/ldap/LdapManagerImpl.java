@@ -9,7 +9,6 @@ import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.config.annotation.authentication.configurers.ldap.LdapAuthenticationProviderConfigurer;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -140,6 +139,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     @Transactional
     private LdapAccountRefInventory bindLdapAccount(String accountUuid, String ldapUid) {
         LdapAccountRefVO ref = new LdapAccountRefVO();
+        ref.setUuid(Platform.getUuid());
         ref.setAccountUuid(accountUuid);
         ref.setLdapServerUuid(getLdapServer().getUuid());
         ref.setLdapUid(ldapUid);
@@ -228,7 +228,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             return;
         }
         if (isValid(vo.getLdapUid(), msg.getPassword())) {
-            reply.setInventory(getSession(vo.getUuid(), vo.getUuid()));
+            reply.setInventory(getSession(vo.getAccountUuid(), vo.getUuid()));
         } else {
             reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR,
                     "Login Failed."));
@@ -237,21 +237,34 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     }
 
     private void handle(APIAddLdapServerMsg msg) {
-        APIAddLdapServerEvent evt = new APIAddLdapServerEvent();
+        APIAddLdapServerEvent evt = new APIAddLdapServerEvent(msg.getId());
 
-        LdapServerVO ldapServerVO = new LdapServerVO();
-        ldapServerVO.setUuid(Platform.getUuid());
-        ldapServerVO.setUrl(msg.getUrl());
-        ldapServerVO.setBase(msg.getBase());
-        ldapServerVO.setUsername(msg.getUsername());
-        ldapServerVO.setPassword(msg.getPassword());
-        dbf.persistAndRefresh(ldapServerVO);
+        SimpleQuery<LdapServerVO> sq = dbf.createQuery(LdapServerVO.class);
+        List<LdapServerVO> ldapServers = sq.list();
+        if (ldapServers.isEmpty()) {
+            LdapServerVO ldapServerVO = new LdapServerVO();
+            ldapServerVO.setUuid(Platform.getUuid());
+            ldapServerVO.setName(msg.getName());
+            ldapServerVO.setDescription(msg.getDescription());
+            ldapServerVO.setUrl(msg.getUrl());
+            ldapServerVO.setBase(msg.getBase());
+            ldapServerVO.setUsername(msg.getUsername());
+            ldapServerVO.setPassword(msg.getPassword());
+
+            ldapServerVO = dbf.persistAndRefresh(ldapServerVO);
+            LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
+            evt.setInventory(inv);
+        } else {
+            evt.setErrorCode(errf.stringToOperationError("There has been a ldap server record. " +
+                    "You'd better remove it before add a new one!"));
+        }
+
 
         bus.publish(evt);
     }
 
     private void handle(APIDeleteLdapServerMsg msg) {
-        APIDeleteLdapServerEvent evt = new APIDeleteLdapServerEvent();
+        APIDeleteLdapServerEvent evt = new APIDeleteLdapServerEvent(msg.getId());
 
         dbf.removeByPrimaryKey(msg.getUuid(), LdapServerVO.class);
 
@@ -259,7 +272,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     }
 
     private void handle(APIBindLdapAccountMsg msg) {
-        APIBindLdapAccountEvent evt = new APIBindLdapAccountEvent();
+        APIBindLdapAccountEvent evt = new APIBindLdapAccountEvent(msg.getId());
 
         if (getDnByUid(msg.getLdapUid()).equals("")) {
             throw new OperationFailureException(errf.stringToOperationError("cannot find uid on ldap server."));
@@ -270,7 +283,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     }
 
     private void handle(APIUnbindLdapAccountMsg msg) {
-        APIUnbindLdapAccountEvent evt = new APIUnbindLdapAccountEvent();
+        APIUnbindLdapAccountEvent evt = new APIUnbindLdapAccountEvent(msg.getId());
 
         dbf.removeByPrimaryKey(msg.getUuid(), LdapAccountRefVO.class);
 

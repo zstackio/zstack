@@ -1,7 +1,6 @@
 package org.zstack.ldap;
 
 import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.identity.AccountVO;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -9,41 +8,39 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@Inventory(mappingVOClass = AccountVO.class)
+@Inventory(mappingVOClass = LdapServerVO.class)
 @PythonClassInventory
 public class LdapServerInventory {
     private String uuid;
     private String name;
     private String description;
-    private String type;
+    private String url;
+    private String base;
+    private String username;
+    private String password;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    public static LdapServerInventory valueOf(AccountVO vo) {
+    public static LdapServerInventory valueOf(LdapServerVO vo) {
         LdapServerInventory inv = new LdapServerInventory();
         inv.setUuid(vo.getUuid());
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
-        inv.setType(vo.getType().toString());
+        inv.setUrl(vo.getUrl());
+        inv.setBase(vo.getBase());
+        inv.setUsername(vo.getUsername());
+        inv.setPassword(vo.getPassword());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
     }
 
-    public static List<LdapServerInventory> valueOf(Collection<AccountVO> vos) {
+    public static List<LdapServerInventory> valueOf(Collection<LdapServerVO> vos) {
         List<LdapServerInventory> lst = new ArrayList<LdapServerInventory>(vos.size());
-        for (AccountVO vo : vos) {
+        for (LdapServerVO vo : vos) {
             lst.add(LdapServerInventory.valueOf(vo));
         }
         return lst;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public String getDescription() {
@@ -84,5 +81,37 @@ public class LdapServerInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getBase() {
+        return base;
+    }
+
+    public void setBase(String base) {
+        this.base = base;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
