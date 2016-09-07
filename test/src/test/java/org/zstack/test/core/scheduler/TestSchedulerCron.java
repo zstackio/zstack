@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.scheduler.SchedulerFacade;
+import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
@@ -50,7 +51,7 @@ public class TestSchedulerCron {
         dbf = loader.getComponent(DatabaseFacade.class);
         scheduler = loader.getComponent(SchedulerFacade.class);
         snapshotKvmSimulator = loader.getComponent(VolumeSnapshotKvmSimulator.class);
-        session = api.loginAsAdmin();
+        SessionInventory session = api.loginByAccount("test", "password");
     }
 
     @Test
@@ -65,9 +66,10 @@ public class TestSchedulerCron {
         long counter = dbf.count(VolumeSnapshotVO.class);
         Assert.assertEquals(3,counter);
         SchedulerVO vo = dbf.listAll(SchedulerVO.class).get(0);
-        api.changeSchedulerState(vo.getUuid(),"disable",session);
+        SchedulerInventory inv = api.changeSchedulerState(vo.getUuid(),"disable",session);
         SchedulerVO changeRecord = dbf.listAll(SchedulerVO.class).get(0);
-        Assert.assertEquals(changeRecord.getState(), "Disabled");
+        Assert.assertEquals("Disabled", changeRecord.getState());
+        Assert.assertEquals("Disabled", inv.getState());
 
     }
 }

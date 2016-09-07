@@ -1,12 +1,14 @@
 package org.zstack.core.scheduler;
 
 import org.zstack.header.core.scheduler.SchedulerVO;
+import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 /**
  * Created by Mei Lei on 8/31/16.
  */
+@Action(category = SchedulerConstant.ACTION_CATEGORY)
 public class APIChangeSchedulerStateMsg  extends APIMessage implements SchedulerMessage  {
     @APIParam(resourceType = SchedulerVO.class)
     private String uuid;
