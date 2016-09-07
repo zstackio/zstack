@@ -1,5 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>zstack</artifactId>
@@ -33,7 +33,7 @@
                                 WEB-INF/lib/reflections-0.9.8.jar,
                             </packagingExcludes>
                             <webResources>
-                                <resource>	
+                                <resource>
                                     <directory>../conf</directory>
                                     <targetPath>WEB-INF/classes</targetPath>
                                     <includes>
@@ -47,21 +47,21 @@
                                         <exclude>springConfigXml/ceph.xml</exclude>
                                     </excludes>
                                 </resource>
-                                <resource>	
+                                <resource>
                                     <directory>../conf</directory>
                                     <targetPath>WEB-INF/</targetPath>
                                     <includes>
                                         <include>urlrewrite.xml</include>
                                     </includes>
                                 </resource>
-                                <resource>	
+                                <resource>
                                     <directory>../premium/conf</directory>
                                     <targetPath>WEB-INF/classes</targetPath>
                                     <includes>
                                         <include>**/*</include>
                                     </includes>
                                 </resource>
-                                <resource>	
+                                <resource>
                                     <directory>.</directory>
                                     <targetPath>META-INF/</targetPath>
                                     <includes>
@@ -217,6 +217,11 @@
                     <artifactId>sharedMountPointPrimaryStorage</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>ldap</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
 
                 <dependency>
                     <groupId>org.zstack</groupId>
@@ -254,24 +259,24 @@
                         WEB-INF/lib/jtidy*.jar,
                         WEB-INF/lib/servlet-api*.jar,
                         WEB-INF/lib/c3p0-0.9.1.1.jar,
-			WEB-INF/lib/reflections-0.9.8.jar,
+                        WEB-INF/lib/reflections-0.9.8.jar,
                     </packagingExcludes>
                     <webResources>
-                        <resource>	
+                        <resource>
                             <directory>../conf</directory>
                             <targetPath>WEB-INF/classes</targetPath>
                             <includes>
                                 <include>**/*</include>
                             </includes>
                         </resource>
-                        <resource>	
+                        <resource>
                             <directory>../conf</directory>
                             <targetPath>WEB-INF/</targetPath>
                             <includes>
                                 <include>urlrewrite.xml</include>
                             </includes>
                         </resource>
-                        <resource>	
+                        <resource>
                             <directory>.</directory>
                             <targetPath>META-INF/</targetPath>
                             <includes>
@@ -424,6 +429,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>sharedMountPointPrimaryStorage</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>ldap</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
