@@ -1,5 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.compiler.version>2.5.1</project.compiler.version>
@@ -329,59 +329,59 @@
                 <artifactId>java-uuid-generator</artifactId>
                 <version>3.1.3</version>
             </dependency>
-	   <!-- https://mvnrepository.com/artifact/org.yaml/snakeyaml -->
-  	    <dependency>
-     		<groupId>org.yaml</groupId>
-    		<artifactId>snakeyaml</artifactId>
-    		<version>1.17</version>
-	    </dependency>
+            <!-- https://mvnrepository.com/artifact/org.yaml/snakeyaml -->
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>1.17</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>
 
-<!--
-    <pluginRepositories>
-        <pluginRepository>
-            <id>sonatype-repo</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <layout>default</layout>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
+    <!--
+        <pluginRepositories>
+            <pluginRepository>
+                <id>sonatype-repo</id>
+                <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                <layout>default</layout>
+                <releases>
+                    <enabled>false</enabled>
+                </releases>
+                <snapshots>
+                    <enabled>true</enabled>
+                </snapshots>
+            </pluginRepository>
+        </pluginRepositories>
 
-    <repositories>
-        <repository>
-            <id>annotationrepo</id>
-            <url>http://maven-annotation-plugin.googlecode.com/svn/trunk/mavenrepo/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>helper</id>
-            <url>http://repo.jfrog.org/artifactory/plugins-releases/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>spring-milestone</id>
-            <name>Spring Maven MILESTONE Repository</name>
-            <url>http://maven.springframework.org/milestone</url>
-        </repository>
-    </repositories>
--->
+        <repositories>
+            <repository>
+                <id>annotationrepo</id>
+                <url>http://maven-annotation-plugin.googlecode.com/svn/trunk/mavenrepo/</url>
+                <releases>
+                    <enabled>true</enabled>
+                </releases>
+                <snapshots>
+                    <enabled>false</enabled>
+                </snapshots>
+            </repository>
+            <repository>
+                <id>helper</id>
+                <url>http://repo.jfrog.org/artifactory/plugins-releases/</url>
+                <releases>
+                    <enabled>true</enabled>
+                </releases>
+                <snapshots>
+                    <enabled>false</enabled>
+                </snapshots>
+            </repository>
+            <repository>
+                <id>spring-milestone</id>
+                <name>Spring Maven MILESTONE Repository</name>
+                <url>http://maven.springframework.org/milestone</url>
+            </repository>
+        </repositories>
+    -->
 
     <build>
         <resources>

@@ -84,3 +84,26 @@ ALTER TABLE `zstack`.`SchedulerVO` change column status state varchar(128) DEFAU
  # Foreign keys for table AlertTimestampVO
  
  ALTER TABLE AlertTimestampVO ADD CONSTRAINT fkAlertTimestampVOAlertVO FOREIGN KEY (alertUuid) REFERENCES AlertVO (uuid) ON DELETE CASCADE;
+
+ CREATE TABLE  `zstack`.`LdapServerVO` (
+     `uuid` varchar(32) NOT NULL UNIQUE,
+     `name` varchar(255) NOT NULL,
+     `description` varchar(2048) DEFAULT NULL,
+     `url` varchar(1024) NOT NULL,
+     `base` varchar(1024) NOT NULL,
+     `username` varchar(1024) NOT NULL,
+     `password` varchar(1024) NOT NULL,
+     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+     `createDate` timestamp,
+     PRIMARY KEY  (`uuid`)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ CREATE TABLE  `zstack`.`LdapAccountRefVO` (
+      `uuid` varchar(32) NOT NULL UNIQUE,
+      `ldapUid` varchar(255) NOT NULL,
+      `ldapServerUuid` varchar(255) NOT NULL,
+      `accountUuid`  varchar(255) NOT NULL,
+      `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+      `createDate` timestamp,
+      PRIMARY KEY  (`uuid`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

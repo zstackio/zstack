@@ -1,12 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.zstack</groupId>
-		<artifactId>plugin</artifactId>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.zstack</groupId>
+        <artifactId>plugin</artifactId>
         <version>1.6.0</version>
-	</parent>
-	<artifactId>virtualRouterProvider</artifactId>
+    </parent>
+    <artifactId>virtualRouterProvider</artifactId>
 
     <build>
         <plugins>
@@ -35,7 +35,7 @@
                 <configuration>
                     <source>${project.java.version}</source>
                     <target>${project.java.version}</target>
-		    <complianceLevel>${project.java.version}</complianceLevel>
+                    <complianceLevel>${project.java.version}</complianceLevel>
                     <XnoInline>true</XnoInline>
                     <aspectLibraries>
                         <aspectLibrary>
@@ -56,37 +56,37 @@
         </plugins>
     </build>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.zstack</groupId>
-			<artifactId>network</artifactId>
-			<version>${project.version}</version>
-		</dependency>
+    <dependencies>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>network</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>vip</artifactId>
             <version>${project.version}</version>
         </dependency>
-		<dependency>
-			<groupId>org.zstack</groupId>
-			<artifactId>configuration</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.zstack</groupId>
-			<artifactId>compute</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.zstack</groupId>
-			<artifactId>kvm</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.zstack</groupId>
-			<artifactId>portForwarding</artifactId>
-			<version>${project.version}</version>
-		</dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>configuration</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>compute</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>kvm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>portForwarding</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>eip</artifactId>
@@ -102,5 +102,5 @@
             <artifactId>loadBalancer</artifactId>
             <version>${project.version}</version>
         </dependency>
-	</dependencies>
+    </dependencies>
 </project>

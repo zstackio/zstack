@@ -1,25 +1,25 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.zstack</groupId>
-		<artifactId>plugin</artifactId>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.zstack</groupId>
+        <artifactId>plugin</artifactId>
         <version>1.6.0</version>
-	</parent>
+    </parent>
 
-	<artifactId>portForwarding</artifactId>
-	<dependencies>
-		<dependency>
-			<groupId>org.zstack</groupId>
-			<artifactId>network</artifactId>
-			<version>${project.version}</version>
-		</dependency>
+    <artifactId>portForwarding</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>network</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>vip</artifactId>
             <version>${project.version}</version>
         </dependency>
-	</dependencies>
+    </dependencies>
 
     <build>
         <plugins>
@@ -48,7 +48,7 @@
                 <configuration>
                     <source>${project.java.version}</source>
                     <target>${project.java.version}</target>
-		    <complianceLevel>${project.java.version}</complianceLevel>
+                    <complianceLevel>${project.java.version}</complianceLevel>
                     <XnoInline>true</XnoInline>
                     <aspectLibraries>
                         <aspectLibrary>

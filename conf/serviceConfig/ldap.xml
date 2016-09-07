@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>ldap</id>
+    <interceptor>LdapApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.ldap.APIAddLdapServerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.ldap.APIDeleteLdapServerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.ldap.APIBindLdapAccountMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.ldap.APIUnbindLdapAccountMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.ldap.APIQueryLdapAccountMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.ldap.APILoginByLdapMsg</name>
+    </message>
+</service>

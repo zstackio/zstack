@@ -9,20 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>loadBalancer</artifactId>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>network</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>vip</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
+    <artifactId>ldap</artifactId>
 
     <build>
         <plugins>
@@ -71,5 +58,12 @@
             </plugin>
         </plugins>
     </build>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.ldap</groupId>
+            <artifactId>spring-ldap-core</artifactId>
+            <version>2.0.2.RELEASE</version>
+        </dependency>
+    </dependencies>
 
 </project>
