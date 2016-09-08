@@ -229,7 +229,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             return;
         }
         if (isValid(vo.getLdapUid(), msg.getPassword())) {
-            reply.setInventory(getSession(vo.getAccountUuid(), vo.getUuid()));
+            reply.setInventory(getSession(vo.getAccountUuid(), vo.getAccountUuid()));
         } else {
             reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR,
                     "Login Failed."));
