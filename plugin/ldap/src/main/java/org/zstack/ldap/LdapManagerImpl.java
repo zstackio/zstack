@@ -5,6 +5,7 @@ import org.springframework.ldap.NamingException;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.AbstractContextMapper;
+import org.springframework.ldap.core.support.DefaultDirObjectFactory;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
@@ -104,8 +105,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
     private void handleApiMessage(APIMessage msg) {
 
-        if (msg instanceof APILoginByLdapMsg) {
-            handle((APILoginByLdapMsg) msg);
+        if (msg instanceof APILogInByLdapMsg) {
+            handle((APILogInByLdapMsg) msg);
         } else if (msg instanceof APIAddLdapServerMsg) {
             handle((APIAddLdapServerMsg) msg);
         } else if (msg instanceof APIDeleteLdapServerMsg) {
@@ -114,6 +115,10 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             handle((APIBindLdapAccountMsg) msg);
         } else if (msg instanceof APIUnbindLdapAccountMsg) {
             handle((APIUnbindLdapAccountMsg) msg);
+        } else if (msg instanceof APITestAddLdapServerConnectionMsg) {
+            handle((APITestAddLdapServerConnectionMsg) msg);
+        } else if (msg instanceof APIUpdateLdapServerMsg) {
+            handle((APIUpdateLdapServerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -216,7 +221,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         return true;
     }
 
-    private void handle(APILoginByLdapMsg msg) {
+    private void handle(APILogInByLdapMsg msg) {
         APILogInReply reply = new APILogInReply();
 
         SimpleQuery<LdapAccountRefVO> q = dbf.createQuery(LdapAccountRefVO.class);
@@ -291,5 +296,87 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         bus.publish(evt);
     }
 
+
+    private void handle(APITestAddLdapServerConnectionMsg msg) {
+        APITestAddLdapServerConnectionEvent evt = new APITestAddLdapServerConnectionEvent(msg.getId());
+
+        LdapServerInventory inv = new LdapServerInventory();
+        inv.setName(msg.getName());
+        inv.setDescription(msg.getDescription());
+        inv.setUrl(msg.getUrl());
+        inv.setBase(msg.getBase());
+        inv.setUsername(msg.getUsername());
+        inv.setPassword(msg.getPassword());
+        evt.setInventory(inv);
+        evt.setSuccess(testAddLdapServerConnection(inv));
+
+        bus.publish(evt);
+    }
+
+    private boolean testAddLdapServerConnection(LdapServerInventory inv) {
+        LdapContextSource testLdapContextSource;
+        testLdapContextSource = new LdapContextSource();
+        testLdapContextSource.setUrl(inv.getUrl());
+        testLdapContextSource.setBase(inv.getBase());
+        testLdapContextSource.setUserDn(inv.getUsername());
+        testLdapContextSource.setPassword(inv.getPassword());
+        testLdapContextSource.setDirObjectFactory(DefaultDirObjectFactory.class);
+        testLdapContextSource.setPooled(false);
+
+        LdapTemplate testLdapTemplate;
+        testLdapTemplate = new LdapTemplate();
+        testLdapTemplate.setContextSource(testLdapContextSource);
+
+        try {
+            testLdapContextSource.afterPropertiesSet();
+            logger.info("Test LDAP Context Source loaded ");
+        } catch (Exception e) {
+            logger.error("Test LDAP Context Source not loaded ", e);
+            throw new CloudRuntimeException("Test LDAP Context Source not loaded", e);
+        }
+
+        try {
+            AndFilter filter = new AndFilter();
+            filter.and(new EqualsFilter("uid", ""));
+            ldapTemplate.authenticate("", filter.toString(), "");
+            logger.info("LDAP connection was successful");
+        } catch (Exception e) {
+            logger.info("Cannot connect to LDAP server");
+            return false;
+        }
+
+
+        return true;
+    }
+
+
+    private void handle(APIUpdateLdapServerMsg msg) {
+        APIUpdateLdapServerEvent evt = new APIUpdateLdapServerEvent(msg.getId());
+
+        LdapServerVO ldapServerVO = dbf.findByUuid(msg.getLdapServerUuid(), LdapServerVO.class);
+        if (msg.getName() != null) {
+            ldapServerVO.setName(msg.getName());
+        }
+        if (msg.getDescription() != null) {
+            ldapServerVO.setDescription(msg.getDescription());
+        }
+        if (msg.getUrl() != null) {
+            ldapServerVO.setUrl(msg.getUrl());
+        }
+        if (msg.getBase() != null) {
+            ldapServerVO.setBase(msg.getBase());
+        }
+        if (msg.getUsername() != null) {
+            ldapServerVO.setUsername(msg.getUsername());
+        }
+        if (msg.getPassword() != null) {
+            ldapServerVO.setPassword(msg.getPassword());
+        }
+
+        ldapServerVO = dbf.persistAndRefresh(ldapServerVO);
+        evt.setInventory(LdapServerInventory.valueOf(ldapServerVO));
+
+        bus.publish(evt);
+    }
 
 }

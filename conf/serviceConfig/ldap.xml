@@ -30,6 +30,15 @@
     </message>
 
     <message>
-        <name>org.zstack.ldap.APILoginByLdapMsg</name>
+        <name>org.zstack.ldap.APILogInByLdapMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.ldap.APITestAddLdapServerConnectionMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.ldap.APIUpdateLdapServerMsg</name>
+    </message>
+
 </service>

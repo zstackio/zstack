@@ -5,7 +5,7 @@ import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.APIParam;
 
 @SuppressCredentialCheck
-public class APILoginByLdapMsg extends APISessionMessage {
+public class APILogInByLdapMsg extends APISessionMessage {
     @APIParam
     private String uid;
     @APIParam

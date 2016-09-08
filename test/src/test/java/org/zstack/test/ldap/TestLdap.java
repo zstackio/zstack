@@ -3,29 +3,22 @@ package org.zstack.test.ldap;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.identity.APILogInReply;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.ldap.*;
-import org.zstack.network.service.eip.APIQueryEipMsg;
-import org.zstack.network.service.eip.APIQueryEipReply;
-import org.zstack.network.service.eip.EipInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.test.search.QueryTestValidator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -103,6 +96,12 @@ public class TestLdap {
         logger.debug(evt1.getInventory().getName());
         queryLdapServer();
 
+        // some assertions
+        Assert.assertFalse(ldapManager.isValid("ldapuser1", ""));
+        Assert.assertFalse(ldapManager.isValid("miao", ""));
+        Assert.assertTrue(ldapManager.isValid("ldapuser1", "redhat"));
+        Assert.assertTrue(ldapManager.isValid("admin", "miao"));
+
         // delete ldap server
         APIDeleteLdapServerMsg msg11 = new APIDeleteLdapServerMsg();
         msg11.setUuid(evt1.getInventory().getUuid());
@@ -116,10 +115,10 @@ public class TestLdap {
         msg13.setDescription("miao desc");
         msg13.setUrl("ldap://172.20.12.176:389");
         msg13.setBase("dc=learnitguide,dc=net");
-//        msg13.setUsername("Manager");
-//        msg13.setPassword("password");
-        msg13.setUsername("");
-        msg13.setPassword("");
+        msg13.setUsername("cn=Manager,dc=learnitguide,dc=net");
+        msg13.setPassword("password");
+//        msg13.setUsername("");
+//        msg13.setPassword("");
         msg13.setSession(session);
         APIAddLdapServerEvent evt13 = sender.send(msg13, APIAddLdapServerEvent.class);
         logger.debug(evt13.getInventory().getName());
@@ -129,7 +128,20 @@ public class TestLdap {
         Assert.assertFalse(ldapManager.isValid("ldapuser1", ""));
         Assert.assertFalse(ldapManager.isValid("miao", ""));
         Assert.assertTrue(ldapManager.isValid("ldapuser1", "redhat"));
+        Assert.assertFalse(ldapManager.isValid("", ""));
         Assert.assertTrue(ldapManager.isValid("admin", "miao"));
+
+        // test conn
+        APITestAddLdapServerConnectionMsg msg21 = new APITestAddLdapServerConnectionMsg();
+        msg21.setName("miao");
+        msg21.setDescription("miao desc");
+        msg21.setUrl("ldap://172.20.12.176:389");
+        msg21.setBase("dc=learnitguide,dc=net");
+        msg21.setUsername("cn=Manager,dc=learnitguide,dc=net");
+        msg21.setPassword("password");
+        msg21.setSession(session);
+        APITestAddLdapServerConnectionEvent evt21 = sender.send(msg21, APITestAddLdapServerConnectionEvent.class);
+        logger.debug(evt21.getInventory().getName());
 
         // bind account
         AccountInventory ai1 = api.createAccount("ldapuser1", "hello-kitty");
@@ -141,7 +153,7 @@ public class TestLdap {
         logger.debug(evt2.getInventory().getUuid());
 
         // login account
-        APILoginByLdapMsg msg3 = new APILoginByLdapMsg();
+        APILogInByLdapMsg msg3 = new APILogInByLdapMsg();
         msg3.setUid("ldapuser1");
         msg3.setPassword("redhat");
         msg3.setServiceId(bus.makeLocalServiceId(LdapConstant.SERVICE_ID));
