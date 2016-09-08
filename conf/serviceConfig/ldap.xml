@@ -21,6 +21,12 @@
 
     <message>
         <name>org.zstack.ldap.APIQueryLdapAccountMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.ldap.APIQueryLdapServerMsg</name>
+        <serviceId>query</serviceId>
     </message>
 
     <message>
