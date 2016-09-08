@@ -89,8 +89,6 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
     @MessageSafe
     public void handleMessage(Message msg) {
-        readLdapServerConfiguration();
-
         if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
@@ -123,6 +121,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
 
     public boolean isValid(String uid, String password) {
+        readLdapServerConfiguration();
         try {
             AndFilter filter = new AndFilter();
             filter.and(new EqualsFilter("uid", uid));
@@ -133,7 +132,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             logger.info("isValid fail userName:" + uid, e);
             return false;
         } catch (Exception e) {
-            logger.info("isValid error userName" + uid, e);
+            logger.info("isValid error userName:" + uid, e);
             return false;
         }
     }
@@ -150,6 +149,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     }
 
     public String getDnByUid(String uid) {
+        readLdapServerConfiguration();
         return getUserDn("uid", uid).replace("," + ldapContextSource.getBaseLdapPathAsString(), "");
     }
 

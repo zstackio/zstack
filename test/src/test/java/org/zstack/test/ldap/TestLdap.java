@@ -11,6 +11,7 @@ import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.identity.APILogInReply;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.query.QueryCondition;
 import org.zstack.ldap.*;
 import org.zstack.network.service.eip.APIQueryEipMsg;
 import org.zstack.network.service.eip.APIQueryEipReply;
@@ -22,6 +23,10 @@ import org.zstack.test.deployer.Deployer;
 import org.zstack.test.search.QueryTestValidator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.ArrayList;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * @author frank
@@ -61,6 +66,17 @@ public class TestLdap {
         session = api.loginAsAdmin();
     }
 
+    private void queryLdapServer() throws ApiSenderException {
+        ApiSender sender = api.getApiSender();
+
+        // query ldap server
+        APIQueryLdapServerMsg msg12 = new APIQueryLdapServerMsg();
+        msg12.setConditions(new ArrayList<QueryCondition>());
+        msg12.setSession(session);
+        APIQueryLdapServerReply reply12 = sender.call(msg12, APIQueryLdapServerReply.class);
+        logger.debug(reply12.getInventories().stream().map(LdapServerInventory::getUrl).collect(Collectors.joining(", ")));
+    }
+
     @Test
     public void test() throws ApiSenderException {
 //        LdapServerVO ldapServerVO = new LdapServerVO();
@@ -85,10 +101,31 @@ public class TestLdap {
         msg1.setSession(session);
         APIAddLdapServerEvent evt1 = sender.send(msg1, APIAddLdapServerEvent.class);
         logger.debug(evt1.getInventory().getName());
+        queryLdapServer();
+
+        // delete ldap server
+        APIDeleteLdapServerMsg msg11 = new APIDeleteLdapServerMsg();
+        msg11.setUuid(evt1.getInventory().getUuid());
+        msg11.setSession(session);
+        APIDeleteLdapServerEvent evt11 = sender.send(msg11, APIDeleteLdapServerEvent.class);
+        queryLdapServer();
+
+        // add ldap server
+        APIAddLdapServerMsg msg13 = new APIAddLdapServerMsg();
+        msg13.setName("miao");
+        msg13.setDescription("miao desc");
+        msg13.setUrl("ldap://172.20.12.176:389");
+        msg13.setBase("dc=learnitguide,dc=net");
+//        msg13.setUsername("Manager");
+//        msg13.setPassword("password");
+        msg13.setUsername("");
+        msg13.setPassword("");
+        msg13.setSession(session);
+        APIAddLdapServerEvent evt13 = sender.send(msg13, APIAddLdapServerEvent.class);
+        logger.debug(evt13.getInventory().getName());
+        queryLdapServer();
 
         // some assertions
-        ldapManager.readLdapServerConfiguration();
-
         Assert.assertFalse(ldapManager.isValid("ldapuser1", ""));
         Assert.assertFalse(ldapManager.isValid("miao", ""));
         Assert.assertTrue(ldapManager.isValid("ldapuser1", "redhat"));
