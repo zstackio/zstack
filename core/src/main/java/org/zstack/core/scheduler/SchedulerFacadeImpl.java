@@ -3,6 +3,7 @@ package org.zstack.core.scheduler;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -30,6 +31,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Query;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -144,6 +146,16 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         return bus.makeLocalServiceId(SchedulerConstant.SERVICE_ID);
     }
 
+    @Transactional
+    private void updateSchedulerStatus(String uuid, String status) {
+        String sql = "update SchedulerVO scheduler set scheduler.state= :state where scheduler.uuid = :schedulerUuid";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("state", status);
+        q.setParameter("schedulerUuid", uuid);
+        q.executeUpdate();
+    }
+
+
     public void pauseSchedulerJob (String uuid) {
         logger.debug(String.format("Scheduler %s will change status to Disabled", uuid));
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
@@ -156,8 +168,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         String jobGroup = q2.findValue();
         try {
             scheduler.pauseJob(jobKey(jobName, jobGroup));
-            self.setState(SchedulerState.Disabled.toString());
-            self = dbf.updateAndRefresh(self);
+            updateSchedulerStatus(uuid, SchedulerState.Disabled.toString());
+            self = dbf.findByUuid(uuid, SchedulerVO.class);
         } catch (SchedulerException e) {
             logger.warn(String.format("Pause Scheduler %s failed!", uuid));
             throw new RuntimeException(e);
@@ -179,8 +191,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             String jobGroup = q2.findValue();
             try {
                 scheduler.resumeJob(jobKey(jobName, jobGroup));
-                self.setState(SchedulerState.Enabled.toString());
-                self = dbf.updateAndRefresh(self);
+                updateSchedulerStatus(uuid, SchedulerState.Enabled.toString());
+                self = dbf.findByUuid(uuid, SchedulerVO.class);
             } catch (SchedulerException e) {
                 logger.warn(String.format("Resume Scheduler %s failed!", uuid));
                 throw new RuntimeException(e);
