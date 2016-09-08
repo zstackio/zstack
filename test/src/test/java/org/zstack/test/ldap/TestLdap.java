@@ -33,7 +33,6 @@ public class TestLdap {
     CloudBus bus;
     DatabaseFacade dbf;
     SessionInventory session;
-    VirtualRouterSimulatorConfig vconfig;
     KVMSimulatorConfig kconfig;
     LdapManager ldapManager;
 
@@ -42,16 +41,11 @@ public class TestLdap {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/ldap/TestLdap.xml", con);
-        deployer.addSpringConfig("VirtualRouter.xml");
-        deployer.addSpringConfig("VirtualRouterSimulator.xml");
         deployer.addSpringConfig("KVMRelated.xml");
-        deployer.addSpringConfig("vip.xml");
-        deployer.addSpringConfig("eip.xml");
         deployer.addSpringConfig("LdapManagerImpl.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
-        vconfig = loader.getComponent(VirtualRouterSimulatorConfig.class);
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         ldapManager = loader.getComponent(LdapManager.class);
         bus = loader.getComponent(CloudBus.class);
@@ -72,15 +66,6 @@ public class TestLdap {
 
     @Test
     public void test() throws ApiSenderException {
-//        LdapServerVO ldapServerVO = new LdapServerVO();
-//        ldapServerVO.setUuid(Platform.getUuid());
-//        ldapServerVO.setName("miao");
-//        ldapServerVO.setUrl("ldap://172.20.12.176:389");
-//        ldapServerVO.setBase("dc=learnitguide,dc=net");
-//        ldapServerVO.setUsername("");
-//        ldapServerVO.setPassword("");
-//        dbf.persistAndRefresh(ldapServerVO);
-
         ApiSender sender = api.getApiSender();
 
         // add ldap server
@@ -117,31 +102,10 @@ public class TestLdap {
         msg13.setBase("dc=learnitguide,dc=net");
         msg13.setUsername("cn=Manager,dc=learnitguide,dc=net");
         msg13.setPassword("password");
-//        msg13.setUsername("");
-//        msg13.setPassword("");
         msg13.setSession(session);
         APIAddLdapServerEvent evt13 = sender.send(msg13, APIAddLdapServerEvent.class);
         logger.debug(evt13.getInventory().getName());
         queryLdapServer();
-
-        // some assertions
-        Assert.assertFalse(ldapManager.isValid("ldapuser1", ""));
-        Assert.assertFalse(ldapManager.isValid("miao", ""));
-        Assert.assertTrue(ldapManager.isValid("ldapuser1", "redhat"));
-        Assert.assertFalse(ldapManager.isValid("", ""));
-        Assert.assertTrue(ldapManager.isValid("admin", "miao"));
-
-        // test conn
-        APITestAddLdapServerConnectionMsg msg21 = new APITestAddLdapServerConnectionMsg();
-        msg21.setName("miao");
-        msg21.setDescription("miao desc");
-        msg21.setUrl("ldap://172.20.12.176:389");
-        msg21.setBase("dc=learnitguide,dc=net");
-        msg21.setUsername("cn=Manager,dc=learnitguide,dc=net");
-        msg21.setPassword("password");
-        msg21.setSession(session);
-        APITestAddLdapServerConnectionEvent evt21 = sender.send(msg21, APITestAddLdapServerConnectionEvent.class);
-        logger.debug(evt21.getInventory().getName());
 
         // bind account
         AccountInventory ai1 = api.createAccount("ldapuser1", "hello-kitty");

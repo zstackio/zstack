@@ -170,6 +170,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             });
             if (result.size() == 1) {
                 dn = result.get(0).toString();
+            } else {
+                throw new CloudRuntimeException("More than one search result");
             }
             logger.info(String.format("getDn success key:%s, val : %s, dn: %s", key, val, dn));
         } catch (NamingException e) {
@@ -338,10 +340,11 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         try {
             AndFilter filter = new AndFilter();
             filter.and(new EqualsFilter("uid", ""));
-            ldapTemplate.authenticate("", filter.toString(), "");
+            testLdapTemplate.authenticate("", filter.toString(), "");
             logger.info("LDAP connection was successful");
         } catch (Exception e) {
             logger.info("Cannot connect to LDAP server");
+            logger.debug(e.toString());
             return false;
         }
 
