@@ -254,6 +254,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             ldapServerVO = dbf.persistAndRefresh(ldapServerVO);
             LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
             evt.setInventory(inv);
+
+            readLdapServerConfiguration();
         } else {
             evt.setErrorCode(errf.stringToOperationError("There has been a ldap server record. " +
                     "You'd better remove it before add a new one!"));
@@ -267,7 +269,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         APIDeleteLdapServerEvent evt = new APIDeleteLdapServerEvent(msg.getId());
 
         dbf.removeByPrimaryKey(msg.getUuid(), LdapServerVO.class);
-
+        readLdapServerConfiguration();
+        
         bus.publish(evt);
     }
 
