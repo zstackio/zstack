@@ -170,8 +170,10 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             });
             if (result.size() == 1) {
                 dn = result.get(0).toString();
+            } else if (result.size() > 1) {
+                throw new CloudRuntimeException("More than one ldap search result");
             } else {
-                throw new CloudRuntimeException("More than one search result");
+                throw new CloudRuntimeException("No ldap search result");
             }
             logger.info(String.format("getDn success key:%s, val : %s, dn: %s", key, val, dn));
         } catch (NamingException e) {
@@ -376,7 +378,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             ldapServerVO.setPassword(msg.getPassword());
         }
 
-        ldapServerVO = dbf.persistAndRefresh(ldapServerVO);
+        ldapServerVO = dbf.updateAndRefresh(ldapServerVO);
         evt.setInventory(LdapServerInventory.valueOf(ldapServerVO));
 
         bus.publish(evt);

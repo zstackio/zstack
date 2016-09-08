@@ -6,13 +6,10 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.APILogInReply;
-import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.ldap.*;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
@@ -21,11 +18,8 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-/**
- * @author frank
- */
-public class TestLdap {
-    CLogger logger = Utils.getLogger(TestLdap.class);
+public class TestLdapServerMultiUid {
+    CLogger logger = Utils.getLogger(TestLdapServerMultiUid.class);
 
     Deployer deployer;
     Api api;
@@ -72,8 +66,8 @@ public class TestLdap {
         APIAddLdapServerMsg msg1 = new APIAddLdapServerMsg();
         msg1.setName("miao");
         msg1.setDescription("miao desc");
-        msg1.setUrl("ldap://172.20.12.176:389");
-        msg1.setBase("dc=learnitguide,dc=net");
+        msg1.setUrl("ldap://172.20.11.200:389");
+        msg1.setBase("cn=accounts,dc=mevoco,dc=com");
         msg1.setUsername("");
         msg1.setPassword("");
         msg1.setSession(session);
@@ -84,51 +78,7 @@ public class TestLdap {
         // some assertions
         Assert.assertFalse(ldapManager.isValid("ldapuser1", ""));
         Assert.assertFalse(ldapManager.isValid("miao", ""));
-        Assert.assertTrue(ldapManager.isValid("ldapuser1", "redhat"));
-        Assert.assertTrue(ldapManager.isValid("admin", "miao"));
-
-        // delete ldap server
-        APIDeleteLdapServerMsg msg11 = new APIDeleteLdapServerMsg();
-        msg11.setUuid(evt1.getInventory().getUuid());
-        msg11.setSession(session);
-        APIDeleteLdapServerEvent evt11 = sender.send(msg11, APIDeleteLdapServerEvent.class);
-        queryLdapServer();
-
-        // add ldap server
-        APIAddLdapServerMsg msg13 = new APIAddLdapServerMsg();
-        msg13.setName("miao");
-        msg13.setDescription("miao desc");
-        msg13.setUrl("ldap://172.20.12.176:389");
-        msg13.setBase("dc=learnitguide,dc=net");
-        msg13.setUsername("cn=Manager,dc=learnitguide,dc=net");
-        msg13.setPassword("password");
-        msg13.setSession(session);
-        APIAddLdapServerEvent evt13 = sender.send(msg13, APIAddLdapServerEvent.class);
-        logger.debug(evt13.getInventory().getName());
-        queryLdapServer();
-
-        // bind account
-        AccountInventory ai1 = api.createAccount("ldapuser1", "hello-kitty");
-        APIBindLdapAccountMsg msg2 = new APIBindLdapAccountMsg();
-        msg2.setAccountUuid(ai1.getUuid());
-        msg2.setLdapUid("ldapuser1");
-        msg2.setSession(session);
-        APIBindLdapAccountEvent evt2 = sender.send(msg2, APIBindLdapAccountEvent.class);
-        logger.debug(evt2.getInventory().getUuid());
-
-        // login account
-        APILogInByLdapMsg msg3 = new APILogInByLdapMsg();
-        msg3.setUid("ldapuser1");
-        msg3.setPassword("redhat");
-        msg3.setServiceId(bus.makeLocalServiceId(LdapConstant.SERVICE_ID));
-        APILogInReply reply3 = sender.call(msg3, APILogInReply.class);
-        logger.debug(reply3.getInventory().getAccountUuid());
-
-        // unbind account
-        APIUnbindLdapAccountMsg msg4 = new APIUnbindLdapAccountMsg();
-        msg4.setUuid(evt2.getInventory().getUuid());
-        msg4.setSession(session);
-        APIUnbindLdapAccountEvent evt4 = sender.send(msg4, APIUnbindLdapAccountEvent.class);
-        Assert.assertTrue(evt4.getErrorCode() == null);
+        Assert.assertTrue(ldapManager.isValid("star.guo", "password"));
+        Assert.assertTrue(ldapManager.isValid("admin", "password"));
     }
 }

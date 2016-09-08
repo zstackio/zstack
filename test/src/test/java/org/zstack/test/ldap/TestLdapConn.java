@@ -63,5 +63,18 @@ public class TestLdapConn {
         logger.debug(evt21.getInventory().getName());
 
 
+        // test conn
+        APITestAddLdapServerConnectionMsg msg22 = new APITestAddLdapServerConnectionMsg();
+        msg22.setName("miao");
+        msg22.setDescription("miao desc");
+        msg22.setUrl("ldap://172.20.11.200:389");
+        msg22.setBase("dc=mevoco,dc=com");
+        msg22.setUsername("");
+        msg22.setPassword("");
+        msg22.setSession(session);
+        msg22.setTimeout(10);
+        APITestAddLdapServerConnectionEvent evt22 = sender.send(msg22, APITestAddLdapServerConnectionEvent.class);
+        logger.debug(evt22.getInventory().getName());
+
     }
 }
