@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
+    <TestCase class="org.zstack.test.ldap.TestLdapBindUnbind"/>
+    <TestCase class="org.zstack.test.ldap.TestLdapConn"/>
+    <TestCase class="org.zstack.test.ldap.TestLdapServer"/>
+    <TestCase class="org.zstack.test.ldap.TestLdapServerEmbedded"/>
+    <TestCase class="org.zstack.test.ldap.TestLdapServerMultiUid"/>
+</UnitTestSuiteConfig>
