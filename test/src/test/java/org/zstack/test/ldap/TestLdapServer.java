@@ -1,8 +1,15 @@
 package org.zstack.test.ldap;
 
+import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.LDAPInterface;
+import com.unboundid.ldap.sdk.SearchResult;
+import com.unboundid.ldap.sdk.SearchScope;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.zapodot.junit.ldap.EmbeddedLdapRule;
+import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -21,6 +28,11 @@ import java.util.stream.Collectors;
 public class TestLdapServer {
     CLogger logger = Utils.getLogger(TestLdapServer.class);
 
+    public static final String DOMAIN_DSN = "dc=example,dc=com";
+    @Rule
+    public EmbeddedLdapRule embeddedLdapRule = EmbeddedLdapRuleBuilder.newInstance().bindingToPort(1888).
+            usingDomainDsn(DOMAIN_DSN).importingLdifs("users-import.ldif").build();
+
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -33,8 +45,8 @@ public class TestLdapServer {
     @Before
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
-        WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/ldap/TestLdap.xml", con);
+
+        deployer = new Deployer("deployerXml/ldap/TestLdap.xml");
         deployer.addSpringConfig("KVMRelated.xml");
         deployer.addSpringConfig("LdapManagerImpl.xml");
         deployer.build();
@@ -59,15 +71,19 @@ public class TestLdapServer {
     }
 
     @Test
-    public void test() throws ApiSenderException {
+    public void test() throws ApiSenderException, LDAPException {
+        final LDAPInterface ldapConnection = embeddedLdapRule.ldapConnection();
+        final SearchResult searchResult = ldapConnection.search(DOMAIN_DSN, SearchScope.SUB, "(objectClass=person)");
+        Assert.assertEquals(3, searchResult.getEntryCount());
+
         ApiSender sender = api.getApiSender();
 
         // add ldap server
         APIAddLdapServerMsg msg1 = new APIAddLdapServerMsg();
         msg1.setName("miao");
         msg1.setDescription("miao desc");
-        msg1.setUrl("ldap://172.20.12.176:389");
-        msg1.setBase("dc=learnitguide,dc=net");
+        msg1.setUrl("ldap://localhost:1888");
+        msg1.setBase(DOMAIN_DSN);
         msg1.setUsername("");
         msg1.setPassword("");
         msg1.setSession(session);
@@ -87,16 +103,14 @@ public class TestLdapServer {
         // update ldap server
         APIUpdateLdapServerMsg msg29 = new APIUpdateLdapServerMsg();
         msg29.setLdapServerUuid(evt1.getInventory().getUuid());
-        msg29.setBase("dc=learnitguide,dc=net");
+        msg29.setBase(DOMAIN_DSN);
         msg29.setSession(session);
         APIUpdateLdapServerEvent evt29 = sender.send(msg29, APIUpdateLdapServerEvent.class);
         queryLdapServer();
 
         // some assertions
-        Assert.assertFalse(ldapManager.isValid("ldapuser1", ""));
-        Assert.assertFalse(ldapManager.isValid("miao", ""));
-        Assert.assertTrue(ldapManager.isValid("ldapuser1", "redhat"));
-        Assert.assertTrue(ldapManager.isValid("admin", "miao"));
+        Assert.assertFalse(ldapManager.isValid("not exist user", ""));
+        Assert.assertTrue(ldapManager.isValid("sclaus", "password"));
 
         // delete ldap server
         APIDeleteLdapServerMsg msg11 = new APIDeleteLdapServerMsg();
