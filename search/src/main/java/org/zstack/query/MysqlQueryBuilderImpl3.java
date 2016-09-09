@@ -727,6 +727,15 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
 
                         ret = String.format("%s order by %s.%s %s", ret, entityName, msg.getSortBy(), msg.getSortDirection().toUpperCase());
                     }
+
+                    if (msg.getGroupBy() != null) {
+                        if (!FieldUtils.hasField(msg.getGroupBy(), info.entityClass)) {
+                            throw new IllegalArgumentException(String.format("illegal groupBy[%s], entity[%s] doesn't have this field", msg.getGroupBy(), info.entityClass.getName()));
+                        }
+
+                        ret = String.format("%s group by %s", ret, msg.getGroupBy());
+                    }
+
                     return ret;
                 }
             }

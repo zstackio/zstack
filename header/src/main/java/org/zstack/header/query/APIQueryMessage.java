@@ -12,11 +12,20 @@ public abstract class APIQueryMessage extends APISyncCallMessage {
     private Integer limit = 1000;
     private Integer start;
     private boolean count;
+    private String groupBy;
     private boolean replyWithCount;
     private String sortBy;
     @APIParam(required = false, validValues = {"asc", "desc"})
     private String sortDirection = "asc";
     private List<String> fields;
+
+    public String getGroupBy() {
+        return groupBy;
+    }
+
+    public void setGroupBy(String groupBy) {
+        this.groupBy = groupBy;
+    }
 
     public List<QueryCondition> getConditions() {
         if (conditions == null) {

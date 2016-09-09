@@ -142,5 +142,11 @@ public class TestQueryZone {
         msg.addQueryCondition("__userTag__", QueryOp.NOT_NULL);
         reply = api.query(msg, APIQueryZoneReply.class);
         Assert.assertEquals(1, reply.getInventories().size());
+
+        msg = new APIQueryZoneMsg();
+        msg.addQueryCondition("type", QueryOp.EQ, "zstack");
+        msg.setGroupBy("type");
+        reply = api.query(msg, APIQueryZoneReply.class);
+        Assert.assertEquals(1, reply.getInventories().size());
     }
 }
