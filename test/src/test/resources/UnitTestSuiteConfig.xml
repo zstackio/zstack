@@ -32,6 +32,7 @@
     <Import resource="unitTestSuiteXml/ceph.xml"/>
     <Import resource="unitTestSuiteXml/lb.xml"/>
     <Import resource="unitTestSuiteXml/mevoco.xml"/>
+    <Import resource="unitTestSuiteXml/imagestore.xml"/>
     <Import resource="unitTestSuiteXml/billing.xml"/>
     <Import resource="unitTestSuiteXml/userdata.xml"/>
     <Import resource="unitTestSuiteXml/smpPrimaryStorage.xml"/>
