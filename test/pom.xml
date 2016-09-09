@@ -1,5 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <properties>
         <maven.resources.overwrite>true</maven.resources.overwrite>
     </properties>
@@ -28,6 +28,13 @@
             <artifactId>junit</artifactId>
             <version>4.10</version>
         </dependency>
+        <dependency>
+            <groupId>org.zapodot</groupId>
+            <artifactId>embedded-ldap-junit</artifactId>
+            <version>0.5.2</version>
+            <scope>test</scope>
+        </dependency>
+
 
         <dependency>
             <groupId>org.zstack</groupId>
@@ -226,7 +233,7 @@
                 <configuration>
                     <source>${project.java.version}</source>
                     <target>${project.java.version}</target>
-		    <complianceLevel>${project.java.version}</complianceLevel>
+                    <complianceLevel>${project.java.version}</complianceLevel>
                     <XnoInline>true</XnoInline>
                     <aspectLibraries>
                         <aspectLibrary>
