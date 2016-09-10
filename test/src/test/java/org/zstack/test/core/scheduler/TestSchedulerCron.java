@@ -8,10 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.scheduler.APIQuerySchedulerMsg;
+import org.zstack.core.scheduler.APIQuerySchedulerReply;
 import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.query.QueryOp;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator;
@@ -70,6 +73,12 @@ public class TestSchedulerCron {
         SchedulerVO changeRecord = dbf.listAll(SchedulerVO.class).get(0);
         Assert.assertEquals("Disabled", changeRecord.getState());
         Assert.assertEquals("Disabled", inv.getState());
+
+
+        APIQuerySchedulerMsg msg = new APIQuerySchedulerMsg();
+        msg.addQueryCondition("schedulerType", QueryOp.EQ, vo.getSchedulerType());
+        APIQuerySchedulerReply reply = api.query(msg, APIQuerySchedulerReply.class);
+        Assert.assertEquals(1, reply.getInventories().size());
 
     }
 }

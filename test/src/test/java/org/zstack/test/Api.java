@@ -4270,7 +4270,6 @@ public class Api implements CloudBusEventListener {
         APICreateVolumeSnapshotSchedulerMsg msg = new APICreateVolumeSnapshotSchedulerMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("testCron");
-        // fire every 3 seconds
         msg.setCron(cronTask);
         msg.setType(type);
         msg.setSnapShotName("Snapshot-" + volUuid);
