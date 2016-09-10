@@ -53,8 +53,24 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     @Autowired
     private ErrorFacade errf;
 
-    private LdapTemplate ldapTemplate;
-    private LdapContextSource ldapContextSource;
+    class LdapTemplateContextSource {
+        private LdapTemplate ldapTemplate;
+        private LdapContextSource ldapContextSource;
+
+        LdapTemplateContextSource(LdapTemplate ldapTemplate, LdapContextSource ldapContextSource) {
+            this.ldapTemplate = ldapTemplate;
+            this.ldapContextSource = ldapContextSource;
+        }
+
+
+        public LdapTemplate getLdapTemplate() {
+            return ldapTemplate;
+        }
+
+        public LdapContextSource getLdapContextSource() {
+            return ldapContextSource;
+        }
+    }
 
     @Transactional(readOnly = true)
     public LdapServerVO getLdapServer() {
@@ -69,15 +85,17 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         return ldapServers.get(0);
     }
 
-    public void readLdapServerConfiguration() {
+    public LdapTemplateContextSource readLdapServerConfiguration() {
         LdapServerVO ldapServer = getLdapServer();
 
+        LdapContextSource ldapContextSource;
         ldapContextSource = new LdapContextSource();
         ldapContextSource.setUrl(ldapServer.getUrl());
         ldapContextSource.setBase(ldapServer.getBase());
         ldapContextSource.setUserDn(ldapServer.getUsername());
         ldapContextSource.setPassword(ldapServer.getPassword());
 
+        LdapTemplate ldapTemplate;
         ldapTemplate = new LdapTemplate();
         ldapTemplate.setContextSource(ldapContextSource);
 
@@ -88,6 +106,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             logger.error("LDAP Context Source not loaded ", e);
             throw new CloudRuntimeException("LDAP Context Source not loaded", e);
         }
+
+        return new LdapTemplateContextSource(ldapTemplate, ldapContextSource);
     }
 
     @MessageSafe
@@ -128,11 +148,12 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
 
     public boolean isValid(String uid, String password) {
-        readLdapServerConfiguration();
+        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
         try {
             AndFilter filter = new AndFilter();
             filter.and(new EqualsFilter("uid", uid));
-            boolean valid = ldapTemplate.authenticate(getDnByUid(uid), filter.toString(), password);
+            boolean valid = ldapTemplateContextSource.getLdapTemplate().
+                    authenticate(getDnByUid(ldapTemplateContextSource, uid), filter.toString(), password);
             logger.info(String.format("isValid success userName:%s, isValid:%s", uid, valid));
             return valid;
         } catch (NamingException e) {
@@ -155,12 +176,12 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         return LdapAccountRefInventory.valueOf(ref);
     }
 
-    public String getDnByUid(String uid) {
-        readLdapServerConfiguration();
-        return getUserDn("uid", uid).replace("," + ldapContextSource.getBaseLdapPathAsString(), "");
+    public String getDnByUid(LdapTemplateContextSource ldapTemplateContextSource, String uid) {
+        return getUserDn(ldapTemplateContextSource.getLdapTemplate(), "uid", uid).
+                replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
     }
 
-    public String getUserDn(String key, String val) {
+    public String getUserDn(LdapTemplate ldapTemplate, String key, String val) {
         String dn = "";
         try {
             EqualsFilter f = new EqualsFilter(key, val);
@@ -177,11 +198,11 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             } else {
                 throw new CloudRuntimeException("No ldap search result");
             }
-            logger.info(String.format("getDn success key:%s, val : %s, dn: %s", key, val, dn));
+            logger.info(String.format("getDn success key:%s, val:%s, dn:%s", key, val, dn));
         } catch (NamingException e) {
-            logger.error(String.format("getDn error key:%s, val : %s", key, val), e);
+            logger.error(String.format("getDn error key:%s, val:%s", key, val), e);
         } catch (Exception e) {
-            logger.error(String.format("getDn error key:%s, val : %s", key, val), e);
+            logger.error(String.format("getDn error key:%s, val:%s", key, val), e);
         }
         return dn;
     }
@@ -286,8 +307,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
     private void handle(APIBindLdapAccountMsg msg) {
         APIBindLdapAccountEvent evt = new APIBindLdapAccountEvent(msg.getId());
-
-        if (getDnByUid(msg.getLdapUid()).equals("")) {
+        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
+        if (getDnByUid(ldapTemplateContextSource, msg.getLdapUid()).equals("")) {
             throw new OperationFailureException(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
                     "cannot find uid on ldap server."));
         }
