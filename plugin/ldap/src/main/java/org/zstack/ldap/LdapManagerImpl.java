@@ -25,7 +25,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.IdentityGlobalConfig;
 import org.zstack.tag.TagManager;
@@ -250,7 +249,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     }
 
     private void handle(APILogInByLdapMsg msg) {
-        APILogInReply reply = new APILogInReply();
+        APILogInByLdapReply reply = new APILogInByLdapReply();
 
         SimpleQuery<LdapAccountRefVO> q = dbf.createQuery(LdapAccountRefVO.class);
         q.add(LdapAccountRefVO_.ldapUid, SimpleQuery.Op.EQ, msg.getUid());
@@ -263,6 +262,14 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         }
         if (isValid(vo.getLdapUid(), msg.getPassword())) {
             reply.setInventory(getSession(vo.getAccountUuid(), vo.getAccountUuid()));
+
+            SimpleQuery<AccountVO> sq = dbf.createQuery(AccountVO.class);
+            sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, vo.getAccountUuid());
+            AccountVO avo = sq.find();
+            if (avo == null) {
+                throw new CloudRuntimeException(String.format("Account[uuid:%s] Not Found!!!", vo.getAccountUuid()));
+            }
+            reply.setAccountInventory(AccountInventory.valueOf(avo));
         } else {
             reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR,
                     "Login Failed."));

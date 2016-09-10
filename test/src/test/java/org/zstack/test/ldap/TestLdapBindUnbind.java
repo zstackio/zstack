@@ -12,12 +12,14 @@ import org.zapodot.junit.ldap.EmbeddedLdapRule;
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.header.identity.APILogInReply;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.ldap.*;
-import org.zstack.test.*;
+import org.zstack.test.Api;
+import org.zstack.test.ApiSender;
+import org.zstack.test.ApiSenderException;
+import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -113,8 +115,9 @@ public class TestLdapBindUnbind {
         msg3.setUid("sclaus");
         msg3.setPassword("password");
         msg3.setServiceId(bus.makeLocalServiceId(LdapConstant.SERVICE_ID));
-        APILogInReply reply3 = sender.call(msg3, APILogInReply.class);
+        APILogInByLdapReply reply3 = sender.call(msg3, APILogInByLdapReply.class);
         logger.debug(reply3.getInventory().getAccountUuid());
+        logger.debug(reply3.getAccountInventory().getName());
 
         // unbind account
         APIUnbindLdapAccountMsg msg4 = new APIUnbindLdapAccountMsg();
