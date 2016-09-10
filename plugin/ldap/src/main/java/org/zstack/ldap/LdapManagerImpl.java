@@ -265,8 +265,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
             evt.setInventory(inv);
         } else {
-            evt.setErrorCode(errf.stringToOperationError("There has been a ldap server record. " +
-                    "You'd better remove it before add a new one!"));
+            evt.setErrorCode(errf.instantiateErrorCode(LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
+                    "There has been a ldap server record. " +
+                            "You'd better remove it before adding a new one!"));
         }
 
 
@@ -285,7 +286,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         APIBindLdapAccountEvent evt = new APIBindLdapAccountEvent(msg.getId());
 
         if (getDnByUid(msg.getLdapUid()).equals("")) {
-            throw new OperationFailureException(errf.stringToOperationError("cannot find uid on ldap server."));
+            throw new OperationFailureException(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
+                    "cannot find uid on ldap server."));
         }
         evt.setInventory(bindLdapAccount(msg.getAccountUuid(), msg.getLdapUid()));
 

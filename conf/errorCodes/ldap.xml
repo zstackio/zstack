@@ -1,0 +1,19 @@
+<error>
+    <prefix>LDAP</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>Failed to connect ldap server.</description>
+    </code>
+
+    <code>
+        <id>1001</id>
+        <description>There shouldn't be more than one ldap server.</description>
+    </code>
+
+    <code>
+        <id>1002</id>
+        <description>Cannot find uid on ldap server.</description>
+    </code>
+</error>
+
