@@ -770,16 +770,17 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (msg.getHostUuid() != null) {
             hostUuid = msg.getHostUuid();
         } else {
-            for (String stag : msg.getSystemTags()) {
-                if (LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.isMatch(stag)) {
-                    hostUuid = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTokenByTag(
-                            stag,
-                            LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN
-                    );
-                    break;
+            if (msg.getSystemTags() != null) {
+                for (String stag : msg.getSystemTags()) {
+                    if (LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.isMatch(stag)) {
+                        hostUuid = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTokenByTag(
+                                stag,
+                                LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN
+                        );
+                        break;
+                    }
                 }
             }
-
 
             if (hostUuid == null) {
                 throw new OperationFailureException(errf.stringToInvalidArgumentError(
