@@ -1,5 +1,6 @@
 package org.zstack.ldap;
 
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.NamingException;
 import org.springframework.ldap.core.DirContextOperations;
@@ -9,6 +10,7 @@ import org.springframework.ldap.core.support.DefaultDirObjectFactory;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -289,8 +291,16 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             throw new OperationFailureException(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
                     "cannot find uid on ldap server."));
         }
-        evt.setInventory(bindLdapAccount(msg.getAccountUuid(), msg.getLdapUid()));
-
+        try {
+            evt.setInventory(bindLdapAccount(msg.getAccountUuid(), msg.getLdapUid()));
+        } catch (JpaSystemException e) {
+            if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
+                evt.setErrorCode(errf.instantiateErrorCode(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
+                        "The ldap uid has been bound to an account. "));
+            } else {
+                throw e;
+            }
+        }
         bus.publish(evt);
     }
 

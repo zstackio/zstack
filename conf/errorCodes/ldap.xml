@@ -15,5 +15,10 @@
         <id>1002</id>
         <description>Cannot find uid on ldap server.</description>
     </code>
+
+    <code>
+        <id>1003</id>
+        <description>Cannot bind the same ldap uid to more than one account.</description>
+    </code>
 </error>
 

@@ -95,6 +95,19 @@ public class TestLdapBindUnbind {
         APIBindLdapAccountEvent evt2 = sender.send(msg2, APIBindLdapAccountEvent.class);
         logger.debug(evt2.getInventory().getUuid());
 
+        // bind account the same uid
+        try {
+            AccountInventory ai12 = api.createAccount("ldapuser2", "hello-kitty");
+            APIBindLdapAccountMsg msg22 = new APIBindLdapAccountMsg();
+            msg22.setAccountUuid(ai1.getUuid());
+            msg22.setLdapUid("sclaus");
+            msg22.setSession(session);
+            APIBindLdapAccountEvent evt22 = sender.send(msg22, APIBindLdapAccountEvent.class);
+            logger.debug(evt22.getInventory().getUuid());
+        } catch (Exception e) {
+            logger.trace("bind account the same uid", e);
+        }
+
         // login account
         APILogInByLdapMsg msg3 = new APILogInByLdapMsg();
         msg3.setUid("sclaus");
