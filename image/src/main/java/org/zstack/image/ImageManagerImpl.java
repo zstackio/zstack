@@ -3,7 +3,6 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -22,10 +21,12 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.AsyncLatch;
+import org.zstack.header.core.BypassWhenUnitTest;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -1312,10 +1313,29 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 }
             }
 
-            private void checkImageSize(APIAddImageMsg msg, long imageSizeQuota, long imageSizeUsed) {
+            @BypassWhenUnitTest
+            private void checkImageSizeQuotaUseHttpHead(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
+                long imageSizeUsed = getUsedImageSize(msg.getSession().getAccountUuid());
+
                 long imageSizeAsked;
-                String url = msg.getUrl().trim();
-                if (url.startsWith("http") || url.startsWith("https")) {
+                String url = msg.getUrl();
+                url = url.trim();
+
+                if (url.startsWith("file:///")) {
+                    GetImageSizeOnBackupStorageMsg cmsg = new GetImageSizeOnBackupStorageMsg();
+                    cmsg.setBackupStorageUuid(msg.getBackupStorageUuids().get(0));
+                    cmsg.setImageUrl(url);
+                    cmsg.setImageUuid(msg.getResourceUuid());
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID,
+                            msg.getBackupStorageUuids().get(0));
+                    MessageReply reply = bus.call(cmsg);
+                    if (!reply.isSuccess()) {
+                        throw new OperationFailureException(reply.getError());
+                    }
+
+                    imageSizeAsked = ((GetImageSizeOnBackupStorageReply) reply).getSize();
+                } else if (url.startsWith("http") || url.startsWith("https")) {
                     String len;
                     try {
                         HttpHeaders header = restf.getRESTTemplate().headForHeaders(url);
@@ -1326,33 +1346,15 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         return;
                     }
 
-                    if (len == null) {
-                        imageSizeAsked = 0;
-                    } else {
-                        imageSizeAsked = Long.valueOf(len);
-                    }
-                } else if (url.startsWith("file:///")) {
-                    GetImageSizeOnBackupStorageMsg cmsg = new GetImageSizeOnBackupStorageMsg();
-                    cmsg.setBackupStorageUuid(msg.getBackupStorageUuids().get(0));
-                    cmsg.setImageUrl(url);
-                    cmsg.setImageUuid(msg.getResourceUuid());
-                    bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID,
-                            msg.getBackupStorageUuids().get(0));
-                    GetImageSizeOnBackupStorageReply reply = (GetImageSizeOnBackupStorageReply) bus.call(cmsg);
-
-                    if (!reply.isSuccess()) {
-                        throw new CloudRuntimeException("Cannot get local image size.");
-                    } else {
-                        imageSizeAsked = reply.getSize();
-                    }
+                    imageSizeAsked = len == null ? 0 : Long.valueOf(len);
                 } else {
-                    logger.info("not check quota for mismatched scheme:" + url);
-                    return;
+                    // bypass the check
+                    imageSizeAsked = 0;
                 }
 
                 if ((imageSizeQuota == 0) || (imageSizeUsed + imageSizeAsked > imageSizeQuota)) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
                                     msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
                     ));
                 }
@@ -1361,11 +1363,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             @Transactional(readOnly = true)
             private void check(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
-                long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
                 long imageNumUsed = getUsedImageNum(msg.getSession().getAccountUuid());
-                long imageSizeUsed = getUsedImageSize(msg.getSession().getAccountUuid());
 
-                // check image num quota
+
                 if (imageNumUsed + 1 > imageNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
@@ -1373,13 +1373,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     ));
                 }
 
-                // check image amount size quota
-                if (!CoreGlobalProperty.UNIT_TEST_ON) {
-                    checkImageSize(msg, imageSizeQuota, imageSizeUsed);
-                } else {
-                    logger.debug("CoreGlobalProperty.UNIT_TEST_ON is true. Skip the image size quota check.");
-                }
-
+                checkImageSizeQuotaUseHttpHead(msg, pairs);
             }
         };
 
