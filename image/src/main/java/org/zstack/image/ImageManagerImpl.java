@@ -3,6 +3,7 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -1311,24 +1312,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 }
             }
 
-            @Transactional(readOnly = true)
-            private void check(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
-                long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
-                long imageNumUsed = getUsedImageNum(msg.getSession().getAccountUuid());
-                long imageSizeUsed = getUsedImageSize(msg.getSession().getAccountUuid());
-
-                if (imageNumUsed + 1 > imageNumQuota) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
-                    ));
-                }
-
-                long imageSizeAsked = 0;
-                String url = msg.getUrl();
-                url = url.trim();
-
+            private void checkImageSize(APIAddImageMsg msg, long imageSizeQuota, long imageSizeUsed) {
+                long imageSizeAsked;
+                String url = msg.getUrl().trim();
                 if (url.startsWith("http") || url.startsWith("https")) {
                     String len;
                     try {
@@ -1352,36 +1338,48 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     cmsg.setImageUuid(msg.getResourceUuid());
                     bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID,
                             msg.getBackupStorageUuids().get(0));
-                    bus.send(cmsg, new CloudBusCallBack(msg) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                throw new RuntimeException("cannot get local image size.");
-                            } else {
-                                long imageSizeAsked = ((GetImageSizeOnBackupStorageReply) reply).getSize();
-                                logger.info("!!!For test!!!" + String.valueOf(imageSizeAsked));
-                                if ((imageSizeQuota == 0) || (imageSizeUsed + imageSizeAsked > imageSizeQuota)) {
-                                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                                    msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
-                                    ));
-                                }
-                            }
-                        }
-                    });
-                    return;
+                    GetImageSizeOnBackupStorageReply reply = (GetImageSizeOnBackupStorageReply) bus.call(cmsg);
+
+                    if (!reply.isSuccess()) {
+                        throw new CloudRuntimeException("Cannot get local image size.");
+                    } else {
+                        imageSizeAsked = reply.getSize();
+                    }
                 } else {
                     logger.info("not check quota for mismatched scheme:" + url);
                     return;
                 }
 
-                logger.info("!!!For test!!!" + String.valueOf(imageSizeAsked));
                 if ((imageSizeQuota == 0) || (imageSizeUsed + imageSizeAsked > imageSizeQuota)) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
                                     msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
                     ));
                 }
+            }
+
+            @Transactional(readOnly = true)
+            private void check(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
+                long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
+                long imageNumUsed = getUsedImageNum(msg.getSession().getAccountUuid());
+                long imageSizeUsed = getUsedImageSize(msg.getSession().getAccountUuid());
+
+                // check image num quota
+                if (imageNumUsed + 1 > imageNumQuota) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
+                    ));
+                }
+
+                // check image amount size quota
+                if (!CoreGlobalProperty.UNIT_TEST_ON) {
+                    checkImageSize(msg, imageSizeQuota, imageSizeUsed);
+                } else {
+                    logger.debug("CoreGlobalProperty.UNIT_TEST_ON is true. Skip the image size quota check.");
+                }
+
             }
         };
 
