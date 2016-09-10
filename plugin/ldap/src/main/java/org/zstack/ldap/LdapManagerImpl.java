@@ -25,6 +25,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.IdentityGlobalConfig;
 import org.zstack.tag.TagManager;
@@ -307,6 +308,25 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
     private void handle(APIBindLdapAccountMsg msg) {
         APIBindLdapAccountEvent evt = new APIBindLdapAccountEvent(msg.getId());
+
+        // account check
+        SimpleQuery<AccountVO> sq = dbf.createQuery(AccountVO.class);
+        sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, msg.getAccountUuid());
+        AccountVO avo = sq.find();
+        if (avo == null) {
+            evt.setErrorCode(errf.instantiateErrorCode(LdapErrors.CANNOT_FIND_ACCOUNT,
+                    String.format("cannot find the specified account[uuid:%s]", msg.getAccountUuid())));
+            bus.publish(evt);
+            return;
+        }
+        if (avo.getType().equals(AccountType.SystemAdmin)) {
+            evt.setErrorCode(errf.instantiateErrorCode(LdapErrors.CANNOT_BIND_ADMIN_ACCOUNT,
+                    "cannot bind ldap uid to admin account."));
+            bus.publish(evt);
+            return;
+        }
+
+        // bind op
         LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
         if (getDnByUid(ldapTemplateContextSource, msg.getLdapUid()).equals("")) {
             throw new OperationFailureException(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,

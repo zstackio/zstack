@@ -20,5 +20,15 @@
         <id>1003</id>
         <description>Cannot bind the same ldap uid to more than one account.</description>
     </code>
+
+    <code>
+        <id>1004</id>
+        <description>Cannot find the specified account.</description>
+    </code>
+
+    <code>
+        <id>1005</id>
+        <description>Cannot bind ldap uid to admin account.</description>
+    </code>
 </error>
 
