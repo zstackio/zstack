@@ -341,7 +341,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmUuid(msg.getVmInstanceUuid());
         cmd.setCpuNum(msg.getInstanceOfferingInventory().getCpuNum());
         cmd.setMemorySize(msg.getInstanceOfferingInventory().getMemorySize());
-        restf.asyncJsonPost(changeCpuMemoryPath, cmd, new JsonAsyncRESTCallback<OnlineChangeCpuMemoryResponse>() {
+        restf.asyncJsonPost(changeCpuMemoryPath, cmd, new JsonAsyncRESTCallback<OnlineChangeCpuMemoryResponse>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -367,8 +367,6 @@ public class KVMHost extends HostBase implements Host {
                 return OnlineChangeCpuMemoryResponse.class;
             }
         });
-        reply.setInstanceOfferingInventory(msg.getInstanceOfferingInventory());
-        bus.reply(msg,reply);
     }
     private void handle(final GetVmConsoleAddressFromHostMsg msg) {
         final GetVmConsoleAddressFromHostReply reply = new GetVmConsoleAddressFromHostReply();

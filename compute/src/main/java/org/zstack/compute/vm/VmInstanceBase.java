@@ -2851,7 +2851,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
             @Override
             public void run(ChangeInstanceOfferingExtensionPoint arg) {
-                arg.beforeChangeInstanceOffering(vm ,inv);
+                arg.beforeChangeInstanceOffering(vm, inv);
             }
         });
 
@@ -2871,63 +2871,69 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             evt.setInventory(getSelfInventory());
             bus.publish(evt);
-        } else {
-            // the vm is running, make the capacity change pending, which will take effect the next
-            // the vm starts
-            if (self.getCpuNum() > iovo.getCpuNum() || self.getMemorySize() > iovo.getMemorySize()) {
-                Map m = new HashMap();
-                m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN, iovo.getCpuNum());
-                m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN, iovo.getCpuSpeed());
-                m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN, iovo.getMemorySize());
-                VmSystemTags.PENDING_CAPACITY_CHANGE.recreateInherentTag(self.getUuid(), m);
-
-                self.setInstanceOfferingUuid(iovo.getUuid());
-                self = dbf.updateAndRefresh(self);
-
-                CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
-                    @Override
-                    public void run(ChangeInstanceOfferingExtensionPoint arg) {
-                        arg.afterChangeInstanceOffering(vm, inv);
-                    }
-                });
-
-                evt.setInventory(getSelfInventory());
-                bus.publish(evt);
-            } else {
-                OnlineChangeVmCpuMemoryMsg hmsg = new OnlineChangeVmCpuMemoryMsg();
-                hmsg.setVmInstanceUuid(self.getUuid());
-                hmsg.setHostUuid(self.getHostUuid());
-                hmsg.setInstanceOfferingInventory(inv);
-                bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, self.getHostUuid());
-                bus.send(hmsg,new CloudBusCallBack(msg) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            evt.setErrorCode(reply.getError());
-                        } else {
-                            OnlineChangeCpuMemoryReply hr = reply.castReply();
-                            self.setInstanceOfferingUuid(hr.getInstanceOfferingInventory().getUuid());
-                            self.setCpuNum(hr.getInstanceOfferingInventory().getCpuNum());
-                            self.setMemorySize(hr.getInstanceOfferingInventory().getMemorySize());
-                            self = dbf.updateAndRefresh(self);
-
-                            CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
-                                @Override
-                                public void run(ChangeInstanceOfferingExtensionPoint arg) {
-                                    arg.afterChangeInstanceOffering(vm, inv);
-                                }
-                            });
-
-                            evt.setInventory(getSelfInventory());
-                            bus.publish(evt);
-                        }
-                    }
-                });
-            }
+            return;
         }
 
 
+        // the vm is running, make the capacity change pending, which will take effect the next
+        // the vm starts
+        if (self.getCpuNum() > iovo.getCpuNum() || self.getMemorySize() > iovo.getMemorySize()) {
+            Map m = new HashMap();
+            m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN, iovo.getCpuNum());
+            m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN, iovo.getCpuSpeed());
+            m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN, iovo.getMemorySize());
+            VmSystemTags.PENDING_CAPACITY_CHANGE.recreateInherentTag(self.getUuid(), m);
+
+            self.setInstanceOfferingUuid(iovo.getUuid());
+            self = dbf.updateAndRefresh(self);
+
+            CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
+                @Override
+                public void run(ChangeInstanceOfferingExtensionPoint arg) {
+                    arg.afterChangeInstanceOffering(vm, inv);
+                }
+            });
+
+            evt.setInventory(getSelfInventory());
+            bus.publish(evt);
+            return;
+        }
+        if (self.getCpuNum() <= iovo.getCpuNum() || self.getMemorySize() <= iovo.getMemorySize()) {
+            OnlineChangeVmCpuMemoryMsg hmsg = new OnlineChangeVmCpuMemoryMsg();
+            hmsg.setVmInstanceUuid(self.getUuid());
+            hmsg.setHostUuid(self.getHostUuid());
+            hmsg.setInstanceOfferingInventory(inv);
+            bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, self.getHostUuid());
+            bus.send(hmsg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        evt.setErrorCode(reply.getError());
+                    } else {
+                        OnlineChangeCpuMemoryReply hr = reply.castReply();
+                        self.setInstanceOfferingUuid(iovo.getUuid());
+                        self.setCpuNum(hr.getInstanceOfferingInventory().getCpuNum());
+                        self.setMemorySize(hr.getInstanceOfferingInventory().getMemorySize());
+                        self = dbf.updateAndRefresh(self);
+
+                        CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
+                            @Override
+                            public void run(ChangeInstanceOfferingExtensionPoint arg) {
+                                arg.afterChangeInstanceOffering(vm, inv);
+                            }
+                        });
+                        evt.setInventory(getSelfInventory());
+                    }
+                    bus.publish(evt);
+                }
+            });
+            return;
+        }
     }
+
+
+
+
 
 
     private void handle(final APIUpdateVmInstanceMsg msg) {
