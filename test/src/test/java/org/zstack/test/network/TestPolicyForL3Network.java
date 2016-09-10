@@ -366,7 +366,7 @@ public class TestPolicyForL3Network {
         qipr.setConditions(new ArrayList<QueryCondition>());
         api.query(qipr, APIQueryIpRangeReply.class, session);
 
-        api.getFreeIp(l3.getUuid(), null, 100, session);
+        api.getFreeIp(l3.getUuid(), null, 100, null, session);
         api.getIpAddressCapacityByAll(session);
         api.getL3NetworkTypes(session);
     }

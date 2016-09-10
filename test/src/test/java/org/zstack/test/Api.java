@@ -1178,6 +1178,10 @@ public class Api implements CloudBusEventListener {
         return getFreeIp(l3Uuid, ipRangeUuid, limit, null);
     }
 
+    public List<FreeIpInventory> getFreeIp(String l3Uuid, String ipRangeUuid, int limit, String start) throws ApiSenderException {
+        return getFreeIp(l3Uuid, ipRangeUuid, limit, start, null);
+    }
+
     public boolean checkIpAvailability(String l3Uuid, String ip) throws ApiSenderException {
         return checkIpAvailability(l3Uuid, ip, null);
     }
@@ -1193,12 +1197,13 @@ public class Api implements CloudBusEventListener {
         return rely.isAvailable();
     }
 
-    public List<FreeIpInventory> getFreeIp(String l3Uuid, String ipRangeUuid, int limit, SessionInventory session) throws ApiSenderException {
+    public List<FreeIpInventory> getFreeIp(String l3Uuid, String ipRangeUuid, int limit, String start, SessionInventory session) throws ApiSenderException {
         APIGetFreeIpMsg msg = new APIGetFreeIpMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setL3NetworkUuid(l3Uuid);
         msg.setIpRangeUuid(ipRangeUuid);
         msg.setLimit(limit);
+        msg.setStartIp(start);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIGetFreeIpReply reply = sender.call(msg, APIGetFreeIpReply.class);
