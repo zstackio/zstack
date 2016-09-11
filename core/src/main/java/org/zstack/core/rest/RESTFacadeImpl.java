@@ -517,6 +517,13 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
+    public String makeUrl(String path) {
+        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(path);
+        return ub.build().toUriString();
+    }
+
+    @Override
     public void installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor) {
         interceptors.add(interceptor);
     }
