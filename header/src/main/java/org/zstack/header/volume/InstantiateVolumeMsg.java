@@ -9,6 +9,15 @@ public class InstantiateVolumeMsg extends NeedReplyMessage implements VolumeMess
     private String volumeUuid;
     private String primaryStorageUuid;
     private String hostUuid;
+    private boolean primaryStorageAllocated;
+
+    public boolean isPrimaryStorageAllocated() {
+        return primaryStorageAllocated;
+    }
+
+    public void setPrimaryStorageAllocated(boolean primaryStorageAllocated) {
+        this.primaryStorageAllocated = primaryStorageAllocated;
+    }
 
     @Override
     public String getVolumeUuid() {

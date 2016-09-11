@@ -4,13 +4,15 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.allocator.HostAllocatorManager;
+import org.zstack.core.asyncbatch.AsyncLoop;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -25,10 +27,10 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
-import org.zstack.utils.Bucket;
 import org.zstack.utils.DebugUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -42,8 +44,6 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
     protected ErrorFacade errf;
     @Autowired
     protected HostAllocatorManager hostAllocatorMgr;
-
-    private static final String SUCCESS = VmAllocatePrimaryStorageFlow.class.getName();
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
@@ -90,76 +90,65 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             msgs.add(amsg);
         }
 
-        bus.send(msgs, 1, new CloudBusListCallBack(trigger) {
+
+        new AsyncLoop<AllocatePrimaryStorageMsg>(trigger) {
             @Override
-            public void run(List<MessageReply> replies) {
-                List<Bucket> ret = new ArrayList<Bucket>();
-                ErrorCode err = null;
-                for (MessageReply r : replies) {
-                    if (!r.isSuccess()) {
-                        err = r.getError();
-                    } else {
-                        AllocatePrimaryStorageMsg msg = msgs.get(replies.indexOf(r));
-                        AllocatePrimaryStorageReply ar = r.castReply();
-                        ret.add(Bucket.newBucket(ar.getPrimaryStorageInventory(), msg.getSize()));
-                    }
-                }
-
-                data.put(SUCCESS, ret);
-
-                if (err != null) {
-                    trigger.fail(err);
-                } else {
-                    VolumeSpec rootSpec = new VolumeSpec();
-                    PrimaryStorageInventory rootPri = ret.get(0).get(0);
-                    Long size = ret.get(0).get(1);
-                    rootSpec.setPrimaryStorageInventory(rootPri);
-                    rootSpec.setRoot(true);
-                    rootSpec.setSize(size);
-                    spec.getVolumeSpecs().add(rootSpec);
-
-                    if (ret.size() > 1) {
-                        for (int i=1; i<ret.size(); i++) {
-                            Bucket b = ret.get(i);
-                            PrimaryStorageInventory pri = b.get(0);
-                            Long dsize = b.get(1);
-                            DiskOfferingInventory dinv = spec.getDataDiskOfferings().get(i-1);
-                            VolumeSpec vspec = new VolumeSpec();
-                            vspec.setDiskOfferingUuid(dinv.getUuid());
-                            vspec.setPrimaryStorageInventory(pri);
-                            vspec.setSize(dsize);
-                            vspec.setRoot(false);
-                            spec.getVolumeSpecs().add(vspec);
-                        }
-                    }
-
-                    trigger.next();
-                }
+            protected Collection<AllocatePrimaryStorageMsg> collectionForLoop() {
+                return msgs;
             }
-        });
+
+            @Override
+            protected void run(AllocatePrimaryStorageMsg msg, Completion completion) {
+                bus.send(msg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            completion.fail(reply.getError());
+                            return;
+                        }
+
+                        VolumeSpec volumeSpec = new VolumeSpec();
+                        AllocatePrimaryStorageReply ar = reply.castReply();
+                        volumeSpec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
+                        volumeSpec.setSize(ar.getSize());
+                        volumeSpec.setRoot(msg.getImageUuid() != null);
+                        if (!volumeSpec.isRoot()) {
+                            volumeSpec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
+                        }
+
+                        spec.getVolumeSpecs().add(volumeSpec);
+
+                        completion.success();
+                    }
+                });
+            }
+
+            @Override
+            protected void done() {
+                trigger.next();
+            }
+
+            @Override
+            protected void error(ErrorCode errorCode) {
+                trigger.fail(errorCode);
+            }
+        }.start();
     }
 
     @Override
     public void rollback(FlowRollback chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-
-        List<Bucket> buckets = (List<Bucket>) data.get(SUCCESS);
-        if (buckets != null) {
-            for (Bucket b : buckets) {
-                VolumeSpec vspec = spec.getVolumeSpecs().get(buckets.indexOf(b));
-                if (vspec.isVolumeCreated()) {
-                    // don't return capacity as it has been returned when the volume is deleted
-                    continue;
-                }
-
-                ReturnPrimaryStorageCapacityMsg msg = new ReturnPrimaryStorageCapacityMsg();
-                PrimaryStorageInventory pri = b.get(0);
-                Long size = b.get(1);
-                msg.setDiskSize(size);
-                msg.setPrimaryStorageUuid(pri.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
-                bus.send(msg);
+        for (VolumeSpec vspec : spec.getVolumeSpecs()) {
+            if (vspec.isVolumeCreated()) {
+                // don't return capacity as it has been returned when the volume is deleted
+                continue;
             }
+
+            ReturnPrimaryStorageCapacityMsg msg = new ReturnPrimaryStorageCapacityMsg();
+            msg.setDiskSize(vspec.getSize());
+            msg.setPrimaryStorageUuid(vspec.getPrimaryStorageInventory().getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vspec.getPrimaryStorageInventory().getUuid());
+            bus.send(msg);
         }
 
         chain.rollback();

@@ -170,43 +170,45 @@ public class VolumeBase implements Volume {
 
             @Override
             public void setup() {
-                flow(new Flow() {
-                    String __name__ = "allocate-primary-storage";
+                if (!msg.isPrimaryStorageAllocated()) {
+                    flow(new Flow() {
+                        String __name__ = "allocate-primary-storage";
 
-                    boolean success;
+                        boolean success;
 
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
-                        amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-                        amsg.setSize(self.getSize());
-                        bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
-                        bus.send(amsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                } else {
-                                    success =  true;
-                                    trigger.next();
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                            amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                            amsg.setSize(self.getSize());
+                            bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                            bus.send(amsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        trigger.fail(reply.getError());
+                                    } else {
+                                        success = true;
+                                        trigger.next();
+                                    }
                                 }
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (success) {
-                            ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
-                            rmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-                            rmsg.setDiskSize(self.getSize());
-                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
-                            bus.send(rmsg);
+                            });
                         }
 
-                        trigger.rollback();
-                    }
-                });
+                        @Override
+                        public void rollback(FlowRollback trigger, Map data) {
+                            if (success) {
+                                ReturnPrimaryStorageCapacityMsg rmsg = new ReturnPrimaryStorageCapacityMsg();
+                                rmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                                rmsg.setDiskSize(self.getSize());
+                                bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                                bus.send(rmsg);
+                            }
+
+                            trigger.rollback();
+                        }
+                    });
+                }
 
                 flow(new Flow() {
                     String __name__ = "instantiate-volume-on-primary-storage";
