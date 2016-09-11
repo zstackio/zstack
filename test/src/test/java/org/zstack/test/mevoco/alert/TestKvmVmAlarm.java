@@ -26,6 +26,8 @@ import org.zstack.utils.path.PathUtil;
 import java.io.File;
 import java.io.IOException;
 
+import static org.zstack.prometheus.PrometheusManager.makeExpression;
+
 public class TestKvmVmAlarm {
     CLogger logger = Utils.getLogger(TestKvmVmAlarm.class);
     Deployer deployer;
@@ -82,7 +84,7 @@ public class TestKvmVmAlarm {
         rb.setName(id.toString());
         rb.setDuration(inv.getConditionDuration());
         rb.setLabels(inv.getLabels());
-        rb.setExpression(inv.getExpression());
+        rb.setExpression(makeExpression(PrometheusConstant.VM_CPU_CONDITION_NAME, inv.getConditionOperator(), inv.getConditionValue()));
         String rule1 = rb.toString();
 
         logger.debug(String.format("rule: %s", rule1));
@@ -105,7 +107,7 @@ public class TestKvmVmAlarm {
         rb.setName(id.toString());
         rb.setDuration(inv2.getConditionDuration());
         rb.setLabels(inv2.getLabels());
-        rb.setExpression(inv2.getExpression());
+        rb.setExpression(makeExpression(PrometheusConstant.VM_CPU_CONDITION_NAME, inv.getConditionOperator(), inv2.getConditionValue()));
         String rule2 = rb.toString();
 
         logger.debug(String.format("rule: %s", rule2));
