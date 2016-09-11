@@ -10,6 +10,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.prometheus.KvmVmAlarmFactory;
 import org.zstack.prometheus.PrometheusAlertRuleBuilder;
 import org.zstack.prometheus.PrometheusConstant;
 import org.zstack.prometheus.PrometheusManager.AlertID;
@@ -25,6 +26,7 @@ import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.prometheus.PrometheusManager.makeExpression;
 
@@ -37,6 +39,7 @@ public class TestKvmVmAlarm {
     DatabaseFacade dbf;
     SessionInventory session;
     SftpBackupStorageSimulatorConfig config;
+    KvmVmAlarmFactory alarmFactory;
 
     @Before
     public void setUp() throws Exception {
@@ -57,6 +60,7 @@ public class TestKvmVmAlarm {
         bus = loader.getComponent(CloudBus.class);
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
+        alarmFactory = loader.getComponent(KvmVmAlarmFactory.class);
         session = api.loginAsAdmin();
     }
 
@@ -77,6 +81,7 @@ public class TestKvmVmAlarm {
         msg.setConditionValue("1");
         APICreateAlarmEvent evt = api.sendApiMessage(msg, APICreateAlarmEvent.class);
         AlarmInventory inv = evt.getInventory();
+        Assert.assertTrue(dbf.isExist(inv.getUuid(), AlarmVO.class));
 
         AlertID id = new AlertID(AlarmConstant.ALERT_CATEGORY_VM_CPU, vm.getUuid());
 
@@ -102,6 +107,7 @@ public class TestKvmVmAlarm {
         msg.setConditionValue("2");
         evt = api.sendApiMessage(msg, APICreateAlarmEvent.class);
         AlarmInventory inv2 = evt.getInventory();
+        Assert.assertTrue(dbf.isExist(inv2.getUuid(), AlarmVO.class));
 
         rb = new PrometheusAlertRuleBuilder();
         rb.setName(id.toString());
@@ -114,6 +120,14 @@ public class TestKvmVmAlarm {
         cpuRuleFile = getRuleFile();
         cpuRule = FileUtils.readFileToString(cpuRuleFile);
         logger.debug(String.format("rule in file: %s", cpuRule));
+        Assert.assertTrue(cpuRule.contains(rule2));
+
+        // delete the rule file and use alarmFactory to re-create
+        cpuRuleFile.delete();
+        alarmFactory.managementNodeReady();
+        TimeUnit.SECONDS.sleep(2);
+        cpuRule = FileUtils.readFileToString(cpuRuleFile);
+        Assert.assertTrue(cpuRule.contains(rule1));
         Assert.assertTrue(cpuRule.contains(rule2));
 
         api.deleteAlarm(inv2.getUuid(), null);
