@@ -115,15 +115,3 @@ ALTER TABLE `zstack`.`LdapAccountRefVO` ADD CONSTRAINT fkLdapAccountRefVOLdapSer
 ALTER TABLE `zstack`.`LdapAccountRefVO` ADD CONSTRAINT fkLdapAccountRefVOAccountVO FOREIGN KEY (accountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;
 
 ALTER TABLE `zstack`.`LdapAccountRefVO` ADD UNIQUE INDEX(ldapUid,ldapServerUuid);
-
-CREATE TABLE `zstack`.`VCenterVO` (
-    `uuid` varchar(32) NOT NULL UNIQUE,
-    `zoneUuid` varchar(32) NOT NULL,
-    `name` varchar(255) NOT NULL,
-    `description` varchar(2048) DEFAULT NULL,
-    `domainName` varchar(255) NOT NULL,
-    `userName` varchar(255) NOT NULL,
-    `password` varchar(1024) NOT NULL,
-    `https` int unsigned DEFAULT NULL,
-    PRIMARY KEY  (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
