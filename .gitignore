@@ -22,3 +22,6 @@ test/unitTestSuiteReport/*
 premium/
 *.orig
 *.rej
+.classpath
+.project
+.settings
