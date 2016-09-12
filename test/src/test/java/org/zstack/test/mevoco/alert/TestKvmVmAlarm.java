@@ -9,8 +9,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.prometheus.KvmVmAlarmFactory;
+import org.zstack.prometheus.PrometheusAlertController.AlertInternal;
 import org.zstack.prometheus.PrometheusAlertRuleBuilder;
 import org.zstack.prometheus.PrometheusConstant;
 import org.zstack.prometheus.PrometheusManager.AlertID;
@@ -26,8 +28,12 @@ import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Arrays.asList;
 import static org.zstack.prometheus.PrometheusManager.makeExpression;
 
 public class TestKvmVmAlarm {
@@ -40,6 +46,7 @@ public class TestKvmVmAlarm {
     SessionInventory session;
     SftpBackupStorageSimulatorConfig config;
     KvmVmAlarmFactory alarmFactory;
+    RESTFacade restf;
 
     @Before
     public void setUp() throws Exception {
@@ -98,6 +105,8 @@ public class TestKvmVmAlarm {
         logger.debug(String.format("rule in file: %s", cpuRule));
         Assert.assertTrue(cpuRule.contains(rule1));
 
+        testAlert(vm.getUuid(), inv);
+
         msg = new APICreateVmCpuAlarmMsg();
         msg.setName("test2");
         msg.setVmInstanceUuid(vm.getUuid());
@@ -138,5 +147,70 @@ public class TestKvmVmAlarm {
         cpuRule = FileUtils.readFileToString(cpuRuleFile);
         cpuRule = cpuRule.replaceAll("\n", "").replaceAll(" ", "");
         Assert.assertTrue(cpuRule.isEmpty());
+    }
+
+    private void testAlert(String vmUuid, AlarmInventory inv) {
+        AlertInternal alert = new AlertInternal();
+        alert.labels = new HashMap<>();
+        alert.labels.put(PrometheusConstant.ANNOTATION_ALERT_TYPE, AlarmConstant.ALERT_CATEGORY_VM_CPU);
+        alert.labels.put(VmAlarmFactory.LABEL_VM_UUID, vmUuid);
+        alert.annotations = new HashMap<>();
+        alert.annotations.put(PrometheusConstant.ANNOTATION_ALARM_UUID, inv.getUuid());
+
+        String url = restf.makeUrl(PrometheusConstant.ALERT_URL);
+        restf.getRESTTemplate().postForEntity(URI.create(url), asList(alert), String.class);
+
+        List<AlertVO> vos = dbf.listAll(AlertVO.class);
+        AlertVO vo = vos.stream().filter((it)->{
+            int count = 0;
+            for (AlertLabelVO lvo : it.getLabels()) {
+                if (lvo.getLabel().equals(vmUuid) || lvo.getLabel().equals(AlarmConstant.ALERT_CATEGORY_VM_CPU)) {
+                    count++;
+                }
+
+                if (count == 2) {
+                    return true;
+                }
+            }
+
+            return false;
+        }).findAny().get();
+        Assert.assertNotNull(vo);
+
+        String name = null;
+        String description = null;
+        if (AlarmConstant.ALERT_CATEGORY_VM_CPU.equals(inv.getConditionName())) {
+            if (AlarmConditionOp.GT.toString().equals(inv.getConditionOperator())) {
+                name = AlertI18n.VM_CPU_ALERT_GT_NAME;
+                description = AlertI18n.VM_CPU_ALERT_GT_DESCRIPTION;
+            } else if (AlarmConditionOp.LT.toString().equals(inv.getConditionOperator())) {
+                name = AlertI18n.VM_CPU_ALERT_LT_NAME;
+                description = AlertI18n.VM_CPU_ALERT_LT_DESCRIPTION;
+            } else if (AlarmConditionOp.EQ.toString().equals(inv.getConditionOperator())) {
+                name = AlertI18n.VM_CPU_ALERT_EQ_NAME;
+                description = AlertI18n.VM_CPU_ALERT_EQ_DESCRIPTION;
+            } else if (AlarmConditionOp.NOT_EQ.toString().equals(inv.getConditionOperator())) {
+                name = AlertI18n.VM_CPU_ALERT_NOT_EQ_NAME;
+                description = AlertI18n.VM_CPU_ALERT_NOT_EQ_DESCRIPTION;
+            }
+        } else if (AlarmConstant.ALERT_CATEGORY_VM_MEM.equals(inv.getConditionName())) {
+            if (AlarmConditionOp.GT.toString().equals(inv.getConditionOperator())) {
+                name = AlertI18n.VM_MEM_ALERT_GT_NAME;
+                description = AlertI18n.VM_MEM_ALERT_GT_DESCRIPTION;
+            } else if (AlarmConditionOp.LT.toString().equals(inv.getConditionOperator())) {
+                name = AlertI18n.VM_MEM_ALERT_LT_NAME;
+                description = AlertI18n.VM_MEM_ALERT_LT_DESCRIPTION;
+            } else if (AlarmConditionOp.EQ.toString().equals(inv.getConditionOperator())) {
+                name = AlertI18n.VM_MEM_ALERT_EQ_NAME;
+                description = AlertI18n.VM_MEM_ALERT_EQ_DESCRIPTION;
+            } else if (AlarmConditionOp.NOT_EQ.toString().equals(inv.getConditionOperator())) {
+                name = AlertI18n.VM_MEM_ALERT_NOT_EQ_NAME;
+                description = AlertI18n.VM_MEM_ALERT_NOT_EQ_DESCRIPTION;
+            }
+        }
+
+        Assert.assertEquals(name, vo.getName());
+        Assert.assertEquals(description, vo.getDescription());
+        Assert.assertNotNull(AlertInventory.valueOf(vo).getLabel(AlarmConstant.ALERT_I18N_PARAMS));
     }
 }

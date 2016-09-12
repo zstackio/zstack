@@ -39,6 +39,7 @@ public class VmInstantiateAttachingVolumeFlow extends NoRollbackFlow {
         final PrimaryStorageInventory pinv = (PrimaryStorageInventory) ctx.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
 
         InstantiateVolumeMsg msg = new InstantiateVolumeMsg();
+        msg.setPrimaryStorageAllocated(true);
         msg.setPrimaryStorageUuid(pinv.getUuid());
         msg.setVolumeUuid(volume.getUuid());
         msg.setHostUuid(spec.getDestHost().getUuid());

@@ -175,7 +175,7 @@ public class TestDiskCapacitySmp2 {
         smpconfig.mergeSnapshotCmdSize.put(rootSp.getVolumeUuid(), templateSize);
         long templateActualSize = SizeUnit.GIGABYTE.toByte(1);
         smpconfig.mergeSnapshotCmdActualSize.put(rootSp.getVolumeUuid(), templateActualSize);
-        ImageInventory template = api.createTemplateFromSnapshot(rootSp.getUuid());
+        ImageInventory template = api.createTemplateFromSnapshot(rootSp.getUuid(), sftp.getUuid());
         Assert.assertEquals(templateSize, template.getSize());
         Assert.assertEquals(templateActualSize, template.getActualSize().longValue());
 

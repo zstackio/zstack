@@ -193,7 +193,7 @@ public class TestDiskCapacityNfs4 {
         nconfig.mergeSnapshotCmdActualSize.put(sp1.getVolumeUuid(), templateActualSize);
         long templateSize = SizeUnit.GIGABYTE.toByte(5);
         nconfig.mergeSnapshotCmdSize.put(sp1.getVolumeUuid(), templateSize);
-        ImageInventory template = api.createTemplateFromSnapshot(sp1.getUuid());
+        ImageInventory template = api.createTemplateFromSnapshot(sp1.getUuid(), sftp.getUuid());
         Assert.assertEquals(templateSize, template.getSize());
         Assert.assertEquals(templateActualSize, template.getActualSize().longValue());
 

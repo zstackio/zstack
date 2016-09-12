@@ -103,6 +103,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.zstack.utils.CollectionDSL.list;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -253,6 +254,10 @@ public class Api implements CloudBusEventListener {
 
     public ImageInventory createTemplateFromSnapshot(String snapshotUuid, List<String> backupStorageUuids) throws ApiSenderException {
         return createTemplateFromSnapshot(snapshotUuid, backupStorageUuids, null);
+    }
+
+    public ImageInventory createTemplateFromSnapshot(String snapshotUuid, String bsUuid, SessionInventory session) throws ApiSenderException {
+        return createTemplateFromSnapshot(snapshotUuid, asList(bsUuid), session);
     }
 
     public ImageInventory createTemplateFromSnapshot(String snapshotUuid, List<String> backupStorageUuids, SessionInventory session) throws ApiSenderException {

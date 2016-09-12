@@ -209,7 +209,7 @@ public class TestDiskCapacityLocalStorage4 {
 
         lconfig.snapshotToVolumeSize.put(sp.getVolumeUuid(), root.getSize());
         lconfig.snapshotToVolumeActualSize.put(sp.getVolumeUuid(), spToTemplateActualSize);
-        ImageInventory template = api.createTemplateFromSnapshot(sp.getUuid());
+        ImageInventory template = api.createTemplateFromSnapshot(sp.getUuid(), bs.getUuid());
         Assert.assertEquals(root.getSize(), template.getSize());
         Assert.assertEquals(spToTemplateActualSize, template.getActualSize().longValue());
 

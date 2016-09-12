@@ -191,7 +191,7 @@ public class TestDiskCapacityCeph2 {
         cconfig.getVolumeSizeCmdSize.put(rootSp.getVolumeUuid(), templateSize);
         long templateActualSize = SizeUnit.GIGABYTE.toByte(1);
         cconfig.getVolumeSizeCmdActualSize.put(rootSp.getVolumeUuid(), templateActualSize);
-        ImageInventory template = api.createTemplateFromSnapshot(rootSp.getUuid());
+        ImageInventory template = api.createTemplateFromSnapshot(rootSp.getUuid(), cephBs.getUuid());
         Assert.assertEquals(templateSize, template.getSize());
         Assert.assertEquals(templateActualSize + getSnapshotSize(rootSp.getVolumeUuid()), template.getActualSize().longValue());
 
