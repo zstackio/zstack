@@ -75,21 +75,4 @@ public class AddHostMsg extends NeedReplyMessage implements AddHostMessage {
         amsg.setResourceUuid(msg.getResourceUuid());
         return amsg;
     }
-
-    public APIAddHostMsg toAPIMsg() {
-        final String name = this.getName();
-        APIAddHostMsg msg = new APIAddHostMsg() {
-            @Override
-            public String getName() {
-                return name;
-            }
-        };
-
-        msg.setName(name);
-        msg.setClusterUuid(msg.getClusterUuid());
-        msg.setDescription(msg.getDescription());
-        msg.setManagementIp(msg.getManagementIp());
-        msg.setResourceUuid(msg.getResourceUuid());
-        return msg;
-    }
 }
