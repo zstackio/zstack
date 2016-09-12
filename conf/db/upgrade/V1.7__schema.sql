@@ -41,6 +41,7 @@ CREATE TABLE  `zstack`.`AlarmLabelVO` (
     `alarmUuid` varchar(32) NOT NULL,
     `label` text NOT NULL,
     `value` text DEFAULT NULL,
+    `type` varchar(64) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY  (`id`)

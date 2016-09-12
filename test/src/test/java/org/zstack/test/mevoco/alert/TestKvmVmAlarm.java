@@ -11,11 +11,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.prometheus.AlertRule;
 import org.zstack.prometheus.KvmVmAlarmFactory;
 import org.zstack.prometheus.PrometheusAlertController.AlertInternal;
-import org.zstack.prometheus.PrometheusAlertRuleBuilder;
 import org.zstack.prometheus.PrometheusConstant;
-import org.zstack.prometheus.PrometheusManager.AlertID;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -23,8 +22,8 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +33,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
-import static org.zstack.prometheus.PrometheusManager.makeExpression;
 
 public class TestKvmVmAlarm {
     CLogger logger = Utils.getLogger(TestKvmVmAlarm.class);
@@ -50,7 +48,7 @@ public class TestKvmVmAlarm {
 
     @Before
     public void setUp() throws Exception {
-        File ruleFile = getRuleFile();
+        File ruleFile = getCpuRuleFile();
         if (ruleFile.exists()) {
             ruleFile.delete();
         }
@@ -68,11 +66,12 @@ public class TestKvmVmAlarm {
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         alarmFactory = loader.getComponent(KvmVmAlarmFactory.class);
+        restf = loader.getComponent(RESTFacade.class);
         session = api.loginAsAdmin();
     }
 
-    private File getRuleFile() {
-        return new File(PathUtil.join(PrometheusConstant.ALERT_RULES_ROOT, String.format("%s.yml", AlarmConstant.ALERT_CATEGORY_VM_CPU)));
+    private File getCpuRuleFile() {
+        return new File(PrometheusConstant.VM_CPU_ALERT_FILE_PATH);
     }
 
 	@Test
@@ -90,17 +89,11 @@ public class TestKvmVmAlarm {
         AlarmInventory inv = evt.getInventory();
         Assert.assertTrue(dbf.isExist(inv.getUuid(), AlarmVO.class));
 
-        AlertID id = new AlertID(AlarmConstant.ALERT_CATEGORY_VM_CPU, vm.getUuid());
-
-        PrometheusAlertRuleBuilder rb = new PrometheusAlertRuleBuilder();
-        rb.setName(id.toString());
-        rb.setDuration(inv.getConditionDuration());
-        rb.setLabels(inv.getLabels());
-        rb.setExpression(makeExpression(PrometheusConstant.VM_CPU_CONDITION_NAME, inv.getConditionOperator(), inv.getConditionValue()));
-        String rule1 = rb.toString();
+        AlertRule alertRule1 = AlertRule.createRule(inv, vm.getUuid());
+        String rule1 = alertRule1.generateRuleText();
 
         logger.debug(String.format("rule: %s", rule1));
-        File cpuRuleFile = getRuleFile();
+        File cpuRuleFile = getCpuRuleFile();
         String cpuRule = FileUtils.readFileToString(cpuRuleFile);
         logger.debug(String.format("rule in file: %s", cpuRule));
         Assert.assertTrue(cpuRule.contains(rule1));
@@ -118,15 +111,11 @@ public class TestKvmVmAlarm {
         AlarmInventory inv2 = evt.getInventory();
         Assert.assertTrue(dbf.isExist(inv2.getUuid(), AlarmVO.class));
 
-        rb = new PrometheusAlertRuleBuilder();
-        rb.setName(id.toString());
-        rb.setDuration(inv2.getConditionDuration());
-        rb.setLabels(inv2.getLabels());
-        rb.setExpression(makeExpression(PrometheusConstant.VM_CPU_CONDITION_NAME, inv.getConditionOperator(), inv2.getConditionValue()));
-        String rule2 = rb.toString();
+        AlertRule alertRule2 = AlertRule.createRule(inv2, vm.getUuid());
+        String rule2 = alertRule2.generateRuleText();
 
         logger.debug(String.format("rule: %s", rule2));
-        cpuRuleFile = getRuleFile();
+        cpuRuleFile = getCpuRuleFile();
         cpuRule = FileUtils.readFileToString(cpuRuleFile);
         logger.debug(String.format("rule in file: %s", cpuRule));
         Assert.assertTrue(cpuRule.contains(rule2));
@@ -149,22 +138,29 @@ public class TestKvmVmAlarm {
         Assert.assertTrue(cpuRule.isEmpty());
     }
 
-    private void testAlert(String vmUuid, AlarmInventory inv) {
+    private void sendAlert(String vmUuid, AlarmInventory inv) {
+        AlertRule rule = AlertRule.createRule(inv, vmUuid);
+
         AlertInternal alert = new AlertInternal();
         alert.labels = new HashMap<>();
-        alert.labels.put(PrometheusConstant.ANNOTATION_ALERT_TYPE, AlarmConstant.ALERT_CATEGORY_VM_CPU);
-        alert.labels.put(VmAlarmFactory.LABEL_VM_UUID, vmUuid);
         alert.annotations = new HashMap<>();
         alert.annotations.put(PrometheusConstant.ANNOTATION_ALARM_UUID, inv.getUuid());
+        alert.annotations.put(PrometheusConstant.ANNOTATION_ALERT_TYPE, inv.getConditionName());
+        alert.annotations.put(PrometheusConstant.ANNOTATION_RESOURCE_UUID, vmUuid);
+        alert.annotations.put(PrometheusConstant.ANNOTATION_ALERT_ID, rule.getId());
 
         String url = restf.makeUrl(PrometheusConstant.ALERT_URL);
-        restf.getRESTTemplate().postForEntity(URI.create(url), asList(alert), String.class);
+        restf.getRESTTemplate().postForEntity(URI.create(url), JSONObjectUtil.toJsonString(asList(alert)), String.class);
+    }
+
+    private void testAlert(String vmUuid, AlarmInventory inv) {
+        sendAlert(vmUuid, inv);
 
         List<AlertVO> vos = dbf.listAll(AlertVO.class);
         AlertVO vo = vos.stream().filter((it)->{
             int count = 0;
             for (AlertLabelVO lvo : it.getLabels()) {
-                if (lvo.getLabel().equals(vmUuid) || lvo.getLabel().equals(AlarmConstant.ALERT_CATEGORY_VM_CPU)) {
+                if (lvo.getValue().equals(vmUuid) || lvo.getValue().equals(VmAlarmFactory.CPU_ALARM)) {
                     count++;
                 }
 
@@ -179,31 +175,31 @@ public class TestKvmVmAlarm {
 
         String name = null;
         String description = null;
-        if (AlarmConstant.ALERT_CATEGORY_VM_CPU.equals(inv.getConditionName())) {
-            if (AlarmConditionOp.GT.toString().equals(inv.getConditionOperator())) {
+        if (VmAlarmFactory.CPU_ALARM.equals(inv.getConditionName())) {
+            if (AlarmConditionOp.GT.getName().equals(inv.getConditionOperator())) {
                 name = AlertI18n.VM_CPU_ALERT_GT_NAME;
                 description = AlertI18n.VM_CPU_ALERT_GT_DESCRIPTION;
-            } else if (AlarmConditionOp.LT.toString().equals(inv.getConditionOperator())) {
+            } else if (AlarmConditionOp.LT.getName().equals(inv.getConditionOperator())) {
                 name = AlertI18n.VM_CPU_ALERT_LT_NAME;
                 description = AlertI18n.VM_CPU_ALERT_LT_DESCRIPTION;
-            } else if (AlarmConditionOp.EQ.toString().equals(inv.getConditionOperator())) {
+            } else if (AlarmConditionOp.EQ.getName().equals(inv.getConditionOperator())) {
                 name = AlertI18n.VM_CPU_ALERT_EQ_NAME;
                 description = AlertI18n.VM_CPU_ALERT_EQ_DESCRIPTION;
-            } else if (AlarmConditionOp.NOT_EQ.toString().equals(inv.getConditionOperator())) {
+            } else if (AlarmConditionOp.NOT_EQ.getName().equals(inv.getConditionOperator())) {
                 name = AlertI18n.VM_CPU_ALERT_NOT_EQ_NAME;
                 description = AlertI18n.VM_CPU_ALERT_NOT_EQ_DESCRIPTION;
             }
-        } else if (AlarmConstant.ALERT_CATEGORY_VM_MEM.equals(inv.getConditionName())) {
-            if (AlarmConditionOp.GT.toString().equals(inv.getConditionOperator())) {
+        } else if (VmAlarmFactory.MEM_ALARM.equals(inv.getConditionName())) {
+            if (AlarmConditionOp.GT.getName().equals(inv.getConditionOperator())) {
                 name = AlertI18n.VM_MEM_ALERT_GT_NAME;
                 description = AlertI18n.VM_MEM_ALERT_GT_DESCRIPTION;
-            } else if (AlarmConditionOp.LT.toString().equals(inv.getConditionOperator())) {
+            } else if (AlarmConditionOp.LT.getName().equals(inv.getConditionOperator())) {
                 name = AlertI18n.VM_MEM_ALERT_LT_NAME;
                 description = AlertI18n.VM_MEM_ALERT_LT_DESCRIPTION;
-            } else if (AlarmConditionOp.EQ.toString().equals(inv.getConditionOperator())) {
+            } else if (AlarmConditionOp.EQ.getName().equals(inv.getConditionOperator())) {
                 name = AlertI18n.VM_MEM_ALERT_EQ_NAME;
                 description = AlertI18n.VM_MEM_ALERT_EQ_DESCRIPTION;
-            } else if (AlarmConditionOp.NOT_EQ.toString().equals(inv.getConditionOperator())) {
+            } else if (AlarmConditionOp.NOT_EQ.getName().equals(inv.getConditionOperator())) {
                 name = AlertI18n.VM_MEM_ALERT_NOT_EQ_NAME;
                 description = AlertI18n.VM_MEM_ALERT_NOT_EQ_DESCRIPTION;
             }
@@ -212,5 +208,12 @@ public class TestKvmVmAlarm {
         Assert.assertEquals(name, vo.getName());
         Assert.assertEquals(description, vo.getDescription());
         Assert.assertNotNull(AlertInventory.valueOf(vo).getLabel(AlarmConstant.ALERT_I18N_PARAMS));
+
+        // send again, confirm only one alert in database but count is 2
+        sendAlert(vmUuid, inv);
+        vos = dbf.listAll(AlertVO.class);
+        Assert.assertEquals(1, vos.size());
+        vo = vos.get(0);
+        Assert.assertEquals(2, vo.getCount());
     }
 }

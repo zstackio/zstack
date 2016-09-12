@@ -72,7 +72,7 @@ public class TestSimulatorVmAlarm {
         Assert.assertEquals(1, factory.alarms.size());
         Assert.assertEquals(vm.getUuid(), inv.getLabel(VmAlarmFactory.LABEL_VM_UUID));
         Assert.assertEquals(msg.getConditionName(), inv.getConditionName());
-        Assert.assertEquals(msg.getConditionOperator().toString(), inv.getConditionOperator());
+        Assert.assertEquals(msg.getConditionOperator().getName(), inv.getConditionOperator());
         Assert.assertEquals(msg.getConditionDuration(), inv.getConditionDuration().longValue());
         Assert.assertEquals(msg.getConditionValue(), inv.getConditionValue());
 
