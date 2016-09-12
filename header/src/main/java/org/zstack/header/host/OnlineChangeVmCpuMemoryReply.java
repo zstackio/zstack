@@ -8,7 +8,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 /**
  * Created by luchukun on 8/9/16.
  */
-public class OnlineChangeCpuMemoryReply extends MessageReply {
+public class OnlineChangeVmCpuMemoryReply extends MessageReply {
     private InstanceOfferingInventory instanceOfferingInventory;
 
     public InstanceOfferingInventory getInstanceOfferingInventory() {

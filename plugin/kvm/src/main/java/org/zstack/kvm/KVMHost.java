@@ -335,7 +335,7 @@ public class KVMHost extends HostBase implements Host {
         bus.reply(msg, reply);
     }
     private void handle(final OnlineChangeVmCpuMemoryMsg msg){
-        final OnlineChangeCpuMemoryReply reply= new OnlineChangeCpuMemoryReply();
+        final OnlineChangeVmCpuMemoryReply reply= new OnlineChangeVmCpuMemoryReply();
 
         OnlineChangeCpuMemoryCmd cmd = new OnlineChangeCpuMemoryCmd();
         cmd.setVmUuid(msg.getVmInstanceUuid());
@@ -1819,6 +1819,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
         cmd.setHostManagementIp(self.getManagementIp());
         cmd.setConsolePassword(spec.getConsolePassword());
+        cmd.setInstanceOfferingOnlineChange(spec.getInstanceOfferingOnliechange());
 
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
         try {

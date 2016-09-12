@@ -599,6 +599,7 @@ public class KVMAgentCommands {
         private Map<String, Object> addons;
         private boolean useVirtio;
         private String consoleMode;
+        private boolean instanceOfferingOnlineChange;
         private String nestedVirtualization;
         private String hostManagementIp;
         private String clock;
@@ -674,6 +675,15 @@ public class KVMAgentCommands {
         public void setConsolePassword(String consolePassword){
             this.consolePassword = consolePassword;
         }
+
+        public boolean getInstanceOfferingOnlineChange(){
+            return instanceOfferingOnlineChange;
+        }
+
+        public void setInstanceOfferingOnlineChange(boolean instanceOfferingOnlineChange){
+            this.instanceOfferingOnlineChange = instanceOfferingOnlineChange;
+        }
+
         public IsoTO getBootIso() {
             return bootIso;
         }

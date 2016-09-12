@@ -35,6 +35,9 @@ public class VmSystemTags {
     public static String CONSOLE_PASSWORD_TOKEN = "consolePassword";
     public static PatternedSystemTag CONSOLE_PASSWORD = new PatternedSystemTag(String.format("consolePassword::{%s}",CONSOLE_PASSWORD_TOKEN),VmInstanceVO.class);
 
+    public static String INSTANCEOFFERING_ONLINECHANGE_TOKEN = "instanceOfferingOnliechange";
+    public static PatternedSystemTag INSTANCEOFFERING_ONLIECHANGE = new PatternedSystemTag(String.format("instanceOfferingOnlinechange::{%s}",INSTANCEOFFERING_ONLINECHANGE_TOKEN),VmInstanceVO.class);
+
     public static String PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN = "cpuNum";
     public static String PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN = "cpuSpeed";
     public static String PENDING_CAPACITY_CHNAGE_MEMORY_TOKEN = "memory";

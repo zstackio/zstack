@@ -1923,6 +1923,10 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             spec.setUserdata(buildUserdata());
             selectBootOrder(spec);
+            String instanceOfferingOnlinechange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(self.getUuid(),VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
+            if (instanceOfferingOnlinechange != null && instanceOfferingOnlinechange.equals("true")){
+                spec.setInstanceOfferingOnliechange(true);
+            }
             spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
 
             changeVmStateInDb(VmInstanceStateEvent.starting);
@@ -2873,11 +2877,41 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.publish(evt);
             return;
         }
+        // if instanceOfferingOnlineChange is true and  the new instanceOffering is bigger than existing instanceOffering
+        // create a local message , OnlineChangeVmCpuMemoryMsg
+        String instanceOfferingOnlineChange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(self.getUuid(),VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
+        if (instanceOfferingOnlineChange.equals("true") && (self.getCpuNum() <= iovo.getCpuNum() && self.getMemorySize() <= iovo.getMemorySize())) {
+            OnlineChangeVmCpuMemoryMsg hmsg = new OnlineChangeVmCpuMemoryMsg();
+            hmsg.setVmInstanceUuid(self.getUuid());
+            hmsg.setHostUuid(self.getHostUuid());
+            hmsg.setInstanceOfferingInventory(inv);
+            bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, self.getHostUuid());
+            bus.send(hmsg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        evt.setErrorCode(reply.getError());
+                    } else {
+                        OnlineChangeVmCpuMemoryReply hr = reply.castReply();
+                        self.setInstanceOfferingUuid(iovo.getUuid());
+                        self.setCpuNum(hr.getInstanceOfferingInventory().getCpuNum());
+                        self.setMemorySize(hr.getInstanceOfferingInventory().getMemorySize());
+                        self = dbf.updateAndRefresh(self);
 
-
-        // the vm is running, make the capacity change pending, which will take effect the next
-        // the vm starts
-        if (self.getCpuNum() > iovo.getCpuNum() || self.getMemorySize() > iovo.getMemorySize()) {
+                        CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
+                            @Override
+                            public void run(ChangeInstanceOfferingExtensionPoint arg) {
+                                arg.afterChangeInstanceOffering(vm, inv);
+                            }
+                        });
+                        evt.setInventory(getSelfInventory());
+                    }
+                    bus.publish(evt);
+                }
+            });
+        }else {
+            // the vm is running and onlinechangeInstanceOffering is not allowed, make the capacity change pending, which will take effect the next
+            // the vm starts
             Map m = new HashMap();
             m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_NUM_TOKEN, iovo.getCpuNum());
             m.put(VmSystemTags.PENDING_CAPACITY_CHNAGE_CPU_SPEED_TOKEN, iovo.getCpuSpeed());
@@ -2896,37 +2930,6 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             evt.setInventory(getSelfInventory());
             bus.publish(evt);
-            return;
-        }
-        if (self.getCpuNum() <= iovo.getCpuNum() || self.getMemorySize() <= iovo.getMemorySize()) {
-            OnlineChangeVmCpuMemoryMsg hmsg = new OnlineChangeVmCpuMemoryMsg();
-            hmsg.setVmInstanceUuid(self.getUuid());
-            hmsg.setHostUuid(self.getHostUuid());
-            hmsg.setInstanceOfferingInventory(inv);
-            bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, self.getHostUuid());
-            bus.send(hmsg, new CloudBusCallBack(msg) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        evt.setErrorCode(reply.getError());
-                    } else {
-                        OnlineChangeCpuMemoryReply hr = reply.castReply();
-                        self.setInstanceOfferingUuid(iovo.getUuid());
-                        self.setCpuNum(hr.getInstanceOfferingInventory().getCpuNum());
-                        self.setMemorySize(hr.getInstanceOfferingInventory().getMemorySize());
-                        self = dbf.updateAndRefresh(self);
-
-                        CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
-                            @Override
-                            public void run(ChangeInstanceOfferingExtensionPoint arg) {
-                                arg.afterChangeInstanceOffering(vm, inv);
-                            }
-                        });
-                        evt.setInventory(getSelfInventory());
-                    }
-                    bus.publish(evt);
-                }
-            });
             return;
         }
     }
@@ -3679,6 +3682,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         spec.setCurrentVmOperation(operation);
         selectBootOrder(spec);
+        String instanceOfferingOnlineChange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(self.getUuid(),VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
+        if(instanceOfferingOnlineChange!=null && instanceOfferingOnlineChange.equals("true")){
+            spec.setInstanceOfferingOnliechange(true);
+        }else {
+            spec.setInstanceOfferingOnliechange(false);
+        }
         spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
         return spec;
     }
