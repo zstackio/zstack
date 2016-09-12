@@ -1631,6 +1631,7 @@ public class KVMHost extends HostBase implements Host {
 
         StopVmCmd cmd = new StopVmCmd();
         cmd.setUuid(vminv.getUuid());
+        cmd.setForce(msg.getForce());
         cmd.setTimeout(120);
         restf.asyncJsonPost(stopVmPath, cmd, new JsonAsyncRESTCallback<StopVmResponse>(msg, completion) {
             @Override

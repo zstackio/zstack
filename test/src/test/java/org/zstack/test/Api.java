@@ -1584,6 +1584,20 @@ public class Api implements CloudBusEventListener {
         APIStopVmInstanceEvent evt = sender.send(msg, APIStopVmInstanceEvent.class);
         return evt.getInventory();
     }
+    public VmInstanceInventory forcefullyStopVmInstance(String uuid) throws ApiSenderException {
+        return forcefullyStopVmInstance(uuid, null);
+    }
+
+    public VmInstanceInventory forcefullyStopVmInstance(String uuid, SessionInventory session) throws ApiSenderException {
+        APIStopVmInstanceMsg msg = new APIStopVmInstanceMsg();
+        msg.setSession(session == null ? adminSession : session);
+        msg.setUuid(uuid);
+        msg.setForce(true);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIStopVmInstanceEvent evt = sender.send(msg, APIStopVmInstanceEvent.class);
+        return evt.getInventory();
+    }
 
     public VmInstanceInventory rebootVmInstance(String uuid) throws ApiSenderException {
         return rebootVmInstance(uuid, null);
