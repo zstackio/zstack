@@ -26,7 +26,7 @@ public class SimulatorFactory implements HypervisorFactory {
     private DatabaseFacade dbf;
 
     @Override
-    public HostVO createHost(HostVO vo, APIAddHostMsg msg) {
+    public HostVO createHost(HostVO vo, AddHostMessage msg) {
         APIAddSimulatorHostMsg smsg = (APIAddSimulatorHostMsg) msg;
 
         SimulatorHostVO svo = new SimulatorHostVO(vo);

@@ -70,7 +70,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private RESTFacade restf;
 
     @Override
-    public HostVO createHost(HostVO vo, APIAddHostMsg msg) {
+    public HostVO createHost(HostVO vo, AddHostMessage msg) {
         APIAddKVMHostMsg amsg = (APIAddKVMHostMsg) msg;
         KVMHostVO kvo = new KVMHostVO(vo);
         kvo.setUsername(amsg.getUsername());

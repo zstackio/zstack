@@ -22,6 +22,7 @@ import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -160,15 +161,24 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handleLocalMessage(Message msg) {
         if (msg instanceof HostMessage) {
             passThrough((HostMessage) msg);
+        } else if (msg instanceof AddHostMsg){
+            handle((AddHostMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    @Deferred
-    private void handle(final APIAddHostMsg msg) {
-        final APIAddHostEvent evt = new APIAddHostEvent(msg.getId());
+    private AddHostMsg getAddHostMsg(AddHostMessage msg) {
+        if (msg instanceof AddHostMsg) {
+            return (AddHostMsg) msg;
+        } else if (msg instanceof APIAddHostMsg) {
+            return AddHostMsg.valueOf((APIAddHostMsg) msg);
+        }
 
+        throw new CloudRuntimeException("unexpected addHost message: " + msg);
+    }
+
+    private void doAddHost(final AddHostMessage msg, ReturnValueCompletion<HostInventory > completion) {
         final ClusterVO cluster = findClusterByUuid(msg.getClusterUuid());
         final HostVO hvo = new HostVO();
         if (msg.getResourceUuid() != null) {
@@ -187,10 +197,13 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
         final HypervisorFactory factory = getHypervisorFactory(HypervisorType.valueOf(cluster.getHypervisorType()));
         final HostVO vo = factory.createHost(hvo, msg);
+        final AddHostMsg amsg = getAddHostMsg(msg);
 
         new Log(vo.getUuid()).log(HostLogLabel.ADD_HOST_WRITE_DB);
 
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), HostVO.class.getSimpleName());
+        if (msg instanceof APIAddHostMsg) {
+            tagMgr.createTagsFromAPICreateMessage((APIAddHostMsg)msg, vo.getUuid(), HostVO.class.getSimpleName());
+        }
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         final HostInventory inv = HostInventory.valueOf(vo);
@@ -313,23 +326,19 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     }
                 });
             }
-        }).done(new FlowDoneHandler(msg) {
+        }).done(new FlowDoneHandler(amsg) {
             @Override
             public void handle(Map data) {
                 HostInventory inv = factory.getHostInventory(vo.getUuid());
                 inv.setStatus(HostStatus.Connected.toString());
-                evt.setInventory(inv);
-                bus.publish(evt);
+                completion.success(inv);
 
                 new Log(inv.getUuid()).log(HostLogLabel.ADD_HOST_SUCCESS);
                 logger.debug(String.format("successfully added host[name:%s, hypervisor:%s, uuid:%s]", vo.getName(), vo.getHypervisorType(), vo.getUuid()));
             }
-        }).error(new FlowErrorHandler(msg) {
+        }).error(new FlowErrorHandler(amsg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setErrorCode(errf.instantiateErrorCode(HostErrors.UNABLE_TO_ADD_HOST, errCode));
-                bus.publish(evt);
-
                 // delete host totally through the database, so other tables
                 // refer to the host table will clean up themselves
                 dbf.remove(vo);
@@ -341,8 +350,49 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                         ext.failedToAddHost(inv, msg);
                     }
                 });
+
+                completion.fail(errf.instantiateErrorCode(HostErrors.UNABLE_TO_ADD_HOST, errCode));
             }
         }).start();
+
+    }
+
+    @Deferred
+    private void handle(final AddHostMsg msg) {
+        final AddHostReply reply = new AddHostReply();
+
+        doAddHost(msg, new ReturnValueCompletion<HostInventory>() {
+            @Override
+            public void success(HostInventory returnValue) {
+                reply.setInventory(returnValue);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Deferred
+    private void handle(final APIAddHostMsg msg) {
+        final APIAddHostEvent evt = new APIAddHostEvent(msg.getId());
+
+        doAddHost(msg, new ReturnValueCompletion<HostInventory>() {
+            @Override
+            public void success(HostInventory inventory) {
+                evt.setInventory(inventory);
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setErrorCode(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     private ClusterVO findClusterByUuid(String uuid) {

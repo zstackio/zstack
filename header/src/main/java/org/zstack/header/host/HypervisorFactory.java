@@ -1,7 +1,7 @@
 package org.zstack.header.host;
 
 public interface HypervisorFactory {
-	HostVO createHost(HostVO vo, APIAddHostMsg msg);
+	HostVO createHost(HostVO vo, AddHostMessage msg);
 	
 	Host getHost(HostVO vo);
 	

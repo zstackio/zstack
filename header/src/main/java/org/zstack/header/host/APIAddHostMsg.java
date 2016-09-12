@@ -3,10 +3,7 @@ package org.zstack.header.host;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
-
-import java.util.ArrayList;
-import java.util.List;
-public abstract class APIAddHostMsg extends APICreateMessage {
+public abstract class APIAddHostMsg extends APICreateMessage implements AddHostMessage {
     /**
      * @desc
      * max length of 255 characters

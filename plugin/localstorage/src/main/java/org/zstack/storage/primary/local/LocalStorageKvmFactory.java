@@ -10,7 +10,7 @@ import org.zstack.core.logging.Log;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.host.APIAddHostMsg;
+import org.zstack.header.host.AddHostMessage;
 import org.zstack.header.host.FailToAddHostExtensionPoint;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
@@ -98,7 +98,7 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
     }
 
     @Override
-    public void failedToAddHost(HostInventory host, APIAddHostMsg amsg) {
+    public void failedToAddHost(HostInventory host, AddHostMessage amsg) {
         final String priUuid = findLocalStorageUuidByHostUuid(host.getClusterUuid());
         if (priUuid == null) {
             return;
