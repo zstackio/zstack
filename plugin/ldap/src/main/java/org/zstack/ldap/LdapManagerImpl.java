@@ -372,7 +372,12 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         inv.setUsername(msg.getUsername());
         inv.setPassword(msg.getPassword());
         evt.setInventory(inv);
-        evt.setSuccess(testAddLdapServerConnection(inv));
+        boolean success = testAddLdapServerConnection(inv);
+        evt.setSuccess(success);
+        if (!success) {
+            evt.setErrorCode(errf.instantiateErrorCode(LdapErrors.TEST_LDAP_CONNECTION_FAILED,
+                    "Test ldap server connection failed. "));
+        }
 
         bus.publish(evt);
     }
