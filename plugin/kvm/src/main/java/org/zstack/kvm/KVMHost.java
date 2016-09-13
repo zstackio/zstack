@@ -2341,7 +2341,7 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void run(FlowTrigger trigger, Map data) {
                                 String privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY).getAbsolutePath();
-                                ShellResult ret = ShellUtils.runAndReturn(String.format("ansible -i %s --private-key %s -m setup %s -e 'ansible_ssh_port=%d ansible_ssh_user=%s'",
+                                ShellResult ret = ShellUtils.runAndReturn(String.format("ansible -i %s --private-key %s -m setup -a filter=ansible_distribution* %s -e 'ansible_ssh_port=%d ansible_ssh_user=%s'",
                                         AnsibleConstant.INVENTORY_FILE, privKeyFile, self.getManagementIp(), getSelf().getPort(), getSelf().getUsername()), AnsibleConstant.ROOT_DIR);
                                 if (!ret.isReturnCode(0)) {
                                     trigger.fail(errf.stringToOperationError(
