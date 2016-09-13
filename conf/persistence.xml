@@ -129,5 +129,6 @@
         <class>org.zstack.alert.AlertTimestampVO</class>
         <class>org.zstack.ldap.LdapServerVO</class>
         <class>org.zstack.ldap.LdapAccountRefVO</class>
+        <class>org.zstack.core.jsonlabel.JsonLabelVO</class>
     </persistence-unit>
 </persistence>

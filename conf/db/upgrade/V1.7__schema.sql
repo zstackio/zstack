@@ -116,3 +116,13 @@ ALTER TABLE `zstack`.`LdapAccountRefVO` ADD CONSTRAINT fkLdapAccountRefVOLdapSer
 ALTER TABLE `zstack`.`LdapAccountRefVO` ADD CONSTRAINT fkLdapAccountRefVOAccountVO FOREIGN KEY (accountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;
 
 ALTER TABLE `zstack`.`LdapAccountRefVO` ADD UNIQUE INDEX(ldapUid,ldapServerUuid);
+
+CREATE TABLE  `zstack`.`JsonLabelVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `labelKey` varchar(128) NOT NULL UNIQUE,
+    `labelValue` text DEFAULT NULL,
+    `resourceUuid` varchar(256) DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
