@@ -856,7 +856,7 @@ public class KVMAgentCommands {
     
     public static class StopVmCmd extends AgentCommand {
     	private String uuid;
-        private boolean force;
+        private String type;
     	private long timeout;
 
 		public String getUuid() {
@@ -871,11 +871,11 @@ public class KVMAgentCommands {
 		public void setTimeout(long timeout) {
 			this.timeout = timeout;
 		}
-        public boolean getForce() {
-            return force;
+        public String getType() {
+            return type;
         }
-        public void setForce(boolean force) {
-            this.force = force;
+        public void setType(String type) {
+            this.type = type;
         }
     }
     public static class StopVmResponse extends AgentResponse {

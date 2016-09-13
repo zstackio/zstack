@@ -46,8 +46,8 @@ public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessag
      */
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
-    @APIParam(required = false)
-    private boolean force = false;
+    @APIParam(required = false,validValues = {"grace","cold"})
+    private String type = "grace";
 
     public String getUuid() {
         return uuid;
@@ -57,11 +57,11 @@ public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessag
         this.uuid = uuid;
     }
 
-    public boolean getForce(){
-        return force;
+    public String getType(){
+        return type;
     }
-    public void setForce(boolean force){
-        this.force = force;
+    public void setType(String type){
+        this.type = type;
     }
 
 

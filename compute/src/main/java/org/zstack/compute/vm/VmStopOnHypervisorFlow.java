@@ -41,7 +41,7 @@ public class VmStopOnHypervisorFlow extends NoRollbackFlow {
         StopVmOnHypervisorMsg msg = new StopVmOnHypervisorMsg();
         msg.setVmInventory(spec.getVmInventory());
         if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.Stop) {
-            msg.setForce(((APIStopVmInstanceMsg)spec.getMessage()).getForce());
+            msg.setType(((APIStopVmInstanceMsg)spec.getMessage()).getType());
         }
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getVmInventory().getHostUuid());
         bus.send(msg, new CloudBusCallBack(chain) {

@@ -1592,7 +1592,7 @@ public class Api implements CloudBusEventListener {
         APIStopVmInstanceMsg msg = new APIStopVmInstanceMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setUuid(uuid);
-        msg.setForce(true);
+        msg.setType("cold");
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIStopVmInstanceEvent evt = sender.send(msg, APIStopVmInstanceEvent.class);

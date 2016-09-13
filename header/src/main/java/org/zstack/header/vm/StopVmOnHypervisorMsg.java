@@ -5,7 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 
 public class StopVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
     private VmInstanceInventory vmInventory;
-    private boolean force;
+    private String type;
 
     public VmInstanceInventory getVmInventory() {
         return vmInventory;
@@ -15,12 +15,12 @@ public class StopVmOnHypervisorMsg extends NeedReplyMessage implements HostMessa
         this.vmInventory = vmInventory;
     }
 
-    public boolean getForce(){
-        return force;
+    public String getType(){
+        return type;
     }
 
-    public void setForce(boolean force){
-        this.force = force;
+    public void setType(String type){
+        this.type = type;
     }
     @Override
     public String getHostUuid() {
