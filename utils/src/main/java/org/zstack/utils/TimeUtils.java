@@ -56,6 +56,18 @@ public class TimeUtils {
             } else if (time.endsWith("D")) {
                 time = StringDSL.stripEnd(time, "D");
                 return TimeUnit.DAYS.toMillis(Long.valueOf(time));
+            } else if (time.endsWith("w")) {
+                time = StringDSL.stripEnd(time, "w");
+                return TimeUnit.DAYS.toMillis(Long.valueOf(time) * 7);
+            } else if (time.endsWith("W")) {
+                time = StringDSL.stripEnd(time, "W");
+                return TimeUnit.DAYS.toMillis(Long.valueOf(time) * 7);
+            } else if (time.endsWith("y")) {
+                time = StringDSL.stripEnd(time, "y");
+                return TimeUnit.DAYS.toMillis(Long.valueOf(time) * 365);
+            } else if (time.endsWith("Y")) {
+                time = StringDSL.stripEnd(time, "Y");
+                return TimeUnit.DAYS.toMillis(Long.valueOf(time) * 365);
             } else {
                 throw new NumberFormatException();
             }
