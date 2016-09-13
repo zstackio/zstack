@@ -29,6 +29,15 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String defaultL3NetworkUuid;
     private String allocatorStrategy;
     private String consolePassword;
+    private String strategy;
+
+    public String getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
+    }
 
     @Override
     public String getInstanceOfferingUuid() {
