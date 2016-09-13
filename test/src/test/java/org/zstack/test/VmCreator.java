@@ -30,6 +30,7 @@ public class VmCreator {
     public String rootDiskOfferingUuid;
     public int timeout = 15;
     public SessionInventory session;
+    public VmCreationStrategy strategy;
 
     final Api api;
 
@@ -40,6 +41,7 @@ public class VmCreator {
     public void addL3Network(String uuid) {
         l3NetworkUuids.add(uuid);
     }
+
 
     public void addDisk(String uuid) {
         diskOfferingUuids.add(uuid);
@@ -66,6 +68,7 @@ public class VmCreator {
         msg.setSystemTags(systemTags);
         msg.setUserTags(userTags);
         msg.setDescription(description);
+        msg.setStrategy(strategy.toString());
         msg.setSession(session == null ? api.getAdminSession() : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);

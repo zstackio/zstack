@@ -19,7 +19,10 @@ public abstract class AbstractVmInstance implements VmInstance {
 
     static {
         allowedOperations.addState(VmInstanceState.Created,
-                StartNewCreatedVmInstanceMsg.class.getName());
+                StartNewCreatedVmInstanceMsg.class.getName(),
+                APIStartVmInstanceMsg.class.getName(),
+                StartVmInstanceMsg.class.getName()
+        );
 
         allowedOperations.addState(VmInstanceState.Running,
                 APIStopVmInstanceMsg.class.getName(),
