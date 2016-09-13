@@ -28,7 +28,6 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String resourceUuid;
     private String defaultL3NetworkUuid;
     private String allocatorStrategy;
-    private String consolePassword;
 
     @Override
     public String getInstanceOfferingUuid() {
@@ -120,14 +119,6 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
         this.l3NetworkUuids = l3NetworkUuids;
     }
 
-
-    public void setConsolePassword(String consolePassword){
-        this.consolePassword = consolePassword;
-    }
-    public String getConsolePassword(){
-        return consolePassword;
-    }
-
     public String getImageUuid() {
         return imageUuid;
     }
@@ -216,7 +207,6 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
         cmsg.setDescription(msg.getDescription());
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
-        cmsg.setConsolePassword(msg.getConsolePassword());
         return cmsg;
     }
 }

@@ -2253,7 +2253,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
     private void handle(APISetVmConsolePasswordMsg msg){
         APISetVmConsolePasswordEvent evt = new APISetVmConsolePasswordEvent(msg.getId());
-        VmSystemTags.CONSOLE_PASSWORD.recreateInherentTag(self.getUuid(),map(e(VmSystemTags.CONSOLE_PASSWORD_TOKEN,msg.getConsolePassword())));
+        VmSystemTags.CONSOLE_PASSWORD.recreateTag(self.getUuid(),map(e(VmSystemTags.CONSOLE_PASSWORD_TOKEN,msg.getConsolePassword())));
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }
@@ -2267,7 +2267,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(APIDeleteVmConsolePasswordMsg msg){
         APIDeleteVmConsolePasswordEvent evt = new APIDeleteVmConsolePasswordEvent(msg.getId());
-        VmSystemTags.CONSOLE_PASSWORD.deleteInherentTag(self.getUuid());
+        VmSystemTags.CONSOLE_PASSWORD.delete(self.getUuid());
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }

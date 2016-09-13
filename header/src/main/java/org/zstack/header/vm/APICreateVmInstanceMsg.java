@@ -141,8 +141,6 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
 
     private String defaultL3NetworkUuid;
 
-    @APIParam(required = false)
-    private String consolePassword;
 
     public String getDefaultL3NetworkUuid() {
         return defaultL3NetworkUuid;
@@ -206,12 +204,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
 	public void setL3NetworkUuids(List<String> l3NetworkUuids) {
 		this.l3NetworkUuids = l3NetworkUuids;
 	}
-	public String getConsolePassword(){
-	    return consolePassword;
-    }
-    public void setConsolePassword(String consolePassword){
-        this.consolePassword = consolePassword;
-    }
+
 	public List<String> getDataDiskOfferingUuids() {
 		return dataDiskOfferingUuids;
 	}
