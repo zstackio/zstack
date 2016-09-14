@@ -24,4 +24,5 @@ public interface CreateVmInstanceMessage {
     String getResourceUuid();
     String getDefaultL3NetworkUuid();
     String getAllocatorStrategy();
+    String getStrategy(); // VmCreationStrategy
 }
