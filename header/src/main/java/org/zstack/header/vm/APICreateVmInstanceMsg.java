@@ -142,6 +142,17 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
     private String defaultL3NetworkUuid;
 
 
+    @APIParam(required = false, validValues = {"InstantStart", "JustCreate"})
+    private String strategy = VmCreationStrategy.InstantStart.toString();
+
+    public String getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
+    }
+
     public String getDefaultL3NetworkUuid() {
         return defaultL3NetworkUuid;
     }

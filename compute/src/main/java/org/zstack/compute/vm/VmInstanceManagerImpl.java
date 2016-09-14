@@ -15,6 +15,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.gc.*;
+import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
@@ -451,7 +452,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         bus.reply(msg, reply);
     }
 
-    private void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<CreateVmInstanceReply> completion) {
+    private void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<VmInstanceInventory> completion) {
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
         VmInstanceVO vo = new VmInstanceVO();
         if (msg.getResourceUuid() != null) {
@@ -496,21 +497,26 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             tagMgr.copySystemTag(instanceOfferingUuid, InstanceOfferingVO.class.getSimpleName(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
         }
 
+        if (VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy())) {
+            VmInstanceInventory inv = VmInstanceInventory.valueOf(vo);
+            createVmButNotStart(msg, inv);
+            completion.success(inv);
+            return;
+        }
+
         StartNewCreatedVmInstanceMsg smsg = new StartNewCreatedVmInstanceMsg();
         smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         smsg.setL3NetworkUuids(msg.getL3NetworkUuids());
         smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(vo));
         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vo.getUuid());
-        bus.send(smsg, new CloudBusCallBack() {
+        bus.send(smsg, new CloudBusCallBack(smsg) {
             @Override
             public void run(MessageReply reply) {
                 try {
-                    CreateVmInstanceReply cr = new CreateVmInstanceReply();
                     if (reply.isSuccess()) {
                         StartNewCreatedVmInstanceReply r = (StartNewCreatedVmInstanceReply) reply;
-                        cr.setInventory(r.getVmInventory());
-                        completion.success(cr);
+                        completion.success(r.getVmInventory());
                     } else {
                         completion.fail(reply.getError());
                     }
@@ -522,11 +528,18 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         });
     }
 
+    private void createVmButNotStart(CreateVmInstanceMsg msg, VmInstanceInventory inv) {
+        StartVmFromNewCreatedStruct struct = StartVmFromNewCreatedStruct.fromMessage(msg);
+        new JsonLabel().create(StartVmFromNewCreatedStruct.makeLabelKey(inv.getUuid()), struct, inv.getUuid());
+    }
+
     private void handle(final CreateVmInstanceMsg msg) {
-        doCreateVmInstance(msg, null, new ReturnValueCompletion<CreateVmInstanceReply>() {
+        doCreateVmInstance(msg, null, new ReturnValueCompletion<VmInstanceInventory>() {
             @Override
-            public void success(CreateVmInstanceReply returnValue) {
-                bus.reply(msg, returnValue);
+            public void success(VmInstanceInventory inv) {
+                CreateVmInstanceReply reply = new CreateVmInstanceReply();
+                reply.setInventory(inv);
+                bus.reply(msg, reply);
             }
 
             @Override
@@ -561,16 +574,17 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         cmsg.setDescription(msg.getDescription());
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
+        cmsg.setStrategy(msg.getStrategy());
         return cmsg;
     }
 
     private void handle(final APICreateVmInstanceMsg msg) {
-        doCreateVmInstance(fromAPICreateVmInstanceMsg(msg), msg, new ReturnValueCompletion<CreateVmInstanceReply>() {
+        doCreateVmInstance(fromAPICreateVmInstanceMsg(msg), msg, new ReturnValueCompletion<VmInstanceInventory>() {
             APICreateVmInstanceEvent evt = new APICreateVmInstanceEvent(msg.getId());
 
             @Override
-            public void success(CreateVmInstanceReply returnValue) {
-                evt.setInventory(returnValue.getInventory());
+            public void success(VmInstanceInventory inv) {
+                evt.setInventory(inv);
                 bus.publish(evt);
             }
 

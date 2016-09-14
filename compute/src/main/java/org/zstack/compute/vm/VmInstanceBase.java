@@ -12,6 +12,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
+import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -1837,154 +1838,35 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void startVmFromNewCreate(final StartNewCreatedVmInstanceMsg msg, final SyncTaskChain taskChain) {
-        boolean callNext = true;
-        try {
-            refreshVO();
-            ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
-            if (allowed != null) {
-                bus.replyErrorByMessageType(msg, allowed);
-                return;
-            }
-            ErrorCode preCreated = extEmitter.preStartNewCreatedVm(msg.getVmInstanceInventory());
-            if (preCreated != null) {
-                bus.replyErrorByMessageType(msg, errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, preCreated));
-                return;
-            }
+        refreshVO();
+        ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (error != null) {
+            throw new OperationFailureException(error);
+        }
 
-            final VmInstanceSpec spec = new VmInstanceSpec();
-            spec.setMessage(msg);
-            spec.setVmInventory(msg.getVmInstanceInventory());
-            if (msg.getL3NetworkUuids() != null && !msg.getL3NetworkUuids().isEmpty()) {
-                SimpleQuery<L3NetworkVO> nwquery = dbf.createQuery(L3NetworkVO.class);
-                nwquery.add(L3NetworkVO_.uuid, Op.IN, msg.getL3NetworkUuids());
-                List<L3NetworkVO> vos = nwquery.list();
-                List<L3NetworkInventory> nws = L3NetworkInventory.valueOf(vos);
+        error = extEmitter.preStartNewCreatedVm(msg.getVmInstanceInventory());
+        if (error != null) {
+            throw new OperationFailureException(error);
+        }
 
-                // order L3 networks by the order they specified in the API
-                List<L3NetworkInventory> l3s = new ArrayList<L3NetworkInventory>(nws.size());
-                for (final String l3Uuid : msg.getL3NetworkUuids()) {
-                    L3NetworkInventory l3 =  CollectionUtils.find(nws, new Function<L3NetworkInventory, L3NetworkInventory>() {
-                        @Override
-                        public L3NetworkInventory call(L3NetworkInventory arg) {
-                            return arg.getUuid().equals(l3Uuid) ? arg : null;
-                        }
-                    });
-                    DebugUtils.Assert(l3 != null, "where is the L3???");
-                    l3s.add(l3);
-                }
-
-                spec.setL3Networks(l3s);
-            } else {
-                spec.setL3Networks(new ArrayList<L3NetworkInventory>(0));
-            }
-
-            if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
-                SimpleQuery<DiskOfferingVO> dquery = dbf.createQuery(DiskOfferingVO.class);
-                dquery.add(DiskOfferingVO_.uuid, SimpleQuery.Op.IN, msg.getDataDiskOfferingUuids());
-                List<DiskOfferingVO> vos = dquery.list();
-
-                // allow create multiple data volume from the same disk offering
-                List<DiskOfferingInventory> disks = new ArrayList<DiskOfferingInventory>();
-                for (final String duuid : msg.getDataDiskOfferingUuids()) {
-                    DiskOfferingVO dvo = CollectionUtils.find(vos, new Function<DiskOfferingVO, DiskOfferingVO>() {
-                        @Override
-                        public DiskOfferingVO call(DiskOfferingVO arg) {
-                            if (duuid.equals(arg.getUuid())) {
-                                return arg;
-                            }
-                            return null;
-                        }
-                    });
-                    disks.add(DiskOfferingInventory.valueOf(dvo));
-                }
-                spec.setDataDiskOfferings(disks);
-            } else {
-                spec.setDataDiskOfferings(new ArrayList<DiskOfferingInventory>(0));
-            }
-            if (msg.getRootDiskOfferingUuid() != null) {
-                DiskOfferingVO rootDisk = dbf.findByUuid(msg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
-                spec.setRootDiskOffering(DiskOfferingInventory.valueOf(rootDisk));
-            }
-
-            ImageVO imvo = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
-            if (imvo.getMediaType() == ImageMediaType.ISO) {
-                new IsoOperator().attachIsoToVm(self.getUuid(), imvo.getUuid());
-                IsoSpec isoSpec  = new IsoSpec();
-                isoSpec.setImageUuid(imvo.getUuid());
-                spec.setDestIso(isoSpec);
-            }
-
-            spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
-            spec.setCurrentVmOperation(VmOperation.NewCreate);
-            if (self.getZoneUuid() != null || self.getClusterUuid() != null || self.getHostUuid() != null) {
-                spec.setHostAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
-            }
-            buildHostname(spec);
-
-            spec.setUserdata(buildUserdata());
-            selectBootOrder(spec);
-            String instanceOfferingOnlinechange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(self.getUuid(),VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
-            if (instanceOfferingOnlinechange != null && instanceOfferingOnlinechange.equals("true")){
-                spec.setInstanceOfferingOnliechange(true);
-            }
-            spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
-
-            changeVmStateInDb(VmInstanceStateEvent.starting);
-
-            CollectionUtils.safeForEach(pluginRgty.getExtensionList(BeforeStartNewCreatedVmExtensionPoint.class), new ForEachFunction<BeforeStartNewCreatedVmExtensionPoint>() {
-                @Override
-                public void run(BeforeStartNewCreatedVmExtensionPoint ext) {
-                    ext.beforeStartNewCreatedVm(spec);
-                }
-            });
-
-            extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
-            FlowChain chain = getCreateVmWorkFlowChain(msg.getVmInstanceInventory());
-            setFlowMarshaller(chain);
-
-            chain.setName(String.format("create-vm-%s", self.getUuid()));
-            chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
-            chain.done(new FlowDoneHandler(msg, taskChain) {
-                @Override
-                public void handle(final Map data) {
-                    VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                    self.setLastHostUuid(spec.getDestHost().getUuid());
-                    self.setHostUuid(spec.getDestHost().getUuid());
-                    self.setClusterUuid(spec.getDestHost().getClusterUuid());
-                    self.setZoneUuid(spec.getDestHost().getZoneUuid());
-                    self.setHypervisorType(spec.getDestHost().getHypervisorType());
-                    self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
-                    changeVmStateInDb(VmInstanceStateEvent.running);
-                    self = dbf.reload(self);
-                    logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
-                    VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-                    extEmitter.afterStartNewCreatedVm(inv);
-                    StartNewCreatedVmInstanceReply reply = new StartNewCreatedVmInstanceReply();
-                    reply.setVmInventory(inv);
-                    bus.reply(msg, reply);
-                    taskChain.next();
-                }
-            }).error(new FlowErrorHandler(msg, taskChain) {
-                @Override
-                public void handle(final ErrorCode errCode, Map data) {
-                    extEmitter.failedToStartNewCreatedVm(VmInstanceInventory.valueOf(self), errCode);
-                    dbf.remove(self);
-                    // clean up EO, otherwise API-retry may cause conflict if
-                    // the resource uuid is set
-                    dbf.eoCleanup(VmInstanceVO.class);
-                    StartNewCreatedVmInstanceReply reply = new StartNewCreatedVmInstanceReply();
-                    reply.setError(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, errCode));
-                    bus.reply(msg, reply);
-                    taskChain.next();
-                }
-            }).start();
-
-            callNext = false;
-        } finally {
-            if (callNext) {
+        StartNewCreatedVmInstanceReply reply = new StartNewCreatedVmInstanceReply();
+        startVmFromNewCreate(StartVmFromNewCreatedStruct.fromMessage(msg), new Completion(msg, taskChain) {
+            @Override
+            public void success() {
+                self = dbf.reload(self);
+                reply.setVmInventory(getSelfInventory());
+                bus.reply(msg, reply);
                 taskChain.next();
             }
-        }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                taskChain.next();
+            }
+        });
+
     }
 
     protected void handle(final StartNewCreatedVmInstanceMsg msg) {
@@ -3351,6 +3233,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        if (self.getState() == VmInstanceState.Created) {
+            StartVmFromNewCreatedStruct struct = new JsonLabel().get(StartVmFromNewCreatedStruct.makeLabelKey(self.getUuid()), StartVmFromNewCreatedStruct.class);
+            startVmFromNewCreate(struct, completion);
+            return;
+        }
+
         applyPendingCapacityChangeIfNeed();
 
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
@@ -3423,6 +3311,130 @@ public class VmInstanceBase extends AbstractVmInstance {
                     self = dbf.updateAndRefresh(self);
                     completion.fail(errCode);
                 }
+            }
+        }).start();
+    }
+
+    private void startVmFromNewCreate(StartVmFromNewCreatedStruct struct, Completion completion) {
+        VmInstanceInventory inv = getSelfInventory();
+
+        final VmInstanceSpec spec = new VmInstanceSpec();
+        spec.setVmInventory(inv);
+        if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {
+            SimpleQuery<L3NetworkVO> nwquery = dbf.createQuery(L3NetworkVO.class);
+            nwquery.add(L3NetworkVO_.uuid, Op.IN, struct.getL3NetworkUuids());
+            List<L3NetworkVO> vos = nwquery.list();
+            List<L3NetworkInventory> nws = L3NetworkInventory.valueOf(vos);
+
+            // order L3 networks by the order they specified in the API
+            List<L3NetworkInventory> l3s = new ArrayList<L3NetworkInventory>(nws.size());
+            for (final String l3Uuid : struct.getL3NetworkUuids()) {
+                L3NetworkInventory l3 =  CollectionUtils.find(nws, new Function<L3NetworkInventory, L3NetworkInventory>() {
+                    @Override
+                    public L3NetworkInventory call(L3NetworkInventory arg) {
+                        return arg.getUuid().equals(l3Uuid) ? arg : null;
+                    }
+                });
+                DebugUtils.Assert(l3 != null, "where is the L3???");
+                l3s.add(l3);
+            }
+
+            spec.setL3Networks(l3s);
+        } else {
+            spec.setL3Networks(new ArrayList<>());
+        }
+
+        if (struct.getDataDiskOfferingUuids() != null && !struct.getDataDiskOfferingUuids().isEmpty()) {
+            SimpleQuery<DiskOfferingVO> dquery = dbf.createQuery(DiskOfferingVO.class);
+            dquery.add(DiskOfferingVO_.uuid, SimpleQuery.Op.IN, struct.getDataDiskOfferingUuids());
+            List<DiskOfferingVO> vos = dquery.list();
+
+            // allow create multiple data volume from the same disk offering
+            List<DiskOfferingInventory> disks = new ArrayList<>();
+            for (final String duuid : struct.getDataDiskOfferingUuids()) {
+                DiskOfferingVO dvo = CollectionUtils.find(vos, new Function<DiskOfferingVO, DiskOfferingVO>() {
+                    @Override
+                    public DiskOfferingVO call(DiskOfferingVO arg) {
+                        if (duuid.equals(arg.getUuid())) {
+                            return arg;
+                        }
+                        return null;
+                    }
+                });
+                disks.add(DiskOfferingInventory.valueOf(dvo));
+            }
+            spec.setDataDiskOfferings(disks);
+        } else {
+            spec.setDataDiskOfferings(new ArrayList<>());
+        }
+        if (struct.getRootDiskOfferingUuid() != null) {
+            DiskOfferingVO rootDisk = dbf.findByUuid(struct.getRootDiskOfferingUuid(), DiskOfferingVO.class);
+            spec.setRootDiskOffering(DiskOfferingInventory.valueOf(rootDisk));
+        }
+
+        ImageVO imvo = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
+        if (imvo.getMediaType() == ImageMediaType.ISO) {
+            new IsoOperator().attachIsoToVm(self.getUuid(), imvo.getUuid());
+            IsoSpec isoSpec  = new IsoSpec();
+            isoSpec.setImageUuid(imvo.getUuid());
+            spec.setDestIso(isoSpec);
+        }
+
+        spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
+        spec.setCurrentVmOperation(VmOperation.NewCreate);
+        if (self.getZoneUuid() != null || self.getClusterUuid() != null || self.getHostUuid() != null) {
+            spec.setHostAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
+        }
+        buildHostname(spec);
+
+        spec.setUserdata(buildUserdata());
+        selectBootOrder(spec);
+        String instanceOfferingOnlinechange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(self.getUuid(),VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
+        if (instanceOfferingOnlinechange != null && instanceOfferingOnlinechange.equals("true")){
+            spec.setInstanceOfferingOnliechange(true);
+        }
+        spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
+
+        changeVmStateInDb(VmInstanceStateEvent.starting);
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(BeforeStartNewCreatedVmExtensionPoint.class), new ForEachFunction<BeforeStartNewCreatedVmExtensionPoint>() {
+            @Override
+            public void run(BeforeStartNewCreatedVmExtensionPoint ext) {
+                ext.beforeStartNewCreatedVm(spec);
+            }
+        });
+
+        extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
+        FlowChain chain = getCreateVmWorkFlowChain(inv);
+        setFlowMarshaller(chain);
+
+        chain.setName(String.format("create-vm-%s", self.getUuid()));
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(final Map data) {
+                VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+                self.setLastHostUuid(spec.getDestHost().getUuid());
+                self.setHostUuid(spec.getDestHost().getUuid());
+                self.setClusterUuid(spec.getDestHost().getClusterUuid());
+                self.setZoneUuid(spec.getDestHost().getZoneUuid());
+                self.setHypervisorType(spec.getDestHost().getHypervisorType());
+                self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
+                changeVmStateInDb(VmInstanceStateEvent.running);
+                logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
+                VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+                extEmitter.afterStartNewCreatedVm(inv);
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(final ErrorCode errCode, Map data) {
+                extEmitter.failedToStartNewCreatedVm(VmInstanceInventory.valueOf(self), errCode);
+                dbf.remove(self);
+                // clean up EO, otherwise API-retry may cause conflict if
+                // the resource uuid is set
+                dbf.eoCleanup(VmInstanceVO.class);
+                completion.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, errCode));
             }
         }).start();
     }
