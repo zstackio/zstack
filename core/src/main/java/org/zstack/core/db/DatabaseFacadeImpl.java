@@ -815,9 +815,15 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     @Override
     public void installEntityLifeCycleCallback(Class clz, EntityEvent evt, EntityLifeCycleCallback cb) {
-        EntityInfo info = entityInfoMap.get(clz);
-        DebugUtils.Assert(info != null, String.format("cannot find EntityInfo for the class[%s]", clz));
-        info.installLifeCycleCallback(evt, cb);
+        if (clz != null) {
+            EntityInfo info = entityInfoMap.get(clz);
+            DebugUtils.Assert(info != null, String.format("cannot find EntityInfo for the class[%s]", clz));
+            info.installLifeCycleCallback(evt, cb);
+        } else {
+            for (EntityInfo info : entityInfoMap.values()) {
+                info.installLifeCycleCallback(evt, cb);
+            }
+        }
     }
 
     @Override

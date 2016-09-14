@@ -40,7 +40,8 @@ public class BeanConstructor {
             "<import resource=\"springConfigXml/Error.xml\" />",
             "<import resource=\"springConfigXml/gc.xml\" />",
             "<import resource=\"springConfigXml/debug.xml\" />",
-            "<import resource=\"springConfigXml/SchedulerFacade.xml\" />"
+            "<import resource=\"springConfigXml/SchedulerFacade.xml\" />",
+            "<import resource=\"springConfigXml/jsonlabel.xml\" />"
     ).toString();
 
     public BeanConstructor() {

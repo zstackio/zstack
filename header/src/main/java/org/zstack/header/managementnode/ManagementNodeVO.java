@@ -2,7 +2,6 @@ package org.zstack.header.managementnode;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.util.Date;
 
 @Entity
 @Table

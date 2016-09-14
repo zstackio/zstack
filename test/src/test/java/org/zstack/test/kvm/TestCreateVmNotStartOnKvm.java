@@ -3,9 +3,12 @@ package org.zstack.test.kvm;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.jsonlabel.JsonLabel;
+import org.zstack.core.jsonlabel.JsonLabelVO;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
@@ -14,6 +17,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmCreationStrategy;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.volume.VolumeVO;
@@ -78,6 +82,12 @@ public class TestCreateVmNotStartOnKvm {
         Assert.assertEquals(cap.getTotalCpu() - vm.getCpuNum(), cap.getAvailableCpu());
         Assert.assertEquals(cap.getTotalMemory() - vm.getMemorySize(), cap.getAvailableMemory());
         Assert.assertEquals(2, dbf.count(VolumeVO.class));
+
+        new JsonLabel().create("1", "2");
+        new JsonLabel().delete("1");
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
+        api.destroyVmInstance(vm.getUuid());
+        Assert.assertEquals(0, dbf.count(JsonLabelVO.class));
     }
 
 }
