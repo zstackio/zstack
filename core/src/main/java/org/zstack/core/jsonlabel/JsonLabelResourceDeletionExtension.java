@@ -6,6 +6,7 @@ import org.zstack.core.db.HardDeleteEntityExtensionPoint;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.SoftDeleteEntityExtensionPoint;
 import org.zstack.core.db.UpdateQuery;
+import org.zstack.core.thread.AsyncThread;
 
 import java.util.Collection;
 import java.util.List;
@@ -25,7 +26,13 @@ public class JsonLabelResourceDeletionExtension implements SoftDeleteEntityExten
         return null;
     }
 
+    @AsyncThread
     private void delete(Collection ids) {
+        // the resourceUuid must be in type of String
+        if (!(ids.iterator().next() instanceof  String)) {
+            return;
+        }
+
         UpdateQuery q = UpdateQuery.New();
         q.entity(JsonLabelVO.class);
         q.condAnd(JsonLabelVO_.resourceUuid, Op.IN, ids);
@@ -38,7 +45,9 @@ public class JsonLabelResourceDeletionExtension implements SoftDeleteEntityExten
             return;
         }
 
-        delete(entityIds);
+        if (!entityIds.isEmpty()) {
+            delete(entityIds);
+        }
     }
 
     @Override
@@ -53,6 +62,8 @@ public class JsonLabelResourceDeletionExtension implements SoftDeleteEntityExten
             return;
         }
 
-        delete(entityIds);
+        if (!entityIds.isEmpty()) {
+            delete(entityIds);
+        }
     }
 }
