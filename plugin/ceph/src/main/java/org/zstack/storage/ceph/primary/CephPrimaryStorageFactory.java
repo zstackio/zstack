@@ -219,7 +219,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }
 
         SimpleQuery<CephPrimaryStorageMonVO> q = dbf.createQuery(CephPrimaryStorageMonVO.class);
-        q.select(CephPrimaryStorageMonVO_.hostname, CephPrimaryStorageMonVO_.monPort);
+        q.select(CephPrimaryStorageMonVO_.monAddr, CephPrimaryStorageMonVO_.monPort);
         q.add(CephPrimaryStorageMonVO_.primaryStorageUuid, Op.EQ, vol.getPrimaryStorageUuid());
         q.add(CephPrimaryStorageMonVO_.status, Op.EQ, MonStatus.Connected);
         List<Tuple> ts = q.listTuple();

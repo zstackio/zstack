@@ -36,4 +36,5 @@ public class CephBackupStorageSimulatorConfig {
     public List<GetFactsCmd> getFactsCmds = new ArrayList<GetFactsCmd>();
     public Map<String, String> getFactsCmdFsid = new HashMap<String, String>();
     String format = "qcow2";
+    public Map<String, String> monAddr = new HashMap<>();
 }

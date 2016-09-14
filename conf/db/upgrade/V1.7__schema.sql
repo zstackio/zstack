@@ -126,3 +126,6 @@ CREATE TABLE  `zstack`.`JsonLabelVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`CephPrimaryStorageMonVO` add column monAddr varchar(255) DEFAULT NULL;
+ALTER TABLE `zstack`.`CephBackupStorageMonVO` add column monAddr varchar(255) DEFAULT NULL;

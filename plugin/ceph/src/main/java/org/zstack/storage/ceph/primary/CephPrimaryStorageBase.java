@@ -602,6 +602,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     public static class GetFactsRsp extends AgentResponse {
         public String fsid;
+        public String monAddr;
     }
 
     public static class DeleteImageCacheCmd extends AgentCommand {
@@ -1768,7 +1769,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                         return;
                                     }
 
-                                    fsids.put(mon.getSelf().getUuid(), rsp.fsid);
+                                    CephPrimaryStorageMonVO monVO = mon.getSelf();
+                                    fsids.put(monVO.getUuid(), rsp.fsid);
+                                    monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
+                                    dbf.update(monVO);
+
                                     latch.ack();
                                 }
 

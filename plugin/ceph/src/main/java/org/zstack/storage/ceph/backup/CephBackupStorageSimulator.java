@@ -80,6 +80,7 @@ public class CephBackupStorageSimulator {
         }
 
         rsp.fsid = fsid;
+        rsp.monAddr = config.monAddr.get(cmd.monUuid);
         reply(entity, rsp);
         return null;
     }
