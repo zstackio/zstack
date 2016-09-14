@@ -153,5 +153,5 @@
     <TestCase class="org.zstack.test.core.asyncbatch.TestAsyncBatch" />
     <TestCase class="org.zstack.test.core.asyncbatch.TestAsyncBatch1" />
 
-    <TestCase class="org.zstack.test.core.gc.TestJsonLabel" />
+    <TestCase class="org.zstack.test.core.jsonlabel.TestJsonLabel" />
 </UnitTestSuiteConfig>
