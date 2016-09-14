@@ -12,7 +12,7 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="LoadBalancerManager" class="org.zstack.core.jsonlabel.JsonLabelResourceDeletionExtension">
+    <bean id="JsonLabelResourceDeletionExtension" class="org.zstack.core.jsonlabel.JsonLabelResourceDeletionExtension">
 	<zstack:plugin>
 		<zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint" />
 		<zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint" />
