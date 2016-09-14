@@ -2762,7 +2762,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         // if instanceOfferingOnlineChange is true and  the new instanceOffering is bigger than existing instanceOffering
         // create a local message , OnlineChangeVmCpuMemoryMsg
         String instanceOfferingOnlineChange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(self.getUuid(),VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
-        if (instanceOfferingOnlineChange.equals("true") && (self.getCpuNum() <= iovo.getCpuNum() && self.getMemorySize() <= iovo.getMemorySize())) {
+        if ((instanceOfferingOnlineChange != null && instanceOfferingOnlineChange.equals("true")) && (self.getCpuNum() <= iovo.getCpuNum() && self.getMemorySize() <= iovo.getMemorySize())) {
             OnlineChangeVmCpuMemoryMsg hmsg = new OnlineChangeVmCpuMemoryMsg();
             hmsg.setVmInstanceUuid(self.getUuid());
             hmsg.setHostUuid(self.getHostUuid());
