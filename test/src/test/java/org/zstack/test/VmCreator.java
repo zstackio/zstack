@@ -68,7 +68,9 @@ public class VmCreator {
         msg.setSystemTags(systemTags);
         msg.setUserTags(userTags);
         msg.setDescription(description);
-        msg.setStrategy(strategy.toString());
+        if (strategy != null) {
+            msg.setStrategy(strategy.toString());
+        }
         msg.setSession(session == null ? api.getAdminSession() : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
