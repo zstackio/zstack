@@ -38,6 +38,7 @@ import java.util.Date;
  *
  * confirm the billing is zero
  */
+@Deprecated
 public class TestBilling10 {
     CLogger logger = Utils.getLogger(TestBilling10.class);
     Deployer deployer;
@@ -270,7 +271,7 @@ public class TestBilling10 {
 	public void test() throws ApiSenderException, InterruptedException {
         class CreatePrice {
             void create(String vmUuid, String vmState, long date) {
-                VmUsageCO u = new VmUsageCO();
+                VmUsageVO u = new VmUsageVO();
                 u.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                 u.setVmUuid(vmUuid);
                 u.setCpuNum(4);
@@ -279,9 +280,8 @@ public class TestBilling10 {
                 u.setInventory("");
                 u.setName(vmUuid);
                 u.setDateInLong(date);
-                u.setDate();
                 u.setState(vmState);
-                ops.insert(u);
+                dbf.persist(u);
             }
         }
 

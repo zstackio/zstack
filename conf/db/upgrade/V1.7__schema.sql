@@ -130,3 +130,60 @@ CREATE TABLE  `zstack`.`JsonLabelVO` (
 
 ALTER TABLE `zstack`.`CephPrimaryStorageMonVO` add column monAddr varchar(255) DEFAULT NULL;
 ALTER TABLE `zstack`.`CephBackupStorageMonVO` add column monAddr varchar(255) DEFAULT NULL;
+
+CREATE TABLE  `zstack`.`VmUsageVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `vmUuid` varchar(32) NOT NULL,
+    `state` varchar(64) NOT NULL,
+    `name` varchar(255) NOT NULL,
+    `accountUuid` varchar(32) NOT NULL,
+    `cpuNum` int unsigned NOT NULL,
+    `memorySize` bigint unsigned NOT NULL,
+    `rootVolumeSize` bigint unsigned NOT NULL,
+    `dateInLong` bigint unsigned NOT NULL,
+    `inventory` text DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`RootVolumeUsageVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `vmUuid` varchar(32) NOT NULL,
+    `volumeUuid` varchar(32) NOT NULL,
+    `volumeStatus` varchar(64) NOT NULL,
+    `volumeName` varchar(255) NOT NULL,
+    `accountUuid` varchar(32) NOT NULL,
+    `volumeSize` bigint unsigned NOT NULL,
+    `dateInLong` bigint unsigned NOT NULL,
+    `inventory` text DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`DataVolumeUsageVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `volumeUuid` varchar(32) NOT NULL,
+    `volumeStatus` varchar(64) NOT NULL,
+    `volumeName` varchar(255) NOT NULL,
+    `accountUuid` varchar(32) NOT NULL,
+    `volumeSize` bigint unsigned NOT NULL,
+    `dateInLong` bigint unsigned NOT NULL,
+    `inventory` text DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`PriceVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `resourceName` varchar(255) NOT NULL,
+    `timeUnit` varchar(255) NOT NULL,
+    `resourceUnit` varchar(255) DEFAULT NULL,
+    `price` float NOT NULL,
+    `dateInLong` bigint unsigned NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

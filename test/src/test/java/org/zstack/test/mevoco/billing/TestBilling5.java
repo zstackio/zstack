@@ -94,7 +94,7 @@ public class TestBilling5 {
 
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
-        msg.setPrice(10f);
+        msg.setPrice(10d);
         msg.setResourceName(BillingConstants.SPENDING_TYPE_DATA_VOLUME);
         msg.setResourceUnit("m");
         api.createPrice(msg);
@@ -112,9 +112,9 @@ public class TestBilling5 {
         logger.debug(String.format("duration: %s s", during));
 
         long volSize = SizeUnit.BYTE.toMegaByte(vol.getSize());
-        float price = 10 * volSize * during;
+        double price = 10 * volSize * during;
 
-        float errorMargin = 10 * volSize * 2; // the error margin of duration is 2s
+        double errorMargin = 10 * volSize * 2; // the error margin of duration is 2s
 
         final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID,
                 null, Long.MAX_VALUE, null);
@@ -131,7 +131,7 @@ public class TestBilling5 {
         Assert.assertEquals(volvo.getUuid(), ds.resourceUuid);
         Assert.assertFalse(ds.sizeInventory.isEmpty());
 
-        float volPrice = (float) ds.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
+        double volPrice = (double) ds.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(price, volPrice, errorMargin);
     }
 }

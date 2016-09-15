@@ -119,8 +119,8 @@ public class TestBilling4 {
         PriceInventory pm2 = api.createPrice(msg);
 
         vm = api.stopVmInstance(vm.getUuid());
-        float cpuPrice1 = vm.getCpuNum() * pc1.getPrice() * during;
-        float memPrice1 = SizeUnit.BYTE.toMegaByte(vm.getMemorySize()) * pm1.getPrice() * during;
+        double cpuPrice1 = vm.getCpuNum() * pc1.getPrice() * during;
+        double memPrice1 = SizeUnit.BYTE.toMegaByte(vm.getMemorySize()) * pm1.getPrice() * during;
 
         logger.debug(String.format("phase1: cpu price: %s, memory price: %s, during: %s s", cpuPrice1, memPrice1, during));
 
@@ -129,26 +129,26 @@ public class TestBilling4 {
         TimeUnit.SECONDS.sleep(during);
         api.destroyVmInstance(vm.getUuid());
 
-        float cpuPrice2 = vm.getCpuNum() * pc2.getPrice() * during;
-        float memPrice2 = SizeUnit.BYTE.toMegaByte(vm.getMemorySize()) * pm2.getPrice() * during;
+        double cpuPrice2 = vm.getCpuNum() * pc2.getPrice() * during;
+        double memPrice2 = SizeUnit.BYTE.toMegaByte(vm.getMemorySize()) * pm2.getPrice() * during;
 
         logger.debug(String.format("phase2: cpu price: %s, memory price: %s, during: %s s", cpuPrice2, memPrice2, during));
 
         final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null,
                 Long.MAX_VALUE, null);
 
-        float cpuPrice = cpuPrice1 + cpuPrice2;
-        float memPrice = memPrice1 + memPrice2;
+        double cpuPrice = cpuPrice1 + cpuPrice2;
+        double memPrice = memPrice1 + memPrice2;
         Assert.assertEquals(cpuPrice + memPrice, reply.getTotal(), 0.02);
 
         Spending spending = CollectionUtils.find(reply.getSpending(), arg -> BillingConstants.SPENDING_TYPE_VM.equals(arg.getSpendingType()) ? arg : null);
         Assert.assertNotNull(spending);
 
         VmSpending vmSpending = (VmSpending) spending.getDetails().get(0);
-        float cpuSpending = (float) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
+        double cpuSpending = (double) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(cpuPrice, cpuSpending, 0.02);
 
-        float memSpending = (float) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
+        double memSpending = (double) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(memPrice, memSpending, 0.02);
     }
 }

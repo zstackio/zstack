@@ -99,6 +99,8 @@ public class UpdateQueryImpl implements UpdateQuery {
     @Override
     @Transactional
     public void delete() {
+        DebugUtils.Assert(entityClass!=null, "entity class cannot be null");
+
         EntityInfo info = dbf.getEntityInfo(entityClass);
 
         DebugUtils.Assert(entityClass!=null, "entity class cannot be null");

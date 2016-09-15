@@ -108,14 +108,14 @@ public class TestBilling9 {
 
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
-        msg.setPrice(100f);
+        msg.setPrice(100d);
         msg.setResourceName(BillingConstants.SPENDING_CPU);
         msg.setDateInLong(date1970);
         PriceInventory cp = api.createPrice(msg);
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
-        msg.setPrice(10f);
+        msg.setPrice(10d);
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
         msg.setResourceUnit("m");
         msg.setDateInLong(date1970);
@@ -123,7 +123,7 @@ public class TestBilling9 {
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
-        msg.setPrice(9f);
+        msg.setPrice(9d);
         msg.setResourceName(BillingConstants.SPENDING_ROOT_VOLUME);
         msg.setResourceUnit("m");
         msg.setDateInLong(date1970);
@@ -131,16 +131,16 @@ public class TestBilling9 {
 
         APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
 
-        float cpuPrice = vm.getCpuNum() * 100f * during;
-        float memPrice = vm.getMemorySize() * 10f * during;
+        double cpuPrice = vm.getCpuNum() * 100d * during;
+        double memPrice = vm.getMemorySize() * 10d * during;
         long volSizeInM = SizeUnit.BYTE.toMegaByte(rootVolume.getSize());
-        float volPrice = volSizeInM * 9f * during;
+        double volPrice = volSizeInM * 9d * during;
 
         // for 2s error margin
-        float cpuPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
-        float memPriceErrorMargin = vm.getMemorySize() * 100f  * 2;
-        float volPriceErrorMargin = volSizeInM * 9f * 2;
-        float errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
+        double cpuPriceErrorMargin = vm.getCpuNum() * 100d  * 2;
+        double memPriceErrorMargin = vm.getMemorySize() * 100d  * 2;
+        double volPriceErrorMargin = volSizeInM * 9d * 2;
+        double errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
 
         Assert.assertEquals((cpuPrice + memPrice + volPrice) * 2, reply.getTotal(), errorMargin);
 
@@ -154,10 +154,10 @@ public class TestBilling9 {
         VmSpending vmSpending = vmSpendings.stream().filter(s -> vm.getUuid().equals(s.resourceUuid)).findFirst().get();
         Assert.assertNotNull(vmSpending);
 
-        float cpuSpending = (float) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
+        double cpuSpending = (double) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(cpuPrice, cpuSpending, cpuPriceErrorMargin);
 
-        float memSpending = (float) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
+        double memSpending = (double) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(memPrice, memSpending, memPriceErrorMargin);
 
         spending = CollectionUtils.find(reply.getSpending(), arg -> BillingConstants.SPENDING_TYPE_ROOT_VOLUME.equals(arg.getSpendingType()) ? arg : null);
@@ -166,16 +166,16 @@ public class TestBilling9 {
         RootVolumeSpending rootVolumeSpending = (RootVolumeSpending) spending.getDetails().stream()
                 .filter(d -> d.resourceUuid.equals(vm.getRootVolumeUuid())).findAny().get();
 
-        float rootVolSpending = (float) rootVolumeSpending.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
+        double rootVolSpending = (double) rootVolumeSpending.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(volPrice, rootVolSpending, volPriceErrorMargin);
 
         vmSpending = vmSpendings.stream().filter(s -> vm2.getUuid().equals(s.resourceUuid)).findFirst().get();
         Assert.assertNotNull(vmSpending);
 
-        cpuSpending = (float) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
+        cpuSpending = (double) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(cpuPrice, cpuSpending, cpuPriceErrorMargin);
 
-        memSpending = (float) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
+        memSpending = (double) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(memPrice, memSpending, memPriceErrorMargin);
 
         spending = CollectionUtils.find(reply.getSpending(), arg -> BillingConstants.SPENDING_TYPE_ROOT_VOLUME.equals(arg.getSpendingType()) ? arg : null);
@@ -183,12 +183,12 @@ public class TestBilling9 {
         rootVolumeSpending = (RootVolumeSpending) spending.getDetails().stream()
                 .filter(d -> d.resourceUuid.equals(vm2.getRootVolumeUuid())).findAny().get();
 
-        rootVolSpending = (float) rootVolumeSpending.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
+        rootVolSpending = (double) rootVolumeSpending.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(volPrice, rootVolSpending, volPriceErrorMargin);
 
-        api.deletePrice(cp.getResourceName(), cp.getDateInLong());
-        api.deletePrice(vp.getResourceName(), vp.getDateInLong());
-        api.deletePrice(mp.getResourceName(), mp.getDateInLong());
+        api.deletePrice(cp.getUuid());
+        api.deletePrice(vp.getUuid());
+        api.deletePrice(mp.getUuid());
 
         reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
         Assert.assertEquals(0, reply.getTotal(), 0.02);

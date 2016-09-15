@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.zstack.billing.APICalculateAccountSpendingReply;
 import org.zstack.billing.APICreateResourcePriceMsg;
 import org.zstack.billing.BillingConstants;
-import org.zstack.billing.DataVolumeUsageCO;
+import org.zstack.billing.DataVolumeUsageVO;
 import org.zstack.cassandra.CassandraFacade;
 import org.zstack.cassandra.CassandraOperator;
 import org.zstack.core.cloudbus.CloudBus;
@@ -120,14 +120,14 @@ public class TestBilling11 {
             Long date = Long.valueOf(pairs[1].trim());
             String status = pairs[2].trim();
 
-            DataVolumeUsageCO co = new DataVolumeUsageCO();
+            DataVolumeUsageVO co = new DataVolumeUsageVO();
             co.setDateInLong(date);
             co.setVolumeUuid(volUuid);
             co.setVolumeName("vol");
             co.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
             co.setVolumeSize(SizeUnit.GIGABYTE.toByte(4));
             co.setVolumeStatus(status);
-            ops.insert(co);
+            dbf.persist(co);
         }
 
         final APICalculateAccountSpendingReply reply = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID,

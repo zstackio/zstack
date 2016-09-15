@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.zstack.billing.*;
 import org.zstack.cassandra.CassandraFacade;
 import org.zstack.cassandra.CassandraOperator;
-import org.zstack.cassandra.Cql;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -99,24 +98,20 @@ public class TestBilling13 {
 
         APICreateResourcePriceMsg msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
-        msg.setPrice(100f);
+        msg.setPrice(100d);
         msg.setResourceName(BillingConstants.SPENDING_CPU);
         api.createPrice(msg);
-        Cql cql = new Cql("select * from <table> where resourceName = :name limit 1");
-        cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_CPU);
-        PriceCO co = ops.selectOne(cql.build(), PriceCO.class);
-        Assert.assertNotNull(co);
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
-        msg.setPrice(10f);
+        msg.setPrice(10d);
         msg.setResourceName(BillingConstants.SPENDING_MEMORY);
         msg.setResourceUnit("m");
         api.createPrice(msg);
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
-        msg.setPrice(9f);
+        msg.setPrice(9d);
         msg.setResourceName(BillingConstants.SPENDING_ROOT_VOLUME);
         msg.setResourceUnit("m");
         api.createPrice(msg);
@@ -134,16 +129,16 @@ public class TestBilling13 {
         final APICalculateAccountSpendingReply reply =
                 api.calculateSpending(identityCreator.getAccountSession().getAccountUuid(), identityCreator.getAccountSession());
 
-        float cpuPrice = vm.getCpuNum() * 100f * during;
-        float memPrice = vm.getMemorySize() * 10f * during;
+        double cpuPrice = vm.getCpuNum() * 100d * during;
+        double memPrice = vm.getMemorySize() * 10d * during;
         long volSizeInM = SizeUnit.BYTE.toMegaByte(rootVolume.getSize());
-        float volPrice = volSizeInM * 9f * during;
+        double volPrice = volSizeInM * 9d * during;
 
         // for 2s error margin
-        float cpuPriceErrorMargin = vm.getCpuNum() * 100f  * 2;
-        float memPriceErrorMargin = vm.getMemorySize() * 100f  * 2;
-        float volPriceErrorMargin = volSizeInM * 9f * 2;
-        float errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
+        double cpuPriceErrorMargin = vm.getCpuNum() * 100d  * 2;
+        double memPriceErrorMargin = vm.getMemorySize() * 100d  * 2;
+        double volPriceErrorMargin = volSizeInM * 9d * 2;
+        double errorMargin = cpuPriceErrorMargin + memPriceErrorMargin + volPriceErrorMargin;
 
         Assert.assertEquals(cpuPrice + memPrice + volPrice, reply.getTotal(), errorMargin);
 
@@ -153,10 +148,10 @@ public class TestBilling13 {
                 ArrayList.class, VmSpending.class);
         VmSpending vmSpending = vmSpendings.get(0);
 
-        float cpuSpending = (float) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
+        double cpuSpending = (double) vmSpending.cpuInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(cpuPrice, cpuSpending, cpuPriceErrorMargin);
 
-        float memSpending = (float) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
+        double memSpending = (double) vmSpending.memoryInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(memPrice, memSpending, memPriceErrorMargin);
 
         spending = CollectionUtils.find(reply.getSpending(), arg -> BillingConstants.SPENDING_TYPE_ROOT_VOLUME.equals(arg.getSpendingType()) ? arg : null);
@@ -164,7 +159,7 @@ public class TestBilling13 {
         Assert.assertEquals(volPrice, spending.getSpending(), volPriceErrorMargin);
         RootVolumeSpending rootVolumeSpending = (RootVolumeSpending) spending.getDetails().get(0);
 
-        float rootVolSpending = (float) rootVolumeSpending.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
+        double rootVolSpending = (double) rootVolumeSpending.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(volPrice, rootVolSpending, volPriceErrorMargin);
     }
 }

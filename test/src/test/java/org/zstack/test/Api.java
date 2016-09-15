@@ -4082,11 +4082,10 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public void deletePrice(String resourceName, long dateInLong) throws ApiSenderException {
+    public void deletePrice(String uuid) throws ApiSenderException {
         APIDeleteResourcePriceMsg msg = new APIDeleteResourcePriceMsg();
-        msg.setResourceName(resourceName);
-        msg.setDateInLong(dateInLong);
         msg.setSession(adminSession);
+        msg.setUuid(uuid);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         sender.send(msg, APIDeleteResourcePriceEvent.class);

@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.zstack.billing.*;
 import org.zstack.cassandra.CassandraFacade;
 import org.zstack.cassandra.CassandraOperator;
-import org.zstack.cassandra.Cql;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -103,11 +102,8 @@ public class TestBilling {
         msg.setTimeUnit("s");
         msg.setPrice(100f);
         msg.setResourceName(BillingConstants.SPENDING_CPU);
-        api.createPrice(msg);
-        Cql cql = new Cql("select * from <table> where resourceName = :name limit 1");
-        cql.setTable(PriceCO.class.getSimpleName()).setParameter("name", BillingConstants.SPENDING_CPU);
-        PriceCO co = ops.selectOne(cql.build(), PriceCO.class);
-        Assert.assertNotNull(co);
+        PriceInventory priceinv = api.createPrice(msg);
+        Assert.assertTrue(dbf.isExist(priceinv.getUuid(), PriceVO.class));
 
         msg = new APICreateResourcePriceMsg();
         msg.setTimeUnit("s");
