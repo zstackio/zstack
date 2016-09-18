@@ -660,8 +660,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
             @Transactional(readOnly = true)
             private long getUsedEip(String accountUuid) {
-                String sql = "select count(eip) from" +
-                        " EipVO eip, AccountResourceRefVO ref" +
+                String sql = "select count(eip)" +
+                        " from EipVO eip, AccountResourceRefVO ref" +
                         " where ref.resourceUuid = eip.uuid" +
                         " and ref.accountUuid = :auuid" +
                         " and ref.resourceType = :rtype";
