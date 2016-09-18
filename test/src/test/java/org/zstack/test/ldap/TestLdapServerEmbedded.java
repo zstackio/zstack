@@ -85,6 +85,7 @@ public class TestLdapServerEmbedded {
         msg1.setBase(DOMAIN_DSN);
         msg1.setUsername("");
         msg1.setPassword("");
+        msg1.setSecure("Normal");
         msg1.setSession(session);
         APIAddLdapServerEvent evt1 = sender.send(msg1, APIAddLdapServerEvent.class);
         logger.debug(evt1.getInventory().getName());

@@ -22,6 +22,9 @@ public class APITestAddLdapServerConnectionMsg extends APIMessage {
     @APIParam(maxLength = 1024)
     private String password;
 
+    @APIParam(maxLength = 1024, validValues = {"Normal", "TLS"})
+    private String secure;
+
     public String getName() {
         return name;
     }
@@ -68,5 +71,13 @@ public class APITestAddLdapServerConnectionMsg extends APIMessage {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getSecure() {
+        return secure;
+    }
+
+    public void setSecure(String secure) {
+        this.secure = secure;
     }
 }

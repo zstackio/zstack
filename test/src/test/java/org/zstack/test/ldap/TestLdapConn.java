@@ -66,31 +66,86 @@ public class TestLdapConn {
         ApiSender sender = api.getApiSender();
 
         // test conn
-        APITestAddLdapServerConnectionMsg msg21 = new APITestAddLdapServerConnectionMsg();
-        msg21.setName("miao");
-        msg21.setDescription("miao desc");
-        msg21.setUrl("ldap://localhost:1888");
-        msg21.setBase(DOMAIN_DSN);
-        msg21.setUsername("");
-        msg21.setPassword("");
-        msg21.setSession(session);
-        msg21.setTimeout(10);
-        APITestAddLdapServerConnectionEvent evt21 = sender.send(msg21, APITestAddLdapServerConnectionEvent.class);
-        logger.debug(evt21.getInventory().getName());
+        int flag = 1;
+        logger.debug("Execute Path:" + flag);
+        switch (flag) {
+            case 0: {
+                APITestAddLdapServerConnectionMsg msg21 = new APITestAddLdapServerConnectionMsg();
+                msg21.setName("miao");
+                msg21.setDescription("miao desc");
+                msg21.setUrl("ldap://localhost:1888");
+                msg21.setBase(DOMAIN_DSN);
+                msg21.setUsername("");
+                msg21.setPassword("");
+                msg21.setSecure("Normal");
+                msg21.setSession(session);
+                msg21.setTimeout(10);
+                APITestAddLdapServerConnectionEvent evt21 = sender.send(msg21, APITestAddLdapServerConnectionEvent.class);
+                logger.debug(evt21.getInventory().getName());
+            }
+            break;
+            case 1: {
+                APITestAddLdapServerConnectionMsg msg33 = new APITestAddLdapServerConnectionMsg();
+                msg33.setName("miao");
+                msg33.setDescription("miao desc");
+                msg33.setUrl("ldap://172.20.11.200:389");
+                msg33.setBase("dc=mevoco,dc=com");
+                msg33.setUsername("uid=admin,cn=users,cn=accounts,dc=mevoco,dc=com");
+                msg33.setPassword("password");
+                msg33.setSecure("TLS");
+                msg33.setSession(session);
+                msg33.setTimeout(10);
+                APITestAddLdapServerConnectionEvent evt33 = sender.send(msg33, APITestAddLdapServerConnectionEvent.class);
+                logger.debug(evt33.getInventory().getName());
+            }
+            break;
+            case 2: {
+                APITestAddLdapServerConnectionMsg msg33 = new APITestAddLdapServerConnectionMsg();
+                msg33.setName("miao");
+                msg33.setDescription("miao desc");
+                msg33.setUrl("ldap://172.20.11.200:389");
+                msg33.setBase("dc=mevoco,dc=com");
+                msg33.setUsername("uid=admin,cn=users,cn=accounts,dc=mevoco,dc=com");
+                msg33.setPassword("password");
+                msg33.setSecure("Normal");
+                msg33.setSession(session);
+                msg33.setTimeout(10);
+                APITestAddLdapServerConnectionEvent evt33 = sender.send(msg33, APITestAddLdapServerConnectionEvent.class);
+                logger.debug(evt33.getInventory().getName());
+            }
+            break;
+            case 3: {
+                APITestAddLdapServerConnectionMsg msg44 = new APITestAddLdapServerConnectionMsg();
+                msg44.setName("miao");
+                msg44.setDescription("miao desc");
+                msg44.setUrl("ldap://172.20.12.176:389");
+                msg44.setBase("dc=learnitguide,dc=net");
+                msg44.setUsername("cn=Manager,dc=learnitguide,dc=net");
+                msg44.setPassword("password");
+                msg44.setSecure("Normal");
+                msg44.setSession(session);
+                msg44.setTimeout(10);
+                APITestAddLdapServerConnectionEvent evt44 = sender.send(msg44, APITestAddLdapServerConnectionEvent.class);
+                logger.debug(evt44.getInventory().getName());
+            }
+            break;
+            case 4: {
+                APITestAddLdapServerConnectionMsg msg22 = new APITestAddLdapServerConnectionMsg();
+                msg22.setName("miao");
+                msg22.setDescription("miao desc");
+                msg22.setUrl("ldaps://172.20.11.200:389");
+                msg22.setBase("dc=mevoco,dc=com");
+                msg22.setUsername("uid=admin,cn=users,cn=accounts,dc=mevoco,dc=com");
+                msg22.setPassword("password");
+                msg22.setSecure("Normal");
+                msg22.setSession(session);
+                msg22.setTimeout(10);
+                APITestAddLdapServerConnectionEvent evt22 = sender.send(msg22, APITestAddLdapServerConnectionEvent.class);
+                logger.debug(evt22.getInventory().getName());
+            }
+            break;
+        }
 
-
-        // test conn:ipa:multi same uid
-//        APITestAddLdapServerConnectionMsg msg22 = new APITestAddLdapServerConnectionMsg();
-//        msg22.setName("miao");
-//        msg22.setDescription("miao desc");
-//        msg22.setUrl("ldap://172.20.11.200:389");
-//        msg22.setBase("dc=mevoco,dc=com");
-//        msg22.setUsername("");
-//        msg22.setPassword("");
-//        msg22.setSession(session);
-//        msg22.setTimeout(10);
-//        APITestAddLdapServerConnectionEvent evt22 = sender.send(msg22, APITestAddLdapServerConnectionEvent.class);
-//        logger.debug(evt22.getInventory().getName());
 
     }
 }

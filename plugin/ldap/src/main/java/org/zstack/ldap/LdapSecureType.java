@@ -1,0 +1,9 @@
+package org.zstack.ldap;
+
+/**
+ * Created by miao on 16-9-18.
+ */
+public enum LdapSecureType {
+    Normal,
+    TLS,
+}

@@ -96,6 +96,7 @@ CREATE TABLE  `zstack`.`LdapServerVO` (
     `base` varchar(1024) NOT NULL,
     `username` varchar(1024) NOT NULL,
     `password` varchar(1024) NOT NULL,
+    `secure` varchar(1024) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)

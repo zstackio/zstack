@@ -15,6 +15,7 @@ public class LdapServerVO_ {
     public static volatile SingularAttribute<LdapServerVO, String> base;
     public static volatile SingularAttribute<LdapServerVO, String> user;
     public static volatile SingularAttribute<LdapServerVO, String> password;
+    public static volatile SingularAttribute<LdapServerVO, String> secure;
     public static volatile SingularAttribute<LdapServerVO, Timestamp> createDate;
     public static volatile SingularAttribute<LdapServerVO, Timestamp> lastOpDate;
 }

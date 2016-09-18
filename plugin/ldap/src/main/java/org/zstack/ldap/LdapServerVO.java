@@ -39,6 +39,9 @@ public class LdapServerVO {
     private String password;
 
     @Column
+    private String secure;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -114,5 +117,13 @@ public class LdapServerVO {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getSecure() {
+        return secure;
+    }
+
+    public void setSecure(String secure) {
+        this.secure = secure;
     }
 }

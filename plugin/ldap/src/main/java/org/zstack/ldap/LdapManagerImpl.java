@@ -7,6 +7,7 @@ import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.AbstractContextMapper;
 import org.springframework.ldap.core.support.DefaultDirObjectFactory;
+import org.springframework.ldap.core.support.DefaultTlsDirContextAuthenticationStrategy;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
@@ -31,6 +32,8 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 import javax.persistence.Query;
 import java.sql.Timestamp;
 import java.util.List;
@@ -86,28 +89,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     }
 
     public LdapTemplateContextSource readLdapServerConfiguration() {
-        LdapServerVO ldapServer = getLdapServer();
-
-        LdapContextSource ldapContextSource;
-        ldapContextSource = new LdapContextSource();
-        ldapContextSource.setUrl(ldapServer.getUrl());
-        ldapContextSource.setBase(ldapServer.getBase());
-        ldapContextSource.setUserDn(ldapServer.getUsername());
-        ldapContextSource.setPassword(ldapServer.getPassword());
-
-        LdapTemplate ldapTemplate;
-        ldapTemplate = new LdapTemplate();
-        ldapTemplate.setContextSource(ldapContextSource);
-
-        try {
-            ldapContextSource.afterPropertiesSet();
-            logger.info("LDAP Context Source loaded ");
-        } catch (Exception e) {
-            logger.error("LDAP Context Source not loaded ", e);
-            throw new CloudRuntimeException("LDAP Context Source not loaded", e);
-        }
-
-        return new LdapTemplateContextSource(ldapTemplate, ldapContextSource);
+        LdapServerVO ldapServerVO = getLdapServer();
+        LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
+        return loadLdap(ldapServerInventory);
     }
 
     @MessageSafe
@@ -291,6 +275,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             ldapServerVO.setBase(msg.getBase());
             ldapServerVO.setUsername(msg.getUsername());
             ldapServerVO.setPassword(msg.getPassword());
+            ldapServerVO.setSecure(msg.getSecure());
 
             ldapServerVO = dbf.persistAndRefresh(ldapServerVO);
             LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
@@ -371,6 +356,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         inv.setBase(msg.getBase());
         inv.setUsername(msg.getUsername());
         inv.setPassword(msg.getPassword());
+        inv.setSecure(msg.getSecure());
         evt.setInventory(inv);
         boolean success = testAddLdapServerConnection(inv);
         evt.setSuccess(success);
@@ -382,39 +368,62 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         bus.publish(evt);
     }
 
-    private boolean testAddLdapServerConnection(LdapServerInventory inv) {
-        LdapContextSource testLdapContextSource;
-        testLdapContextSource = new LdapContextSource();
-        testLdapContextSource.setUrl(inv.getUrl());
-        testLdapContextSource.setBase(inv.getBase());
-        testLdapContextSource.setUserDn(inv.getUsername());
-        testLdapContextSource.setPassword(inv.getPassword());
-        testLdapContextSource.setDirObjectFactory(DefaultDirObjectFactory.class);
-        testLdapContextSource.setPooled(false);
+    private void setTls(LdapContextSource ldapContextSource) {
+        // set tls
+        logger.debug("Ldap TLS enabled.");
+        ldapContextSource.setCacheEnvironmentProperties(false);
+        ldapContextSource.setPooled(false);
+        DefaultTlsDirContextAuthenticationStrategy tls = new DefaultTlsDirContextAuthenticationStrategy();
+        tls.setHostnameVerifier(new HostnameVerifier() {
+            @Override
+            public boolean verify(String hostname, SSLSession session) {
+                return true;
+            }
+        });
+        tls.setSslSocketFactory(new DummySSLSocketFactory());
+        ldapContextSource.setAuthenticationStrategy(tls);
+    }
 
-        LdapTemplate testLdapTemplate;
-        testLdapTemplate = new LdapTemplate();
-        testLdapTemplate.setContextSource(testLdapContextSource);
+    private LdapTemplateContextSource loadLdap(LdapServerInventory inv) {
+        LdapContextSource ldapContextSource;
+        ldapContextSource = new LdapContextSource();
+        ldapContextSource.setUrl(inv.getUrl());
+        ldapContextSource.setBase(inv.getBase());
+        ldapContextSource.setUserDn(inv.getUsername());
+        ldapContextSource.setPassword(inv.getPassword());
+        ldapContextSource.setDirObjectFactory(DefaultDirObjectFactory.class);
+        if (inv.getSecure().equals(LdapSecureType.TLS.toString())) {
+            setTls(ldapContextSource);
+        }
+        //
+        LdapTemplate ldapTemplate;
+        ldapTemplate = new LdapTemplate();
+        ldapTemplate.setContextSource(ldapContextSource);
 
         try {
-            testLdapContextSource.afterPropertiesSet();
+            ldapContextSource.afterPropertiesSet();
             logger.info("Test LDAP Context Source loaded ");
         } catch (Exception e) {
             logger.error("Test LDAP Context Source not loaded ", e);
             throw new CloudRuntimeException("Test LDAP Context Source not loaded", e);
         }
 
+        return new LdapTemplateContextSource(ldapTemplate, ldapContextSource);
+    }
+
+    private boolean testAddLdapServerConnection(LdapServerInventory inv) {
+        LdapTemplateContextSource ldapTemplateContextSource = loadLdap(inv);
+
         try {
             AndFilter filter = new AndFilter();
             filter.and(new EqualsFilter("uid", ""));
-            testLdapTemplate.authenticate("", filter.toString(), "");
+            ldapTemplateContextSource.getLdapTemplate().authenticate("", filter.toString(), "");
             logger.info("LDAP connection was successful");
         } catch (Exception e) {
             logger.info("Cannot connect to LDAP server");
             logger.debug(e.toString());
             return false;
         }
-
 
         return true;
     }
@@ -441,6 +450,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         }
         if (msg.getPassword() != null) {
             ldapServerVO.setPassword(msg.getPassword());
+        }
+        if (msg.getSecure() != null) {
+            ldapServerVO.setSecure(msg.getSecure());
         }
 
         ldapServerVO = dbf.updateAndRefresh(ldapServerVO);

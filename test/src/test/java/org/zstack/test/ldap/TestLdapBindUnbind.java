@@ -83,6 +83,7 @@ public class TestLdapBindUnbind {
         msg13.setBase(DOMAIN_DSN);
         msg13.setUsername("");
         msg13.setPassword("");
+        msg13.setSecure("Normal");
         msg13.setSession(session);
         APIAddLdapServerEvent evt13 = sender.send(msg13, APIAddLdapServerEvent.class);
         logger.debug(evt13.getInventory().getName());

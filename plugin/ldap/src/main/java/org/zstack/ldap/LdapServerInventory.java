@@ -18,6 +18,7 @@ public class LdapServerInventory {
     private String base;
     private String username;
     private String password;
+    private String secure;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -30,13 +31,14 @@ public class LdapServerInventory {
         inv.setBase(vo.getBase());
         inv.setUsername(vo.getUsername());
         inv.setPassword(vo.getPassword());
+        inv.setSecure(vo.getSecure());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
     }
 
     public static List<LdapServerInventory> valueOf(Collection<LdapServerVO> vos) {
-        List<LdapServerInventory> lst = new ArrayList<LdapServerInventory>(vos.size());
+        List<LdapServerInventory> lst = new ArrayList<>(vos.size());
         for (LdapServerVO vo : vos) {
             lst.add(LdapServerInventory.valueOf(vo));
         }
@@ -113,5 +115,13 @@ public class LdapServerInventory {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getSecure() {
+        return secure;
+    }
+
+    public void setSecure(String secure) {
+        this.secure = secure;
     }
 }
