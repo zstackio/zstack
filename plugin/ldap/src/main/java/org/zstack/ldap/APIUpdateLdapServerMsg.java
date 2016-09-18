@@ -25,8 +25,8 @@ public class APIUpdateLdapServerMsg extends APIMessage {
     @APIParam(maxLength = 1024, required = false)
     private String password;
 
-    @APIParam(maxLength = 1024, validValues = {"Normal", "TLS"}, required = false)
-    private String secure;
+    @APIParam(maxLength = 1024, validValues = {"None", "TLS"}, required = false)
+    private String encryption;
 
     public String getName() {
         return name;
@@ -84,11 +84,11 @@ public class APIUpdateLdapServerMsg extends APIMessage {
         this.ldapServerUuid = ldapServerUuid;
     }
 
-    public String getSecure() {
-        return secure;
+    public String getEncryption() {
+        return encryption;
     }
 
-    public void setSecure(String secure) {
-        this.secure = secure;
+    public void setEncryption(String encryption) {
+        this.encryption = encryption;
     }
 }

@@ -22,8 +22,8 @@ public class APIAddLdapServerMsg extends APIMessage {
     @APIParam(maxLength = 1024)
     private String password;
 
-    @APIParam(maxLength = 1024, validValues = {"Normal", "TLS"})
-    private String secure;
+    @APIParam(maxLength = 1024, validValues = {"None", "TLS"})
+    private String encryption;
 
     public String getName() {
         return name;
@@ -73,11 +73,11 @@ public class APIAddLdapServerMsg extends APIMessage {
         this.password = password;
     }
 
-    public String getSecure() {
-        return secure;
+    public String getEncryption() {
+        return encryption;
     }
 
-    public void setSecure(String secure) {
-        this.secure = secure;
+    public void setEncryption(String encryption) {
+        this.encryption = encryption;
     }
 }

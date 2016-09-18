@@ -18,7 +18,7 @@ public class LdapServerInventory {
     private String base;
     private String username;
     private String password;
-    private String secure;
+    private String encryption;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -31,7 +31,7 @@ public class LdapServerInventory {
         inv.setBase(vo.getBase());
         inv.setUsername(vo.getUsername());
         inv.setPassword(vo.getPassword());
-        inv.setSecure(vo.getSecure());
+        inv.setEncryption(vo.getEncryption());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -117,11 +117,11 @@ public class LdapServerInventory {
         this.password = password;
     }
 
-    public String getSecure() {
-        return secure;
+    public String getEncryption() {
+        return encryption;
     }
 
-    public void setSecure(String secure) {
-        this.secure = secure;
+    public void setEncryption(String encryption) {
+        this.encryption = encryption;
     }
 }

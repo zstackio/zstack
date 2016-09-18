@@ -1133,7 +1133,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
                 if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_INVALID_OP,
-                            String.format("Invalid ChangerResourceOwner operation." +
+                            String.format("Invalid ChangeResourceOwner operation." +
                                             "Original owner is the same as target owner." +
                                             "Current account is [uuid: %s]." +
                                             "The resource target owner account[uuid: %s]." +

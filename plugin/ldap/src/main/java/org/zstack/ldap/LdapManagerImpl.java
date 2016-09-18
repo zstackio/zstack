@@ -275,7 +275,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             ldapServerVO.setBase(msg.getBase());
             ldapServerVO.setUsername(msg.getUsername());
             ldapServerVO.setPassword(msg.getPassword());
-            ldapServerVO.setSecure(msg.getSecure());
+            ldapServerVO.setEncryption(msg.getEncryption());
 
             ldapServerVO = dbf.persistAndRefresh(ldapServerVO);
             LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
@@ -356,7 +356,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         inv.setBase(msg.getBase());
         inv.setUsername(msg.getUsername());
         inv.setPassword(msg.getPassword());
-        inv.setSecure(msg.getSecure());
+        inv.setEncryption(msg.getEncryption());
         evt.setInventory(inv);
         boolean success = testAddLdapServerConnection(inv);
         evt.setSuccess(success);
@@ -392,7 +392,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         ldapContextSource.setUserDn(inv.getUsername());
         ldapContextSource.setPassword(inv.getPassword());
         ldapContextSource.setDirObjectFactory(DefaultDirObjectFactory.class);
-        if (inv.getSecure().equals(LdapSecureType.TLS.toString())) {
+        if (inv.getEncryption().equals(LdapEncryptionType.TLS.toString())) {
             setTls(ldapContextSource);
         }
         //
@@ -451,8 +451,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         if (msg.getPassword() != null) {
             ldapServerVO.setPassword(msg.getPassword());
         }
-        if (msg.getSecure() != null) {
-            ldapServerVO.setSecure(msg.getSecure());
+        if (msg.getEncryption() != null) {
+            ldapServerVO.setEncryption(msg.getEncryption());
         }
 
         ldapServerVO = dbf.updateAndRefresh(ldapServerVO);

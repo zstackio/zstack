@@ -77,7 +77,7 @@ public class TestLdapConn {
                 msg21.setBase(DOMAIN_DSN);
                 msg21.setUsername("");
                 msg21.setPassword("");
-                msg21.setSecure("Normal");
+                msg21.setEncryption("None");
                 msg21.setSession(session);
                 msg21.setTimeout(10);
                 APITestAddLdapServerConnectionEvent evt21 = sender.send(msg21, APITestAddLdapServerConnectionEvent.class);
@@ -92,7 +92,7 @@ public class TestLdapConn {
                 msg33.setBase("dc=mevoco,dc=com");
                 msg33.setUsername("uid=admin,cn=users,cn=accounts,dc=mevoco,dc=com");
                 msg33.setPassword("password");
-                msg33.setSecure("TLS");
+                msg33.setEncryption("TLS");
                 msg33.setSession(session);
                 msg33.setTimeout(10);
                 APITestAddLdapServerConnectionEvent evt33 = sender.send(msg33, APITestAddLdapServerConnectionEvent.class);
@@ -107,7 +107,7 @@ public class TestLdapConn {
                 msg33.setBase("dc=mevoco,dc=com");
                 msg33.setUsername("uid=admin,cn=users,cn=accounts,dc=mevoco,dc=com");
                 msg33.setPassword("password");
-                msg33.setSecure("Normal");
+                msg33.setEncryption("None");
                 msg33.setSession(session);
                 msg33.setTimeout(10);
                 APITestAddLdapServerConnectionEvent evt33 = sender.send(msg33, APITestAddLdapServerConnectionEvent.class);
@@ -122,7 +122,7 @@ public class TestLdapConn {
                 msg44.setBase("dc=learnitguide,dc=net");
                 msg44.setUsername("cn=Manager,dc=learnitguide,dc=net");
                 msg44.setPassword("password");
-                msg44.setSecure("Normal");
+                msg44.setEncryption("None");
                 msg44.setSession(session);
                 msg44.setTimeout(10);
                 APITestAddLdapServerConnectionEvent evt44 = sender.send(msg44, APITestAddLdapServerConnectionEvent.class);
@@ -137,7 +137,7 @@ public class TestLdapConn {
                 msg22.setBase("dc=mevoco,dc=com");
                 msg22.setUsername("uid=admin,cn=users,cn=accounts,dc=mevoco,dc=com");
                 msg22.setPassword("password");
-                msg22.setSecure("Normal");
+                msg22.setEncryption("None");
                 msg22.setSession(session);
                 msg22.setTimeout(10);
                 APITestAddLdapServerConnectionEvent evt22 = sender.send(msg22, APITestAddLdapServerConnectionEvent.class);
