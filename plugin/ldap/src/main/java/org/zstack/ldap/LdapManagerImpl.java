@@ -178,14 +178,14 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             if (result.size() == 1) {
                 dn = result.get(0).toString();
             } else if (result.size() > 1) {
-                throw new CloudRuntimeException("More than one ldap search result");
+                throw new OperationFailureException(errf.instantiateErrorCode(
+                        LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "More than one ldap search result"));
             } else {
-                throw new CloudRuntimeException("No ldap search result");
+                throw new OperationFailureException(errf.instantiateErrorCode(
+                        LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "No ldap search result"));
             }
             logger.info(String.format("getDn success key:%s, val:%s, dn:%s", key, val, dn));
         } catch (NamingException e) {
-            logger.error(String.format("getDn error key:%s, val:%s", key, val), e);
-        } catch (Exception e) {
             logger.error(String.format("getDn error key:%s, val:%s", key, val), e);
         }
         return dn;
