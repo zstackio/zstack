@@ -35,6 +35,7 @@ import org.zstack.utils.logging.CLogger;
  * 3. add DNS
  * confirm the DNS added successfully
  */
+@Deprecated
 public class TestCassandra {
     CLogger logger = Utils.getLogger(TestCassandra.class);
     Deployer deployer;
