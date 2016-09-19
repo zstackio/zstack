@@ -10,12 +10,12 @@ import java.util.concurrent.TimeUnit;
 public class TimeUtils {
     private static CLogger logger = Utils.getLogger(TimeUtils.class);
 
-    public static void loopExecuteUntilTimeoutIgnoreException(long period, long interval, TimeUnit unit, Callable<Boolean> runnable) {
+    public static boolean loopExecuteUntilTimeoutIgnoreExceptionAndReturn(long period, long interval, TimeUnit unit, Callable<Boolean> runnable) {
         long count = 0;
         while (count < period) {
             try {
                 if (runnable.call()) {
-                    return;
+                    return true;
                 }
 
                 unit.sleep(interval);
@@ -25,7 +25,13 @@ public class TimeUtils {
             count += interval;
         }
 
-        throw new RuntimeException(String.format("timeout after %s seconds", period));
+        return false;
+    }
+
+    public static void loopExecuteUntilTimeoutIgnoreException(long period, long interval, TimeUnit unit, Callable<Boolean> runnable) {
+        if (!loopExecuteUntilTimeoutIgnoreExceptionAndReturn(period, interval, unit, runnable)) {
+            throw new RuntimeException(String.format("timeout after %s seconds", period));
+        }
     }
 
     public static long parseTimeInMillis(String time) {

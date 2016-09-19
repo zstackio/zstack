@@ -39,6 +39,10 @@ public class ProcessFinder {
         return procs;
     }
 
+    public boolean processExists(int pid) {
+        return new File(String.format("/proc/%s", pid)).exists();
+    }
+
     public Integer findByCommandLineKeywords(String...words) {
         for (Proc p : getAllProcessFolders()) {
             File cmdline = new File(PathUtil.join(p.procFolder.getAbsolutePath(), "cmdline"));
