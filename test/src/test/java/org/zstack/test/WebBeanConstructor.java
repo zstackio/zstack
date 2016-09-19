@@ -50,7 +50,7 @@ public class WebBeanConstructor extends BeanConstructor {
 
         jetty = new Server();
         ServerConnector http = new ServerConnector(jetty);
-        http.setHost("localhost");
+        http.setHost("0.0.0.0");
         http.setPort(port);
         http.setDefaultProtocol("HTTP/1.1");
         jetty.addConnector(http);

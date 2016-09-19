@@ -12,6 +12,7 @@ public class BackupStorageType {
 	private final Set<String> supportedSchemes;
     private boolean exposed = true;
 	private int order;
+    private BackupStorageFindRelatedPrimaryStorage primaryStorageFinder;
 	
 	public BackupStorageType(String typeName, String...protocols) {
 		this.typeName = typeName;
@@ -86,6 +87,18 @@ public class BackupStorageType {
                 return arg.toString();
             }
         });
+    }
+
+    public List<String> findRelatedPrimaryStorage(String bsUuid) {
+        return primaryStorageFinder == null ? null : primaryStorageFinder.findRelatedPrimaryStorage(bsUuid);
+    }
+
+    public BackupStorageFindRelatedPrimaryStorage getPrimaryStorageFinder() {
+        return primaryStorageFinder;
+    }
+
+    public void setPrimaryStorageFinder(BackupStorageFindRelatedPrimaryStorage primaryStorageFinder) {
+        this.primaryStorageFinder = primaryStorageFinder;
     }
 
     public int getOrder() {

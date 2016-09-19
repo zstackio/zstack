@@ -82,6 +82,20 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         type.setOrder(799);
     }
 
+    void init() {
+        type.setPrimaryStorageFindBackupStorage(new PrimaryStorageFindBackupStorage() {
+            @Override
+            @Transactional(readOnly = true)
+            public List<String> findBackupStorage(String primaryStorageUuid) {
+                String sql = "select b.uuid from CephPrimaryStorageVO p, CephBackupStorageVO b where b.fsid = p.fsid" +
+                        " and p.uuid = :puuid";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                q.setParameter("puuid", primaryStorageUuid);
+                return q.getResultList();
+            }
+        });
+    }
+
     @Override
     public PrimaryStorageType getPrimaryStorageType() {
         return type;

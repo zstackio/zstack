@@ -13,6 +13,7 @@ import org.zstack.storage.fusionstor.*;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
+import java.util.List;
 
 /**
  * Created by frank on 7/27/2015.
@@ -27,6 +28,20 @@ public class FusionstorBackupStorageFactory implements BackupStorageFactory, Fus
 
     static {
         type.setOrder(799);
+    }
+
+    void init() {
+        type.setPrimaryStorageFinder(new BackupStorageFindRelatedPrimaryStorage() {
+            @Override
+            @Transactional(readOnly = true)
+            public List<String> findRelatedPrimaryStorage(String backupStorageUuid) {
+                String sql = "select p.uuid from FusionstorPrimaryStorageVO p, FusionstorBackupStorageVO b where b.fsid = p.fsid" +
+                        " and b.uuid = :buuid";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                q.setParameter("buuid", backupStorageUuid);
+                return q.getResultList();
+            }
+        });
     }
 
     @Override
