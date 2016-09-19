@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.identity.*;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
@@ -14,6 +15,8 @@ import org.zstack.header.query.QueryCondition;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.header.volume.VolumeConstant;
@@ -29,6 +32,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -80,13 +84,28 @@ public class TestChangeOwnerOfVm {
         ArrayList<String> resUuids = new ArrayList<>();
         resUuids.add(vm.getRootVolumeUuid());
         resUuids.add(vi.getUuid());
+        // add vmnics of vm
+        SimpleQuery<VmNicVO> sq = dbf.createQuery(VmNicVO.class);
+        sq.select(VmNicVO_.uuid);
+        sq.add(VmNicVO_.vmInstanceUuid, SimpleQuery.Op.EQ, vm.getUuid());
+        List<String> vmnics = sq.listValue();
+        if (vmnics.isEmpty()) {
+            return;
+        }
+        for (String vmnicUuid : vmnics) {
+            logger.debug("VmNic:" + vmnicUuid);
+            resUuids.add(vmnicUuid);
+        }
+        //
         Map<String, AccountInventory> resAccMap = api.getResourceAccount(resUuids);
         assert (resAccMap.size() == resUuids.size());
 
         for (AccountInventory ai : resAccMap.values()) {
+            logger.debug("begin");
             logger.debug(ai.getUuid());
             logger.debug(ai.getType());
             logger.debug("targetAccountUuid:" + targetAccountUuid);
+            logger.debug("end");
             assert (ai.getUuid().equals(targetAccountUuid));
         }
     }

@@ -1600,6 +1600,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             return;
         }
 
+        // change root volume
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
         q.select(VmInstanceVO_.rootVolumeUuid);
         q.add(VmInstanceVO_.uuid, Op.EQ, ref.getResourceUuid());
@@ -1609,6 +1610,18 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         }
 
         acntMgr.changeResourceOwner(rootVolumeUuid, newOwnerUuid);
+
+        // change vmnic(s)
+        SimpleQuery<VmNicVO> sq = dbf.createQuery(VmNicVO.class);
+        sq.select(VmNicVO_.uuid);
+        sq.add(VmNicVO_.vmInstanceUuid, Op.EQ, ref.getResourceUuid());
+        List<String> vmnics = sq.listValue();
+        if (vmnics.isEmpty()) {
+            return;
+        }
+        for (String vmnicUuid : vmnics) {
+            acntMgr.changeResourceOwner(vmnicUuid, newOwnerUuid);
+        }
     }
 
     @Override
