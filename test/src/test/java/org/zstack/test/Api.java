@@ -4430,4 +4430,14 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         sender.send(msg, APIDeleteAlarmEvent.class);
     }
+
+    public List<VmInstanceInventory> getCandidateVmForAttachingIso(String isoUuid, SessionInventory session) throws ApiSenderException {
+        APIGetCandidateVmForAttachingIsoMsg msg = new APIGetCandidateVmForAttachingIsoMsg();
+        msg.setIsoUuid(isoUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetCandidateVmForAttachingIsoReply reply = sender.call(msg, APIGetCandidateVmForAttachingIsoReply.class);
+        return reply.getInventories();
+    }
 }

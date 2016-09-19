@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
@@ -103,6 +104,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
     @Autowired
     private SchedulerFacade schedulerFacade;
+    @Autowired
+    private HostAllocatorManager hostAllocatorMgr;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
@@ -2519,6 +2522,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void attachIso(final String isoUuid, final Completion completion) {
+        checkIfIsoAttachable(isoUuid);
+
         if (self.getState() == VmInstanceState.Stopped) {
             new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
             completion.success();
@@ -2548,6 +2553,51 @@ public class VmInstanceBase extends AbstractVmInstance {
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    @Transactional(readOnly = true)
+    private void checkIfIsoAttachable(String isoUuid) {
+        String psUuid = getSelfInventory().getRootVolume().getPrimaryStorageUuid();
+        String sql = "select count(i) from ImageCacheVO i where i.primaryStorageUuid = :psUuid and i.imageUuid = :isoUuid";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("psUuid", psUuid);
+        q.setParameter("isoUuid", isoUuid);
+        Long count = q.getSingleResult();
+        if (count > 0) {
+            // on the same primary storage
+            return;
+        }
+
+        PrimaryStorageVO psvo = dbf.getEntityManager().find(PrimaryStorageVO.class, psUuid);
+        PrimaryStorageType type = PrimaryStorageType.valueOf(psvo.getType());
+        List<String> bsUuids = type.findBackupStorage(psUuid);
+        if (bsUuids == null) {
+            List<String> possibleBsTypes = hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(psvo.getType());
+            sql = "select count(bs) from BackupStorageVO bs, ImageBackupStorageRefVO ref where bs.uuid = ref.backupStorageUuid" +
+                    " and ref.imageUuid = :imgUuid and bs.type in (:bsTypes)";
+            q = dbf.getEntityManager().createQuery(sql, Long.class);
+            q.setParameter("imgUuid", isoUuid);
+            q.setParameter("bsTypes", possibleBsTypes);
+            count = q.getSingleResult();
+            if (count > 0) {
+                return;
+            }
+        } else if (!bsUuids.isEmpty()) {
+            sql = "select count(bs) from BackupStorageVO bs, ImageBackupStorageRefVO ref where bs.uuid = ref.backupStorageUuid" +
+                    " and ref.imageUuid = :imgUuid and bs.uuid in (:bsUuids)";
+            q = dbf.getEntityManager().createQuery(sql, Long.class);
+            q.setParameter("imgUuid", isoUuid);
+            q.setParameter("bsUuids", bsUuids);
+            count = q.getSingleResult();
+            if (count > 0) {
+                return;
+            }
+        }
+
+        throw new OperationFailureException(errf.stringToOperationError(
+                String.format("the ISO[uuid:%s] is on backup storage that is not compatible of the primary storage[uuid:%s]" +
+                        " where the VM[name:%s, uuid:%s] is on", isoUuid, psUuid, self.getName(), self.getUuid())
+        ));
     }
 
     private void handle(final APIDetachL3NetworkFromVmMsg msg) {

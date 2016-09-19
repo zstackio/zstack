@@ -5,6 +5,9 @@
     <backupStorages>
         <sftpBackupStorage name="sftp" description="Test"
             url="nfs://test" />
+        <cephBackupStorage name="ceph-bk" description="Test"
+                           url="/path1" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost:23,root:pass@#$word@127.0.0.1:23"
+                           totalCapacity="1T" availableCapacity="500G"/>
     </backupStorages>
 
     <images>
@@ -15,6 +18,11 @@
 
         <image name="TestIso" description="Test" mediaType="ISO" format="iso">
             <backupStorageRef>sftp</backupStorageRef>
+            <accountRef>test</accountRef>
+        </image>
+
+        <image name="TestIso1" description="Test" mediaType="ISO" format="iso">
+            <backupStorageRef>ceph-bk</backupStorageRef>
             <accountRef>test</accountRef>
         </image>
     </images>
@@ -94,7 +102,11 @@
             </l2Networks>
 
             <backupStorageRef>sftp</backupStorageRef>
+            <backupStorageRef>ceph-bk</backupStorageRef>
             <primaryStorages>
+                <cephPrimaryStorage name="ceph-pri" description="Test"
+                                    totalCapacity="1T" availableCapacity="500G" url="ceph://test" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost/?monPort=7777,root:password@127.0.0.1/?monPort=7777"/>
+
                 <nfsPrimaryStorage name="nfs" description="Test"
                     totalCapacity="1T" url="nfs://test" />
             </primaryStorages>
