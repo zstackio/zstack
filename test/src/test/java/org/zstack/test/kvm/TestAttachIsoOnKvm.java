@@ -11,14 +11,12 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.kvm.KVMAgentCommands;
-import org.zstack.kvm.KVMAgentCommands.*;
-import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
+import org.zstack.kvm.KVMAgentCommands.AttachIsoCmd;
+import org.zstack.kvm.KVMAgentCommands.DetachIsoCmd;
+import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -26,10 +24,10 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.List;
 
 /**
  * 1. create a vm
@@ -78,6 +76,8 @@ public class TestAttachIsoOnKvm {
         WebBeanConstructor con = new WebBeanConstructor();
         deployer = new Deployer("deployerXml/kvm/TestAttachIsoOnKvm.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
+        deployer.addSpringConfig("ceph.xml");
+        deployer.addSpringConfig("cephSimulator.xml");
         deployer.addSpringConfig("VirtualRouter.xml");
         deployer.addSpringConfig("VirtualRouterSimulator.xml");
         deployer.build();
@@ -93,6 +93,11 @@ public class TestAttachIsoOnKvm {
 	public void test() throws ApiSenderException {
         ImageInventory iso = deployer.images.get("TestIso");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
+
+        List<VmInstanceInventory> vms = api.getCandidateVmForAttachingIso(iso.getUuid(), null);
+        Assert.assertEquals(1, vms.size());
+        VmInstanceInventory candidate = vms.get(0);
+        Assert.assertEquals(vm.getUuid(), candidate.getUuid());
 
         api.attachIso(vm.getUuid(), iso.getUuid(), null);
         Assert.assertFalse(config.attachIsoCmds.isEmpty());
@@ -144,5 +149,17 @@ public class TestAttachIsoOnKvm {
         Assert.assertEquals(iso.getUuid(), dcmd.isoUuid);
         isoUuid = VmSystemTags.ISO.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.ISO_TOKEN);
         Assert.assertNull(isoUuid);
+
+        ImageInventory iso1 = deployer.images.get("TestIso1");
+        boolean s = false;
+        try {
+            api.attachIso(vm.getUuid(), iso1.getUuid(), null);
+        } catch (ApiSenderException e) {
+            s = true;
+        }
+        Assert.assertTrue(s);
+
+        vms = api.getCandidateVmForAttachingIso(iso1.getUuid(), null);
+        Assert.assertEquals(0, vms.size());
     }
 }

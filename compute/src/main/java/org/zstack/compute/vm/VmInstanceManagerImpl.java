@@ -213,11 +213,65 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             handle((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
         } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
             handle((APIGetInterdependentL3NetworksImagesMsg) msg);
+        } else if (msg instanceof APIGetCandidateVmForAttachingIsoMsg) {
+            handle((APIGetCandidateVmForAttachingIsoMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    @Transactional(readOnly = true)
+    private void handle(APIGetCandidateVmForAttachingIsoMsg msg) {
+        APIGetCandidateVmForAttachingIsoReply reply = new APIGetCandidateVmForAttachingIsoReply();
+
+        String sql = "select bs from BackupStorageVO bs, ImageBackupStorageRefVO ref where" +
+                " ref.imageUuid = :isoUuid and bs.uuid = ref.backupStorageUuid";
+        TypedQuery<BackupStorageVO> q = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
+        q.setParameter("isoUuid", msg.getIsoUuid());
+        List<BackupStorageVO> bss = q.getResultList();
+        if (bss.isEmpty()) {
+            reply.setInventories(new ArrayList<>());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        List<String> psUuids = new ArrayList<>();
+        List<String> psTypes = new ArrayList<>();
+        for (BackupStorageVO bs : bss) {
+            BackupStorageType bsType = BackupStorageType.valueOf(bs.getType());
+            List<String> lst = bsType.findRelatedPrimaryStorage(bs.getUuid());
+            if (lst != null) {
+                psUuids.addAll(lst);
+            } else {
+                psTypes.addAll(hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics(bs.getType()));
+            }
+        }
+
+        List<VmInstanceVO> vms = new ArrayList<>();
+        if (!psUuids.isEmpty()) {
+            sql = "select vm from VmInstanceVO vm, VolumeVO vol where vol.type = :volType and vol.vmInstanceUuid = vm.uuid" +
+                    " and vm.state in (:vmStates) and vol.primaryStorageUuid in (:psUuids)";
+            TypedQuery<VmInstanceVO> vmq = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+            vmq.setParameter("volType", VolumeType.Root);
+            vmq.setParameter("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped));
+            vmq.setParameter("psUuids", psUuids);
+            vms.addAll(vmq.getResultList());
+        }
+
+        if (!psTypes.isEmpty()) {
+            sql = "select vm from VmInstanceVO vm, VolumeVO vol, PrimaryStorageVO ps where vol.type = :volType and vol.vmInstanceUuid = vm.uuid" +
+                    " and vm.state in (:vmStates) and vol.primaryStorageUuid = ps.uuid and ps.type in (:psTypes)";
+            TypedQuery<VmInstanceVO> vmq = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
+            vmq.setParameter("volType", VolumeType.Root);
+            vmq.setParameter("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped));
+            vmq.setParameter("psTypes", psTypes);
+            vms.addAll(vmq.getResultList());
+        }
+
+        reply.setInventories(VmInstanceInventory.valueOf(vms));
+        bus.reply(msg, reply);
     }
 
     private void handle(APIGetInterdependentL3NetworksImagesMsg msg) {
