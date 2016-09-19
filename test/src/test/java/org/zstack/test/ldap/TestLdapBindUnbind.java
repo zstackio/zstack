@@ -89,6 +89,19 @@ public class TestLdapBindUnbind {
         logger.debug(evt13.getInventory().getName());
         queryLdapServer();
 
+        // bind account the same uid
+        try {
+            AccountInventory ai12 = api.createAccount("ldapuser3", "hello-kitty");
+            APIBindLdapAccountMsg msg22 = new APIBindLdapAccountMsg();
+            msg22.setAccountUuid(ai12.getUuid());
+            msg22.setLdapUid("Not exist");
+            msg22.setSession(session);
+            APIBindLdapAccountEvent evt22 = sender.send(msg22, APIBindLdapAccountEvent.class);
+            logger.debug(evt22.getInventory().getUuid());
+        } catch (Exception e) {
+            logger.trace("bind account with a non-existent uid", e);
+        }
+
         // bind account
         AccountInventory ai1 = api.createAccount("ldapuser1", "hello-kitty");
         APIBindLdapAccountMsg msg2 = new APIBindLdapAccountMsg();
@@ -98,11 +111,11 @@ public class TestLdapBindUnbind {
         APIBindLdapAccountEvent evt2 = sender.send(msg2, APIBindLdapAccountEvent.class);
         logger.debug(evt2.getInventory().getUuid());
 
-        // bind account the same uid
+        // bind another account  with the same uid
         try {
             AccountInventory ai12 = api.createAccount("ldapuser2", "hello-kitty");
             APIBindLdapAccountMsg msg22 = new APIBindLdapAccountMsg();
-            msg22.setAccountUuid(ai1.getUuid());
+            msg22.setAccountUuid(ai12.getUuid());
             msg22.setLdapUid("sclaus");
             msg22.setSession(session);
             APIBindLdapAccountEvent evt22 = sender.send(msg22, APIBindLdapAccountEvent.class);

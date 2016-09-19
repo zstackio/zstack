@@ -181,8 +181,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
                 throw new OperationFailureException(errf.instantiateErrorCode(
                         LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "More than one ldap search result"));
             } else {
-                throw new OperationFailureException(errf.instantiateErrorCode(
-                        LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "No ldap search result"));
+                return "";
             }
             logger.info(String.format("getDn success key:%s, val:%s, dn:%s", key, val, dn));
         } catch (NamingException e) {
@@ -322,7 +321,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
         if (getDnByUid(ldapTemplateContextSource, msg.getLdapUid()).equals("")) {
             throw new OperationFailureException(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
-                    "cannot find uid on ldap server."));
+                    String.format("cannot find uid[%s] on ldap server[Address:%s, BaseDN:%s].", msg.getLdapUid(),
+                            String.join(", ", ldapTemplateContextSource.getLdapContextSource().getUrls()),
+                            ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString())));
         }
         try {
             evt.setInventory(bindLdapAccount(msg.getAccountUuid(), msg.getLdapUid()));
