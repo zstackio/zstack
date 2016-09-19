@@ -1975,14 +1975,20 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void checkPrimaryStorageCapabilities(Map<String, Object> ret) {
         VolumeInventory rootVolume = getSelfInventory().getRootVolume();
-        SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
-        q.select(PrimaryStorageVO_.type);
-        q.add(PrimaryStorageVO_.uuid, Op.EQ, rootVolume.getPrimaryStorageUuid());
-        String type = q.findValue();
 
-        PrimaryStorageType psType = PrimaryStorageType.valueOf(type);
-        ret.put(Capability.LiveMigration.toString(), psType.isSupportVmLiveMigration());
-        ret.put(Capability.VolumeMigration.toString(), psType.isSupportVolumeMigration());
+        if (rootVolume == null) {
+            ret.put(Capability.LiveMigration.toString(), false);
+            ret.put(Capability.VolumeMigration.toString(), false);
+        } else {
+            SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
+            q.select(PrimaryStorageVO_.type);
+            q.add(PrimaryStorageVO_.uuid, Op.EQ, rootVolume.getPrimaryStorageUuid());
+            String type = q.findValue();
+
+            PrimaryStorageType psType = PrimaryStorageType.valueOf(type);
+            ret.put(Capability.LiveMigration.toString(), psType.isSupportVmLiveMigration());
+            ret.put(Capability.VolumeMigration.toString(), psType.isSupportVolumeMigration());
+        }
     }
 
     private void handle(APIGetVmHostnameMsg msg) {
