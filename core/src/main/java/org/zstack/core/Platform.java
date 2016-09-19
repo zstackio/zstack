@@ -37,6 +37,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -589,6 +590,29 @@ public class Platform {
             return messageSource.getMessage(code, args, l);
         } else {
             return messageSource.getMessage(code, null, l);
+        }
+    }
+
+    public static boolean killProcess(int pid) {
+        return killProcess(pid, 15);
+    }
+
+    public static boolean killProcess(int pid, Integer timeout) {
+        timeout = timeout == null ? 30 : timeout;
+
+        if (!TimeUtils.loopExecuteUntilTimeoutIgnoreExceptionAndReturn(timeout, 1, TimeUnit.SECONDS, () -> {
+            ShellUtils.runAndReturn(String.format("kill %s", pid));
+            return !new ProcessFinder().processExists(pid);
+        })) {
+            logger.warn(String.format("cannot kill the process[PID:%s] after %s seconds, kill -9 it", pid, timeout));
+            ShellUtils.runAndReturn(String.format("kill -9 %s", pid));
+        }
+
+        if (!TimeUtils.loopExecuteUntilTimeoutIgnoreExceptionAndReturn(5, 1, TimeUnit.SECONDS, () -> !new ProcessFinder().processExists(pid))) {
+            logger.warn(String.format("FAILED TO KILL -9 THE PROCESS[PID:%s], THE KERNEL MUST HAVE SOMETHING RUN", pid));
+            return false;
+        } else {
+            return true;
         }
     }
 }

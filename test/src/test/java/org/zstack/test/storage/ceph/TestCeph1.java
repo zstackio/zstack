@@ -165,5 +165,10 @@ public class TestCeph1 {
         img = api.syncImageSize(img.getUuid(), null);
         Assert.assertEquals(size, img.getSize());
         Assert.assertEquals(asize, img.getActualSize().longValue());
+
+        api.deleteBackupStorage(bs.getUuid());
+        Assert.assertEquals(0, dbf.count(CephBackupStorageMonVO.class));
+        api.deletePrimaryStorage(ps.getUuid());
+        Assert.assertEquals(0, dbf.count(CephPrimaryStorageMonVO.class));
     }
 }
