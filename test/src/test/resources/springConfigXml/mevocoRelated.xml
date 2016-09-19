@@ -13,6 +13,4 @@
 	<import resource="flatNetworkProvider.xml"/>
 	<import resource="agentManager.xml"/>
 	<import resource="KVMRelated.xml"/>
-	<import resource="cassandra.xml"/>
-	<import resource="logging.xml"/>
 </beans>
