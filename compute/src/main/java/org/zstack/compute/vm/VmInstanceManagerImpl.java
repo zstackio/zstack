@@ -61,6 +61,10 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.search.SearchOp;
+import org.zstack.header.storage.backup.BackupStorageType;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageType;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagValidator;
@@ -224,10 +228,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         }
     }
 
-    private List<String> listIntersection(List<String> a, List<String> b) {
-        List<String> ret = new ArrayList<>();
-        for (String s : a) {
-            if (b.contains(s)) {
+    private List<BackupStorageVO> listIntersection(List<BackupStorageVO> a, List<BackupStorageVO> b) {
+        List<BackupStorageVO> ret = new ArrayList<>();
+        for (BackupStorageVO s : a) {
+            if (b.stream().filter(it -> it.getUuid().equals(s.getUuid())).findAny().isPresent()) {
                 ret.add(s);
             }
         }
@@ -239,40 +243,62 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private void getInterdependentImagesByL3NetworkUuids(APIGetInterdependentL3NetworksImagesMsg msg) {
         APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
 
-        List<List<String>> listBsTypes = new ArrayList<>();
-        List<String> allBsTypes = new ArrayList<>();
+        List<List<BackupStorageVO>> bss = new ArrayList<>();
         for (String l3uuid : msg.getL3NetworkUuids()) {
-            String sql = "select ps.type from PrimaryStorageVO ps, L2NetworkClusterRefVO l2ref, L3NetworkVO l3, PrimaryStorageClusterRefVO psref" +
+            String sql = "select ps from PrimaryStorageVO ps, L2NetworkClusterRefVO l2ref, L3NetworkVO l3, PrimaryStorageClusterRefVO psref" +
                     " where ps.uuid = psref.primaryStorageUuid and psref.clusterUuid = l2ref.clusterUuid" +
                     " and l2ref.l2NetworkUuid = l3.l2NetworkUuid and l3.uuid = :l3uuid";
-            TypedQuery<String> psq = dbf.getEntityManager().createQuery(sql, String.class);
+            TypedQuery<PrimaryStorageVO> psq = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             psq.setParameter("l3uuid", l3uuid);
-            List<String> l = psq.getResultList();
+            List<PrimaryStorageVO> pss = psq.getResultList();
 
-            List<String> bsTypes = new ArrayList<>();
-            for (String psType : l) {
-                bsTypes.addAll(hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(psType));
+            List<BackupStorageVO> lst = new ArrayList<>();
+            for (PrimaryStorageVO ps : pss) {
+                PrimaryStorageType psType = PrimaryStorageType.valueOf(ps.getType());
+                List<String> bsUuids = psType.findBackupStorage(ps.getUuid());
+
+                if (bsUuids == null) {
+                    // the primary storage doesn't have bound backup storage
+                    sql = "select bs from BackupStorageVO bs where bs.type in (:types)";
+                    TypedQuery<BackupStorageVO> bq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
+                    bq.setParameter("types", hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType()));
+                    lst.addAll(bq.getResultList());
+                } else if (!bsUuids.isEmpty()) {
+                    // the primary storage has bound backup storage, e.g. ceph, fusionstor
+                    sql = "select bs from BackupStorageVO bs where bs.uuid in (:uuids)";
+                    TypedQuery<BackupStorageVO> bq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
+                    bq.setParameter("uuids", bsUuids);
+                    lst.addAll(bq.getResultList());
+                } else {
+                    logger.warn(String.format("the primary storage[uuid:%s, type:%s] needs a bound backup storage, but seems" +
+                            " it's not added", ps.getUuid(), ps.getType()));
+                }
             }
-            listBsTypes.add(bsTypes);
-            allBsTypes.addAll(bsTypes);
+
+            bss.add(lst);
         }
 
-        List<String> bsTypes = allBsTypes;
-        for (List<String> bss : listBsTypes) {
-            bsTypes = listIntersection(bsTypes, bss);
+        List<BackupStorageVO> selectedBss = new ArrayList<>();
+        for (List<BackupStorageVO> lst : bss) {
+            selectedBss.addAll(lst);
         }
 
-        if (bsTypes.isEmpty()) {
+        for (List<BackupStorageVO> l : bss) {
+            selectedBss = listIntersection(selectedBss, l);
+        }
+
+        if (selectedBss.isEmpty()) {
             reply.setInventories(new ArrayList());
             bus.reply(msg, reply);
             return;
         }
 
+        List<String> bsUuids = selectedBss.stream().map(BackupStorageVO::getUuid).collect(Collectors.toList());
         String sql = "select img from ImageVO img, ImageBackupStorageRefVO iref, BackupStorageZoneRefVO zref, BackupStorageVO bs where" +
                 " img.uuid = iref.imageUuid and iref.backupStorageUuid = zref.backupStorageUuid" +
-                " and bs.uuid = zref.backupStorageUuid and bs.type in (:bsTypes) and zref.zoneUuid = :zoneUuid group by img.uuid";
+                " and bs.uuid = zref.backupStorageUuid and bs.uuid in (:uuids) and zref.zoneUuid = :zoneUuid group by img.uuid";
         TypedQuery<ImageVO> iq = dbf.getEntityManager().createQuery(sql, ImageVO.class);
-        iq.setParameter("bsTypes", bsTypes);
+        iq.setParameter("uuids", bsUuids);
         iq.setParameter("zoneUuid", msg.getZoneUuid());
         List<ImageVO> vos = iq.getResultList();
         reply.setInventories(ImageInventory.valueOf(vos));
@@ -283,34 +309,52 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private void getInterdependentL3NetworksByImageUuid(APIGetInterdependentL3NetworksImagesMsg msg) {
         APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
 
-        String sql = "select bs.type from BackupStorageVO bs, ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zref" +
+        String sql = "select bs from BackupStorageVO bs, ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zref" +
                 " where bs.uuid = ref.backupStorageUuid and ref.imageUuid = :imgUuid and ref.backupStorageUuid = zref.backupStorageUuid" +
                 " and zref.zoneUuid = :zoneUuid";
-        TypedQuery<String> bsq = dbf.getEntityManager().createQuery(sql, String.class);
+        TypedQuery<BackupStorageVO> bsq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
         bsq.setParameter("imgUuid", msg.getImageUuid());
         bsq.setParameter("zoneUuid", msg.getZoneUuid());
-        List<String> bssTypes = bsq.getResultList();
-        if (bssTypes.isEmpty()) {
+        List<BackupStorageVO> bss = bsq.getResultList();
+        if (bss.isEmpty()) {
             throw new OperationFailureException(errf.stringToInvalidArgumentError(
                     String.format("the image[uuid:%s] is not on any backup storage that has been attached to the zone[uuid:%s]",
                             msg.getImageUuid(), msg.getZoneUuid())
             ));
         }
 
-        List<String> possiblePrimaryStorageTypes = new ArrayList<>();
-        for (String bsType : bssTypes) {
-            List<String> psTypes = hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics(bsType);
-            possiblePrimaryStorageTypes.addAll(psTypes);
+        List<L3NetworkVO> l3s = new ArrayList<>();
+        for (BackupStorageVO bs : bss) {
+            BackupStorageType bsType = BackupStorageType.valueOf(bs.getType());
+            List<String> relatedPrimaryStorageUuids = bsType.findRelatedPrimaryStorage(bs.getUuid());
+            if (relatedPrimaryStorageUuids == null) {
+                // the backup storage has no strongly-bound primary storage
+                List<String> psTypes = hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics(bs.getType());
+                sql = "select l3 from L3NetworkVO l3, L2NetworkClusterRefVO l2ref, PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                        " where l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid = psref.clusterUuid" +
+                        " and psref.primaryStorageUuid = ps.uuid and ps.type in (:psTypes) and ps.zoneUuid = l3.zoneUuid" +
+                        " and l3.zoneUuid = :zoneUuid group by l3.uuid";
+                TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
+                l3q.setParameter("psTypes", psTypes);
+                l3q.setParameter("zoneUuid", msg.getZoneUuid());
+                l3s.addAll(l3q.getResultList());
+            } else if (!relatedPrimaryStorageUuids.isEmpty()) {
+                // the backup storage has strongly-bound primary storage, e.g. ceph, fusionstor
+                sql = "select l3 from L3NetworkVO l3, L2NetworkClusterRefVO l2ref, PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                        " where l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid = psref.clusterUuid" +
+                        " and psref.primaryStorageUuid = ps.uuid and ps.uuid in (:psUuids) and ps.zoneUuid = l3.zoneUuid" +
+                        " and l3.zoneUuid = :zoneUuid group by l3.uuid";
+                TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
+                l3q.setParameter("psUuids", relatedPrimaryStorageUuids);
+                l3q.setParameter("zoneUuid", msg.getZoneUuid());
+                l3s.addAll(l3q.getResultList());
+            } else {
+                logger.warn(String.format("the backup storage[uuid:%s, type: %s] needs a strongly-bound primary storage, but" +
+                        " seems the primary storage is not added", bs.getUuid(), bs.getType()));
+            }
         }
 
-        sql = "select l3 from L3NetworkVO l3, L2NetworkClusterRefVO l2ref, PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
-                " where l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid = psref.clusterUuid" +
-                " and psref.primaryStorageUuid = ps.uuid and ps.type in (:psTypes) and ps.zoneUuid = l3.zoneUuid" +
-                " and l3.zoneUuid = :zoneUuid group by l3.uuid";
-        TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
-        l3q.setParameter("psTypes", possiblePrimaryStorageTypes);
-        l3q.setParameter("zoneUuid", msg.getZoneUuid());
-        List<L3NetworkVO> l3s = l3q.getResultList();
+
         reply.setInventories(L3NetworkInventory.valueOf(l3s));
         bus.reply(msg, reply);
     }

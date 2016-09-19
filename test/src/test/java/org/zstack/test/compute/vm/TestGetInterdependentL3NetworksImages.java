@@ -147,6 +147,18 @@ public class TestGetInterdependentL3NetworksImages {
         sender = api.getApiSender();
         reply = sender.call(msg, APIGetInterdependentL3NetworkImageReply.class);
         Assert.assertEquals(0, reply.getInventories().size());
+
+        ImageInventory image2 = deployer.images.get("TestImage2");
+        L3NetworkInventory l3Network5 = deployer.l3Networks.get("TestL3Network5");
+        msg = new APIGetInterdependentL3NetworksImagesMsg();
+        msg.setZoneUuid(zone.getUuid());
+        msg.setImageUuid(image2.getUuid());
+        msg.setSession(api.getAdminSession());
+        sender = api.getApiSender();
+        reply = sender.call(msg, APIGetInterdependentL3NetworkImageReply.class);
+        Assert.assertEquals(1, reply.getInventories().size());
+        L3NetworkInventory l35 = (L3NetworkInventory) reply.getInventories().get(0);
+        Assert.assertEquals(l3Network5.getUuid(), l35.getUuid());
     }
 
 }

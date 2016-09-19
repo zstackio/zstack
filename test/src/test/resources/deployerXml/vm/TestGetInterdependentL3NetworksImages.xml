@@ -7,6 +7,9 @@
         <cephBackupStorage name="ceph-bk" description="Test"
                            url="/path1" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost:23,root:pass@#$word@127.0.0.1:23"
                            totalCapacity="1T" availableCapacity="500G"/>
+        <cephBackupStorage name="ceph-bk1" description="Test"
+                           url="/path1" fsid="7ff218d9-f525-435f-8a40-3618d1772a65" monUrl="root:password@127.0.0.6:23,root:pass@#$word@127.0.0.5:23"
+                           totalCapacity="1T" availableCapacity="500G"/>
     </backupStorages>
 
     <images>
@@ -16,6 +19,10 @@
 
         <image name="TestImage1" description="Test">
             <backupStorageRef>ceph-bk</backupStorageRef>
+        </image>
+
+        <image name="TestImage2" description="Test">
+            <backupStorageRef>ceph-bk1</backupStorageRef>
         </image>
     </images>
 
@@ -67,6 +74,15 @@
                     <primaryStorageRef>local</primaryStorageRef>
                     <l2NetworkRef>TestL2Network4</l2NetworkRef>
                 </cluster>
+
+                <cluster name="Cluster5" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host5" description="Test" managementIp="127.0.0.5"
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                    </hosts>
+                    <primaryStorageRef>ceph-pri1</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network5</l2NetworkRef>
+                </cluster>
             </clusters>
 
             <l2Networks>
@@ -109,16 +125,29 @@
                         </l3BasicNetwork>
                     </l3Networks>
                 </l2NoVlanNetwork>
+
+                <l2NoVlanNetwork name="TestL2Network5" description="Test"
+                                 physicalInterface="eth4">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network5" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                     endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
             </l2Networks>
 
             <backupStorageRef>sftp</backupStorageRef>
             <backupStorageRef>ceph-bk</backupStorageRef>
+            <backupStorageRef>ceph-bk1</backupStorageRef>
 
             <primaryStorages>
                 <nfsPrimaryStorage name="nfs" description="Test"
                     totalCapacity="1T" url="nfs://test" />
                 <cephPrimaryStorage name="ceph-pri" description="Test"
                                     totalCapacity="1T" availableCapacity="500G" url="ceph://test" fsid="7ff218d9-f525-435f-8a40-3618d1772a64" monUrl="root:password@localhost/?monPort=7777,root:password@127.0.0.1/?monPort=7777"/>
+                <cephPrimaryStorage name="ceph-pri1" description="Test"
+                                    totalCapacity="1T" availableCapacity="500G" url="ceph://test" fsid="7ff218d9-f525-435f-8a40-3618d1772a65" monUrl="root:password@127.0.0.6/?monPort=7777,root:password@127.0.0.5/?monPort=7777"/>
                 <localPrimaryStorage name="local" description="Test"
                                      url="/test" />
                 <sharedMountPointPrimaryStorage name="smp" description="Test"

@@ -17,6 +17,7 @@ public class PrimaryStorageType {
 	private boolean supportVolumeMigrationInCurrentPrimaryStorage;
 	private boolean supportVolumeMigrationToOtherPrimaryStorage;
     private int order;
+    private PrimaryStorageFindBackupStorage primaryStorageFindBackupStorage;
 
     public int getOrder() {
         return order;
@@ -141,5 +142,17 @@ public class PrimaryStorageType {
 
     public void setSupportVolumeMigrationToOtherPrimaryStorage(boolean supportVolumeMigrationToOtherPrimaryStorage) {
         this.supportVolumeMigrationToOtherPrimaryStorage = supportVolumeMigrationToOtherPrimaryStorage;
+    }
+
+    public PrimaryStorageFindBackupStorage getPrimaryStorageFindBackupStorage() {
+        return primaryStorageFindBackupStorage;
+    }
+
+    public void setPrimaryStorageFindBackupStorage(PrimaryStorageFindBackupStorage primaryStorageFindBackupStorage) {
+        this.primaryStorageFindBackupStorage = primaryStorageFindBackupStorage;
+    }
+
+    public List<String> findBackupStorage(String psUuid) {
+        return primaryStorageFindBackupStorage == null ? null : primaryStorageFindBackupStorage.findBackupStorage(psUuid);
     }
 }
