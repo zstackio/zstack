@@ -1441,18 +1441,18 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
             @Transactional(readOnly = true)
             private void check(APICreateVmInstanceMsg msg, Map<String, QuotaPair> pairs) {
-                long vmNum = pairs.get(VmInstanceConstant.QUOTA_VM_NUM).getValue();
-                long cpuNum = pairs.get(VmInstanceConstant.QUOTA_CPU_NUM).getValue();
-                long memory = pairs.get(VmInstanceConstant.QUOTA_VM_MEMORY).getValue();
-                long dataVolumeCount = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
-                long allVolumeSize = pairs.get(VolumeConstant.QUOTA_VOLUME_SIZE).getValue();
+                long vmNumQuota = pairs.get(VmInstanceConstant.QUOTA_VM_NUM).getValue();
+                long cpuNumQuota = pairs.get(VmInstanceConstant.QUOTA_CPU_NUM).getValue();
+                long memoryQuota = pairs.get(VmInstanceConstant.QUOTA_VM_MEMORY).getValue();
+                long dataVolumeNumQuota = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
+                long allVolumeSizeQuota = pairs.get(VolumeConstant.QUOTA_VOLUME_SIZE).getValue();
 
-                VmQuota vmQuota = getUsedVmCpuMemory(msg.getSession().getAccountUuid());
+                VmQuota vmQuotaUsed = getUsedVmCpuMemory(msg.getSession().getAccountUuid());
 
-                if (vmQuota.vmNum + 1 > vmNum) {
+                if (vmQuotaUsed.vmNum + 1 > vmNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_VM_NUM, vmNum)
+                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_VM_NUM, vmNumQuota)
                     ));
                 }
 
@@ -1463,17 +1463,17 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 int cpuNumAsked = it.get(0, Integer.class);
                 long memoryAsked = it.get(1, Long.class);
 
-                if (vmQuota.cpuNum + cpuNumAsked > cpuNum) {
+                if (vmQuotaUsed.cpuNum + cpuNumAsked > cpuNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_CPU_NUM, cpuNum)
+                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_CPU_NUM, cpuNumQuota)
                     ));
                 }
 
-                if (vmQuota.memorySize + memoryAsked > memory) {
+                if (vmQuotaUsed.memorySize + memoryAsked > memoryQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_VM_MEMORY, memory)
+                                    msg.getSession().getAccountUuid(), VmInstanceConstant.QUOTA_VM_MEMORY, memoryQuota)
                     ));
                 }
 
@@ -1481,14 +1481,15 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
                     long n = getUsedDataVolumeCount(msg.getSession().getAccountUuid());
 
-                    if (n + msg.getDataDiskOfferingUuids().size() > dataVolumeCount) {
+                    if (n + msg.getDataDiskOfferingUuids().size() > dataVolumeNumQuota) {
                         throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                                 String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                        msg.getSession().getAccountUuid(), VolumeConstant.QUOTA_DATA_VOLUME_NUM, dataVolumeCount)
+                                        msg.getSession().getAccountUuid(), VolumeConstant.QUOTA_DATA_VOLUME_NUM, dataVolumeNumQuota)
                         ));
                     }
                 }
 
+                // check all volume size
                 long requiredVolSize = 0;
 
                 sql = "select img.size, img.mediaType from ImageVO img where img.uuid = :iuuid";
@@ -1507,20 +1508,32 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 } else if (imgType == ImageMediaType.ISO) {
                     diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
                 }
+
+                HashMap<String, Long> diskOfferingCountMap = new HashMap<>();
                 if (!diskOfferingUuids.isEmpty()) {
-                    sql = "select sum(d.diskSize) from DiskOfferingVO d where d.uuid in (:uuids)";
-                    TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
-                    dq.setParameter("uuids", diskOfferingUuids);
-                    Long dsize = dq.getSingleResult();
-                    dsize = dsize == null ? 0 : dsize;
-                    requiredVolSize += dsize;
+                    for (String diskOfferingUuid : diskOfferingUuids) {
+                        if (diskOfferingCountMap.containsKey(diskOfferingUuid)) {
+                            diskOfferingCountMap.put(diskOfferingUuid, diskOfferingCountMap.get(diskOfferingUuid) + 1);
+                        } else {
+                            diskOfferingCountMap.put(diskOfferingUuid, 1L);
+                        }
+                    }
+                    for (String diskOfferingUuid : diskOfferingCountMap.keySet()) {
+                        sql = "select diskSize from DiskOfferingVO where uuid = :uuid";
+                        TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
+                        dq.setParameter("uuid", diskOfferingUuid);
+                        Long dsize = dq.getSingleResult();
+                        dsize = dsize == null ? 0 : dsize;
+                        requiredVolSize += dsize * diskOfferingCountMap.get(diskOfferingUuid);
+                    }
                 }
 
                 long vsize = getUsedAllVolumeSize(msg.getSession().getAccountUuid());
-                if (vsize + requiredVolSize > allVolumeSize) {
+                if (vsize + requiredVolSize > allVolumeSizeQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), VolumeConstant.QUOTA_VOLUME_SIZE, allVolumeSize)
+                                    msg.getSession().getAccountUuid(), VolumeConstant.QUOTA_VOLUME_SIZE,
+                                    allVolumeSizeQuota)
                     ));
                 }
             }
@@ -1560,6 +1573,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         quota.setOperator(checker);
 
         return list(quota);
+
     }
 
     private List<String> getVmInUnknownStateManagedByUs() {
