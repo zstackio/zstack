@@ -646,6 +646,12 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 if (type != AccountType.SystemAdmin) {
                     if (msg instanceof APICreateEipMsg) {
                         check((APICreateEipMsg) msg, pairs);
+                    } else if (msg instanceof APIChangeResourceOwnerMsg) {
+                        check((APIChangeResourceOwnerMsg) msg, pairs);
+                    }
+                } else {
+                    if (msg instanceof APIChangeResourceOwnerMsg) {
+                        check((APIChangeResourceOwnerMsg) msg, pairs);
                     }
                 }
             }
@@ -654,12 +660,12 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
                 usage.setName(EipConstant.QUOTA_EIP_NUM);
-                usage.setUsed(getUsedEip(accountUuid));
+                usage.setUsed(getUsedEipNum(accountUuid));
                 return list(usage);
             }
 
             @Transactional(readOnly = true)
-            private long getUsedEip(String accountUuid) {
+            private long getUsedEipNum(String accountUuid) {
                 String sql = "select count(eip)" +
                         " from EipVO eip, AccountResourceRefVO ref" +
                         " where ref.resourceUuid = eip.uuid" +
@@ -669,27 +675,88 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
                 q.setParameter("auuid", accountUuid);
                 q.setParameter("rtype", EipVO.class.getSimpleName());
-                Long en = q.getSingleResult();
-                en = en == null ? 0 : en;
-                return en;
+                Long usedEipNum = q.getSingleResult();
+                usedEipNum = usedEipNum == null ? 0 : usedEipNum;
+                return usedEipNum;
+            }
+
+            @Transactional(readOnly = true)
+            private long getVmEipNum(String vmUuid) {
+                String sql = "select count(eip)" +
+                        " from EipVO eip, VmNicVO vmnic" +
+                        " where vmnic.vmInstanceUuid = :vmuuid" +
+                        " and vmnic.uuid = eip.vmNicUuid";
+
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("vmuuid", vmUuid);
+                Long vmEipNum = q.getSingleResult();
+                vmEipNum = vmEipNum == null ? 0 : vmEipNum;
+                return vmEipNum;
             }
 
             @Transactional(readOnly = true)
             private void check(APICreateEipMsg msg, Map<String, QuotaPair> pairs) {
                 long eipNum = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
-                long en = getUsedEip(msg.getSession().getAccountUuid());
+                long usedEipNum = getUsedEipNum(msg.getSession().getAccountUuid());
 
-                if (en + 1 > eipNum) {
+                if (usedEipNum + 1 > eipNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
                                     msg.getSession().getAccountUuid(), EipConstant.QUOTA_EIP_NUM, eipNum)
                     ));
                 }
             }
+
+            @Transactional(readOnly = true)
+            private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                SimpleQuery<AccountVO> q1 = dbf.createQuery(AccountVO.class);
+                q1.select(AccountVO_.type);
+                q1.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
+                AccountType type = q1.findValue();
+                if (type == AccountType.SystemAdmin && (pairs == null || pairs.size() == 0)) {
+                    logger.debug("APIChangeResourceOwnerMsg:(pairs == null || pairs.size() == 0)." +
+                            "Skip quota check for being called by QuotaChecker with admin account session." +
+                            "Another quota check would be executed by message interceptor.");
+                    return;
+                }
+
+                SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
+                q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
+                AccountResourceRefVO accResRefVO = q.find();
+
+                String resourceOriginalOwnerAccountUuid = accResRefVO.getOwnerAccountUuid();
+                String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
+                if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_INVALID_OP,
+                            String.format("Invalid ChangeResourceOwner operation." +
+                                            "Original owner is the same as target owner." +
+                                            "Current account is [uuid: %s]." +
+                                            "The resource target owner account[uuid: %s]." +
+                                            "The resource original owner account[uuid:%s].",
+                                    currentAccountUuid, resourceTargetOwnerAccountUuid, resourceOriginalOwnerAccountUuid)
+                    ));
+                }
+
+                if (accResRefVO.getResourceType().equals(VmInstanceVO.class.getSimpleName())) {
+                    long eipQuotaNum = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
+                    long usedEipNum = getUsedEipNum(msg.getSession().getAccountUuid());
+
+                    if (usedEipNum + getVmEipNum(msg.getResourceUuid()) > eipQuotaNum) {
+                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                                String.format("quota exceeding. Current account is [uuid: %s]. " +
+                                                "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                        currentAccountUuid, resourceTargetOwnerAccountUuid,
+                                        EipConstant.QUOTA_EIP_NUM, eipQuotaNum)
+                        ));
+                    }
+                }
+            }
         };
 
         Quota quota = new Quota();
         quota.addMessageNeedValidation(APICreateEipMsg.class);
+        quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
