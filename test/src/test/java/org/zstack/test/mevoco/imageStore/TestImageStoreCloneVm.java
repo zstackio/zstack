@@ -52,13 +52,13 @@ public class TestImageStoreCloneVm {
         List<String> names = Collections.singletonList("cloned");
 
         try {
-	    MessageCommandRecorder.reset();
-	    MessageCommandRecorder.start(APICloneVmInstanceMsg.class);
+            MessageCommandRecorder.reset();
+            MessageCommandRecorder.start(APICloneVmInstanceMsg.class);
 
             CloneVmInstanceResults res = creator.cloneVm(names, vm.getUuid());
 
-	    String callingChain = MessageCommandRecorder.endAndToString();
-	    logger.debug(callingChain);
+            String callingChain = MessageCommandRecorder.endAndToString();
+            logger.debug(callingChain);
 
             numOfClonedVm = res.getNumberOfClonedVm();
         } catch (ApiSenderException e) {
