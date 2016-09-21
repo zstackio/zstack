@@ -152,5 +152,11 @@ public class TestBilling {
 
         float rootVolSpending = (float) rootVolumeSpending.sizeInventory.stream().mapToDouble(i -> i.spending).sum();
         Assert.assertEquals(volPrice, rootVolSpending, volPriceErrorMargin);
+
+        api.destroyVmInstance(vm.getUuid());
+        APICalculateAccountSpendingReply reply1 = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
+        TimeUnit.SECONDS.sleep(3);
+        APICalculateAccountSpendingReply reply2 = api.calculateSpending(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, null);
+        Assert.assertEquals(reply1.getTotal(), reply2.getTotal(), 0.2);
     }
 }
