@@ -3008,7 +3008,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     private List<VolumeVO> getAttachableVolume(String accountUuid) {
         List<String> volUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VolumeVO.class);
         if (volUuids != null && volUuids.isEmpty()) {
-            return new ArrayList<VolumeVO>();
+            return new ArrayList<>();
         }
 
         List<String> formats = VolumeFormat.getVolumeFormatSupportedByHypervisorTypeInString(self.getHypervisorType());
@@ -3020,15 +3020,21 @@ public class VmInstanceBase extends AbstractVmInstance {
         List<VolumeVO> vos;
         if (volUuids == null) {
             // accessed by a system admin
-            sql = "select vol from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref where vol.type = :type and vol.state = :volState and vol.status = :volStatus and vol.format in (:formats) and vol.vmInstanceUuid is null and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = vol.primaryStorageUuid group by vol.uuid";
+            sql = "select vol from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref where vol.type = :type and vol.state = :volState" +
+                    " and vol.status = :volStatus and vol.format in (:formats) and vol.vmInstanceUuid is null" +
+                    " and vm.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = vol.primaryStorageUuid" +
+                    " and vm.uuid = :vmUuid" +
+                    " group by vol.uuid";
             TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
             q.setParameter("volState", VolumeState.Enabled);
             q.setParameter("volStatus", VolumeStatus.Ready);
             q.setParameter("formats", formats);
+            q.setParameter("vmUuid", self.getUuid());
             q.setParameter("type", VolumeType.Data);
             vos = q.getResultList();
 
-            sql = "select vol from VolumeVO vol where vol.type = :type and vol.status = :volStatus and vol.state = :volState group by vol.uuid";
+            sql = "select vol from VolumeVO vol where vol.type = :type and vol.status = :volStatus" +
+                    " and vol.state = :volState group by vol.uuid";
             q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
             q.setParameter("type", VolumeType.Data);
             q.setParameter("volState", VolumeState.Enabled);
@@ -3036,12 +3042,16 @@ public class VmInstanceBase extends AbstractVmInstance {
             vos.addAll(q.getResultList());
         } else {
             // accessed by a normal account
-            sql = "select vol from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref where vol.type = :type and vol.state = :volState and vol.status = :volStatus" +
+            sql = "select vol from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref where vol.type = :type and vol.state = :volState" +
+                    " and vol.status = :volStatus" +
                     " and vol.format in (:formats) and vol.vmInstanceUuid is null and vm.clusterUuid = ref.clusterUuid and" +
-                    " ref.primaryStorageUuid = vol.primaryStorageUuid and vol.uuid in (:volUuids) group by vol.uuid";
+                    " ref.primaryStorageUuid = vol.primaryStorageUuid and vol.uuid in (:volUuids)" +
+                    " and vm.uuid = :vmUuid" +
+                    " group by vol.uuid";
             TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
             q.setParameter("volState", VolumeState.Enabled);
             q.setParameter("volStatus", VolumeStatus.Ready);
+            q.setParameter("vmUuid", self.getUuid());
             q.setParameter("formats", formats);
             q.setParameter("type", VolumeType.Data);
             q.setParameter("volUuids", volUuids);
@@ -3056,6 +3066,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setParameter("volStatus", VolumeStatus.NotInstantiated);
             vos.addAll(q.getResultList());
         }
+
 
         for (GetAttachableVolumeExtensionPoint ext : pluginRgty.getExtensionList(GetAttachableVolumeExtensionPoint.class)) {
             if (!vos.isEmpty()) {
