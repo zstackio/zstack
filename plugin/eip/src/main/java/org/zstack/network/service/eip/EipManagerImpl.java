@@ -739,15 +739,17 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 }
 
                 if (accResRefVO.getResourceType().equals(VmInstanceVO.class.getSimpleName())) {
-                    long eipQuotaNum = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
+                    long eipNumQuota = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
                     long usedEipNum = getUsedEipNum(msg.getSession().getAccountUuid());
-
-                    if (usedEipNum + getVmEipNum(msg.getResourceUuid()) > eipQuotaNum) {
+                    long askedEipNum = getVmEipNum(msg.getResourceUuid());
+                    if (usedEipNum + askedEipNum > eipNumQuota) {
                         throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                                 String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                                "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                                "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                                                "Current used:%s, Request:%s. ",
                                         currentAccountUuid, resourceTargetOwnerAccountUuid,
-                                        EipConstant.QUOTA_EIP_NUM, eipQuotaNum)
+                                        EipConstant.QUOTA_EIP_NUM, eipNumQuota,
+                                        usedEipNum, askedEipNum)
                         ));
                     }
                 }
