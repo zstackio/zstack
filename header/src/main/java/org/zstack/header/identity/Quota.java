@@ -10,15 +10,15 @@ import java.util.stream.Collectors;
  */
 public class Quota {
     public Set<QuotaValidator> getQuotaValidators() {
-        return quotaValidators;
+        return this.quotaValidators;
     }
 
     public void addQuotaValidators(Set<QuotaValidator> quotaValidators) {
-        if (quotaValidators == null) {
-            quotaValidators = new HashSet<>();
+        if (this.quotaValidators == null) {
+            this.quotaValidators = new HashSet<>();
         }
         for (QuotaValidator q : quotaValidators) {
-            quotaValidators.add(q);
+            this.quotaValidators.add(q);
         }
     }
 
@@ -92,7 +92,7 @@ public class Quota {
 
     public void addPair(QuotaPair p) {
         if (quotaPairs == null) {
-            quotaPairs = new ArrayList<QuotaPair>();
+            quotaPairs = new ArrayList<>();
         }
         quotaPairs.add(p);
     }
