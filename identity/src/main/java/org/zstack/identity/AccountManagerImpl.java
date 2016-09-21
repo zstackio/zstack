@@ -756,6 +756,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         // Add additional quota checker to quota
         for (RegisterQuotaCheckerExtensionPoint ext : pluginRgty.getExtensionList(RegisterQuotaCheckerExtensionPoint.class)) {
+            // Map<quota name,Set<QuotaValidator>>
             Map<String, Set<Quota.QuotaValidator>> m = ext.registerQuotaValidator();
             for (Map.Entry<String, Set<Quota.QuotaValidator>> entry : m.entrySet()) {
                 Quota quota = nameQuotaMap.get(entry.getKey());
