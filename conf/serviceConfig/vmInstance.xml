@@ -146,4 +146,7 @@
     <message>
         <name>org.zstack.header.vm.APIGetCandidateVmForAttachingIsoMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIGetCandidateIsoForAttachingVmMsg</name>
+    </message>
 </service>

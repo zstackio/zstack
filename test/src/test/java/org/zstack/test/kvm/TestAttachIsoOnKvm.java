@@ -99,6 +99,10 @@ public class TestAttachIsoOnKvm {
         VmInstanceInventory candidate = vms.get(0);
         Assert.assertEquals(vm.getUuid(), candidate.getUuid());
 
+        List<ImageInventory> isos = api.getCandidateIsoForAttachingVm(vm.getUuid(), null);
+        Assert.assertEquals(1, isos.size());
+        Assert.assertEquals(isos.get(0).getUuid(), iso.getUuid());
+
         api.attachIso(vm.getUuid(), iso.getUuid(), null);
         Assert.assertFalse(config.attachIsoCmds.isEmpty());
         AttachIsoCmd cmd = config.attachIsoCmds.get(0);
