@@ -20,6 +20,7 @@ ALTER TABLE `zstack`.`person` modify column description varchar(2048) DEFAULT NU
 ALTER TABLE `zstack`.`UserGroupVO` modify column description varchar(2048) DEFAULT NULL;
 ALTER TABLE `zstack`.`SchedulerVO` add column schedulerJob varchar(2048) DEFAULT NULL;
 ALTER TABLE `zstack`.`SchedulerVO` change column status state varchar(128) DEFAULT NULL;
+ALTER TABLE `zstack`.`SchedulerVO` modify column jobData text DEFAULT NULL;
 
 ALTER TABLE `zstack`.`AccountResourceRefVO` modify column resourceUuid varchar(255) NOT NULL;
 
@@ -187,3 +188,4 @@ CREATE TABLE  `zstack`.`PriceVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
