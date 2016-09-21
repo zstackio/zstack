@@ -9,6 +9,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.test.Api;
@@ -80,5 +81,17 @@ public class TestVmGetAttachableVolume1 {
         // for admin
         vols = api.getVmAttachableVolume(vm.getUuid());
         Assert.assertEquals(4, vols.size());
+
+
+        // create a data volume on the primary storage not attached
+        // confirm it's not in the attachable candidate list
+        PrimaryStorageInventory ps3 = deployer.primaryStorages.get("TestPrimaryStorage2");
+        VolumeInventory data3 = api.createDataVolume("user-data3", dinv.getUuid(), ps3.getUuid(), null);
+        vols = api.getVmAttachableVolume(vm.getUuid());
+        for (VolumeInventory vol : vols) {
+            if (vol.getUuid().equals(data3.getUuid())) {
+                Assert.fail(String.format("volume %s should not be attachable", data3.getUuid()));
+            }
+        }
     }
 }
