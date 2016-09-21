@@ -1169,39 +1169,45 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceOwnerAccountUuid = getResourceOwnerAccountUuid(msg.getVmInstanceUuid());
 
-                long vmNum = pairs.get(VmInstanceConstant.QUOTA_VM_NUM).getValue();
-                long cpuNum = pairs.get(VmInstanceConstant.QUOTA_CPU_NUM).getValue();
-                long memory = pairs.get(VmInstanceConstant.QUOTA_VM_MEMORY).getValue();
+                long vmNumQuota = pairs.get(VmInstanceConstant.QUOTA_VM_NUM).getValue();
+                long cpuNumQuota = pairs.get(VmInstanceConstant.QUOTA_CPU_NUM).getValue();
+                long memoryQuota = pairs.get(VmInstanceConstant.QUOTA_VM_MEMORY).getValue();
 
-                VmQuota vmQuota = getUsedVmCpuMemory(resourceOwnerAccountUuid);
+                VmQuota vmQuotaUsed = getUsedVmCpuMemory(resourceOwnerAccountUuid);
 
-                if (vmQuota.vmNum + 1 > vmNum) {
+                if (vmQuotaUsed.vmNum + 1 > vmNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                                            "Current used:%s, Request:%s. ",
                                     currentAccountUuid, resourceOwnerAccountUuid,
-                                    VmInstanceConstant.QUOTA_VM_NUM, vmNum)
+                                    VmInstanceConstant.QUOTA_VM_NUM, vmNumQuota,
+                                    vmQuotaUsed.vmNum, 1)
                     ));
                 }
 
                 VmInstanceVO vm = dbf.getEntityManager().find(VmInstanceVO.class, msg.getUuid());
                 int cpuNumAsked = vm.getCpuNum();
                 long memoryAsked = vm.getMemorySize();
-                if (vmQuota.cpuNum + cpuNumAsked > cpuNum) {
+                if (vmQuotaUsed.cpuNum + cpuNumAsked > cpuNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                                            "Current used:%s, Request:%s. ",
                                     currentAccountUuid, resourceOwnerAccountUuid,
-                                    VmInstanceConstant.QUOTA_CPU_NUM, cpuNum)
+                                    VmInstanceConstant.QUOTA_CPU_NUM, cpuNumQuota,
+                                    vmQuotaUsed.cpuNum, cpuNumAsked)
                     ));
                 }
 
-                if (vmQuota.memorySize + memoryAsked > memory) {
+                if (vmQuotaUsed.memorySize + memoryAsked > memoryQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                                            "Current used:%s, Request:%s. ",
                                     currentAccountUuid, resourceOwnerAccountUuid,
-                                    VmInstanceConstant.QUOTA_VM_MEMORY, memory)
+                                    VmInstanceConstant.QUOTA_VM_MEMORY, memoryQuota,
+                                    vmQuotaUsed.memorySize, memoryAsked)
                     ));
                 }
             }
@@ -1227,14 +1233,16 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     }
                 }
                 // check data volume num
-                long n = getUsedDataVolumeCount(resourceTargetOwnerAccountUuid);
+                long usedDataVolumeCount = getUsedDataVolumeCount(resourceTargetOwnerAccountUuid);
                 if (dataVolumeUuids != null && !dataVolumeUuids.isEmpty()
-                        && n + dataVolumeUuids.size() > dataVolumeQuotaNum) {
+                        && usedDataVolumeCount + dataVolumeUuids.size() > dataVolumeQuotaNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                                            "Current used:%s, Request:%s. ",
                                     currentAccountUuid, resourceTargetOwnerAccountUuid,
-                                    VolumeConstant.QUOTA_DATA_VOLUME_NUM, dataVolumeQuotaNum)
+                                    VolumeConstant.QUOTA_DATA_VOLUME_NUM, dataVolumeQuotaNum,
+                                    usedDataVolumeCount, dataVolumeUuids.size())
                     ));
                 }
 
@@ -1251,9 +1259,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 if (vsize + requiredVolSize > allVolumeQuotaSize) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                                            "Current used:%s, Request:%s. ",
                                     currentAccountUuid, resourceTargetOwnerAccountUuid,
-                                    VolumeConstant.QUOTA_VOLUME_SIZE, allVolumeQuotaSize)
+                                    VolumeConstant.QUOTA_VOLUME_SIZE, allVolumeQuotaSize,
+                                    vsize, requiredVolSize)
                     ));
                 }
             }
@@ -1264,40 +1274,46 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                                                                    String currentAccountUuid,
                                                                    Map<String, Quota.QuotaPair> pairs) {
 
-                long vmNum = pairs.get(VmInstanceConstant.QUOTA_VM_NUM).getValue();
-                long cpuNum = pairs.get(VmInstanceConstant.QUOTA_CPU_NUM).getValue();
-                long memory = pairs.get(VmInstanceConstant.QUOTA_VM_MEMORY).getValue();
+                long vmNumQuota = pairs.get(VmInstanceConstant.QUOTA_VM_NUM).getValue();
+                long cpuNumQuota = pairs.get(VmInstanceConstant.QUOTA_CPU_NUM).getValue();
+                long memoryQuota = pairs.get(VmInstanceConstant.QUOTA_VM_MEMORY).getValue();
 
 
-                VmQuota vmQuota = getUsedVmCpuMemory(resourceTargetOwnerAccountUuid);
+                VmQuota vmQuotaUsed = getUsedVmCpuMemory(resourceTargetOwnerAccountUuid);
 
-                if (vmQuota.vmNum + 1 > vmNum) {
+                if (vmQuotaUsed.vmNum + 1 > vmNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                                            "Current used:%s, Request:%s. ",
                                     currentAccountUuid, resourceTargetOwnerAccountUuid,
-                                    VmInstanceConstant.QUOTA_VM_NUM, vmNum)
+                                    VmInstanceConstant.QUOTA_VM_NUM, vmNumQuota,
+                                    vmQuotaUsed.vmNum, 1)
                     ));
                 }
 
                 VmInstanceVO vm = dbf.getEntityManager().find(VmInstanceVO.class, vmInstanceUuid);
                 int cpuNumAsked = vm.getCpuNum();
                 long memoryAsked = vm.getMemorySize();
-                if (vmQuota.cpuNum + cpuNumAsked > cpuNum) {
+                if (vmQuotaUsed.cpuNum + cpuNumAsked > cpuNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                                            "Current used:%s, Request:%s. ",
                                     currentAccountUuid, resourceTargetOwnerAccountUuid,
-                                    VmInstanceConstant.QUOTA_CPU_NUM, cpuNum)
+                                    VmInstanceConstant.QUOTA_CPU_NUM, cpuNumQuota,
+                                    vmQuotaUsed.cpuNum, cpuNumAsked)
                     ));
                 }
 
-                if (vmQuota.memorySize + memoryAsked > memory) {
+                if (vmQuotaUsed.memorySize + memoryAsked > memoryQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                                            "Current used:%s, Request:%s. ",
                                     currentAccountUuid, resourceTargetOwnerAccountUuid,
-                                    VmInstanceConstant.QUOTA_VM_MEMORY, memory)
+                                    VmInstanceConstant.QUOTA_VM_MEMORY, memoryQuota,
+                                    vmQuotaUsed.memorySize, memoryAsked)
                     ));
                 }
             }
@@ -1391,16 +1407,18 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceOwnerAccountUuid = getResourceOwnerAccountUuid(msg.getVolumeUuid());
 
-                long dataVolumeCount = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
+                long dataVolumeNumQuota = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
 
                 // check data volume num
-                long n = getUsedDataVolumeCount(resourceOwnerAccountUuid);
-                if (n + 1 > dataVolumeCount) {
+                long usedDataVolumeCount = getUsedDataVolumeCount(resourceOwnerAccountUuid);
+                if (usedDataVolumeCount + 1 > dataVolumeNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                                            "Current used:%s, Request:%s. ",
                                     currentAccountUuid, resourceOwnerAccountUuid,
-                                    VolumeConstant.QUOTA_DATA_VOLUME_NUM, dataVolumeCount)
+                                    VolumeConstant.QUOTA_DATA_VOLUME_NUM, dataVolumeNumQuota,
+                                    usedDataVolumeCount, 1)
                     ));
                 }
 
