@@ -41,6 +41,7 @@
                                     </includes>
                                     <excludes>
                                         <exclude>zstack.xml</exclude>
+                                        <exclude>persistence.xml</exclude>
                                         <exclude>springConfigXml/localStorage.xml</exclude>
                                         <exclude>springConfigXml/NfsPrimaryStorage.xml</exclude>
                                         <exclude>springConfigXml/sharedMountPointPrimaryStorage.xml</exclude>
