@@ -104,7 +104,8 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
                 bkd.grantConsoleAccess(msg.getSession(), VmInstanceInventory.valueOf(vmvo), new ReturnValueCompletion<ConsoleInventory>(chain) {
                     @Override
                     public void success(ConsoleInventory returnValue) {
-                        if (!"0.0.0.0".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)) {
+                        if (!"0.0.0.0".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP) &&
+                                !"".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)) {
                             returnValue.setHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
                         } else {
                             returnValue.setHostname(CoreGlobalProperty.UNIT_TEST_ON ? "127.0.0.1" : Platform.getManagementServerIp());
@@ -164,7 +165,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     }
 
     @Transactional
-    public void clean(){
+    public void clean() {
         String sql = "delete from ConsoleProxyVO";
         Query q = dbf.getEntityManager().createQuery(sql);
         q.executeUpdate();
