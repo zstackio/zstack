@@ -4440,4 +4440,14 @@ public class Api implements CloudBusEventListener {
         APIGetCandidateVmForAttachingIsoReply reply = sender.call(msg, APIGetCandidateVmForAttachingIsoReply.class);
         return reply.getInventories();
     }
+
+    public List<ImageInventory> getCandidateIsoForAttachingVm(String vmUuid, SessionInventory session) throws ApiSenderException {
+        APIGetCandidateIsoForAttachingVmMsg msg = new APIGetCandidateIsoForAttachingVmMsg();
+        msg.setVmInstanceUuid(vmUuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetCandidateIsoForAttachingVmReply reply = sender.call(msg, APIGetCandidateIsoForAttachingVmReply.class);
+        return reply.getInventories();
+    }
 }
