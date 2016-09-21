@@ -1388,8 +1388,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
                     ArrayList<String> dataVolumeUuids = new ArrayList<>();
                     SimpleQuery<VolumeVO> sq1 = dbf.createQuery(VolumeVO.class);
-                    sq.add(VolumeVO_.vmInstanceUuid, Op.EQ, vmInstanceUuid);
-                    sq.add(VolumeVO_.type, Op.EQ, VolumeType.Data);
+                    sq1.add(VolumeVO_.vmInstanceUuid, Op.EQ, vmInstanceUuid);
+                    sq1.add(VolumeVO_.type, Op.EQ, VolumeType.Data);
                     List<VolumeVO> volumeVOs = sq1.list();
                     if (volumeVOs != null && !volumeVOs.isEmpty()) {
                         for (VolumeVO vvo : volumeVOs) {
