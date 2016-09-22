@@ -140,5 +140,6 @@
   <TestCase class="org.zstack.test.kvm.TestVmConsolePasswordOnKvm"/>
   <TestCase class="org.zstack.test.kvm.TestKvmPingAgentExtension"/>
   <TestCase class="org.zstack.test.kvm.TestGetCandidatesForCreatingVm"/>
+  <TestCase class="org.zstack.test.kvm.TestGetCandidatesForCreatingVm1"/>
   <TestCase class="org.zstack.test.kvm.TestCreateVmNotStartOnKvm"/>
 </UnitTestSuiteConfig>
