@@ -34,8 +34,6 @@ import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.scheduler.SchedulerVO;
-import org.zstack.header.core.scheduler.SchedulerVO_;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -63,8 +61,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.storage.primary.PrimaryStorageType;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagValidator;
@@ -100,8 +97,7 @@ import static org.zstack.utils.CollectionDSL.list;
 
 public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager,
         ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint,
-        ResourceOwnerAfterChangeExtensionPoint, GlobalApiMessageInterceptor, VmInstanceDestroyExtensionPoint,
-        RecoverVmExtensionPoint, VmBeforeExpungeExtensionPoint {
+        ResourceOwnerAfterChangeExtensionPoint, GlobalApiMessageInterceptor, PrimaryStorageDeleteExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<String, VmInstanceFactory>());
     private List<String> createVmWorkFlowElements;
@@ -1872,60 +1868,30 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         }
     }
 
-    public String preDestroyVm(VmInstanceInventory inv) {
-        return null;
+    public void preDeletePrimaryStorage(PrimaryStorageInventory inv) throws PrimaryStorageException {
+
     }
 
-    public void beforeDestroyVm(VmInstanceInventory inv) {
-        logger.debug(String.format("will pause scheduler before destroy vm %s", inv.getUuid()));
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, inv.getUuid());
-        q.select(SchedulerVO_.uuid);
-        List<String> uuids = q.listValue();
-        for (String uuid : uuids) {
-            schedulerFacade.pauseSchedulerJob(uuid);
+    public void beforeDeletePrimaryStorage(PrimaryStorageInventory inv) {
+
+    }
+
+    public void afterDeletePrimaryStorage(PrimaryStorageInventory inv) {
+        String sql = "select vm.name,vm.uuid from VmInstanceVO vm, VolumeVO vol where vm.uuid = vol.vmInstanceUuid and " +
+                "vm.state='Destroyed' and vol.type = 'Root' and vol.primaryStorageUuid = :primaryUuid";
+
+        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        q.setParameter("primaryUuid", inv.getUuid());
+        List<Tuple> vms = q.getResultList();
+        if (vms.isEmpty()) {
+            return;
         }
 
-    }
-
-    public void afterDestroyVm(VmInstanceInventory vm) {
-
-    }
-
-    public void failedToDestroyVm(VmInstanceInventory vm, ErrorCode reason) {
-
-    }
-
-    public void preRecoverVm(VmInstanceInventory vm) {
-
-    }
-
-    public void beforeRecoverVm(VmInstanceInventory vm) {
-
-    }
-
-    public void afterRecoverVm(VmInstanceInventory vm) {
-        logger.debug(String.format("will resume scheduler after recover vm %s", vm.getUuid()));
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, vm.getUuid());
-        logger.debug(String.format("target resource uuid is %s", vm.getUuid()));
-        q.select(SchedulerVO_.uuid);
-        List<String> uuids = q.listValue();
-        for (String uuid : uuids) {
-            logger.debug(String.format("scheduler uuid is %s", uuid));
-            schedulerFacade.resumeSchedulerJob(uuid);
+        for (Tuple vm : vms) {
+            APIExpungeVmInstanceMsg msg = new APIExpungeVmInstanceMsg();
+            msg.setUuid(vm.get(1, String.class));
+            passThrough(msg);
         }
 
-    }
-
-    public void vmBeforeExpunge(VmInstanceInventory inv) {
-        logger.debug(String.format("will delete scheduler before expunge vm"));
-        SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
-        q.add(SchedulerVO_.targetResourceUuid, Op.EQ, inv.getUuid());
-        q.select(SchedulerVO_.uuid);
-        List<String> uuids = q.listValue();
-        for (String uuid : uuids) {
-            schedulerFacade.deleteSchedulerJob(uuid);
-        }
     }
 }
