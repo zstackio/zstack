@@ -615,35 +615,52 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     }
 
     protected void handle(APIReconnectPrimaryStorageMsg msg) {
-        final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
-        doConnect(new ConnectParam(), new Completion(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                evt.setInventory(getSelfInventory());
-                bus.publish(evt);
+            public String getSyncSignature() {
+                return getSyncId();
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
-                bus.publish(evt);
+            public void run(SyncTaskChain chain) {
+                final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
+                doConnect(new ConnectParam(), new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        evt.setInventory(getSelfInventory());
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setErrorCode(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "reconnect-primary-storage";
             }
         });
     }
 
+    // don't use chainTask for this method, the sub-sequential DetachPrimaryStorageFromClusterMsg
+    // is in the queue
     protected void handle(final APIDetachPrimaryStorageFromClusterMsg msg) {
         final APIDetachPrimaryStorageFromClusterEvent evt = new APIDetachPrimaryStorageFromClusterEvent(msg.getId());
 
         try {
             extpEmitter.preDetach(self, msg.getClusterUuid());
         } catch (PrimaryStorageException e) {
-            evt.setErrorCode(errf.instantiateErrorCode(PrimaryStorageErrors.DETACH_ERROR, e.getMessage()));
-            bus.publish(evt);
-            return;
+            throw new OperationFailureException(errf.instantiateErrorCode(PrimaryStorageErrors.DETACH_ERROR, e.getMessage()));
         }
 
         String issuer = PrimaryStorageVO.class.getSimpleName();
-        List<PrimaryStorageDetachStruct> ctx = new ArrayList<PrimaryStorageDetachStruct>();
+        List<PrimaryStorageDetachStruct> ctx = new ArrayList<>();
         PrimaryStorageDetachStruct struct = new PrimaryStorageDetachStruct();
         struct.setClusterUuid(msg.getClusterUuid());
         struct.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
