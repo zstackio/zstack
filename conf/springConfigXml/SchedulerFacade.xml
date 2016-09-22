@@ -20,6 +20,9 @@
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener"/>
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.VmStateChangedExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceDestroyExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmBeforeExpungeExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.RecoverVmExtensionPoint" />
         </zstack:plugin>
     </bean>
     <bean id="schedulerFactoryBean" class="org.springframework.scheduling.quartz.SchedulerFactoryBean" />
