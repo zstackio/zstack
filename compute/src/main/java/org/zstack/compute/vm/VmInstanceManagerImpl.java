@@ -1041,6 +1041,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
                 if (type != AccountType.SystemAdmin) {
                     if (msg instanceof APICreateVmInstanceMsg) {
+                        if (((APICreateVmInstanceMsg) msg).getStrategy().
+                                equals(VmCreationStrategy.JustCreate.toString())) {
+                            return;
+                        }
                         check((APICreateVmInstanceMsg) msg, pairs);
                     } else if (msg instanceof APICreateDataVolumeMsg) {
                         check((APICreateDataVolumeMsg) msg, pairs);
@@ -1104,7 +1108,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("auuid", accountUUid);
                 q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
-                q.setParameter("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying, VmInstanceState.Destroyed));
+                q.setParameter("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying,
+                        VmInstanceState.Destroyed, VmInstanceState.Created));
                 Tuple t = q.getSingleResult();
                 Long vnum = t.get(0, Long.class);
                 quota.vmNum = vnum == null ? 0 : vnum;

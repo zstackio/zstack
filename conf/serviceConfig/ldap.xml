@@ -41,4 +41,7 @@
         <name>org.zstack.ldap.APIUpdateLdapServerMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.ldap.APICleanInvalidLdapBindingsMsg</name>
+    </message>
 </service>

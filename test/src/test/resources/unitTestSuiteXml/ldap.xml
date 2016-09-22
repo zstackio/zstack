@@ -5,4 +5,5 @@
     <TestCase class="org.zstack.test.ldap.TestLdapServer"/>
     <TestCase class="org.zstack.test.ldap.TestLdapServerEmbedded"/>
     <TestCase class="org.zstack.test.ldap.TestLdapServerMultiUid"/>
+    <TestCase class="org.zstack.test.ldap.TestLdapCleanInvalidBindings"/>
 </UnitTestSuiteConfig>

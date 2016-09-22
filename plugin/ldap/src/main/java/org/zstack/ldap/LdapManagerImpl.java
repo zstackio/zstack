@@ -36,6 +36,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 import javax.persistence.Query;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -125,6 +126,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             handle((APITestAddLdapServerConnectionMsg) msg);
         } else if (msg instanceof APIUpdateLdapServerMsg) {
             handle((APIUpdateLdapServerMsg) msg);
+        } else if (msg instanceof APICleanInvalidLdapBindingsMsg) {
+            handle((APICleanInvalidLdapBindingsMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -185,7 +188,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             }
             logger.info(String.format("getDn success key:%s, val:%s, dn:%s", key, val, dn));
         } catch (NamingException e) {
-            logger.error(String.format("getDn error key:%s, val:%s", key, val), e);
+            logger.trace(String.format("getDn error key:%s, val:%s", key, val), e);
+            throw new OperationFailureException(errf.instantiateErrorCode(
+                    LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, String.format("getDn error key:%s, val:%s", key, val)));
         }
         return dn;
     }
@@ -369,6 +374,35 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         bus.publish(evt);
     }
 
+    @Transactional
+    private void handle(APICleanInvalidLdapBindingsMsg msg) {
+        APICleanInvalidLdapBindingsEvent evt = new APICleanInvalidLdapBindingsEvent(msg.getId());
+
+        ArrayList<String> accountUuidList = new ArrayList<>();
+        ArrayList<String> ldapAccountRefUuidList = new ArrayList<>();
+        SimpleQuery<LdapAccountRefVO> sq = dbf.createQuery(LdapAccountRefVO.class);
+        List<LdapAccountRefVO> refList = sq.list();
+        if (refList != null && !refList.isEmpty()) {
+            LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
+            for (LdapAccountRefVO ldapAccRefVO : refList) {
+                if (getDnByUid(ldapTemplateContextSource, ldapAccRefVO.getLdapUid()).equals("")) {
+                    accountUuidList.add(ldapAccRefVO.getAccountUuid());
+                    ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
+                }
+            }
+        }
+        if (!accountUuidList.isEmpty()) {
+            // remove ldap bindings
+            dbf.removeByPrimaryKeys(ldapAccountRefUuidList, LdapAccountRefVO.class);
+            // return accounts of which ldap bindings had been removed
+            SimpleQuery<AccountVO> sq1 = dbf.createQuery(AccountVO.class);
+            sq1.add(AccountVO_.uuid, SimpleQuery.Op.IN, accountUuidList);
+            evt.setAccountInventoryList(sq1.list());
+        }
+
+        bus.publish(evt);
+    }
+
     private void setTls(LdapContextSource ldapContextSource) {
         // set tls
         logger.debug("Ldap TLS enabled.");
@@ -434,6 +468,15 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         APIUpdateLdapServerEvent evt = new APIUpdateLdapServerEvent(msg.getId());
 
         LdapServerVO ldapServerVO = dbf.findByUuid(msg.getLdapServerUuid(), LdapServerVO.class);
+        if (ldapServerVO == null) {
+            evt.setErrorCode(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_SERVER_RECORD,
+                    String.format("Cannot find the specified ldap server[uuid:%s] in database.",
+                            msg.getLdapServerUuid())));
+            bus.publish(evt);
+            return;
+        }
+
+        //
         if (msg.getName() != null) {
             ldapServerVO.setName(msg.getName());
         }
