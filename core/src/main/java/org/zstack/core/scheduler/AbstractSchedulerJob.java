@@ -30,6 +30,7 @@ public class AbstractSchedulerJob implements SchedulerJob {
     private String resourceUuid;
     private String targetResourceUuid;
     private Timestamp createDate;
+    private String accountUuid;
 
     public AbstractSchedulerJob() {
     }
@@ -41,6 +42,7 @@ public class AbstractSchedulerJob implements SchedulerJob {
         schedulerName = msg.getSchedulerName();
         type = msg.getType();
         resourceUuid = msg.getResourceUuid();
+        accountUuid = msg.getSession().getAccountUuid();
 
         if ( msg.getSchedulerDescription() != null && ! msg.getSchedulerDescription().isEmpty()) {
             schedulerDescription = msg.getSchedulerDescription();
@@ -208,6 +210,14 @@ public class AbstractSchedulerJob implements SchedulerJob {
 
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
+    }
+
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
     }
 
     public void run() {}
