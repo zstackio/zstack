@@ -155,7 +155,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
                 completion.fail(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST, "reservation on cpu/memory failed on all candidates host"));
             }
         } catch (Throwable t) {
-            logger.debug(t.getClass().getName(),t);
+            logger.debug(t.getClass().getName(), t);
             completion.fail(errf.throwableToInternalError(t));
         }
     }
@@ -176,7 +176,9 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             flow.allocate();
         } catch (OperationFailureException ofe) {
             if (ofe.getErrorCode().getCode().equals(HostAllocatorConstant.PAGINATION_INTERMEDIATE_ERROR.getCode())) {
-                logger.debug(String.format("[Host Allocation]: intermediate failure; because of pagination, will start over allocation again; current pagination info %s; failure details: %s",
+                logger.debug(String.format("[Host Allocation]: intermediate failure; " +
+                                "because of pagination, will start over allocation again; " +
+                                "current pagination info %s; failure details: %s",
                         JSONObjectUtil.toJsonString(paginationInfo), ofe.getErrorCode().getDetails()));
                 seriesErrorWhenPagination.add(String.format("{%s}", ofe.getErrorCode().getDetails()));
                 startOver();
@@ -240,7 +242,8 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
 
     @Override
     public void skip() {
-        logger.debug(String.format("[Host Allocation]: flow[%s] asks to skip itself, we are running to the next flow", lastFlow.getClass()));
+        logger.debug(String.format("[Host Allocation]: flow[%s] asks to skip itself, we are running to the next flow",
+                lastFlow.getClass()));
 
         if (it.hasNext()) {
             runFlow(it.next());
@@ -258,10 +261,13 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     private void fail(ErrorCode errorCode) {
         result = null;
         if (seriesErrorWhenPagination.isEmpty()) {
-            logger.debug(String.format("[Host Allocation] flow[%s] failed to allocate host; %s", lastFlow.getClass().getName(), errorCode.getDetails()));
+            logger.debug(String.format("[Host Allocation] flow[%s] failed to allocate host; %s",
+                    lastFlow.getClass().getName(), errorCode.getDetails()));
             this.errorCode = errorCode;
         } else {
-            String err = String.format("unable to allocate hosts; due to pagination is enabled, there might be several allocation failures happened before; the error list is %s", seriesErrorWhenPagination);
+            String err = String.format("unable to allocate hosts; due to pagination is enabled, " +
+                    "there might be several allocation failures happened before;" +
+                    " the error list is %s", seriesErrorWhenPagination);
             logger.debug(err);
             this.errorCode = errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST, err);
         }
