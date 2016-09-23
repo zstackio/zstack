@@ -4027,7 +4027,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         job.setVmUuid(msg.getVmInstanceUuid());
         job.setTargetResourceUuid(msg.getVmInstanceUuid());
         SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(),schedulerVO.getUuid(), SchedulerVO.class);
         if ( schedulerVO != null) {
             schedulerVO = dbf.reload(schedulerVO);
             SchedulerInventory sinv = SchedulerInventory.valueOf(schedulerVO);
@@ -4042,7 +4041,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         job.setVmUuid(msg.getVmInstanceUuid());
         job.setTargetResourceUuid(msg.getVmInstanceUuid());
         SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(),schedulerVO.getUuid(), SchedulerVO.class);
         if ( schedulerVO != null) {
             schedulerVO = dbf.reload(schedulerVO);
             SchedulerInventory sinv = SchedulerInventory.valueOf(schedulerVO);
@@ -4057,7 +4055,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         job.setVmUuid(msg.getVmInstanceUuid());
         job.setTargetResourceUuid(msg.getVmInstanceUuid());
         SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(),schedulerVO.getUuid(), SchedulerVO.class);
         if ( schedulerVO != null) {
             schedulerVO = dbf.reload(schedulerVO);
             SchedulerInventory sinv = SchedulerInventory.valueOf(schedulerVO);
