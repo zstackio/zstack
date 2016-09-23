@@ -28,6 +28,7 @@ import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -97,6 +98,11 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         check((APICreateSecurityGroupMsg) msg, pairs);
                     }
                 }
+            }
+
+            @Override
+            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
+
             }
 
             @Override

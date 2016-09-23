@@ -25,6 +25,7 @@ import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
@@ -781,6 +782,11 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                         check((APICreatePortForwardingRuleMsg) msg, pairs);
                     }
                 }
+            }
+
+            @Override
+            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
+
             }
 
             @Override

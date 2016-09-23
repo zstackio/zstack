@@ -1,9 +1,10 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by frank on 7/13/2015.
@@ -25,13 +26,15 @@ public class Quota {
     public interface QuotaOperator {
         void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs);
 
+        void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs);
+
         List<QuotaUsage> getQuotaUsageByAccount(String accountUuid);
     }
 
     public interface QuotaValidator {
         void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs);
 
-        List<Class<? extends APIMessage>> getMessagesNeedValidation();
+        List<Class<? extends Message>> getMessagesNeedValidation();
     }
 
     public static class QuotaUsage {
@@ -86,7 +89,7 @@ public class Quota {
     }
 
     private List<QuotaPair> quotaPairs;
-    private List<Class<? extends APIMessage>> messagesNeedValidation = new ArrayList<Class<? extends APIMessage>>();
+    private List<Class<? extends Message>> messagesNeedValidation = new ArrayList<>();
     private QuotaOperator operator;
     private Set<QuotaValidator> quotaValidators;
 
@@ -105,11 +108,11 @@ public class Quota {
         this.quotaPairs = quotaPairs;
     }
 
-    public void addMessageNeedValidation(Class<? extends APIMessage> msgClass) {
+    public void addMessageNeedValidation(Class<? extends Message> msgClass) {
         messagesNeedValidation.add(msgClass);
     }
 
-    public List<Class<? extends APIMessage>> getMessagesNeedValidation() {
+    public List<Class<? extends Message>> getMessagesNeedValidation() {
         return messagesNeedValidation;
     }
 

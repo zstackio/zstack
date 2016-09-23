@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
@@ -8,8 +9,9 @@ import org.zstack.header.message.NeedReplyMessage;
  * Time: 9:51 PM
  * To change this template use File | Settings | File Templates.
  */
-public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
+public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage, NeedQuotaCheckMessage {
     private String vmInstanceUuid;
+    private String accountUuid;
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
@@ -18,5 +20,13 @@ public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMe
     @Override
     public String getVmInstanceUuid() {
         return vmInstanceUuid;
+    }
+
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
     }
 }

@@ -23,6 +23,7 @@ import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
@@ -397,6 +398,11 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                         check((APICreateL3NetworkMsg) msg, pairs);
                     }
                 }
+            }
+
+            @Override
+            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
+
             }
 
             @Override

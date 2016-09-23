@@ -38,6 +38,7 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.*;
@@ -1168,6 +1169,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         check((APIChangeResourceOwnerMsg) msg, pairs);
                     }
                 }
+            }
+
+            @Override
+            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, Quota.QuotaPair> pairs) {
+
             }
 
             @Override
