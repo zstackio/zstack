@@ -31,6 +31,7 @@ import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
@@ -599,6 +600,11 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         check((APICreateVipMsg) msg, pairs);
                     }
                 }
+            }
+
+            @Override
+            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
+
             }
 
             @Override

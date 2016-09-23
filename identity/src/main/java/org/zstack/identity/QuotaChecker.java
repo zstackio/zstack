@@ -52,7 +52,7 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
         return msg;
     }
 
-    private Map<String, QuotaPair> makeQuotaPairs(Quota quota, SessionInventory session) {
+    private Map<String, QuotaPair> makeQuotaPairs(Quota quota, String accountUuid) {
         List<String> names = new ArrayList<>();
         for (QuotaPair p : quota.getQuotaPairs()) {
             names.add(p.getName());
@@ -61,7 +61,7 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
         SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
         q.select(QuotaVO_.name, QuotaVO_.value);
         q.add(QuotaVO_.identityType, Op.EQ, AccountVO.class.getSimpleName());
-        q.add(QuotaVO_.identityUuid, Op.EQ, session.getAccountUuid());
+        q.add(QuotaVO_.identityUuid, Op.EQ, accountUuid);
         q.add(QuotaVO_.name, Op.IN, names);
         List<Tuple> ts = q.listTuple();
 
@@ -79,7 +79,7 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
     }
 
     private void check(APIMessage msg, Quota quota) {
-        Map<String, QuotaPair> pairs = makeQuotaPairs(quota, msg.getSession());
+        Map<String, QuotaPair> pairs = makeQuotaPairs(quota, msg.getSession().getAccountUuid());
         quota.getOperator().checkQuota(msg, pairs);
 
         if (quota.getQuotaValidators() != null) {

@@ -53,7 +53,7 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
         ApiMessageDescriptor desc = processor.getApiMessageDescriptor(msg);
         if (desc == null) {
             Map message = map(e(msg.getClass().getName(), msg));
-            String  err = String.format("no service configuration file declares message: %s", JSONObjectUtil.toJsonString(message));
+            String err = String.format("no service configuration file declares message: %s", JSONObjectUtil.toJsonString(message));
             logger.warn(err);
             bus.replyErrorByMessageType(msg, errf.instantiateErrorCode(PortalErrors.NO_SERVICE_FOR_MESSAGE, err));
             return;
@@ -110,8 +110,10 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
                     handle((APIIsReadyToGoMsg) msg);
                 } else if (msg instanceof APIGetVersionMsg) {
                     handle((APIGetVersionMsg) msg);
-                } else {
+                } else if (msg instanceof APIMessage) {
                     dispatchMessage((APIMessage) msg);
+                } else {
+                    logger.debug("Not an APIMessage.Message ID is " + msg.getId());
                 }
             }
 

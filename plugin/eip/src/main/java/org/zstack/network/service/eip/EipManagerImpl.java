@@ -26,6 +26,7 @@ import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.UsedIpInventory;
@@ -657,6 +658,11 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             }
 
             @Override
+            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
+
+            }
+
+            @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
                 usage.setName(EipConstant.QUOTA_EIP_NUM);
@@ -740,7 +746,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                 if (accResRefVO.getResourceType().equals(VmInstanceVO.class.getSimpleName())) {
                     long eipNumQuota = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
-                    long usedEipNum = getUsedEipNum(msg.getSession().getAccountUuid());
+                    long usedEipNum = getUsedEipNum(resourceTargetOwnerAccountUuid);
                     long askedEipNum = getVmEipNum(msg.getResourceUuid());
                     if (usedEipNum + askedEipNum > eipNumQuota) {
                         throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,

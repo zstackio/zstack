@@ -1,5 +1,6 @@
 package org.zstack.identity;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -29,8 +30,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -44,6 +47,8 @@ import static org.zstack.utils.CollectionDSL.list;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AccountBase extends AbstractAccount {
+    private static final CLogger logger = Utils.getLogger(AccountBase.class);
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -242,11 +247,11 @@ public class AccountBase extends AbstractAccount {
         } else if (msg instanceof APICreatePolicyMsg) {
             handle((APICreatePolicyMsg) msg);
         } else if (msg instanceof APIAttachPolicyToUserMsg) {
-            handle((APIAttachPolicyToUserMsg)msg);
+            handle((APIAttachPolicyToUserMsg) msg);
         } else if (msg instanceof APICreateUserGroupMsg) {
-            handle((APICreateUserGroupMsg)msg);
+            handle((APICreateUserGroupMsg) msg);
         } else if (msg instanceof APIAttachPolicyToUserGroupMsg) {
-            handle((APIAttachPolicyToUserGroupMsg)msg);
+            handle((APIAttachPolicyToUserGroupMsg) msg);
         } else if (msg instanceof APIAddUserToGroupMsg) {
             handle((APIAddUserToGroupMsg) msg);
         } else if (msg instanceof APIDeleteUserGroupMsg) {
@@ -327,18 +332,15 @@ public class AccountBase extends AbstractAccount {
 
     @Transactional
     private void handle(APIAttachPoliciesToUserMsg msg) {
-        String sql = "select p.uuid from PolicyVO p where p.uuid in (:uuids) and p.uuid not in (select ref.policyUuid from UserPolicyRefVO ref" +
-                " where ref.userUuid = :userUuid) group by p.uuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("uuids", msg.getPolicyUuids());
-        q.setParameter("userUuid", msg.getUserUuid());
-        List<String> puuids = q.getResultList();
-
-        for (String puuid : puuids) {
-            UserPolicyRefVO ref = new UserPolicyRefVO();
-            ref.setUserUuid(msg.getUserUuid());
-            ref.setPolicyUuid(puuid);
-            dbf.getEntityManager().persist(ref);
+        for (String puuid : msg.getPolicyUuids()) {
+            try {
+                UserPolicyRefVO ref = new UserPolicyRefVO();
+                ref.setUserUuid(msg.getUserUuid());
+                ref.setPolicyUuid(puuid);
+                dbf.getEntityManager().persist(ref);
+            } catch (ConstraintViolationException e) {
+                logger.trace("ConstraintViolationException", e);
+            }
         }
 
         APIAttachPoliciesToUserEvent evt = new APIAttachPoliciesToUserEvent(msg.getId());
@@ -633,7 +635,7 @@ public class AccountBase extends AbstractAccount {
         upvo.setPolicyUuid(msg.getPolicyUuid());
         upvo.setUserUuid(msg.getUserUuid());
         dbf.persist(upvo);
-        
+
         APIAttachPolicyToUserEvent evt = new APIAttachPolicyToUserEvent(msg.getId());
         bus.publish(evt);
     }
