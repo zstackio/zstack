@@ -188,9 +188,14 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             }
             logger.info(String.format("getDn success key:%s, val:%s, dn:%s", key, val, dn));
         } catch (NamingException e) {
-            logger.trace(String.format("getDn error key:%s, val:%s", key, val), e);
+            LdapServerVO ldapServerVO = getLdapServer();
+            String errString = String.format(
+                    "You'd better check the ldap server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
+                            " configuration and test connection first.getDn error key:%s, val:%s",
+                    ldapServerVO.getUrl(), ldapServerVO.getBase(),
+                    ldapServerVO.getEncryption(), ldapServerVO.getUsername(), key, val);
             throw new OperationFailureException(errf.instantiateErrorCode(
-                    LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, String.format("getDn error key:%s, val:%s", key, val)));
+                    LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, errString));
         }
         return dn;
     }
