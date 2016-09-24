@@ -43,6 +43,7 @@
 				<value>org.zstack.header.configuration.InstanceOfferingVO</value>
 				<value>org.zstack.header.configuration.DiskOfferingVO</value>
 				<value>org.zstack.network.service.lb.LoadBalancerVO</value>
+				<value>org.zstack.network.service.lb.LoadBalancerListenerVO</value>
         <value>org.zstack.header.core.scheduler.SchedulerVO</value>
 			</list>
 		</property>
