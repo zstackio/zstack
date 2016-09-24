@@ -45,18 +45,18 @@ import java.util.concurrent.Callable;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager, VmAbnormalLifeCycleExtensionPoint {
-	private static final CLogger logger = Utils.getLogger(HostAllocatorManagerImpl.class);
+    private static final CLogger logger = Utils.getLogger(HostAllocatorManagerImpl.class);
 
-	private Map<String, HostAllocatorStrategyFactory> factories = Collections.synchronizedMap(new HashMap<String, HostAllocatorStrategyFactory>());
+    private Map<String, HostAllocatorStrategyFactory> factories = Collections.synchronizedMap(new HashMap<String, HostAllocatorStrategyFactory>());
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
     private Map<String, List<String>> primaryStorageBackupStorageMetrics = new HashMap<>();
 
-	@Autowired
-	private CloudBus bus;
-	@Autowired
-	private DatabaseFacade dbf;
-	@Autowired
-	private PluginRegistry pluginRgty;
+    @Autowired
+    private CloudBus bus;
+    @Autowired
+    private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
     @Autowired
     private HostCapacityReserveManager reserveMgr;
     @Autowired
@@ -66,31 +66,31 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     @Autowired
     private ErrorFacade errf;
 
-	@Override
+    @Override
     @MessageSafe
-	public void handleMessage(Message msg) {
+    public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
         }
-	}
+    }
 
-	private void handleLocalMessage(Message msg) {
-		if (msg instanceof AllocateHostMsg) {
-			handle((AllocateHostMsg) msg);
-		} else if (msg instanceof ReportHostCapacityMessage) {
-			handle((ReportHostCapacityMessage) msg);
-		} else if (msg instanceof ReturnHostCapacityMsg) {
+    private void handleLocalMessage(Message msg) {
+        if (msg instanceof AllocateHostMsg) {
+            handle((AllocateHostMsg) msg);
+        } else if (msg instanceof ReportHostCapacityMessage) {
+            handle((ReportHostCapacityMessage) msg);
+        } else if (msg instanceof ReturnHostCapacityMsg) {
             handle((ReturnHostCapacityMsg) msg);
         } else if (msg instanceof RecalculateHostCapacityMsg) {
             handle((RecalculateHostCapacityMsg) msg);
-		} else {
-			bus.dealWithUnknownMessage(msg);
-		}
-	}
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
 
-	@Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     private void handle(APIGetCandidateBackupStorageForCreatingImageMsg msg) {
         PrimaryStorageVO ps;
         if (msg.getVolumeUuid() != null) {
@@ -100,7 +100,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             q.setParameter("uuid", msg.getVolumeUuid());
             List<PrimaryStorageVO> pss = q.getResultList();
             ps = pss.isEmpty() ? null : pss.get(0);
-        } else if (msg.getVolumeSnapshotUuid() != null){
+        } else if (msg.getVolumeSnapshotUuid() != null) {
             String sql = "select ps from PrimaryStorageVO ps, VolumeSnapshotVO sp where ps.uuid = sp.primaryStorageUuid" +
                     " and sp.uuid = :uuid";
             TypedQuery<PrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
@@ -212,9 +212,9 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     cap.setAvailableCpu(availCpu);
 
                     logger.debug(String.format("re-calculated available capacity on the host[uuid:%s]:" +
-                            "\n[available memory] before: %s, now: %s" +
-                            "\n[total cpu] before: %s, now: %s" +
-                            "\n[available cpu] before: %s, now :%s", s.hostUuid, before, avail,
+                                    "\n[available memory] before: %s, now: %s" +
+                                    "\n[total cpu] before: %s, now: %s" +
+                                    "\n[available cpu] before: %s, now :%s", s.hostUuid, before, avail,
                             totalCpuBefore, totalCpu,
                             beforeCpu, availCpu));
                     return cap;
@@ -224,7 +224,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     }
 
     private void handle(ReturnHostCapacityMsg msg) {
-	    returnCapacity(msg.getHostUuid(), msg.getCpuCapacity(), msg.getMemoryCapacity());
+        returnCapacity(msg.getHostUuid(), msg.getCpuCapacity(), msg.getMemoryCapacity());
     }
 
     private void handle(ReportHostCapacityMessage msg) {
@@ -280,7 +280,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         }
     }
 
-	private void handle(final AllocateHostMsg msg) {
+    private void handle(final AllocateHostMsg msg) {
         HostAllocatorSpec spec = HostAllocatorSpec.fromAllocationMsg(msg);
         spec.setBackupStoragePrimaryStorageMetrics(backupStoragePrimaryStorageMetrics);
 
@@ -318,7 +318,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             });
         } else {
             final AllocateHostReply reply = new AllocateHostReply();
-            strategy.allocate(spec,  new ReturnValueCompletion<HostInventory>(msg) {
+            strategy.allocate(spec, new ReturnValueCompletion<HostInventory>(msg) {
                 @Override
                 public void success(HostInventory returnValue) {
                     reply.setHost(returnValue);
@@ -332,19 +332,19 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 }
             });
         }
-	}
+    }
 
-	private void handleApiMessage(APIMessage msg) {
-	    if (msg instanceof APIGetCpuMemoryCapacityMsg) {
-	        handle((APIGetCpuMemoryCapacityMsg) msg);
-        } else  if (msg instanceof APIGetHostAllocatorStrategiesMsg) {
+    private void handleApiMessage(APIMessage msg) {
+        if (msg instanceof APIGetCpuMemoryCapacityMsg) {
+            handle((APIGetCpuMemoryCapacityMsg) msg);
+        } else if (msg instanceof APIGetHostAllocatorStrategiesMsg) {
             handle((APIGetHostAllocatorStrategiesMsg) msg);
         } else if (msg instanceof APIGetCandidateBackupStorageForCreatingImageMsg) {
             handle((APIGetCandidateBackupStorageForCreatingImageMsg) msg);
-	    } else {
-	        bus.dealWithUnknownMessage(msg);
-	    }
-	}
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
 
     private void handle(APIGetHostAllocatorStrategiesMsg msg) {
         APIGetHostAllocatorStrategiesReply reply = new APIGetHostAllocatorStrategiesReply();
@@ -368,7 +368,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     q.setParameter("hstate", HostState.Enabled);
                     q.setParameter("hstatus", HostStatus.Connected);
                     return q.getSingleResult();
-                }  else if (msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty()) {
+                } else if (msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty()) {
                     String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory) from " +
                             "HostCapacityVO hc, HostVO host where hc.uuid = host.uuid and host.clusterUuid in (:clusterUuids) and host.state = :hstate and host.status = :hstatus";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
@@ -390,7 +390,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             }
         }.call();
 
-        long totalCpu = ret.get(0, Long.class) == null ? 0 : ret.get(0, Long.class) ;
+        long totalCpu = ret.get(0, Long.class) == null ? 0 : ret.get(0, Long.class);
         long availCpu = ret.get(1, Long.class) == null ? 0 : ret.get(1, Long.class);
         long availMemory = ret.get(2, Long.class) == null ? 0 : ret.get(2, Long.class);
         long totalMemory = ret.get(3, Long.class) == null ? 0 : ret.get(3, Long.class);
@@ -417,11 +417,11 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     }
 
     @Override
-	public String getId() {
-		return bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID);
-	}
+    public String getId() {
+        return bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID);
+    }
 
-	private void populateHostAllocatorStrategyFactory() {
+    private void populateHostAllocatorStrategyFactory() {
         for (HostAllocatorStrategyFactory ext : pluginRgty.getExtensionList(HostAllocatorStrategyFactory.class)) {
             HostAllocatorStrategyFactory old = factories.get(ext.getHostAllocatorStrategyType().toString());
             if (old != null) {
@@ -430,14 +430,14 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             }
             factories.put(ext.getHostAllocatorStrategyType().toString(), ext);
         }
-	}
-	
-	@Override
-	public boolean start() {
-		populateHostAllocatorStrategyFactory();
+    }
+
+    @Override
+    public boolean start() {
+        populateHostAllocatorStrategyFactory();
         populatePrimaryStorageBackupStorageMetrics();
-		return true;
-	}
+        return true;
+    }
 
     private void populatePrimaryStorageBackupStorageMetrics() {
         for (Map.Entry<String, List<String>> e : backupStoragePrimaryStorageMetrics.entrySet()) {
@@ -455,21 +455,21 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     }
 
     @Override
-	public boolean stop() {
-		return true;
-	}
+    public boolean stop() {
+        return true;
+    }
 
-	@Override
-	public HostAllocatorStrategyFactory getHostAllocatorStrategyFactory(HostAllocatorStrategyType type) {
-		HostAllocatorStrategyFactory factory = factories.get(type.toString());
-		if (factory == null) {
-			throw new CloudRuntimeException(String.format("Unable to find HostAllocatorStrategyFactory with type[%s]", type));
-		}
+    @Override
+    public HostAllocatorStrategyFactory getHostAllocatorStrategyFactory(HostAllocatorStrategyType type) {
+        HostAllocatorStrategyFactory factory = factories.get(type.toString());
+        if (factory == null) {
+            throw new CloudRuntimeException(String.format("Unable to find HostAllocatorStrategyFactory with type[%s]", type));
+        }
 
-		return factory;
-	}
-	
-	@Override
+        return factory;
+    }
+
+    @Override
     public void returnCapacity(final String hostUuid, final long cpu, final long memory) {
         new HostCapacityUpdater(hostUuid).run(new HostCapacityUpdaterRunnable() {
             @Override
@@ -540,7 +540,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     @Override
                     public void run() {
                         long cpu = struct.getVmInstance().getCpuNum();
-                        new HostAllocatorChain().reserveCapacity(struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                        new HostAllocatorChain().reserveCapacity(
+                                struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
                     }
                 };
                 trigger.next();
@@ -566,14 +567,16 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 // return the capacity to the original host
                 try {
                     final long cpu = struct.getVmInstance().getCpuNum();
-                    new HostAllocatorChain().reserveCapacity(struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                    new HostAllocatorChain().reserveCapacity(
+                            struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
                     returnCapacity(struct.getOriginalHostUuid());
 
                     rollback = new Runnable() {
                         @Override
                         public void run() {
                             returnCapacity(struct.getCurrentHostUuid());
-                            new HostAllocatorChain().reserveCapacity(struct.getOriginalHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                            new HostAllocatorChain().reserveCapacity(
+                                    struct.getOriginalHostUuid(), cpu, struct.getVmInstance().getMemorySize());
                         }
                     };
 
@@ -587,7 +590,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 // allocate capacity on the current host
                 try {
                     long cpu = struct.getVmInstance().getCpuNum();
-                    new HostAllocatorChain().reserveCapacity(struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                    new HostAllocatorChain().reserveCapacity(
+                            struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
 
                     rollback = new Runnable() {
                         @Override
@@ -623,7 +627,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
     @Override
     public List<String> getPrimaryStorageTypesByBackupStorageTypeFromMetrics(String backupStorageType) {
-        List<String> psTypes =  backupStoragePrimaryStorageMetrics.get(backupStorageType);
+        List<String> psTypes = backupStoragePrimaryStorageMetrics.get(backupStorageType);
         if (psTypes == null) {
             throw new CloudRuntimeException(String.format("cannot find supported primary storage types by the backup storage type[%s]", backupStorageType));
         }

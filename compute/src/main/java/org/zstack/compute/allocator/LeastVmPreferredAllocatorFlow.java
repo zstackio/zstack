@@ -60,8 +60,8 @@ public class LeastVmPreferredAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
 
-        // for host not having vm running, put vm number to zero
-        Map<String, VmNumHost> mp = new HashMap<String, VmNumHost>();
+        //
+        Map<String, VmNumHost> mp = new HashMap<>();
         for (Tuple t : tuples) {
             long num = t.get(0, Long.class);
             String hostUuid = t.get(1, String.class);
@@ -71,6 +71,7 @@ public class LeastVmPreferredAllocatorFlow extends AbstractHostAllocatorFlow {
             mp.put(hostUuid, vh);
         }
 
+        // for host not having vm running, put vm number to zero
         for (String huuid : huuids) {
             VmNumHost vh = mp.get(huuid);
             if (vh == null) {
