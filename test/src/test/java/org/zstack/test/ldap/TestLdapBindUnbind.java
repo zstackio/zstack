@@ -133,6 +133,19 @@ public class TestLdapBindUnbind {
         logger.debug(reply3.getInventory().getAccountUuid());
         logger.debug(reply3.getAccountInventory().getName());
 
+        // login wrong account
+        try {
+            APILogInByLdapMsg msg31 = new APILogInByLdapMsg();
+            msg31.setUid("sclaus");
+            msg31.setPassword("wrong password");
+            msg31.setServiceId(bus.makeLocalServiceId(LdapConstant.SERVICE_ID));
+            APILogInByLdapReply reply31 = sender.call(msg31, APILogInByLdapReply.class);
+            logger.debug(reply31.getInventory().getAccountUuid());
+            logger.debug(reply31.getAccountInventory().getName());
+        }catch(Exception e){
+
+        }
+
         // unbind account
         APIUnbindLdapAccountMsg msg4 = new APIUnbindLdapAccountMsg();
         msg4.setUuid(evt2.getInventory().getUuid());
