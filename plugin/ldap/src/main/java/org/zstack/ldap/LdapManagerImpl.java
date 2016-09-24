@@ -139,9 +139,13 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         try {
             AndFilter filter = new AndFilter();
             filter.and(new EqualsFilter("uid", uid));
-            boolean valid = ldapTemplateContextSource.getLdapTemplate().
-                    authenticate(getDnByUid(ldapTemplateContextSource, uid), filter.toString(), password);
-            logger.info(String.format("isValid success userName:%s, isValid:%s", uid, valid));
+            boolean valid;
+            String dn = getDnByUid(ldapTemplateContextSource, uid);
+            if (dn.equals("") || password.equals("")) {
+                return false;
+            }
+            valid = ldapTemplateContextSource.getLdapTemplate().authenticate(dn, filter.toString(), password);
+            logger.info(String.format("isValid[userName:%s, dn:%s, valid:%s]", uid, dn, valid));
             return valid;
         } catch (NamingException e) {
             logger.info("isValid fail userName:" + uid, e);
