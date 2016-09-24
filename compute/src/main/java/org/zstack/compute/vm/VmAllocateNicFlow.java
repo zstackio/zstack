@@ -47,10 +47,11 @@ public class VmAllocateNicFlow implements Flow {
                 vo = dbf.persistAndRefresh(vo);
                 return vo;
             } catch (JpaSystemException e) {
-                if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException && e.getRootCause().getMessage().contains("Duplicate entry")) {
-                    logger.debug(String
-                            .format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, we will try finding another mac",
-                                    vo.getMac()));
+                if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
+                        e.getRootCause().getMessage().contains("Duplicate entry")) {
+                    logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
+                            "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
+                            "we will try finding another mac", vo.getMac()));
                     logger.trace("", e);
                     vo.setMac(NetworkUtils.generateMacWithDeviceId((short) vo.getDeviceId()));
                 } else {

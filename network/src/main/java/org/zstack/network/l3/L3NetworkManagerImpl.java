@@ -354,7 +354,10 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             return UsedIpInventory.valueOf(vo);
         } catch (JpaSystemException e) {
             if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
-                logger.debug(String.format("Concurrent ip allocation. Ip[%s] in ip range[uuid:%s] has been allocated, try allocating another one. The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, we will try finding another ip", ip, ipRange.getUuid()));
+                logger.debug(String.format("Concurrent ip allocation. " +
+                        "Ip[%s] in ip range[uuid:%s] has been allocated, try allocating another one. " +
+                        "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
+                        "we will try finding another ip", ip, ipRange.getUuid()));
                 logger.trace("", e);
             } else {
                 throw e;
