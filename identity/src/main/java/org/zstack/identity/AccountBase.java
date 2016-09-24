@@ -1,9 +1,11 @@
 package org.zstack.identity;
 
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeConstant;
@@ -338,8 +340,12 @@ public class AccountBase extends AbstractAccount {
                 ref.setUserUuid(msg.getUserUuid());
                 ref.setPolicyUuid(puuid);
                 dbf.getEntityManager().persist(ref);
-            } catch (ConstraintViolationException e) {
-                logger.trace("ConstraintViolationException", e);
+            } catch (JpaSystemException e) {
+                if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
+                    logger.trace("", e);
+                } else {
+                    throw e;
+                }
             }
         }
 

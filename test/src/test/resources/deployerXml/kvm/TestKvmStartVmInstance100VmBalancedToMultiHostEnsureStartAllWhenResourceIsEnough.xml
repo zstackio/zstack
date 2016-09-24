@@ -34,13 +34,13 @@
             <clusters>
                 <cluster name="Cluster1" description="Test" hypervisorType="KVM">
                     <hosts>
-                        <kvmHost name="host1" description="Test" managementIp="localhost"
+                        <kvmHost name="host1" description="Test" managementIp="127.0.0.4"
                                  memoryCapacity="12G" cpuNum="8" cpuSpeed="26000"/>
                         <kvmHost name="host2" description="Test" managementIp="127.0.0.1"
                                  memoryCapacity="12G" cpuNum="8" cpuSpeed="26000"/>
-                        <kvmHost name="host1" description="Test" managementIp="127.0.0.2"
+                        <kvmHost name="host3" description="Test" managementIp="127.0.0.2"
                                  memoryCapacity="12G" cpuNum="8" cpuSpeed="26000"/>
-                        <kvmHost name="host2" description="Test" managementIp="127.0.0.3"
+                        <kvmHost name="host4" description="Test" managementIp="127.0.0.3"
                                  memoryCapacity="12G" cpuNum="8" cpuSpeed="26000"/>
                     </hosts>
 

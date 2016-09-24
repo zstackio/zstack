@@ -86,12 +86,13 @@ public abstract class AbstractHostAllocatorFlow {
 
     protected void throwExceptionIfIAmTheFirstFlow() {
         if (candidates == null || candidates.isEmpty()) {
-            throw new CloudRuntimeException(String.format("%s cannot be the first flow in the allocation chain", this.getClass().getName()));
+            throw new CloudRuntimeException(String.format("%s cannot be the first flow in the allocation chain",
+                    this.getClass().getName()));
         }
     }
 
     protected List<String> getHostUuidsFromCandidates() {
-        List<String> huuids = new ArrayList<String>(candidates.size());
+        List<String> huuids = new ArrayList<>(candidates.size());
         for (HostVO vo : candidates) {
             huuids.add(vo.getUuid());
         }
