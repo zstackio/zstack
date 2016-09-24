@@ -415,8 +415,6 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private void setTls(LdapContextSource ldapContextSource) {
         // set tls
         logger.debug("Ldap TLS enabled.");
-        ldapContextSource.setCacheEnvironmentProperties(false);
-        ldapContextSource.setPooled(false);
         DefaultTlsDirContextAuthenticationStrategy tls = new DefaultTlsDirContextAuthenticationStrategy();
         tls.setHostnameVerifier(new HostnameVerifier() {
             @Override
@@ -439,6 +437,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         if (inv.getEncryption().equals(LdapEncryptionType.TLS.toString())) {
             setTls(ldapContextSource);
         }
+        ldapContextSource.setCacheEnvironmentProperties(false);
+        ldapContextSource.setPooled(false);
         //
         LdapTemplate ldapTemplate;
         ldapTemplate = new LdapTemplate();
