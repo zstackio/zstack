@@ -7,39 +7,32 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.kvm.APIAddKVMHostMsg;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class TestKvm100VmBalancedToMultiHost {
-    CLogger logger = Utils.getLogger(TestKvm100VmBalancedToMultiHost.class);
+public class TestKvmStartVmInstance100VmBalancedToMultiHostEnsureStartAllWhenResourceIsEnough {
+    CLogger logger = Utils.getLogger(TestKvmStartVmInstance100VmBalancedToMultiHostEnsureStartAllWhenResourceIsEnough.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -49,7 +42,7 @@ public class TestKvm100VmBalancedToMultiHost {
     FlatNetworkServiceSimulatorConfig fconfig;
     KVMSimulatorConfig kconfig;
     ThreadFacade thdf;
-    int total = 10;
+    int total = 30;
     int syncLevel = 1000;
     int timeout = 10000;
 
@@ -57,7 +50,7 @@ public class TestKvm100VmBalancedToMultiHost {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/kvm/TestKvm100VmBalancedToMultiHost.xml", con);
+        deployer = new Deployer("deployerXml/kvm/TestKvmStartVmInstance100VmBalancedToMultiHostEnsureStartAllWhenResourceIsEnough.xml", con);
         deployer.addSpringConfig("flatNetworkProvider.xml");
         deployer.addSpringConfig("flatNetworkServiceSimulator.xml");
         deployer.addSpringConfig("KVMRelated.xml");
@@ -83,8 +76,8 @@ public class TestKvm100VmBalancedToMultiHost {
         ImageVO imgvo = dbf.findByUuid(img.getUuid(), ImageVO.class);
         imgvo.setSize(1);
         dbf.update(imgvo);
-        final InstanceOfferingInventory ioinv1 = deployer.instanceOfferings.get("512M1Core");
-        final InstanceOfferingInventory ioinv2 = deployer.instanceOfferings.get("2G2Core");
+
+        final InstanceOfferingInventory instanceOfferingInventory = deployer.instanceOfferings.get("2G2Core");
         final CountDownLatch latch = new CountDownLatch(total);
         HostInventory hinv1 = deployer.hosts.get("host1");
         HostInventory hinv2 = deployer.hosts.get("host2");
@@ -110,8 +103,7 @@ public class TestKvm100VmBalancedToMultiHost {
 
                 @Override
                 public Object call() throws Exception {
-                    //createVm(ioinv1.getUuid());
-                    createVm(ioinv2.getUuid());
+                    createVm(instanceOfferingInventory.getUuid());
                     return null;
                 }
 

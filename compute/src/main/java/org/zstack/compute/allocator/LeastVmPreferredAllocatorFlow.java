@@ -31,7 +31,11 @@ public class LeastVmPreferredAllocatorFlow extends AbstractHostAllocatorFlow {
 
     @Transactional(readOnly = true)
     private List<Tuple> findLeastVmHost(List<String> huuids) {
-        String sql = "select count(vm), host.uuid from VmInstanceVO vm, HostVO host where vm.hostUuid = host.uuid and host.uuid in (:huuids) group by host.uuid";
+        String sql = "select count(vm), host.uuid" +
+                " from VmInstanceVO vm, HostVO host" +
+                " where vm.hostUuid = host.uuid" +
+                " and host.uuid in (:huuids)" +
+                " group by host.uuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("huuids", huuids);
         return q.getResultList();
