@@ -332,14 +332,13 @@ public class AccountBase extends AbstractAccount {
         bus.publish(evt);
     }
 
-    @Transactional
     private void handle(APIAttachPoliciesToUserMsg msg) {
         for (String puuid : msg.getPolicyUuids()) {
             try {
-                UserPolicyRefVO ref = new UserPolicyRefVO();
-                ref.setUserUuid(msg.getUserUuid());
-                ref.setPolicyUuid(puuid);
-                dbf.getEntityManager().persist(ref);
+                UserPolicyRefVO refVO = new UserPolicyRefVO();
+                refVO.setUserUuid(msg.getUserUuid());
+                refVO.setPolicyUuid(puuid);
+                dbf.persist(refVO);
             } catch (JpaSystemException e) {
                 if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
                     logger.trace("", e);
