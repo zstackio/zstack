@@ -12,6 +12,8 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
@@ -97,14 +99,35 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         String vmNicUuid = t.get(1, String.class);
         if (vmNicUuid != null) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("eip[uuid:%s] has attached to another vm nic[uuid:%s], can't attach again", msg.getEipUuid(), vmNicUuid)
+                    String.format("eip[uuid:%s] has attached to another vm nic[uuid:%s], can't attach again",
+                            msg.getEipUuid(), vmNicUuid)
             ));
         }
 
         EipState state = t.get(0, EipState.class);
         if (state != EipState.Enabled) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
-                    String.format("eip[uuid: %s] can only be attached when state is %s, current state is %s", msg.getEipUuid(), EipState.Enabled, state)
+                    String.format("eip[uuid: %s] can only be attached when state is %s, current state is %s",
+                            msg.getEipUuid(), EipState.Enabled, state)
+            ));
+        }
+
+        // check owner
+        SimpleQuery<AccountResourceRefVO> eipOwnerQuery = dbf.createQuery(AccountResourceRefVO.class);
+        eipOwnerQuery.select(AccountResourceRefVO_.accountUuid);
+        eipOwnerQuery.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getEipUuid());
+        String eipOwnerUuid = eipOwnerQuery.findValue();
+
+        SimpleQuery<AccountResourceRefVO> vmnicOwnerQuery = dbf.createQuery(AccountResourceRefVO.class);
+        vmnicOwnerQuery.select(AccountResourceRefVO_.accountUuid);
+        vmnicOwnerQuery.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getVmNicUuid());
+        String vmnicOwnerUuid = vmnicOwnerQuery.findValue();
+
+        if (!eipOwnerUuid.equals(vmnicOwnerUuid)) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("eip can only be attached to the vmnic with the same owner," +
+                                    "eip's owner account uuid:%s, vmnic's owner account uuid:%s",
+                            eipOwnerUuid, vmnicOwnerUuid)
             ));
         }
 
@@ -115,7 +138,10 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
             @Override
             @Transactional(readOnly = true)
             public String call() {
-                String sql = "select vip.uuid from VipVO vip, EipVO eip where vip.uuid = eip.vipUuid and eip.uuid = :eipUuid";
+                String sql = "select vip.uuid" +
+                        " from VipVO vip, EipVO eip" +
+                        " where vip.uuid = eip.vipUuid" +
+                        " and eip.uuid = :eipUuid";
                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                 q.setParameter("eipUuid", msg.getEipUuid());
                 return q.getSingleResult();
