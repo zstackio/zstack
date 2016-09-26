@@ -89,11 +89,23 @@ public class TestLdapBindUnbind {
         logger.debug(evt13.getInventory().getName());
         queryLdapServer();
 
-        // bind account the same uid
+        // bind account with a not exist uid
         try {
             AccountInventory ai12 = api.createAccount("ldapuser3", "hello-kitty");
             APIBindLdapAccountMsg msg22 = new APIBindLdapAccountMsg();
             msg22.setAccountUuid(ai12.getUuid());
+            msg22.setLdapUid("Not exist");
+            msg22.setSession(session);
+            APIBindLdapAccountEvent evt22 = sender.send(msg22, APIBindLdapAccountEvent.class);
+            logger.debug(evt22.getInventory().getUuid());
+        } catch (Exception e) {
+            logger.trace("bind account with a non-existent uid", e);
+        }
+
+        // bind a not exist account with a not exist uid
+        try {
+            APIBindLdapAccountMsg msg22 = new APIBindLdapAccountMsg();
+            msg22.setAccountUuid("not exist account uuid");
             msg22.setLdapUid("Not exist");
             msg22.setSession(session);
             APIBindLdapAccountEvent evt22 = sender.send(msg22, APIBindLdapAccountEvent.class);
@@ -111,7 +123,7 @@ public class TestLdapBindUnbind {
         APIBindLdapAccountEvent evt2 = sender.send(msg2, APIBindLdapAccountEvent.class);
         logger.debug(evt2.getInventory().getUuid());
 
-        // bind another account  with the same uid
+        // bind another account with the same uid
         try {
             AccountInventory ai12 = api.createAccount("ldapuser2", "hello-kitty");
             APIBindLdapAccountMsg msg22 = new APIBindLdapAccountMsg();
@@ -124,7 +136,8 @@ public class TestLdapBindUnbind {
             logger.trace("bind account the same uid", e);
         }
 
-        // login account
+
+        // login with right ldap uid and right ldap password
         APILogInByLdapMsg msg3 = new APILogInByLdapMsg();
         msg3.setUid("sclaus");
         msg3.setPassword("password");
@@ -133,7 +146,7 @@ public class TestLdapBindUnbind {
         logger.debug(reply3.getInventory().getAccountUuid());
         logger.debug(reply3.getAccountInventory().getName());
 
-        // login wrong account
+        // login with right ldap uid and wrong ldap password
         try {
             APILogInByLdapMsg msg31 = new APILogInByLdapMsg();
             msg31.setUid("sclaus");
@@ -142,7 +155,20 @@ public class TestLdapBindUnbind {
             APILogInByLdapReply reply31 = sender.call(msg31, APILogInByLdapReply.class);
             logger.debug(reply31.getInventory().getAccountUuid());
             logger.debug(reply31.getAccountInventory().getName());
-        }catch(Exception e){
+        } catch (Exception e) {
+
+        }
+
+        // login with wrong ldap uid
+        try {
+            APILogInByLdapMsg msg31 = new APILogInByLdapMsg();
+            msg31.setUid("wrong ldap uid");
+            msg31.setPassword("wrong password");
+            msg31.setServiceId(bus.makeLocalServiceId(LdapConstant.SERVICE_ID));
+            APILogInByLdapReply reply31 = sender.call(msg31, APILogInByLdapReply.class);
+            logger.debug(reply31.getInventory().getAccountUuid());
+            logger.debug(reply31.getAccountInventory().getName());
+        } catch (Exception e) {
 
         }
 
