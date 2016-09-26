@@ -137,15 +137,22 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     public boolean isValid(String uid, String password) {
         LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
         try {
-            AndFilter filter = new AndFilter();
-            filter.and(new EqualsFilter("uid", uid));
             boolean valid;
-            String dn = getDnByUid(ldapTemplateContextSource, uid);
-            if (dn.equals("") || password.equals("")) {
+            String fullUserDn = getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), "uid", uid);
+            if (fullUserDn.equals("") || password.equals("")) {
                 return false;
             }
-            valid = ldapTemplateContextSource.getLdapTemplate().authenticate(dn, filter.toString(), password);
-            logger.info(String.format("isValid[userName:%s, dn:%s, valid:%s]", uid, dn, valid));
+            LdapServerVO ldapServerVO = getLdapServer();
+            LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
+            ldapServerInventory.setUsername(fullUserDn);
+            ldapServerInventory.setPassword(password);
+            LdapTemplateContextSource ldapTemplateContextSource2 = loadLdap(ldapServerInventory);
+
+            AndFilter filter = new AndFilter();
+            filter.and(new EqualsFilter(fullUserDn.split(",")[0].split("=")[0], fullUserDn.split(",")[0].split("=")[1]));
+            valid = ldapTemplateContextSource2.getLdapTemplate().
+                    authenticate("", filter.toString(), password);
+            logger.info(String.format("isValid[userName:%s, dn:%s, valid:%s]", uid, fullUserDn, valid));
             return valid;
         } catch (NamingException e) {
             logger.info("isValid fail userName:" + uid, e);
@@ -167,12 +174,12 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         return LdapAccountRefInventory.valueOf(ref);
     }
 
-    public String getDnByUid(LdapTemplateContextSource ldapTemplateContextSource, String uid) {
-        return getUserDn(ldapTemplateContextSource.getLdapTemplate(), "uid", uid).
+    public String getPartialUserDnByUid(LdapTemplateContextSource ldapTemplateContextSource, String uid) {
+        return getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), "uid", uid).
                 replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
     }
 
-    public String getUserDn(LdapTemplate ldapTemplate, String key, String val) {
+    public String getFullUserDn(LdapTemplate ldapTemplate, String key, String val) {
         String dn = "";
         try {
             EqualsFilter f = new EqualsFilter(key, val);
@@ -333,7 +340,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
         // bind op
         LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
-        if (getDnByUid(ldapTemplateContextSource, msg.getLdapUid()).equals("")) {
+        if (getPartialUserDnByUid(ldapTemplateContextSource, msg.getLdapUid()).equals("")) {
             throw new OperationFailureException(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
                     String.format("cannot find uid[%s] on ldap server[Address:%s, BaseDN:%s].", msg.getLdapUid(),
                             String.join(", ", ldapTemplateContextSource.getLdapContextSource().getUrls()),
@@ -394,7 +401,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         if (refList != null && !refList.isEmpty()) {
             LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
             for (LdapAccountRefVO ldapAccRefVO : refList) {
-                if (getDnByUid(ldapTemplateContextSource, ldapAccRefVO.getLdapUid()).equals("")) {
+                if (getPartialUserDnByUid(ldapTemplateContextSource, ldapAccRefVO.getLdapUid()).equals("")) {
                     accountUuidList.add(ldapAccRefVO.getAccountUuid());
                     ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
                 }
