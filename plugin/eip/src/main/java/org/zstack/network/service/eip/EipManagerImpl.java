@@ -246,7 +246,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             return;
         }
 
-        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(nicInventory.getL3NetworkUuid(), EipConstant.EIP_TYPE);
+        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                nicInventory.getL3NetworkUuid(), EipConstant.EIP_TYPE);
         EipStruct struct = new EipStruct();
         struct.setNic(nicInventory);
         struct.setVip(vipInventory);

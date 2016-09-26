@@ -1178,7 +1178,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
-                List<Quota.QuotaUsage> usages = new ArrayList<Quota.QuotaUsage>();
+                List<Quota.QuotaUsage> usages = new ArrayList<>();
 
                 ImageQuota imageQuota = getUsed(accountUuid);
 
