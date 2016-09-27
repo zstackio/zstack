@@ -12,8 +12,6 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
@@ -109,25 +107,6 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
                     String.format("eip[uuid: %s] can only be attached when state is %s, current state is %s",
                             msg.getEipUuid(), EipState.Enabled, state)
-            ));
-        }
-
-        // check owner
-        SimpleQuery<AccountResourceRefVO> eipOwnerQuery = dbf.createQuery(AccountResourceRefVO.class);
-        eipOwnerQuery.select(AccountResourceRefVO_.accountUuid);
-        eipOwnerQuery.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getEipUuid());
-        String eipOwnerUuid = eipOwnerQuery.findValue();
-
-        SimpleQuery<AccountResourceRefVO> vmnicOwnerQuery = dbf.createQuery(AccountResourceRefVO.class);
-        vmnicOwnerQuery.select(AccountResourceRefVO_.accountUuid);
-        vmnicOwnerQuery.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getVmNicUuid());
-        String vmnicOwnerUuid = vmnicOwnerQuery.findValue();
-
-        if (!eipOwnerUuid.equals(vmnicOwnerUuid)) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("eip can only be attached to the vmnic with the same owner," +
-                                    "eip's owner account uuid:%s, vmnic's owner account uuid:%s",
-                            eipOwnerUuid, vmnicOwnerUuid)
             ));
         }
 

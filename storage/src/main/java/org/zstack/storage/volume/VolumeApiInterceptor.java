@@ -7,16 +7,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageState;
 import org.zstack.header.image.ImageStatus;
@@ -213,25 +210,6 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
                     String.format("data volume can only be attached when status is [%s, %s], current is %s",
                             VolumeStatus.Ready, VolumeStatus.NotInstantiated, vol.getStatus())
-            ));
-        }
-
-        // check volume's owner
-        SimpleQuery<AccountResourceRefVO> vmOwnerQuery = dbf.createQuery(AccountResourceRefVO.class);
-        vmOwnerQuery.select(AccountResourceRefVO_.accountUuid);
-        vmOwnerQuery.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getVmInstanceUuid());
-        String vmOwnerUuid = vmOwnerQuery.findValue();
-
-        SimpleQuery<AccountResourceRefVO> volumeOwnerQuery = dbf.createQuery(AccountResourceRefVO.class);
-        volumeOwnerQuery.select(AccountResourceRefVO_.accountUuid);
-        volumeOwnerQuery.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getVolumeUuid());
-        String volumeOwnerUuid = volumeOwnerQuery.findValue();
-
-        if (!vmOwnerUuid.equals(volumeOwnerUuid)) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("data volume can only be attached to the vm instance with the same owner," +
-                                    "volume's owner account uuid:%s, vm's owner account uuid:%s",
-                            vmOwnerUuid, volumeOwnerUuid)
             ));
         }
 
