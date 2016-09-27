@@ -11,10 +11,7 @@ import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.message.APIMessage;
 
 import javax.persistence.Tuple;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by frank on 7/30/2015.
@@ -52,17 +49,12 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
         return msg;
     }
 
-    private Map<String, QuotaPair> makeQuotaPairs(Quota quota, String accountUuid) {
-        List<String> names = new ArrayList<>();
-        for (QuotaPair p : quota.getQuotaPairs()) {
-            names.add(p.getName());
-        }
-
+    private Map<String, QuotaPair> makeQuotaPairs(Set<String> quotaNames, String accountUuid) {
         SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
         q.select(QuotaVO_.name, QuotaVO_.value);
         q.add(QuotaVO_.identityType, Op.EQ, AccountVO.class.getSimpleName());
         q.add(QuotaVO_.identityUuid, Op.EQ, accountUuid);
-        q.add(QuotaVO_.name, Op.IN, names);
+        q.add(QuotaVO_.name, Op.IN, quotaNames);
         List<Tuple> ts = q.listTuple();
 
         Map<String, QuotaPair> pairs = new HashMap<>();
@@ -79,9 +71,19 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
     }
 
     private void check(APIMessage msg, Quota quota) {
-        Map<String, QuotaPair> pairs = makeQuotaPairs(quota, msg.getSession().getAccountUuid());
-        quota.getOperator().checkQuota(msg, pairs);
+        Set<String> quotaNames = new HashSet<>();
+        for (QuotaPair p : quota.getQuotaPairs()) {
+            quotaNames.add(p.getName());
+        }
+        if (quota.getQuotaValidators() != null) {
+            for (Quota.QuotaValidator q : quota.getQuotaValidators()) {
+                quotaNames.addAll(q.reportQuotaName());
+            }
+        }
+        Map<String, QuotaPair> pairs = makeQuotaPairs(quotaNames, msg.getSession().getAccountUuid());
 
+
+        quota.getOperator().checkQuota(msg, pairs);
         if (quota.getQuotaValidators() != null) {
             for (Quota.QuotaValidator q : quota.getQuotaValidators()) {
                 q.checkQuota(msg, pairs);
