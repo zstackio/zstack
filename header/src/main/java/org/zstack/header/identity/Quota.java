@@ -10,19 +10,6 @@ import java.util.*;
  * Created by frank on 7/13/2015.
  */
 public class Quota {
-    public Set<QuotaValidator> getQuotaValidators() {
-        return this.quotaValidators;
-    }
-
-    public void addQuotaValidators(Set<QuotaValidator> quotaValidators) {
-        if (this.quotaValidators == null) {
-            this.quotaValidators = new HashSet<>();
-        }
-        for (QuotaValidator q : quotaValidators) {
-            this.quotaValidators.add(q);
-        }
-    }
-
     public interface QuotaOperator {
         void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs);
 
@@ -33,6 +20,8 @@ public class Quota {
 
     public interface QuotaValidator {
         void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs);
+
+        Set<String> reportQuotaName();
 
         List<Class<? extends Message>> getMessagesNeedValidation();
     }
@@ -88,6 +77,7 @@ public class Quota {
         }
     }
 
+    private Set<String> quotaSet;
     private List<QuotaPair> quotaPairs;
     private List<Class<? extends Message>> messagesNeedValidation = new ArrayList<>();
     private QuotaOperator operator;
@@ -122,5 +112,32 @@ public class Quota {
 
     public void setOperator(QuotaOperator operator) {
         this.operator = operator;
+    }
+
+    public Set<QuotaValidator> getQuotaValidators() {
+        return this.quotaValidators;
+    }
+
+    public void addQuotaValidators(Set<QuotaValidator> quotaValidators) {
+        if (this.quotaValidators == null) {
+            this.quotaValidators = new HashSet<>();
+        }
+        for (QuotaValidator q : quotaValidators) {
+            this.quotaValidators.add(q);
+        }
+    }
+
+    public void addToQuotaSet(String quotaName) {
+        if (this.quotaSet == null) {
+            this.quotaSet = new HashSet<>();
+        }
+        this.quotaSet.add(quotaName);
+    }
+
+    public Set<String> getQuotaSet() {
+        if (this.quotaSet == null) {
+            this.quotaSet = new HashSet<>();
+        }
+        return this.quotaSet;
     }
 }
