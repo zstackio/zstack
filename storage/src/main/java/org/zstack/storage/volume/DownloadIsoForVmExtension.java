@@ -120,7 +120,7 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
             DeleteIsoFromPrimaryStorageMsg msg = new DeleteIsoFromPrimaryStorageMsg();
             msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
             msg.setIsoSpec(spec.getImageSpec());
-            msg.setPrimaryStorageUuid(spec.getDestIso().getPrimaryStorageUuid());
+            msg.setPrimaryStorageUuid(psUuid);
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
             bus.send(msg, new CloudBusCallBack(completion) {
                 @Override
