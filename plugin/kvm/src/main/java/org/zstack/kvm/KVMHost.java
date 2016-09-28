@@ -22,8 +22,8 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
@@ -51,6 +51,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
+import org.zstack.utils.ssh.SshShell;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -2215,9 +2216,13 @@ public class KVMHost extends HostBase implements Host {
                                 new Log(self.getUuid()).log(KVMHostLabel.ADD_HOST_CHECK_DNS, checkList);
 
                                 checkList = checkList.replaceAll(",", " ");
-                                SshResult ret = new Ssh().setHostname(getSelf().getManagementIp())
-                                        .setUsername(getSelf().getUsername()).setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
-                                        .script("scripts/check-public-dns-name.sh", map(e("dnsCheckList", checkList))).runAndClose();
+
+                                SshShell sshShell = new SshShell();
+                                sshShell.setUsername(getSelf().getUsername());
+                                sshShell.setPassword(getSelf().getPassword());
+                                sshShell.setPort(getSelf().getPort());
+                                SshResult ret = sshShell.runScriptWithToken("scripts/check-public-dns-name.sh", map(e("dnsCheckList", checkList)));
+
                                 if (ret.isSshFailure()) {
                                     trigger.fail(errf.stringToOperationError(
                                             String.format("unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage())
@@ -2241,9 +2246,12 @@ public class KVMHost extends HostBase implements Host {
                         public void run(FlowTrigger trigger, Map data) {
                             new Log(self.getUuid()).log(KVMHostLabel.ADD_HOST_CHECK_PING_MGMT_NODE);
 
-                            SshResult ret = new Ssh().setHostname(getSelf().getManagementIp())
-                                    .setUsername(getSelf().getUsername()).setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
-                                    .command(String.format("curl --connect-timeout 10 %s", restf.getCallbackUrl())).runAndClose();
+                            SshShell sshShell = new SshShell();
+                            sshShell.setHostname(getSelf().getManagementIp());
+                            sshShell.setUsername(getSelf().getUsername());
+                            sshShell.setPassword(getSelf().getPassword());
+                            sshShell.setPort(getSelf().getPort());
+                            SshResult ret = sshShell.runCommand(String.format("curl --connect-timeout 10 %s", restf.getCallbackUrl()));
 
                             if (ret.isSshFailure()) {
                                 throw new OperationFailureException(errf.stringToOperationError(
