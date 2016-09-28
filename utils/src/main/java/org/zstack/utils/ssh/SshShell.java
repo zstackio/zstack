@@ -6,10 +6,15 @@ import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.zstack.utils.StringDSL.ln;
+import static org.zstack.utils.StringDSL.s;
 
 /**
  * Created by frank on 12/5/2015.
@@ -129,6 +134,22 @@ public class SshShell {
             }
         }
     }
+
+    public SshResult runScriptWithToken(String scriptName, Map token) {
+        String scriptPath = PathUtil.findFileOnClassPath(scriptName, true).getAbsolutePath();
+        if (token == null) {
+            token = new HashMap();
+        }
+        String contents = null;
+        try {
+            contents = FileUtils.readFileToString(new File(scriptPath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        String script = s(contents).formatByMap(token);
+        return runScript(script);
+    }
+
 
     public String getHostname() {
         return hostname;
