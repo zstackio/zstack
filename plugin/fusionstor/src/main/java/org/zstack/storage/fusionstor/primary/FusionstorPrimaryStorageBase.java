@@ -38,6 +38,9 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmSetupSelfFencerParam;
@@ -2376,6 +2379,23 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
     private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
         final RevertVolumeFromSnapshotOnPrimaryStorageReply reply  = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
+
+        if (msg.getVolume().getVmInstanceUuid() != null) {
+            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+            q.select(VmInstanceVO_.state);
+            q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVolume().getVmInstanceUuid());
+            VmInstanceState state = q.findValue();
+            if (state != VmInstanceState.Stopped) {
+                reply.setError(errf.stringToOperationError(
+                        String.format("unable to revert volume[uuid:%s] to snapshot[uuid:%s], the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
+                                msg.getVolume().getUuid(), msg.getSnapshot().getUuid(), msg.getVolume().getVmInstanceUuid(), state)
+                ));
+
+                bus.reply(msg, reply);
+                return;
+            }
+        }
+
         RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
         cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
         httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {

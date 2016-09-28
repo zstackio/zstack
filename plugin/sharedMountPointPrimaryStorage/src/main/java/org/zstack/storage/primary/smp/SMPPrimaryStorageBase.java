@@ -21,6 +21,9 @@ import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
@@ -511,6 +514,23 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
+        if (msg.getVolume().getVmInstanceUuid() != null) {
+            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+            q.select(VmInstanceVO_.state);
+            q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVolume().getVmInstanceUuid());
+            VmInstanceState state = q.findValue();
+            if (state != VmInstanceState.Stopped) {
+                final RevertVolumeFromSnapshotOnPrimaryStorageReply reply  = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
+                reply.setError(errf.stringToOperationError(
+                        String.format("unable to revert volume[uuid:%s] to snapshot[uuid:%s], the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
+                                msg.getVolume().getUuid(), msg.getSnapshot().getUuid(), msg.getVolume().getVmInstanceUuid(), state)
+                ));
+
+                bus.reply(msg, reply);
+                return;
+            }
+        }
+
         HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolume().getUuid());
         bkd.handle(msg, new ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply>(msg) {
             @Override
