@@ -402,6 +402,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         job.setSnapShotName(msg.getSnapShotName());
         job.setSnapShotDescription(msg.getVolumeSnapshotDescription());
         SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(),schedulerVO.getUuid(), SchedulerVO.class);
         if ( schedulerVO != null) {
             schedulerVO = dbf.reload(schedulerVO);
             SchedulerInventory sinv = SchedulerInventory.valueOf(schedulerVO);
