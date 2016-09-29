@@ -21,7 +21,7 @@ import java.util.Map;
  */
 public class ErrorFacadeImpl implements ErrorFacade {
     private static final CLogger logger = Utils.getLogger(ErrorFacadeImpl.class);
-    private Map<String, ErrorCodeInfo> codes = new HashMap<String, ErrorCodeInfo>();
+    private Map<String, ErrorCodeInfo> codes = new HashMap<>();
     private boolean dumpOnError = Boolean.valueOf(System.getProperty("ErrorFacade.dumpOnError"));
 
     @Override
@@ -41,7 +41,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
 
     @Override
     public ErrorCode instantiateErrorCode(String code, String details, ErrorCode cause) {
-        ErrorCode err = instantiateErrorCode(code, details) ;
+        ErrorCode err = instantiateErrorCode(code, details);
         err.setCause(cause);
         return err;
     }
@@ -65,7 +65,8 @@ public class ErrorFacadeImpl implements ErrorFacade {
         err.setCauses(causes);
 
         if (dumpOnError) {
-            DebugUtils.dumpStackTrace(String.format("An error code%s is instantiated, for tracing the place error happened, dump stack as below", err));
+            DebugUtils.dumpStackTrace(String.format("An error code%s is instantiated," +
+                    " for tracing the place error happened, dump stack as below", err));
         }
 
         return err;
@@ -123,7 +124,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
 
     @Override
     public ErrorCodeList instantiateErrorCode(String code, String details, List<ErrorCode> causes) {
-        return  (ErrorCodeList) doInstantiateErrorCode(code, details, causes);
+        return (ErrorCodeList) doInstantiateErrorCode(code, details, causes);
     }
 
     @Override
@@ -156,7 +157,8 @@ public class ErrorFacadeImpl implements ErrorFacade {
             String codeId = String.format("%s.%s", error.getPrefix(), code.getId());
             ErrorCodeInfo info = codes.get(codeId);
             if (info != null) {
-                throw new CloudRuntimeException(String.format("duplicate definition of ErrorCode[%s], file[%s] and file[%s] both define it", codeId, info.path, path));
+                throw new CloudRuntimeException(String.format("duplicate definition of ErrorCode[%s]," +
+                        " file[%s] and file[%s] both define it", codeId, info.path, path));
             }
 
             ErrorCodeList errorCode = new ErrorCodeList();
@@ -182,7 +184,8 @@ public class ErrorFacadeImpl implements ErrorFacade {
 
                 File cfg = new File(p);
                 Unmarshaller unmarshaller = context.createUnmarshaller();
-                org.zstack.core.errorcode.schema.Error error = (org.zstack.core.errorcode.schema.Error) unmarshaller.unmarshal(cfg);
+                org.zstack.core.errorcode.schema.Error error =
+                        (org.zstack.core.errorcode.schema.Error) unmarshaller.unmarshal(cfg);
                 createErrorCode(error, p);
             }
         } catch (Exception e) {
