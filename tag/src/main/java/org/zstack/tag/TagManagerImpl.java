@@ -17,6 +17,7 @@ import org.zstack.core.defer.Defer;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
@@ -78,7 +79,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                 f.setAccessible(true);
                 SystemTag stag = (SystemTag) f.get(null);
                 if (stag == null) {
-                    throw new CloudRuntimeException(String.format("%s.%s defines a null system tag", f.getDeclaringClass(), f.getName()));
+                    throw new CloudRuntimeException(String.format("%s.%s defines a null system tag",
+                            f.getDeclaringClass(), f.getName()));
                 }
 
                 if (PatternedSystemTag.class.isAssignableFrom(f.getType())) {
@@ -108,7 +110,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     void init() {
         for (EntityType<?> entity : dbf.getEntityManager().getMetamodel().getEntities()) {
-            Class type =  entity.getJavaType();
+            Class type = entity.getJavaType();
             String name = type.getSimpleName();
             resourceTypeClassMap.put(name, type);
             logger.debug(String.format("discovered tag resource type[%s], class[%s]", name, type));
@@ -126,7 +128,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             TagResourceType at = (TagResourceType) cmsgClz.getAnnotation(TagResourceType.class);
             Class resType = at.value();
             if (!resourceTypeClassMap.values().contains(resType)) {
-                throw new CloudRuntimeException(String.format("tag resource type[%s] defined in @TagResourceType of class[%s] is not a VO entity",
+                throw new CloudRuntimeException(String.format(
+                        "tag resource type[%s] defined in @TagResourceType of class[%s] is not a VO entity",
                         resType.getName(), cmsgClz.getName()));
             }
             resourceTypeCreateMessageMap.put(cmsgClz, resType);
@@ -147,7 +150,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         for (SystemTagLifeCycleExtension ext : pluginRgty.getExtensionList(SystemTagLifeCycleExtension.class)) {
             for (String resType : ext.getResourceTypeOfSystemTags()) {
                 if (!resourceTypeClassMap.containsKey(resType)) {
-                    throw new CloudRuntimeException(String.format("%s returns a unknown resource type[%s] for system tag", ext.getClass(), resType));
+                    throw new CloudRuntimeException(String.format("%s returns a unknown resource type[%s] for system tag",
+                            ext.getClass(), resType));
                 }
 
                 List<SystemTagLifeCycleExtension> lst = lifeCycleExtensions.get(resType);
@@ -185,7 +189,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
 
         if (isTagExisting(resourceUuid, tag, type, resourceType)) {
-            return null;
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("Duplicated Tag[tag:%s, type:%s, resourceType:%s, resourceUuid:%s]",
+                            tag, type, resourceType, resourceUuid)));
         }
 
         if (type == TagType.User) {
@@ -331,7 +337,11 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Override
     @Transactional
     public void copySystemTag(String srcResourceUuid, String srcResourceType, String dstResourceUuid, String dstResourceType) {
-        String sql = "select stag from SystemTagVO stag where stag.resourceUuid = :ruuid and stag.resourceType = :rtype and stag.inherent = :ih";
+        String sql = "select stag" +
+                " from SystemTagVO stag" +
+                " where stag.resourceUuid = :ruuid" +
+                " and stag.resourceType = :rtype" +
+                " and stag.inherent = :ih";
         TypedQuery<SystemTagVO> srcq = dbf.getEntityManager().createQuery(sql, SystemTagVO.class);
         srcq.setParameter("ruuid", srcResourceUuid);
         srcq.setParameter("rtype", srcResourceType);
@@ -416,12 +426,13 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private void deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit, boolean useLike) {
-        DebugUtils.Assert(tag != null || resourceUuid != null || resourceType != null, "tag, resourceUuid, resourceType cannot all be null");
+        DebugUtils.Assert(tag != null || resourceUuid != null || resourceType != null,
+                "tag, resourceUuid, resourceType cannot all be null");
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         if (tag != null) {
             if (useLike) {
                 q.add(SystemTagVO_.tag, Op.LIKE, tag);
-            } else{
+            } else {
                 q.add(SystemTagVO_.tag, Op.EQ, tag);
             }
         }
@@ -502,7 +513,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
-            handleApiMessage((APIMessage)msg);
+            handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
         }
@@ -651,13 +662,17 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Transactional
     private void postDelete(Collection entityIds, Class entityClass) {
         List<String> rtypes = getResourceTypes(entityClass);
-        String sql = "delete from SystemTagVO s where s.resourceType in (:resourceTypes) and s.resourceUuid in (:resourceUuids)";
+        String sql = "delete from SystemTagVO s" +
+                " where s.resourceType in (:resourceTypes)" +
+                " and s.resourceUuid in (:resourceUuids)";
         Query q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("resourceTypes", rtypes);
         q.setParameter("resourceUuids", entityIds);
         q.executeUpdate();
 
-        sql = "delete from UserTagVO s where s.resourceType in (:resourceTypes) and s.resourceUuid in (:resourceUuids)";
+        sql = "delete from UserTagVO s" +
+                " where s.resourceType in (:resourceTypes)" +
+                " and s.resourceUuid in (:resourceUuids)";
         q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("resourceTypes", rtypes);
         q.setParameter("resourceUuids", entityIds);
@@ -682,7 +697,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        APICreateMessage cmsg = (APICreateMessage)msg;
+        APICreateMessage cmsg = (APICreateMessage) msg;
         if (cmsg.getSystemTags() != null && !cmsg.getSystemTags().isEmpty()) {
             cmsg.setSystemTags(removeDuplicateFromList(cmsg.getSystemTags()));
 
@@ -705,7 +720,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             Class resourceType = resourceTypeCreateMessageMap.get(cmsg.getClass());
             if (resourceType == null) {
                 throw new ApiMessageInterceptionException(errf.stringToInternalError(
-                        String.format("API message[%s] doesn't define resource type by @TagResourceType", cmsg.getClass().getName())
+                        String.format("API message[%s] doesn't define resource type by @TagResourceType",
+                                cmsg.getClass().getName())
                 ));
             }
 

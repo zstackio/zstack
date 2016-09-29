@@ -1459,7 +1459,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return msg;
     }
 
-    private void validate(APIChangeResourceOwnerMsg msg) {
+    private void validateResourceAccessPermission(APIChangeResourceOwnerMsg msg) {
+    }
+
+    private void checkQuotaForChangeResourceOwner(APIChangeResourceOwnerMsg msg) {
         for (Quota quota : messageQuotaMap.get(APIChangeResourceOwnerMsg.class)) {
             // make quota pairs
             List<String> names = new ArrayList<>();
@@ -1487,6 +1490,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             // check quota
             quota.getOperator().checkQuota(msg, pairs);
         }
+    }
+
+    private void validate(APIChangeResourceOwnerMsg msg) {
+        validateResourceAccessPermission(msg);
+        checkQuotaForChangeResourceOwner(msg);
     }
 
     private void validate(APIGetAccountQuotaUsageMsg msg) {

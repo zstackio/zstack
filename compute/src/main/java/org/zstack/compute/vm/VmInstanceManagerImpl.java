@@ -96,7 +96,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint, GlobalApiMessageInterceptor, PrimaryStorageDeleteExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
-    private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<String, VmInstanceFactory>());
+    private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(
+            new HashMap<String, VmInstanceFactory>());
     private List<String> createVmWorkFlowElements;
     private List<String> stopVmWorkFlowElements;
     private List<String> rebootVmWorkFlowElements;
