@@ -110,7 +110,7 @@ public class KVMHost extends HostBase implements Host {
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_CONNECT_PATH);
         connectPath = ub.build().toUriString();
-        
+
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_PING_PATH);
         pingPath = ub.build().toUriString();
@@ -134,15 +134,15 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DESTROY_VM_PATH);
         destroyVmPath = ub.build().toString();
-        
+
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_ATTACH_VOLUME);
         attachDataVolumePath = ub.build().toString();
-        
+
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DETACH_VOLUME);
         detachDataVolumePath = ub.build().toString();
-        
+
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_ECHO_PATH);
         echoPath = ub.build().toString();
@@ -246,10 +246,9 @@ public class KVMHost extends HostBase implements Host {
             handle((KvmRunShellMsg) msg);
         } else if (msg instanceof VmDirectlyDestroyOnHypervisorMsg) {
             handle((VmDirectlyDestroyOnHypervisorMsg) msg);
-        } else if (msg instanceof OnlineChangeVmCpuMemoryMsg){
+        } else if (msg instanceof OnlineChangeVmCpuMemoryMsg) {
             handle((OnlineChangeVmCpuMemoryMsg) msg);
-        }
-        else {
+        } else {
             super.handleLocalMessage(msg);
         }
     }
@@ -335,8 +334,9 @@ public class KVMHost extends HostBase implements Host {
 
         bus.reply(msg, reply);
     }
-    private void handle(final OnlineChangeVmCpuMemoryMsg msg){
-        final OnlineChangeVmCpuMemoryReply reply= new OnlineChangeVmCpuMemoryReply();
+
+    private void handle(final OnlineChangeVmCpuMemoryMsg msg) {
+        final OnlineChangeVmCpuMemoryReply reply = new OnlineChangeVmCpuMemoryReply();
 
         OnlineChangeCpuMemoryCmd cmd = new OnlineChangeCpuMemoryCmd();
         cmd.setVmUuid(msg.getVmInstanceUuid());
@@ -369,6 +369,7 @@ public class KVMHost extends HostBase implements Host {
             }
         });
     }
+
     private void handle(final GetVmConsoleAddressFromHostMsg msg) {
         final GetVmConsoleAddressFromHostReply reply = new GetVmConsoleAddressFromHostReply();
 
@@ -736,7 +737,7 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode err) {
                 KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
                 if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
-                    reply.setError(errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "cannot do the operation on the KVM host",err));
+                    reply.setError(errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "cannot do the operation on the KVM host", err));
                 } else {
                     reply.setError(reply.getError());
                 }
@@ -953,7 +954,7 @@ public class KVMHost extends HostBase implements Host {
             }
 
             MigrateStruct s = it.next();
-            vmUuid =  s.vmUuid;
+            vmUuid = s.vmUuid;
             hostIp = s.dstHostIp;
             storageMigrationPolicy = s.storageMigrationPolicy;
         }
@@ -1294,7 +1295,7 @@ public class KVMHost extends HostBase implements Host {
         final DetachDataVolumeCmd cmd = new DetachDataVolumeCmd();
         cmd.setVolume(to);
         cmd.setVmUuid(vm.getUuid());
-        extEmitter.beforeDetachVolume((KVMHostInventory)getSelfInventory(), vm, vol, cmd);
+        extEmitter.beforeDetachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
         restf.asyncJsonPost(detachDataVolumePath, cmd, new JsonAsyncRESTCallback<DetachDataVolumeResponse>(msg, completion) {
 
             @Override
@@ -1376,7 +1377,7 @@ public class KVMHost extends HostBase implements Host {
         final AttachDataVolumeCmd cmd = new AttachDataVolumeCmd();
         cmd.setVolume(to);
         cmd.setVmUuid(msg.getVmInventory().getUuid());
-        extEmitter.beforeAttachVolume((KVMHostInventory)getSelfInventory(), vm, vol, cmd);
+        extEmitter.beforeAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
         restf.asyncJsonPost(attachDataVolumePath, cmd, new JsonAsyncRESTCallback<AttachDataVolumeResponse>(msg, completion) {
             @Override
             public void fail(ErrorCode err) {
@@ -2144,7 +2145,7 @@ public class KVMHost extends HostBase implements Host {
             logger.warn(t.getMessage(), t);
             errCode = errf.throwableToInternalError(t);
         }
-        
+
         return errCode;
     }
 
@@ -2184,18 +2185,21 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void createHostVersionSystemTags(String distro, String release, String version) {
-        HostSystemTags.OS_DISTRIBUTION.createInherentTag(self.getUuid(), map(e(HostSystemTags.OS_DISTRIBUTION_TOKEN, distro)));
+        HostSystemTags.OS_DISTRIBUTION.createInherentTag(self.getUuid(),
+                map(e(HostSystemTags.OS_DISTRIBUTION_TOKEN, distro)));
         HostSystemTags.OS_RELEASE.createInherentTag(self.getUuid(), map(e(HostSystemTags.OS_RELEASE_TOKEN, release)));
         HostSystemTags.OS_VERSION.createInherentTag(self.getUuid(), map(e(HostSystemTags.OS_VERSION_TOKEN, version)));
     }
-    
+
     @Override
     public void connectHook(final ConnectHostInfo info, final Completion complete) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             if (info.isNewAdded()) {
                 createHostVersionSystemTags("zstack", "kvmSimulator", "0.1");
-                KVMSystemTags.LIBVIRT_VERSION.createInherentTag(self.getUuid(), map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.2.9")));
-                KVMSystemTags.QEMU_IMG_VERSION.createInherentTag(self.getUuid(), map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0")));
+                KVMSystemTags.LIBVIRT_VERSION.createInherentTag(self.getUuid(),
+                        map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.2.9")));
+                KVMSystemTags.QEMU_IMG_VERSION.createInherentTag(self.getUuid(),
+                        map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0")));
             }
 
             continueConnect(info.isNewAdded(), complete);
@@ -2218,10 +2222,12 @@ public class KVMHost extends HostBase implements Host {
                                 checkList = checkList.replaceAll(",", " ");
 
                                 SshShell sshShell = new SshShell();
+                                sshShell.setHostname(getSelf().getManagementIp());
                                 sshShell.setUsername(getSelf().getUsername());
                                 sshShell.setPassword(getSelf().getPassword());
                                 sshShell.setPort(getSelf().getPort());
-                                SshResult ret = sshShell.runScriptWithToken("scripts/check-public-dns-name.sh", map(e("dnsCheckList", checkList)));
+                                SshResult ret = sshShell.runScriptWithToken("scripts/check-public-dns-name.sh",
+                                        map(e("dnsCheckList", checkList)));
 
                                 if (ret.isSshFailure()) {
                                     trigger.fail(errf.stringToOperationError(
@@ -2261,7 +2267,7 @@ public class KVMHost extends HostBase implements Host {
                             } else if (ret.getReturnCode() != 0) {
                                 throw new OperationFailureException(errf.stringToOperationError(
                                         String.format("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
-                                                " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), Platform.getManagementServerIp(),
+                                                        " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), Platform.getManagementServerIp(),
                                                 ret.getStderr(), ret.getExitErrorMessage())
                                 ));
                             }
@@ -2300,7 +2306,7 @@ public class KVMHost extends HostBase implements Host {
                                 runner.setFullDeploy(true);
                             }
                             runner.putArgument("pkg_kvmagent", agentPackageName);
-                            runner.putArgument("hostname", String.format("%s.zstack.org",self.getManagementIp().replaceAll("\\.", "-")));
+                            runner.putArgument("hostname", String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
 
                             UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
                             ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
@@ -2484,7 +2490,7 @@ public class KVMHost extends HostBase implements Host {
         if (umsg.getPassword() != null) {
             vo.setPassword(umsg.getPassword());
         }
-        if (umsg.getSshPort() != null && umsg.getSshPort() > 0 && umsg.getSshPort() <= 65535 ) {
+        if (umsg.getSshPort() != null && umsg.getSshPort() > 0 && umsg.getSshPort() <= 65535) {
             vo.setPort(umsg.getSshPort());
         }
 
