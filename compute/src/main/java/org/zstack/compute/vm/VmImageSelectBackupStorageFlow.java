@@ -11,7 +11,11 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.ImageBackupStorageRefVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
+import org.zstack.header.storage.backup.BackupStorageZoneRefVO_;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -22,6 +26,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -87,6 +92,24 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
         }
     }
 
+    private String findIsoBsUuid(final String isoImageUuid, final String zoneUuid) {
+        final SimpleQuery<ImageBackupStorageRefVO> q = dbf.createQuery(ImageBackupStorageRefVO.class);
+        q.add(ImageBackupStorageRefVO_.imageUuid, Op.EQ, isoImageUuid);
+        q.select(ImageBackupStorageRefVO_.backupStorageUuid);
+
+        final List<String> bsUUids = q.listValue();
+
+        for (String bsUuid : bsUUids) {
+            SimpleQuery<BackupStorageZoneRefVO> zq = dbf.createQuery(BackupStorageZoneRefVO.class);
+            zq.add(BackupStorageZoneRefVO_.backupStorageUuid, Op.EQ, bsUuid);
+            zq.add(BackupStorageZoneRefVO_.zoneUuid, Op.EQ, zoneUuid);
+            if (!q.listValue().isEmpty()) {
+                return bsUuid;
+            }
+        }
+
+        return null;
+    }
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -106,7 +129,13 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
             }
         } else if ((VmOperation.Start == spec.getCurrentVmOperation() || VmOperation.Reboot == spec.getCurrentVmOperation())
                 && spec.getDestIso() != null) {
-            String isoBsUuid = findBackupStorage(spec, spec.getDestIso().getImageUuid());
+            String isoImageUuid = spec.getDestIso().getImageUuid();
+            String isoBsUuid = findIsoBsUuid(isoImageUuid, spec.getVmInventory().getZoneUuid());
+            if (isoBsUuid == null) {
+                String err = String.format("No backup storage found for ISO (%s)", isoImageUuid);
+                trigger.fail(errf.stringToOperationError(err));
+                return;
+            }
             spec.getDestIso().setBackupStorageUuid(isoBsUuid);
         }
 
