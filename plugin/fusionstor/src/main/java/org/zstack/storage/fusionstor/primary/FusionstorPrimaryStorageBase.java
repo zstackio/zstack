@@ -1552,7 +1552,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
+    protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
         cmd.setUuid(self.getUuid());
         cmd.setFsId(getSelf().getFsid());
 
