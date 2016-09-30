@@ -55,6 +55,7 @@ import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -1971,17 +1972,19 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     reconnectMon(mon, false);
                                 }
 
-                            } else if (res.operationFailure) {
+                            } else if (PingOperationFailure.UnableToCreateFile.toString().equals(res.failure)) {
                                 // as long as there is one mon saying the ceph not working, the primary storage goes down
                                 logger.warn(String.format("the ceph primary storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports" +
                                         " an operation failure[%s]", self.getUuid(), self.getName(), mon.getSelf().getUuid(), res.error));
                                 ErrorCode errorCode = errf.stringToOperationError(res.error);
                                 errors.add(errorCode);
                                 primaryStorageDown();
-                            } else  {
+                            } else if (!res.success || PingOperationFailure.MonAddrChanged.toString().equals(res.failure))  {
                                 // this mon is down(success == false, operationFailure == false), but the primary storage may still work as other mons may work
                                 ErrorCode errorCode = errf.stringToOperationError(res.error);
                                 thisMonIsDown(errorCode);
+                            } else {
+                                throw new CloudRuntimeException("should not be here");
                             }
                         }
 

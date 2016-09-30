@@ -45,6 +45,12 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
     public static final String ECHO_PATH = "/ceph/primarystorage/echo";
     public static final String PING_PATH = "/ceph/primarystorage/ping";
 
+    public enum PingOperationFailure {
+        UnableToCreateFile,
+        MonAddrChanged,
+    }
+
+
     public static class AgentCmd {
         public String monUuid;
         public String primaryStorageUuid;
@@ -57,10 +63,12 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
     public static class PingCmd extends AgentCmd {
         public String testImagePath;
+        public String monAddr;
     }
 
     public static class PingRsp extends AgentRsp {
         public boolean operationFailure;
+        public PingOperationFailure failure;
     }
 
 
@@ -277,6 +285,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
         cmd.testImagePath = String.format("%s/%s-this-is-a-test-image-with-long-name", poolName, Platform.getUuid());
         cmd.monUuid = getSelf().getUuid();
         cmd.primaryStorageUuid = getSelf().getPrimaryStorageUuid();
+        cmd.monAddr = getSelf().getMonAddr();
 
         httpCall(PING_PATH, cmd, PingRsp.class, new ReturnValueCompletion<PingRsp>(completion) {
             @Override
@@ -287,7 +296,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                 } else {
                     res.success = false;
                     res.error = rsp.error;
-                    res.operationFailure = rsp.operationFailure;
+                    res.failure = rsp.failure.toString();
                 }
 
                 completion.success(res);

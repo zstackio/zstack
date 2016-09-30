@@ -95,8 +95,7 @@ public class CephBackupStorageSimulator {
         if (!rsp.success) {
             rsp.error = "on purpose";
         }
-        Boolean operationFailure = config.pingCmdOperationFailure.get(cmd.monUuid);
-        rsp.operationFailure = operationFailure == null ? false : operationFailure;
+        rsp.failure = config.pingCmdOperationFailure.get(cmd.monUuid);
         reply(entity, rsp);
         return null;
     }

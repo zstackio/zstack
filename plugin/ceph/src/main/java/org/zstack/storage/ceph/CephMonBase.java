@@ -21,7 +21,7 @@ public abstract class CephMonBase {
     protected RESTFacade restf;
 
     public static class PingResult {
-        public boolean operationFailure;
+        public String failure;
         public boolean success;
         public String error;
     }

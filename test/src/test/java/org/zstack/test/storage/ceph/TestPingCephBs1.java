@@ -13,6 +13,7 @@ import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.backup.BackupStorageGlobalConfig;
 import org.zstack.storage.ceph.CephGlobalConfig;
 import org.zstack.storage.ceph.MonStatus;
+import org.zstack.storage.ceph.backup.CephBackupStorageBase.PingOperationFailure;
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
@@ -112,7 +113,7 @@ public class TestPingCephBs1 {
         // put all mons to operation failure, confirm all down
         config.pingCmdSuccess.put(mon1.getUuid(), false);
         config.pingCmdSuccess.put(mon2.getUuid(), false);
-        config.pingCmdOperationFailure.put(mon1.getUuid(), true);
+        config.pingCmdOperationFailure.put(mon1.getUuid(), PingOperationFailure.UnableToCreateFile);
         TimeUnit.SECONDS.sleep(3);
         ceph = dbf.reload(ceph);
         mon1 = dbf.reload(mon1);
@@ -120,6 +121,18 @@ public class TestPingCephBs1 {
         Assert.assertEquals(BackupStorageStatus.Disconnected, ceph.getStatus());
         Assert.assertEquals(MonStatus.Disconnected, mon1.getStatus());
         Assert.assertEquals(MonStatus.Disconnected, mon2.getStatus());
+
+        // put one mon to the error MonAddrChanged, confirm only the mon down
+        config.pingCmdSuccess.put(mon1.getUuid(), false);
+        config.pingCmdSuccess.put(mon2.getUuid(), true);
+        config.pingCmdOperationFailure.put(mon1.getUuid(), PingOperationFailure.MonAddrChanged);
+        TimeUnit.SECONDS.sleep(3);
+        ceph = dbf.reload(ceph);
+        mon1 = dbf.reload(mon1);
+        mon2 = dbf.reload(mon2);
+        Assert.assertEquals(BackupStorageStatus.Connected, ceph.getStatus());
+        Assert.assertEquals(MonStatus.Disconnected, mon1.getStatus());
+        Assert.assertEquals(MonStatus.Connected, mon2.getStatus());
 
         // put all mons up, the backup storage is up
         CephGlobalConfig.BACKUP_STORAGE_MON_AUTO_RECONNECT.updateValue(true);

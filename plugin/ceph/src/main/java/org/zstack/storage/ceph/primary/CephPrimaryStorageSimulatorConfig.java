@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.primary;
 
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase.*;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +44,7 @@ public class CephPrimaryStorageSimulatorConfig {
     public Map<String, Long> getVolumeSizeCmdActualSize = new HashMap<String, Long>();
 
     public Map<String, Boolean> pingCmdSuccess = new HashMap<String, Boolean>();
-    public Map<String, Boolean> pingCmdOperationFailure = new HashMap<String, Boolean>();
+    public Map<String, PingOperationFailure> pingCmdOperationFailure = new HashMap<String, PingOperationFailure>();
     public List<GetFactsCmd> getFactsCmds = new ArrayList<GetFactsCmd>();
     public Map<String, String> getFactsCmdFsid = new HashMap<String, String>();
     public List<KvmSetupSelfFencerCmd> kvmSetupSelfFencerCmds = new ArrayList<>();
