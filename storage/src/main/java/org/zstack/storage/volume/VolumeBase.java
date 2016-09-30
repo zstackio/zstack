@@ -823,7 +823,9 @@ public class VolumeBase implements Volume {
     private void handle(APIGetVolumeCapabilitiesMsg msg) {
         APIGetVolumeCapabilitiesReply reply = new APIGetVolumeCapabilitiesReply();
         Map<String, Object> ret = new HashMap<String, Object>();
-        getPrimaryStorageCapacities(ret);
+        if (VolumeStatus.Ready == self.getStatus()) {
+            getPrimaryStorageCapacities(ret);
+        }
         reply.setCapabilities(ret);
         bus.reply(msg, reply);
     }
