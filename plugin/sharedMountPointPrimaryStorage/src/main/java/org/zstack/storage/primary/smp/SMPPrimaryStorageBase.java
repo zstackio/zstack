@@ -4,12 +4,13 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.AsyncBatchRunner;
+import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -30,10 +31,7 @@ import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageBase;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -72,77 +70,6 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         String hvType = q.findValue();
 
         return getHypervisorFactoryByHypervisorType(hvType);
-    }
-
-    @Transactional(readOnly = true)
-    private List<String> findClustersHavingHosts() {
-        String sql = "select ref.clusterUuid from PrimaryStorageClusterRefVO ref, HostVO host where ref.clusterUuid = host.clusterUuid" +
-                " and ref.primaryStorageUuid = :psUuid and host.status = :hstatus";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("psUuid", self.getUuid());
-        q.setParameter("hstatus", HostStatus.Connected);
-        return q.getResultList();
-    }
-
-    @Override
-    public void handle(APIReconnectPrimaryStorageMsg msg) {
-        final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
-        List<String> cuuids = findClustersHavingHosts();
-
-        if (cuuids.isEmpty()) {
-            evt.setInventory(getSelfInventory());
-            bus.publish(evt);
-            return;
-        }
-
-        final Iterator<String> it = cuuids.iterator();
-
-        class Connect {
-            private List<ErrorCode> errors = new ArrayList<ErrorCode>();
-
-            void connect(final Completion completion) {
-                if (!it.hasNext()) {
-                    completion.fail(errf.stringToOperationError(
-                            String.format("failed to reconnect the shared mount point primary storage[name:%s, uuid:%s], operations failed" +
-                                    " in all attached clusters; errors are %s", self.getName(), self.getUuid(), errors)
-                    ));
-                    return;
-                }
-
-                String cuuid = it.next();
-                HypervisorFactory f = getHypervisorFactoryByClusterUuid(cuuid);
-                HypervisorBackend bkd = f.getHypervisorBackend(self);
-                bkd.connectByClusterUuid(cuuid, new Completion(completion) {
-                    @Override
-                    public void success() {
-                        completion.success();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        errors.add(errorCode);
-                        connect(completion);
-                    }
-                });
-            }
-        }
-
-        new Connect().connect(new Completion(msg) {
-            @Override
-            public void success() {
-                self = dbf.reload(self);
-                self.setStatus(PrimaryStorageStatus.Connected);
-                self = dbf.updateAndRefresh(self);
-                evt.setInventory(getSelfInventory());
-                bus.publish(evt);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setErrorCode(errorCode);
-                bus.publish(evt);
-            }
-        });
     }
 
     @Override
@@ -347,42 +274,48 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        class Result {
+        new LoopAsyncBatch<String>(completion) {
             boolean success;
-            List<ErrorCode> errors = new ArrayList<ErrorCode>();
-        }
 
-        final Result ret = new Result();
-
-        final AsyncLatch latch = new AsyncLatch(clusterUuids.size(), new NoErrorCompletion(completion) {
             @Override
-            public void done() {
-                if (ret.success) {
+            protected Collection<String> collect() {
+                return clusterUuids;
+            }
+
+            @Override
+            protected AsyncBatchRunner forEach(String item) {
+                return new AsyncBatchRunner() {
+                    @Override
+                    public void run(NoErrorCompletion completion) {
+                        HypervisorBackend bkd = getHypervisorFactoryByClusterUuid(item).getHypervisorBackend(self);
+                        bkd.connectByClusterUuid(item, new Completion(completion) {
+                            @Override
+                            public void success() {
+                                success = true;
+                                completion.done();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                errors.add(errorCode);
+                                completion.done();
+                            }
+                        });
+                    }
+                };
+            }
+
+            @Override
+            protected void done() {
+                if (success) {
                     completion.success();
                 } else {
                     completion.fail(errf.stringToOperationError(
-                            String.format("failed to connect to all clusters%s, errors are %s", clusterUuids, ret.errors)
+                            String.format("failed to connect to all clusters%s", clusterUuids), errors
                     ));
                 }
             }
-        });
-
-        for (String cuuid : clusterUuids) {
-            HypervisorBackend bkd = getHypervisorFactoryByClusterUuid(cuuid).getHypervisorBackend(self);
-            bkd.connectByClusterUuid(cuuid, new Completion(latch) {
-                @Override
-                public void success() {
-                    ret.success = true;
-                    latch.ack();
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    ret.errors.add(errorCode);
-                    latch.ack();
-                }
-            });
-        }
+        }.start();
     }
 
     @Override
