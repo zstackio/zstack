@@ -786,6 +786,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public CacheInstallPath disassemble() {
             DebugUtils.Assert(fullPath != null, "fullPath cannot be null");
             String[] pair = fullPath.split(";");
+            DebugUtils.Assert(pair.length == 2, String.format("invalid cache path %s", fullPath));
             installPath = pair[0].replaceFirst("file://", "");
             hostUuid = pair[1].replaceFirst("hostUuid://", "");
             return this;
