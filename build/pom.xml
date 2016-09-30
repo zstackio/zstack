@@ -46,7 +46,6 @@
                                         <exclude>springConfigXml/NfsPrimaryStorage.xml</exclude>
                                         <exclude>springConfigXml/sharedMountPointPrimaryStorage.xml</exclude>
                                         <exclude>springConfigXml/ceph.xml</exclude>
-                                        <exclude>springConfigXml/fusionstor.xml</exclude>
                                     </excludes>
                                 </resource>
                                 <resource>
