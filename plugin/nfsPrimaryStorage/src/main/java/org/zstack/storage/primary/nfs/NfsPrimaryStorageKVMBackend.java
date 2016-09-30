@@ -22,6 +22,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
@@ -117,8 +118,17 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setNoStatusCheck(true);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         MessageReply reply =  bus.call(msg);
+        
         if (!reply.isSuccess()) {
-            throw new OperationFailureException(reply.getError());
+            ErrorCode err = reply.getError();
+
+            if (reply.getError().getDetails().contains("java.net.SocketTimeoutException: Read timed out")) {
+                // socket read timeout is caused by timeout of mounting a wrong URL
+                err = errf.instantiateErrorCode(SysErrors.TIMEOUT, String.format("mount timeout. Please the check if the URL[%s] is" +
+                        " valid to mount", inv.getUrl()), reply.getError());
+            }
+
+            throw new OperationFailureException(err);
         }
 
         MountAgentResponse rsp = ((KVMHostSyncHttpCallReply)reply).toResponse(MountAgentResponse.class);

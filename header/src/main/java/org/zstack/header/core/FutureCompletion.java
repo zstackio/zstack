@@ -12,6 +12,15 @@ public class FutureCompletion extends Completion {
     private volatile boolean success;
     private ErrorCode errorCode;
     private volatile boolean done;
+    private boolean timeout;
+
+    public boolean isTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(boolean timeout) {
+        this.timeout = timeout;
+    }
 
     public FutureCompletion(AsyncBackup...backups) {
         super(backups);
@@ -56,6 +65,7 @@ public class FutureCompletion extends Completion {
         }
 
         if (!done) {
+            this.timeout = true;
             ErrorCode err = new ErrorCode();
             err.setCode(SysErrors.TIMEOUT.toString());
             err.setDetails(String.format("FutureCompletion timeout after %s seconds", TimeUnit.MILLISECONDS.toSeconds(timeout)));

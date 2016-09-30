@@ -21,6 +21,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.validation.ValidationFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.*;
@@ -402,8 +403,9 @@ public class RESTFacadeImpl implements RESTFacade {
         }.run();
 
         if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
-            String err = String.format("http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody());
-            throw new RestClientException(err);
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("failed to post to %s, status code: %s, response body: %s", url, rsp.getStatusCode(), rsp.getBody())
+            ));
         }
         
         if (rsp.getBody() != null && returnClass != Void.class) {
