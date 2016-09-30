@@ -63,6 +63,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
     @Autowired
     protected RESTFacade restf;
 
+    public enum PingOperationFailure {
+        UnableToCreateFile,
+        MonAddrChanged
+    }
+
     public static class AgentCommand {
         String fsid;
         String uuid;
@@ -801,13 +806,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                     reconnectMon(mon, false);
                                 }
 
-                            } else if (res.operationFailure) {
+                            } else if (PingOperationFailure.UnableToCreateFile.toString().equals(res.failure)) {
                                 // as long as there is one mon saying the ceph not working, the backup storage goes down
                                 logger.warn(String.format("the ceph backup storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports" +
                                         " an operation failure[%s]", self.getUuid(), self.getName(), mon.getSelf().getUuid(), res.error));
                                 backupStorageDown();
-                            } else {
-                                // this mon is down(success == false, operationFailure == false), but the backup storage may still work as other mons may work
+                            } else if (!res.success || PingOperationFailure.MonAddrChanged.toString().equals(res.failure)) {
+                                // this mon is down(success == false), but the backup storage may still work as other mons may work
                                 ErrorCode errorCode = errf.stringToOperationError(res.error);
                                 thisMonIsDown(errorCode);
                             }

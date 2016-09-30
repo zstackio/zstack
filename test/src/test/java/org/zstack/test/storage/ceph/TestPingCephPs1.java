@@ -13,6 +13,7 @@ import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.ceph.CephGlobalConfig;
 import org.zstack.storage.ceph.MonStatus;
 import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageVO;
@@ -115,7 +116,7 @@ public class TestPingCephPs1 {
         // put all mons to operation failure, confirm all down
         config.pingCmdSuccess.put(mon1.getUuid(), false);
         config.pingCmdSuccess.put(mon2.getUuid(), false);
-        config.pingCmdOperationFailure.put(mon1.getUuid(), true);
+        config.pingCmdOperationFailure.put(mon1.getUuid(), PingOperationFailure.UnableToCreateFile);
         TimeUnit.SECONDS.sleep(3);
         ceph = dbf.reload(ceph);
         mon1 = dbf.reload(mon1);
@@ -123,6 +124,18 @@ public class TestPingCephPs1 {
         Assert.assertEquals(PrimaryStorageStatus.Disconnected, ceph.getStatus());
         Assert.assertEquals(MonStatus.Disconnected, mon1.getStatus());
         Assert.assertEquals(MonStatus.Disconnected, mon2.getStatus());
+
+        // put one mon in monAddrChanged error, confirm only that mon down
+        config.pingCmdSuccess.put(mon1.getUuid(), false);
+        config.pingCmdSuccess.put(mon2.getUuid(), true);
+        config.pingCmdOperationFailure.put(mon1.getUuid(), PingOperationFailure.MonAddrChanged);
+        TimeUnit.SECONDS.sleep(3);
+        ceph = dbf.reload(ceph);
+        mon1 = dbf.reload(mon1);
+        mon2 = dbf.reload(mon2);
+        Assert.assertEquals(PrimaryStorageStatus.Connected, ceph.getStatus());
+        Assert.assertEquals(MonStatus.Disconnected, mon1.getStatus());
+        Assert.assertEquals(MonStatus.Connected, mon2.getStatus());
 
         // put all mons up, the primary storage is up
         CephGlobalConfig.PRIMARY_STORAGE_MON_AUTO_RECONNECT.updateValue(true);

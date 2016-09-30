@@ -23,6 +23,7 @@ import org.zstack.storage.ceph.CephGlobalProperty;
 import org.zstack.storage.ceph.CephMonAO;
 import org.zstack.storage.ceph.CephMonBase;
 import org.zstack.storage.ceph.MonStatus;
+import org.zstack.storage.ceph.backup.CephBackupStorageBase.PingOperationFailure;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -58,10 +59,11 @@ public class CephBackupStorageMonBase extends CephMonBase {
 
     public static class PingCmd extends AgentCmd {
         public String testImagePath;
+        public String monAddr;
     }
 
     public static class PingRsp extends AgentRsp {
-        public boolean operationFailure;
+        public PingOperationFailure failure;
     }
 
     public CephBackupStorageMonBase(CephMonAO self) {
@@ -280,6 +282,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
         String poolName = q.findValue();
 
         PingCmd cmd = new PingCmd();
+        cmd.monAddr = getSelf().getMonAddr();
         cmd.testImagePath = String.format("%s/%s-this-is-a-test-image-with-long-name", poolName, Platform.getUuid());
         cmd.monUuid = getSelf().getUuid();
         cmd.backupStorageUuid = getSelf().getBackupStorageUuid();
@@ -293,7 +296,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
                 } else {
                     res.success = false;
                     res.error = rsp.error;
-                    res.operationFailure = rsp.operationFailure;
+                    res.failure = rsp.failure.toString();
                 }
 
                 completion.success(res);
