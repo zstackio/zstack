@@ -3,15 +3,12 @@ package org.zstack.test.storage.primary.smp;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.smp.SMPPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
@@ -57,13 +54,19 @@ public class TestSmpPrimaryStorage5 {
     
 	@Test
 	public void test() throws ApiSenderException {
+        PrimaryStorageInventory smp = deployer.primaryStorages.get("smp");
+
         config.totalCapacity = SizeUnit.TERABYTE.toByte(10);
         config.availableCapcacity = SizeUnit.TERABYTE.toByte(5);
 
-        PrimaryStorageInventory smp = deployer.primaryStorages.get("smp");
+        PrimaryStorageCapacityVO cap = dbf.findByUuid(smp.getUuid(), PrimaryStorageCapacityVO.class);
+        cap.setAvailableCapacity(0);
+        cap.setTotalCapacity(0);
+        dbf.update(cap);
+
         api.reconnectPrimaryStorage(smp.getUuid());
 
-        PrimaryStorageCapacityVO cap = dbf.findByUuid(smp.getUuid(), PrimaryStorageCapacityVO.class);
+        cap = dbf.findByUuid(smp.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(config.totalCapacity, cap.getTotalCapacity());
         Assert.assertEquals(config.totalCapacity, cap.getTotalPhysicalCapacity());
         Assert.assertEquals(config.availableCapcacity, cap.getAvailablePhysicalCapacity());
