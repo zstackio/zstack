@@ -14,5 +14,6 @@
     <TestCase class="org.zstack.test.mevoco.billing.TestBilling11"/>
     <TestCase class="org.zstack.test.mevoco.billing.TestBilling12"/>
     <TestCase class="org.zstack.test.mevoco.billing.TestBilling13"/>
+    <TestCase class="org.zstack.test.mevoco.billing.TestBilling14"/>
     <TestCase class="org.zstack.test.mevoco.billing.TestBillingHourPrice"/>
 </UnitTestSuiteConfig>
