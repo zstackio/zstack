@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.AsyncBatchRunner;
+import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
@@ -69,6 +71,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -884,12 +887,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), ImageVO.class);
         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
 
-        Defer.guard(new Runnable() {
-            @Override
-            public void run() {
-                dbf.remove(ivo);
-            }
-        });
+        Defer.guard(() -> dbf.remove(ivo));
 
         final ImageInventory inv = ImageInventory.valueOf(ivo);
         for (AddImageExtensionPoint ext : pluginRgty.getExtensionList(AddImageExtensionPoint.class)) {
@@ -914,46 +912,65 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             }
         });
 
-        bus.send(dmsgs, new CloudBusListCallBack(msg) {
+        new LoopAsyncBatch<DownloadImageMsg>(msg) {
+            AtomicBoolean success = new AtomicBoolean(false);
+
             @Override
-            public void run(List<MessageReply> replies) {
-                //TODO: check if the database still has the record of the image
-                // if there is no record, that means user delete the image during the downloading,
-                // then we need to cleanup
-                boolean success = false;
+            protected Collection<DownloadImageMsg> collect() {
+                return dmsgs;
+            }
 
-                StringBuilder sb = new StringBuilder();
-                for (MessageReply r : replies) {
-                    String bsUuid = msg.getBackupStorageUuids().get(replies.indexOf(r));
-
-                    if (!r.isSuccess()) {
-                        logger.warn(String.format("failed to download image[uuid:%s, name:%s] to backup storage[uuid:%s], %s", inv.getUuid(), inv.getName(), bsUuid, r.getError()));
-                        sb.append(String.format("\nerror code for backup storage[uuid:%s]: %s", bsUuid, r.getError()));
-                    } else {
-                        DownloadImageReply re = (DownloadImageReply) r;
+            @Override
+            protected AsyncBatchRunner forEach(DownloadImageMsg dmsg) {
+                return new AsyncBatchRunner() {
+                    @Override
+                    public void run(NoErrorCompletion completion) {
                         ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
                         ref.setImageUuid(ivo.getUuid());
-                        ref.setInstallPath(re.getInstallPath());
-                        ref.setBackupStorageUuid(bsUuid);
-                        ref.setStatus(ImageStatus.Ready);
+                        ref.setInstallPath("");
+                        ref.setBackupStorageUuid(dmsg.getBackupStorageUuid());
+                        ref.setStatus(ImageStatus.Downloading);
                         dbf.persist(ref);
 
-                        if (!success) {
-                            ivo.setMd5Sum(re.getMd5sum());
-                            ivo.setSize(re.getSize());
-                            ivo.setActualSize(re.getActualSize());
-                            ivo.setStatus(ImageStatus.Ready);
-                            ivo.setFormat(re.getFormat());
-                            dbf.update(ivo);
-                            success = true;
-                        }
+                        bus.send(dmsg, new CloudBusCallBack(completion) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    errors.add(reply.getError());
+                                    dbf.remove(ref);
+                                } else {
+                                    DownloadImageReply re = reply.castReply();
+                                    ref.setStatus(ImageStatus.Ready);
+                                    ref.setInstallPath(re.getInstallPath());
+                                    dbf.update(ref);
 
-                        logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]", inv.getUuid(), inv.getName(), bsUuid));
+                                    if (success.compareAndSet(false, true)) {
+                                        ivo.setMd5Sum(re.getMd5sum());
+                                        ivo.setSize(re.getSize());
+                                        ivo.setActualSize(re.getActualSize());
+                                        ivo.setStatus(ImageStatus.Ready);
+                                        ivo.setFormat(re.getFormat());
+                                        dbf.update(ivo);
+                                    }
+
+                                    logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]",
+                                            inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
+                                }
+
+                                completion.done();
+                            }
+                        });
                     }
-                }
+                };
+            }
 
+            @Override
+            protected void done() {
+                // TODO: check if the database still has the record of the image
+                // if there is no record, that means user delete the image during the downloading,
+                // then we need to cleanup
 
-                if (success) {
+                if (success.get()) {
                     ImageVO vo = dbf.reload(ivo);
                     final ImageInventory einv = ImageInventory.valueOf(vo);
 
@@ -966,8 +983,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     evt.setInventory(einv);
                 } else {
-                    final ErrorCode err = errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, String.format("Failed to download image[name:%s] on all backup storage%s. %s",
-                            inv.getName(), msg.getBackupStorageUuids(), sb.toString()));
+                    final ErrorCode err = errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, String.format("Failed to download image[name:%s] on all backup storage%s.",
+                            inv.getName(), msg.getBackupStorageUuids()), errors);
 
                     CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {
                         @Override
@@ -982,7 +999,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                 bus.publish(evt);
             }
-        });
+        }.start();
     }
 
     @Override
