@@ -1798,7 +1798,9 @@ public class KVMHost extends HostBase implements Host {
             v.setDeviceId(data.getDeviceId());
             v.setDeviceType(getVolumeTOType(data));
             v.setVolumeUuid(data.getUuid());
-            v.setUseVirtio(virtio);
+            // always use virtio driver for data volume
+            // set bug https://github.com/zxwing/premium/issues/1050
+            v.setUseVirtio(true);
             v.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
             dataVolumes.add(v);
         }
