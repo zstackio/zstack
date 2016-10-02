@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -11,11 +12,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
-import org.zstack.header.image.ImageBackupStorageRefVO;
-import org.zstack.header.image.ImageBackupStorageRefVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
-import org.zstack.header.storage.backup.BackupStorageZoneRefVO_;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -26,6 +23,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
+import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
 
@@ -92,23 +90,25 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
         }
     }
 
-    private String findIsoBsUuid(final String isoImageUuid, final String zoneUuid) {
-        final SimpleQuery<ImageBackupStorageRefVO> q = dbf.createQuery(ImageBackupStorageRefVO.class);
-        q.add(ImageBackupStorageRefVO_.imageUuid, Op.EQ, isoImageUuid);
-        q.select(ImageBackupStorageRefVO_.backupStorageUuid);
+    @Transactional(readOnly = true)
+    private String findIsoBsUuidInTheZone(final String isoImageUuid, final String zoneUuid) {
+        String sql = "select ref.backupStorageUuid from ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zoneref" +
+                " where ref.backupStorageUuid = zoneref.backupStorageUuid and zoneref.zoneUuid = :zoneUuid" +
+                " and ref.imageUuid = :imgUuid";
 
-        final List<String> bsUUids = q.listValue();
-
-        for (String bsUuid : bsUUids) {
-            SimpleQuery<BackupStorageZoneRefVO> zq = dbf.createQuery(BackupStorageZoneRefVO.class);
-            zq.add(BackupStorageZoneRefVO_.backupStorageUuid, Op.EQ, bsUuid);
-            zq.add(BackupStorageZoneRefVO_.zoneUuid, Op.EQ, zoneUuid);
-            if (!q.listValue().isEmpty()) {
-                return bsUuid;
-            }
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("zoneUuid", zoneUuid);
+        q.setParameter("imgUuid", isoImageUuid);
+        q.setMaxResults(1);
+        List<String> ret = q.getResultList();
+        if (ret.isEmpty()) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("no backup storage attached to the zone[uuid:%s] contains the ISO[uuid:%s]",
+                            zoneUuid, isoImageUuid)
+            ));
         }
 
-        return null;
+        return ret.get(0);
     }
 
     @Override
@@ -129,14 +129,10 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
             }
         } else if ((VmOperation.Start == spec.getCurrentVmOperation() || VmOperation.Reboot == spec.getCurrentVmOperation())
                 && spec.getDestIso() != null) {
-            String isoImageUuid = spec.getDestIso().getImageUuid();
-            String isoBsUuid = findIsoBsUuid(isoImageUuid, spec.getVmInventory().getZoneUuid());
-            if (isoBsUuid == null) {
-                String err = String.format("No backup storage found for ISO (%s)", isoImageUuid);
-                trigger.fail(errf.stringToOperationError(err));
-                return;
-            }
-            spec.getDestIso().setBackupStorageUuid(isoBsUuid);
+            spec.getDestIso().setBackupStorageUuid(
+                    findIsoBsUuidInTheZone(spec.getDestIso().getImageUuid(),
+                    spec.getVmInventory().getZoneUuid())
+            );
         }
 
         trigger.next();

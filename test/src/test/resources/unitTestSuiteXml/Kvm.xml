@@ -142,4 +142,5 @@
   <TestCase class="org.zstack.test.kvm.TestGetCandidatesForCreatingVm"/>
   <TestCase class="org.zstack.test.kvm.TestGetCandidatesForCreatingVm1"/>
   <TestCase class="org.zstack.test.kvm.TestCreateVmNotStartOnKvm"/>
+  <TestCase class="org.zstack.test.kvm.TestStartVmWithKvmIso"/>
 </UnitTestSuiteConfig>
