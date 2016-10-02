@@ -1,11 +1,9 @@
 package org.zstack.identity;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeConstant;
@@ -32,6 +30,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -39,7 +38,6 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -332,19 +330,21 @@ public class AccountBase extends AbstractAccount {
         bus.publish(evt);
     }
 
+    @Transactional
     private void handle(APIAttachPoliciesToUserMsg msg) {
         for (String puuid : msg.getPolicyUuids()) {
             try {
                 UserPolicyRefVO refVO = new UserPolicyRefVO();
                 refVO.setUserUuid(msg.getUserUuid());
                 refVO.setPolicyUuid(puuid);
-                dbf.persist(refVO);
-            } catch (JpaSystemException e) {
-                if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
-                    logger.trace("", e);
-                } else {
-                    throw e;
+                dbf.getEntityManager().persist(refVO);
+                dbf.getEntityManager().flush();
+            } catch (Throwable t) {
+                if (!ExceptionDSL.isCausedBy(t, ConstraintViolationException.class)) {
+                    throw t;
                 }
+
+                // the policy is already attached
             }
         }
 
@@ -597,18 +597,19 @@ public class AccountBase extends AbstractAccount {
         bus.publish(evt);
     }
 
-    @Transactional
     private void handle(APIAttachPolicyToUserGroupMsg msg) {
-        String sql = "select count(ref) from UserGroupPolicyRefVO ref where ref.groupUuid = :guuid and ref.policyUuid = :puuid";
-        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-        q.setParameter("guuid", msg.getGroupUuid());
-        q.setParameter("puuid", msg.getPolicyUuid());
-        long count = q.getSingleResult();
-        if (count == 0) {
-            UserGroupPolicyRefVO grvo = new UserGroupPolicyRefVO();
-            grvo.setGroupUuid(msg.getGroupUuid());
-            grvo.setPolicyUuid(msg.getPolicyUuid());
-            dbf.getEntityManager().persist(grvo);
+        UserGroupPolicyRefVO grvo = new UserGroupPolicyRefVO();
+        grvo.setGroupUuid(msg.getGroupUuid());
+        grvo.setPolicyUuid(msg.getPolicyUuid());
+
+        try {
+            dbf.persist(grvo);
+        } catch (Throwable t) {
+            if (!ExceptionDSL.isCausedBy(t, ConstraintViolationException.class)) {
+                throw t;
+            }
+
+            // the policy is already attached
         }
 
         APIAttachPolicyToUserGroupEvent evt = new APIAttachPolicyToUserGroupEvent(msg.getId());
@@ -639,7 +640,15 @@ public class AccountBase extends AbstractAccount {
         UserPolicyRefVO upvo = new UserPolicyRefVO();
         upvo.setPolicyUuid(msg.getPolicyUuid());
         upvo.setUserUuid(msg.getUserUuid());
-        dbf.persist(upvo);
+        try {
+            dbf.persist(upvo);
+        } catch (Throwable t) {
+            if (!ExceptionDSL.isCausedBy(t, ConstraintViolationException.class)) {
+                throw t;
+            }
+
+            // the policy is already attached
+        }
 
         APIAttachPolicyToUserEvent evt = new APIAttachPolicyToUserEvent(msg.getId());
         bus.publish(evt);
