@@ -1,6 +1,5 @@
 package org.zstack.test.applianceVm;
 
-import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -8,18 +7,11 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.identity.*;
-import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
-import org.zstack.header.image.ImageConstant;
-import org.zstack.header.query.QueryCondition;
-import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
-import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
-import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
-import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -31,7 +23,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

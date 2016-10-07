@@ -3,6 +3,7 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -50,6 +51,7 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
@@ -77,7 +79,7 @@ import java.util.stream.Collectors;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
-        ReportQuotaExtensionPoint {
+        ReportQuotaExtensionPoint, ResourceOwnerPreChangeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ImageManagerImpl.class);
 
     @Autowired
@@ -1417,5 +1419,38 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         quota.addPair(p);
 
         return list(quota);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void resourceOwnerPreChange(AccountResourceRefInventory ref, String newOwnerUuid) {
+        String resourceUuid = ref.getResourceUuid();
+        // skip for admin
+        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+        q.select(AccountVO_.type);
+        q.add(AccountVO_.uuid, Op.EQ, newOwnerUuid);
+        AccountType type = q.findValue();
+        if (type != AccountType.SystemAdmin) {
+            return;
+        }
+
+        SimpleQuery<AccountResourceRefVO> sq = dbf.createQuery(AccountResourceRefVO.class);
+        sq.add(AccountResourceRefVO_.resourceUuid, Op.EQ, resourceUuid);
+        AccountResourceRefVO accResRefVO = sq.find();
+        // skip if not vm instance
+        if (!accResRefVO.getResourceType().equals(VmInstanceVO.class.getSimpleName())) {
+            return;
+        }
+        // image
+        VmInstanceVO vmInstanceVO = dbf.findByUuid(resourceUuid, VmInstanceVO.class);
+        String isoUuid = VmSystemTags.ISO.getTokenByResourceUuid(resourceUuid, VmSystemTags.ISO_TOKEN);
+        if (vmInstanceVO.getImageUuid() != null && !vmInstanceVO.getImageUuid().equals("")) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("unable to change owner for vmInstance[uuid:%s]." +
+                                    "ISO[uuid:%s] is not accessible to target account[uuid:%s]." +
+                                    "You'd better share the image to target account or unmount it before change",
+                            resourceUuid, isoUuid, newOwnerUuid)
+            ));
+        }
     }
 }
