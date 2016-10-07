@@ -1824,7 +1824,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setHostManagementIp(self.getManagementIp());
         cmd.setConsolePassword(spec.getConsolePassword());
         cmd.setInstanceOfferingOnlineChange(spec.getInstanceOfferingOnlineChange());
-
+        addons(spec, cmd);
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
         try {
             extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
@@ -1872,6 +1872,19 @@ public class KVMHost extends HostBase implements Host {
                 return StartVmResponse.class;
             }
         });
+    }
+
+    private void addons(final VmInstanceSpec spec, StartVmCmd cmd){
+        KVMAddons.Channel chan = new KVMAddons.Channel();
+        chan.setSocketPath(makeChannelSocketPath(spec.getVmInventory().getUuid()));
+        chan.setTargetName(String.format("org.qemu.guest_agent.0"));
+        cmd.getAddons().put(chan.NAME, chan);
+        logger.debug(String.format("make kvm channel device[path:%s, target:%s]", chan.getSocketPath(), chan.getTargetName()));
+
+    }
+
+    private String makeChannelSocketPath(String apvmuuid) {
+        return PathUtil.join(String.format("/var/lib/libvirt/qemu/%s"), apvmuuid);
     }
 
     private void handle(final StartVmOnHypervisorMsg msg) {
