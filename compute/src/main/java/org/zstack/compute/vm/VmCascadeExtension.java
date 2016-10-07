@@ -176,12 +176,21 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Transactional(readOnly = true)
     private List<String> getVmUuidForPrimaryStorageDetached(List<PrimaryStorageDetachStruct> structs) {
-        List<String> vmUuids = new ArrayList<String>();
+        List<String> vmUuids = new ArrayList<>();
         for (PrimaryStorageDetachStruct s : structs) {
-            String sql = "select vm.uuid from VmInstanceVO vm, PrimaryStorageVO ps, VolumeVO vol where vm.type = :vmType and vm.state not in (:vmStates) and vm.clusterUuid = :clusterUuid and vm.uuid = vol.vmInstanceUuid and vol.primaryStorageUuid = :psUuid";
+            String sql = "select vm.uuid" +
+                    " from VmInstanceVO vm, PrimaryStorageVO ps, VolumeVO vol" +
+                    " where vm.type = :vmType" +
+                    " and vm.state in (:vmStates)" +
+                    " and vm.clusterUuid = :clusterUuid" +
+                    " and vm.uuid = vol.vmInstanceUuid" +
+                    " and vol.primaryStorageUuid = :psUuid";
             TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
             q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-            q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Migrating, VmInstanceState.Stopping));
+            q.setParameter("vmStates", Arrays.asList(
+                    VmInstanceState.Stopped,
+                    VmInstanceState.Unknown,
+                    VmInstanceState.Running));
             q.setParameter("clusterUuid", s.getClusterUuid());
             q.setParameter("psUuid", s.getPrimaryStorageUuid());
             vmUuids.addAll(q.getResultList());
@@ -214,7 +223,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 for (MessageReply r : replies) {
                     if (!r.isSuccess()) {
                         String vmUuid = vmUuids.get(replies.indexOf(r));
-                        logger.warn(String.format("failed to stop vm[uuid:%s] for primary storage detached, %s. However, detaching will go on", vmUuid, r.getError()));
+                        logger.warn(String.format("failed to stop vm[uuid:%s] for primary storage detached, %s." +
+                                " However, detaching will go on", vmUuid, r.getError()));
                     }
                 }
 
@@ -459,7 +469,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         } else if (NAME.equals(action.getParentIssuer())) {
             return action.getParentIssuerContext();
         } else if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> pruuids = CollectionUtils.transformToList((List<PrimaryStorageInventory>)action.getParentIssuerContext(), new Function<String, PrimaryStorageInventory>() {
+            final List<String> pruuids = CollectionUtils.transformToList((List<PrimaryStorageInventory>) action.getParentIssuerContext(), new Function<String, PrimaryStorageInventory>() {
                 @Override
                 public String call(PrimaryStorageInventory arg) {
                     return arg.getUuid();
@@ -485,7 +495,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 ret = toVmDeletionStruct(vmvos);
             }
         } else if (L3NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> l3uuids = CollectionUtils.transformToList((List<L3NetworkInventory>)action.getParentIssuerContext(), new Function<String, L3NetworkInventory>() {
+            final List<String> l3uuids = CollectionUtils.transformToList((List<L3NetworkInventory>) action.getParentIssuerContext(), new Function<String, L3NetworkInventory>() {
                 @Override
                 public String call(L3NetworkInventory arg) {
                     return arg.getUuid();
@@ -510,7 +520,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 ret = toVmDeletionStruct(vmvos);
             }
         } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> ipruuids = CollectionUtils.transformToList((List<IpRangeInventory>)action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
+            final List<String> ipruuids = CollectionUtils.transformToList((List<IpRangeInventory>) action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
                 @Override
                 public String call(IpRangeInventory arg) {
                     return arg.getUuid();
