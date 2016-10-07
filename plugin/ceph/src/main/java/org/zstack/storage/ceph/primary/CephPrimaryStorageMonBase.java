@@ -285,7 +285,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
         cmd.testImagePath = String.format("%s/%s-this-is-a-test-image-with-long-name", poolName, Platform.getUuid());
         cmd.monUuid = getSelf().getUuid();
         cmd.primaryStorageUuid = getSelf().getPrimaryStorageUuid();
-        cmd.monAddr = getSelf().getMonAddr();
+        cmd.monAddr = String.format("%s:%s", getSelf().getMonAddr(), getSelf().getMonPort());
 
         httpCall(PING_PATH, cmd, PingRsp.class, new ReturnValueCompletion<PingRsp>(completion) {
             @Override
