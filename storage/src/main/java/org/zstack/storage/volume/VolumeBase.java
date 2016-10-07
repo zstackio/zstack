@@ -118,6 +118,8 @@ public class VolumeBase implements Volume {
             handle((VolumeDeletionMsg) msg);
         } else if (msg instanceof DeleteVolumeMsg) {
             handle((DeleteVolumeMsg) msg);
+        } else if (msg instanceof VolumeCreateSnapshotMsg) {
+            handle((VolumeCreateSnapshotMsg) msg);
         } else if (msg instanceof CreateDataVolumeTemplateFromDataVolumeMsg) {
             handle((CreateDataVolumeTemplateFromDataVolumeMsg) msg);
         } else if (msg instanceof ExpungeVolumeMsg) {
@@ -1277,6 +1279,46 @@ public class VolumeBase implements Volume {
             public void fail(ErrorCode errorCode) {
                 evt.setErrorCode(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errorCode));
                 bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(final VolumeCreateSnapshotMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
+                cmsg.setName(msg.getName());
+                cmsg.setDescription(msg.getDescription());
+                cmsg.setResourceUuid(msg.getResourceUuid());
+                cmsg.setAccountUuid(msg.getAccountUuid());
+                cmsg.setVolumeUuid(msg.getVolumeUuid());
+                bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
+                bus.send(cmsg, new CloudBusCallBack(msg, chain) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        VolumeCreateSnapshotReply r = new VolumeCreateSnapshotReply();
+                        if (reply.isSuccess()) {
+                            CreateVolumeSnapshotReply creply = (CreateVolumeSnapshotReply) reply;
+                            r.setInventory(creply.getInventory());
+                        } else {
+                            r.setError(reply.getError());
+                        }
+
+                        bus.reply(msg, r);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("create-snapshot-for-volume-%s", self.getUuid());
             }
         });
     }

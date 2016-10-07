@@ -7,10 +7,10 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.scheduler.AbstractSchedulerJob;
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.snapshot.CreateVolumeSnapshotMsg;
-import org.zstack.header.storage.snapshot.CreateVolumeSnapshotReply;
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.volume.APICreateVolumeSnapshotEvent;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeCreateSnapshotMsg;
+import org.zstack.header.volume.VolumeCreateSnapshotReply;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -40,18 +40,18 @@ public class CreateVolumeSnapshotJob extends AbstractSchedulerJob {
     @Override
     public void run() {
         logger.debug(String.format("run scheduler for job: CreateVolumeSnapshotJob; volume uuid is %s", getVolumeUuid()));
-        CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
+        VolumeCreateSnapshotMsg cmsg = new VolumeCreateSnapshotMsg();
         cmsg.setName(getSnapShotName());
         cmsg.setDescription(getSnapShotDescription());
         cmsg.setVolumeUuid(getVolumeUuid());
         cmsg.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(getVolumeUuid()));
-        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, getVolumeUuid());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, getVolumeUuid());
         bus.send(cmsg, new CloudBusCallBack() {
             @Override
             public void run(MessageReply reply) {
                 APICreateVolumeSnapshotEvent evt = new APICreateVolumeSnapshotEvent(cmsg.getId());
                 if (reply.isSuccess()) {
-                    CreateVolumeSnapshotReply creply = (CreateVolumeSnapshotReply) reply;
+                    VolumeCreateSnapshotReply creply = (VolumeCreateSnapshotReply) reply;
                     evt.setInventory(creply.getInventory());
                 } else {
                     evt.setErrorCode(reply.getError());
