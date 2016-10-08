@@ -101,7 +101,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
     private void checkForNullElement(Node node, CascadeAction currentAction) {
         Object parentIssuerContext = currentAction.getParentIssuerContext();
         if (parentIssuerContext != null && parentIssuerContext instanceof List) {
-            List lst = (List)parentIssuerContext;
+            List lst = (List) parentIssuerContext;
             for (Object obj : lst) {
                 if (obj == null) {
                     throw new CloudRuntimeException(String.format("CascadeExtensionPoint[%s] returns parent content that is a List but containing NULL element", node.getExtension().getClass().getName()));
@@ -111,7 +111,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
 
         Object rootIssuerContext = currentAction.getRootIssuerContext();
         if (rootIssuerContext != null && rootIssuerContext instanceof List) {
-            List lst = (List)rootIssuerContext;
+            List lst = (List) rootIssuerContext;
             for (Object obj : lst) {
                 if (obj == null) {
                     throw new CloudRuntimeException(String.format("CascadeExtensionPoint[%s] returns root content that is a List but containing NULL element", node.getExtension().getClass().getName()));
@@ -177,8 +177,8 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
         assert action.getActionCode() != null;
 
         TreeNode root = cascadeTree.get(action.getRootIssuer());
-        DebugUtils.Assert(root!=null, String.format("found no CascadeExtension for %s", action.getRootIssuer()));
-        List<Bucket> paths = new ArrayList<Bucket>();
+        DebugUtils.Assert(root != null, String.format("found no CascadeExtension for %s", action.getRootIssuer()));
+        List<Bucket> paths = new ArrayList<>();
         collectPathsForAsyncCascade(root, true, action.isFullTraverse(), action, paths);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         for (Bucket path : paths) {
@@ -187,7 +187,8 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    logger.debug(String.format("[Async cascade (%s)]: %s --> %s", caction.getActionCode(), caction.getParentIssuer(), node.getName()));
+                    logger.debug(String.format("[Async cascade (%s)]: %s --> %s",
+                            caction.getActionCode(), caction.getParentIssuer(), node.getName()));
                     node.getExtension().asyncCascade(caction, new Completion() {
                         @Override
                         public void success() {
@@ -303,7 +304,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
         Map<String, TreeNode> root = new HashMap<String, TreeNode>();
         Map<String, TreeNode> prev = root;
         Map<String, TreeNode> curr = prev;
-        for (int i=0; i<maxLevel; i++) {
+        for (int i = 0; i < maxLevel; i++) {
             for (List<Node> path : paths) {
                 if (i >= path.size()) {
                     continue;
@@ -354,7 +355,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                     p.setName(parent);
                     p.setEdges(new ArrayList<Node>());
                     CascadeExtensionPoint dext = exts.get(parent);
-                    if(dext == null) {
+                    if (dext == null) {
                         throw new CloudRuntimeException(String.format("cannot find parent CascadeExtensionPoint[%s] for CascadeExtensionPoint[name: %s, class: %s]", parent, ext.getCascadeResourceName(), ext.getClass().getName()));
                     }
                     p.setExtension(dext);

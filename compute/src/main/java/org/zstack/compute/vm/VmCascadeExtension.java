@@ -252,14 +252,17 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     @Transactional
                     public void run() {
                         List<InstanceOfferingInventory> offerings = action.getParentIssuerContext();
-                        List<String> offeringUuids = CollectionUtils.transformToList(offerings, new Function<String, InstanceOfferingInventory>() {
-                            @Override
-                            public String call(InstanceOfferingInventory arg) {
-                                return arg.getUuid();
-                            }
-                        });
+                        List<String> offeringUuids = CollectionUtils.transformToList(offerings,
+                                new Function<String, InstanceOfferingInventory>() {
+                                    @Override
+                                    public String call(InstanceOfferingInventory arg) {
+                                        return arg.getUuid();
+                                    }
+                                });
 
-                        String sql = "update VmInstanceVO vm set vm.instanceOfferingUuid = null where vm.instanceOfferingUuid in (:offeringUuids)";
+                        String sql = "update VmInstanceVO vm" +
+                                " set vm.instanceOfferingUuid = null" +
+                                " where vm.instanceOfferingUuid in (:offeringUuids)";
                         Query q = dbf.getEntityManager().createQuery(sql);
                         q.setParameter("offeringUuids", offeringUuids);
                         q.executeUpdate();
@@ -272,14 +275,22 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         }
 
         final List<VmDeletionStruct> vminvs = vmFromDeleteAction(action);
-        if (vminvs == null) {
+        if (vminvs == null || vminvs.isEmpty()) {
             completion.success();
             return;
         }
 
         if (op == OP_STOP) {
-            List<StopVmInstanceMsg> msgs = new ArrayList<StopVmInstanceMsg>();
+            List<StopVmInstanceMsg> msgs = new ArrayList<>();
+            List<String> vmStateCanStop = Arrays.asList(
+                    VmInstanceState.Unknown.toString(),
+                    VmInstanceState.Stopped.toString(),
+                    VmInstanceState.Running.toString());
             for (VmDeletionStruct inv : vminvs) {
+                if (!vmStateCanStop.stream().anyMatch(
+                        str -> str.trim().equals(inv.getInventory().getState()))) {
+                    continue;
+                }
                 StopVmInstanceMsg msg = new StopVmInstanceMsg();
                 msg.setVmInstanceUuid(inv.getInventory().getUuid());
                 msg.setGcOnFailure(true);
@@ -303,7 +314,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             });
         } else if (op == OP_DELETION) {
-            List<VmInstanceDeletionMsg> msgs = new ArrayList<VmInstanceDeletionMsg>();
+            List<VmInstanceDeletionMsg> msgs = new ArrayList<>();
             for (VmDeletionStruct inv : vminvs) {
                 VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
                 msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
@@ -328,7 +339,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             });
         } else if (op == OP_DETACH_NIC) {
-            final List<DetachNicFromVmMsg> msgs = new ArrayList<DetachNicFromVmMsg>();
+            final List<DetachNicFromVmMsg> msgs = new ArrayList<>();
             List<L3NetworkInventory> l3s = action.getParentIssuerContext();
             for (VmDeletionStruct vm : vminvs) {
                 for (L3NetworkInventory l3 : l3s) {
@@ -422,7 +433,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             });
 
-            Map<String, VmInstanceVO> vmvos = new HashMap<String, VmInstanceVO>();
+            Map<String, VmInstanceVO> vmvos = new HashMap<>();
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
             q.add(VmInstanceVO_.hostUuid, SimpleQuery.Op.IN, huuids);
             q.add(VmInstanceVO_.type, Op.EQ, VmInstanceConstant.USER_VM_TYPE);
@@ -469,20 +480,27 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         } else if (NAME.equals(action.getParentIssuer())) {
             return action.getParentIssuerContext();
         } else if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> pruuids = CollectionUtils.transformToList((List<PrimaryStorageInventory>) action.getParentIssuerContext(), new Function<String, PrimaryStorageInventory>() {
-                @Override
-                public String call(PrimaryStorageInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> pruuids = CollectionUtils.transformToList(
+                    (List<PrimaryStorageInventory>) action.getParentIssuerContext(),
+                    new Function<String, PrimaryStorageInventory>() {
+                        @Override
+                        public String call(PrimaryStorageInventory arg) {
+                            return arg.getUuid();
+                        }
+                    });
 
 
             List<VmInstanceVO> vmvos = new Callable<List<VmInstanceVO>>() {
                 @Override
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
-                    String sql = "select vm from VmInstanceVO vm, VolumeVO vol, PrimaryStorageVO pr where vm.type = :vmType and vm.uuid = vol.vmInstanceUuid" +
-                            " and vol.primaryStorageUuid = pr.uuid and vol.type = :volType and pr.uuid in (:uuids) group by vm.uuid";
+                    String sql = "select vm from VmInstanceVO vm, VolumeVO vol, PrimaryStorageVO pr" +
+                            " where vm.type = :vmType" +
+                            " and vm.uuid = vol.vmInstanceUuid" +
+                            " and vol.primaryStorageUuid = pr.uuid" +
+                            " and vol.type = :volType" +
+                            " and pr.uuid in (:uuids)" +
+                            " group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
                     q.setParameter("uuids", pruuids);
@@ -495,22 +513,32 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 ret = toVmDeletionStruct(vmvos);
             }
         } else if (L3NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> l3uuids = CollectionUtils.transformToList((List<L3NetworkInventory>) action.getParentIssuerContext(), new Function<String, L3NetworkInventory>() {
-                @Override
-                public String call(L3NetworkInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> l3uuids = CollectionUtils.transformToList(
+                    (List<L3NetworkInventory>) action.getParentIssuerContext(),
+                    new Function<String, L3NetworkInventory>() {
+                        @Override
+                        public String call(L3NetworkInventory arg) {
+                            return arg.getUuid();
+                        }
+                    });
 
             List<VmInstanceVO> vmvos = new Callable<List<VmInstanceVO>>() {
                 @Override
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
-                    String sql = "select vm from VmInstanceVO vm, L3NetworkVO l3, VmNicVO nic where vm.type = :vmType and vm.uuid = nic.vmInstanceUuid and vm.state in (:vmStates)" +
-                            " and nic.l3NetworkUuid = l3.uuid and l3.uuid in (:uuids) group by vm.uuid";
+                    String sql = "select vm from VmInstanceVO vm, L3NetworkVO l3, VmNicVO nic" +
+                            " where vm.type = :vmType" +
+                            " and vm.uuid = nic.vmInstanceUuid" +
+                            " and vm.state in (:vmStates)" +
+                            " and nic.l3NetworkUuid = l3.uuid" +
+                            " and l3.uuid in (:uuids)" +
+                            " group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-                    q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Running, VmInstanceState.Destroyed));
+                    q.setParameter("vmStates", Arrays.asList(
+                            VmInstanceState.Stopped,
+                            VmInstanceState.Running,
+                            VmInstanceState.Destroyed));
                     q.setParameter("uuids", l3uuids);
                     return q.getResultList();
                 }
@@ -520,19 +548,27 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 ret = toVmDeletionStruct(vmvos);
             }
         } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> ipruuids = CollectionUtils.transformToList((List<IpRangeInventory>) action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
-                @Override
-                public String call(IpRangeInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> ipruuids = CollectionUtils.transformToList(
+                    (List<IpRangeInventory>) action.getParentIssuerContext(),
+                    new Function<String, IpRangeInventory>() {
+                        @Override
+                        public String call(IpRangeInventory arg) {
+                            return arg.getUuid();
+                        }
+                    });
 
             List<VmInstanceVO> vmvos = new Callable<List<VmInstanceVO>>() {
                 @Override
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
-                    String sql = "select vm from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip, IpRangeVO ipr where vm.type = :vmType and vm.uuid = nic.vmInstanceUuid and vm.state not in (:vmStates)" +
-                            " and nic.usedIpUuid = ip.uuid and ip.ipRangeUuid = ipr.uuid and ipr.uuid in (:uuids) group by vm.uuid";
+                    String sql = "select vm from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip, IpRangeVO ipr" +
+                            " where vm.type = :vmType" +
+                            " and vm.uuid = nic.vmInstanceUuid" +
+                            " and vm.state not in (:vmStates)" +
+                            " and nic.usedIpUuid = ip.uuid" +
+                            " and ip.ipRangeUuid = ipr.uuid" +
+                            " and ipr.uuid in (:uuids)" +
+                            " group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
                     q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Stopping));
@@ -545,19 +581,24 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 ret = toVmDeletionStruct(vmvos);
             }
         } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
-                @Override
-                public String call(AccountInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            final List<String> auuids = CollectionUtils.transformToList(
+                    (List<AccountInventory>) action.getParentIssuerContext(),
+                    new Function<String, AccountInventory>() {
+                        @Override
+                        public String call(AccountInventory arg) {
+                            return arg.getUuid();
+                        }
+                    });
 
             List<VmInstanceVO> vmvos = new Callable<List<VmInstanceVO>>() {
                 @Override
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
-                    String sql = "select d from VmInstanceVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
-                            " r.resourceType = :rtype and r.accountUuid in (:auuids) group by d.uuid";
+                    String sql = "select d from VmInstanceVO d, AccountResourceRefVO r" +
+                            " where d.uuid = r.resourceUuid" +
+                            " and r.resourceType = :rtype" +
+                            " and r.accountUuid in (:auuids)" +
+                            " group by d.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
                     q.setParameter("auuids", auuids);
