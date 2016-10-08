@@ -89,7 +89,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             return OP_DETACH_NIC;
         }
 
-        if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer()) && IpRangeVO.class.getSimpleName().equals(action.getRootIssuer())) {
+        if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer()) &&
+                IpRangeVO.class.getSimpleName().equals(action.getRootIssuer())) {
             return OP_STOP;
         }
 
@@ -127,9 +128,17 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Transactional(readOnly = true)
     private List<String> getVmUuidFromL2NetworkDetached(List<L2NetworkDetachStruct> structs) {
-        List<String> vmUuids = new ArrayList<String>();
+        List<String> vmUuids = new ArrayList<>();
         for (L2NetworkDetachStruct s : structs) {
-            String sql = "select vm.uuid from VmInstanceVO vm, L2NetworkVO l2, L3NetworkVO l3, VmNicVO nic where vm.type = :vmType and vm.clusterUuid = :clusterUuid and vm.state not in (:vmStates) and vm.uuid = nic.vmInstanceUuid and nic.l3NetworkUuid = l3.uuid and l3.l2NetworkUuid = l2.uuid and l2.uuid = :l2Uuid";
+            String sql = "select vm.uuid" +
+                    " from VmInstanceVO vm, L2NetworkVO l2, L3NetworkVO l3, VmNicVO nic" +
+                    " where vm.type = :vmType" +
+                    " and vm.clusterUuid = :clusterUuid" +
+                    " and vm.state not in (:vmStates)" +
+                    " and vm.uuid = nic.vmInstanceUuid" +
+                    " and nic.l3NetworkUuid = l3.uuid" +
+                    " and l3.l2NetworkUuid = l2.uuid" +
+                    " and l2.uuid = :l2Uuid";
             TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
             q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
             q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Migrating, VmInstanceState.Stopping));
@@ -165,7 +174,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 for (MessageReply r : replies) {
                     if (!r.isSuccess()) {
                         String vmUuid = vmUuids.get(replies.indexOf(r));
-                        logger.warn(String.format("failed to stop vm[uuid:%s] for l2Network detached, %s. However, detaching will go on", vmUuid, r.getError()));
+                        logger.warn(String.format("failed to stop vm[uuid:%s] for l2Network detached, %s." +
+                                " However, detaching will go on", vmUuid, r.getError()));
                     }
                 }
 
@@ -406,9 +416,14 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(HostVO.class.getSimpleName(), L3NetworkVO.class.getSimpleName(),
-                IpRangeVO.class.getSimpleName(), PrimaryStorageVO.class.getSimpleName(), L2NetworkVO.class.getSimpleName(),
-                InstanceOfferingVO.class.getSimpleName(), AccountVO.class.getSimpleName());
+        return Arrays.asList(
+                HostVO.class.getSimpleName(),
+                L3NetworkVO.class.getSimpleName(),
+                IpRangeVO.class.getSimpleName(),
+                PrimaryStorageVO.class.getSimpleName(),
+                L2NetworkVO.class.getSimpleName(),
+                InstanceOfferingVO.class.getSimpleName(),
+                AccountVO.class.getSimpleName());
     }
 
     @Override
@@ -417,7 +432,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     private List<VmDeletionStruct> toVmDeletionStruct(Collection<VmInstanceVO> vos) {
-        List<VmDeletionStruct> structs = new ArrayList<VmDeletionStruct>();
+        List<VmDeletionStruct> structs = new ArrayList<>();
         for (VmInstanceVO vo : vos) {
             VmDeletionStruct s = new VmDeletionStruct();
             s.setInventory(VmInstanceInventory.valueOf(vo));

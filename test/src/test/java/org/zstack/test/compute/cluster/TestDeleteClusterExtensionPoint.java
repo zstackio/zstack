@@ -14,6 +14,7 @@ import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.BeanConstructor;
 import org.zstack.test.DBUtil;
+
 public class TestDeleteClusterExtensionPoint {
     Api api;
     ComponentLoader loader;
@@ -25,13 +26,18 @@ public class TestDeleteClusterExtensionPoint {
         DBUtil.reDeployDB();
         BeanConstructor con = new BeanConstructor();
         /* This loads spring application context */
-        loader = con.addXml("PortalForUnitTest.xml").addXml("ClusterManager.xml").addXml("ZoneManager.xml").addXml("ClusterForUnitTest.xml").addXml("AccountManager.xml").build();
+        loader = con.addXml("PortalForUnitTest.xml").
+                addXml("ClusterManager.xml").
+                addXml("ZoneManager.xml").
+                addXml("ClusterForUnitTest.xml").
+                addXml("AccountManager.xml").
+                build();
         dbf = loader.getComponent(DatabaseFacade.class);
         ext = loader.getComponent(ClusterDeleteExtension.class);
         api = new Api();
         api.startServer();
     }
-    
+
     @Test
     public void test() throws ApiSenderException {
         try {
