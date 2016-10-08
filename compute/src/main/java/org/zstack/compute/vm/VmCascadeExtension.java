@@ -298,6 +298,11 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 msgs.add(msg);
             }
 
+            if (msgs.isEmpty()) {
+                completion.success();
+                return;
+            }
+
             bus.send(msgs, 20, new CloudBusListCallBack(completion) {
                 @Override
                 public void run(List<MessageReply> replies) {
