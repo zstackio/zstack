@@ -1884,7 +1884,7 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private String makeChannelSocketPath(String apvmuuid) {
-        return PathUtil.join(String.format("/var/lib/libvirt/qemu/%s"), apvmuuid);
+        return PathUtil.join(String.format("/var/lib/libvirt/qemu/%s", apvmuuid));
     }
 
     private void handle(final StartVmOnHypervisorMsg msg) {
