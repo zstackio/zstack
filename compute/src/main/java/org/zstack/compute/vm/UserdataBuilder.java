@@ -81,8 +81,13 @@ public class UserdataBuilder {
                 continue;
             }
 
-            sshKey = VmSystemTags.SSHKEY.getTokenByTag(sshKey, VmSystemTags.SSHKEY_TOKEN);
-            rootPassword = VmSystemTags.ROOT_PASSWORD.getTokenByTag(rootPassword, VmSystemTags.ROOT_PASSWORD_TOKEN);
+            if (sshKey != null) {
+                sshKey = VmSystemTags.SSHKEY.getTokenByTag(sshKey, VmSystemTags.SSHKEY_TOKEN);
+            }
+            if (rootPassword != null) {
+                rootPassword = VmSystemTags.ROOT_PASSWORD.getTokenByTag(rootPassword, VmSystemTags.ROOT_PASSWORD_TOKEN);
+            }
+
             ret.put(uuid, sshkeyRootPassword(sshKey, rootPassword));
         }
 
