@@ -30,22 +30,22 @@ public class InstanceOfferingInventory implements Serializable {
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private String state;
-    
+
     public InstanceOfferingInventory() {
     }
-    
+
     protected InstanceOfferingInventory(InstanceOfferingVO vo) {
-    	this.setAllocatorStrategy(vo.getAllocatorStrategy());
-    	this.setCpuNum(vo.getCpuNum());
-    	this.setCpuSpeed(vo.getCpuSpeed());
-    	this.setMemorySize(vo.getMemorySize());
-    	this.setUuid(vo.getUuid());
-    	this.setName(vo.getName());
-    	this.setDescription(vo.getDescription());
-    	this.setSortKey(vo.getSortKey());
-    	this.setCreateDate(vo.getCreateDate());
-    	this.setLastOpDate(vo.getLastOpDate());
-    	this.setType(vo.getType());
+        this.setAllocatorStrategy(vo.getAllocatorStrategy());
+        this.setCpuNum(vo.getCpuNum());
+        this.setCpuSpeed(vo.getCpuSpeed());
+        this.setMemorySize(vo.getMemorySize());
+        this.setUuid(vo.getUuid());
+        this.setName(vo.getName());
+        this.setDescription(vo.getDescription());
+        this.setSortKey(vo.getSortKey());
+        this.setCreateDate(vo.getCreateDate());
+        this.setLastOpDate(vo.getLastOpDate());
+        this.setType(vo.getType());
         this.setState(vo.getState().toString());
     }
 
@@ -69,71 +69,80 @@ public class InstanceOfferingInventory implements Serializable {
     }
 
     public static InstanceOfferingInventory valueOf(InstanceOfferingVO vo) {
-    	InstanceOfferingInventory inv = new InstanceOfferingInventory(vo);
-    	return inv;
+        InstanceOfferingInventory inv = new InstanceOfferingInventory(vo);
+        return inv;
     }
-    
+
     public static List<InstanceOfferingInventory> valueOf(Collection<InstanceOfferingVO> vos) {
-        List<InstanceOfferingInventory> invs = new ArrayList<InstanceOfferingInventory>(vos.size());
+        List<InstanceOfferingInventory> invs = new ArrayList<>(vos.size());
         for (InstanceOfferingVO vo : vos) {
             invs.add(InstanceOfferingInventory.valueOf(vo));
         }
         return invs;
     }
-    
-	public String getUuid() {
-    	return uuid;
-    }
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
-    }
-	public int getCpuNum() {
-    	return cpuNum;
-    }
-	public void setCpuNum(int cpuNum) {
-    	this.cpuNum = cpuNum;
-    }
-	public int getCpuSpeed() {
-    	return cpuSpeed;
-    }
-	public void setCpuSpeed(int cpuSpeed) {
-    	this.cpuSpeed = cpuSpeed;
-    }
-	public long getMemorySize() {
-    	return memorySize;
-    }
-	public void setMemorySize(long memorySize) {
-    	this.memorySize = memorySize;
-    }
-	public String getAllocatorStrategy() {
-    	return allocatorStrategy;
-    }
-	public void setAllocatorStrategy(String allocatorStrategy) {
-    	this.allocatorStrategy = allocatorStrategy;
+
+    public String getUuid() {
+        return uuid;
     }
 
-	public String getName() {
-    	return name;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
-	public void setName(String name) {
-    	this.name = name;
+    public int getCpuNum() {
+        return cpuNum;
     }
 
-	public String getDescription() {
-    	return description;
+    public void setCpuNum(int cpuNum) {
+        this.cpuNum = cpuNum;
     }
 
-	public void setDescription(String description) {
-    	this.description = description;
+    public int getCpuSpeed() {
+        return cpuSpeed;
     }
 
-	public int getSortKey() {
-    	return sortKey;
+    public void setCpuSpeed(int cpuSpeed) {
+        this.cpuSpeed = cpuSpeed;
     }
 
-	public void setSortKey(int sortKey) {
-    	this.sortKey = sortKey;
+    public long getMemorySize() {
+        return memorySize;
+    }
+
+    public void setMemorySize(long memorySize) {
+        this.memorySize = memorySize;
+    }
+
+    public String getAllocatorStrategy() {
+        return allocatorStrategy;
+    }
+
+    public void setAllocatorStrategy(String allocatorStrategy) {
+        this.allocatorStrategy = allocatorStrategy;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public int getSortKey() {
+        return sortKey;
+    }
+
+    public void setSortKey(int sortKey) {
+        this.sortKey = sortKey;
     }
 
     public Timestamp getCreateDate() {
@@ -153,12 +162,12 @@ public class InstanceOfferingInventory implements Serializable {
     }
 
     public String getType() {
-		return type;
-	}
+        return type;
+    }
 
-	public void setType(String type) {
-		this.type = type;
-	}
+    public void setType(String type) {
+        this.type = type;
+    }
 
     public String getState() {
         return state;
