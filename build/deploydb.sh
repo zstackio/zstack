@@ -14,6 +14,8 @@ DROP DATABASE IF EXISTS zstack_rest;
 CREATE DATABASE zstack_rest;
 grant all privileges on zstack.* to root@'%' identified by "$password";
 grant all privileges on zstack_rest.* to root@'%' identified by "$password";
+grant all privileges on zstack.* to root@'127.0.0.1' identified by "$password";
+grant all privileges on zstack_rest.* to root@'127.0.0.1' identified by "$password";
 EOF
 
 flyway="$base/../conf//tools/flyway-3.2.1/flyway"
