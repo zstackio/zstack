@@ -1,6 +1,8 @@
 package org.zstack.image;
 
+import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
@@ -28,6 +30,7 @@ import java.util.Map;
 /**
  * Created by miao on 16-10-9.
  */
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ImageQuotaUtil {
     private static final CLogger logger = Utils.getLogger(ImageQuotaUtil.class);
 

@@ -1,6 +1,8 @@
 package org.zstack.identity;
 
+import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.identity.IdentityErrors;
@@ -8,6 +10,7 @@ import org.zstack.header.identity.IdentityErrors;
 /**
  * Created by miao on 16-10-9.
  */
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class QuotaUtil {
     @Autowired
     private ErrorFacade errf;
