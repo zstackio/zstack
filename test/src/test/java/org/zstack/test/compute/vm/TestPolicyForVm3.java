@@ -73,7 +73,7 @@ public class TestPolicyForVm3 {
             Assert.assertEquals(Long.valueOf(gvo.getValue()), Long.valueOf(q.getValue()));
         }
 
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_NUM, 0);
+        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_NUM, 0);
 
         VmCreator vmCreator = new VmCreator(api);
         vmCreator.imageUuid = img.getUuid();
@@ -93,7 +93,7 @@ public class TestPolicyForVm3 {
         }
         Assert.assertTrue(success);
 
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_NUM, 1);
+        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_NUM, 1);
         VmInstanceInventory vm = vmCreator.create();
         api.destroyVmInstance(vm.getUuid());
 
@@ -102,7 +102,7 @@ public class TestPolicyForVm3 {
         api.destroyVmInstance(vm.getUuid());
 
         // Vm cpu number exceeds
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_CPU_NUM, 2);
+        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM, 2);
         success = false;
         try {
             vmCreator.instanceOfferingUuid = cpu6.getUuid();
@@ -114,12 +114,12 @@ public class TestPolicyForVm3 {
         }
         Assert.assertTrue(success);
 
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_CPU_NUM, 100);
+        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM, 100);
         vm = vmCreator.create();
         api.destroyVmInstance(vm.getUuid());
 
         // Vm cpu memory exceeds
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_MEMORY, SizeUnit.GIGABYTE.toByte(1));
+        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE, SizeUnit.GIGABYTE.toByte(1));
         InstanceOfferingInventory memory12G = deployer.instanceOfferings.get("12G");
         success = false;
         try {
@@ -132,7 +132,7 @@ public class TestPolicyForVm3 {
         }
         Assert.assertTrue(success);
 
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_MEMORY, SizeUnit.GIGABYTE.toByte(100));
+        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE, SizeUnit.GIGABYTE.toByte(100));
         DiskOfferingInventory disk50G = deployer.diskOfferings.get("disk50G");
         vmCreator.instanceOfferingUuid = ioinv.getUuid();
         vmCreator.addDisk(disk50G.getUuid());

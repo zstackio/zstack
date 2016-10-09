@@ -1,7 +1,6 @@
 package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
@@ -24,12 +23,10 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.AsyncLatch;
-import org.zstack.header.core.BypassWhenUnitTest;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -103,8 +100,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     @Autowired
     protected RESTFacade restf;
 
-    private Map<String, ImageFactory> imageFactories = Collections.synchronizedMap(new HashMap<String, ImageFactory>());
-    private static final Set<Class> allowedMessageAfterDeletion = new HashSet<Class>();
+    private Map<String, ImageFactory> imageFactories = Collections.synchronizedMap(new HashMap<>());
+    private static final Set<Class> allowedMessageAfterDeletion = new HashSet<>();
     private Future<Void> expungeTask;
 
     static {
@@ -1162,12 +1159,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     @Override
     public List<Quota> reportQuota() {
         Quota.QuotaOperator checker = new Quota.QuotaOperator() {
-
-            class ImageQuota {
-                long imageNum;
-                long imageSize;
-            }
-
             @Override
             public void checkQuota(APIMessage msg, Map<String, Quota.QuotaPair> pairs) {
                 SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
@@ -1199,7 +1190,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 List<Quota.QuotaUsage> usages = new ArrayList<>();
 
-                ImageQuota imageQuota = getUsed(accountUuid);
+                ImageQuotaUtil.ImageQuota imageQuota = new ImageQuotaUtil().getUsed(accountUuid);
 
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
                 usage.setName(ImageConstant.QUOTA_IMAGE_NUM);
@@ -1212,46 +1203,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 usages.add(usage);
 
                 return usages;
-            }
-
-            @Transactional(readOnly = true)
-            private ImageQuota getUsed(String accountUUid) {
-                ImageQuota quota = new ImageQuota();
-
-                quota.imageSize = getUsedImageSize(accountUUid);
-                quota.imageNum = getUsedImageNum(accountUUid);
-
-                return quota;
-            }
-
-            @Transactional(readOnly = true)
-            private long getUsedImageNum(String accountUuid) {
-                String sql = "select count(image) " +
-                        " from ImageVO image, AccountResourceRefVO ref " +
-                        " where image.uuid = ref.resourceUuid " +
-                        " and ref.accountUuid = :auuid " +
-                        " and ref.resourceType = :rtype ";
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", accountUuid);
-                q.setParameter("rtype", ImageVO.class.getSimpleName());
-                Long imageNum = q.getSingleResult();
-                imageNum = imageNum == null ? 0 : imageNum;
-                return imageNum;
-            }
-
-            @Transactional(readOnly = true)
-            private long getUsedImageSize(String accountUuid) {
-                String sql = "select sum(image.size) " +
-                        " from ImageVO image, AccountResourceRefVO ref " +
-                        " where image.uuid = ref.resourceUuid " +
-                        " and ref.accountUuid = :auuid " +
-                        " and ref.resourceType = :rtype ";
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", accountUuid);
-                q.setParameter("rtype", ImageVO.class.getSimpleName());
-                Long imageSize = q.getSingleResult();
-                imageSize = imageSize == null ? 0 : imageSize;
-                return imageSize;
             }
 
             @Transactional(readOnly = true)
@@ -1290,8 +1241,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
                     long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
 
-                    long imageNumUsed = getUsedImageNum(resourceTargetOwnerAccountUuid);
-                    long imageSizeUsed = getUsedImageSize(resourceTargetOwnerAccountUuid);
+                    long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
+                    long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(resourceTargetOwnerAccountUuid);
 
                     ImageVO image = dbf.getEntityManager().find(ImageVO.class, msg.getResourceUuid());
                     long imageSizeAsked = image.getSize();
@@ -1315,10 +1266,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
             @Transactional(readOnly = true)
             private void check(APIRecoverImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                String currentAccountUuid = msg.getSession().getAccountUuid();
                 long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
                 long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
-                long imageNumUsed = getUsedImageNum(msg.getSession().getAccountUuid());
-                long imageSizeUsed = getUsedImageSize(msg.getSession().getAccountUuid());
+                long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(currentAccountUuid);
+                long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(currentAccountUuid);
 
                 ImageVO image = dbf.getEntityManager().find(ImageVO.class, msg.getImageUuid());
                 long imageSizeAsked = image.getSize();
@@ -1326,79 +1278,33 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 if (imageNumUsed + 1 > imageNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
+                                    currentAccountUuid, ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
                     ));
                 }
 
                 if (imageSizeUsed + imageSizeAsked > imageSizeQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
-                    ));
-                }
-            }
-
-            @BypassWhenUnitTest
-            private void checkImageSizeQuotaUseHttpHead(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
-                long imageSizeUsed = getUsedImageSize(msg.getSession().getAccountUuid());
-
-                long imageSizeAsked;
-                String url = msg.getUrl();
-                url = url.trim();
-
-                if (url.startsWith("file:///")) {
-                    GetImageSizeOnBackupStorageMsg cmsg = new GetImageSizeOnBackupStorageMsg();
-                    cmsg.setBackupStorageUuid(msg.getBackupStorageUuids().get(0));
-                    cmsg.setImageUrl(url);
-                    cmsg.setImageUuid(msg.getResourceUuid());
-                    bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID,
-                            msg.getBackupStorageUuids().get(0));
-                    MessageReply reply = bus.call(cmsg);
-                    if (!reply.isSuccess()) {
-                        throw new OperationFailureException(reply.getError());
-                    }
-
-                    imageSizeAsked = ((GetImageSizeOnBackupStorageReply) reply).getSize();
-                } else if (url.startsWith("http") || url.startsWith("https")) {
-                    String len;
-                    try {
-                        HttpHeaders header = restf.getRESTTemplate().headForHeaders(url);
-                        len = header.getFirst("Content-Length");
-                    } catch (Exception e) {
-                        logger.warn(String.format("cannot get image.  The image url : %s. description: %s.name: %s",
-                                url, msg.getDescription(), msg.getName()));
-                        return;
-                    }
-
-                    imageSizeAsked = len == null ? 0 : Long.valueOf(len);
-                } else {
-                    // bypass the check
-                    imageSizeAsked = 0;
-                }
-
-                if ((imageSizeQuota == 0) || (imageSizeUsed + imageSizeAsked > imageSizeQuota)) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
+                                    currentAccountUuid, ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
                     ));
                 }
             }
 
             @Transactional(readOnly = true)
             private void check(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                String currentAccountUuid = msg.getSession().getAccountUuid();
                 long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
-                long imageNumUsed = getUsedImageNum(msg.getSession().getAccountUuid());
+                long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(currentAccountUuid);
 
 
                 if (imageNumUsed + 1 > imageNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
+                                    currentAccountUuid, ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
                     ));
                 }
 
-                checkImageSizeQuotaUseHttpHead(msg, pairs);
+                new ImageQuotaUtil().checkImageSizeQuotaUseHttpHead(msg, pairs);
             }
         };
 

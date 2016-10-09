@@ -4,12 +4,12 @@ import org.zstack.header.configuration.PythonClass;
 
 @PythonClass
 public interface VmInstanceConstant {
-    public static final String SERVICE_ID = "vmInstance";
-    public static final String ACTION_CATEGORY = "instance";
+    String SERVICE_ID = "vmInstance";
+    String ACTION_CATEGORY = "instance";
     @PythonClass
-    public static final String USER_VM_TYPE = "UserVm";
-    
-    public static enum Params {
+    String USER_VM_TYPE = "UserVm";
+
+    enum Params {
         VmInstanceSpec,
         AttachingVolumeInventory,
         DestPrimaryStorageInventoryForAttachingVolume,
@@ -17,8 +17,8 @@ public interface VmInstanceConstant {
         AbnormalLifeCycleStruct,
         DeletionPolicy,
     }
-    
-    public static enum VmOperation {
+
+    enum VmOperation {
         NewCreate,
         Start,
         Stop,
@@ -33,9 +33,10 @@ public interface VmInstanceConstant {
         Expunge
     }
 
-    String QUOTA_VM_NUM = "vm.num";
-    String QUOTA_VM_MEMORY = "vm.memorySize";
-    String QUOTA_CPU_NUM = "vm.cpuNum";
+    String QUOTA_VM_TOTAL_NUM = "vm.totalNum";
+    String QUOTA_VM_RUNNING_NUM = "vm.num";
+    String QUOTA_VM_RUNNING_MEMORY_SIZE = "vm.memorySize";
+    String QUOTA_VM_RUNNING_CPU_NUM = "vm.cpuNum";
 
     enum Capability {
         LiveMigration,

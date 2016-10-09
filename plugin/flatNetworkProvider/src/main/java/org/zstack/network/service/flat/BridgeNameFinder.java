@@ -43,15 +43,20 @@ public class BridgeNameFinder {
 
     @Transactional(readOnly = true)
     public Map<String, String> findByL3Uuids(Collection<String> l3Uuids) {
-        String sql = "select t.tag, l3.uuid from SystemTagVO t, L3NetworkVO l3 where t.resourceType = :ttype and t.tag like :tag" +
-                " and t.resourceUuid = l3.l2NetworkUuid and l3.uuid in (:l3Uuids) group by l3.uuid";
+        String sql = "select t.tag, l3.uuid" +
+                " from SystemTagVO t, L3NetworkVO l3" +
+                " where t.resourceType = :ttype" +
+                " and t.tag like :tag" +
+                " and t.resourceUuid = l3.l2NetworkUuid" +
+                " and l3.uuid in (:l3Uuids)" +
+                " group by l3.uuid";
         TypedQuery<Tuple> tq = dbf.getEntityManager().createQuery(sql, Tuple.class);
         tq.setParameter("tag", TagUtils.tagPatternToSqlPattern(KVMSystemTags.L2_BRIDGE_NAME.getTagFormat()));
         tq.setParameter("l3Uuids", l3Uuids);
         tq.setParameter("ttype", L2NetworkVO.class.getSimpleName());
         List<Tuple> ts = tq.getResultList();
 
-        Map<String, String> bridgeNames = new HashMap<String, String>();
+        Map<String, String> bridgeNames = new HashMap<>();
         for (Tuple t : ts) {
             String brToken = t.get(0, String.class);
             String l3Uuid = t.get(1, String.class);
