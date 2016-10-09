@@ -20,6 +20,7 @@ public class FusionstorBackupStorageMonInventory {
     private String sshUsername;
     private String sshPassword;
     private Integer sshPort;
+    private String status;
 
     public static FusionstorBackupStorageMonInventory valueOf(FusionstorBackupStorageMonVO vo) {
         FusionstorBackupStorageMonInventory inv = new FusionstorBackupStorageMonInventory();
@@ -31,6 +32,7 @@ public class FusionstorBackupStorageMonInventory {
         inv.setSshPort(vo.getSshPort());
         inv.setSshPassword(vo.getSshPassword());
         inv.setSshUsername(vo.getSshUsername());
+        inv.setStatus(vo.getStatus().toString());
         return inv;
     }
 
@@ -103,5 +105,13 @@ public class FusionstorBackupStorageMonInventory {
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+
+    public String getStatus() {
+            return status;
+    }
+
+    public void setStatus(String status) {
+            this.status = status;
     }
 }
