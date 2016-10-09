@@ -74,7 +74,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     @Autowired
     private ErrorFacade errf;
 
-    private Map<String, EipBackend> backends = new HashMap<String, EipBackend>();
+    private Map<String, EipBackend> backends = new HashMap<>();
     private List<String> createEipFlowNames;
     private List<String> removeEipFlowNames;
     private List<String> attachEipFlowNames;
@@ -143,21 +143,35 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     private List<VmNicInventory> getAttachableVmNicForEip(String eipUuid, String vipUuid) {
         String zoneUuid = null;
         if (eipUuid != null) {
-            String sql = "select l3.zoneUuid, vip.uuid from L3NetworkVO l3, VipVO vip, EipVO eip where l3.uuid = vip.l3NetworkUuid and eip.vipUuid = vip.uuid and eip.uuid = :eipUuid";
+            String sql = "select l3.zoneUuid, vip.uuid" +
+                    " from L3NetworkVO l3, VipVO vip, EipVO eip" +
+                    " where l3.uuid = vip.l3NetworkUuid" +
+                    " and eip.vipUuid = vip.uuid" +
+                    " and eip.uuid = :eipUuid";
             TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
             q.setParameter("eipUuid", eipUuid);
             Tuple t = q.getSingleResult();
             zoneUuid = t.get(0, String.class);
             vipUuid = t.get(1, String.class);
         } else {
-            String sql = "select l3.zoneUuid from L3NetworkVO l3, VipVO vip where l3.uuid = vip.l3NetworkUuid and vip.uuid = :vipUuid";
+            String sql = "select l3.zoneUuid" +
+                    " from L3NetworkVO l3, VipVO vip" +
+                    " where l3.uuid = vip.l3NetworkUuid" +
+                    " and vip.uuid = :vipUuid";
             TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
             q.setParameter("vipUuid", vipUuid);
             zoneUuid = q.getSingleResult();
         }
 
 
-        String sql = "select l3.uuid from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref where l3.system = :system and l3.uuid != vip.l3NetworkUuid and l3.uuid = ref.l3NetworkUuid and ref.networkServiceType = :nsType and l3.zoneUuid = :zoneUuid and vip.uuid = :vipUuid";
+        String sql = "select l3.uuid" +
+                " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref" +
+                " where l3.system = :system" +
+                " and l3.uuid != vip.l3NetworkUuid" +
+                " and l3.uuid = ref.l3NetworkUuid" +
+                " and ref.networkServiceType = :nsType" +
+                " and l3.zoneUuid = :zoneUuid" +
+                " and vip.uuid = :vipUuid";
         TypedQuery<String> l3q = dbf.getEntityManager().createQuery(sql, String.class);
         l3q.setParameter("vipUuid", vipUuid);
         l3q.setParameter("system", false);
@@ -168,7 +182,12 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             return new ArrayList<VmNicInventory>();
         }
 
-        sql = "select nic from VmNicVO nic, VmInstanceVO vm where nic.l3NetworkUuid in (:l3Uuids) and nic.vmInstanceUuid = vm.uuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (select eip.vmNicUuid from EipVO eip where eip.vmNicUuid is not null)";
+        sql = "select nic" +
+                " from VmNicVO nic, VmInstanceVO vm" +
+                " where nic.l3NetworkUuid in (:l3Uuids)" +
+                " and nic.vmInstanceUuid = vm.uuid" +
+                " and vm.type = :vmType and vm.state in (:vmStates)" +
+                " and nic.uuid not in (select eip.vmNicUuid from EipVO eip where eip.vmNicUuid is not null)";
         TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
         nq.setParameter("l3Uuids", l3Uuids);
         nq.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
@@ -203,7 +222,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         VipVO vipvo = dbf.findByUuid(vo.getVipUuid(), VipVO.class);
         VipInventory vipInventory = VipInventory.valueOf(vipvo);
 
-        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(nicInventory.getL3NetworkUuid(), EipConstant.EIP_TYPE);
+        NetworkServiceProviderType providerType = nwServiceMgr.
+                getTypeOfNetworkServiceProviderForService(nicInventory.getL3NetworkUuid(), EipConstant.EIP_TYPE);
         EipStruct struct = new EipStruct();
         struct.setVip(vipInventory);
         struct.setNic(nicInventory);
@@ -291,7 +311,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         struct.setVip(vipInventory);
         struct.setEip(EipInventory.valueOf(vo));
         struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
-        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(nicInventory.getL3NetworkUuid(), EipConstant.EIP_TYPE);
+        NetworkServiceProviderType providerType = nwServiceMgr.
+                getTypeOfNetworkServiceProviderForService(nicInventory.getL3NetworkUuid(), EipConstant.EIP_TYPE);
 
         FlowChain chain = removeEipFlowBuilder.build();
         chain.setName(String.format("delete-eip-vmNic-%s-vip-%s", nicvo.getUuid(), vipvo.getUuid()));
@@ -609,7 +630,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     @Override
     public List<ExpandedQueryStruct> getExpandedQueryStructs() {
-        List<ExpandedQueryStruct> structs = new ArrayList<ExpandedQueryStruct>();
+        List<ExpandedQueryStruct> structs = new ArrayList<>();
 
         ExpandedQueryStruct struct = new ExpandedQueryStruct();
         struct.setInventoryClassToExpand(VmNicInventory.class);
@@ -793,7 +814,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             @Override
             @Transactional(readOnly = true)
             public void run() {
-                String sql = "select count(*) from EipVO eip, VipVO vip where eip.vipUuid = vip.uuid and vip.l3NetworkUuid = :l3Uuid" +
+                String sql = "select count(*)" +
+                        " from EipVO eip, VipVO vip" +
+                        " where eip.vipUuid = vip.uuid" +
+                        " and vip.l3NetworkUuid = :l3Uuid" +
                         " and eip.vmNicUuid in (:nicUuids)";
                 TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
                 q.setParameter("l3Uuid", l3.getUuid());
@@ -801,8 +825,9 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 Long count = q.getSingleResult();
                 if (count > 0) {
                     throw new OperationFailureException(errf.stringToOperationError(
-                            String.format("unable to attach the L3 network[uuid:%s, name:%s] to the vm[uuid:%s, name:%s], because the L3" +
-                                    " network is providing EIP to one of the vm's nic", l3.getUuid(), l3.getName(), vm.getUuid(), vm.getName())
+                            String.format("unable to attach the L3 network[uuid:%s, name:%s] to the vm[uuid:%s, name:%s]," +
+                                            " because the L3 network is providing EIP to one of the vm's nic",
+                                    l3.getUuid(), l3.getName(), vm.getUuid(), vm.getName())
                     ));
                 }
             }

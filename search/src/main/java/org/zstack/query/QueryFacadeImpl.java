@@ -31,7 +31,7 @@ import java.util.*;
 
 public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor {
     private static CLogger logger = Utils.getLogger(QueryFacadeImpl.class);
-    private Map<String, QueryBuilderFactory> builerFactories = new HashMap<String, QueryBuilderFactory>();
+    private Map<String, QueryBuilderFactory> builerFactories = new HashMap<>();
     private String queryBuilderType = MysqlQueryBuilderFactory.type.toString();
 
     @Autowired
@@ -91,10 +91,11 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
 
         List<Class> inventoryClasses = BeanUtils.scanClass("org.zstack", Inventory.class);
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         for (Class clz : inventoryClasses) {
             boolean error = false;
-            StringBuilder sb = new StringBuilder(String.format("inventory class[%s] contains below primitive fields:", clz.getName()));
+            StringBuilder sb = new StringBuilder(String.format("inventory class[%s] contains below primitive fields:",
+                    clz.getName()));
             for (Field f : FieldUtils.getAllFields(clz)) {
                 if (f.isAnnotationPresent(APINoSee.class)) {
                     continue;
@@ -112,7 +113,9 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
 
         if (!errors.isEmpty()) {
-            throw new CloudRuntimeException(String.format("detected some inventory class using primitive type. Please change those primitive type field to corresponding box type:\n %s", StringUtils.join(errors, "\n\n")));
+            throw new CloudRuntimeException(String.format("detected some inventory class using primitive type." +
+                    " Please change those primitive type field to corresponding box type:\n %s",
+                    StringUtils.join(errors, "\n\n")));
         }
     }
 
@@ -162,8 +165,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         bus.publish(evt);
     }
 
-    private Map<Class, Method> replySetter = new HashMap<Class, Method>();
-    private Map<Class, AutoQuery> autoQueryMap = new HashMap<Class, AutoQuery>();
+    private Map<Class, Method> replySetter = new HashMap<>();
+    private Map<Class, AutoQuery> autoQueryMap = new HashMap<>();
 
     private void handle(APIQueryMessage msg) {
         AutoQuery at = autoQueryMap.get(msg.getClass());
@@ -228,7 +231,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
     @Override
     public List<Class> getMessageClassToIntercept() {
-        List<Class> ret = new ArrayList<Class>();
+        List<Class> ret = new ArrayList<>();
         ret.add(APIQueryMessage.class);
         return ret;
     }
@@ -249,7 +252,9 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             }
 
             if (!QueryOp.NOT_NULL.equals(cond.getOp()) && !QueryOp.IS_NULL.equals(cond.getOp()) && cond.getValue() == null) {
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(String.format("'value' of query condition %s cannot be null", JSONObjectUtil.toJsonString(cond))));
+                throw new ApiMessageInterceptionException(
+                        errf.stringToInvalidArgumentError(String.format("'value' of query condition %s cannot be null",
+                                JSONObjectUtil.toJsonString(cond))));
             }
         }
 

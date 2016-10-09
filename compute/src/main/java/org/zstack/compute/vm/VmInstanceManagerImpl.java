@@ -96,8 +96,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint, GlobalApiMessageInterceptor, PrimaryStorageDeleteExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
-    private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(
-            new HashMap<String, VmInstanceFactory>());
+    private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<>());
     private List<String> createVmWorkFlowElements;
     private List<String> stopVmWorkFlowElements;
     private List<String> rebootVmWorkFlowElements;
@@ -220,8 +219,10 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private void handle(APIGetCandidateVmForAttachingIsoMsg msg) {
         APIGetCandidateVmForAttachingIsoReply reply = new APIGetCandidateVmForAttachingIsoReply();
 
-        String sql = "select bs from BackupStorageVO bs, ImageBackupStorageRefVO ref where" +
-                " ref.imageUuid = :isoUuid and bs.uuid = ref.backupStorageUuid";
+        String sql = "select bs" +
+                " from BackupStorageVO bs, ImageBackupStorageRefVO ref" +
+                " where ref.imageUuid = :isoUuid" +
+                " and bs.uuid = ref.backupStorageUuid";
         TypedQuery<BackupStorageVO> q = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
         q.setParameter("isoUuid", msg.getIsoUuid());
         List<BackupStorageVO> bss = q.getResultList();
@@ -245,8 +246,12 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
         List<VmInstanceVO> vms = new ArrayList<>();
         if (!psUuids.isEmpty()) {
-            sql = "select vm from VmInstanceVO vm, VolumeVO vol where vol.type = :volType and vol.vmInstanceUuid = vm.uuid" +
-                    " and vm.state in (:vmStates) and vol.primaryStorageUuid in (:psUuids)";
+            sql = "select vm" +
+                    " from VmInstanceVO vm, VolumeVO vol" +
+                    " where vol.type = :volType" +
+                    " and vol.vmInstanceUuid = vm.uuid" +
+                    " and vm.state in (:vmStates)" +
+                    " and vol.primaryStorageUuid in (:psUuids)";
             TypedQuery<VmInstanceVO> vmq = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
             vmq.setParameter("volType", VolumeType.Root);
             vmq.setParameter("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped));
@@ -255,8 +260,13 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         }
 
         if (!psTypes.isEmpty()) {
-            sql = "select vm from VmInstanceVO vm, VolumeVO vol, PrimaryStorageVO ps where vol.type = :volType and vol.vmInstanceUuid = vm.uuid" +
-                    " and vm.state in (:vmStates) and vol.primaryStorageUuid = ps.uuid and ps.type in (:psTypes)";
+            sql = "select vm" +
+                    " from VmInstanceVO vm, VolumeVO vol, PrimaryStorageVO ps" +
+                    " where vol.type = :volType" +
+                    " and vol.vmInstanceUuid = vm.uuid" +
+                    " and vm.state in (:vmStates)" +
+                    " and vol.primaryStorageUuid = ps.uuid" +
+                    " and ps.type in (:psTypes)";
             TypedQuery<VmInstanceVO> vmq = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
             vmq.setParameter("volType", VolumeType.Root);
             vmq.setParameter("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped));
@@ -293,9 +303,13 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
         List<List<BackupStorageVO>> bss = new ArrayList<>();
         for (String l3uuid : msg.getL3NetworkUuids()) {
-            String sql = "select ps from PrimaryStorageVO ps, L2NetworkClusterRefVO l2ref, L3NetworkVO l3, PrimaryStorageClusterRefVO psref" +
-                    " where ps.uuid = psref.primaryStorageUuid and psref.clusterUuid = l2ref.clusterUuid" +
-                    " and l2ref.l2NetworkUuid = l3.l2NetworkUuid and l3.uuid = :l3uuid";
+            String sql = "select ps" +
+                    " from PrimaryStorageVO ps, L2NetworkClusterRefVO l2ref," +
+                    " L3NetworkVO l3, PrimaryStorageClusterRefVO psref" +
+                    " where ps.uuid = psref.primaryStorageUuid" +
+                    " and psref.clusterUuid = l2ref.clusterUuid" +
+                    " and l2ref.l2NetworkUuid = l3.l2NetworkUuid" +
+                    " and l3.uuid = :l3uuid";
             TypedQuery<PrimaryStorageVO> psq = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             psq.setParameter("l3uuid", l3uuid);
             List<PrimaryStorageVO> pss = psq.getResultList();
@@ -342,9 +356,14 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         }
 
         List<String> bsUuids = selectedBss.stream().map(BackupStorageVO::getUuid).collect(Collectors.toList());
-        String sql = "select img from ImageVO img, ImageBackupStorageRefVO iref, BackupStorageZoneRefVO zref, BackupStorageVO bs where" +
-                " img.uuid = iref.imageUuid and iref.backupStorageUuid = zref.backupStorageUuid" +
-                " and bs.uuid = zref.backupStorageUuid and bs.uuid in (:uuids) and zref.zoneUuid = :zoneUuid group by img.uuid";
+        String sql = "select img" +
+                " from ImageVO img, ImageBackupStorageRefVO iref, BackupStorageZoneRefVO zref, BackupStorageVO bs" +
+                " where img.uuid = iref.imageUuid" +
+                " and iref.backupStorageUuid = zref.backupStorageUuid" +
+                " and bs.uuid = zref.backupStorageUuid" +
+                " and bs.uuid in (:uuids)" +
+                " and zref.zoneUuid = :zoneUuid" +
+                " group by img.uuid";
         TypedQuery<ImageVO> iq = dbf.getEntityManager().createQuery(sql, ImageVO.class);
         iq.setParameter("uuids", bsUuids);
         iq.setParameter("zoneUuid", msg.getZoneUuid());
@@ -357,8 +376,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private void getInterdependentL3NetworksByImageUuid(APIGetInterdependentL3NetworksImagesMsg msg) {
         APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
 
-        String sql = "select bs from BackupStorageVO bs, ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zref" +
-                " where bs.uuid = ref.backupStorageUuid and ref.imageUuid = :imgUuid and ref.backupStorageUuid = zref.backupStorageUuid" +
+        String sql = "select bs" +
+                " from BackupStorageVO bs, ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zref" +
+                " where bs.uuid = ref.backupStorageUuid" +
+                " and ref.imageUuid = :imgUuid" +
+                " and ref.backupStorageUuid = zref.backupStorageUuid" +
                 " and zref.zoneUuid = :zoneUuid";
         TypedQuery<BackupStorageVO> bsq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
         bsq.setParameter("imgUuid", msg.getImageUuid());
@@ -378,27 +400,39 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             if (relatedPrimaryStorageUuids == null) {
                 // the backup storage has no strongly-bound primary storage
                 List<String> psTypes = hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics(bs.getType());
-                sql = "select l3 from L3NetworkVO l3, L2NetworkClusterRefVO l2ref, PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
-                        " where l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid = psref.clusterUuid" +
-                        " and psref.primaryStorageUuid = ps.uuid and ps.type in (:psTypes) and ps.zoneUuid = l3.zoneUuid" +
-                        " and l3.zoneUuid = :zoneUuid group by l3.uuid";
+                sql = "select l3" +
+                        " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
+                        " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                        " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
+                        " and l2ref.clusterUuid = psref.clusterUuid" +
+                        " and psref.primaryStorageUuid = ps.uuid" +
+                        " and ps.type in (:psTypes)" +
+                        " and ps.zoneUuid = l3.zoneUuid" +
+                        " and l3.zoneUuid = :zoneUuid" +
+                        " group by l3.uuid";
                 TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
                 l3q.setParameter("psTypes", psTypes);
                 l3q.setParameter("zoneUuid", msg.getZoneUuid());
                 l3s.addAll(l3q.getResultList());
             } else if (!relatedPrimaryStorageUuids.isEmpty()) {
                 // the backup storage has strongly-bound primary storage, e.g. ceph, fusionstor
-                sql = "select l3 from L3NetworkVO l3, L2NetworkClusterRefVO l2ref, PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
-                        " where l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid = psref.clusterUuid" +
-                        " and psref.primaryStorageUuid = ps.uuid and ps.uuid in (:psUuids) and ps.zoneUuid = l3.zoneUuid" +
-                        " and l3.zoneUuid = :zoneUuid group by l3.uuid";
+                sql = "select l3" +
+                        " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
+                        " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                        " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
+                        " and l2ref.clusterUuid = psref.clusterUuid" +
+                        " and psref.primaryStorageUuid = ps.uuid" +
+                        " and ps.uuid in (:psUuids)" +
+                        " and ps.zoneUuid = l3.zoneUuid" +
+                        " and l3.zoneUuid = :zoneUuid" +
+                        " group by l3.uuid";
                 TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
                 l3q.setParameter("psUuids", relatedPrimaryStorageUuids);
                 l3q.setParameter("zoneUuid", msg.getZoneUuid());
                 l3s.addAll(l3q.getResultList());
             } else {
-                logger.warn(String.format("the backup storage[uuid:%s, type: %s] needs a strongly-bound primary storage, but" +
-                        " seems the primary storage is not added", bs.getUuid(), bs.getType()));
+                logger.warn(String.format("the backup storage[uuid:%s, type: %s] needs a strongly-bound primary storage," +
+                        " but seems the primary storage is not added", bs.getUuid(), bs.getType()));
             }
         }
 
@@ -455,7 +489,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         } else {
             if (msg.getZoneUuid() == null) {
                 throw new OperationFailureException(errf.stringToInvalidArgumentError(
-                        String.format("zoneUuid must be set because the image[name:%s, uuid:%s] is on multiple backup storage", image.getName(), image.getUuid())
+                        String.format("zoneUuid must be set because the image[name:%s, uuid:%s] is on multiple backup storage",
+                                image.getName(), image.getUuid())
                 ));
             }
 
@@ -488,10 +523,12 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     if (!re.getHosts().isEmpty()) {
                         areply.setHosts(re.getHosts());
 
-                        List<String> clusterUuids = re.getHosts().stream().map(HostInventory::getClusterUuid).collect(Collectors.toList());
+                        List<String> clusterUuids = re.getHosts().stream().
+                                map(HostInventory::getClusterUuid).collect(Collectors.toList());
                         areply.setClusters(ClusterInventory.valueOf(dbf.listByPrimaryKeys(clusterUuids, ClusterVO.class)));
 
-                        List<String> zoneUuids = re.getHosts().stream().map(HostInventory::getZoneUuid).collect(Collectors.toList());
+                        List<String> zoneUuids = re.getHosts().stream().
+                                map(HostInventory::getZoneUuid).collect(Collectors.toList());
                         areply.setZones(ZoneInventory.valueOf(dbf.listByPrimaryKeys(zoneUuids, ZoneVO.class)));
                     } else {
                         areply.setHosts(new ArrayList<>());
@@ -854,14 +891,16 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
                 if (!dbf.isExist(l3Uuid, L3NetworkVO.class)) {
                     throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("L3 network[uuid:%s] not found. Please correct your system tag[%s] of static IP", l3Uuid, sysTag)
+                            String.format("L3 network[uuid:%s] not found. Please correct your system tag[%s] of static IP",
+                                    l3Uuid, sysTag)
                     ));
                 }
 
                 String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
                 if (!NetworkUtils.isIpv4Address(ip)) {
                     throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("%s is not a valid IPv4 address. Please correct your system tag[%s] of static IP", ip, sysTag)
+                            String.format("%s is not a valid IPv4 address. Please correct your system tag[%s] of static IP",
+                                    ip, sysTag)
                     ));
                 }
 
@@ -884,7 +923,12 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
             @Transactional(readOnly = true)
             private void validateHostNameOnDefaultL3Network(String tag, String hostname, String l3Uuid) {
-                String sql = "select t from SystemTagVO t, VmInstanceVO vm, VmNicVO nic where t.resourceUuid = vm.uuid and vm.uuid = nic.vmInstanceUuid and nic.l3NetworkUuid = :l3Uuid and t.tag = :sysTag";
+                String sql = "select t" +
+                        " from SystemTagVO t, VmInstanceVO vm, VmNicVO nic" +
+                        " where t.resourceUuid = vm.uuid" +
+                        " and vm.uuid = nic.vmInstanceUuid" +
+                        " and nic.l3NetworkUuid = :l3Uuid" +
+                        " and t.tag = :sysTag";
                 TypedQuery<SystemTagVO> q = dbf.getEntityManager().createQuery(sql, SystemTagVO.class);
                 q.setParameter("l3Uuid", l3Uuid);
                 q.setParameter("sysTag", tag);
@@ -893,7 +937,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 if (!vos.isEmpty()) {
                     SystemTagVO sameTag = vos.get(0);
                     throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                            String.format("conflict hostname in system tag[%s]; there has been a VM[uuid:%s] having hostname[%s] on L3 network[uuid:%s]",
+                            String.format("conflict hostname in system tag[%s];" +
+                                    " there has been a VM[uuid:%s] having hostname[%s] on L3 network[uuid:%s]",
                                     tag, sameTag.getResourceUuid(), hostname, l3Uuid)
                     ));
                 }
@@ -1689,8 +1734,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 String hostUuid = t.get(1, String.class);
                 if (hostUuid == null) {
                     //TODO
-                    logger.warn(String.format("the vm[uuid:%s] is in Unknown state, but its hostUuid is null, we cannot check its" +
-                            " real state", vmUuid));
+                    logger.warn(String.format("the vm[uuid:%s] is in Unknown state, but its hostUuid is null," +
+                            " we cannot check its real state", vmUuid));
                     continue;
                 }
 
@@ -1823,9 +1868,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                         for (MessageReply r : replies) {
                             ExpungeVmMsg msg = msgs.get(replies.indexOf(r));
                             if (!r.isSuccess()) {
-                                logger.warn(String.format("failed to expunge the vm[uuid:%s], %s", msg.getVmInstanceUuid(), r.getError()));
+                                logger.warn(String.format("failed to expunge the vm[uuid:%s], %s",
+                                        msg.getVmInstanceUuid(), r.getError()));
                             } else {
-                                logger.debug(String.format("successfully expunged the vm[uuid:%s]", msg.getVmInstanceUuid()));
+                                logger.debug(String.format("successfully expunged the vm[uuid:%s]",
+                                        msg.getVmInstanceUuid()));
                             }
                         }
                     }
@@ -1946,8 +1993,12 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     }
 
     public void afterDeletePrimaryStorage(PrimaryStorageInventory inv) {
-        String sql = "select vm.name,vm.uuid from VmInstanceVO vm, VolumeVO vol where vm.uuid = vol.vmInstanceUuid and " +
-                "vm.state='Destroyed' and vol.type = 'Root' and vol.primaryStorageUuid = :primaryUuid";
+        String sql = "select vm.name,vm.uuid" +
+                " from VmInstanceVO vm, VolumeVO vol" +
+                " where vm.uuid = vol.vmInstanceUuid" +
+                " and vm.state = 'Destroyed'" +
+                " and vol.type = 'Root'" +
+                " and vol.primaryStorageUuid = :primaryUuid";
 
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("primaryUuid", inv.getUuid());
