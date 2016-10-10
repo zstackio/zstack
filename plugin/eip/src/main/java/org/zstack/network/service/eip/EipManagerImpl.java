@@ -36,6 +36,7 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
@@ -724,19 +725,29 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
             @Transactional(readOnly = true)
             private void check(APICreateEipMsg msg, Map<String, QuotaPair> pairs) {
-                long eipNum = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
-                long usedEipNum = getUsedEipNum(msg.getSession().getAccountUuid());
+                String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
 
-                if (usedEipNum + 1 > eipNum) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), EipConstant.QUOTA_EIP_NUM, eipNum)
-                    ));
-                }
+                long eipNumQuota = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
+                long usedEipNum = getUsedEipNum(msg.getSession().getAccountUuid());
+                long askedEipNum = 1;
+
+                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                quotaCompareInfo.quotaName = EipConstant.QUOTA_EIP_NUM;
+                quotaCompareInfo.quotaValue = eipNumQuota;
+                quotaCompareInfo.currentUsed = usedEipNum;
+                quotaCompareInfo.request = askedEipNum;
+                new QuotaUtil().CheckQuota(quotaCompareInfo);
             }
 
             @Transactional(readOnly = true)
             private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
+
                 SimpleQuery<AccountVO> q1 = dbf.createQuery(AccountVO.class);
                 q1.select(AccountVO_.type);
                 q1.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
@@ -752,34 +763,21 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
                 AccountResourceRefVO accResRefVO = q.find();
 
-                String resourceOriginalOwnerAccountUuid = accResRefVO.getOwnerAccountUuid();
-                String currentAccountUuid = msg.getSession().getAccountUuid();
-                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
-                if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_INVALID_OP,
-                            String.format("Invalid ChangeResourceOwner operation." +
-                                            "Original owner is the same as target owner." +
-                                            "Current account is [uuid: %s]." +
-                                            "The resource target owner account[uuid: %s]." +
-                                            "The resource original owner account[uuid:%s].",
-                                    currentAccountUuid, resourceTargetOwnerAccountUuid, resourceOriginalOwnerAccountUuid)
-                    ));
-                }
 
                 if (accResRefVO.getResourceType().equals(VmInstanceVO.class.getSimpleName())) {
                     long eipNumQuota = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
                     long usedEipNum = getUsedEipNum(resourceTargetOwnerAccountUuid);
                     long askedEipNum = getVmEipNum(msg.getResourceUuid());
-                    if (usedEipNum + askedEipNum > eipNumQuota) {
-                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                                String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                                "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
-                                                "Current used:%s, Request:%s. ",
-                                        currentAccountUuid, resourceTargetOwnerAccountUuid,
-                                        EipConstant.QUOTA_EIP_NUM, eipNumQuota,
-                                        usedEipNum, askedEipNum)
-                        ));
-                    }
+
+                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = EipConstant.QUOTA_EIP_NUM;
+                    quotaCompareInfo.quotaValue = eipNumQuota;
+                    quotaCompareInfo.currentUsed = usedEipNum;
+                    quotaCompareInfo.request = askedEipNum;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
                 }
             }
         };
@@ -799,12 +797,13 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     @Override
     public void vmPreAttachL3Network(final VmInstanceInventory vm, final L3NetworkInventory l3) {
-        final List<String> nicUuids = CollectionUtils.transformToList(vm.getVmNics(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                return arg.getUuid();
-            }
-        });
+        final List<String> nicUuids = CollectionUtils.transformToList(vm.getVmNics(),
+                new Function<String, VmNicInventory>() {
+                    @Override
+                    public String call(VmNicInventory arg) {
+                        return arg.getUuid();
+                    }
+                });
 
         if (nicUuids.isEmpty()) {
             return;

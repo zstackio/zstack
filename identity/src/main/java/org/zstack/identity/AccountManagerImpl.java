@@ -1463,6 +1463,24 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void checkQuotaForChangeResourceOwner(APIChangeResourceOwnerMsg msg) {
+        String currentAccountUuid = msg.getSession().getAccountUuid();
+        String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
+        // check change resource owner to self
+        SimpleQuery<AccountResourceRefVO> queryAccResRefVO = dbf.createQuery(AccountResourceRefVO.class);
+        queryAccResRefVO.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
+        AccountResourceRefVO accResRefVO = queryAccResRefVO.find();
+        String resourceOriginalOwnerAccountUuid = accResRefVO.getOwnerAccountUuid();
+        if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_INVALID_OP,
+                    String.format("Invalid ChangeResourceOwner operation." +
+                                    "Original owner is the same as target owner." +
+                                    "Current account is [uuid: %s]." +
+                                    "The resource target owner account[uuid: %s]." +
+                                    "The resource original owner account[uuid:%s].",
+                            currentAccountUuid, resourceTargetOwnerAccountUuid, resourceOriginalOwnerAccountUuid)
+            ));
+        }
+        // check quota
         for (Quota quota : messageQuotaMap.get(APIChangeResourceOwnerMsg.class)) {
             // make quota pairs
             List<String> names = new ArrayList<>();

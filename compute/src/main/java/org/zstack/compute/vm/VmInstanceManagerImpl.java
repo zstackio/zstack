@@ -1207,7 +1207,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
             private void checkStartVmInstance(String currentAccountUuid,
                                               String vmInstanceUuid,
                                               Map<String, Quota.QuotaPair> pairs) {
-                String resourceTargetOwnerAccountUuid = new VmQuotaUtil().getResourceOwnerAccountUuid(vmInstanceUuid);
+                String resourceTargetOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(vmInstanceUuid);
                 checkVmInstanceQuota(currentAccountUuid, resourceTargetOwnerAccountUuid, vmInstanceUuid, pairs);
             }
 
@@ -1223,34 +1223,38 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(resourceTargetOwnerAccountUuid);
                 //
                 QuotaUtil.QuotaCompareInfo quotaCompareInfo;
-                quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-                quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-                quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                quotaCompareInfo.quotaName = VmInstanceConstant.QUOTA_VM_RUNNING_NUM;
-                quotaCompareInfo.quotaValue = vmNumQuota;
-                quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmNum;
-                quotaCompareInfo.request = 1;
-                new QuotaUtil().CheckQuota(quotaCompareInfo);
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = VmInstanceConstant.QUOTA_VM_RUNNING_NUM;
+                    quotaCompareInfo.quotaValue = vmNumQuota;
+                    quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmNum;
+                    quotaCompareInfo.request = 1;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
+                }
                 //
                 VmInstanceVO vm = dbf.getEntityManager().find(VmInstanceVO.class, vmInstanceUuid);
-
-                quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-                quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-                quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                quotaCompareInfo.quotaName = VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM;
-                quotaCompareInfo.quotaValue = cpuNumQuota;
-                quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmCpuNum;
-                quotaCompareInfo.request = vm.getCpuNum();
-                new QuotaUtil().CheckQuota(quotaCompareInfo);
-
-                quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-                quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-                quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                quotaCompareInfo.quotaName = VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE;
-                quotaCompareInfo.quotaValue = memoryQuota;
-                quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmMemorySize;
-                quotaCompareInfo.request = vm.getMemorySize();
-                new QuotaUtil().CheckQuota(quotaCompareInfo);
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM;
+                    quotaCompareInfo.quotaValue = cpuNumQuota;
+                    quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmCpuNum;
+                    quotaCompareInfo.request = vm.getCpuNum();
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
+                }
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE;
+                    quotaCompareInfo.quotaValue = memoryQuota;
+                    quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmMemorySize;
+                    quotaCompareInfo.request = vm.getMemorySize();
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
+                }
             }
 
 
@@ -1319,9 +1323,12 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
             @Transactional(readOnly = true)
             private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
+
                 SimpleQuery<AccountVO> q1 = dbf.createQuery(AccountVO.class);
                 q1.select(AccountVO_.type);
-                q1.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
+                q1.add(AccountVO_.uuid, Op.EQ, currentAccountUuid);
                 AccountType type = q1.findValue();
                 if (type == AccountType.SystemAdmin && (pairs == null || pairs.size() == 0)) {
                     logger.debug("APIChangeResourceOwnerMsg:(pairs == null || pairs.size() == 0)." +
@@ -1334,19 +1341,6 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
                 AccountResourceRefVO accResRefVO = q.find();
 
-                String resourceOriginalOwnerAccountUuid = accResRefVO.getOwnerAccountUuid();
-                String currentAccountUuid = msg.getSession().getAccountUuid();
-                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
-                if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_INVALID_OP,
-                            String.format("Invalid ChangeResourceOwner operation." +
-                                            "Original owner is the same as target owner." +
-                                            "Current account is [uuid: %s]." +
-                                            "The resource target owner account[uuid: %s]." +
-                                            "The resource original owner account[uuid:%s].",
-                                    currentAccountUuid, resourceTargetOwnerAccountUuid, resourceOriginalOwnerAccountUuid)
-                    ));
-                }
 
                 if (accResRefVO.getResourceType().equals(VolumeVO.class.getSimpleName())) {
                     String volumeUuid = msg.getResourceUuid();
@@ -1406,56 +1400,67 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
             private void check(APIRecoverDataVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String currentAccountUuid = msg.getSession().getAccountUuid();
-                String resourceOwnerAccountUuid = new VmQuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
-
-                long dataVolumeNumQuota = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
-
+                String resourceTargetOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
                 // check data volume num
-                long usedDataVolumeCount = new VmQuotaUtil().getUsedDataVolumeCount(resourceOwnerAccountUuid);
-                if (usedDataVolumeCount + 1 > dataVolumeNumQuota) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
-                                            "Current used:%s, Request:%s. ",
-                                    currentAccountUuid, resourceOwnerAccountUuid,
-                                    VolumeConstant.QUOTA_DATA_VOLUME_NUM, dataVolumeNumQuota,
-                                    usedDataVolumeCount, 1)
-                    ));
-                }
+                long dataVolumeNumQuota = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
+                long dataVolumeNumUsed = new VmQuotaUtil().getUsedDataVolumeCount(resourceTargetOwnerAccountUuid);
+                long dataVolumeNumAsked = 1;
 
+                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = VolumeConstant.QUOTA_DATA_VOLUME_NUM;
+                    quotaCompareInfo.quotaValue = dataVolumeNumQuota;
+                    quotaCompareInfo.currentUsed = dataVolumeNumUsed;
+                    quotaCompareInfo.request = dataVolumeNumAsked;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
+                }
             }
 
             @Transactional(readOnly = true)
             private void check(APICreateDataVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                long dataVolumeCount = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
-                long allVolumeSize = pairs.get(VolumeConstant.QUOTA_VOLUME_SIZE).getValue();
                 String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
+
+                long dataVolumeNumQuota = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
+                long allVolumeSizeQuota = pairs.get(VolumeConstant.QUOTA_VOLUME_SIZE).getValue();
 
                 // check data volume num
-                long requestVolumeNum = new VmQuotaUtil().getUsedDataVolumeCount(currentAccountUuid);
-                if (requestVolumeNum + 1 > dataVolumeCount) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, VolumeConstant.QUOTA_DATA_VOLUME_NUM,
-                                    dataVolumeCount)
-                    ));
+                long dataVolumeNumUsed = new VmQuotaUtil().getUsedDataVolumeCount(currentAccountUuid);
+                long dataVolumeNumAsked = 1;
+                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = VolumeConstant.QUOTA_DATA_VOLUME_NUM;
+                    quotaCompareInfo.quotaValue = dataVolumeNumQuota;
+                    quotaCompareInfo.currentUsed = dataVolumeNumUsed;
+                    quotaCompareInfo.request = dataVolumeNumAsked;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
                 }
 
                 // check data volume size
-                long requestVolumeSize;
+                long allVolumeSizeAsked;
                 String sql = "select diskSize from DiskOfferingVO where uuid = :uuid ";
                 TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
                 dq.setParameter("uuid", msg.getDiskOfferingUuid());
                 Long dsize = dq.getSingleResult();
                 dsize = dsize == null ? 0 : dsize;
-                requestVolumeSize = dsize;
+                allVolumeSizeAsked = dsize;
 
-                long vsize = new VmQuotaUtil().getUsedAllVolumeSize(currentAccountUuid);
-                if (vsize + requestVolumeSize > allVolumeSize) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, VolumeConstant.QUOTA_VOLUME_SIZE, allVolumeSize)
-                    ));
+                long allVolumeSizeUsed = new VmQuotaUtil().getUsedAllVolumeSize(currentAccountUuid);
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = VolumeConstant.QUOTA_VOLUME_SIZE;
+                    quotaCompareInfo.quotaValue = allVolumeSizeQuota;
+                    quotaCompareInfo.currentUsed = allVolumeSizeUsed;
+                    quotaCompareInfo.request = allVolumeSizeAsked;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
                 }
             }
 

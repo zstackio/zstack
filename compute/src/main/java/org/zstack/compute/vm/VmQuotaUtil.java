@@ -6,9 +6,6 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeStatus;
@@ -70,20 +67,6 @@ public class VmQuotaUtil {
         return vsize;
     }
 
-    @Transactional(readOnly = true)
-    public String getResourceOwnerAccountUuid(String resourceUuid) {
-        SimpleQuery<AccountResourceRefVO> q;
-        q = dbf.createQuery(AccountResourceRefVO.class);
-        q.select(AccountResourceRefVO_.ownerAccountUuid);
-        q.add(AccountResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, resourceUuid);
-        String owner = q.findValue();
-        if (owner == null || owner.equals("")) {
-            throw new CloudRuntimeException(
-                    String.format("cannot find owner account uuid for resource[uuid:%s]", resourceUuid));
-        } else {
-            return owner;
-        }
-    }
 
     @Transactional(readOnly = true)
     public VmQuota getUsedVmCpuMemory(String accountUUid) {

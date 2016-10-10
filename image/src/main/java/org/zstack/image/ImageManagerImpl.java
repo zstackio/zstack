@@ -51,6 +51,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -1207,6 +1208,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
             @Transactional(readOnly = true)
             private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
+
                 SimpleQuery<AccountVO> q1 = dbf.createQuery(AccountVO.class);
                 q1.select(AccountVO_.type);
                 q1.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
@@ -1222,20 +1226,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
                 AccountResourceRefVO accResRefVO = q.find();
 
-                String resourceOriginalOwnerAccountUuid = accResRefVO.getOwnerAccountUuid();
-                String currentAccountUuid = msg.getSession().getAccountUuid();
-                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
-                if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_INVALID_OP,
-                            String.format("Invalid ChangeResourceOwner operation." +
-                                            "Original owner is the same as target owner." +
-                                            "Current account is [uuid: %s]." +
-                                            "The resource target owner account[uuid: %s]." +
-                                            "The resource original owner account[uuid:%s].",
-                                    currentAccountUuid, resourceTargetOwnerAccountUuid, resourceOriginalOwnerAccountUuid)
-                    ));
-                }
-
 
                 if (accResRefVO.getResourceType().equals(ImageVO.class.getSimpleName())) {
                     long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
@@ -1245,20 +1235,31 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(resourceTargetOwnerAccountUuid);
 
                     ImageVO image = dbf.getEntityManager().find(ImageVO.class, msg.getResourceUuid());
+                    long imageNumAsked = 1;
                     long imageSizeAsked = image.getSize();
 
-                    if (imageNumUsed + 1 > imageNumQuota) {
-                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                                String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                        resourceTargetOwnerAccountUuid, ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
-                        ));
+
+                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                    {
+                        quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                        quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                        quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                        quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_NUM;
+                        quotaCompareInfo.quotaValue = imageNumQuota;
+                        quotaCompareInfo.currentUsed = imageNumUsed;
+                        quotaCompareInfo.request = imageNumAsked;
+                        new QuotaUtil().CheckQuota(quotaCompareInfo);
                     }
 
-                    if (imageSizeUsed + imageSizeAsked > imageSizeQuota) {
-                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                                String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                        resourceTargetOwnerAccountUuid, ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
-                        ));
+                    {
+                        quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                        quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                        quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                        quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_SIZE;
+                        quotaCompareInfo.quotaValue = imageSizeQuota;
+                        quotaCompareInfo.currentUsed = imageSizeUsed;
+                        quotaCompareInfo.request = imageSizeAsked;
+                        new QuotaUtil().CheckQuota(quotaCompareInfo);
                     }
                 }
 
@@ -1267,43 +1268,60 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             @Transactional(readOnly = true)
             private void check(APIRecoverImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getImageUuid());
+
                 long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
                 long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
-                long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(currentAccountUuid);
-                long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(currentAccountUuid);
+                long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
+                long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(resourceTargetOwnerAccountUuid);
 
                 ImageVO image = dbf.getEntityManager().find(ImageVO.class, msg.getImageUuid());
+                long imageNumAsked = 1;
                 long imageSizeAsked = image.getSize();
 
-                if (imageNumUsed + 1 > imageNumQuota) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
-                    ));
+                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_NUM;
+                    quotaCompareInfo.quotaValue = imageNumQuota;
+                    quotaCompareInfo.currentUsed = imageNumUsed;
+                    quotaCompareInfo.request = imageNumAsked;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
                 }
 
-                if (imageSizeUsed + imageSizeAsked > imageSizeQuota) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, ImageConstant.QUOTA_IMAGE_SIZE, imageSizeQuota)
-                    ));
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_SIZE;
+                    quotaCompareInfo.quotaValue = imageSizeQuota;
+                    quotaCompareInfo.currentUsed = imageSizeUsed;
+                    quotaCompareInfo.request = imageSizeAsked;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
                 }
             }
 
             @Transactional(readOnly = true)
             private void check(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
                 long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
-                long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(currentAccountUuid);
+                long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
+                long imageNumAsked = 1;
 
-
-                if (imageNumUsed + 1 > imageNumQuota) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, ImageConstant.QUOTA_IMAGE_NUM, imageNumQuota)
-                    ));
+                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_NUM;
+                    quotaCompareInfo.quotaValue = imageNumQuota;
+                    quotaCompareInfo.currentUsed = imageNumUsed;
+                    quotaCompareInfo.request = imageNumAsked;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
                 }
-
                 new ImageQuotaUtil().checkImageSizeQuotaUseHttpHead(msg, pairs);
             }
         };
