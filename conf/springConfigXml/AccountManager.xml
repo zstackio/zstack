@@ -1,70 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
-	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
          http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
          http://www.springframework.org/schema/aop
          http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
          http://www.springframework.org/schema/tx
-     	 http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
-     	 http://zstack.org/schema/zstack
+         http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+         http://zstack.org/schema/zstack
          http://zstack.org/schema/zstack/plugin.xsd"
-	default-init-method="init" default-destroy-method="destroy">
+       default-init-method="init" default-destroy-method="destroy">
 
-	<bean id="AccountManager" class="org.zstack.identity.AccountManagerImpl">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.Service" />
-			<zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
-			<zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint" />
-			<zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint" />
-			<zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
-			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
-		</zstack:plugin>
+    <bean id="AccountManager" class="org.zstack.identity.AccountManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Service"/>
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint"/>
+            <zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint"/>
+            <zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
+        </zstack:plugin>
 
-		<property name="resourceTypeForAccountRef">
-			<list>
-				<value>org.zstack.header.vm.VmInstanceVO</value>
-				<value>org.zstack.header.vm.VmNicVO</value>
-				<value>org.zstack.header.volume.VolumeVO</value>
-				<value>org.zstack.header.image.ImageVO</value>
-				<value>org.zstack.header.network.l3.L3NetworkVO</value>
-				<value>org.zstack.header.network.l3.IpRangeVO</value>
-				<value>org.zstack.network.service.vip.VipVO</value>
-				<value>org.zstack.network.securitygroup.SecurityGroupVO</value>
-				<value>org.zstack.network.service.portforwarding.PortForwardingRuleVO</value>
-				<value>org.zstack.network.service.eip.EipVO</value>
-				<value>org.zstack.header.storage.snapshot.VolumeSnapshotVO</value>
-				<value>org.zstack.header.identity.UserGroupVO</value>
-				<value>org.zstack.header.identity.PolicyVO</value>
-				<value>org.zstack.header.identity.UserVO</value>
-				<value>org.zstack.header.identity.QuotaVO</value>
-				<value>org.zstack.header.configuration.InstanceOfferingVO</value>
-				<value>org.zstack.header.configuration.DiskOfferingVO</value>
-				<value>org.zstack.network.service.lb.LoadBalancerVO</value>
-				<value>org.zstack.network.service.lb.LoadBalancerListenerVO</value>
-        <value>org.zstack.header.core.scheduler.SchedulerVO</value>
-			</list>
-		</property>
-	</bean>
+        <property name="resourceTypeForAccountRef">
+            <list>
+                <value>org.zstack.header.vm.VmInstanceVO</value>
+                <value>org.zstack.header.vm.VmNicVO</value>
+                <value>org.zstack.header.volume.VolumeVO</value>
+                <value>org.zstack.header.image.ImageVO</value>
+                <value>org.zstack.header.network.l3.L3NetworkVO</value>
+                <value>org.zstack.header.network.l3.IpRangeVO</value>
+                <value>org.zstack.network.service.vip.VipVO</value>
+                <value>org.zstack.network.securitygroup.SecurityGroupVO</value>
+                <value>org.zstack.network.service.portforwarding.PortForwardingRuleVO</value>
+                <value>org.zstack.network.service.eip.EipVO</value>
+                <value>org.zstack.header.storage.snapshot.VolumeSnapshotVO</value>
+                <value>org.zstack.header.identity.UserGroupVO</value>
+                <value>org.zstack.header.identity.PolicyVO</value>
+                <value>org.zstack.header.identity.UserVO</value>
+                <value>org.zstack.header.identity.QuotaVO</value>
+                <value>org.zstack.header.configuration.InstanceOfferingVO</value>
+                <value>org.zstack.header.configuration.DiskOfferingVO</value>
+                <value>org.zstack.network.service.lb.LoadBalancerVO</value>
+                <value>org.zstack.network.service.lb.LoadBalancerListenerVO</value>
+                <value>org.zstack.header.core.scheduler.SchedulerVO</value>
+            </list>
+        </property>
+    </bean>
 
-	<bean id="AccountSubQueryExtension" class="org.zstack.identity.AccountSubQueryExtension">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.query.MysqlQuerySubQueryExtension" />
-		</zstack:plugin>
-	</bean>
+    <bean id="AccountSubQueryExtension" class="org.zstack.identity.AccountSubQueryExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.query.MysqlQuerySubQueryExtension"/>
+        </zstack:plugin>
+    </bean>
 
-	<bean id="QuotaChecker" class="org.zstack.identity.QuotaChecker">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
-		</zstack:plugin>
-	</bean>
+    <bean id="QuotaChecker" class="org.zstack.identity.QuotaChecker">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
+        </zstack:plugin>
+    </bean>
 
-	<bean id="AccountCascadeExtension" class="org.zstack.identity.AccountCascadeExtension">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
-		</zstack:plugin>
-	</bean>
+    <bean id="AccountCascadeExtension" class="org.zstack.identity.AccountCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>
 

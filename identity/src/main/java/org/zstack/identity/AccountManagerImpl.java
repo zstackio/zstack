@@ -1465,7 +1465,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void checkQuotaForChangeResourceOwner(APIChangeResourceOwnerMsg msg) {
         String currentAccountUuid = msg.getSession().getAccountUuid();
         String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
-        // check change resource owner to self
+        // check if change resource owner to self
         SimpleQuery<AccountResourceRefVO> queryAccResRefVO = dbf.createQuery(AccountResourceRefVO.class);
         queryAccResRefVO.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
         AccountResourceRefVO accResRefVO = queryAccResRefVO.find();
@@ -1482,31 +1482,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
         // check quota
         for (Quota quota : messageQuotaMap.get(APIChangeResourceOwnerMsg.class)) {
-            // make quota pairs
-            List<String> names = new ArrayList<>();
-            for (QuotaPair p : quota.getQuotaPairs()) {
-                names.add(p.getName());
-            }
-
-            SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
-            q.select(QuotaVO_.name, QuotaVO_.value);
-            q.add(QuotaVO_.identityType, Op.EQ, AccountVO.class.getSimpleName());
-            q.add(QuotaVO_.identityUuid, Op.EQ, msg.getAccountUuid());
-            q.add(QuotaVO_.name, Op.IN, names);
-            List<Tuple> ts = q.listTuple();
-
-            Map<String, QuotaPair> pairs = new HashMap<>();
-            for (Tuple t : ts) {
-                String name = t.get(0, String.class);
-                long value = t.get(1, Long.class);
-                QuotaPair p = new QuotaPair();
-                p.setName(name);
-                p.setValue(value);
-                pairs.put(name, p);
-            }
-
-            // check quota
-            quota.getOperator().checkQuota(msg, pairs);
+            quota.getOperator().checkQuota(msg, new QuotaUtil().makeQuotaPairs(quota, msg.getAccountUuid()));
         }
     }
 

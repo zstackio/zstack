@@ -22,16 +22,17 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.identity.AccountResourceRefInventory;
-import org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint;
+import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
@@ -47,10 +48,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 /**
  */
-public class VolumeSnapshotManagerImpl extends AbstractService implements VolumeSnapshotManager,
-        ReplyMessagePreSendingExtensionPoint, VolumeBeforeExpungeExtensionPoint, ResourceOwnerAfterChangeExtensionPoint {
+public class VolumeSnapshotManagerImpl extends AbstractService implements
+        VolumeSnapshotManager,
+        ReplyMessagePreSendingExtensionPoint,
+        VolumeBeforeExpungeExtensionPoint,
+        ResourceOwnerAfterChangeExtensionPoint,
+        ReportQuotaExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotManagerImpl.class);
 
     @Autowired
@@ -110,7 +117,10 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
 
     @Transactional(readOnly = true)
     private void handle(VolumeSnapshotReportPrimaryStorageCapacityUsageMsg msg) {
-        String sql = "select sum(sp.size) from VolumeSnapshotVO sp where sp.type = :sptype and sp.primaryStorageUuid = :prUuid";
+        String sql = "select sum(sp.size)" +
+                " from VolumeSnapshotVO sp" +
+                " where sp.type = :sptype" +
+                " and sp.primaryStorageUuid = :prUuid";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("sptype", VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
         q.setParameter("prUuid", msg.getPrimaryStorageUuid());
@@ -149,7 +159,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
                 return;
             }
 
-            List<VolumeSnapshotTreeInventory> treeInventories = new ArrayList<VolumeSnapshotTreeInventory>();
+            List<VolumeSnapshotTreeInventory> treeInventories = new ArrayList<>();
             for (VolumeSnapshotTreeVO vo : trees) {
                 VolumeSnapshotTreeInventory inv = VolumeSnapshotTreeInventory.valueOf(vo);
                 SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
@@ -193,7 +203,10 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
 
     @Transactional
     private VolumeSnapshotStruct saveChainTypeSnapshot(VolumeSnapshotVO vo) {
-        String sql = "select c from VolumeSnapshotTreeVO c where c.volumeUuid = :volUuid and c.current = true";
+        String sql = "select c" +
+                " from VolumeSnapshotTreeVO c" +
+                " where c.volumeUuid = :volUuid" +
+                " and c.current = true";
         TypedQuery<VolumeSnapshotTreeVO> cq = dbf.getEntityManager().createQuery(sql, VolumeSnapshotTreeVO.class);
         cq.setParameter("volUuid", vo.getVolumeUuid());
         List<VolumeSnapshotTreeVO> rets = cq.getResultList();
@@ -202,7 +215,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         if (chain == null) {
             return newChain(vo, false);
         } else {
-            sql = "select s from VolumeSnapshotVO s where s.latest = true and s.volumeUuid = :volUuid and s.treeUuid = :chainUuid";
+            sql = "select s" +
+                    " from VolumeSnapshotVO s" +
+                    " where s.latest = true" +
+                    " and s.volumeUuid = :volUuid" +
+                    " and s.treeUuid = :chainUuid";
             TypedQuery<VolumeSnapshotVO> q = dbf.getEntityManager().createQuery(sql, VolumeSnapshotVO.class);
             q.setParameter("volUuid", vo.getVolumeUuid());
             q.setParameter("chainUuid", chain.getUuid());
@@ -232,7 +249,10 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
 
     @Transactional
     private VolumeSnapshotStruct saveIndividualTypeSnapshot(VolumeSnapshotVO vo) {
-        String sql = "update VolumeSnapshotTreeVO tree set tree.current = false where tree.current = true and tree.volumeUuid = :volUuid";
+        String sql = "update VolumeSnapshotTreeVO tree" +
+                " set tree.current = false" +
+                " where tree.current = true" +
+                " and tree.volumeUuid = :volUuid";
         Query q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("volUuid", vo.getVolumeUuid());
         q.executeUpdate();
@@ -268,7 +288,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         bus.makeTargetServiceIdByResourceUuid(askMsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
         MessageReply reply = bus.call(askMsg);
         if (!reply.isSuccess()) {
-            ret.setError(errf.stringToOperationError(String.format("cannot ask primary storage[uuid:%s] for volume snapshot capability", vol.getUuid()), reply.getError()));
+            ret.setError(errf.stringToOperationError(
+                    String.format("cannot ask primary storage[uuid:%s] for volume snapshot capability",
+                            vol.getUuid()), reply.getError()));
             bus.reply(msg, ret);
             return;
         }
@@ -276,7 +298,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         AskVolumeSnapshotCapabilityReply areply = reply.castReply();
         VolumeSnapshotCapability capability = areply.getCapability();
         if (!capability.isSupport()) {
-            ret.setError(errf.stringToOperationError(String.format("primary storage[uuid:%s] doesn't support volume snapshot; cannot create snapshot for volume[uuid:%s]", primaryStorageUuid, vol.getUuid())));
+            ret.setError(errf.stringToOperationError(
+                    String.format("primary storage[uuid:%s] doesn't support volume snapshot;" +
+                            " cannot create snapshot for volume[uuid:%s]", primaryStorageUuid, vol.getUuid())));
             bus.reply(msg, ret);
             return;
         }
@@ -332,7 +356,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
                                     return;
                                 }
 
-                                TakeSnapshotReply treply = (TakeSnapshotReply)reply;
+                                TakeSnapshotReply treply = (TakeSnapshotReply) reply;
                                 volumeNewInstallPath = treply.getNewVolumeInstallPath();
                                 snapshot = treply.getInventory();
                                 trigger.next();
@@ -350,7 +374,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
                             @Override
                             public void run() {
                                 // TODO
-                                PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(vol.getPrimaryStorageUuid());
+                                PrimaryStorageCapacityUpdater updater =
+                                        new PrimaryStorageCapacityUpdater(vol.getPrimaryStorageUuid());
                                 updater.reserve(snapshot.getSize());
                             }
                         });
@@ -402,8 +427,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         job.setSnapShotName(msg.getSnapShotName());
         job.setSnapShotDescription(msg.getVolumeSnapshotDescription());
         SchedulerVO schedulerVO = schedulerFacade.runScheduler(job);
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(),schedulerVO.getUuid(), SchedulerVO.class);
-        if ( schedulerVO != null) {
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), schedulerVO.getUuid(), SchedulerVO.class);
+        if (schedulerVO != null) {
             schedulerVO = dbf.reload(schedulerVO);
             SchedulerInventory sinv = SchedulerInventory.valueOf(schedulerVO);
             evt.setInventory(sinv);
@@ -428,12 +453,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
 
     @Override
     public boolean start() {
-        pluginRgty.saveExtensionAsMap(CreateTemplateFromVolumeSnapshotExtensionPoint.class, new Function<Object, CreateTemplateFromVolumeSnapshotExtensionPoint>() {
-            @Override
-            public Object call(CreateTemplateFromVolumeSnapshotExtensionPoint arg) {
-                return arg.createTemplateFromVolumeSnapshotPrimaryStorageType();
-            }
-        });
+        pluginRgty.saveExtensionAsMap(CreateTemplateFromVolumeSnapshotExtensionPoint.class,
+                new Function<Object, CreateTemplateFromVolumeSnapshotExtensionPoint>() {
+                    @Override
+                    public Object call(CreateTemplateFromVolumeSnapshotExtensionPoint arg) {
+                        return arg.createTemplateFromVolumeSnapshotPrimaryStorageType();
+                    }
+                });
 
         return true;
     }
@@ -445,7 +471,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
 
     @Override
     public List<Class> getReplyMessageClassForPreSendingExtensionPoint() {
-        List<Class> ret = new ArrayList<Class>();
+        List<Class> ret = new ArrayList<>();
         ret.add(APIQueryVolumeSnapshotTreeReply.class);
         return ret;
     }
@@ -474,7 +500,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
 
     @Override
     public void volumeBeforeExpunge(VolumeInventory volume) {
-        List<VolumeSnapshotDeletionMsg> msgs = new ArrayList<VolumeSnapshotDeletionMsg>();
+        List<VolumeSnapshotDeletionMsg> msgs = new ArrayList<>();
         SimpleQuery<VolumeSnapshotTreeVO> cq = dbf.createQuery(VolumeSnapshotTreeVO.class);
         cq.select(VolumeSnapshotTreeVO_.uuid);
         cq.add(VolumeSnapshotTreeVO_.volumeUuid, Op.EQ, volume.getUuid());
@@ -534,5 +560,114 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements Volume
         for (String spUuid : spUuids) {
             acntMgr.changeResourceOwner(spUuid, newOwnerUuid);
         }
+    }
+
+
+    @Override
+    public List<Quota> reportQuota() {
+        Quota.QuotaOperator checker = new Quota.QuotaOperator() {
+            @Override
+            public void checkQuota(APIMessage msg, Map<String, Quota.QuotaPair> pairs) {
+                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+                q.select(AccountVO_.type);
+                q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
+                AccountType type = q.findValue();
+
+                if (type != AccountType.SystemAdmin) {
+                    if (msg instanceof APICreateVolumeSnapshotMsg) {
+                        check((APICreateVolumeSnapshotMsg) msg, pairs);
+                    } else if (msg instanceof APIChangeResourceOwnerMsg) {
+                        check((APIChangeResourceOwnerMsg) msg, pairs);
+                    }
+                } else {
+                    if (msg instanceof APIChangeResourceOwnerMsg) {
+                        check((APIChangeResourceOwnerMsg) msg, pairs);
+                    }
+                }
+            }
+
+            @Override
+            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, Quota.QuotaPair> pairs) {
+                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+                q.select(AccountVO_.type);
+                q.add(AccountVO_.uuid, Op.EQ, msg.getAccountUuid());
+                AccountType type = q.findValue();
+
+                if (type != AccountType.SystemAdmin) {
+                    if (msg instanceof VolumeCreateSnapshotMsg) {
+                        check((VolumeCreateSnapshotMsg) msg, pairs);
+                    }
+                }
+            }
+
+            @Override
+            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
+                List<Quota.QuotaUsage> usages = new ArrayList<>();
+
+                Quota.QuotaUsage usage;
+
+                usage = new Quota.QuotaUsage();
+                usage.setName(VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM);
+                usage.setUsed(getUsedVolumeSnapshotNum(accountUuid));
+                usages.add(usage);
+
+                return usages;
+            }
+
+            private long getUsedVolumeSnapshotNum(String accountUuid) {
+                SimpleQuery<AccountResourceRefVO> queryVolumeSnapshotNum = dbf.createQuery(AccountResourceRefVO.class);
+                queryVolumeSnapshotNum.add(AccountResourceRefVO_.accountUuid, Op.EQ, accountUuid);
+                queryVolumeSnapshotNum.add(AccountResourceRefVO_.resourceType, Op.EQ, VolumeSnapshotVO.class.getSimpleName());
+                return queryVolumeSnapshotNum.count();
+            }
+
+            private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                // TODO vminstance,volume,volumesnapshot
+            }
+
+            private void check(VolumeCreateSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                checkVolumeSnapshotNumQuota(msg.getAccountUuid(), msg.getAccountUuid(), pairs);
+            }
+
+            private void check(APICreateVolumeSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
+                checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, pairs);
+            }
+
+            private void checkVolumeSnapshotNumQuota(String currentAccountUuid,
+                                                     String resourceTargetOwnerAccountUuid,
+                                                     Map<String, Quota.QuotaPair> pairs) {
+                long volumeSnapshotNumQuota = pairs.get(VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM).getValue();
+                long volumeSnapshotNumUsed = getUsedVolumeSnapshotNum(resourceTargetOwnerAccountUuid);
+                long volumeSnapshotNumAsked = 1;
+                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM;
+                    quotaCompareInfo.quotaValue = volumeSnapshotNumQuota;
+                    quotaCompareInfo.currentUsed = volumeSnapshotNumUsed;
+                    quotaCompareInfo.request = volumeSnapshotNumAsked;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
+                }
+            }
+        };
+
+
+        Quota quota = new Quota();
+        Quota.QuotaPair p;
+
+        p = new Quota.QuotaPair();
+        p.setName(VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM);
+        p.setValue(200);
+        quota.addPair(p);
+
+        quota.addMessageNeedValidation(APICreateVolumeSnapshotMsg.class);
+        quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
+        quota.addMessageNeedValidation(VolumeCreateSnapshotMsg.class);
+        quota.setOperator(checker);
+
+        return list(quota);
     }
 }

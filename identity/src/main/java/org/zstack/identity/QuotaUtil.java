@@ -10,9 +10,10 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
-import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.identity.*;
+
+import javax.persistence.Tuple;
+import java.util.*;
 
 /**
  * Created by miao on 16-10-9.
@@ -68,5 +69,34 @@ public class QuotaUtil {
                             quotaCompareInfo.currentUsed, quotaCompareInfo.request)
             ));
         }
+    }
+
+    public Map<String, Quota.QuotaPair> makeQuotaPairs(Set<String> quotaNames, String accountUuid) {
+        SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
+        q.select(QuotaVO_.name, QuotaVO_.value);
+        q.add(QuotaVO_.identityType, SimpleQuery.Op.EQ, AccountVO.class.getSimpleName());
+        q.add(QuotaVO_.identityUuid, SimpleQuery.Op.EQ, accountUuid);
+        q.add(QuotaVO_.name, SimpleQuery.Op.IN, quotaNames);
+        List<Tuple> ts = q.listTuple();
+
+        Map<String, Quota.QuotaPair> pairs = new HashMap<>();
+        for (Tuple t : ts) {
+            String name = t.get(0, String.class);
+            long value = t.get(1, Long.class);
+            Quota.QuotaPair p = new Quota.QuotaPair();
+            p.setName(name);
+            p.setValue(value);
+            pairs.put(name, p);
+        }
+
+        return pairs;
+    }
+
+    public Map<String, Quota.QuotaPair> makeQuotaPairs(Quota quota, String accountUuid) {
+        Set<String> quotaNameSet = new HashSet<>();
+        for (Quota.QuotaPair p : quota.getQuotaPairs()) {
+            quotaNameSet.add(p.getName());
+        }
+        return makeQuotaPairs(quotaNameSet, accountUuid);
     }
 }

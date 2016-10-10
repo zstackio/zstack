@@ -753,32 +753,6 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         }
     }
 
-    private Map<String, QuotaPair> makeQuotaPairs(Quota quota, String accountUuid) {
-        List<String> names = new ArrayList<>();
-        for (QuotaPair p : quota.getQuotaPairs()) {
-            names.add(p.getName());
-        }
-
-        SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
-        q.select(QuotaVO_.name, QuotaVO_.value);
-        q.add(QuotaVO_.identityType, Op.EQ, AccountVO.class.getSimpleName());
-        q.add(QuotaVO_.identityUuid, Op.EQ, accountUuid);
-        q.add(QuotaVO_.name, Op.IN, names);
-        List<Tuple> ts = q.listTuple();
-
-        Map<String, QuotaPair> pairs = new HashMap<>();
-        for (Tuple t : ts) {
-            String name = t.get(0, String.class);
-            long value = t.get(1, Long.class);
-            QuotaPair p = new QuotaPair();
-            p.setName(name);
-            p.setValue(value);
-            pairs.put(name, p);
-        }
-
-        return pairs;
-    }
-
     @Override
     public boolean start() {
         try {
@@ -802,7 +776,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                             return;
                         }
                         for (Quota quota : quotas) {
-                            Map<String, QuotaPair> pairs = makeQuotaPairs(quota, ((NeedQuotaCheckMessage) msg).getAccountUuid());
+                            Map<String, QuotaPair> pairs = new QuotaUtil().
+                                    makeQuotaPairs(quota, ((NeedQuotaCheckMessage) msg).getAccountUuid());
                             quota.getOperator().checkQuota((NeedQuotaCheckMessage) msg, pairs);
                         }
                     }
@@ -1581,7 +1556,6 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 }
             }
 
-            @Transactional(readOnly = true)
             private void check(APIRecoverVmInstanceMsg msg, Map<String, QuotaPair> pairs) {
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
