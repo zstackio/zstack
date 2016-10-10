@@ -1133,6 +1133,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                         check((APIStartVmInstanceMsg) msg, pairs);
                     } else if (msg instanceof APIChangeResourceOwnerMsg) {
                         check((APIChangeResourceOwnerMsg) msg, pairs);
+                    } else if (msg instanceof APIRecoverVmInstanceMsg) {
+                        check((APIRecoverVmInstanceMsg) msg, pairs);
                     }
                 } else {
                     if (msg instanceof APIChangeResourceOwnerMsg) {
@@ -1466,19 +1468,30 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
             @Transactional(readOnly = true)
             private void check(APICreateVmInstanceMsg msg, Map<String, QuotaPair> pairs) {
-                long vmNumQuota = pairs.get(VmInstanceConstant.QUOTA_VM_RUNNING_NUM).getValue();
-                long cpuNumQuota = pairs.get(VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM).getValue();
-                long memoryQuota = pairs.get(VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE).getValue();
+                String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
+
+                long totalVmNumQuota = pairs.get(VmInstanceConstant.QUOTA_VM_TOTAL_NUM).getValue();
+                long runningVmNumQuota = pairs.get(VmInstanceConstant.QUOTA_VM_RUNNING_NUM).getValue();
+                long runningVmCpuNumQuota = pairs.get(VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM).getValue();
+                long runningVmMemorySizeQuota = pairs.get(VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE).getValue();
                 long dataVolumeNumQuota = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
                 long allVolumeSizeQuota = pairs.get(VolumeConstant.QUOTA_VOLUME_SIZE).getValue();
-                String currentAccountUuid = msg.getSession().getAccountUuid();
+
 
                 VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(currentAccountUuid);
 
-                if (vmQuotaUsed.runningVmNum + 1 > vmNumQuota) {
+                if (vmQuotaUsed.totalVmNum + 1 > totalVmNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, VmInstanceConstant.QUOTA_VM_RUNNING_NUM, vmNumQuota)
+                                    currentAccountUuid, VmInstanceConstant.QUOTA_VM_TOTAL_NUM, totalVmNumQuota)
+                    ));
+                }
+
+                if (vmQuotaUsed.runningVmNum + 1 > runningVmNumQuota) {
+                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
+                                    currentAccountUuid, VmInstanceConstant.QUOTA_VM_RUNNING_NUM, runningVmNumQuota)
                     ));
                 }
 
@@ -1491,17 +1504,17 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 int cpuNumAsked = it.get(0, Integer.class);
                 long memoryAsked = it.get(1, Long.class);
 
-                if (vmQuotaUsed.runningVmCpuNum + cpuNumAsked > cpuNumQuota) {
+                if (vmQuotaUsed.runningVmCpuNum + cpuNumAsked > runningVmCpuNumQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM, cpuNumQuota)
+                                    currentAccountUuid, VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM, runningVmCpuNumQuota)
                     ));
                 }
 
-                if (vmQuotaUsed.runningVmMemorySize + memoryAsked > memoryQuota) {
+                if (vmQuotaUsed.runningVmMemorySize + memoryAsked > runningVmMemorySizeQuota) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE, memoryQuota)
+                                    currentAccountUuid, VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE, runningVmMemorySizeQuota)
                     ));
                 }
 
@@ -1567,6 +1580,27 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     ));
                 }
             }
+
+            @Transactional(readOnly = true)
+            private void check(APIRecoverVmInstanceMsg msg, Map<String, QuotaPair> pairs) {
+                String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
+
+                long totalVmNumQuota = pairs.get(VmInstanceConstant.QUOTA_VM_TOTAL_NUM).getValue();
+                VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(currentAccountUuid);
+                long totalVmNumAsked = 1;
+                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = VmInstanceConstant.QUOTA_VM_TOTAL_NUM;
+                    quotaCompareInfo.quotaValue = totalVmNumQuota;
+                    quotaCompareInfo.currentUsed = vmQuotaUsed.totalVmNum;
+                    quotaCompareInfo.request = totalVmNumAsked;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
+                }
+            }
         };
 
         Quota quota = new Quota();
@@ -1603,6 +1637,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         quota.addPair(p);
 
         quota.addMessageNeedValidation(APICreateVmInstanceMsg.class);
+        quota.addMessageNeedValidation(APIRecoverVmInstanceMsg.class);
         quota.addMessageNeedValidation(APICreateDataVolumeMsg.class);
         quota.addMessageNeedValidation(APIRecoverDataVolumeMsg.class);
         quota.addMessageNeedValidation(APIStartVmInstanceMsg.class);

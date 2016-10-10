@@ -68,66 +68,86 @@ public class TestQuotaUsageForVm {
         VmInstanceInventory vm = vmCreator.create();
 
         List<Quota.QuotaUsage> usages = api.getQuotaUsage(test.getUuid(), null);
-        Quota.QuotaUsage vmNum = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
-            @Override
-            public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return VmInstanceConstant.QUOTA_VM_RUNNING_NUM.equals(arg.getName()) ? arg :null;
-            }
-        });
-        Assert.assertNotNull(vmNum);
-
-        QuotaInventory qvm = api.getQuota(VmInstanceConstant.QUOTA_VM_RUNNING_NUM, test.getUuid(), identityCreator.getAccountSession());
-        Assert.assertEquals(qvm.getValue(), vmNum.getTotal().longValue());
-        Assert.assertEquals(1, vmNum.getUsed().longValue());
-
-        Quota.QuotaUsage cpuNum = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
-            @Override
-            public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM.equals(arg.getName()) ? arg :null;
-            }
-        });
-        Assert.assertNotNull(cpuNum);
-        qvm = api.getQuota(VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM, test.getUuid(), identityCreator.getAccountSession());
-        Assert.assertEquals(qvm.getValue(), cpuNum.getTotal().longValue());
-        Assert.assertEquals(vm.getCpuNum().intValue(), cpuNum.getUsed().intValue());
-
-        Quota.QuotaUsage mem = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
-            @Override
-            public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE.equals(arg.getName()) ? arg :null;
-            }
-        });
-        Assert.assertNotNull(mem);
-        qvm = api.getQuota(VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE, test.getUuid(), identityCreator.getAccountSession());
-        Assert.assertEquals(qvm.getValue(), mem.getTotal().longValue());
-        Assert.assertEquals(vm.getMemorySize(), mem.getUsed());
-
-        Quota.QuotaUsage volnum = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
-            @Override
-            public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return VolumeConstant.QUOTA_DATA_VOLUME_NUM.equals(arg.getName()) ? arg :null;
-            }
-        });
-        Assert.assertNotNull(volnum);
-        qvm = api.getQuota(VolumeConstant.QUOTA_DATA_VOLUME_NUM, test.getUuid(), identityCreator.getAccountSession());
-        Assert.assertEquals(qvm.getValue(), volnum.getTotal().longValue());
-        Assert.assertEquals(vm.getAllVolumes().size()-1, volnum.getUsed().intValue());
-
-        Quota.QuotaUsage volsize = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
-            @Override
-            public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return VolumeConstant.QUOTA_VOLUME_SIZE.equals(arg.getName()) ? arg :null;
-            }
-        });
-        Assert.assertNotNull(volsize);
-        qvm = api.getQuota(VolumeConstant.QUOTA_VOLUME_SIZE, test.getUuid(), identityCreator.getAccountSession());
-        Assert.assertEquals(qvm.getValue(), volsize.getTotal().longValue());
-
-        long size = 0;
-        for (VolumeInventory v : vm.getAllVolumes()) {
-            size += v.getSize();
+        {
+            Quota.QuotaUsage totalVmNum = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
+                @Override
+                public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
+                    return VmInstanceConstant.QUOTA_VM_TOTAL_NUM.equals(arg.getName()) ? arg : null;
+                }
+            });
+            Assert.assertNotNull(totalVmNum);
         }
-        Assert.assertEquals(size, volsize.getUsed().longValue());
+
+        {
+            Quota.QuotaUsage vmNum = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
+                @Override
+                public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
+                    return VmInstanceConstant.QUOTA_VM_RUNNING_NUM.equals(arg.getName()) ? arg : null;
+                }
+            });
+            Assert.assertNotNull(vmNum);
+
+            QuotaInventory qvm = api.getQuota(VmInstanceConstant.QUOTA_VM_RUNNING_NUM, test.getUuid(), identityCreator.getAccountSession());
+            Assert.assertEquals(qvm.getValue(), vmNum.getTotal().longValue());
+            Assert.assertEquals(1, vmNum.getUsed().longValue());
+        }
+
+        {
+            Quota.QuotaUsage cpuNum = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
+                @Override
+                public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
+                    return VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM.equals(arg.getName()) ? arg : null;
+                }
+            });
+            Assert.assertNotNull(cpuNum);
+            QuotaInventory qvm = api.getQuota(VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM, test.getUuid(), identityCreator.getAccountSession());
+            Assert.assertEquals(qvm.getValue(), cpuNum.getTotal().longValue());
+            Assert.assertEquals(vm.getCpuNum().intValue(), cpuNum.getUsed().intValue());
+        }
+
+        {
+            Quota.QuotaUsage mem = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
+                @Override
+                public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
+                    return VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE.equals(arg.getName()) ? arg : null;
+                }
+            });
+            Assert.assertNotNull(mem);
+            QuotaInventory qvm = api.getQuota(VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE, test.getUuid(), identityCreator.getAccountSession());
+            Assert.assertEquals(qvm.getValue(), mem.getTotal().longValue());
+            Assert.assertEquals(vm.getMemorySize(), mem.getUsed());
+        }
+
+        {
+            Quota.QuotaUsage volnum = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
+                @Override
+                public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
+                    return VolumeConstant.QUOTA_DATA_VOLUME_NUM.equals(arg.getName()) ? arg : null;
+                }
+            });
+            Assert.assertNotNull(volnum);
+            QuotaInventory qvm = api.getQuota(VolumeConstant.QUOTA_DATA_VOLUME_NUM, test.getUuid(), identityCreator.getAccountSession());
+            Assert.assertEquals(qvm.getValue(), volnum.getTotal().longValue());
+            Assert.assertEquals(vm.getAllVolumes().size() - 1, volnum.getUsed().intValue());
+        }
+
+        {
+            Quota.QuotaUsage volsize = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
+                @Override
+                public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
+                    return VolumeConstant.QUOTA_VOLUME_SIZE.equals(arg.getName()) ? arg : null;
+                }
+            });
+            Assert.assertNotNull(volsize);
+            QuotaInventory qvm = api.getQuota(VolumeConstant.QUOTA_VOLUME_SIZE, test.getUuid(), identityCreator.getAccountSession());
+            Assert.assertEquals(qvm.getValue(), volsize.getTotal().longValue());
+
+            long size = 0;
+            for (VolumeInventory v : vm.getAllVolumes()) {
+                size += v.getSize();
+            }
+            Assert.assertEquals(size, volsize.getUsed().longValue());
+        }
     }
 }
 
