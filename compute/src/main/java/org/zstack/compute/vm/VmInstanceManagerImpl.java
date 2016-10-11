@@ -1310,17 +1310,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
 
-                AccountType type = new QuotaUtil().getAccountType(currentAccountUuid);
-                if (type == AccountType.SystemAdmin && (pairs == null || pairs.size() == 0)) {
-                    logger.debug("APIChangeResourceOwnerMsg:(pairs == null || pairs.size() == 0)." +
-                            "Skip quota check for being called by QuotaChecker with admin account session." +
-                            "Another quota check would be executed by message interceptor.");
-                    return;
-                }
-
                 String resourceType = new QuotaUtil().getResourceType(msg.getResourceUuid());
-
-
                 if (resourceType.equals(VolumeVO.class.getSimpleName())) {
                     String volumeUuid = msg.getResourceUuid();
                     ArrayList<String> volumeUuids = new ArrayList<>();

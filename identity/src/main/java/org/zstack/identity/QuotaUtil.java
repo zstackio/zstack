@@ -1,6 +1,5 @@
 package org.zstack.identity;
 
-import junit.framework.Assert;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -50,15 +49,6 @@ public class QuotaUtil {
     }
 
     public void CheckQuota(QuotaCompareInfo quotaCompareInfo) {
-        Assert.assertNotNull(quotaCompareInfo);
-        Assert.assertNotNull(quotaCompareInfo.currentAccountUuid);
-        Assert.assertNotNull(quotaCompareInfo.resourceTargetOwnerAccountUuid);
-        Assert.assertNotNull(quotaCompareInfo.quotaName);
-        Assert.assertNotNull(quotaCompareInfo.quotaValue);
-        Assert.assertNotNull(quotaCompareInfo.currentUsed);
-        Assert.assertNotNull(quotaCompareInfo.request);
-
-
         if (quotaCompareInfo.currentUsed + quotaCompareInfo.request > quotaCompareInfo.quotaValue) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                     String.format("quota exceeding. Current account is [uuid: %s]. " +

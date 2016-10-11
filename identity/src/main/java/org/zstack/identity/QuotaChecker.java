@@ -39,6 +39,11 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
             return msg;
         }
 
+        // skip admin. if needed, another quota check will be issued in AccountManagerImpl
+        if(new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())){
+            return msg;
+        }
+
         List<Quota> quotas = acntMgr.getMessageQuotaMap().get(msg.getClass());
         if (quotas == null || quotas.size() == 0) {
             return msg;

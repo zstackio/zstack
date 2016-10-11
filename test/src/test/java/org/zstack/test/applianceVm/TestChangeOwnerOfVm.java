@@ -9,6 +9,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
@@ -60,6 +61,9 @@ public class TestChangeOwnerOfVm {
         DiskOfferingInventory dinv = deployer.diskOfferings.get("TestDataDiskOffering1");
         VolumeInventory vi = api.createDataVolume("data", dinv.getUuid());
         api.attachVolumeToVm(vm.getUuid(), vi.getUuid());
+        // create volume snapshot
+        String volUuid = vm.getRootVolumeUuid();
+        VolumeSnapshotInventory inv = api.createSnapshot(volUuid);
 
         // change owner for the same account
         try {

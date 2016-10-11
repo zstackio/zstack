@@ -743,16 +743,6 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
 
-                SimpleQuery<AccountVO> q1 = dbf.createQuery(AccountVO.class);
-                q1.select(AccountVO_.type);
-                q1.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
-                AccountType type = q1.findValue();
-                if (type == AccountType.SystemAdmin && (pairs == null || pairs.size() == 0)) {
-                    logger.debug("APIChangeResourceOwnerMsg:(pairs == null || pairs.size() == 0)." +
-                            "Skip quota check for being called by QuotaChecker with admin account session." +
-                            "Another quota check would be executed by message interceptor.");
-                    return;
-                }
 
                 SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
                 q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());

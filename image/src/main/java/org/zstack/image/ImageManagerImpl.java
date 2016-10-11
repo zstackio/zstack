@@ -232,7 +232,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             @Override
                             @Transactional(readOnly = true)
                             public String call() {
-                                String sql = "select ps.zoneUuid from PrimaryStorageVO ps, VolumeVO vol where vol.primaryStorageUuid = ps.uuid and vol.uuid = :volUuid";
+                                String sql = "select ps.zoneUuid" +
+                                        " from PrimaryStorageVO ps, VolumeVO vol" +
+                                        " where vol.primaryStorageUuid = ps.uuid" +
+                                        " and vol.uuid = :volUuid";
                                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                                 q.setParameter("volUuid", msg.getVolumeUuid());
                                 return q.getSingleResult();
@@ -1206,16 +1209,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
 
-                SimpleQuery<AccountVO> q1 = dbf.createQuery(AccountVO.class);
-                q1.select(AccountVO_.type);
-                q1.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
-                AccountType type = q1.findValue();
-                if (type == AccountType.SystemAdmin && (pairs == null || pairs.size() == 0)) {
-                    logger.debug("APIChangeResourceOwnerMsg:(pairs == null || pairs.size() == 0)." +
-                            "Skip quota check for being called by QuotaChecker with admin account session." +
-                            "Another quota check would be executed by message interceptor.");
-                    return;
-                }
 
                 SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
                 q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());

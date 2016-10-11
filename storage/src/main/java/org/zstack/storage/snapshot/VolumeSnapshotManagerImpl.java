@@ -30,6 +30,7 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -611,26 +612,54 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 return queryVolumeSnapshotNum.count();
             }
 
+            @Transactional(readOnly = true)
             private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                // TODO vminstance,volume,volumesnapshot
+                String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
 
+                String resourceType = new QuotaUtil().getResourceType(msg.getResourceUuid());
+                long volumeSnapshotNumAsked;
+                if (resourceType.equals(VmInstanceVO.class.getSimpleName())) {
+                    String sql = "select count(s)" +
+                            " from VolumeVO v, VolumeSnapshotVO s" +
+                            " where s.volumeUuid = v.uuid" +
+                            " and v.vmInstanceUuid = :vmInstanceUuid";
+                    TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                    q.setParameter("vmInstanceUuid", msg.getResourceUuid());
+                    volumeSnapshotNumAsked = q.getSingleResult();
+                } else if (resourceType.equals(VolumeVO.class.getSimpleName())) {
+                    String sql = "select count(s)" +
+                            " from VolumeSnapshotVO s" +
+                            " where s.volumeUuid = :volumeUuid";
+                    TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                    q.setParameter("volumeUuid", msg.getResourceUuid());
+                    volumeSnapshotNumAsked = q.getSingleResult();
+                } else if (resourceType.equals(VolumeSnapshotVO.class.getSimpleName())) {
+                    volumeSnapshotNumAsked = 1;
+                } else {
+                    return;
+                }
+                checkVolumeSnapshotNumQuota(currentAccountUuid,
+                        resourceTargetOwnerAccountUuid,
+                        volumeSnapshotNumAsked,
+                        pairs);
             }
 
             private void check(VolumeCreateSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                checkVolumeSnapshotNumQuota(msg.getAccountUuid(), msg.getAccountUuid(), pairs);
+                checkVolumeSnapshotNumQuota(msg.getAccountUuid(), msg.getAccountUuid(), 1, pairs);
             }
 
             private void check(APICreateVolumeSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
-                checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, pairs);
+                checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, 1, pairs);
             }
 
             private void checkVolumeSnapshotNumQuota(String currentAccountUuid,
                                                      String resourceTargetOwnerAccountUuid,
+                                                     long volumeSnapshotNumAsked,
                                                      Map<String, Quota.QuotaPair> pairs) {
                 long volumeSnapshotNumQuota = pairs.get(VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM).getValue();
                 long volumeSnapshotNumUsed = getUsedVolumeSnapshotNum(resourceTargetOwnerAccountUuid);
-                long volumeSnapshotNumAsked = 1;
                 {
                     QuotaUtil.QuotaCompareInfo quotaCompareInfo;
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
