@@ -65,6 +65,13 @@ public class TestChangeOwnerOfVm {
         String volUuid = vm.getRootVolumeUuid();
         VolumeSnapshotInventory inv = api.createSnapshot(volUuid);
 
+        ArrayList<String> sharedResources = new ArrayList<>();
+        ArrayList<String> accountList = new ArrayList<>();
+        accountList.add(deployer.accounts.get("test2").getUuid());
+        deployer.l3Networks.forEach(
+                (s, l3NetworkInventory) -> sharedResources.add(l3NetworkInventory.getUuid()));
+        api.shareResource(sharedResources, accountList, false);
+
         // change owner for the same account
         try {
             api.changeResourceOwner(vm.getUuid(), identityCreator.getAccountSession().getAccountUuid());

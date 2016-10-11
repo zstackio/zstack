@@ -1352,6 +1352,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         // image
         VmInstanceVO vmInstanceVO = dbf.findByUuid(resourceUuid, VmInstanceVO.class);
         String isoUuid = VmSystemTags.ISO.getTokenByResourceUuid(resourceUuid, VmSystemTags.ISO_TOKEN);
+        if (isoUuid == null || isoUuid.equals("")) {
+            return;
+        }
         if (vmInstanceVO.getImageUuid() != null && !vmInstanceVO.getImageUuid().equals("")) {
             throw new ApiMessageInterceptionException(errf.stringToOperationError(
                     String.format("unable to change owner for vmInstance[uuid:%s]." +
