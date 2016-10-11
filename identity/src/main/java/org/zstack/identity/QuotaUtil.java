@@ -99,4 +99,22 @@ public class QuotaUtil {
         }
         return makeQuotaPairs(quotaNameSet, accountUuid);
     }
+
+    public AccountType getAccountType(String accountUuid) {
+        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+        q.select(AccountVO_.type);
+        q.add(AccountVO_.uuid, SimpleQuery.Op.EQ, accountUuid);
+        return q.findValue();
+    }
+
+    public boolean isAdminAccount(String accountUuid) {
+        return getAccountType(accountUuid) == AccountType.SystemAdmin;
+    }
+
+    public String getResourceType(String resourceUuid) {
+        SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
+        q.add(AccountResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, resourceUuid);
+        AccountResourceRefVO accResRefVO = q.find();
+        return accResRefVO.getResourceType();
+    }
 }

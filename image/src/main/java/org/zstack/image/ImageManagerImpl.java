@@ -151,7 +151,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-data-volume-template-from-volume-%s", msg.getVolumeUuid()));
         chain.then(new ShareFlow() {
-            List<BackupStorageInventory> backupStorage = new ArrayList<BackupStorageInventory>();
+            List<BackupStorageInventory> backupStorage = new ArrayList<>();
             ImageVO image;
             long actualSize;
 
@@ -271,7 +271,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             bus.send(amsgs, new CloudBusListCallBack(trigger) {
                                 @Override
                                 public void run(List<MessageReply> replies) {
-                                    List<ErrorCode> errs = new ArrayList<ErrorCode>();
+                                    List<ErrorCode> errs = new ArrayList<>();
                                     for (MessageReply r : replies) {
                                         if (r.isSuccess()) {
                                             backupStorage.add(((AllocateBackupStorageReply) r).getInventory());
@@ -554,7 +554,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             ImageVO imageVO;
             VolumeInventory rootVolume;
             Long imageActualSize;
-            List<BackupStorageInventory> targetBackupStorages = new ArrayList<BackupStorageInventory>();
+            List<BackupStorageInventory> targetBackupStorages = new ArrayList<>();
             String zoneUuid;
 
             {
@@ -680,7 +680,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             bus.send(amsgs, new CloudBusListCallBack(trigger) {
                                 @Override
                                 public void run(List<MessageReply> replies) {
-                                    List<ErrorCode> errs = new ArrayList<ErrorCode>();
+                                    List<ErrorCode> errs = new ArrayList<>();
                                     for (MessageReply r : replies) {
                                         if (r.isSuccess()) {
                                             targetBackupStorages.add(((AllocateBackupStorageReply) r).getInventory());
@@ -1162,12 +1162,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         Quota.QuotaOperator checker = new Quota.QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, Quota.QuotaPair> pairs) {
-                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-                q.select(AccountVO_.type);
-                q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
-                AccountType type = q.findValue();
-
-                if (type != AccountType.SystemAdmin) {
+                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
                     if (msg instanceof APIAddImageMsg) {
                         check((APIAddImageMsg) msg, pairs);
                     } else if (msg instanceof APIRecoverImageMsg) {
@@ -1350,11 +1345,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     public void resourceOwnerPreChange(AccountResourceRefInventory ref, String newOwnerUuid) {
         String resourceUuid = ref.getResourceUuid();
         // skip for admin
-        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-        q.select(AccountVO_.type);
-        q.add(AccountVO_.uuid, Op.EQ, newOwnerUuid);
-        AccountType type = q.findValue();
-        if (type != AccountType.SystemAdmin) {
+        if (new QuotaUtil().isAdminAccount(newOwnerUuid)) {
             return;
         }
 

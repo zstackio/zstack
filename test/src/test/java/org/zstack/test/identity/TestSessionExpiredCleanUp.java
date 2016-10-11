@@ -38,7 +38,7 @@ public class TestSessionExpiredCleanUp {
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         IdentityGlobalConfig.SESSION_TIMEOUT.updateValue(1);
-        IdentityGlobalConfig.SESSION_CELANUP_INTERVAL.updateValue(1);
+        IdentityGlobalConfig.SESSION_CLEANUP_INTERVAL.updateValue(1);
         SessionInventory session = api.loginAsAdmin();
         TimeUnit.SECONDS.sleep(5);
         SessionVO vo = dbf.findByUuid(session.getUserUuid(), SessionVO.class);

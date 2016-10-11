@@ -34,6 +34,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -590,12 +591,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-                q.select(AccountVO_.type);
-                q.add(AccountVO_.uuid, SimpleQuery.Op.EQ, msg.getSession().getAccountUuid());
-                AccountType type = q.findValue();
-
-                if (type != AccountType.SystemAdmin) {
+                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
                     if (msg instanceof APICreateVipMsg) {
                         check((APICreateVipMsg) msg, pairs);
                     }

@@ -29,6 +29,7 @@ import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -393,12 +394,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-                q.select(AccountVO_.type);
-                q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
-                AccountType type = q.findValue();
-
-                if (type != AccountType.SystemAdmin) {
+                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
                     if (msg instanceof APICreateL3NetworkMsg) {
                         check((APICreateL3NetworkMsg) msg, pairs);
                     }
@@ -460,11 +456,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     public void resourceOwnerPreChange(AccountResourceRefInventory ref, String newOwnerUuid) {
         String resourceUuid = ref.getResourceUuid();
         // skip for admin
-        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-        q.select(AccountVO_.type);
-        q.add(AccountVO_.uuid, Op.EQ, newOwnerUuid);
-        AccountType type = q.findValue();
-        if (type != AccountType.SystemAdmin) {
+        if (new QuotaUtil().isAdminAccount(newOwnerUuid)) {
             return;
         }
 

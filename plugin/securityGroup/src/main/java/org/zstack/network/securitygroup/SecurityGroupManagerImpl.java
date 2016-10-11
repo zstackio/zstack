@@ -34,6 +34,7 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.query.QueryFacade;
 import org.zstack.tag.TagManager;
@@ -88,12 +89,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-                q.select(AccountVO_.type);
-                q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
-                AccountType type = q.findValue();
-
-                if (type != AccountType.SystemAdmin) {
+                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
                     if (msg instanceof APICreateSecurityGroupMsg) {
                         check((APICreateSecurityGroupMsg) msg, pairs);
                     }

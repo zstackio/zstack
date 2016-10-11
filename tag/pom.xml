@@ -32,6 +32,11 @@
             <artifactId>search</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>identity</artifactId>
+            <version>1.7.0</version>
+        </dependency>
     </dependencies>
 
     <build>

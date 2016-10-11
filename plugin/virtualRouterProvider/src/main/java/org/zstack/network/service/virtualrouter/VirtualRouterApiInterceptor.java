@@ -23,6 +23,7 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
+import org.zstack.identity.QuotaUtil;
 
 import javax.persistence.Tuple;
 import java.util.List;
@@ -52,12 +53,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIUpdateVirtualRouterOfferingMsg msg) {
         if (msg.getIsDefault() != null) {
-            SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-            q.select(AccountVO_.type);
-            q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
-            AccountType type = q.findValue();
-
-            if (type != AccountType.SystemAdmin) {
+            if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
                         "cannot change the default field of a virtual router offering; only admin can do the operation"
                 ));
@@ -89,12 +85,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICreateVirtualRouterOfferingMsg msg) {
         if (msg.isDefault() != null) {
-            SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-            q.select(AccountVO_.type);
-            q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
-            AccountType type = q.findValue();
-
-            if (type != AccountType.SystemAdmin) {
+            if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
                         "cannot create a virtual router offering with the default field set; only admin can do the operation"
                 ));

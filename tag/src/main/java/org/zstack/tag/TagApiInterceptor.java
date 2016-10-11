@@ -13,6 +13,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.tag.*;
+import org.zstack.identity.QuotaUtil;
 
 import javax.persistence.TypedQuery;
 
@@ -77,7 +78,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
 
         boolean userTag = dbf.isExist(msg.getUuid(), UserTagVO.class);
         boolean sysTag = dbf.isExist(msg.getUuid(), SystemTagVO.class);
-        if (!isAdminAccount(msg.getSession().getAccountUuid())) {
+        if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
             if (userTag) {
                 checkAccountForUserTag(msg);
             } else if (sysTag) {
@@ -86,17 +87,13 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private boolean isAdminAccount(String accountUuid) {
-        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-        q.select(AccountVO_.type);
-        q.add(AccountVO_.uuid, Op.EQ, accountUuid);
-        AccountType type = q.findValue();
-        return type == AccountType.SystemAdmin;
-    }
 
     @Transactional(readOnly = true)
     private void checkAccountForSystemTag(APIDeleteTagMsg msg) {
-        String sql = "select ref.accountUuid from SystemTagVO tag, AccountResourceRefVO ref where tag.resourceUuid = ref.resourceUuid and tag.uuid = :tuuid";
+        String sql = "select ref.accountUuid" +
+                " from SystemTagVO tag, AccountResourceRefVO ref" +
+                " where tag.resourceUuid = ref.resourceUuid" +
+                " and tag.uuid = :tuuid";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("tuuid", msg.getUuid());
         String accountUuid = q.getSingleResult();

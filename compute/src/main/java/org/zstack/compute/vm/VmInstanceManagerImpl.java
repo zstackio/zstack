@@ -93,9 +93,14 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.list;
 
-public class VmInstanceManagerImpl extends AbstractService implements VmInstanceManager,
-        ReportQuotaExtensionPoint, ManagementNodeReadyExtensionPoint, L3NetworkDeleteExtensionPoint,
-        ResourceOwnerAfterChangeExtensionPoint, GlobalApiMessageInterceptor, PrimaryStorageDeleteExtensionPoint {
+public class VmInstanceManagerImpl extends AbstractService implements
+        VmInstanceManager,
+        ReportQuotaExtensionPoint,
+        ManagementNodeReadyExtensionPoint,
+        L3NetworkDeleteExtensionPoint,
+        ResourceOwnerAfterChangeExtensionPoint,
+        GlobalApiMessageInterceptor,
+        PrimaryStorageDeleteExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<>());
     private List<String> createVmWorkFlowElements;
@@ -118,7 +123,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
     private FlowChainBuilder attachIsoFlowBuilder;
     private FlowChainBuilder detachIsoFlowBuilder;
     private FlowChainBuilder expungeVmFlowBuilder;
-    private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
+    private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private Future<Void> expungeVmTask;
 
     static {
@@ -333,8 +338,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     bq.setParameter("uuids", bsUuids);
                     lst.addAll(bq.getResultList());
                 } else {
-                    logger.warn(String.format("the primary storage[uuid:%s, type:%s] needs a bound backup storage, but seems" +
-                            " it's not added", ps.getUuid(), ps.getType()));
+                    logger.warn(String.format("the primary storage[uuid:%s, type:%s] needs a bound backup storage," +
+                            " but seems it's not added", ps.getUuid(), ps.getType()));
                 }
             }
 
@@ -622,7 +627,11 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         }
 
         if (instanceOfferingUuid != null) {
-            tagMgr.copySystemTag(instanceOfferingUuid, InstanceOfferingVO.class.getSimpleName(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
+            tagMgr.copySystemTag(
+                    instanceOfferingUuid,
+                    InstanceOfferingVO.class.getSimpleName(),
+                    vo.getUuid(),
+                    VmInstanceVO.class.getSimpleName());
         }
 
         if (VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy())) {
@@ -1088,10 +1097,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-                q.select(AccountVO_.type);
-                q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
-                AccountType type = q.findValue();
+                AccountType type = new QuotaUtil().getAccountType(msg.getSession().getAccountUuid());
 
                 if (type != AccountType.SystemAdmin) {
                     if (msg instanceof APICreateVmInstanceMsg) {
@@ -1120,12 +1126,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
             @Override
             public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
-                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-                q.select(AccountVO_.type);
-                q.add(AccountVO_.uuid, Op.EQ, msg.getAccountUuid());
-                AccountType type = q.findValue();
-
-                if (type != AccountType.SystemAdmin) {
+                if (!new QuotaUtil().isAdminAccount(msg.getAccountUuid())) {
                     if (msg instanceof StartVmInstanceMsg) {
                         check((StartVmInstanceMsg) msg, pairs);
                     }
@@ -1199,8 +1200,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
                 VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(resourceTargetOwnerAccountUuid);
                 //
-                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
                 {
+                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
@@ -1213,6 +1214,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 //
                 VmInstanceVO vm = dbf.getEntityManager().find(VmInstanceVO.class, vmInstanceUuid);
                 {
+                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
@@ -1223,6 +1225,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     new QuotaUtil().CheckQuota(quotaCompareInfo);
                 }
                 {
+                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
@@ -1240,8 +1243,8 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                                                                 String resourceTargetOwnerAccountUuid,
                                                                 String currentAccountUuid,
                                                                 Map<String, Quota.QuotaPair> pairs) {
-                long dataVolumeQuotaNum = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
-                long allVolumeQuotaSize = pairs.get(VolumeConstant.QUOTA_VOLUME_SIZE).getValue();
+                long dataVolumeNumQuota = pairs.get(VolumeConstant.QUOTA_DATA_VOLUME_NUM).getValue();
+                long allVolumeSizeQuota = pairs.get(VolumeConstant.QUOTA_VOLUME_SIZE).getValue();
 
                 ArrayList<String> volumeUuids = new ArrayList<>();
                 if (dataVolumeUuids != null && !dataVolumeUuids.isEmpty()) {
@@ -1255,38 +1258,42 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     }
                 }
                 // check data volume num
-                long usedDataVolumeCount = new VmQuotaUtil().getUsedDataVolumeCount(resourceTargetOwnerAccountUuid);
-                if (dataVolumeUuids != null && !dataVolumeUuids.isEmpty()
-                        && usedDataVolumeCount + dataVolumeUuids.size() > dataVolumeQuotaNum) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
-                                            "Current used:%s, Request:%s. ",
-                                    currentAccountUuid, resourceTargetOwnerAccountUuid,
-                                    VolumeConstant.QUOTA_DATA_VOLUME_NUM, dataVolumeQuotaNum,
-                                    usedDataVolumeCount, dataVolumeUuids.size())
-                    ));
+                long dataVolumeNumUsed = new VmQuotaUtil().getUsedDataVolumeCount(resourceTargetOwnerAccountUuid);
+                if (dataVolumeUuids != null && !dataVolumeUuids.isEmpty()) {
+                    long dataVolumeNumAsked = dataVolumeUuids.size();
+                    {
+                        QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                        quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                        quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                        quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                        quotaCompareInfo.quotaName = VolumeConstant.QUOTA_DATA_VOLUME_NUM;
+                        quotaCompareInfo.quotaValue = dataVolumeNumQuota;
+                        quotaCompareInfo.currentUsed = dataVolumeNumUsed;
+                        quotaCompareInfo.request = dataVolumeNumAsked;
+                        new QuotaUtil().CheckQuota(quotaCompareInfo);
+                    }
                 }
 
                 // check data volume size
-                long requiredVolSize;
+                long allVolumeSizeAsked;
                 String sql = "select sum(size) from VolumeVO where uuid in (:uuids) ";
                 TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
                 dq.setParameter("uuids", volumeUuids);
                 Long dsize = dq.getSingleResult();
                 dsize = dsize == null ? 0 : dsize;
-                requiredVolSize = dsize;
+                allVolumeSizeAsked = dsize;
 
-                long vsize = new VmQuotaUtil().getUsedAllVolumeSize(resourceTargetOwnerAccountUuid);
-                if (vsize + requiredVolSize > allVolumeQuotaSize) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. Current account is [uuid: %s]. " +
-                                            "The resource owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
-                                            "Current used:%s, Request:%s. ",
-                                    currentAccountUuid, resourceTargetOwnerAccountUuid,
-                                    VolumeConstant.QUOTA_VOLUME_SIZE, allVolumeQuotaSize,
-                                    vsize, requiredVolSize)
-                    ));
+                long allVolumeSizeUsed = new VmQuotaUtil().getUsedAllVolumeSize(resourceTargetOwnerAccountUuid);
+                {
+                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = VolumeConstant.QUOTA_VOLUME_SIZE;
+                    quotaCompareInfo.quotaValue = allVolumeSizeQuota;
+                    quotaCompareInfo.currentUsed = allVolumeSizeUsed;
+                    quotaCompareInfo.request = allVolumeSizeAsked;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
                 }
             }
 
@@ -1303,10 +1310,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
 
-                SimpleQuery<AccountVO> q1 = dbf.createQuery(AccountVO.class);
-                q1.select(AccountVO_.type);
-                q1.add(AccountVO_.uuid, Op.EQ, currentAccountUuid);
-                AccountType type = q1.findValue();
+                AccountType type = new QuotaUtil().getAccountType(currentAccountUuid);
                 if (type == AccountType.SystemAdmin && (pairs == null || pairs.size() == 0)) {
                     logger.debug("APIChangeResourceOwnerMsg:(pairs == null || pairs.size() == 0)." +
                             "Skip quota check for being called by QuotaChecker with admin account session." +
@@ -1314,19 +1318,17 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     return;
                 }
 
-                SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
-                q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
-                AccountResourceRefVO accResRefVO = q.find();
+                String resourceType = new QuotaUtil().getResourceType(msg.getResourceUuid());
 
 
-                if (accResRefVO.getResourceType().equals(VolumeVO.class.getSimpleName())) {
+                if (resourceType.equals(VolumeVO.class.getSimpleName())) {
                     String volumeUuid = msg.getResourceUuid();
                     ArrayList<String> volumeUuids = new ArrayList<>();
                     volumeUuids.add(volumeUuid);
                     checkVolumeQuotaForChangeResourceOwner(volumeUuids, null,
                             resourceTargetOwnerAccountUuid, currentAccountUuid, pairs);
 
-                } else if (accResRefVO.getResourceType().equals(VmInstanceVO.class.getSimpleName())) {
+                } else if (resourceType.equals(VmInstanceVO.class.getSimpleName())) {
                     VmInstanceVO vmInstanceVO = dbf.findByUuid(msg.getResourceUuid(), VmInstanceVO.class);
 
                     // filter vm state
@@ -1495,9 +1497,9 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
 
                 // check data volume num
                 if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
-                    long n = new VmQuotaUtil().getUsedDataVolumeCount(currentAccountUuid);
-
-                    if (n + msg.getDataDiskOfferingUuids().size() > dataVolumeNumQuota) {
+                    long dataVolumeNumUsed = new VmQuotaUtil().getUsedDataVolumeCount(currentAccountUuid);
+                    long dataVolumeNumAsked = msg.getDataDiskOfferingUuids().size();
+                    if (dataVolumeNumUsed + dataVolumeNumAsked > dataVolumeNumQuota) {
                         throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                                 String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
                                         currentAccountUuid, VolumeConstant.QUOTA_DATA_VOLUME_NUM, dataVolumeNumQuota)
@@ -1506,7 +1508,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 }
 
                 // check all volume size
-                long requiredVolSize = 0;
+                long allVolumeSizeAsked = 0;
 
                 sql = "select img.size, img.mediaType" +
                         " from ImageVO img" +
@@ -1522,7 +1524,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                     diskOfferingUuids.addAll(msg.getDataDiskOfferingUuids());
                 }
                 if (imgType == ImageMediaType.RootVolumeTemplate) {
-                    requiredVolSize += imgSize;
+                    allVolumeSizeAsked += imgSize;
                 } else if (imgType == ImageMediaType.ISO) {
                     diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
                 }
@@ -1542,17 +1544,21 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                         dq.setParameter("uuid", diskOfferingUuid);
                         Long dsize = dq.getSingleResult();
                         dsize = dsize == null ? 0 : dsize;
-                        requiredVolSize += dsize * diskOfferingCountMap.get(diskOfferingUuid);
+                        allVolumeSizeAsked += dsize * diskOfferingCountMap.get(diskOfferingUuid);
                     }
                 }
 
-                long vsize = new VmQuotaUtil().getUsedAllVolumeSize(currentAccountUuid);
-                if (vsize + requiredVolSize > allVolumeSizeQuota) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, VolumeConstant.QUOTA_VOLUME_SIZE,
-                                    allVolumeSizeQuota)
-                    ));
+                long allVolumeSizeUsed = new VmQuotaUtil().getUsedAllVolumeSize(currentAccountUuid);
+                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = VolumeConstant.QUOTA_VOLUME_SIZE;
+                    quotaCompareInfo.quotaValue = allVolumeSizeQuota;
+                    quotaCompareInfo.currentUsed = allVolumeSizeUsed;
+                    quotaCompareInfo.request = allVolumeSizeAsked;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
                 }
             }
 
@@ -1630,7 +1636,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         long amount = q.count();
         int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
         int start = 0;
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
         for (int i = 0; i < times; i++) {
             q = dbf.createQuery(VmInstanceVO.class);
             q.select(VmInstanceVO_.uuid, VmInstanceVO_.hostUuid);
@@ -1666,7 +1672,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
         }
 
         for (final String uuid : unknownVmUuids) {
-            TimeBasedGCEphemeralContext<Void> context = new TimeBasedGCEphemeralContext<Void>();
+            TimeBasedGCEphemeralContext<Void> context = new TimeBasedGCEphemeralContext<>();
             context.setInterval(5);
             context.setTimeUnit(TimeUnit.SECONDS);
             context.setRunner(new GCRunner() {
@@ -1714,7 +1720,7 @@ public class VmInstanceManagerImpl extends AbstractService implements VmInstance
                 long amount = q.count();
                 int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
                 int start = 0;
-                List<Tuple> ret = new ArrayList<Tuple>();
+                List<Tuple> ret = new ArrayList<>();
                 for (int i = 0; i < times; i++) {
                     q = dbf.createQuery(VmInstanceVO.class);
                     q.select(VmInstanceVO_.uuid, VmInstanceVO_.lastOpDate);

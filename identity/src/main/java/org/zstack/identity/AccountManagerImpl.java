@@ -853,7 +853,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void startExpiredSessionCollector() {
-        final int interval = IdentityGlobalConfig.SESSION_CELANUP_INTERVAL.value(Integer.class);
+        final int interval = IdentityGlobalConfig.SESSION_CLEANUP_INTERVAL.value(Integer.class);
         expiredSessionCollector = thdf.submitPeriodicTask(new PeriodicTask() {
 
             @Transactional
@@ -1238,12 +1238,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         private void policyCheck() {
-            SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-            q.select(AccountVO_.type);
-            q.add(AccountVO_.uuid, Op.EQ, session.getAccountUuid());
-            AccountType type = q.findValue();
-
-            if (type == AccountType.SystemAdmin) {
+            if (new QuotaUtil().isAdminAccount(session.getAccountUuid())) {
                 return;
             }
 
@@ -1326,8 +1321,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         @Transactional(readOnly = true)
         private List<PolicyInventory> getGroupPolicies() {
-            String sql = "select p from PolicyVO p, UserGroupUserRefVO ref, UserGroupPolicyRefVO gref where" +
-                    " p.uuid = gref.policyUuid and gref.groupUuid = ref.groupUuid and ref.userUuid = :uuid";
+            String sql = "select p" +
+                    " from PolicyVO p, UserGroupUserRefVO ref, UserGroupPolicyRefVO gref" +
+                    " where p.uuid = gref.policyUuid" +
+                    " and gref.groupUuid = ref.groupUuid" +
+                    " and ref.userUuid = :uuid";
             TypedQuery<PolicyVO> q = dbf.getEntityManager().createQuery(sql, PolicyVO.class);
             q.setParameter("uuid", session.getUserUuid());
             return PolicyInventory.valueOf(q.getResultList());
@@ -1540,11 +1538,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void validate(APIDeleteAccountMsg msg) {
-        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-        q.select(AccountVO_.type);
-        q.add(AccountVO_.uuid, Op.EQ, msg.getUuid());
-        AccountType type = q.findValue();
-        if (AccountType.SystemAdmin == type) {
+        if (new QuotaUtil().isAdminAccount(msg.getUuid())) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                     "unable to delete an account. The account is an admin account"
             ));

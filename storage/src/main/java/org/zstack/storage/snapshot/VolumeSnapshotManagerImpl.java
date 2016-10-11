@@ -568,12 +568,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         Quota.QuotaOperator checker = new Quota.QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, Quota.QuotaPair> pairs) {
-                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-                q.select(AccountVO_.type);
-                q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
-                AccountType type = q.findValue();
-
-                if (type != AccountType.SystemAdmin) {
+                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
                     if (msg instanceof APICreateVolumeSnapshotMsg) {
                         check((APICreateVolumeSnapshotMsg) msg, pairs);
                     } else if (msg instanceof APIChangeResourceOwnerMsg) {
@@ -588,12 +583,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
             @Override
             public void checkQuota(NeedQuotaCheckMessage msg, Map<String, Quota.QuotaPair> pairs) {
-                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-                q.select(AccountVO_.type);
-                q.add(AccountVO_.uuid, Op.EQ, msg.getAccountUuid());
-                AccountType type = q.findValue();
-
-                if (type != AccountType.SystemAdmin) {
+                if (!new QuotaUtil().isAdminAccount(msg.getAccountUuid())) {
                     if (msg instanceof VolumeCreateSnapshotMsg) {
                         check((VolumeCreateSnapshotMsg) msg, pairs);
                     }
@@ -623,6 +613,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
             private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 // TODO vminstance,volume,volumesnapshot
+
             }
 
             private void check(VolumeCreateSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
@@ -640,8 +631,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 long volumeSnapshotNumQuota = pairs.get(VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM).getValue();
                 long volumeSnapshotNumUsed = getUsedVolumeSnapshotNum(resourceTargetOwnerAccountUuid);
                 long volumeSnapshotNumAsked = 1;
-                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
                 {
+                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;

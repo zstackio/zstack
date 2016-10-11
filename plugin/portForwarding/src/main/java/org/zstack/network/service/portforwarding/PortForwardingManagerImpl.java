@@ -35,6 +35,7 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.vip.VipConstant.Params;
@@ -772,12 +773,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         QuotaOperator checker = new QuotaOperator() {
             @Override
             public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-                q.select(AccountVO_.type);
-                q.add(AccountVO_.uuid, Op.EQ, msg.getSession().getAccountUuid());
-                AccountType type = q.findValue();
-
-                if (type != AccountType.SystemAdmin) {
+                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
                     if (msg instanceof APICreatePortForwardingRuleMsg) {
                         check((APICreatePortForwardingRuleMsg) msg, pairs);
                     }
