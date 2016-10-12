@@ -103,27 +103,38 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
 
     @Transactional
     private void validate(APIAttachPrimaryStorageToClusterMsg msg) {
-        String sql = "select count(ref) from PrimaryStorageClusterRefVO ref where ref.clusterUuid = :clusterUuid and ref.primaryStorageUuid = :psUuid";
-        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-        q.setParameter("psUuid", msg.getPrimaryStorageUuid());
-        q.setParameter("clusterUuid", msg.getClusterUuid());
-        long count = q.getSingleResult();
-        if (count != 0) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("primary storage[uuid:%s] has been attached to cluster[uuid:%s]", msg.getPrimaryStorageUuid(),
-                            msg.getClusterUuid())
-            ));
+        {
+            String sql = "select count(ref)" +
+                    " from PrimaryStorageClusterRefVO ref" +
+                    " where ref.clusterUuid = :clusterUuid" +
+                    " and ref.primaryStorageUuid = :psUuid";
+            TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+            q.setParameter("psUuid", msg.getPrimaryStorageUuid());
+            q.setParameter("clusterUuid", msg.getClusterUuid());
+            long count = q.getSingleResult();
+            if (count != 0) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                        String.format("primary storage[uuid:%s] has been attached to cluster[uuid:%s]",
+                                msg.getPrimaryStorageUuid(), msg.getClusterUuid())
+                ));
+            }
         }
-
-        sql = "select count(ps) from PrimaryStorageVO ps, ClusterVO cluster where cluster.zoneUuid = ps.zoneUuid and cluster.uuid = :clusterUuid and ps.uuid = :psUuid";
-        TypedQuery<Long> jq = dbf.getEntityManager().createQuery(sql, Long.class);
-        jq.setParameter("psUuid", msg.getPrimaryStorageUuid());
-        jq.setParameter("clusterUuid", msg.getClusterUuid());
-        count = jq.getSingleResult();
-        if (count == 0) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("primary storage[uuid:%s] and cluster[uuid:%s] are not in the same zone", msg.getPrimaryStorageUuid(), msg.getClusterUuid())
-            ));
+        {
+            String sql = "select count(ps)" +
+                    " from PrimaryStorageVO ps, ClusterVO cluster" +
+                    " where cluster.zoneUuid = ps.zoneUuid" +
+                    " and cluster.uuid = :clusterUuid" +
+                    " and ps.uuid = :psUuid";
+            TypedQuery<Long> jq = dbf.getEntityManager().createQuery(sql, Long.class);
+            jq.setParameter("psUuid", msg.getPrimaryStorageUuid());
+            jq.setParameter("clusterUuid", msg.getClusterUuid());
+            long count = jq.getSingleResult();
+            if (count == 0) {
+                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                        String.format("primary storage[uuid:%s] and cluster[uuid:%s] are not in the same zone",
+                                msg.getPrimaryStorageUuid(), msg.getClusterUuid())
+                ));
+            }
         }
     }
 

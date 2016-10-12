@@ -1881,26 +1881,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     public void attachHook(final String clusterUuid, Completion completion) {
-        new Runnable() {
-            @Override
-            @Transactional(readOnly = true)
-            public void run() {
-                String sql = "select count(ref) from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref where" +
-                        " ps.uuid = ref.primaryStorageUuid and ref.clusterUuid = :cuuid and ps.type = :ptype";
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("cuuid", clusterUuid);
-                q.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-                long count = q.getSingleResult();
-                if (count > 0) {
-                    throw new OperationFailureException(errf.stringToOperationError(
-                            String.format("unable to attach the local storage[uuid:%s, name: %s] to the cluster[uuid:%s]," +
-                                            "there has been a local storage attached on the cluster already", self.getUuid(), self.getName(),
-                                    clusterUuid)
-                    ));
-                }
-            }
-        }.run();
-
         SimpleQuery<ClusterVO> q = dbf.createQuery(ClusterVO.class);
         q.select(ClusterVO_.hypervisorType);
         q.add(ClusterVO_.uuid, Op.EQ, clusterUuid);
