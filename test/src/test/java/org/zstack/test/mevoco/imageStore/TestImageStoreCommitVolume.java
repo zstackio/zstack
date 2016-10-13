@@ -7,9 +7,12 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.primary.APICommitVolumeAsImageMsg;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.image.ImageGlobalConfig;
 import org.zstack.storage.backup.imagestore.ImageStoreBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -21,10 +24,12 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class TestImageStoreCommitVolume {
     private CLogger logger = Utils.getLogger(TestImageStoreCommitVolume.class);
     private Deployer deployer;
+    private DatabaseFacade dbf;
     private Api api;
 
     @Before
@@ -40,32 +45,46 @@ public class TestImageStoreCommitVolume {
         api = deployer.getApi();
         ComponentLoader loader = deployer.getComponentLoader();
         loader.getComponent(CloudBus.class);
-        loader.getComponent(DatabaseFacade.class);
+        dbf = loader.getComponent(DatabaseFacade.class);
         loader.getComponent(ImageStoreBackupStorageSimulatorConfig.class);
         api.loginAsAdmin();
     }
 
     @Test
-    public void test() throws ApiSenderException {
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
         // Commit a volume as image
-        try {
-            MessageCommandRecorder.reset();
-            MessageCommandRecorder.start(APICommitVolumeAsImageMsg.class);
+        MessageCommandRecorder.reset();
+        MessageCommandRecorder.start(APICommitVolumeAsImageMsg.class);
 
-            BackupStorageInventory bs = deployer.backupStorages.get("imagestore");
-            List<String> bsUuids = Collections.singletonList(bs.getUuid());
-            api.commitVolumeAsImage(
-                    vm.getRootVolumeUuid(),
-                    "test-image",
-                    bsUuids
-            );
+        BackupStorageInventory bs = deployer.backupStorages.get("imagestore");
+        List<String> bsUuids = Collections.singletonList(bs.getUuid());
+        ImageInventory inv = api.commitVolumeAsImage(
+                vm.getRootVolumeUuid(),
+                "test-image",
+                bsUuids
+        );
 
-            String callingChain = MessageCommandRecorder.endAndToString();
-            logger.debug(callingChain);
-        } catch (ApiSenderException e) {
-            Assert.fail(e.toString());
-        }
+        String callingChain = MessageCommandRecorder.endAndToString();
+        logger.debug(callingChain);
+
+        Assert.assertTrue(inv != null);
+
+        // Expunge the root image of the VM and try to commit again
+        final VolumeVO vol = dbf.findByUuid(vm.getRootVolumeUuid(), VolumeVO.class);
+        Assert.assertTrue("Root volume is missing!", vol != null);
+
+        ImageGlobalConfig.EXPUNGE_PERIOD.updateValue(1);
+        ImageGlobalConfig.EXPUNGE_INTERVAL.updateValue(1);
+        api.deleteImage(vol.getRootImageUuid(), bsUuids, null);
+        TimeUnit.SECONDS.sleep(2);
+
+        inv = api.commitVolumeAsImage(
+                vm.getRootVolumeUuid(),
+                "test-image2",
+                bsUuids
+        );
+        Assert.assertTrue(inv != null);
     }
 }
