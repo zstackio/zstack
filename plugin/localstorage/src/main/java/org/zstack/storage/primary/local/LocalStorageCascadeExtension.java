@@ -74,7 +74,7 @@ public class LocalStorageCascadeExtension extends AbstractAsyncCascadeExtension 
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(ZoneVO.class.getSimpleName());
+        return Arrays.asList(PrimaryStorageVO.class.getSimpleName());
     }
 
     @Override
