@@ -532,7 +532,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         if (target == null) {
-            throw new OperationFailureException(errf.stringToOperationError(String.format("cannot find any qualified primary storage, errors are %s", errs)));
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("cannot find any qualified primary storage, errors are %s", errs)));
         }
 
         reply.setPrimaryStorageInventory(target);
