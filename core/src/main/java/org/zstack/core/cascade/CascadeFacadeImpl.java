@@ -157,15 +157,24 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
 
     @Override
     public void asyncCascade(String actionCode, String issuer, Object context, Completion completion) {
-        CascadeAction action = new CascadeAction().setRootIssuer(issuer).setRootIssuerContext(context)
-                .setParentIssuer(issuer).setParentIssuerContext(context).setActionCode(actionCode);
+        CascadeAction action = new CascadeAction().
+                setRootIssuer(issuer).
+                setRootIssuerContext(context).
+                setParentIssuer(issuer).
+                setParentIssuerContext(context).
+                setActionCode(actionCode);
         asyncCascade(action, completion);
     }
 
     @Override
     public void asyncCascadeFull(String actionCode, String issuer, Object context, Completion completion) {
-        CascadeAction action = new CascadeAction().setRootIssuer(issuer).setRootIssuerContext(context)
-                .setParentIssuer(issuer).setParentIssuerContext(context).setActionCode(actionCode).setFullTraverse(true);
+        CascadeAction action = new CascadeAction().
+                setRootIssuer(issuer).
+                setRootIssuerContext(context).
+                setParentIssuer(issuer).
+                setParentIssuerContext(context).
+                setActionCode(actionCode).
+                setFullTraverse(true);
         asyncCascade(action, completion);
     }
 

@@ -57,14 +57,14 @@ import java.util.Map;
 public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     private final static CLogger logger = Utils.getLogger(PrimaryStorageBase.class);
 
-	protected PrimaryStorageVO self;
+    protected PrimaryStorageVO self;
 
-	@Autowired
-	protected CloudBus bus;
-	@Autowired
-	protected DatabaseFacade dbf;
-	@Autowired
-	protected JobQueueFacade jobf;
+    @Autowired
+    protected CloudBus bus;
+    @Autowired
+    protected DatabaseFacade dbf;
+    @Autowired
+    protected JobQueueFacade jobf;
     @Autowired
     protected PrimaryStorageExtensionPointEmitter extpEmitter;
     @Autowired
@@ -99,11 +99,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
     }
 
-	protected abstract void handle(InstantiateVolumeOnPrimaryStorageMsg msg);
-	
-	protected abstract void handle(DeleteVolumeOnPrimaryStorageMsg msg);
-	
-	protected abstract void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg);
+    protected abstract void handle(InstantiateVolumeOnPrimaryStorageMsg msg);
+
+    protected abstract void handle(DeleteVolumeOnPrimaryStorageMsg msg);
+
+    protected abstract void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg);
 
     protected abstract void handle(DownloadDataVolumeToPrimaryStorageMsg msg);
 
@@ -123,9 +123,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void syncPhysicalCapacity(ReturnValueCompletion<PhysicalCapacityUsage> completion);
 
-	public PrimaryStorageBase(PrimaryStorageVO self) {
-		this.self = self;
-	}
+    public PrimaryStorageBase(PrimaryStorageVO self) {
+        this.self = self;
+    }
 
     protected PrimaryStorageInventory getSelfInventory() {
         return PrimaryStorageInventory.valueOf(self);
@@ -153,29 +153,29 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     public void changeStateHook(PrimaryStorageStateEvent evt, PrimaryStorageState nextState) {
     }
 
-	@Override
-	public void handleMessage(Message msg) {
-		try {
-			if (msg instanceof APIMessage) {
-				handleApiMessage((APIMessage) msg);
-			} else {
-				handleLocalMessage(msg);
-			}
-		} catch (Exception e) {
-			bus.logExceptionWithMessageDump(msg, e);
-			bus.replyErrorByMessageType(msg, e);
-		}
-	}
+    @Override
+    public void handleMessage(Message msg) {
+        try {
+            if (msg instanceof APIMessage) {
+                handleApiMessage((APIMessage) msg);
+            } else {
+                handleLocalMessage(msg);
+            }
+        } catch (Exception e) {
+            bus.logExceptionWithMessageDump(msg, e);
+            bus.replyErrorByMessageType(msg, e);
+        }
+    }
 
-	protected void handleLocalMessage(Message msg) {
-	    if (msg instanceof PrimaryStorageReportPhysicalCapacityMsg) {
-	        handle((PrimaryStorageReportPhysicalCapacityMsg) msg);
-	    } else if (msg instanceof InstantiateVolumeOnPrimaryStorageMsg) {
-	        handle((InstantiateVolumeOnPrimaryStorageMsg)msg);
-	    } else if (msg instanceof DeleteVolumeOnPrimaryStorageMsg) {
-	        handle((DeleteVolumeOnPrimaryStorageMsg)msg);
-	    } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {
-	        handleBase((CreateTemplateFromVolumeOnPrimaryStorageMsg) msg);
+    protected void handleLocalMessage(Message msg) {
+        if (msg instanceof PrimaryStorageReportPhysicalCapacityMsg) {
+            handle((PrimaryStorageReportPhysicalCapacityMsg) msg);
+        } else if (msg instanceof InstantiateVolumeOnPrimaryStorageMsg) {
+            handle((InstantiateVolumeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeOnPrimaryStorageMsg) {
+            handle((DeleteVolumeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {
+            handleBase((CreateTemplateFromVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof PrimaryStorageDeletionMsg) {
             handle((PrimaryStorageDeletionMsg) msg);
         } else if (msg instanceof DetachPrimaryStorageFromClusterMsg) {
@@ -200,10 +200,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((ChangePrimaryStorageStatusMsg) msg);
         } else if (msg instanceof ReconnectPrimaryStorageMsg) {
             handle((ReconnectPrimaryStorageMsg) msg);
-	    } else {
-	        bus.dealWithUnknownMessage(msg);
-	    }
-	}
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
 
     protected void handle(ReconnectPrimaryStorageMsg msg) {
         ReconnectPrimaryStorageReply reply = new ReconnectPrimaryStorageReply();
@@ -418,17 +418,17 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     private void handle(PrimaryStorageReportPhysicalCapacityMsg msg) {
         updateCapacity(msg.getTotalCapacity(), msg.getAvailableCapacity());
-	    bus.reply(msg, new MessageReply());
+        bus.reply(msg, new MessageReply());
     }
 
     protected void handleApiMessage(APIMessage msg) {
-		if (msg instanceof APIDeletePrimaryStorageMsg) {
-			handle((APIDeletePrimaryStorageMsg) msg);
-		} else if (msg instanceof APIChangePrimaryStorageStateMsg) {
-			handle((APIChangePrimaryStorageStateMsg) msg);
-		} else if (msg instanceof APIAttachPrimaryStorageToClusterMsg) {
-			handle((APIAttachPrimaryStorageToClusterMsg) msg);
-		} else if (msg instanceof APIDetachPrimaryStorageFromClusterMsg) {
+        if (msg instanceof APIDeletePrimaryStorageMsg) {
+            handle((APIDeletePrimaryStorageMsg) msg);
+        } else if (msg instanceof APIChangePrimaryStorageStateMsg) {
+            handle((APIChangePrimaryStorageStateMsg) msg);
+        } else if (msg instanceof APIAttachPrimaryStorageToClusterMsg) {
+            handle((APIAttachPrimaryStorageToClusterMsg) msg);
+        } else if (msg instanceof APIDetachPrimaryStorageFromClusterMsg) {
             handle((APIDetachPrimaryStorageFromClusterMsg) msg);
         } else if (msg instanceof APIReconnectPrimaryStorageMsg) {
             handle((APIReconnectPrimaryStorageMsg) msg);
@@ -438,10 +438,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((APISyncPrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof APICleanUpImageCacheOnPrimaryStorageMsg) {
             handle((APICleanUpImageCacheOnPrimaryStorageMsg) msg);
-		} else {
-			bus.dealWithUnknownMessage(msg);
-		}
-	}
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
 
     protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
         throw new OperationFailureException(errf.stringToOperationError("operation not supported"));
@@ -679,7 +679,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 bus.publish(evt);
             }
         });
-	}
+    }
 
     protected void handle(final APIAttachPrimaryStorageToClusterMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
@@ -768,9 +768,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         extpEmitter.afterChange(self, event, currState);
         evt.setInventory(PrimaryStorageInventory.valueOf(self));
         bus.publish(evt);
-	}
+    }
 
-	protected void handle(APIDeletePrimaryStorageMsg msg) {
+    protected void handle(APIDeletePrimaryStorageMsg msg) {
         final APIDeletePrimaryStorageEvent evt = new APIDeletePrimaryStorageEvent(msg.getId());
         final String issuer = PrimaryStorageVO.class.getSimpleName();
         final List<PrimaryStorageInventory> ctx = PrimaryStorageInventory.valueOf(Arrays.asList(self));
@@ -845,6 +845,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 bus.publish(evt);
             }
         }).start();
-	}
+    }
 
 }

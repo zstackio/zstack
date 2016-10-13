@@ -54,7 +54,8 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     private void logDeletedPrimaryStorage() {
-        logger.warn(String.format("[Primary Storage Capacity] unable to update capacity for the primary storage[uuid:%s]. It may have been deleted, cannot find it in database",
+        logger.warn(String.format("[Primary Storage Capacity] unable to update capacity for the primary storage[uuid:%s]." +
+                        " It may have been deleted, cannot find it in database",
                 primaryStorageUuid));
     }
 
@@ -63,17 +64,17 @@ public class PrimaryStorageCapacityUpdater {
             StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
             int index = 0;
             String fileName = PrimaryStorageCapacityUpdater.class.getSimpleName() + ".java";
-            for (int i=0; i<stackTraceElements.length; i++) {
+            for (int i = 0; i < stackTraceElements.length; i++) {
                 if (fileName.equals(stackTraceElements[i].getFileName())) {
                     index = i;
                 }
             }
-            StackTraceElement caller = stackTraceElements[index+1];
+            StackTraceElement caller = stackTraceElements[index + 1];
             logger.trace(String.format("[Primary Storage Capacity] %s:%s:%s changed the capacity of the primary storage[uuid:%s] as:\n" +
-                    "total: %s --> %s\n" +
-                    "available: %s --> %s\n" +
-                    "physical total: %s --> %s\n" +
-                    "physical available: %s --> %s\n", caller.getFileName(), caller.getMethodName(), caller.getLineNumber(), capacityVO.getUuid(),
+                            "total: %s --> %s\n" +
+                            "available: %s --> %s\n" +
+                            "physical total: %s --> %s\n" +
+                            "physical available: %s --> %s\n", caller.getFileName(), caller.getMethodName(), caller.getLineNumber(), capacityVO.getUuid(),
                     totalForLog, capacityVO.getTotalCapacity(),
                     availForLog, capacityVO.getAvailableCapacity(),
                     totalPhysicalForLog, capacityVO.getTotalPhysicalCapacity(),
@@ -108,13 +109,18 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     private boolean isResized() {
-        return originalCopy != null && capacityVO != null && originalCopy.getTotalPhysicalCapacity() != 0 && originalCopy.getTotalPhysicalCapacity() != capacityVO.getTotalPhysicalCapacity();
+        return originalCopy != null &&
+                capacityVO != null &&
+                originalCopy.getTotalPhysicalCapacity() != 0 &&
+                originalCopy.getTotalPhysicalCapacity() != capacityVO.getTotalPhysicalCapacity();
     }
 
     private void checkResize() {
         if (isResized()) {
-            logger.debug(String.format("the physical capacity of primary storage[uuid:%s] changed from %s to %s, this indicates the primary storage is re-sized." +
-                    " We need to recalculate its capacity", capacityVO.getUuid(), originalCopy.getTotalPhysicalCapacity(), capacityVO.getTotalPhysicalCapacity()));
+            logger.debug(String.format("the physical capacity of primary storage[uuid:%s] changed from %s to %s," +
+                    " this indicates the primary storage is re-sized." +
+                    " We need to recalculate its capacity", capacityVO.getUuid(),
+                    originalCopy.getTotalPhysicalCapacity(), capacityVO.getTotalPhysicalCapacity()));
             // primary storage re-sized
             RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
             msg.setPrimaryStorageUuid(capacityVO.getUuid());
@@ -263,7 +269,8 @@ public class PrimaryStorageCapacityUpdater {
         if (capacityVO.getAvailableCapacity() < size) {
             if (exceptionOnFailure) {
                 throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("cannot reserve %s bytes on the primary storage[uuid:%s], it's short of available capacity", size, capacityVO.getUuid())
+                        String.format("cannot reserve %s bytes on the primary storage[uuid:%s]," +
+                                " it's short of available capacity", size, capacityVO.getUuid())
                 ));
             } else {
                 return false;
