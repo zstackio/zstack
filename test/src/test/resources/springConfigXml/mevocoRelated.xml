@@ -4,13 +4,13 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
          http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
        default-init-method="init" default-destroy-method="destory">
-	
-	<import resource="mevoco.xml"/>
-	<import resource="license.xml"/>
-	<import resource="localStorage.xml"/>
-	<import resource="localStorageSimulator.xml"/>
-	<import resource="flatNetworkServiceSimulator.xml"/>
-	<import resource="flatNetworkProvider.xml"/>
-	<import resource="agentManager.xml"/>
-	<import resource="KVMRelated.xml"/>
+
+    <import resource="mevoco.xml"/>
+    <import resource="license.xml"/>
+    <import resource="localStorage.xml"/>
+    <import resource="localStorageSimulator.xml"/>
+    <import resource="flatNetworkServiceSimulator.xml"/>
+    <import resource="flatNetworkProvider.xml"/>
+    <import resource="agentManager.xml"/>
+    <import resource="KVMRelated.xml"/>
 </beans>

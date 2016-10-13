@@ -14,10 +14,10 @@ import java.util.*;
 
 public class PluginRegistryImpl implements PluginRegistryIN {
     private static final CLogger logger = CLoggerImpl.getLogger(PluginRegistryImpl.class);
-    private Map<String, List<PluginExtension>> extensions = new HashMap<String, List<PluginExtension>>();
-    private Map<String, List<PluginExtension>> extensionsByInterfaceName = new HashMap<String, List<PluginExtension>>();
-    private Map<Class, List> extensionsByInterfaceClass = new HashMap<Class, List>();
-    private Map<Class, Map<Object, Object>> extensionAsMap = new HashMap<Class, Map<Object, Object>>();
+    private Map<String, List<PluginExtension>> extensions = new HashMap<>();
+    private Map<String, List<PluginExtension>> extensionsByInterfaceName = new HashMap<>();
+    private Map<Class, List> extensionsByInterfaceClass = new HashMap<>();
+    private Map<Class, Map<Object, Object>> extensionAsMap = new HashMap<>();
     private Map<Class, Map<Object, List>> extensionListAsMap = new HashMap<>();
 
     private void sortPlugins() {
@@ -31,7 +31,7 @@ public class PluginRegistryImpl implements PluginRegistryIN {
             });
         }
     }
-    
+
     private void buildPluginTree() {
         ComponentLoader loader = Platform.getComponentLoader();
         for (Map.Entry<String, List<PluginExtension>> entry : extensions.entrySet()) {
@@ -42,27 +42,35 @@ public class PluginRegistryImpl implements PluginRegistryIN {
                  * parent plugin as implementation
                  */
                 try {
-                	Class<?> interfaceClass = Class.forName(ext.getReferenceInterface());
-                	Object instance = null;
+                    Class<?> interfaceClass = Class.forName(ext.getReferenceInterface());
+                    Object instance;
                     if (!"".equals(ext.getInstanceId())) {
                         instance = loader.getComponentByBeanName(ext.getInstanceId());
                     } else {
-                    	instance = loader.getComponentByBeanName(ext.getBeanName());
+                        instance = loader.getComponentByBeanName(ext.getBeanName());
                     }
                     ext.setInstance(instance);
-                    
+
                     if (!interfaceClass.isInstance(ext.getInstance())) {
-                    	throw new IllegalArgumentException(String.format("%s is not an instance of the interface %s", ext.getInstance().getClass().getCanonicalName(), interfaceClass.getName()));
+                        throw new IllegalArgumentException(String.format("%s is not an instance of the interface %s",
+                                ext.getInstance().getClass().getCanonicalName(), interfaceClass.getName()));
                     }
-                    
+
                     List<PluginExtension> exts = extensionsByInterfaceName.get(ext.getReferenceInterface());
                     if (exts == null) {
-                    	exts = new ArrayList<PluginExtension>(1);
+                        exts = new ArrayList<>(1);
                     }
                     exts.add(ext);
                     extensionsByInterfaceName.put(ext.getReferenceInterface(), exts);
                 } catch (Exception e) {
-                    throw new CloudRuntimeException(String.format("%s, mark extension referred to interface [%s] in bean[name=%s, class=%s] as invalid. Checking the bean XML file to fix it", e.getMessage(), ext.getReferenceInterface(), ext.getBeanName(), ext.getBeanClassName()), e);
+                    throw new CloudRuntimeException(
+                            String.format("%s, mark extension referred to interface [%s] in bean[name=%s, class=%s] as invalid." +
+                                            " Checking the bean XML file to fix it",
+                                    e.getMessage(),
+                                    ext.getReferenceInterface(),
+                                    ext.getBeanName(),
+                                    ext.getBeanClassName()),
+                            e);
                 }
             }
         }
@@ -94,16 +102,19 @@ public class PluginRegistryImpl implements PluginRegistryIN {
                 ext.setAttributes(extd.attributes);
 
                 if (!extd.interfaceClass.isInstance(ext.getInstance())) {
-                    throw new IllegalArgumentException(String.format("%s is not an instance of the interface %s", ext.getInstance().getClass().getCanonicalName(), extd.interfaceClass.getName()));
+                    throw new IllegalArgumentException(
+                            String.format("%s is not an instance of the interface %s",
+                                    ext.getInstance().getClass().getCanonicalName(), extd.interfaceClass.getName()));
                 }
 
                 List<PluginExtension> exts = extensionsByInterfaceName.get(ifaceName);
                 if (exts == null) {
-                    exts = new ArrayList<PluginExtension>();
+                    exts = new ArrayList<>();
                     extensionsByInterfaceName.put(ifaceName, exts);
                 }
 
-                logger.debug(String.format("Plugin[%s] declares an extension[%s] from static DSL", beanClass.getName(), extd.interfaceClass.getName()));
+                logger.debug(String.format("Plugin[%s] declares an extension[%s] from static DSL",
+                        beanClass.getName(), extd.interfaceClass.getName()));
                 exts.add(ext);
             }
         }
@@ -133,13 +144,13 @@ public class PluginRegistryImpl implements PluginRegistryIN {
     @Override
     public <T> List<T> getExtensionList(Class<T> clazz) {
         List<T> exts = extensionsByInterfaceClass.get(clazz);
-        return exts == null ? new ArrayList<T>() : exts;
+        return exts == null ? new ArrayList<>() : exts;
     }
 
     @Override
     public <T, K> void saveExtensionAsMap(Class<T> clazz, Function<K, T> func) {
         List<T> exts = getExtensionList(clazz);
-        Map<Object, Object> m = new HashMap<Object, Object>();
+        Map<Object, Object> m = new HashMap<>();
 
         for (T ext : exts) {
             K key = func.call(ext);
@@ -164,7 +175,7 @@ public class PluginRegistryImpl implements PluginRegistryIN {
     @Override
     public <T, K> void saveExtensionListAsMap(Class<T> clazz, Function<K, T> func) {
         List<T> exts = getExtensionList(clazz);
-        Map<Object, List> m =  new HashMap<>();
+        Map<Object, List> m = new HashMap<>();
         for (T ext : exts) {
             K key = func.call(ext);
             DebugUtils.Assert(key != null, "key cannot be null");
@@ -193,15 +204,15 @@ public class PluginRegistryImpl implements PluginRegistryIN {
 
     @Override
     public List<PluginExtension> getExtensionByInterfaceName(String interfaceName) {
-		List<PluginExtension> exts = extensionsByInterfaceName.get(interfaceName);
-		if (exts == null) {
-			exts = new ArrayList<PluginExtension>(0);
-		}
-		
-	    return exts;
+        List<PluginExtension> exts = extensionsByInterfaceName.get(interfaceName);
+        if (exts == null) {
+            exts = new ArrayList<>(0);
+        }
+
+        return exts;
     }
 
-	public void setExtensions(Map<String, List<PluginExtension>> extensions) {
-    	this.extensions = extensions;
+    public void setExtensions(Map<String, List<PluginExtension>> extensions) {
+        this.extensions = extensions;
     }
 }

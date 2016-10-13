@@ -10,7 +10,6 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

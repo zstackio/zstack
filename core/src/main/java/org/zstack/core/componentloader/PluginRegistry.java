@@ -17,6 +17,6 @@ public interface PluginRegistry {
 
     <T> List getExtensionListFromMap(Object key, Class<T> clazz);
 
-    public static final String PLUGIN_REGISTRY_BEAN_NAME = "zstack.PluginRegistry";
-    public static final String PLUGIN_REGISTRYIMPL_PLUGINS_FIELD_NAME = "extensions";
+    String PLUGIN_REGISTRY_BEAN_NAME = "zstack.PluginRegistry";
+    String PLUGIN_REGISTRYIMPL_PLUGINS_FIELD_NAME = "extensions";
 }

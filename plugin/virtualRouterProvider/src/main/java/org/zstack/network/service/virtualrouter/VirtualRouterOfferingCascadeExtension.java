@@ -49,7 +49,14 @@ public class VirtualRouterOfferingCascadeExtension extends AbstractAsyncCascadeE
 
     @Transactional
     private void deleteInstanceOfferingEONotReferredByVm() {
-        String sql = "delete from InstanceOfferingEO i where i.deleted is not null and i.uuid not in (select vm.instanceOfferingUuid from VmInstanceVO vm where vm.instanceOfferingUuid is not null)";
+        String sql = "delete from InstanceOfferingEO i" +
+                " where i.deleted is not null" +
+                " and i.uuid not in" +
+                " (" +
+                " select vm.instanceOfferingUuid" +
+                " from VmInstanceVO vm" +
+                " where vm.instanceOfferingUuid is not null" +
+                " )";
         Query q = dbf.getEntityManager().createQuery(sql);
         q.executeUpdate();
     }
@@ -80,12 +87,13 @@ public class VirtualRouterOfferingCascadeExtension extends AbstractAsyncCascadeE
             offeringVOs.addAll(lst);
             ret = VirtualRouterOfferingInventory.valueOf1(offeringVOs);
         } else if (ImageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> imgUuids = CollectionUtils.transformToList((List<ImageDeletionStruct>)action.getParentIssuerContext(), new Function<String, ImageDeletionStruct>() {
-                @Override
-                public String call(ImageDeletionStruct arg) {
-                    return arg.getDeleteAll() ? arg.getImage().getUuid() : null;
-                }
-            });
+            List<String> imgUuids = CollectionUtils.transformToList(
+                    (List<ImageDeletionStruct>) action.getParentIssuerContext(), new Function<String, ImageDeletionStruct>() {
+                        @Override
+                        public String call(ImageDeletionStruct arg) {
+                            return arg.getDeleteAll() ? arg.getImage().getUuid() : null;
+                        }
+                    });
 
             SimpleQuery<VirtualRouterOfferingVO> q = dbf.createQuery(VirtualRouterOfferingVO.class);
             q.add(VirtualRouterOfferingVO_.imageUuid, Op.IN, imgUuids);
@@ -114,16 +122,17 @@ public class VirtualRouterOfferingCascadeExtension extends AbstractAsyncCascadeE
             }
         });
 
-        List<InstanceOfferingDeletionMsg> msgs = CollectionUtils.transformToList(offeringUuids, new Function<InstanceOfferingDeletionMsg, String>() {
-            @Override
-            public InstanceOfferingDeletionMsg call(String arg) {
-                InstanceOfferingDeletionMsg msg = new InstanceOfferingDeletionMsg();
-                msg.setInstanceOfferingUuid(arg);
-                msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
-                bus.makeTargetServiceIdByResourceUuid(msg, ConfigurationConstant.SERVICE_ID, arg);
-                return msg;
-            }
-        });
+        List<InstanceOfferingDeletionMsg> msgs = CollectionUtils.transformToList(
+                offeringUuids, new Function<InstanceOfferingDeletionMsg, String>() {
+                    @Override
+                    public InstanceOfferingDeletionMsg call(String arg) {
+                        InstanceOfferingDeletionMsg msg = new InstanceOfferingDeletionMsg();
+                        msg.setInstanceOfferingUuid(arg);
+                        msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
+                        bus.makeTargetServiceIdByResourceUuid(msg, ConfigurationConstant.SERVICE_ID, arg);
+                        return msg;
+                    }
+                });
 
         bus.send(msgs, new CloudBusListCallBack(completion) {
             @Override

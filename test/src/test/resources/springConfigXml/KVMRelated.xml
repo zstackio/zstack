@@ -4,11 +4,11 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
          http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
        default-init-method="init" default-destroy-method="destory">
-	
-	<import resource="Kvm.xml"/>
-	<import resource="KVMSimulator.xml"/>
-	<import resource="NfsPrimaryStorage.xml"/>
-	<import resource="NfsPrimaryStorageSimulator.xml"/>
-	<import resource="SftpBackupStorage.xml"/>
-	<import resource="SftpBackupStorageSimulator.xml"/>
+
+    <import resource="Kvm.xml"/>
+    <import resource="KVMSimulator.xml"/>
+    <import resource="NfsPrimaryStorage.xml"/>
+    <import resource="NfsPrimaryStorageSimulator.xml"/>
+    <import resource="SftpBackupStorage.xml"/>
+    <import resource="SftpBackupStorageSimulator.xml"/>
 </beans>
