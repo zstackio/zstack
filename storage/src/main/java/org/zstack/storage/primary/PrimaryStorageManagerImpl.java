@@ -65,11 +65,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     @Autowired
     private PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
 
-    private Map<String, RecalculatePrimaryStorageCapacityExtensionPoint> recalculateCapacityExtensions = new HashMap<String, RecalculatePrimaryStorageCapacityExtensionPoint>();
-    private Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<String, PrimaryStorageFactory>());
-    private Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections
-            .synchronizedMap(new HashMap<String, PrimaryStorageAllocatorStrategyFactory>());
-    private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
+    private Map<String, RecalculatePrimaryStorageCapacityExtensionPoint> recalculateCapacityExtensions = new HashMap<>();
+    private Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<>());
+    private Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections.synchronizedMap(new HashMap<>());
+    private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
 
     static {
         allowedMessageAfterSoftDeletion.add(PrimaryStorageDeletionMsg.class);
@@ -79,7 +78,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG.installValidator(new SystemTagValidator() {
             @Override
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
-                String uuid = PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG.getTokenByTag(systemTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG_TOKEN);
+                String uuid = PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG.getTokenByTag(
+                        systemTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_UUID_TAG_TOKEN);
                 if (!StringDSL.isZstackUuid(uuid)) {
                     throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                             String.format("%s is invalid. %s is not a valid zstack uuid", systemTag, uuid)
@@ -101,7 +101,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         } else if (msg instanceof APIListPrimaryStorageMsg) {
             handle((APIListPrimaryStorageMsg) msg);
         } else if (msg instanceof APISearchPrimaryStorageMsg) {
-        	handle((APISearchPrimaryStorageMsg) msg);
+            handle((APISearchPrimaryStorageMsg) msg);
         } else if (msg instanceof APIGetPrimaryStorageMsg) {
             handle((APIGetPrimaryStorageMsg) msg);
         } else if (msg instanceof PrimaryStorageMessage) {
@@ -125,17 +125,34 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             @Transactional(readOnly = true)
             public Tuple call() {
                 if (msg.getPrimaryStorageUuids() != null && !msg.getPrimaryStorageUuids().isEmpty()) {
-                    String sql = "select sum(psc.totalCapacity), sum(psc.availableCapacity), sum(psc.totalPhysicalCapacity), sum(psc.availablePhysicalCapacity) from PrimaryStorageCapacityVO psc where psc.uuid in (:psUuids)";
+                    String sql = "select sum(psc.totalCapacity)," +
+                            " sum(psc.availableCapacity)," +
+                            " sum(psc.totalPhysicalCapacity)," +
+                            " sum(psc.availablePhysicalCapacity)" +
+                            " from PrimaryStorageCapacityVO psc" +
+                            " where psc.uuid in (:psUuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("psUuids", msg.getPrimaryStorageUuids());
                     return q.getSingleResult();
                 } else if (msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty()) {
-                    String sql = "select sum(psc.totalCapacity), sum(psc.availableCapacity), sum(psc.totalPhysicalCapacity), sum(psc.availablePhysicalCapacity) from PrimaryStorageCapacityVO psc, PrimaryStorageClusterRefVO ref where ref.primaryStorageUuid = psc.uuid and ref.clusterUuid in (:clusterUuids)";
+                    String sql = "select sum(psc.totalCapacity)," +
+                            " sum(psc.availableCapacity)," +
+                            " sum(psc.totalPhysicalCapacity)," +
+                            " sum(psc.availablePhysicalCapacity)" +
+                            " from PrimaryStorageCapacityVO psc, PrimaryStorageClusterRefVO ref" +
+                            " where ref.primaryStorageUuid = psc.uuid" +
+                            " and ref.clusterUuid in (:clusterUuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("clusterUuids", msg.getClusterUuids());
                     return q.getSingleResult();
                 } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
-                    String sql = "select sum(psc.totalCapacity), sum(psc.availableCapacity), sum(psc.totalPhysicalCapacity), sum(psc.availablePhysicalCapacity) from PrimaryStorageCapacityVO psc, PrimaryStorageVO ps where ps.uuid = psc.uuid and ps.zoneUuid in (:zoneUuids)";
+                    String sql = "select sum(psc.totalCapacity)," +
+                            " sum(psc.availableCapacity)," +
+                            " sum(psc.totalPhysicalCapacity)," +
+                            " sum(psc.availablePhysicalCapacity)" +
+                            " from PrimaryStorageCapacityVO psc, PrimaryStorageVO ps" +
+                            " where ps.uuid = psc.uuid" +
+                            " and ps.zoneUuid in (:zoneUuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("zoneUuids", msg.getZoneUuids());
                     return q.getSingleResult();
@@ -164,7 +181,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private void handle(APIGetPrimaryStorageTypesMsg msg) {
         APIGetPrimaryStorageTypesReply reply = new APIGetPrimaryStorageTypesReply();
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
         ret.addAll(PrimaryStorageType.getAllTypeNames());
         reply.setPrimaryStorageTypes(ret);
         bus.reply(msg, reply);
@@ -179,14 +196,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void handle(APISearchPrimaryStorageMsg msg) {
-    	SearchQuery<PrimaryStorageInventory> sq = SearchQuery.create(msg, PrimaryStorageInventory.class);
-    	String content = sq.listAsString();
-    	APISearchPrimaryStorageReply reply = new APISearchPrimaryStorageReply();
-    	reply.setContent(content);
-    	bus.reply(msg, reply);
-	}
+        SearchQuery<PrimaryStorageInventory> sq = SearchQuery.create(msg, PrimaryStorageInventory.class);
+        String content = sq.listAsString();
+        APISearchPrimaryStorageReply reply = new APISearchPrimaryStorageReply();
+        reply.setContent(content);
+        bus.reply(msg, reply);
+    }
 
-	private void handle(APIListPrimaryStorageMsg msg) {
+    private void handle(APIListPrimaryStorageMsg msg) {
         List<PrimaryStorageVO> vos = dl.listByApiMessage(msg, PrimaryStorageVO.class);
         List<PrimaryStorageInventory> invs = PrimaryStorageInventory.valueOf(vos);
         APIListPrimaryStorageReply reply = new APIListPrimaryStorageReply();
@@ -238,7 +255,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         tagMgr.createTagsFromAPICreateMessage(msg, inv.getUuid(), PrimaryStorageVO.class.getSimpleName());
 
-        PrimaryStorageCapacityVO capvo =  dbf.findByUuid(vo.getUuid(), PrimaryStorageCapacityVO.class);
+        PrimaryStorageCapacityVO capvo = dbf.findByUuid(vo.getUuid(), PrimaryStorageCapacityVO.class);
         if (capvo == null) {
             capvo = new PrimaryStorageCapacityVO();
             capvo.setUuid(vo.getUuid());
@@ -255,11 +272,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             public void run(MessageReply reply) {
                 if (!reply.isSuccess() && !reply.getError().isError(PrimaryStorageErrors.DISCONNECTED)) {
                     evt.setErrorCode(reply.getError());
-                    logger.warn(String.format("failed to connect primary storage[uuid:%s, name:%s, url:%s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
+                    logger.warn(String.format("failed to connect primary storage[uuid:%s, name:%s, url:%s]",
+                            finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
                     dbf.remove(finalVo);
                 } else {
                     PrimaryStorageInventory pinv = factory.getInventory(finalVo.getUuid());
-                    logger.debug(String.format("successfully add primary storage[uuid:%s, name:%s, url: %s]", finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
+                    logger.debug(String.format("successfully add primary storage[uuid:%s, name:%s, url: %s]",
+                            finalVo.getUuid(), finalVo.getName(), finalVo.getUrl()));
                     evt.setInventory(pinv);
                 }
 
@@ -296,7 +315,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private void handle(final RecalculatePrimaryStorageCapacityMsg msg) {
         RecalculatePrimaryStorageCapacityReply reply = new RecalculatePrimaryStorageCapacityReply();
 
-        final List<String> psUuids = new ArrayList<String>();
+        final List<String> psUuids = new ArrayList<>();
 
         if (msg.getPrimaryStorageUuid() != null) {
             psUuids.add(msg.getPrimaryStorageUuid());
@@ -314,12 +333,16 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             return;
         }
 
-        final Map<String, Long> psCap = new HashMap<String, Long>();
+        final Map<String, Long> psCap = new HashMap<>();
         new Runnable() {
             @Override
             @Transactional(readOnly = true)
             public void run() {
-                String sql = "select sum(vol.size), vol.primaryStorageUuid from VolumeVO vol where vol.primaryStorageUuid in (:psUuids) and vol.status = :volStatus group by vol.primaryStorageUuid";
+                String sql = "select sum(vol.size), vol.primaryStorageUuid" +
+                        " from VolumeVO vol" +
+                        " where vol.primaryStorageUuid in (:psUuids)" +
+                        " and vol.status = :volStatus" +
+                        " group by vol.primaryStorageUuid";
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("psUuids", psUuids);
                 q.setParameter("volStatus", VolumeStatus.Ready);
@@ -336,7 +359,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     psCap.put(psUuid, ratioMgr.calculateByRatio(psUuid, cap));
                 }
 
-                sql = "select sum(i.size), i.primaryStorageUuid from ImageCacheVO i where i.primaryStorageUuid in (:psUuids) group by i.primaryStorageUuid";
+                sql = "select sum(i.size), i.primaryStorageUuid" +
+                        " from ImageCacheVO i" +
+                        " where i.primaryStorageUuid in (:psUuids)" +
+                        " group by i.primaryStorageUuid";
                 q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("psUuids", psUuids);
                 ts = q.getResultList();
@@ -419,7 +445,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private void handle(ReturnPrimaryStorageCapacityMsg msg) {
         long diskSize = msg.isNoOverProvisioning() ? msg.getDiskSize() : ratioMgr.calculateByRatio(msg.getPrimaryStorageUuid(), msg.getDiskSize());
-        PrimaryStorageCapacityUpdater updater  = new PrimaryStorageCapacityUpdater(msg.getPrimaryStorageUuid());
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(msg.getPrimaryStorageUuid());
         if (updater.increaseAvailableCapacity(diskSize)) {
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("Successfully return %s bytes to primary storage[uuid:%s]", diskSize, msg.getPrimaryStorageUuid()));
@@ -468,18 +494,19 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
         Iterator<PrimaryStorageInventory> it = ret.iterator();
 
-        List<String> errs = new ArrayList<String>();
+        List<String> errs = new ArrayList<>();
         PrimaryStorageInventory target = null;
         while (it.hasNext()) {
             PrimaryStorageInventory inv = it.next();
 
             if (!physicalCapacityMgr.checkCapacityByRatio(inv.getUuid(), inv.getTotalPhysicalCapacity(), inv.getAvailablePhysicalCapacity())) {
-                errs.add(String.format("primary storage[uuid:%s]'s physical capacity usage has exceeded the threshold[%s]", inv.getUuid(), physicalCapacityMgr.getRatio(inv.getUuid())));
+                errs.add(String.format("primary storage[uuid:%s]'s physical capacity usage has exceeded the threshold[%s]",
+                        inv.getUuid(), physicalCapacityMgr.getRatio(inv.getUuid())));
                 continue;
             }
 
             long requiredSize = spec.getSize();
-            if (!msg.isNoOverProvisioning())  {
+            if (!msg.isNoOverProvisioning()) {
                 requiredSize = ratioMgr.calculateByRatio(inv.getUuid(), requiredSize);
             }
 
@@ -543,7 +570,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             @Override
             public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
                 if (!SizeUtils.isSizeString(newValue)) {
-                    throw new GlobalConfigException(String.format("%s is not a size string; a size string consists of a number ending with suffix B/K/M/G/T or without suffix; for example, 512M, 1G", newValue));
+                    throw new GlobalConfigException(String.format("%s is not a size string;" +
+                            " a size string consists of a number ending with suffix B/K/M/G/T or without suffix;" +
+                            " for example, 512M, 1G", newValue));
                 }
             }
         });
@@ -576,8 +605,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         for (RecalculatePrimaryStorageCapacityExtensionPoint ext : pluginRgty.getExtensionList(RecalculatePrimaryStorageCapacityExtensionPoint.class)) {
             RecalculatePrimaryStorageCapacityExtensionPoint old = recalculateCapacityExtensions.get(ext.getPrimaryStorageTypeForRecalculateCapacityExtensionPoint());
             if (old != null) {
-                throw new CloudRuntimeException(String.format("duplicate RecalculatePrimaryStorageCapacityExtensionPoint[%s, %s] for type[%s]",
-                        ext.getClass().getName(), old.getClass().getName(), old.getPrimaryStorageTypeForRecalculateCapacityExtensionPoint()));
+                throw new CloudRuntimeException(
+                        String.format("duplicate RecalculatePrimaryStorageCapacityExtensionPoint[%s, %s] for type[%s]",
+                                ext.getClass().getName(), old.getClass().getName(),
+                                old.getPrimaryStorageTypeForRecalculateCapacityExtensionPoint()));
             }
             recalculateCapacityExtensions.put(ext.getPrimaryStorageTypeForRecalculateCapacityExtensionPoint(), ext);
         }
@@ -603,7 +634,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     @Override
     public void nodeJoin(String nodeId) {
-        logger.debug(String.format("management node[uuid:%s] join, node[uuid:%s] starts taking over primary storage...", nodeId, Platform.getManagementServerId()));
+        logger.debug(String.format("management node[uuid:%s] join, node[uuid:%s] starts taking over primary storage...",
+                nodeId, Platform.getManagementServerId()));
         loadPrimaryStorage();
     }
 
@@ -613,7 +645,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private List<String> getPrimaryStorageManagedByUs() {
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
         SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
         q.select(PrimaryStorageVO_.uuid);
         List<String> uuids = q.listValue();
@@ -657,7 +689,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     @AsyncThread
     @Override
     public void managementNodeReady() {
-        logger.debug(String.format("management node[uuid:%s] joins, starts load primary storage ...", Platform.getManagementServerId()));
+        logger.debug(String.format("management node[uuid:%s] joins, starts load primary storage ...",
+                Platform.getManagementServerId()));
         loadPrimaryStorage();
     }
 }

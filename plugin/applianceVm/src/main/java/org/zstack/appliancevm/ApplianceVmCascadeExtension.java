@@ -108,45 +108,59 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Transactional(readOnly = true)
     private List<VmInstanceVO> getVmFromL2NetworkDetached(List<L2NetworkDetachStruct> structs) {
-        Set<VmInstanceVO> apvms = new HashSet<VmInstanceVO>();
+        Set<VmInstanceVO> apvms = new HashSet<>();
         for (L2NetworkDetachStruct s : structs) {
-            String sql = "select vm from VmInstanceVO vm, L2NetworkVO l2, L3NetworkVO l3, VmNicVO nic where vm.type = :vmType and vm.clusterUuid = :clusterUuid and vm.state in (:vmStates) and vm.uuid = nic.vmInstanceUuid and nic.l3NetworkUuid = l3.uuid and l3.l2NetworkUuid = l2.uuid and l2.uuid = :l2Uuid";
+            String sql = "select vm" +
+                    " from VmInstanceVO vm, L2NetworkVO l2, L3NetworkVO l3, VmNicVO nic" +
+                    " where vm.type = :vmType" +
+                    " and vm.clusterUuid = :clusterUuid" +
+                    " and vm.state in (:vmStates)" +
+                    " and vm.uuid = nic.vmInstanceUuid" +
+                    " and nic.l3NetworkUuid = l3.uuid" +
+                    " and l3.l2NetworkUuid = l2.uuid" +
+                    " and l2.uuid = :l2Uuid";
             TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
             q.setParameter("vmType", ApplianceVmConstant.APPLIANCE_VM_TYPE);
-            q.setParameter("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Migrating, VmInstanceState.Starting, VmInstanceState.Rebooting));
+            q.setParameter("vmStates", Arrays.asList(
+                    VmInstanceState.Running,
+                    VmInstanceState.Migrating,
+                    VmInstanceState.Starting,
+                    VmInstanceState.Rebooting));
             q.setParameter("clusterUuid", s.getClusterUuid());
             q.setParameter("l2Uuid", s.getL2NetworkUuid());
             apvms.addAll(q.getResultList());
         }
 
-        List<VmInstanceVO> ret = new ArrayList<VmInstanceVO>(apvms.size());
+        List<VmInstanceVO> ret = new ArrayList<>(apvms.size());
         ret.addAll(apvms);
         return ret;
     }
 
     private void migrateOrStopVmOnClusterDetach(final List<VmInstanceVO> toMigrate,
-                                                List<String> clusterUuids, final Completion completion) {
+                                                List<String> clusterUuids,
+                                                final Completion completion) {
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.uuid);
         q.add(HostVO_.clusterUuid, Op.IN, clusterUuids);
         final List<String> avoidHostUuids = q.listValue();
-        final List<VmInstanceVO> toStop = new ArrayList<VmInstanceVO>();
+        final List<VmInstanceVO> toStop = new ArrayList<>();
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("handle-appliance-vm-for-cluster-detach"));
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                final List<MigrateVmMsg> migrateVmMsgs = CollectionUtils.transformToList(toMigrate, new Function<MigrateVmMsg, VmInstanceVO>() {
-                    @Override
-                    public MigrateVmMsg call(VmInstanceVO arg) {
-                        MigrateVmMsg msg = new MigrateVmMsg();
-                        msg.setVmInstanceUuid(arg.getUuid());
-                        msg.setAvoidHostUuids(avoidHostUuids);
-                        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
-                        return msg;
-                    }
-                });
+                final List<MigrateVmMsg> migrateVmMsgs = CollectionUtils.transformToList(toMigrate,
+                        new Function<MigrateVmMsg, VmInstanceVO>() {
+                            @Override
+                            public MigrateVmMsg call(VmInstanceVO arg) {
+                                MigrateVmMsg msg = new MigrateVmMsg();
+                                msg.setVmInstanceUuid(arg.getUuid());
+                                msg.setAvoidHostUuids(avoidHostUuids);
+                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
+                                return msg;
+                            }
+                        });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "migrate-appliance-vm";
@@ -244,26 +258,36 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Transactional(readOnly = true)
     private List<VmInstanceVO> getVmForPrimaryStorageDetached(List<PrimaryStorageDetachStruct> structs) {
-        Set<VmInstanceVO> vms = new HashSet<VmInstanceVO>();
+        Set<VmInstanceVO> vms = new HashSet<>();
         for (PrimaryStorageDetachStruct s : structs) {
-            String sql = "select vm from VmInstanceVO vm, PrimaryStorageVO ps, VolumeVO vol where vm.type = :vmType and vm.state in (:vmStates) and vm.clusterUuid = :clusterUuid and vm.uuid = vol.vmInstanceUuid and vol.primaryStorageUuid = :psUuid";
+            String sql = "select vm" +
+                    " from VmInstanceVO vm, PrimaryStorageVO ps, VolumeVO vol" +
+                    " where vm.type = :vmType" +
+                    " and vm.state in (:vmStates)" +
+                    " and vm.clusterUuid = :clusterUuid" +
+                    " and vm.uuid = vol.vmInstanceUuid" +
+                    " and vol.primaryStorageUuid = :psUuid";
             TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
             q.setParameter("vmType", ApplianceVmConstant.APPLIANCE_VM_TYPE);
-            q.setParameter("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Starting, VmInstanceState.Migrating, VmInstanceState.Rebooting));
+            q.setParameter("vmStates", Arrays.asList(
+                    VmInstanceState.Running,
+                    VmInstanceState.Starting,
+                    VmInstanceState.Migrating,
+                    VmInstanceState.Rebooting));
             q.setParameter("clusterUuid", s.getClusterUuid());
             q.setParameter("psUuid", s.getPrimaryStorageUuid());
             vms.addAll(q.getResultList());
         }
 
-        List<VmInstanceVO> ret = new ArrayList<VmInstanceVO>(vms.size());
+        List<VmInstanceVO> ret = new ArrayList<>(vms.size());
         ret.addAll(vms);
         return ret;
     }
 
     private void handlePrimaryStorageDetach(CascadeAction action, final Completion completion) {
         List<PrimaryStorageDetachStruct> structs = action.getParentIssuerContext();
-        final List<VmInstanceVO> apvms = getVmForPrimaryStorageDetached(structs);
-        if (apvms.isEmpty()) {
+        final List<VmInstanceVO> vmInstanceVOs = getVmForPrimaryStorageDetached(structs);
+        if (vmInstanceVOs.isEmpty()) {
             completion.success();
             return;
         }
@@ -275,7 +299,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             }
         });
 
-        migrateOrStopVmOnClusterDetach(apvms, clusterUuids, completion);
+        migrateOrStopVmOnClusterDetach(vmInstanceVOs, clusterUuids, completion);
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
@@ -332,7 +356,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
                     if (!apvmToMigrate.isEmpty()) {
                         flow(new NoRollbackFlow() {
-                            String __name__  = "try-migrate-appliancevm";
+                            String __name__ = "try-migrate-appliancevm";
 
                             @Override
                             public void run(final FlowTrigger trigger, Map data) {
@@ -416,7 +440,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
-                    String __name__  = "delete-appliancevm";
+                    String __name__ = "delete-appliancevm";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
@@ -539,7 +563,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         } else if (NAME.equals(action.getParentIssuer())) {
             return action.getParentIssuerContext();
         } else if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> pruuids = CollectionUtils.transformToList((List<PrimaryStorageInventory>)action.getParentIssuerContext(), new Function<String, PrimaryStorageInventory>() {
+            final List<String> pruuids = CollectionUtils.transformToList((List<PrimaryStorageInventory>) action.getParentIssuerContext(), new Function<String, PrimaryStorageInventory>() {
                 @Override
                 public String call(PrimaryStorageInventory arg) {
                     return arg.getUuid();
@@ -579,7 +603,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 ret = ApplianceVmInventory.valueOf1(apvms);
             }
         } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            final List<String> ipruuids = CollectionUtils.transformToList((List<IpRangeInventory>)action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
+            final List<String> ipruuids = CollectionUtils.transformToList((List<IpRangeInventory>) action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
                 @Override
                 public String call(IpRangeInventory arg) {
                     return arg.getUuid();
@@ -600,7 +624,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
             // find out appliance vm whose ip is gateway of ip range
 
-            final List<String> iprL3Uuids = CollectionUtils.transformToList((List<IpRangeInventory>)action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
+            final List<String> iprL3Uuids = CollectionUtils.transformToList((List<IpRangeInventory>) action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
                 @Override
                 public String call(IpRangeInventory arg) {
                     return arg.getL3NetworkUuid();
@@ -619,7 +643,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             }.call();
 
             if (!vmvos1.isEmpty()) {
-                for (final IpRangeInventory ipr : (List<IpRangeInventory>)action.getParentIssuerContext()) {
+                for (final IpRangeInventory ipr : (List<IpRangeInventory>) action.getParentIssuerContext()) {
                     for (ApplianceVmVO vm : vmvos1) {
                         for (VmNicVO nic : vm.getVmNics()) {
                             if (ipr.getGateway().equals(nic.getIp())) {

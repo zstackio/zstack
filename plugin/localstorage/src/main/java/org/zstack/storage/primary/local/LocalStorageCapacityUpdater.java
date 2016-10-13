@@ -31,7 +31,8 @@ public class LocalStorageCapacityUpdater {
             return;
         }
 
-        if (ref.getAvailablePhysicalCapacity() == rsp.getAvailableCapacity() && ref.getTotalPhysicalCapacity() == rsp.getTotalCapacity()) {
+        if (ref.getAvailablePhysicalCapacity() == rsp.getAvailableCapacity()
+                && ref.getTotalPhysicalCapacity() == rsp.getTotalCapacity()) {
             return;
         }
 
@@ -44,9 +45,9 @@ public class LocalStorageCapacityUpdater {
 
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("[Local Storage Capacity] changed the physical capacity of the host[uuid:%s] of " +
-                    "the local primary storage[uuid:%s] as:\n" +
-                    "physical total: %s --> %s\n" +
-                    "physical available: %s --> %s\n",
+                            "the local primary storage[uuid:%s] as:\n" +
+                            "physical total: %s --> %s\n" +
+                            "physical available: %s --> %s\n",
                     hostUuid, psUuid, originalPhysicalTotal, ref.getTotalPhysicalCapacity(),
                     originalPhysicalAvailable, ref.getAvailablePhysicalCapacity()));
         }

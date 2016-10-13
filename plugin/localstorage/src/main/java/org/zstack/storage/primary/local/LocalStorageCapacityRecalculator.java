@@ -36,11 +36,15 @@ public class LocalStorageCapacityRecalculator {
     public LocalStorageCapacityRecalculator calculateByHostUuids(String psUuid, List<String> huuids) {
         DebugUtils.Assert(!huuids.isEmpty(), "hostUuids cannot be empty");
 
-        Map<String, Long> hostCap = new HashMap<String, Long>();
+        Map<String, Long> hostCap = new HashMap<>();
 
-        String sql = "select sum(vol.size), ref.hostUuid from VolumeVO vol, LocalStorageResourceRefVO ref" +
-                " where vol.primaryStorageUuid = :psUuid and vol.uuid = ref.resourceUuid and" +
-                " ref.primaryStorageUuid = vol.primaryStorageUuid and ref.hostUuid in (:huuids) group by ref.hostUuid";
+        String sql = "select sum(vol.size), ref.hostUuid" +
+                " from VolumeVO vol, LocalStorageResourceRefVO ref" +
+                " where vol.primaryStorageUuid = :psUuid" +
+                " and vol.uuid = ref.resourceUuid" +
+                " and ref.primaryStorageUuid = vol.primaryStorageUuid" +
+                " and ref.hostUuid in (:huuids)" +
+                " group by ref.hostUuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("psUuid", psUuid);
         q.setParameter("huuids", huuids);
@@ -59,7 +63,11 @@ public class LocalStorageCapacityRecalculator {
         for (String huuid : huuids) {
             // note: templates in image cache are physical size
             // do not calculate over provisioning for them
-            sql = "select sum(i.size) from ImageCacheVO i where i.installUrl like :mark and i.primaryStorageUuid = :psUuid group by i.primaryStorageUuid";
+            sql = "select sum(i.size)" +
+                    " from ImageCacheVO i" +
+                    " where i.installUrl like :mark" +
+                    " and i.primaryStorageUuid = :psUuid" +
+                    " group by i.primaryStorageUuid";
             TypedQuery<Long> iq = dbf.getEntityManager().createQuery(sql, Long.class);
             iq.setParameter("psUuid", psUuid);
             iq.setParameter("mark", String.format("%%hostUuid://%s%%", huuid));
@@ -98,7 +106,10 @@ public class LocalStorageCapacityRecalculator {
     public LocalStorageCapacityRecalculator calculateByPrimaryStorageUuid(String psUuid) {
         // hmm, in some case, the mysql returns duplicate hostUuid
         // which I didn't figure out how. So use a groupby to remove the duplicates
-        String sql = "select ref.hostUuid from LocalStorageHostRefVO ref where ref.primaryStorageUuid = :psUuid group by ref.hostUuid";
+        String sql = "select ref.hostUuid" +
+                " from LocalStorageHostRefVO ref" +
+                " where ref.primaryStorageUuid = :psUuid" +
+                " group by ref.hostUuid";
         TypedQuery<String> hq = dbf.getEntityManager().createQuery(sql, String.class);
         hq.setParameter("psUuid", psUuid);
         List<String> huuids = hq.getResultList();
@@ -111,7 +122,8 @@ public class LocalStorageCapacityRecalculator {
     @Transactional
     public LocalStorageCapacityRecalculator calculateTotalCapacity(String psUuid) {
         String sql = "select sum(ref.totalCapacity), sum(ref.totalPhysicalCapacity), sum(ref.availablePhysicalCapacity)" +
-                " from LocalStorageHostRefVO ref where ref.primaryStorageUuid = :psUuid";
+                " from LocalStorageHostRefVO ref" +
+                " where ref.primaryStorageUuid = :psUuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("psUuid", psUuid);
         List<Tuple> ts = q.getResultList();

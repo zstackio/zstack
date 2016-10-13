@@ -333,13 +333,18 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     @Transactional(readOnly = true)
     private void checkIfBackupStorageAttachedToMyZone(String bsUuid) {
-        String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO ref where bs.uuid = ref.backupStorageUuid and ref.zoneUuid = :zoneUuid and bs.uuid = :bsUuid";
+        String sql = "select bs.uuid" +
+                " from BackupStorageVO bs, BackupStorageZoneRefVO ref" +
+                " where bs.uuid = ref.backupStorageUuid" +
+                " and ref.zoneUuid = :zoneUuid" +
+                " and bs.uuid = :bsUuid";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("zoneUuid", self.getZoneUuid());
         q.setParameter("bsUuid", bsUuid);
         if (q.getResultList().isEmpty()) {
             throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("backup storage[uuid:%s] is not attached to zone[uuid:%s] the primary storage[uuid:%s] belongs to", bsUuid, self.getZoneUuid(), self.getUuid())
+                    String.format("backup storage[uuid:%s] is not attached to zone[uuid:%s] the primary storage[uuid:%s] belongs to",
+                            bsUuid, self.getZoneUuid(), self.getUuid())
             ));
         }
     }
@@ -372,7 +377,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         self = dbf.reload(self);
                         extpEmitter.afterDetach(self, msg.getClusterUuid());
 
-                        logger.debug(String.format("successfully detached primary storage[name: %s, uuid:%s]", self.getName(), self.getUuid()));
+                        logger.debug(String.format("successfully detached primary storage[name: %s, uuid:%s]",
+                                self.getName(), self.getUuid()));
                         bus.reply(msg, reply);
                         chain.next();
                     }
