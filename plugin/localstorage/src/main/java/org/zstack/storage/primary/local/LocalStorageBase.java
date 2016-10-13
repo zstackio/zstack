@@ -123,10 +123,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
             size += snapshotSize;
         }
 
-        sql = "select href.hostUuid from LocalStorageHostRefVO href where" +
-                " href.hostUuid != (select rref.hostUuid from LocalStorageResourceRefVO rref where rref.resourceUuid = :volUuid and rref.resourceType = :rtype)" +
-                " and (href.totalPhysicalCapacity * (1 - :thres)) <= href.availablePhysicalCapacity and href.availablePhysicalCapacity != 0" +
-                " and href.availableCapacity >= :size and href.primaryStorageUuid = :psUuid group by href.hostUuid";
+        sql = "select href.hostUuid" +
+                " from LocalStorageHostRefVO href" +
+                " where href.hostUuid !=" +
+                " (" +
+                " select rref.hostUuid" +
+                " from LocalStorageResourceRefVO rref" +
+                " where rref.resourceUuid = :volUuid" +
+                " and rref.resourceType = :rtype" +
+                " )" +
+                " and (href.totalPhysicalCapacity * (1 - :thres)) <= href.availablePhysicalCapacity" +
+                " and href.availablePhysicalCapacity != 0" +
+                " and href.availableCapacity >= :size" +
+                " and href.primaryStorageUuid = :psUuid" +
+                " group by href.hostUuid";
 
         double physicalThreshold = physicalCapacityMgr.getRatio(self.getUuid());
 
@@ -223,14 +233,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
 
         if (ref.getHostUuid().equals(msg.getDestHostUuid())) {
-            logger.debug(String.format("the volume[uuid:%s] is already on the host[uuid:%s], no need to migrate", msg.getVolumeUuid(), msg.getDestHostUuid()));
+            logger.debug(String.format("the volume[uuid:%s] is already on the host[uuid:%s], no need to migrate",
+                    msg.getVolumeUuid(), msg.getDestHostUuid()));
             bus.reply(msg, reply);
             completion.done();
             return;
         }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("migrate-volume-%s-local-storage-%s-to-host-%s", msg.getVolumeUuid(), msg.getPrimaryStorageUuid(), msg.getDestHostUuid()));
+        chain.setName(String.format("migrate-volume-%s-local-storage-%s-to-host-%s",
+                msg.getVolumeUuid(), msg.getPrimaryStorageUuid(), msg.getDestHostUuid()));
         chain.then(new ShareFlow() {
             LocalStorageResourceRefVO volumeRefVO;
             List<LocalStorageResourceRefVO> snapshotRefVOS;
@@ -290,8 +302,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         }));
 
                         if (info.getResourceRef() == null) {
-                            throw new CloudRuntimeException(String.format("cannot find reference of snapshot[uuid:%s, name:%s] on the local storage[uuid:%s, name:%s]",
-                                    vo.getUuid(), vo.getName(), self.getUuid(), self.getName()));
+                            throw new CloudRuntimeException(
+                                    String.format("cannot find reference of snapshot[uuid:%s, name:%s] on the local storage[uuid:%s, name:%s]",
+                                            vo.getUuid(), vo.getName(), self.getUuid(), self.getName()));
                         }
 
                         struct.getInfos().add(info);
@@ -332,7 +345,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        List<LocalStorageResourceRefVO> refs = new ArrayList<LocalStorageResourceRefVO>();
+                        List<LocalStorageResourceRefVO> refs = new ArrayList<>();
                         volumeRefVO.setHostUuid(msg.getDestHostUuid());
                         refs.add(volumeRefVO);
 

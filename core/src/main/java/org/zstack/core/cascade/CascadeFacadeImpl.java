@@ -58,8 +58,8 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private Map<String, Node> nodes = new HashMap<String, Node>();
-    private Map<String, TreeNode> cascadeTree = new HashMap<String, TreeNode>();
+    private Map<String, Node> nodes = new HashMap<>();
+    private Map<String, TreeNode> cascadeTree = new HashMap<>();
 
     private void doSyncCascade(TreeNode treeNode, boolean init, CascadeAction action) throws CascadeException {
         CascadeAction currentAction;
@@ -104,7 +104,9 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
             List lst = (List) parentIssuerContext;
             for (Object obj : lst) {
                 if (obj == null) {
-                    throw new CloudRuntimeException(String.format("CascadeExtensionPoint[%s] returns parent content that is a List but containing NULL element", node.getExtension().getClass().getName()));
+                    throw new CloudRuntimeException(
+                            String.format("CascadeExtensionPoint[%s] returns parent content that is a List but containing NULL element",
+                                    node.getExtension().getClass().getName()));
                 }
             }
         }
@@ -114,7 +116,9 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
             List lst = (List) rootIssuerContext;
             for (Object obj : lst) {
                 if (obj == null) {
-                    throw new CloudRuntimeException(String.format("CascadeExtensionPoint[%s] returns root content that is a List but containing NULL element", node.getExtension().getClass().getName()));
+                    throw new CloudRuntimeException(
+                            String.format("CascadeExtensionPoint[%s] returns root content that is a List but containing NULL element",
+                                    node.getExtension().getClass().getName()));
                 }
             }
         }
@@ -247,7 +251,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
 
     private void traverse(Node node, List<Node> resolved, List<List<Node>> paths) {
         if (resolved.contains(node)) {
-            List<Node> path = new ArrayList<Node>();
+            List<Node> path = new ArrayList<>();
             path.addAll(resolved);
             paths.add(path);
             return;
@@ -260,7 +264,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                 traverse(e, resolved, paths);
             }
         } else {
-            List<Node> path = new ArrayList<Node>();
+            List<Node> path = new ArrayList<>();
             path.addAll(resolved);
             paths.add(path);
         }
@@ -271,23 +275,23 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
     private TreeNode createTraversingTree(String issuer) {
         Node node = nodes.get(issuer);
 
-        List<List<Node>> paths = new ArrayList<List<Node>>();
+        List<List<Node>> paths = new ArrayList<>();
         if (node.getEdges().isEmpty()) {
-            List<Node> resolved = new ArrayList<Node>();
+            List<Node> resolved = new ArrayList<>();
             resolved.add(node);
             traverse(node, resolved, paths);
         } else {
             for (Node n : node.getEdges()) {
-                List<Node> resolved = new ArrayList<Node>();
+                List<Node> resolved = new ArrayList<>();
                 resolved.add(node);
                 traverse(n, resolved, paths);
             }
         }
 
 
-        List<List<String>> ret = new ArrayList<List<String>>();
+        List<List<String>> ret = new ArrayList<>();
         for (List<Node> path : paths) {
-            List<String> spath = new ArrayList<String>();
+            List<String> spath = new ArrayList<>();
             for (Node n : path) {
                 spath.add(n.getName());
             }
@@ -310,7 +314,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
             }
         }
 
-        Map<String, TreeNode> root = new HashMap<String, TreeNode>();
+        Map<String, TreeNode> root = new HashMap<>();
         Map<String, TreeNode> prev = root;
         Map<String, TreeNode> curr = prev;
         for (int i = 0; i < maxLevel; i++) {
@@ -324,7 +328,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                 if (tn == null) {
                     tn = new TreeNode();
                     tn.node = n;
-                    tn.leafs = new HashSet<TreeNode>();
+                    tn.leafs = new HashSet<>();
                     curr.put(n.getName(), tn);
                 }
 
@@ -338,7 +342,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                 pn.leafs.add(tn);
             }
             prev = curr;
-            curr = new HashMap<String, TreeNode>();
+            curr = new HashMap<>();
         }
 
         assert root.size() == 1;
@@ -353,7 +357,7 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                 n = new Node();
                 n.setName(ext.getCascadeResourceName());
                 n.setExtension(ext);
-                n.setEdges(new ArrayList<Node>());
+                n.setEdges(new ArrayList<>());
                 nodes.put(n.getName(), n);
             }
 
@@ -362,10 +366,12 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                 if (p == null) {
                     p = new Node();
                     p.setName(parent);
-                    p.setEdges(new ArrayList<Node>());
+                    p.setEdges(new ArrayList<>());
                     CascadeExtensionPoint dext = exts.get(parent);
                     if (dext == null) {
-                        throw new CloudRuntimeException(String.format("cannot find parent CascadeExtensionPoint[%s] for CascadeExtensionPoint[name: %s, class: %s]", parent, ext.getCascadeResourceName(), ext.getClass().getName()));
+                        throw new CloudRuntimeException(
+                                String.format("cannot find parent CascadeExtensionPoint[%s] for CascadeExtensionPoint[name: %s, class: %s]",
+                                        parent, ext.getCascadeResourceName(), ext.getClass().getName()));
                     }
                     p.setExtension(dext);
                     nodes.put(parent, p);
@@ -376,13 +382,15 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
 
         for (Node n : nodes.values()) {
             if (n.getExtension().getEdgeNames().contains(n.getExtension().getCascadeResourceName())) {
-                throw new CloudRuntimeException(String.format("CascadeExtensionPoint[%s] is self referenced, a CascadeExtensionPoint cannot put itself as parent", n.getExtension().getClass().getName()));
+                throw new CloudRuntimeException(
+                        String.format("CascadeExtensionPoint[%s] is self referenced, a CascadeExtensionPoint cannot put itself as parent",
+                                n.getExtension().getClass().getName()));
             }
         }
     }
 
     private void populateNodes() {
-        Map<String, CascadeExtensionPoint> exts = new HashMap<String, CascadeExtensionPoint>();
+        Map<String, CascadeExtensionPoint> exts = new HashMap<>();
         for (CascadeExtensionPoint extp : pluginRgty.getExtensionList(CascadeExtensionPoint.class)) {
             CascadeExtensionPoint oext = exts.get(extp.getCascadeResourceName());
             if (oext != null) {

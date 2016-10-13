@@ -114,7 +114,7 @@ public class PrimaryStorageCascadeExtension extends AbstractAsyncCascadeExtensio
                     }
                 }
 
-                List<String> uuids = new ArrayList<String>();
+                List<String> uuids = new ArrayList<>();
                 for (MessageReply r : replies) {
                     PrimaryStorageInventory inv = prinvs.get(replies.indexOf(r));
                     uuids.add(inv.getUuid());
@@ -158,12 +158,13 @@ public class PrimaryStorageCascadeExtension extends AbstractAsyncCascadeExtensio
     private List<PrimaryStorageInventory> primaryStorageInventories(CascadeAction action) {
         List<PrimaryStorageInventory> ret = null;
         if (ZoneVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<String> zuuids = CollectionUtils.transformToList((List<ZoneInventory>) action.getParentIssuerContext(), new Function<String, ZoneInventory>() {
-                @Override
-                public String call(ZoneInventory arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> zuuids = CollectionUtils.transformToList(
+                    (List<ZoneInventory>) action.getParentIssuerContext(), new Function<String, ZoneInventory>() {
+                        @Override
+                        public String call(ZoneInventory arg) {
+                            return arg.getUuid();
+                        }
+                    });
 
             SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
             q.add(PrimaryStorageVO_.zoneUuid, SimpleQuery.Op.IN, zuuids);

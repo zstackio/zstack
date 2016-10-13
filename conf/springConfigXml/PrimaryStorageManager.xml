@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
-    xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
-    xsi:schemaLocation="http://www.springframework.org/schema/beans
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
     http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
     http://www.springframework.org/schema/aop
     http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
@@ -10,24 +10,25 @@
     http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
     http://zstack.org/schema/zstack 
     http://zstack.org/schema/zstack/plugin.xsd"
-    default-init-method="init" default-destroy-method="destroy">
-    
+       default-init-method="init" default-destroy-method="destroy">
+
     <bean id="PrimaryStorageManager" class="org.zstack.storage.primary.PrimaryStorageManagerImpl">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.Service" />
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Service"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
     <bean id="PrimaryStorageApiInterceptor" class="org.zstack.storage.primary.PrimaryStorageApiInterceptor">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
         </zstack:plugin>
     </bean>
-    
-    <bean id="DefaultPrimaryStorageAllocatorFactory" class="org.zstack.storage.primary.DefaultPrimaryStorageAllocatorFactory">
+
+    <bean id="DefaultPrimaryStorageAllocatorFactory"
+          class="org.zstack.storage.primary.DefaultPrimaryStorageAllocatorFactory">
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.storage.primary.PrimaryStorageMainAllocatorFlow</value>
@@ -38,44 +39,48 @@
         </property>
 
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory" />
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory"/>
         </zstack:plugin>
     </bean>
-    
-    <bean id="PrimaryStorageExtensionPointEmitter" class="org.zstack.storage.primary.PrimaryStorageExtensionPointEmitter">
+
+    <bean id="PrimaryStorageExtensionPointEmitter"
+          class="org.zstack.storage.primary.PrimaryStorageExtensionPointEmitter">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
 
     <bean id="PrimaryStorageCascadeExtension" class="org.zstack.storage.primary.PrimaryStorageCascadeExtension">
         <zstack:plugin>
-			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
-    <bean id="PrimaryStorageTagAllocatorExtension" class="org.zstack.storage.primary.PrimaryStorageTagAllocatorExtension">
+    <bean id="PrimaryStorageTagAllocatorExtension"
+          class="org.zstack.storage.primary.PrimaryStorageTagAllocatorExtension">
         <zstack:plugin>
-			<zstack:extension interface="org.zstack.header.allocator.InstanceOfferingTagAllocatorExtensionPoint" />
-			<zstack:extension interface="org.zstack.header.allocator.DiskOfferingTagAllocatorExtensionPoint" />
-			<zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageTagAllocatorExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.allocator.InstanceOfferingTagAllocatorExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.allocator.DiskOfferingTagAllocatorExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageTagAllocatorExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
     <bean id="PrimaryStorageDiskCapacityTracer" class="org.zstack.storage.primary.DiskCapacityTracer">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
 
-    <bean id="PrimaryStorageOverProvisioningManager" class="org.zstack.storage.primary.PrimaryStorageOverProvisioningManagerImpl" />
+    <bean id="PrimaryStorageOverProvisioningManager"
+          class="org.zstack.storage.primary.PrimaryStorageOverProvisioningManagerImpl"/>
 
-    <bean id="PrimaryStoragePhysicalCapacityManager" class="org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManagerImpl" />
+    <bean id="PrimaryStoragePhysicalCapacityManager"
+          class="org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManagerImpl"/>
 
     <bean id="PrimaryStoragePingTracker" class="org.zstack.storage.primary.PrimaryStoragePingTracker">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
 </beans>
