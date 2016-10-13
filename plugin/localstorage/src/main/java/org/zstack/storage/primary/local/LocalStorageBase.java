@@ -1783,7 +1783,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             fc.clusters.add(ClusterInventory.valueOf(c));
         }
 
-        List<FactoryCluster> fcs = new ArrayList<FactoryCluster>();
+        List<FactoryCluster> fcs = new ArrayList<>();
         fcs.addAll(m.values());
         return fcs;
     }

@@ -55,8 +55,7 @@ public class PrimaryStorageCapacityUpdater {
 
     private void logDeletedPrimaryStorage() {
         logger.warn(String.format("[Primary Storage Capacity] unable to update capacity for the primary storage[uuid:%s]." +
-                        " It may have been deleted, cannot find it in database",
-                primaryStorageUuid));
+                " It may have been deleted, cannot find it in database", primaryStorageUuid));
     }
 
     private void logCapacityChange() {
@@ -74,7 +73,8 @@ public class PrimaryStorageCapacityUpdater {
                             "total: %s --> %s\n" +
                             "available: %s --> %s\n" +
                             "physical total: %s --> %s\n" +
-                            "physical available: %s --> %s\n", caller.getFileName(), caller.getMethodName(), caller.getLineNumber(), capacityVO.getUuid(),
+                            "physical available: %s --> %s\n",
+                    caller.getFileName(), caller.getMethodName(), caller.getLineNumber(), capacityVO.getUuid(),
                     totalForLog, capacityVO.getTotalCapacity(),
                     availForLog, capacityVO.getAvailableCapacity(),
                     totalPhysicalForLog, capacityVO.getTotalPhysicalCapacity(),
@@ -118,8 +118,8 @@ public class PrimaryStorageCapacityUpdater {
     private void checkResize() {
         if (isResized()) {
             logger.debug(String.format("the physical capacity of primary storage[uuid:%s] changed from %s to %s," +
-                    " this indicates the primary storage is re-sized." +
-                    " We need to recalculate its capacity", capacityVO.getUuid(),
+                            " this indicates the primary storage is re-sized." +
+                            " We need to recalculate its capacity", capacityVO.getUuid(),
                     originalCopy.getTotalPhysicalCapacity(), capacityVO.getTotalPhysicalCapacity()));
             // primary storage re-sized
             RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
