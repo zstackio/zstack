@@ -113,6 +113,10 @@ public class LocalStorageCascadeExtension extends AbstractAsyncCascadeExtension 
                                         sq.select(LocalStorageHostRefVO_.hostUuid);
                                         sq.add(LocalStorageHostRefVO_.primaryStorageUuid, SimpleQuery.Op.EQ, psUuid);
                                         List<String> hostUuids = sq.list();
+                                        if (hostUuids == null || hostUuids.isEmpty()) {
+                                            trigger.next();
+                                            return;
+                                        }
                                         List<RemoveHostFromLocalStorageMsg> msgs = CollectionUtils.transformToList(hostUuids,
                                                 new Function<RemoveHostFromLocalStorageMsg, String>() {
                                                     @Override
