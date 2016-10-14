@@ -7,12 +7,12 @@ import org.zstack.header.message.MessageReply;
 import java.util.List;
 
 public abstract class CloudBusListCallBack extends AbstractCompletion {
-    public CloudBusListCallBack(AsyncBackup...backup) {
+    public CloudBusListCallBack(AsyncBackup... backup) {
         super(backup);
     }
 
     public CloudBusListCallBack() {
     }
 
-	public abstract void run(List<MessageReply> replies);
+    public abstract void run(List<MessageReply> replies);
 }

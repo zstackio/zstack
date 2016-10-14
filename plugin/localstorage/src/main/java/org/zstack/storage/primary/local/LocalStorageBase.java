@@ -1027,7 +1027,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
         deleteResourceRef(msg.getHostUuid());
 
         // on remove, substract the total capacity from every capacity
-        decreaseCapacity(ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getTotalCapacity(), ref.getSystemUsedCapacity());
+        decreaseCapacity(ref.getTotalCapacity(),
+                ref.getTotalCapacity(),
+                ref.getTotalCapacity(),
+                ref.getTotalCapacity(),
+                ref.getSystemUsedCapacity());
         bus.reply(msg, new RemoveHostFromLocalStorageReply());
     }
 
@@ -1097,7 +1101,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize);
                     dbf.persist(ref);
 
-                    increaseCapacity(c.totalPhysicalSize, c.availablePhysicalSize, c.totalPhysicalSize, c.availablePhysicalSize, ref.getSystemUsedCapacity());
+                    increaseCapacity(
+                            c.totalPhysicalSize,
+                            c.availablePhysicalSize,
+                            c.totalPhysicalSize,
+                            c.availablePhysicalSize,
+                            ref.getSystemUsedCapacity());
                 } else {
                     boolean totalCapacityChanged = false;
                     if (ref.getTotalCapacity() != c.totalPhysicalSize) {
@@ -1141,13 +1150,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
         List<LocalStorageHostRefVO> refs = q.getResultList();
 
         if (refs.isEmpty()) {
-            throw new CloudRuntimeException(String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]", hostUuid, self.getUuid()));
+            throw new CloudRuntimeException(String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]",
+                    hostUuid, self.getUuid()));
         }
 
 
         LocalStorageHostRefVO ref = refs.get(0);
 
-        physicalCapacityMgr.checkCapacityByRatio(self.getUuid(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity());
+        physicalCapacityMgr.checkCapacityByRatio(
+                self.getUuid(),
+                ref.getTotalPhysicalCapacity(),
+                ref.getAvailablePhysicalCapacity());
 
         LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
         s.setLocalStorage(getSelfInventory());
@@ -1155,14 +1168,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
         s.setSizeBeforeOverProvisioning(size);
         s.setSize(size);
 
-        for (LocalStorageReserveHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReserveHostCapacityExtensionPoint.class)) {
+        for (LocalStorageReserveHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(
+                LocalStorageReserveHostCapacityExtensionPoint.class)) {
             ext.beforeReserveLocalStorageCapacityOnHost(s);
         }
 
         long avail = ref.getAvailableCapacity() - s.getSize();
         if (avail < 0) {
             throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity[current: %s bytes, needed: %s]",
+                    String.format("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity" +
+                                    "[current: %s bytes, needed: %s]",
                             hostUuid, self.getUuid(), ref.getAvailableCapacity(), size)
             ));
         }
@@ -1180,7 +1195,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
         List<LocalStorageHostRefVO> refs = q.getResultList();
 
         if (refs.isEmpty()) {
-            throw new CloudRuntimeException(String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]", hostUuid, self.getUuid()));
+            throw new CloudRuntimeException(String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]",
+                    hostUuid, self.getUuid()));
         }
 
         LocalStorageHostRefVO ref = refs.get(0);
@@ -1191,7 +1207,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
         s.setLocalStorage(getSelfInventory());
         s.setSize(size);
 
-        for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReturnHostCapacityExtensionPoint.class)) {
+        for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(
+                LocalStorageReturnHostCapacityExtensionPoint.class)) {
             ext.beforeReturnLocalStorageCapacityOnHost(s);
         }
 
@@ -1201,7 +1218,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Transactional
     protected void returnCapacityToHostByResourceUuid(String resUuid) {
-        String sql = "select href, ref from LocalStorageHostRefVO href, LocalStorageResourceRefVO ref where href.hostUuid = ref.hostUuid and ref.resourceUuid = :resUuid and ref.primaryStorageUuid = :puuid";
+        String sql = "select href, ref" +
+                " from LocalStorageHostRefVO href, LocalStorageResourceRefVO ref" +
+                " where href.hostUuid = ref.hostUuid" +
+                " and ref.resourceUuid = :resUuid" +
+                " and ref.primaryStorageUuid = :puuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         q.setParameter("resUuid", resUuid);
@@ -1221,7 +1242,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
         s.setHostUuid(href.getHostUuid());
         s.setLocalStorage(getSelfInventory());
         s.setSize(requiredSize);
-        for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(LocalStorageReturnHostCapacityExtensionPoint.class)) {
+        for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(
+                LocalStorageReturnHostCapacityExtensionPoint.class)) {
             ext.beforeReturnLocalStorageCapacityOnHost(s);
         }
 
@@ -1712,7 +1734,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
         updater.update(total, avail, totalPhysical, availPhysical);
     }
 
-    protected void increaseCapacity(final Long total, final Long avail, final Long totalPhysical, final Long availPhysical, final Long sysmtemUsed) {
+    protected void increaseCapacity(final Long total,
+                                    final Long avail,
+                                    final Long totalPhysical,
+                                    final Long availPhysical,
+                                    final Long sysmtemUsed) {
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
@@ -1741,7 +1767,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
-    protected void decreaseCapacity(final Long total, final Long avail, final Long totalPhysical, final Long availPhysical, final Long systemUsed) {
+    protected void decreaseCapacity(final Long total,
+                                    final Long avail,
+                                    final Long totalPhysical,
+                                    final Long availPhysical,
+                                    final Long systemUsed) {
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override

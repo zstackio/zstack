@@ -90,18 +90,23 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         private boolean success = true;
         private String error;
+
         public boolean isSuccess() {
             return success;
         }
+
         public void setSuccess(boolean success) {
             this.success = success;
         }
+
         public String getError() {
             return error;
         }
+
         public void setError(String error) {
             this.error = error;
         }
+
         public Long getTotalCapacity() {
             return totalCapacity;
         }
@@ -292,9 +297,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
         }
+
         public String getVolumePath() {
             return volumePath;
         }
+
         public void setVolumePath(String rootVolumePath) {
             this.volumePath = rootVolumePath;
         }
@@ -1337,7 +1344,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     return;
                 }
 
-                TakeSnapshotOnHypervisorReply treply = (TakeSnapshotOnHypervisorReply)reply;
+                TakeSnapshotOnHypervisorReply treply = (TakeSnapshotOnHypervisorReply) reply;
                 sp.setSize(treply.getSize());
                 sp.setPrimaryStorageUuid(self.getUuid());
                 sp.setPrimaryStorageInstallPath(treply.getSnapshotInstallPath());
@@ -1405,7 +1412,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             return;
         }
 
-        final String installPath = ((BackupStorageAskInstallPathReply)br).getInstallPath();
+        final String installPath = ((BackupStorageAskInstallPathReply) br).getInstallPath();
 
         m.uploadBits(getSelfInventory(), msg.getBackupStorage(), installPath, sp.getPrimaryStorageInstallPath(), hostUuid, new ReturnValueCompletion<String>(completion) {
             @Override
@@ -1455,7 +1462,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         VolumeInventory volume = msg.getTo();
         VolumeSnapshotInventory sp = msg.getFrom();
         if (volume.getVmInstanceUuid() != null) {
-            SimpleQuery<VmInstanceVO> q  = dbf.createQuery(VmInstanceVO.class);
+            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
             q.select(VmInstanceVO_.state);
             q.add(VmInstanceVO_.uuid, Op.EQ, volume.getVmInstanceUuid());
             VmInstanceState state = q.findValue();
@@ -1604,13 +1611,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 bus.reply(msg, reply);
             }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("failed to upload template[%s] from local primary storage[uuid: %s] to the backup storage[uuid: %s, path: %s]",
-                        msg.getPrimaryStorageInstallPath(), self.getUuid(), bs.getUuid(), msg.getBackupStorageInstallPath()));
-                completion.fail(errorCode);
-            }
-        });
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format("failed to upload template[%s] from local primary storage[uuid: %s] to the backup storage[uuid: %s, path: %s]",
+                                msg.getPrimaryStorageInstallPath(), self.getUuid(), bs.getUuid(), msg.getBackupStorageInstallPath()));
+                        completion.fail(errorCode);
+                    }
+                });
     }
 
     @Override
@@ -1644,7 +1651,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @Override
     @MessageSafe
     void handleHypervisorSpecificMessage(LocalStorageHypervisorSpecificMessage msg) {
-        bus.dealWithUnknownMessage((Message)msg);
+        bus.dealWithUnknownMessage((Message) msg);
     }
 
     @Override
@@ -1717,7 +1724,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 GetQCOW2ReferenceRsp rsp = w.getResponse(GetQCOW2ReferenceRsp.class);
                                 if (rsp.referencePaths == null || rsp.referencePaths.isEmpty()) {
                                     trigger.next();
-                                } else  {
+                                } else {
                                     trigger.fail(errf.stringToInternalError(String.format("[THIS IS A BUG NEEDED TO BE FIXED RIGHT NOW, PLEASE REPORT TO US ASAP] the image cache file[%s] is still referenced by" +
                                             " below QCOW2 files:\n%s", msg.getInstallPath(), StringUtils.join(rsp.referencePaths, "\n"))));
                                 }
@@ -1924,19 +1931,19 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
                                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger, chain) {
-                                    @Override
-                                    public void success(AgentResponse rsp) {
-                                        s = true;
-                                        trigger.next();
-                                        chain.next();
-                                    }
+                                            @Override
+                                            public void success(AgentResponse rsp) {
+                                                s = true;
+                                                trigger.next();
+                                                chain.next();
+                                            }
 
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        trigger.fail(errorCode);
-                                        chain.next();
-                                    }
-                                });
+                                            @Override
+                                            public void fail(ErrorCode errorCode) {
+                                                trigger.fail(errorCode);
+                                                chain.next();
+                                            }
+                                        });
                             }
 
                             @Override
@@ -2101,17 +2108,17 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
-                    @Override
-                    public void success(AgentResponse rsp) {
-                        migrated = cmd.paths;
-                        trigger.next();
-                    }
+                            @Override
+                            public void success(AgentResponse rsp) {
+                                migrated = cmd.paths;
+                                trigger.next();
+                            }
 
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
             }
 
             @Override
@@ -2232,6 +2239,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     public void attachHook(String clusterUuid, final Completion completion) {
+        // get all hosts of cluster
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.uuid);
         q.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
@@ -2242,22 +2250,24 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             return;
         }
 
-        List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids, new Function<KVMHostAsyncHttpCallMsg, String>() {
-            @Override
-            public KVMHostAsyncHttpCallMsg call(String arg) {
-                InitCmd cmd = new InitCmd();
-                cmd.path = self.getUrl();
-                cmd.hostUuid = arg;
+        // make init msg for each host
+        List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids,
+                new Function<KVMHostAsyncHttpCallMsg, String>() {
+                    @Override
+                    public KVMHostAsyncHttpCallMsg call(String arg) {
+                        InitCmd cmd = new InitCmd();
+                        cmd.path = self.getUrl();
+                        cmd.hostUuid = arg;
 
-                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
-                msg.setPath(INIT_PATH);
-                msg.setHostUuid(arg);
-                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, arg);
-                return msg;
-            }
-        });
+                        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                        msg.setCommand(cmd);
+                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+                        msg.setPath(INIT_PATH);
+                        msg.setHostUuid(arg);
+                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, arg);
+                        return msg;
+                    }
+                });
 
         bus.send(msgs, new CloudBusListCallBack(completion) {
             @Override
@@ -2265,24 +2275,27 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 long total = 0;
                 long avail = 0;
                 long systemUsed = 0;
-                List<LocalStorageHostRefVO> refs = new ArrayList<LocalStorageHostRefVO>();
+                List<LocalStorageHostRefVO> refs = new ArrayList<>();
 
                 for (MessageReply reply : replies) {
                     String hostUuid = hostUuids.get(replies.indexOf(reply));
                     if (!reply.isSuccess()) {
-                        logger.warn(String.format("cannot get the physical capacity of local storage on the host[uuid:%s], %s", hostUuid, reply.getError()));
+                        logger.warn(String.format("cannot get the physical capacity of local storage on the host[uuid:%s], %s",
+                                hostUuid, reply.getError()));
                         continue;
                     }
 
                     KVMHostAsyncHttpCallReply r = reply.castReply();
                     AgentResponse rsp = r.toResponse(AgentResponse.class);
                     if (!rsp.isSuccess()) {
-                        logger.warn(String.format("cannot get the physical capacity of local storage on the host[uuid:%s], %s", hostUuid, rsp.getError()));
+                        logger.warn(String.format("cannot get the physical capacity of local storage on the host[uuid:%s], %s",
+                                hostUuid, rsp.getError()));
                         continue;
                     }
 
                     if (dbf.isExist(hostUuid, LocalStorageHostRefVO.class)) {
-                        logger.debug(String.format("host[uuid :%s] is already in the local primary storage[uuid: %s]", hostUuid, self.getUuid()));
+                        logger.debug(String.format("host[uuid :%s] is already in the local primary storage[uuid: %s]",
+                                hostUuid, self.getUuid()));
                         continue;
                     }
 
@@ -2312,7 +2325,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    protected  void handle(final CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
+    protected void handle(final CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         final LocalStorageResourceRefVO ref = dbf.findByUuid(msg.getVolumeInventory().getUuid(), LocalStorageResourceRefVO.class);
         final CreateTemplateFromVolumeOnPrimaryStorageReply reply = new CreateTemplateFromVolumeOnPrimaryStorageReply();
 
@@ -2354,16 +2367,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         httpCall(CREATE_TEMPLATE_FROM_VOLUME, ref.getHostUuid(), cmd, false,
                                 CreateTemplateFromVolumeRsp.class,
                                 new ReturnValueCompletion<CreateTemplateFromVolumeRsp>(trigger) {
-                            @Override
-                            public void success(CreateTemplateFromVolumeRsp rsp) {
-                                trigger.next();
-                            }
+                                    @Override
+                                    public void success(CreateTemplateFromVolumeRsp rsp) {
+                                        trigger.next();
+                                    }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
                     }
 
                     @Override
