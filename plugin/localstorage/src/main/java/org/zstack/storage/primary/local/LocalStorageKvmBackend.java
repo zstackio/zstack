@@ -2292,11 +2292,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 hostUuid, rsp.getError()));
                         continue;
                     }
-
-                    if (dbf.isExist(hostUuid, LocalStorageHostRefVO.class)) {
-                        logger.debug(String.format("host[uuid :%s] is already in the local primary storage[uuid: %s]",
-                                hostUuid, self.getUuid()));
-                        continue;
+                    {
+                        SimpleQuery<LocalStorageHostRefVO> sq = dbf.createQuery(LocalStorageHostRefVO.class);
+                        sq.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+                        sq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, hostUuid);
+                        if (sq.isExists()) {
+                            logger.debug(String.format("host[uuid :%s] is already in the local primary storage[uuid: %s]",
+                                    hostUuid, self.getUuid()));
+                            continue;
+                        }
                     }
 
                     total += rsp.getTotalCapacity();
