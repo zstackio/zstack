@@ -49,9 +49,16 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
         String errorInfo;
 
         if (spec.getRequiredPrimaryStorageUuid() != null) {
-            String sql = "select ref from PrimaryStorageVO pri, LocalStorageHostRefVO ref, HostVO host where ref.primaryStorageUuid = pri.uuid and pri.state = :state" +
-                    " and pri.status = :status and pri.uuid = :uuid and host.uuid = ref.hostUuid and host.state = :hstate" +
-                    " and host.status = :hstatus and pri.type = :ptype";
+            String sql = "select ref" +
+                    " from PrimaryStorageVO pri, LocalStorageHostRefVO ref, HostVO host" +
+                    " where ref.primaryStorageUuid = pri.uuid" +
+                    " and pri.state = :state" +
+                    " and pri.status = :status" +
+                    " and pri.uuid = :uuid" +
+                    " and host.uuid = ref.hostUuid" +
+                    " and host.state = :hstate" +
+                    " and host.status = :hstatus" +
+                    " and pri.type = :ptype";
             query = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
             query.setParameter("state", PrimaryStorageState.Enabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
@@ -59,13 +66,27 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("hstate", HostState.Enabled);
             query.setParameter("hstatus", HostStatus.Connected);
             query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-            errorInfo = String.format("required local primary storage[uuid:%s] cannot satisfy conditions[state: %s, status: %s], or hosts providing the primary storage don't satisfy conditions[state: %s, status: %s, size > %s bytes]",
-                    spec.getRequiredPrimaryStorageUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, HostState.Enabled, HostStatus.Connected, spec.getSize());
+            errorInfo = String.format("required local primary storage[uuid:%s] cannot satisfy conditions[state: %s, status: %s]," +
+                            " or hosts providing the primary storage don't satisfy conditions[state: %s, status: %s, size > %s bytes]",
+                    spec.getRequiredPrimaryStorageUuid(),
+                    PrimaryStorageState.Enabled,
+                    PrimaryStorageStatus.Connected,
+                    HostState.Enabled,
+                    HostStatus.Connected,
+                    spec.getSize());
         } else if (spec.getRequiredHostUuid() != null) {
-            String sql = "select lref from PrimaryStorageVO pri, PrimaryStorageClusterRefVO pref, HostVO host, LocalStorageHostRefVO lref where pri.uuid = pref.primaryStorageUuid" +
-                    " and lref.primaryStorageUuid = pri.uuid and host.uuid = :huuid and host.uuid = lref.hostUuid" +
-                    " and host.clusterUuid = pref.clusterUuid and pri.state = :pstate and pri.status = :pstatus" +
-                    " and host.state = :hstate and host.status = :hstatus and pri.type = :ptype";
+            String sql = "select lref" +
+                    " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO pref, HostVO host, LocalStorageHostRefVO lref" +
+                    " where pri.uuid = pref.primaryStorageUuid" +
+                    " and lref.primaryStorageUuid = pri.uuid" +
+                    " and host.uuid = :huuid" +
+                    " and host.uuid = lref.hostUuid" +
+                    " and host.clusterUuid = pref.clusterUuid" +
+                    " and pri.state = :pstate" +
+                    " and pri.status = :pstatus" +
+                    " and host.state = :hstate" +
+                    " and host.status = :hstatus" +
+                    " and pri.type = :ptype";
             query = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
             query.setParameter("huuid", spec.getRequiredHostUuid());
             query.setParameter("pstate", PrimaryStorageState.Enabled);
@@ -73,12 +94,26 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("hstate", HostState.Enabled);
             query.setParameter("hstatus", HostStatus.Connected);
             query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-            errorInfo = String.format("the required host[uuid:%s] cannot satisfy conditions[state: %s, status: %s, size > %s bytes], or doesn't belong to a local primary storage satisfying conditions[state: %s, status: %s], or its cluster doesn't attach to any local primary storage",
-                    spec.getRequiredHostUuid(), HostState.Enabled, HostStatus.Connected, spec.getSize(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected);
+            errorInfo = String.format("the required host[uuid:%s] cannot satisfy conditions[state: %s, status: %s, size > %s bytes]," +
+                            " or doesn't belong to a local primary storage satisfying conditions[state: %s, status: %s]," +
+                            " or its cluster doesn't attach to any local primary storage",
+                    spec.getRequiredHostUuid(),
+                    HostState.Enabled,
+                    HostStatus.Connected,
+                    spec.getSize(),
+                    PrimaryStorageState.Enabled,
+                    PrimaryStorageStatus.Connected);
         } else if (spec.getRequiredZoneUuid() != null) {
-            String sql = "select ref from PrimaryStorageVO pri, LocalStorageHostRefVO ref, HostVO host where pri.uuid = ref.primaryStorageUuid" +
-                    " and pri.state = :pstate and pri.status = :pstatus and pri.zoneUuid = :zoneUuid and pri.type = :ptype" +
-                    " and host.uuid = ref.hostUuid and host.state = :hstate and host.status = :hstatus";
+            String sql = "select ref" +
+                    " from PrimaryStorageVO pri, LocalStorageHostRefVO ref, HostVO host" +
+                    " where pri.uuid = ref.primaryStorageUuid" +
+                    " and pri.state = :pstate" +
+                    " and pri.status = :pstatus" +
+                    " and pri.zoneUuid = :zoneUuid" +
+                    " and pri.type = :ptype" +
+                    " and host.uuid = ref.hostUuid" +
+                    " and host.state = :hstate" +
+                    " and host.status = :hstatus";
             query = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
             query.setParameter("pstate", PrimaryStorageState.Enabled);
             query.setParameter("pstatus", PrimaryStorageStatus.Connected);
@@ -86,12 +121,24 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("hstate", HostState.Enabled);
             query.setParameter("hstatus", HostStatus.Connected);
             query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-            errorInfo = String.format("no local primary storage in zone[uuid:%s] can satisfy conditions[state: %s, status: %s] or contain hosts satisfying conditions[state: %s, status: %s, size > %s bytes]",
-                    spec.getRequiredZoneUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, HostState.Enabled, HostStatus.Connected, spec.getSize());
+            errorInfo = String.format("no local primary storage in zone[uuid:%s] can satisfy conditions[state: %s, status: %s]" +
+                            " or contain hosts satisfying conditions[state: %s, status: %s, size > %s bytes]",
+                    spec.getRequiredZoneUuid(),
+                    PrimaryStorageState.Enabled,
+                    PrimaryStorageStatus.Connected,
+                    HostState.Enabled,
+                    HostStatus.Connected,
+                    spec.getSize());
         } else {
-            String sql = "select ref from PrimaryStorageVO pri, LocalStorageHostRefVO ref, HostVO host where pri.uuid = ref.primaryStorageUuid" +
-                    " and host.uuid = ref.hostUuid and pri.state = :pstate and pri.status = :pstatus and host.state = :hstate" +
-                    " and host.status = :hstatus and pri.type = :ptype";
+            String sql = "select ref" +
+                    " from PrimaryStorageVO pri, LocalStorageHostRefVO ref, HostVO host" +
+                    " where pri.uuid = ref.primaryStorageUuid" +
+                    " and host.uuid = ref.hostUuid" +
+                    " and pri.state = :pstate" +
+                    " and pri.status = :pstatus" +
+                    " and host.state = :hstate" +
+                    " and host.status = :hstatus" +
+                    " and pri.type = :ptype";
             query = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
             query.setParameter("pstate", PrimaryStorageState.Enabled);
             query.setParameter("pstatus", PrimaryStorageStatus.Connected);
@@ -99,12 +146,17 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("hstatus", HostStatus.Connected);
             query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
-            errorInfo = String.format("no local primary storage can satisfy conditions[state: %s, status: %s] or contain hosts satisfying conditions[state: %s, status: %s, size > %s bytes]",
-                    PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, HostState.Enabled, HostStatus.Connected, spec.getSize());
+            errorInfo = String.format("no local primary storage can satisfy conditions[state: %s, status: %s]" +
+                            " or contain hosts satisfying conditions[state: %s, status: %s, size > %s bytes]",
+                    PrimaryStorageState.Enabled,
+                    PrimaryStorageStatus.Connected,
+                    HostState.Enabled,
+                    HostStatus.Connected,
+                    spec.getSize());
         }
 
         List<LocalStorageHostRefVO> refs = query.getResultList();
-        List<LocalStorageHostRefVO> candidateHosts = new ArrayList<LocalStorageHostRefVO>();
+        List<LocalStorageHostRefVO> candidateHosts = new ArrayList<>();
         for (LocalStorageHostRefVO ref : refs) {
             if (spec.isNoOverProvisioning()) {
                 if (ref.getAvailableCapacity() > spec.getSize()) {
@@ -119,12 +171,12 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
 
         if (!candidateHosts.isEmpty()) {
             Iterator<LocalStorageHostRefVO> it = candidateHosts.iterator();
-            List<String> err = new ArrayList<String>();
+            List<String> err = new ArrayList<>();
             while (it.hasNext()) {
                 LocalStorageHostRefVO ref = it.next();
                 if (!physicalCapacityMgr.checkCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())) {
-                    err.add(String.format("{the physical capacity usage of the host[uuid:%s] has exceeded the threshold[%s]}", ref.getHostUuid(),
-                            physicalCapacityMgr.getRatio(ref.getPrimaryStorageUuid())));
+                    err.add(String.format("{the physical capacity usage of the host[uuid:%s] has exceeded the threshold[%s]}",
+                            ref.getHostUuid(), physicalCapacityMgr.getRatio(ref.getPrimaryStorageUuid())));
                     it.remove();
                 }
             }
@@ -134,7 +186,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             }
         }
 
-        Set<String> candidates = new HashSet<String>();
+        Set<String> candidates = new HashSet<>();
         if (!candidateHosts.isEmpty()) {
             if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose())) {
                 candidates.addAll(considerImageCache(spec, candidateHosts));
@@ -147,7 +199,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
 
         List<PrimaryStorageVO> res;
         if (candidates.isEmpty()) {
-            res = new ArrayList<PrimaryStorageVO>();
+            res = new ArrayList<>();
         } else {
             String sql = "select ps from PrimaryStorageVO ps where ps.uuid in (:psUuids)";
             TypedQuery<PrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
@@ -174,7 +226,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
     }
 
     private Collection<? extends String> considerImageCache(PrimaryStorageAllocationSpec spec, List<LocalStorageHostRefVO> candidateHosts) {
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
 
         String sql = "select i.size from ImageVO i where i.uuid = :uuid";
         TypedQuery<Long> sq = dbf.getEntityManager().createQuery(sql, Long.class);

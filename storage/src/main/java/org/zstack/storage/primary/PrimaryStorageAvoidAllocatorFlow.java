@@ -29,7 +29,8 @@ public class PrimaryStorageAvoidAllocatorFlow extends NoRollbackFlow {
     public void run(FlowTrigger trigger, Map data) {
         List<PrimaryStorageVO> candidates = (List<PrimaryStorageVO>) data.get(AllocatorParams.CANDIDATES);
         final PrimaryStorageAllocationSpec spec = (PrimaryStorageAllocationSpec) data.get(AllocatorParams.SPEC);
-        DebugUtils.Assert(candidates != null && !candidates.isEmpty(), "PrimaryStorageAvoidAllocatorFlow cannot be the first element in allocator chain");
+        DebugUtils.Assert(candidates != null && !candidates.isEmpty(),
+                "PrimaryStorageAvoidAllocatorFlow cannot be the first element in allocator chain");
 
         if (spec.getAvoidPrimaryStorageUuids() == null || spec.getAvoidPrimaryStorageUuids().isEmpty()) {
             trigger.next();
@@ -45,7 +46,8 @@ public class PrimaryStorageAvoidAllocatorFlow extends NoRollbackFlow {
 
         if (candidates.isEmpty()) {
             throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("after removing primary storage%s to avoid, there is no candidate primary storage anymore", spec.getAvoidPrimaryStorageUuids())
+                    String.format("after removing primary storage%s to avoid," +
+                            " there is no candidate primary storage anymore", spec.getAvoidPrimaryStorageUuids())
             ));
         }
 
