@@ -737,7 +737,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
                 PrimaryStorageInventory pinv = (PrimaryStorageInventory) invf.valueOf(self);
                 evt.setInventory(pinv);
-                logger.debug(String.format("successfully attached primary storage[name:%s, uuid:%s]", pinv.getName(), pinv.getUuid()));
+                logger.debug(String.format("successfully attached primary storage[name:%s, uuid:%s]",
+                        pinv.getName(), pinv.getUuid()));
                 bus.publish(evt);
                 completion.done();
             }

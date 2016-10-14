@@ -126,24 +126,30 @@ public class LocalStorageCapacityRecalculator {
                 " where ref.primaryStorageUuid = :psUuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("psUuid", psUuid);
-        List<Tuple> ts = q.getResultList();
-        if (!ts.isEmpty() && ts.get(0) != null) {
-            Tuple t = ts.get(0);
-            final long total = t.get(0, Long.class);
-            final long tp = t.get(1, Long.class);
-            final long pa = t.get(2, Long.class);
+        Tuple ts = q.getSingleResult();
 
-            PrimaryStorageCapacityUpdater pupdater = new PrimaryStorageCapacityUpdater(psUuid);
-            pupdater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                @Override
-                public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                    cap.setTotalCapacity(total);
-                    cap.setTotalPhysicalCapacity(tp);
-                    cap.setAvailablePhysicalCapacity(pa);
-                    return cap;
-                }
-            });
+        final long total;
+        final long tp;
+        final long pa;
+        PrimaryStorageCapacityUpdater pupdater = new PrimaryStorageCapacityUpdater(psUuid);
+        if (ts != null) {
+            total = ts.get(0) == null ? 0 : ts.get(0, Long.class);
+            tp = ts.get(1) == null ? 0 : ts.get(1, Long.class);
+            pa = ts.get(2) == null ? 0 : ts.get(2, Long.class);
+        } else {
+            total = 0;
+            tp = 0;
+            pa = 0;
         }
+        pupdater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                cap.setTotalCapacity(total);
+                cap.setTotalPhysicalCapacity(tp);
+                cap.setAvailablePhysicalCapacity(pa);
+                return cap;
+            }
+        });
 
         return this;
     }
