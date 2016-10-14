@@ -121,32 +121,39 @@ public class LocalStorageCapacityRecalculator {
 
     @Transactional
     public LocalStorageCapacityRecalculator calculateTotalCapacity(String psUuid) {
-        String sql = "select sum(ref.totalCapacity), sum(ref.totalPhysicalCapacity), sum(ref.availablePhysicalCapacity)" +
+        String sql = "select sum(ref.totalCapacity)," +
+                " sum(ref.availableCapacity)," +
+                " sum(ref.totalPhysicalCapacity)," +
+                " sum(ref.availablePhysicalCapacity)" +
                 " from LocalStorageHostRefVO ref" +
                 " where ref.primaryStorageUuid = :psUuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("psUuid", psUuid);
         Tuple ts = q.getSingleResult();
 
-        final long total;
-        final long tp;
-        final long pa;
+        final long totalCapacity;
+        final long availableCapacity;
+        final long totalPhysicalCapacity;
+        final long availablePhysicalCapacity;
         PrimaryStorageCapacityUpdater pupdater = new PrimaryStorageCapacityUpdater(psUuid);
         if (ts != null) {
-            total = ts.get(0) == null ? 0 : ts.get(0, Long.class);
-            tp = ts.get(1) == null ? 0 : ts.get(1, Long.class);
-            pa = ts.get(2) == null ? 0 : ts.get(2, Long.class);
+            totalCapacity = ts.get(0) == null ? 0 : ts.get(0, Long.class);
+            availableCapacity = ts.get(1) == null ? 0 : ts.get(1, Long.class);
+            totalPhysicalCapacity = ts.get(2) == null ? 0 : ts.get(2, Long.class);
+            availablePhysicalCapacity = ts.get(3) == null ? 0 : ts.get(3, Long.class);
         } else {
-            total = 0;
-            tp = 0;
-            pa = 0;
+            totalCapacity = 0;
+            availableCapacity = 0;
+            totalPhysicalCapacity = 0;
+            availablePhysicalCapacity = 0;
         }
         pupdater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                cap.setTotalCapacity(total);
-                cap.setTotalPhysicalCapacity(tp);
-                cap.setAvailablePhysicalCapacity(pa);
+                cap.setTotalCapacity(totalCapacity);
+                cap.setAvailableCapacity(availableCapacity);
+                cap.setTotalPhysicalCapacity(totalPhysicalCapacity);
+                cap.setAvailablePhysicalCapacity(availablePhysicalCapacity);
                 return cap;
             }
         });
