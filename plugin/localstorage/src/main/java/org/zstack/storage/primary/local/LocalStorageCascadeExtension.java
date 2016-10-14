@@ -120,6 +120,7 @@ public class LocalStorageCascadeExtension extends AbstractAsyncCascadeExtension 
                                                         RemoveHostFromLocalStorageMsg msg = new RemoveHostFromLocalStorageMsg();
                                                         msg.setHostUuid(arg);
                                                         msg.setPrimaryStorageUuid(psUuid);
+                                                        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
                                                         return msg;
                                                     }
                                                 });
