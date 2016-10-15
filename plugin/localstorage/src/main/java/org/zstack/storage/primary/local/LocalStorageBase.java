@@ -671,8 +671,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 @Override
                 @Transactional(readOnly = true)
                 public List<String> call() {
-                    String sql = "select h.hostUuid from LocalStorageHostRefVO h, HostVO host where h.primaryStorageUuid = :puuid" +
-                            " and h.hostUuid = host.uuid and host.status = :hstatus";
+                    String sql = "select h.hostUuid" +
+                            " from LocalStorageHostRefVO h, HostVO host" +
+                            " where h.primaryStorageUuid = :puuid" +
+                            " and h.hostUuid = host.uuid" +
+                            " and host.status = :hstatus";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                     q.setParameter("puuid", self.getUuid());
                     q.setParameter("hstatus", HostStatus.Connected);
@@ -1099,7 +1102,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bkd.handle(msg, new ReturnValueCompletion<PhysicalCapacityUsage>(msg) {
             @Override
             public void success(PhysicalCapacityUsage c) {
-                LocalStorageHostRefVO ref = dbf.findByUuid(msg.getHostUuid(), LocalStorageHostRefVO.class);
+                String sqlLocalStorageHostRefVO = "select ref" +
+                        " from LocalStorageHostRefVO ref" +
+                        " where hostUuid = :hostUuid" +
+                        " and primaryStorageUuid = :primaryStorageUuid";
+                TypedQuery<LocalStorageHostRefVO> query = dbf.getEntityManager().
+                        createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
+                query.setParameter("hostUuid", msg.getHostUuid());
+                query.setParameter("primaryStorageUuid", msg.getPrimaryStorageUuid());
+                LocalStorageHostRefVO ref = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getSingleResult();
 
                 if (ref == null) {
                     ref = new LocalStorageHostRefVO();
