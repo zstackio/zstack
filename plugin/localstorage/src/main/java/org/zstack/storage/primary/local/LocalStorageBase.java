@@ -1021,7 +1021,18 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(RemoveHostFromLocalStorageMsg msg) {
-        LocalStorageHostRefVO ref = dbf.findByUuid(msg.getHostUuid(), LocalStorageHostRefVO.class);
+        String sqlLocalStorageHostRefVO = "select ref" +
+                " from LocalStorageHostRefVO ref" +
+                " where hostUuid = :hostUuid" +
+                " and primaryStorageUuid = :primaryStorageUuid";
+        TypedQuery<LocalStorageHostRefVO> query = dbf.getEntityManager().
+                createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
+        query.setParameter("hostUuid", msg.getHostUuid());
+        query.setParameter("primaryStorageUuid", msg.getPrimaryStorageUuid());
+        LocalStorageHostRefVO ref = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getSingleResult();
+        if (ref == null) {
+            return;
+        }
         dbf.remove(ref);
 
         deleteResourceRef(msg.getHostUuid());

@@ -10,19 +10,19 @@ import java.util.Set;
 
 @Entity
 @Table
-@Inheritance(strategy=InheritanceType.JOINED)
+@Inheritance(strategy = InheritanceType.JOINED)
 @EO(EOClazz = BackupStorageEO.class)
 @AutoDeleteTag
 public class BackupStorageVO extends BackupStorageAO {
-    @OneToMany(fetch=FetchType.EAGER)
-    @JoinColumn(name="backupStorageUuid", insertable=false, updatable=false)
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "backupStorageUuid", insertable = false, updatable = false)
     @NoView
     private Set<BackupStorageZoneRefVO> attachedZoneRefs = new HashSet<BackupStorageZoneRefVO>();
 
-	public BackupStorageVO() {
-	}
-	
-	protected BackupStorageVO(BackupStorageVO vo) {
+    public BackupStorageVO() {
+    }
+
+    protected BackupStorageVO(BackupStorageVO vo) {
         this.setUuid(vo.getUuid());
         this.setAttachedZoneRefs(vo.getAttachedZoneRefs());
         this.setCreateDate(vo.getCreateDate());
@@ -35,7 +35,7 @@ public class BackupStorageVO extends BackupStorageAO {
         this.setType(vo.getType());
         this.setUrl(vo.getUrl());
         this.setAvailableCapacity(vo.getAvailableCapacity());
-	}
+    }
 
     public Set<BackupStorageZoneRefVO> getAttachedZoneRefs() {
         return attachedZoneRefs;
