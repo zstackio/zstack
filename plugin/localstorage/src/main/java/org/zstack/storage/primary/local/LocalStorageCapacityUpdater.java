@@ -13,6 +13,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
+import javax.persistence.TypedQuery;
 
 /**
  * Created by frank on 11/10/2015.
@@ -26,7 +27,15 @@ public class LocalStorageCapacityUpdater {
 
     @Transactional
     public void updatePhysicalCapacityByKvmAgentResponse(String psUuid, String hostUuid, AgentResponse rsp) {
-        LocalStorageHostRefVO ref = dbf.getEntityManager().find(LocalStorageHostRefVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
+        String sqlLocalStorageHostRefVO = "select ref" +
+                " from LocalStorageHostRefVO ref" +
+                " where hostUuid = :hostUuid" +
+                " and primaryStorageUuid = :primaryStorageUuid";
+        TypedQuery<LocalStorageHostRefVO> query = dbf.getEntityManager().
+                createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
+        query.setParameter("hostUuid", hostUuid);
+        query.setParameter("primaryStorageUuid", psUuid);
+        LocalStorageHostRefVO ref = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getSingleResult();
         if (ref == null) {
             return;
         }
