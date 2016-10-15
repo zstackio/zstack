@@ -1023,6 +1023,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
+    @Transactional
     private void handle(RemoveHostFromLocalStorageMsg msg) {
         String sqlLocalStorageHostRefVO = "select ref" +
                 " from LocalStorageHostRefVO ref" +
