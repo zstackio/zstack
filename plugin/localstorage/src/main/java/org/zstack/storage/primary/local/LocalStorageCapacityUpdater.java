@@ -35,7 +35,7 @@ public class LocalStorageCapacityUpdater {
                 createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
         query.setParameter("hostUuid", hostUuid);
         query.setParameter("primaryStorageUuid", psUuid);
-        LocalStorageHostRefVO ref = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getSingleResult();
+        LocalStorageHostRefVO ref = query.getSingleResult();
         if (ref == null) {
             return;
         }
