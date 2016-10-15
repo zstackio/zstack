@@ -12,20 +12,22 @@ import java.sql.Timestamp;
 /**
  * Created by frank on 6/30/2015.
  */
+class CompositePrimaryKeyForLocalStorageHostRefVO {
+    private String hostUuid;
+    private String primaryStorageUuid;
+}
+
 @Entity
 @Table
-@PrimaryKeyJoinColumns({
-        @PrimaryKeyJoinColumn(name = "hostUuid",
-                referencedColumnName = "hostUuid"),
-        @PrimaryKeyJoinColumn(name = "primaryStorageUuid",
-                referencedColumnName = "primaryStorageUuid")
-})
+@IdClass(CompositePrimaryKeyForLocalStorageHostRefVO.class)
 public class LocalStorageHostRefVO {
     @Column
+    @Id
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String hostUuid;
 
     @Column
+    @Id
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String primaryStorageUuid;
 
