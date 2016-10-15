@@ -1101,6 +1101,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
         bkd.handle(msg, new ReturnValueCompletion<PhysicalCapacityUsage>(msg) {
             @Override
+            @Transactional
             public void success(PhysicalCapacityUsage c) {
                 String sqlLocalStorageHostRefVO = "select ref" +
                         " from LocalStorageHostRefVO ref" +
