@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
@@ -90,13 +91,23 @@ public class LocalStorageCapacityRecalculator {
             String hostUuid = e.getKey();
             long used = e.getValue();
 
-            LocalStorageHostRefVO ref = dbf.getEntityManager().find(LocalStorageHostRefVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
+            String sqlLocalStorageHostRefVO = "select ref" +
+                    " from LocalStorageHostRefVO ref" +
+                    " where hostUuid = :hostUuid" +
+                    " and primaryStorageUuid = :primaryStorageUuid";
+            TypedQuery<LocalStorageHostRefVO> query = dbf.getEntityManager().
+                    createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
+            query.setParameter("hostUuid", hostUuid);
+            query.setParameter("primaryStorageUuid", psUuid);
+            LocalStorageHostRefVO ref = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getSingleResult();
+
             long old = ref.getAvailableCapacity();
             long avail = ref.getTotalCapacity() - used - ref.getSystemUsedCapacity();
             ref.setAvailableCapacity(avail);
             dbf.getEntityManager().merge(ref);
-            logger.debug(String.format("re-calculated available capacity[before:%s, now: %s] of host[uuid:%s] of the local storage[uuid:%s] with" +
-                    " over-provisioning ratio[%s]", old, avail, hostUuid, psUuid, ratioMgr.getRatio(psUuid)));
+            logger.debug(String.format("re-calculated available capacity[before:%s, now: %s] of host[uuid:%s]" +
+                            " of the local storage[uuid:%s] with over-provisioning ratio[%s]",
+                    old, avail, hostUuid, psUuid, ratioMgr.getRatio(psUuid)));
         }
 
         return this;

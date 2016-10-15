@@ -16,7 +16,6 @@ import java.sql.Timestamp;
 @Table
 public class LocalStorageHostRefVO {
     @Column
-    @Id
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String hostUuid;
 
