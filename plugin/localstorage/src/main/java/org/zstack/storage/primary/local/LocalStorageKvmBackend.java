@@ -1600,6 +1600,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void success(String installPath) {
                 UploadBitsFromLocalStorageToBackupStorageReply reply = new UploadBitsFromLocalStorageToBackupStorageReply();
+                reply.setBackupStorageInstallPath(installPath);
                 bus.reply(msg, reply);
             }
 
@@ -2405,6 +2406,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         m.uploadBits(getSelfInventory(), BackupStorageInventory.valueOf(bsvo), backupStorageInstallPath, temporaryTemplatePath, ref.getHostUuid(), new ReturnValueCompletion<String>(trigger) {
                             @Override
                             public void success(String installPath) {
+                                backupStorageInstallPath = installPath;
                                 trigger.next();
                             }
 

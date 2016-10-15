@@ -167,7 +167,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                         if (!reply.isSuccess()) {
                             trigger.fail(reply.getError());
                         } else {
-                            out.setBackupStorageInstallPath(bsInstallPath);
+                            UploadBitsFromLocalStorageToBackupStorageReply r = reply.castReply();
+                            out.setBackupStorageInstallPath(r.getBackupStorageInstallPath());
                             trigger.next();
                         }
                     }

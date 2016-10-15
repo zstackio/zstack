@@ -1146,7 +1146,9 @@ public class KvmBackend extends HypervisorBackend {
         uploader.uploadBits(msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
             @Override
             public void success(String bsPath) {
-                completion.success(new UploadBitsToBackupStorageReply());
+                UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
+                reply.setBackupStorageInstallPath(bsPath);
+                completion.success(reply);
             }
 
             @Override

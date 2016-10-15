@@ -156,7 +156,8 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
                         if (!reply.isSuccess()) {
                             trigger.fail(reply.getError());
                         } else {
-                            out.setBackupStorageInstallPath(bsInstallPath);
+                            UploadBitsToBackupStorageReply r = reply.castReply();
+                            out.setBackupStorageInstallPath(r.getBackupStorageInstallPath());
                             trigger.next();
                         }
                     }
