@@ -1033,7 +1033,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
         query.setParameter("hostUuid", msg.getHostUuid());
         query.setParameter("primaryStorageUuid", msg.getPrimaryStorageUuid());
-        LocalStorageHostRefVO ref = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getSingleResult();
+        LocalStorageHostRefVO ref = query.getSingleResult();
         if (ref == null) {
             return;
         }
