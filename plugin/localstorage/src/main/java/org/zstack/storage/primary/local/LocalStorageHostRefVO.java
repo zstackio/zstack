@@ -14,6 +14,12 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@PrimaryKeyJoinColumns({
+        @PrimaryKeyJoinColumn(name = "hostUuid",
+                referencedColumnName = "hostUuid"),
+        @PrimaryKeyJoinColumn(name = "primaryStorageUuid",
+                referencedColumnName = "primaryStorageUuid")
+})
 public class LocalStorageHostRefVO {
     @Column
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
