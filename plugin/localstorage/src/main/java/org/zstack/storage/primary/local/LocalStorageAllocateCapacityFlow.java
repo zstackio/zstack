@@ -50,7 +50,12 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
 
     @Transactional(readOnly = true)
     private boolean isThereOtherStorageForTheHost(String hostUuid, String localStorageUuid) {
-        String sql = "select count(pri) from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host where pri.uuid = ref.primaryStorageUuid and ref.clusterUuid = host.clusterUuid and host.uuid = :huuid and pri.uuid != :puuid";
+        String sql = "select count(pri)" +
+                " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host" +
+                " where pri.uuid = ref.primaryStorageUuid" +
+                " and ref.clusterUuid = host.clusterUuid" +
+                " and host.uuid = :huuid" +
+                " and pri.uuid != :puuid";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("huuid", hostUuid);
         q.setParameter("puuid", localStorageUuid);
@@ -74,7 +79,7 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
         List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
         DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
 
-        List<AllocatePrimaryStorageMsg> msgs = new ArrayList<AllocatePrimaryStorageMsg>();
+        List<AllocatePrimaryStorageMsg> msgs = new ArrayList<>();
 
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
         rmsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);

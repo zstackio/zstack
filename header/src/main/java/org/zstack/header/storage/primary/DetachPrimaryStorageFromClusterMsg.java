@@ -1,9 +1,6 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedReplyMessage;
-
-import java.util.List;
 
 /**
  */

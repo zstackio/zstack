@@ -33,8 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, FlowChainMutable {
     private static final CLogger logger = Utils.getLogger(SimpleFlowChain.class);
 
-    private List<Flow> flows = new ArrayList<Flow>();
-    private Stack<Flow> rollBackFlows = new Stack<Flow>();
+    private List<Flow> flows = new ArrayList<>();
+    private Stack<Flow> rollBackFlows = new Stack<>();
     private Map data = new HashMap();
     private Iterator<Flow> it;
     private boolean isStart = false;
@@ -49,17 +49,17 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private boolean skipRestRollbacks;
     private boolean allowEmptyFlow;
     private FlowMarshaller flowMarshaller;
-    private List<FlowChainProcessor> processers;
+    private List<FlowChainProcessor> processors;
     private List<List<Runnable>> afterDone = new ArrayList<>();
     private List<List<Runnable>> afterError = new ArrayList<>();
     private List<List<Runnable>> afterFinal = new ArrayList<>();
 
     private boolean isFailCalled;
 
-    private static final Map<String, WorkFlowStatistic> statistics = new ConcurrentHashMap<String, WorkFlowStatistic>();
+    private static final Map<String, WorkFlowStatistic> statistics = new ConcurrentHashMap<>();
 
     private class FlowStopWatch {
-        Map<String, Long> beginTime = new HashMap<String, Long>();
+        Map<String, Long> beginTime = new HashMap<>();
         void start(Flow flow) {
             long btime = System.currentTimeMillis();
             if (currentFlow != null) {
@@ -68,7 +68,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 WorkFlowStatistic stat = statistics.get(cname);
                 stat.addStatistic(btime - stime);
 
-                logger.debug(String.format("[FlowChain:%s, flow:%s] takes %sms to complete", name, cname, stat.getTotalTime()));
+                logger.debug(String.format("[FlowChain:%s, flow:%s] takes %sms to complete",
+                        name, cname, stat.getTotalTime()));
             }
 
             String fname = getFlowName(flow);
@@ -92,11 +93,11 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         }
     }
 
-    private FlowStopWatch stopWath;
+    private FlowStopWatch stopWatch;
 
     {
         if (CoreGlobalProperty.PROFILER_WORKFLOW) {
-            stopWath = new FlowStopWatch();
+            stopWatch = new FlowStopWatch();
         }
     }
 
@@ -227,7 +228,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     @Override
     public void setProcessors(List<FlowChainProcessor> processors) {
-        this.processers = processors;
+        this.processors = processors;
     }
 
     @Override
@@ -272,9 +273,11 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         try {
             Flow toRun = null;
             if (flowMarshaller != null) {
-                toRun = flowMarshaller.marshalTheNextFlow(currentFlow == null ? null : currentFlow.getClass().getName(), flow.getClass().getName(), this, data);
+                toRun = flowMarshaller.marshalTheNextFlow(currentFlow == null ? null : currentFlow.getClass().getName(),
+                        flow.getClass().getName(), this, data);
                 if (toRun != null) {
-                    logger.debug(String.format("FlowMarshaller[%s] replaces the next flow[%s] to the flow[%s]", flowMarshaller.getClass(), flow.getClass(), toRun.getClass()));
+                    logger.debug(String.format("FlowMarshaller[%s] replaces the next flow[%s] to the flow[%s]",
+                            flowMarshaller.getClass(), flow.getClass(), toRun.getClass()));
                 }
             }
 
@@ -283,7 +286,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             }
 
             if (CoreGlobalProperty.PROFILER_WORKFLOW) {
-                stopWath.start(toRun);
+                stopWatch.start(toRun);
             }
 
             currentFlow = toRun;
@@ -447,7 +450,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private void callDoneHandler() {
         if (CoreGlobalProperty.PROFILER_WORKFLOW) {
-            stopWath.stop();
+            stopWatch.stop();
         }
 
         if (doneHandler != null) {
@@ -516,8 +519,8 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     @Override
     public void start() {
-        if (processers != null) {
-            for (FlowChainProcessor p : processers) {
+        if (processors != null) {
+            for (FlowChainProcessor p : processors) {
                 p.processFlowChain(this);
             }
         }
