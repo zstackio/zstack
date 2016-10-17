@@ -139,25 +139,25 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
-                    BackupStorageAskInstallPathMsg ask = new BackupStorageAskInstallPathMsg();
-                    ask.setBackupStorageUuid(paramIn.getBackupStorageUuid());
-                    ask.setImageMediaType(paramIn.getImage().getMediaType());
-                    ask.setImageUuid(paramIn.getImage().getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(ask, BackupStorageConstant.SERVICE_ID, paramIn.getBackupStorageUuid());
-                    MessageReply areply = bus.call(ask);
-                    if (!areply.isSuccess()) {
-                        trigger.fail(areply.getError());
-                        return;
-                    }
+                BackupStorageAskInstallPathMsg ask = new BackupStorageAskInstallPathMsg();
+                ask.setBackupStorageUuid(paramIn.getBackupStorageUuid());
+                ask.setImageMediaType(paramIn.getImage().getMediaType());
+                ask.setImageUuid(paramIn.getImage().getUuid());
+                bus.makeTargetServiceIdByResourceUuid(ask, BackupStorageConstant.SERVICE_ID, paramIn.getBackupStorageUuid());
+                MessageReply areply = bus.call(ask);
+                if (!areply.isSuccess()) {
+                    trigger.fail(areply.getError());
+                    return;
+                }
 
-                    String bsInstallPath = ((BackupStorageAskInstallPathReply)areply).getInstallPath();
-                    UploadBitsFromLocalStorageToBackupStorageMsg msg = new UploadBitsFromLocalStorageToBackupStorageMsg();
-                    msg.setHostUuid(ctx.hostUuid);
-                    msg.setPrimaryStorageInstallPath(ctx.temporaryInstallPath);
-                    msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
-                    msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
-                    msg.setBackupStorageInstallPath(bsInstallPath);
-                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                String bsInstallPath = ((BackupStorageAskInstallPathReply) areply).getInstallPath();
+                UploadBitsFromLocalStorageToBackupStorageMsg msg = new UploadBitsFromLocalStorageToBackupStorageMsg();
+                msg.setHostUuid(ctx.hostUuid);
+                msg.setPrimaryStorageInstallPath(ctx.temporaryInstallPath);
+                msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
+                msg.setBackupStorageInstallPath(bsInstallPath);
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
 
                 bus.send(msg, new CloudBusCallBack(trigger) {
                     @Override
@@ -289,7 +289,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Transactional(readOnly = true)
     private String getLocalStorageInCluster(String clusterUuid) {
-        String sql = "select pri.uuid from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref where pri.uuid = ref.primaryStorageUuid and ref.clusterUuid = :cuuid and pri.type = :ptype";
+        String sql = "select pri.uuid" +
+                " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                " where pri.uuid = ref.primaryStorageUuid" +
+                " and ref.clusterUuid = :cuuid" +
+                " and pri.type = :ptype";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("cuuid", clusterUuid);
         q.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
@@ -345,26 +349,31 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
         q.select(LocalStorageHostRefVO_.primaryStorageUuid);
         q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, inventory.getUuid());
-        final String psUuid = q.findValue();
-        if (psUuid == null) {
+        List<String> psUuids = q.listValue();
+        if (psUuids == null || psUuids.isEmpty()) {
             return;
         }
 
         logger.debug(String.format("the host[uuid:%s] belongs to the local storage[uuid:%s], starts to delete vms and" +
-                " volumes on the host", inventory.getUuid(), psUuid));
+                " volumes on the host", inventory.getUuid(), String.join(",", psUuids)));
 
         final List<String> vmUuids = new Callable<List<String>>() {
             @Override
             @Transactional(readOnly = true)
             public List<String> call() {
-                String sql = "select vm.uuid from VolumeVO vol, LocalStorageResourceRefVO ref, VmInstanceVO vm where ref.primaryStorageUuid = :psUuid" +
-                        " and vol.type = :vtype and ref.resourceUuid = vol.uuid and ref.resourceType = :rtype and ref.hostUuid = :huuid" +
+                String sql = "select vm.uuid" +
+                        " from VolumeVO vol, LocalStorageResourceRefVO ref, VmInstanceVO vm" +
+                        " where ref.primaryStorageUuid in :psUuids" +
+                        " and vol.type = :vtype" +
+                        " and ref.resourceUuid = vol.uuid" +
+                        " and ref.resourceType = :rtype" +
+                        " and ref.hostUuid = :huuid" +
                         " and vm.uuid = vol.vmInstanceUuid";
                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                 q.setParameter("vtype", VolumeType.Root);
                 q.setParameter("rtype", VolumeVO.class.getSimpleName());
                 q.setParameter("huuid", inventory.getUuid());
-                q.setParameter("psUuid", psUuid);
+                q.setParameter("psUuids", psUuids);
                 return q.getResultList();
             }
         }.call();
@@ -385,7 +394,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             bus.send(msgs, new CloudBusListCallBack(completion) {
                 @Override
                 public void run(List<MessageReply> replies) {
-                    for (MessageReply r : replies){
+                    for (MessageReply r : replies) {
                         if (!r.isSuccess()) {
                             String vmUuid = vmUuids.get(replies.indexOf(r));
                             //TODO
@@ -404,10 +413,15 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             @Override
             @Transactional(readOnly = true)
             public List<String> call() {
-                String sql = "select vol.uuid from VolumeVO vol, LocalStorageResourceRefVO ref where ref.primaryStorageUuid = :psUuid" +
-                        " and vol.type = :vtype and ref.resourceUuid = vol.uuid and ref.resourceType = :rtype and ref.hostUuid = :huuid";
+                String sql = "select vol.uuid" +
+                        " from VolumeVO vol, LocalStorageResourceRefVO ref" +
+                        " where ref.primaryStorageUuid in :psUuids" +
+                        " and vol.type = :vtype" +
+                        " and ref.resourceUuid = vol.uuid" +
+                        " and ref.resourceType = :rtype" +
+                        " and ref.hostUuid = :huuid";
                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                q.setParameter("psUuid", psUuid);
+                q.setParameter("psUuids", psUuids);
                 q.setParameter("vtype", VolumeType.Data);
                 q.setParameter("rtype", VolumeVO.class.getSimpleName());
                 q.setParameter("huuid", inventory.getUuid());
@@ -536,8 +550,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         });
 
-        String sql = "select ref.hostUuid from LocalStorageResourceRefVO ref where ref.resourceUuid = :volUuid and ref.resourceType = :rtype";
-        TypedQuery<String>  q = dbf.getEntityManager().createQuery(sql, String.class);
+        String sql = "select ref.hostUuid" +
+                " from LocalStorageResourceRefVO ref" +
+                " where ref.resourceUuid = :volUuid" +
+                " and ref.resourceType = :rtype";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("volUuid", vm.getRootVolumeUuid());
         q.setParameter("rtype", VolumeVO.class.getSimpleName());
         List<String> ret = q.getResultList();
@@ -546,7 +563,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         }
 
         String hostUuid = ret.get(0);
-        sql = "select ref.resourceUuid from LocalStorageResourceRefVO ref where ref.resourceUuid in (:uuids) and ref.resourceType = :rtype" +
+        sql = "select ref.resourceUuid" +
+                " from LocalStorageResourceRefVO ref" +
+                " where ref.resourceUuid in (:uuids)" +
+                " and ref.resourceType = :rtype" +
                 " and ref.hostUuid != :huuid";
         q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuids", volUuids);
@@ -569,8 +589,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     @Transactional(readOnly = true)
     public HostMaintenancePolicy getHostMaintenancePolicy(HostInventory host) {
-        String sql = "select count(ps) from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref where ps.uuid = ref.primaryStorageUuid" +
-                " and ps.type = :type and ref.clusterUuid = :cuuid";
+        String sql = "select count(ps)" +
+                " from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref" +
+                " where ps.uuid = ref.primaryStorageUuid" +
+                " and ps.type = :type" +
+                " and ref.clusterUuid = :cuuid";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("type", LocalStorageConstants.LOCAL_STORAGE_TYPE);
         q.setParameter("cuuid", host.getClusterUuid());
@@ -581,7 +604,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public List<ExpandedQueryStruct> getExpandedQueryStructs() {
-        List<ExpandedQueryStruct> structs = new ArrayList<ExpandedQueryStruct>();
+        List<ExpandedQueryStruct> structs = new ArrayList<>();
 
         ExpandedQueryStruct s = new ExpandedQueryStruct();
         s.setExpandedField("localStorageHostRef");
@@ -610,7 +633,9 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     @Transactional(readOnly = true)
     public List<VmInstanceVO> returnAttachableVms(VolumeInventory vol, List<VmInstanceVO> candidates) {
-        String sql = "select ref.hostUuid from LocalStorageResourceRefVO ref where ref.resourceUuid = :uuid" +
+        String sql = "select ref.hostUuid" +
+                " from LocalStorageResourceRefVO ref" +
+                " where ref.resourceUuid = :uuid" +
                 " and ref.resourceType = :rtype";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuid", vol.getUuid());
@@ -629,8 +654,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         });
 
-        sql = "select ref.resourceUuid from LocalStorageResourceRefVO ref where ref.hostUuid = :huuid" +
-                " and ref.resourceUuid in (:rootVolumeUuids) and ref.resourceType = :rtype";
+        sql = "select ref.resourceUuid" +
+                " from LocalStorageResourceRefVO ref" +
+                " where ref.hostUuid = :huuid" +
+                " and ref.resourceUuid in (:rootVolumeUuids)" +
+                " and ref.resourceType = :rtype";
         q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("huuid", hostUuid);
         q.setParameter("rootVolumeUuids", vmRootVolumeUuids);
@@ -667,7 +695,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (!rq.isExists()) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("the data volume[name:%s, uuid:%s] is on the local storage[uuid:%s]; however," +
-                            "the host on which the data volume is has been deleted. Unable to recover this volume",
+                                    "the host on which the data volume is has been deleted. Unable to recover this volume",
                             vol.getName(), vol.getUuid(), vol.getPrimaryStorageUuid())
             ));
         }
@@ -688,8 +716,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     public void preRecoverVm(VmInstanceInventory vm) {
         String rootVolUuid = vm.getRootVolumeUuid();
 
-        String sql = "select ps.uuid from PrimaryStorageVO ps, VolumeVO vol where ps.uuid = vol.primaryStorageUuid" +
-                " and vol.uuid = :uuid and ps.type = :pstype";
+        String sql = "select ps.uuid" +
+                " from PrimaryStorageVO ps, VolumeVO vol" +
+                " where ps.uuid = vol.primaryStorageUuid" +
+                " and vol.uuid = :uuid" +
+                " and ps.type = :pstype";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuid", rootVolUuid);
         q.setParameter("pstype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
@@ -698,7 +729,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return;
         }
 
-        sql = "select count(ref) from LocalStorageResourceRefVO ref where ref.resourceUuid = :uuid and ref.resourceType = :rtype";
+        sql = "select count(ref)" +
+                " from LocalStorageResourceRefVO ref" +
+                " where ref.resourceUuid = :uuid" +
+                " and ref.resourceType = :rtype";
         TypedQuery<Long> rq = dbf.getEntityManager().createQuery(sql, Long.class);
         rq.setParameter("uuid", rootVolUuid);
         rq.setParameter("rtype", VolumeVO.class.getSimpleName());
@@ -706,7 +740,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (count == 0) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("unable to recover the vm[uuid:%s, name:%s]. The vm's root volume is on the local" +
-                            " storage[uuid:%s]; however, the host on which the root volume is has been deleted",
+                                    " storage[uuid:%s]; however, the host on which the root volume is has been deleted",
                             vm.getUuid(), vm.getName(), psuuid)
             ));
         }
@@ -732,8 +766,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         });
 
-        String sql = "select count(ps) from PrimaryStorageVO ps, VolumeVO vol where ps.uuid = vol.primaryStorageUuid and" +
-                " vol.uuid in (:volUuids) and ps.type = :ptype";
+        String sql = "select count(ps)" +
+                " from PrimaryStorageVO ps, VolumeVO vol" +
+                " where ps.uuid = vol.primaryStorageUuid" +
+                " and vol.uuid in (:volUuids)" +
+                " and ps.type = :ptype";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("volUuids", volUuids);
         q.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
@@ -819,7 +856,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 if (!reply.isSuccess()) {
                     completion.fail(reply.getError());
                 } else {
-                    completion.success(((InstantiateVolumeOnPrimaryStorageReply)reply).getVolume());
+                    completion.success(((InstantiateVolumeOnPrimaryStorageReply) reply).getVolume());
                 }
             }
         });
