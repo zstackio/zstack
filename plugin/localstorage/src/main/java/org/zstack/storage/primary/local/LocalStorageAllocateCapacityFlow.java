@@ -33,6 +33,7 @@ import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Created by frank on 7/2/2015.
@@ -69,7 +70,9 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
         SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
         q.select(LocalStorageHostRefVO_.primaryStorageUuid);
         q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, spec.getDestHost().getUuid());
-        String localStorageUuid = q.findValue();
+        List<String> localStorageUuids = q.listValue();
+        Random random = new Random();
+        String localStorageUuid = localStorageUuids.get(random.nextInt(localStorageUuids.size()));
 
         SimpleQuery<BackupStorageVO> bq = dbf.createQuery(BackupStorageVO.class);
         bq.select(BackupStorageVO_.type);
@@ -150,7 +153,7 @@ public class LocalStorageAllocateCapacityFlow implements Flow {
                     } else {
                         vspec.setSize(ar.getSize());
                         vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
-                        vspec.setDiskOfferingUuid(spec.getDataDiskOfferings().get(i-1).getUuid());
+                        vspec.setDiskOfferingUuid(spec.getDataDiskOfferings().get(i - 1).getUuid());
                         vspec.setRoot(false);
                     }
 
