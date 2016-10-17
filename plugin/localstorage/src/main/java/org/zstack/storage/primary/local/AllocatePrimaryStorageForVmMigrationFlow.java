@@ -47,7 +47,7 @@ public class AllocatePrimaryStorageForVmMigrationFlow  extends AbstractHostAlloc
         });
 
         long volumeSize = 0;
-        List<String> volUuids = new ArrayList<String>();
+        List<String> volUuids = new ArrayList<>();
         for (VolumeInventory vol : spec.getVmInstance().getAllVolumes()) {
             volumeSize += vol.getSize();
             volUuids.add(vol.getUuid());
@@ -66,7 +66,7 @@ public class AllocatePrimaryStorageForVmMigrationFlow  extends AbstractHostAlloc
         q.add(LocalStorageHostRefVO_.hostUuid, Op.IN, huuids);
         q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, psUuid);
         List<LocalStorageHostRefVO> refs = q.list();
-        final List<String> hostUuids = new ArrayList<String>();
+        final List<String> hostUuids = new ArrayList<>();
         for (LocalStorageHostRefVO ref : refs) {
             if (ref.getAvailableCapacity() > ratioMgr.calculateByRatio(psUuid, volumeSize) + snapshotSize) {
                 hostUuids.add(ref.getHostUuid());
