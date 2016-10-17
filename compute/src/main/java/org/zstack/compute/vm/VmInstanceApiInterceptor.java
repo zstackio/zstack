@@ -86,8 +86,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateRebootVmInstanceSchedulerMsg) msg);
         } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
             validate((APIGetInterdependentL3NetworksImagesMsg) msg);
+        } else if (msg instanceof APIChangeVMPasswordMsg) {
+            validate((APIChangeVMPasswordMsg) msg);
         }
-
         setServiceId(msg);
         return msg;
     }
@@ -96,6 +97,15 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (msg.getL3NetworkUuids() == null && msg.getImageUuid() == null) {
             throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
                     "either l3NetworkUuids or imageUuid must be set"
+            ));
+        }
+    }
+
+    private void validate(APIChangeVMPasswordMsg msg) {
+        if (msg.getVmInstanceUuid() == null && msg.getVmAccountName() == null
+                && msg.getVmAccountPassword() == null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    "either vmUuid or vmAccountName or vmAccountPassword must be set"
             ));
         }
     }

@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.test.Api;
@@ -78,5 +77,6 @@ public class TestChangeVmInstanceOffering {
         Assert.assertEquals(ioinv2.getCpuNum(), (int)vm.getCpuNum());
         Assert.assertEquals(ioinv2.getCpuSpeed(), (long)vm.getCpuSpeed());
         Assert.assertEquals(ioinv2.getMemorySize(), (long)vm.getMemorySize());
+
     }
 }

@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.vm.VmAccountPerference;
 import org.zstack.header.vm.VmInstanceFactory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceType;
@@ -25,6 +26,8 @@ public interface VmInstanceManager {
     FlowChain getDetachIsoWorkFlowChain(VmInstanceInventory inv);
 
     FlowChain getExpungeVmWorkFlowChain(VmInstanceInventory inv);
+
+    FlowChain getChangeVmPasswordWorkFlowChain(VmAccountPerference account);
 
     VmInstanceFactory getVmInstanceFactory(VmInstanceType vmType);
 }
