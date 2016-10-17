@@ -560,6 +560,10 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 Collections.addAll(values, at.validValues());
                 sb.append(String.format("\n%s#valid values: %s", whiteSpace(8), values));
             }
+            if (at != null && at.validRegexValues() != null && at.validRegexValues().trim().equals("") == false) {
+                String regex = at.validRegexValues().trim();
+                sb.append(String.format("\n%s#valid regex values: %s", whiteSpace(8), regex));
+            }
 
             if (Collection.class.isAssignableFrom(f.getType())) {
                 if (at != null && at.required()) {

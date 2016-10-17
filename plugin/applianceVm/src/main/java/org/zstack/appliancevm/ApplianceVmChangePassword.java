@@ -5,7 +5,6 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.vm.VmBeforeCreateOnHypervisorExtensionPoint;
 import org.zstack.header.vm.VmBeforeStartOnHypervisorExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
@@ -14,16 +13,17 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 /**
+ * Created by mingjian.deng on 16/10/25.
  */
-public class ApplianceVmManagementIpChecker implements VmBeforeCreateOnHypervisorExtensionPoint, VmBeforeStartOnHypervisorExtensionPoint {
-    private static final CLogger logger = Utils.getLogger(ApplianceVmManagementIpChecker.class);
+public class ApplianceVmChangePassword implements VmBeforeStartOnHypervisorExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(ApplianceVmChangePassword.class);
 
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
 
-    private void checkManagementIp(VmInstanceSpec spec, boolean isNewCreated) {
+    private void checkManagementIp(VmInstanceSpec spec) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             return;
         }
@@ -56,13 +56,12 @@ public class ApplianceVmManagementIpChecker implements VmBeforeCreateOnHyperviso
         }
     }
 
-    @Override
-    public void beforeCreateVmOnHypervisor(VmInstanceSpec spec) {
-        checkManagementIp(spec, true);
+    private void injectPassword(VmInstanceSpec spec){
+
     }
 
     @Override
     public void beforeStartVmOnHypervisor(VmInstanceSpec spec) {
-        checkManagementIp(spec, false);
+        injectPassword(spec);
     }
 }

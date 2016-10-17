@@ -15,6 +15,7 @@ import org.zstack.header.simulator.*;
 import org.zstack.header.vm.VmAttachNicOnHypervisorMsg;
 import org.zstack.header.vm.VmAttachNicOnHypervisorReply;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -109,10 +110,13 @@ class SimulatorHost extends HostBase {
             handle((DetachNicFromVmOnHypervisorMsg) msg);
         } else if (msg instanceof VmAttachNicOnHypervisorMsg) {
             handle((VmAttachNicOnHypervisorMsg) msg);
+
+	    } else if (msg instanceof ChangeVmPasswordMsg) {
+            handle((ChangeVmPasswordMsg) msg);
         } else {
-            super.handleLocalMessage(msg);
-        }
-    }
+	        super.handleLocalMessage(msg);
+	    }
+	}
 
     private void handle(MigrateVmOnHypervisorMsg msg) {
         config.removeVm(msg.getSrcHostUuid(), msg.getVmInventory().getUuid());
@@ -175,6 +179,12 @@ class SimulatorHost extends HostBase {
     private void handle(CheckNetworkPhysicalInterfaceMsg msg) {
         logger.debug(String.format("Successfully checked physical network interface %s on simulator host", msg.getPhysicalInterface()));
         CheckNetworkPhysicalInterfaceReply reply = new CheckNetworkPhysicalInterfaceReply();
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final ChangeVmPasswordMsg msg) {
+        logger.debug(String.format("SimulatorHost handle the message, hostid = %s ", msg.getHostUuid()));
+        ChangeVmPasswordReply reply = new ChangeVmPasswordReply();
         bus.reply(msg, reply);
     }
 

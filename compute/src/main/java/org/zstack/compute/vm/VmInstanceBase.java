@@ -236,6 +236,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         return vmMgr.getStopVmWorkFlowChain(inv);
     }
 
+    protected FlowChain getChangeVmPasswordWorkFlowChain(VmAccountPerference account) {
+        return vmMgr.getChangeVmPasswordWorkFlowChain(account);
+    }
+
     protected FlowChain getRebootVmWorkFlowChain(VmInstanceInventory inv) {
         return vmMgr.getRebootVmWorkFlowChain(inv);
     }
@@ -1993,6 +1997,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIDeleteVmSshKeyMsg) msg);
         } else if (msg instanceof APIGetCandidateIsoForAttachingVmMsg) {
             handle((APIGetCandidateIsoForAttachingVmMsg) msg);
+        } else if (msg instanceof APIChangeVMPasswordMsg) {
+            handle((APIChangeVMPasswordMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -4160,6 +4166,97 @@ public class VmInstanceBase extends AbstractVmInstance {
                 stopVm(msg, chain);
             }
         });
+    }
+
+    protected void handle(final APIChangeVMPasswordMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                changePassword(msg, chain);
+            }
+
+            @Override
+            public String getName() {
+                return String.format("change-vm-password-%s", self.getUuid());
+            }
+        });
+    }
+
+    private void changePassword(final APIChangeVMPasswordMsg msg, final SyncTaskChain taskChain) {
+        changepasswd(msg, new Completion(taskChain) {
+            @Override
+            public void success() {
+                // if succeed, useraccount and password of msg are the final one
+                APIChangeVMPasswordEvent evt = new APIChangeVMPasswordEvent(msg.getId());
+                VmAccountPerference account = new VmAccountPerference(msg.getVmInstanceUuid(),
+                        msg.getVmAccountName(), msg.getVmAccountPassword());
+                evt.setVmUuid(msg.getVmInstanceUuid());
+                evt.setUserAccount(msg.getVmAccountName());
+                evt.setAccountPassword(msg.getVmAccountPassword());
+                bus.publish(evt);
+                taskChain.next();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                APIChangeVMPasswordEvent evt = new APIChangeVMPasswordEvent(msg.getId());
+                evt.setErrorCode(errf.instantiateErrorCode(VmErrors.CHANGE_VM_PASSWORD_ERROR, errorCode));
+                bus.publish(evt);
+                taskChain.next();
+            }
+        });
+    }
+
+    private void changepasswd(final Message msg, final Completion completion){
+        ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
+        if (allowed != null) {
+            completion.fail(allowed);
+            return;
+        }
+
+        APIChangeVMPasswordMsg amsg = (APIChangeVMPasswordMsg)msg;
+        VmAccountPerference account = new VmAccountPerference(amsg.getVmInstanceUuid(),
+                amsg.getVmAccountName(), amsg.getVmAccountPassword());
+
+        final VmInstanceSpec spec = new VmInstanceSpec();
+        spec.setAccountPerference(account);
+
+        VmInstanceInventory inv =
+                VmInstanceInventory.valueOf(dbf.findByUuid(amsg.getVmInstanceUuid(), VmInstanceVO.class));
+
+        ErrorCode noHostErr = new ErrorCode(
+                "NO_DEST_HOST_FOUND", "not dest host found in db by uuid",
+                String.format("not dest host found in db by uuid: %s, " +
+                        "can't send change password cmd to the host!", amsg.getVmInstanceUuid()));
+        if(inv != null) {
+            HostVO hvo = dbf.findByUuid(inv.getHostUuid(), HostVO.class);
+            if (hvo != null)
+                spec.setDestHost(HostInventory.valueOf(hvo));
+            else
+                completion.fail(noHostErr);
+        } else
+            completion.fail(noHostErr);
+
+        FlowChain chain = getChangeVmPasswordWorkFlowChain(account);
+
+        chain.setName(String.format("change-vm-password-%s", amsg.getVmInstanceUuid()));
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(final ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     protected void handle(final APICreateStopVmInstanceSchedulerMsg msg) {

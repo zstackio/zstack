@@ -9,6 +9,7 @@ public @interface APIParam {
     boolean operationTarget() default false;
 	boolean required() default true;
     String[] validValues() default {};
+    String validRegexValues() default "";
     Class resourceType() default Object.class;
     int maxLength() default Integer.MIN_VALUE;
     boolean nonempty() default false;

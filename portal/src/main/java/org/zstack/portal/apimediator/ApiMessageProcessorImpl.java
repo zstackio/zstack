@@ -35,6 +35,8 @@ import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created with IntelliJ IDEA.
@@ -281,6 +283,18 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                         throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
                                 String.format("valid value for field[%s] of message[%s] are %s, but %s found", f.getName(),
                                         msg.getClass().getName(), vals, value)
+                        ));
+                    }
+                }
+
+                if (value != null && at.validRegexValues() != null && at.validRegexValues().trim().equals("") == false) {
+                    String regex = at.validRegexValues().trim();
+                    Pattern p = Pattern.compile(regex);
+                    Matcher mt = p.matcher(value.toString());
+                    if (!mt.matches()){
+                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
+                                String.format("valid regex value for field[%s] of message[%s] are %s, but %s found", f.getName(),
+                                        msg.getClass().getName(), regex, value)
                         ));
                     }
                 }

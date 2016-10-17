@@ -15,7 +15,6 @@ public enum HostErrors {
     FAILED_TO_MIGRATE_VM_ON_HYPERVISOR(1009),
     HOST_IS_DISCONNECTED(1010),
     OPERATION_FAILURE_GC_ELIGIBLE(1011);
-
     private String code;
 
     private HostErrors(int id) {

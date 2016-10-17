@@ -98,6 +98,7 @@ public class KVMHost extends HostBase implements Host {
     private String getConsolePortPath;
     private String changeCpuMemoryPath;
     private String deleteConsoleFirewall;
+    private String changeVmPasswordPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -191,6 +192,9 @@ public class KVMHost extends HostBase implements Host {
         ub.path(KVMConstant.KVM_VM_CHANGE_CPUMEMORY);
         changeCpuMemoryPath = ub.build().toString();
 
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_CHANGE_PASSWORD_PATH);
+        changeVmPasswordPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
@@ -248,6 +252,8 @@ public class KVMHost extends HostBase implements Host {
             handle((VmDirectlyDestroyOnHypervisorMsg) msg);
         } else if (msg instanceof OnlineChangeVmCpuMemoryMsg) {
             handle((OnlineChangeVmCpuMemoryMsg) msg);
+        } else if (msg instanceof ChangeVmPasswordMsg) {
+            handle((ChangeVmPasswordMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -333,6 +339,36 @@ public class KVMHost extends HostBase implements Host {
         }
 
         bus.reply(msg, reply);
+    }
+
+    private void handle(final ChangeVmPasswordMsg msg) {
+        final ChangeVmPasswordReply reply = new ChangeVmPasswordReply();
+
+        ChangeVmPasswordCmd cmd = new ChangeVmPasswordCmd();
+        cmd.setVmUuid(msg.getAccountPreference().getVmUuid());
+        cmd.setAccountPerference(msg.getAccountPreference());
+        restf.asyncJsonPost(changeVmPasswordPath, cmd, new JsonAsyncRESTCallback<ChangeVmPasswordResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(ChangeVmPasswordResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                } else {
+                    reply.setVmAccountPerference(msg.getAccountPreference());
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<ChangeVmPasswordResponse> getReturnClass() {
+                return ChangeVmPasswordResponse.class;
+            }
+        });
     }
 
     private void handle(final OnlineChangeVmCpuMemoryMsg msg) {

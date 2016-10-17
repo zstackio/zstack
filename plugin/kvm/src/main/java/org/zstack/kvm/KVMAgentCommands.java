@@ -1,12 +1,11 @@
 package org.zstack.kvm;
 
 import org.zstack.core.validation.ConditionalValidation;
-import org.zstack.header.configuration.InstanceOffering;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
+import org.zstack.header.vm.VmAccountPerference;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
@@ -775,6 +774,22 @@ public class KVMAgentCommands {
     }
     public static class StartVmResponse extends AgentResponse {
     }
+    public static class ChangeVmPasswordCmd extends AgentCommand{
+        private String vmUuid;
+        private VmAccountPerference accountPerference;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public VmAccountPerference getAccountPerference() { return accountPerference; }
+
+        public void setAccountPerference(VmAccountPerference accountPerference) { this.accountPerference = accountPerference; }
+    }
     public static class OnlineChangeCpuMemoryCmd extends AgentCommand{
         private String vmUuid;
         private int cpuNum;
@@ -802,6 +817,13 @@ public class KVMAgentCommands {
         public long getMemorySize(){
             return memorySize;
         }
+    }
+    public static class ChangeVmPasswordResponse extends AgentResponse{
+        private VmAccountPerference vmAccountPerference;
+
+        public VmAccountPerference getVmAccountPerference() { return vmAccountPerference; }
+        public void setVmAccountPerference(VmAccountPerference vmAccountPerference) { this.vmAccountPerference = vmAccountPerference; }
+
     }
     public static class OnlineChangeCpuMemoryResponse extends AgentResponse{
         private int cpuNum;

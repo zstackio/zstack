@@ -94,6 +94,11 @@
                 <value>org.zstack.compute.vm.VmExpungeRootVolumeFlow</value>
             </list>
         </property>
+        <property name="changeVmPasswdFlowElements">
+            <list>
+                <value>org.zstack.compute.vm.ChangeVmPasswordFlow</value>
+            </list>
+        </property>
 
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
