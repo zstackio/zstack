@@ -788,12 +788,14 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     public void afterHostConnected(HostInventory host) {
         SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
         q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, host.getUuid());
-        LocalStorageHostRefVO ref = q.find();
-        if (ref != null) {
-            RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
-            msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
-            bus.send(msg);
+        List<LocalStorageHostRefVO> refs = q.list();
+        if (refs != null && !refs.isEmpty()) {
+            for (LocalStorageHostRefVO ref : refs) {
+                RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
+                msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
+                bus.send(msg);
+            }
         }
     }
 
