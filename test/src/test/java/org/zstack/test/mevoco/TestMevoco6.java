@@ -18,9 +18,8 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.mevoco.MevocoGlobalConfig;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply;
-import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -38,11 +37,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. destroy all vms
  * 2. change PRIMARY_STORAGE_OVER_PROVISIONING_RATIO
- *
+ * <p>
  * confirm the primary storage capacity is correct
- *
+ * <p>
  * confirm the memory capacity and disk capacity returned correctly
- *
  */
 public class TestMevoco6 {
     CLogger logger = Utils.getLogger(TestMevoco6.class);
@@ -84,14 +82,14 @@ public class TestMevoco6 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmInstanceInventory vm1 = deployer.vms.get("TestVm1");
         HostInventory host = deployer.hosts.get("host1");
-        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
 
         long iused = 0;
         List<ImageCacheVO> ics = dbf.listAll(ImageCacheVO.class);
@@ -102,23 +100,23 @@ public class TestMevoco6 {
         api.destroyVmInstance(vm.getUuid());
         api.destroyVmInstance(vm1.getUuid());
 
-        PrimaryStorageCapacityVO pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        PrimaryStorageCapacityVO pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(pscap.getAvailableCapacity(), pscap.getTotalCapacity() - iused);
-        LocalStorageHostRefVO ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO ref = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(ref.getTotalCapacity() - iused, ref.getAvailableCapacity());
 
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(1);
         TimeUnit.SECONDS.sleep(2);
-        pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(pscap.getAvailableCapacity(), pscap.getTotalCapacity() - iused);
-        ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        ref = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(ref.getTotalCapacity() - iused, ref.getAvailableCapacity());
 
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(2);
         TimeUnit.SECONDS.sleep(2);
-        pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(pscap.getAvailableCapacity(), pscap.getTotalCapacity() - iused);
-        ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        ref = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(ref.getTotalCapacity() - iused, ref.getAvailableCapacity());
 
         MevocoGlobalConfig.MEMORY_OVER_PROVISIONING_RATIO.updateValue(1);

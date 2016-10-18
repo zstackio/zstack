@@ -13,6 +13,7 @@ import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheMsg;
 import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -23,10 +24,10 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.RebaseRootVolumeToBackingFileCmd;
 import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -46,21 +47,21 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. migrate a vm with storage
- *
+ * <p>
  * confirm all related commands sent
  * confirm the volumes are referenced on the dst host
  * confirm the capacity of the src host and dst host are correct
- *
+ * <p>
  * 2. get migration target host
- *
+ * <p>
  * confirm only host1 is the target
- *
+ * <p>
  * 3. migrate the vm to a simulator host
- *
+ * <p>
  * confirm the migration failed
- *
+ * <p>
  * 4. put the host2 to the maintenance mode
- *
+ * <p>
  * confirm the vm stopped
  */
 public class TestLocalStorage28 {
@@ -105,9 +106,10 @@ public class TestLocalStorage28 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         HostInventory host2 = deployer.hosts.get("host2");
         HostInventory host1 = deployer.hosts.get("host1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
@@ -140,9 +142,9 @@ public class TestLocalStorage28 {
 
         Assert.assertTrue(downloadImageCalled);
 
-        LocalStorageHostRefVO ref1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO ref1 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
         Assert.assertEquals(ref1.getTotalCapacity() - imageSize, ref1.getAvailableCapacity());
-        LocalStorageHostRefVO ref2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO ref2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         Assert.assertEquals(ref2.getTotalCapacity() - imageSize - usedVolumeSize, ref2.getAvailableCapacity());
 
         Assert.assertEquals(vm.getAllVolumes().size(), config.createEmptyVolumeCmds.size());
@@ -197,5 +199,5 @@ public class TestLocalStorage28 {
         api.maintainHost(host2.getUuid());
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
-	}
+    }
 }

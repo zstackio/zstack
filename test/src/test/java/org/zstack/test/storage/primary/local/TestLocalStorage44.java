@@ -6,8 +6,6 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.ImageCacheVO;
@@ -16,7 +14,7 @@ import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
-import org.zstack.storage.primary.local.LocalStorageHostRefVO_;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -32,21 +30,21 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. use local storage
  * 2. create a vm
- *
+ * <p>
  * confirm all local storage related commands, VOs are set
- *
+ * <p>
  * 3. attach another local storage to the cluster
- *
+ * <p>
  * confirm unable to attach
- *
+ * <p>
  * 4. add a new host which doesn't have any image cache
  * 5. reconnect the host
- *
+ * <p>
  * confirm reconnect successfully
- *
+ * <p>
  * 6. remove a host record of the local storage from database
  * 7. reconnect the primary storage
- *
+ * <p>
  * confirm the capacity re-calculated
  */
 public class TestLocalStorage44 {
@@ -86,17 +84,16 @@ public class TestLocalStorage44 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HostInventory host = deployer.hosts.get("host1");
-        SimpleQuery<LocalStorageHostRefVO> hq = dbf.createQuery(LocalStorageHostRefVO.class);
-        hq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, host.getUuid());
-        LocalStorageHostRefVO href = hq.find();
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+
+        LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(href.getTotalCapacity(), totalSize);
         Assert.assertEquals(href.getTotalPhysicalCapacity(), totalSize);
 
-        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
 
         long usedSize = 0;
         List<ImageCacheVO> imgs = dbf.listAll(ImageCacheVO.class);
@@ -119,17 +116,17 @@ public class TestLocalStorage44 {
         api.reconnectHost(host.getUuid());
         TimeUnit.SECONDS.sleep(3);
 
-        href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(totalSize, href.getTotalCapacity());
         Assert.assertEquals(totalSize, href.getAvailablePhysicalCapacity());
         Assert.assertEquals(totalSize, href.getTotalPhysicalCapacity());
-        Assert.assertEquals(totalSize-usedSize, href.getAvailableCapacity());
+        Assert.assertEquals(totalSize - usedSize, href.getAvailableCapacity());
 
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(totalSize, pscap.getTotalCapacity());
         Assert.assertEquals(totalSize, pscap.getTotalPhysicalCapacity());
         Assert.assertEquals(totalSize, pscap.getAvailablePhysicalCapacity());
-        Assert.assertEquals(totalSize-usedSize, pscap.getAvailableCapacity());
+        Assert.assertEquals(totalSize - usedSize, pscap.getAvailableCapacity());
 
         // squeeze the the local storage
         totalSize = SizeUnit.GIGABYTE.toByte(80);
@@ -142,17 +139,17 @@ public class TestLocalStorage44 {
 
         TimeUnit.SECONDS.sleep(3);
 
-        href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(totalSize, href.getTotalCapacity());
         Assert.assertEquals(totalSize, href.getAvailablePhysicalCapacity());
         Assert.assertEquals(totalSize, href.getTotalPhysicalCapacity());
-        Assert.assertEquals(totalSize-usedSize, href.getAvailableCapacity());
+        Assert.assertEquals(totalSize - usedSize, href.getAvailableCapacity());
 
         pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(totalSize, pscap.getTotalCapacity());
         Assert.assertEquals(totalSize, pscap.getTotalPhysicalCapacity());
         Assert.assertEquals(totalSize, pscap.getAvailablePhysicalCapacity());
-        Assert.assertEquals(totalSize-usedSize, pscap.getAvailableCapacity());
+        Assert.assertEquals(totalSize - usedSize, pscap.getAvailableCapacity());
 
         c = new Capacity();
         c.total = totalSize;
@@ -162,7 +159,7 @@ public class TestLocalStorage44 {
         HostInventory host2 = api.addKvmHost("host2", "127.0.0.1", host.getClusterUuid());
         api.reconnectHost(host2.getUuid());
 
-        LocalStorageHostRefVO refHost2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO refHost2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         // make available capacity bigger than total capacity
         // to simulate abnormal conditions.
         pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);

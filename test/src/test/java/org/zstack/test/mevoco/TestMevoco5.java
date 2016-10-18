@@ -23,6 +23,7 @@ import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -40,9 +41,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. create 2 vms
  * 2. delete a vm
- *
+ * <p>
  * confirm the memory capacity and disk capacity returned correctly
- *
  */
 public class TestMevoco5 {
     CLogger logger = Utils.getLogger(TestMevoco5.class);
@@ -88,15 +88,15 @@ public class TestMevoco5 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         long totalMemorySize = SizeUnit.GIGABYTE.toByte(32);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         VmInstanceInventory vm1 = deployer.vms.get("TestVm1");
         HostInventory host = deployer.hosts.get("host1");
-        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
 
         api.stopVmInstance(vm.getUuid());
         HostCapacityVO hcap = dbf.findByUuid(host.getUuid(), HostCapacityVO.class);
@@ -111,7 +111,7 @@ public class TestMevoco5 {
         }
 
         api.destroyVmInstance(vm.getUuid());
-        PrimaryStorageCapacityVO pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        PrimaryStorageCapacityVO pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         long availSize = totalSize - isize - pscap.getSystemUsedCapacity() - psRatioMgr.calculateByRatio(vm.getRootVolume().getPrimaryStorageUuid(), vm.getRootVolume().getSize());
         Assert.assertEquals(availSize, pscap.getAvailableCapacity());
 
@@ -123,11 +123,11 @@ public class TestMevoco5 {
 
         MevocoGlobalConfig.PRIMARY_STORAGE_OVER_PROVISIONING_RATIO.updateValue(1);
         TimeUnit.SECONDS.sleep(2);
-        pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         availSize = totalSize - pscap.getSystemUsedCapacity() - isize - psRatioMgr.calculateByRatio(vm1.getRootVolume().getPrimaryStorageUuid(), vm1.getRootVolume().getSize());
         Assert.assertEquals(availSize, pscap.getAvailableCapacity());
 
-        LocalStorageHostRefVO lref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO lref = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         availSize = totalSize - lref.getSystemUsedCapacity() - isize - psRatioMgr.calculateByRatio(vm1.getRootVolume().getPrimaryStorageUuid(), vm1.getRootVolume().getSize());
         Assert.assertEquals(availSize, lref.getAvailableCapacity());
 
@@ -138,16 +138,16 @@ public class TestMevoco5 {
         Assert.assertEquals(availMem, hcap.getAvailableMemory());
 
         api.destroyVmInstance(vm1.getUuid());
-        pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(pscap.getTotalCapacity() - pscap.getSystemUsedCapacity() - isize, pscap.getAvailableCapacity());
 
-        lref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        lref = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(lref.getTotalCapacity() - lref.getSystemUsedCapacity() - isize, lref.getAvailableCapacity());
 
         hcap = dbf.findByUuid(host.getUuid(), HostCapacityVO.class);
         Assert.assertEquals(hcap.getTotalMemory(), hcap.getAvailableMemory());
 
-        APIGetLocalStorageHostDiskCapacityReply reply = api.getLocalStorageHostCapacity(ps.getUuid(), host.getUuid());
+        APIGetLocalStorageHostDiskCapacityReply reply = api.getLocalStorageHostCapacity(local.getUuid(), host.getUuid());
         HostDiskCapacity c = reply.getInventories().get(0);
 
         Assert.assertEquals(lref.getTotalCapacity(), c.getTotalCapacity());
@@ -155,7 +155,7 @@ public class TestMevoco5 {
         Assert.assertEquals(lref.getTotalPhysicalCapacity(), c.getTotalPhysicalCapacity());
         Assert.assertEquals(lref.getAvailablePhysicalCapacity(), c.getAvailablePhysicalCapacity());
 
-        reply = api.getLocalStorageHostCapacity(ps.getUuid(), null);
+        reply = api.getLocalStorageHostCapacity(local.getUuid(), null);
         c = reply.getInventories().get(0);
 
         Assert.assertEquals(lref.getTotalCapacity(), c.getTotalCapacity());

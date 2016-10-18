@@ -10,24 +10,19 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
-import org.zstack.header.message.Message;
-import org.zstack.header.storage.primary.DownloadImageToPrimaryStorageCacheMsg;
 import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.*;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -48,11 +43,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. migrate a vm with snapshots
- *
+ * <p>
  * confirm all related commands sent
  * confirm the volumes are referenced on the dst host
  * confirm the capacity of the src host and dst host are correct
- *
  */
 public class TestLocalStorage43 {
     CLogger logger = Utils.getLogger(TestLocalStorage43.class);
@@ -95,9 +89,10 @@ public class TestLocalStorage43 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         HostInventory host2 = deployer.hosts.get("host2");
         HostInventory host1 = deployer.hosts.get("host1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
@@ -116,8 +111,8 @@ public class TestLocalStorage43 {
         }
 
         int snum = 10;
-        List<VolumeSnapshotInventory> sps = new ArrayList<VolumeSnapshotInventory>();
-        for (int i=0; i<snum; i++) {
+        List<VolumeSnapshotInventory> sps = new ArrayList<>();
+        for (int i = 0; i < snum; i++) {
             sps.add(api.createSnapshot(vm.getRootVolumeUuid()));
         }
 
@@ -135,9 +130,9 @@ public class TestLocalStorage43 {
         TimeUnit.SECONDS.sleep(5);
 
         // confirm capacity are correct no both hosts
-        LocalStorageHostRefVO ref1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO ref1 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
         Assert.assertEquals(ref1.getTotalCapacity() - imageSize, ref1.getAvailableCapacity());
-        LocalStorageHostRefVO ref2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO ref2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         Assert.assertEquals(ref2.getTotalCapacity() - imageSize - usedSize, ref2.getAvailableCapacity());
 
         Assert.assertEquals(vm.getAllVolumes().size(), config.createEmptyVolumeCmds.size());
@@ -198,7 +193,7 @@ public class TestLocalStorage43 {
         LocalStorageKvmBackend.CheckMd5sumCmd checkMd5sumCmd = config.checkMd5sumCmds.get(0);
         goOn:
         for (VolumeSnapshotInventory sp : sps) {
-            for (LocalStorageKvmBackend.Md5TO to :checkMd5sumCmd.md5s) {
+            for (LocalStorageKvmBackend.Md5TO to : checkMd5sumCmd.md5s) {
                 if (to.path.equals(sp.getPrimaryStorageInstallPath())) {
                     break goOn;
                 }
@@ -272,7 +267,7 @@ public class TestLocalStorage43 {
         Assert.assertTrue(s);
 
         // deleted src volume and snapshots
-        Assert.assertEquals(snum+vm.getAllVolumes().size(), config.deleteBitsCmds.size());
+        Assert.assertEquals(snum + vm.getAllVolumes().size(), config.deleteBitsCmds.size());
         goOn3:
         for (VolumeSnapshotInventory sp : sps) {
             for (DeleteBitsCmd dcmd : config.deleteBitsCmds) {
@@ -303,5 +298,5 @@ public class TestLocalStorage43 {
             }
         }
         Assert.assertTrue(s);
-	}
+    }
 }

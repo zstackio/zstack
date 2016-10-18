@@ -24,6 +24,7 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -42,15 +43,14 @@ import java.util.concurrent.TimeUnit;
  * 2. attach 2 data volumes to vm1 which is on the host1
  * 3. create 1 vm(vm3) on the host2 and attach 2 data volumes to the vm3
  * 4. delete the host1
- *
+ * <p>
  * confirm vms and data volumes are deleted
  * confirm the total capacity of the primary storage is correct
  * confirm the vm3 and its data volumes are not effected by the host1 deletion
- *
+ * <p>
  * 5. delete the host2
- *
+ * <p>
  * confirm the capacity of the primary storage becomes zero
- *
  */
 public class TestMevoco19 {
     CLogger logger = Utils.getLogger(TestMevoco19.class);
@@ -95,12 +95,12 @@ public class TestMevoco19 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-	    VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         VmInstanceInventory vm = deployer.vms.get("TestVm");
-        VmInstanceInventory vm1= deployer.vms.get("TestVm1");
+        VmInstanceInventory vm1 = deployer.vms.get("TestVm1");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm2");
         VmInstanceInventory vm3 = deployer.vms.get("TestVm3");
 
@@ -120,10 +120,10 @@ public class TestMevoco19 {
         HostInventory host2 = deployer.hosts.get("host2");
         api.deleteHost(host1.getUuid());
         TimeUnit.SECONDS.sleep(2);
-        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
 
-        LocalStorageHostRefVO ref2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
-        PrimaryStorageCapacityVO cap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        LocalStorageHostRefVO ref2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
+        PrimaryStorageCapacityVO cap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(ref2.getAvailableCapacity(), cap.getAvailableCapacity());
         Assert.assertEquals(ref2.getTotalCapacity(), cap.getTotalCapacity());
 
@@ -149,7 +149,7 @@ public class TestMevoco19 {
 
         api.deleteHost(host2.getUuid());
         TimeUnit.SECONDS.sleep(2);
-        cap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        cap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(0, cap.getAvailableCapacity());
         Assert.assertEquals(0, cap.getTotalCapacity());
 

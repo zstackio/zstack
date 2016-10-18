@@ -6,22 +6,18 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -33,7 +29,6 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,9 +37,8 @@ import java.util.concurrent.TimeUnit;
  * 3. stop the vm and detach the data volume
  * 4. delete the image
  * 5. migrate the root volume to host2
- *
+ * <p>
  * confirm the migration succeeded by copying the backing file
- *
  */
 public class TestLocalStorage34 {
     Deployer deployer;
@@ -84,12 +78,12 @@ public class TestLocalStorage34 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageInventory image = deployer.images.get("TestImage");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
-        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         api.stopVmInstance(vm.getUuid());
 
         VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -109,10 +103,10 @@ public class TestLocalStorage34 {
 
         VolumeInventory root = vm.getRootVolume();
 
-        long requiredSize = image.getSize() + psRatioMgr.calculateByRatio(ps.getUuid(), root.getSize());
+        long requiredSize = image.getSize() + psRatioMgr.calculateByRatio(local.getUuid(), root.getSize());
 
         HostInventory host2 = deployer.hosts.get("host2");
-        LocalStorageHostRefVO hcap2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
 
         api.localStorageMigrateVolume(root.getUuid(), host2.getUuid(), null);
         Assert.assertEquals(1, config.getBackingFileCmds.size());
@@ -141,7 +135,7 @@ public class TestLocalStorage34 {
         DeleteBitsCmd deleteBitsCmd = config.deleteBitsCmds.get(0);
         Assert.assertEquals(root.getInstallPath(), deleteBitsCmd.getPath());
 
-        LocalStorageHostRefVO hcap22 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap22 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         Assert.assertEquals(hcap2.getAvailableCapacity() - requiredSize, hcap22.getAvailableCapacity());
     }
 }

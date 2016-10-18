@@ -11,17 +11,15 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.storage.primary.local.LocalStorageDirectlyDeleteBitsMsg;
-import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.*;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
-import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -40,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * 1. create a vm with local storage
  * 2. set migration to fail
  * 3. migrate the vm
- *
+ * <p>
  * confirm the migration failed
  * confirm all resources are returned
  */
@@ -87,9 +85,10 @@ public class TestLocalStorage29 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         final HostInventory host2 = deployer.hosts.get("host2");
         final HostInventory host1 = deployer.hosts.get("host1");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
@@ -131,10 +130,10 @@ public class TestLocalStorage29 {
 
         Assert.assertTrue(directDeleteOnDst);
         Assert.assertFalse(directDeleteOnSrc);
-        LocalStorageHostRefVO ref1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO ref1 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
         Assert.assertEquals(ref1.getTotalCapacity() - imageSize - usedVolumeSize, ref1.getAvailableCapacity());
         // even migration failed, the image is always downloaded to the image cache, which will not be rolled back
-        LocalStorageHostRefVO ref2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO ref2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         Assert.assertEquals(ref2.getTotalCapacity() - imageSize, ref2.getAvailableCapacity());
 
         Assert.assertEquals(vm.getAllVolumes().size(), config.createEmptyVolumeCmds.size());
@@ -162,5 +161,5 @@ public class TestLocalStorage29 {
             LocalStorageResourceRefVO r = dbf.findByUuid(vol.getUuid(), LocalStorageResourceRefVO.class);
             Assert.assertEquals(host1.getUuid(), r.getHostUuid());
         }
-	}
+    }
 }

@@ -12,12 +12,12 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.mevoco.MevocoGlobalConfig;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -32,11 +32,11 @@ import org.zstack.utils.logging.CLogger;
 /**
  * 1. create a vm with mevoco setting
  * 2. set the physical capacity of the host to the small value lower than the threshold
- *
+ * <p>
  * confirm creating vm failed
- *
+ * <p>
  * 3. set the physical capacity of the primary storage to the small value lower than the threshold
- *
+ * <p>
  * confirm creating vm failed
  */
 public class TestMevoco16 {
@@ -81,14 +81,15 @@ public class TestMevoco16 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         MevocoGlobalConfig.VM_API_RETRY.updateValue(0);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         HostInventory host = deployer.hosts.get("host1");
 
-        LocalStorageHostRefVO ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO ref = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         long origin = ref.getAvailablePhysicalCapacity();
         ref.setAvailablePhysicalCapacity(100);
         dbf.update(ref);

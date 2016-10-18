@@ -18,8 +18,8 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
-import org.zstack.storage.primary.local.LocalStorageResourceRefInventory;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
+import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -40,9 +40,8 @@ import java.util.concurrent.TimeUnit;
  * 2. create a vm with data volume
  * 3. stop the vm and detach the data volume
  * 4. migrate the data volume with snapshots, and fails it on purpose
- *
+ * <p>
  * confirm all rollback happened
- *
  */
 public class TestLocalStorage33 {
     Deployer deployer;
@@ -82,9 +81,10 @@ public class TestLocalStorage33 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 
@@ -101,12 +101,12 @@ public class TestLocalStorage33 {
         HostInventory host2 = deployer.hosts.get("host2");
 
         int spNum = 30;
-        for (int i=0; i<spNum; i++) {
+        for (int i = 0; i < spNum; i++) {
             api.createSnapshot(data.getUuid());
         }
 
-        LocalStorageHostRefVO hcap1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
-        LocalStorageHostRefVO hcap2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap1 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
+        LocalStorageHostRefVO hcap2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
 
         SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
         q.add(VolumeSnapshotVO_.volumeUuid, Op.EQ, data.getUuid());
@@ -142,8 +142,8 @@ public class TestLocalStorage33 {
         LocalStorageResourceRefVO dref = dbf.findByUuid(data.getUuid(), LocalStorageResourceRefVO.class);
         Assert.assertEquals(host1.getUuid(), dref.getHostUuid());
 
-        LocalStorageHostRefVO hcap11 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
-        LocalStorageHostRefVO hcap22 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap11 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
+        LocalStorageHostRefVO hcap22 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         Assert.assertEquals(hcap1.getAvailableCapacity(), hcap11.getAvailableCapacity());
         Assert.assertEquals(hcap2.getAvailableCapacity(), hcap22.getAvailableCapacity());
     }

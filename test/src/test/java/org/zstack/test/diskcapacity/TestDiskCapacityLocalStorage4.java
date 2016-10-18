@@ -28,6 +28,7 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
@@ -49,7 +50,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * 4. create 50 snapshots from the root volume
  * 5. create a template from a snapshot
  * 6. create a data volume from a snapshot
- *
+ * <p>
  * confirm the size of snapshots correct
  * confirm the local storage capacity correct
  * confirm the capacity of the backup storage correct
@@ -160,8 +161,8 @@ public class TestDiskCapacityLocalStorage4 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException {
+    @Test
+    public void test() throws ApiSenderException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -180,7 +181,7 @@ public class TestDiskCapacityLocalStorage4 {
 
         List<VolumeSnapshotInventory> snapshots = new ArrayList<VolumeSnapshotInventory>();
         long snapshotSize = 0;
-        for (int i=1; i<num; i++) {
+        for (int i = 1; i < num; i++) {
             TakeSnapshot takeSnapshot = new TakeSnapshot();
             takeSnapshot.size = SizeUnit.MEGABYTE.toByte(i);
             takeSnapshot.volumeUuid = root.getUuid();
@@ -194,7 +195,7 @@ public class TestDiskCapacityLocalStorage4 {
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
 
         HostInventory host = deployer.hosts.get("host1");
-        LocalStorageHostRefVO href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
 
         // image cache + volume + snapshot
         long used = addImage.actualSize + root.getSize() + snapshotSize;
@@ -227,8 +228,8 @@ public class TestDiskCapacityLocalStorage4 {
 
         avail = avail - dataVolumeSize;
         pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
-        href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(avail, pscap.getAvailableCapacity());
         Assert.assertEquals(avail, href.getAvailableCapacity());
-	}
+    }
 }

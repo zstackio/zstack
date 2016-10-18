@@ -28,6 +28,7 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
@@ -186,12 +187,12 @@ public class TestDiskCapacityLocalStorage6 {
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
 
         HostInventory host = deployer.hosts.get("host1");
-        LocalStorageHostRefVO href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
 
         // delete the vm, check the capacity
         api.destroyVmInstance(vm.getUuid());
         PrimaryStorageCapacityVO pscap1 = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
-        LocalStorageHostRefVO href1 = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO href1 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
 
         Assert.assertEquals(pscap.getAvailableCapacity(), pscap1.getAvailableCapacity());
         Assert.assertEquals(href.getAvailableCapacity(), href1.getAvailableCapacity());
@@ -202,7 +203,7 @@ public class TestDiskCapacityLocalStorage6 {
         // used size = image cache + data volume + data volume snapshot size
         long used = addImage.actualSize + data.getSize() + dataSp.getSize();
         PrimaryStorageCapacityVO pscap2 = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
-        LocalStorageHostRefVO href2 = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO href2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         long avail = pscap2.getTotalCapacity() - used;
         Assert.assertEquals(avail, pscap2.getAvailableCapacity());
         Assert.assertEquals(avail, href2.getAvailableCapacity());
@@ -210,7 +211,7 @@ public class TestDiskCapacityLocalStorage6 {
         // expunge the data volume
         api.deleteDataVolume(data.getUuid());
         PrimaryStorageCapacityVO pscap3 = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
-        LocalStorageHostRefVO href3 = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO href3 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(pscap2.getAvailableCapacity(), pscap3.getAvailableCapacity());
         Assert.assertEquals(href3.getAvailableCapacity(), href3.getAvailableCapacity());
 
@@ -220,7 +221,7 @@ public class TestDiskCapacityLocalStorage6 {
         used = addImage.actualSize;
         avail = pscap2.getTotalCapacity() - used;
         PrimaryStorageCapacityVO pscap4 = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
-        LocalStorageHostRefVO href4 = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO href4 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(avail, pscap4.getAvailableCapacity());
         Assert.assertEquals(avail, href4.getAvailableCapacity());
 	}

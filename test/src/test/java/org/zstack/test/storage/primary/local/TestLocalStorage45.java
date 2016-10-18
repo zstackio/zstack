@@ -6,15 +6,13 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.storage.primary.local.*;
+import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -26,7 +24,7 @@ import org.zstack.utils.data.SizeUnit;
 /**
  * 1. an empty local storage
  * 2. reconnect it
- *
+ * <p>
  * confirm the capacity is correct
  */
 public class TestLocalStorage45 {
@@ -64,9 +62,9 @@ public class TestLocalStorage45 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         api.reconnectPrimaryStorage(local.getUuid());
 
@@ -75,7 +73,7 @@ public class TestLocalStorage45 {
         Assert.assertEquals(totalSize, cap.getAvailableCapacity());
 
         HostInventory host = deployer.hosts.get("host1");
-        LocalStorageHostRefVO ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO ref = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(totalSize, ref.getTotalCapacity());
         Assert.assertEquals(totalSize, ref.getAvailableCapacity());
     }

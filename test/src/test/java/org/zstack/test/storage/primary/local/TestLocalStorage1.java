@@ -29,12 +29,12 @@ import java.util.Map;
 /**
  * 1. use local storage
  * 2. create a vm
- *
+ * <p>
  * confirm all local storage related commands, VOs are set
- *
+ * <p>
  * 3. attach another local storage to the cluster
- *
- * confirm unable to attach
+ * <p>
+ * confirm able to attach
  */
 public class TestLocalStorage1 {
     Deployer deployer;
@@ -72,13 +72,12 @@ public class TestLocalStorage1 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         HostInventory host = deployer.hosts.get("host1");
-        SimpleQuery<LocalStorageHostRefVO> hq = dbf.createQuery(LocalStorageHostRefVO.class);
-        hq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, host.getUuid());
-        LocalStorageHostRefVO href = hq.find();
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(href.getTotalCapacity(), totalSize);
         Assert.assertEquals(href.getTotalPhysicalCapacity(), totalSize);
 
@@ -94,15 +93,17 @@ public class TestLocalStorage1 {
         Assert.assertNotNull(rref);
         Assert.assertEquals(vm.getRootVolume().getSize(), rref.getSize());
 
-        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
-        ClusterInventory cluster = deployer.clusters.get("Cluster1");
-        boolean s = false;
-        try {
-            api.attachPrimaryStorage(cluster.getUuid(), local2.getUuid());
-        } catch (ApiSenderException e) {
-            s = true;
+        {
+            PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
+            ClusterInventory cluster = deployer.clusters.get("Cluster1");
+            boolean s = false;
+            try {
+                api.attachPrimaryStorage(cluster.getUuid(), local2.getUuid());
+            } catch (ApiSenderException e) {
+                s = true;
+            }
+            Assert.assertFalse(s);
         }
-        Assert.assertTrue(s);
 
         Map<String, Object> cap = api.getVmCapabilities(vm.getUuid(), null);
         Assert.assertFalse((Boolean) cap.get(Capability.LiveMigration.toString()));

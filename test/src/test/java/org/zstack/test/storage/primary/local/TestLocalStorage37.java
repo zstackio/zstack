@@ -6,19 +6,16 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -34,15 +31,13 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.stopwatch.StopWatch;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 1. use local storage
  * 2. create a vm with data volume
  * 3. stop the vm and detach the data volume
- *
+ * <p>
  * test the APILocalStorageGetVolumeMigratableHostsMsg
- *
  */
 public class TestLocalStorage37 {
     CLogger logger = Utils.getLogger(TestLocalStorage37.class);
@@ -83,10 +78,11 @@ public class TestLocalStorage37 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         api.stopVmInstance(vm.getUuid());
 
         VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -102,11 +98,11 @@ public class TestLocalStorage37 {
         HostInventory host2 = deployer.hosts.get("host2");
 
         int spNum = 30;
-        for (int i=0; i<spNum; i++) {
+        for (int i = 0; i < spNum; i++) {
             api.createSnapshot(data.getUuid());
         }
 
-        LocalStorageHostRefVO hcap2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
 
         List<HostInventory> targets = api.getLocalStorageVolumeMigratableHost(data.getUuid(), null);
         Assert.assertEquals(1, targets.size());

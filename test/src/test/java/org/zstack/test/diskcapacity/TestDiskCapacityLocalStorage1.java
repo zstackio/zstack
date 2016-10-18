@@ -25,6 +25,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
@@ -161,7 +162,7 @@ public class TestDiskCapacityLocalStorage1 {
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
 
         HostInventory host = deployer.hosts.get("host1");
-        LocalStorageHostRefVO href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
 
         // image cache + volume
         long used = addImage.actualSize + root.getSize();

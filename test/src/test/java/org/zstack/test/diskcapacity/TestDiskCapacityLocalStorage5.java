@@ -29,6 +29,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.storage.volume.VolumeGlobalConfig;
@@ -47,7 +48,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * 3. attach a data volume to the vm
  * 4. delete the vm
  * 5. delete the data volume
- *
+ * <p>
  * confirm the size of image/volume are correct
  * confirm the local storage capacity correct
  */
@@ -145,8 +146,8 @@ public class TestDiskCapacityLocalStorage5 {
         }
     }
 
-	@Test
-	public void test() throws ApiSenderException {
+    @Test
+    public void test() throws ApiSenderException {
         AddImage addImage = new AddImage();
         addImage.size = SizeUnit.GIGABYTE.toByte(10);
         addImage.actualSize = SizeUnit.GIGABYTE.toByte(1);
@@ -177,7 +178,7 @@ public class TestDiskCapacityLocalStorage5 {
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
 
         HostInventory host = deployer.hosts.get("host1");
-        LocalStorageHostRefVO href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
 
         long avail = pscap.getTotalCapacity() - used;
         Assert.assertEquals(avail, pscap.getAvailableCapacity());
@@ -190,9 +191,9 @@ public class TestDiskCapacityLocalStorage5 {
         // image cache
         used = addImage.actualSize;
         pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
-        href = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         avail = pscap.getTotalCapacity() - used;
         Assert.assertEquals(avail, pscap.getAvailableCapacity());
         Assert.assertEquals(avail, href.getAvailableCapacity());
-	}
+    }
 }

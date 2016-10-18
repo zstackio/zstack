@@ -7,8 +7,6 @@ import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.ImageCacheVO;
@@ -16,7 +14,10 @@ import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.storage.primary.local.*;
+import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -31,7 +32,7 @@ import java.util.List;
  * 1. use local storage
  * 2. create a vm
  * 3. destroy the vm
- *
+ * <p>
  * confirm the LocalStorageResourceRefVO to the root volume is deleted
  */
 public class TestLocalStorage16 {
@@ -69,9 +70,9 @@ public class TestLocalStorage16 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.destroyVmInstance(vm.getUuid());
@@ -85,11 +86,12 @@ public class TestLocalStorage16 {
         }
 
         HostInventory host1 = deployer.hosts.get("host1");
-        LocalStorageHostRefVO ref = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
-        Assert.assertEquals(totalSize-isize, ref.getAvailableCapacity());
-
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+
+        LocalStorageHostRefVO ref = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
+        Assert.assertEquals(totalSize - isize, ref.getAvailableCapacity());
+
         PrimaryStorageVO pvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
-        Assert.assertEquals(totalSize-isize, pvo.getCapacity().getAvailableCapacity());
+        Assert.assertEquals(totalSize - isize, pvo.getCapacity().getAvailableCapacity());
     }
 }

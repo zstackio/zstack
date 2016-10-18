@@ -13,7 +13,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.kvm.APIAddKVMHostMsg;
-import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
@@ -24,11 +24,11 @@ import org.zstack.utils.data.SizeUnit;
  * 1. use local storage
  * 2. add 2 hosts
  * 3. delete one host
- *
+ * <p>
  * confirm the local storage capacity reduced to a half
- *
+ * <p>
  * 4. delete another host
- *
+ * <p>
  * confirm the local storage capacity is zero
  */
 public class TestLocalStorage7 {
@@ -67,9 +67,9 @@ public class TestLocalStorage7 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ClusterInventory cluster = deployer.clusters.get("Cluster1");
 
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
@@ -103,11 +103,11 @@ public class TestLocalStorage7 {
         Assert.assertEquals(totalSize, lvo.getCapacity().getTotalPhysicalCapacity());
         Assert.assertEquals(totalSize, lvo.getCapacity().getAvailablePhysicalCapacity());
 
-        Assert.assertFalse(dbf.isExist(host1.getUuid(), LocalStorageHostRefVO.class));
+        Assert.assertFalse(new LocalStorageHostRefVOFinder().isExist(host1.getUuid(), local.getUuid()));
 
         api.deleteHost(host2.getUuid());
 
-        Assert.assertFalse(dbf.isExist(host2.getUuid(), LocalStorageHostRefVO.class));
+        Assert.assertFalse(new LocalStorageHostRefVOFinder().isExist(host2.getUuid(), local.getUuid()));
 
         lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
         Assert.assertEquals(0, lvo.getCapacity().getTotalCapacity());

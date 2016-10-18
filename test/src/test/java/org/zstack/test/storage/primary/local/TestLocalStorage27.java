@@ -8,18 +8,18 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
-import org.zstack.storage.primary.local.*;
+import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
@@ -32,7 +32,7 @@ import java.util.List;
  * 2. create a vm
  * 3. set image cache check to false
  * 4. create another vm
- *
+ * <p>
  * confirm the image is re-downloaded
  * confirm the image cache has only image
  * confirm the capacity is correct
@@ -94,9 +94,9 @@ public class TestLocalStorage27 {
 
         return used;
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
         ImageInventory img = deployer.images.get("TestImage");
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
@@ -117,10 +117,12 @@ public class TestLocalStorage27 {
         long used = usedVolumeSize();
         PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
         PrimaryStorageCapacityVO pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
-        Assert.assertEquals(pscap.getTotalCapacity()-used, pscap.getAvailableCapacity());
+        Assert.assertEquals(pscap.getTotalCapacity() - used, pscap.getAvailableCapacity());
 
         HostInventory host = deployer.hosts.get("host1");
-        LocalStorageHostRefVO ref = dbf.findByUuid(host.getUuid(), LocalStorageHostRefVO.class);
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+
+        LocalStorageHostRefVO ref = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(ref.getTotalCapacity() - used, ref.getAvailableCapacity());
     }
 }

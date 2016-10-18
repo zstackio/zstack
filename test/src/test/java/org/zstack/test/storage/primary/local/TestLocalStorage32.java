@@ -18,12 +18,9 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
-import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.*;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd;
-import org.zstack.storage.primary.local.LocalStorageResourceRefInventory;
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
-import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -42,26 +39,25 @@ import java.util.concurrent.TimeUnit;
  * 2. create a vm with data volume
  * 3. stop the vm and detach the data volume
  * 4. migrate the root volume to host2
- *
+ * <p>
  * confirm the migration succeeded
- *
+ * <p>
  * 5. attach the data volume
- *
+ * <p>
  * confirm unable to attach
- *
+ * <p>
  * 6. migrate the data volume to the host2
- *
+ * <p>
  * confirm the migration succeeded
- *
+ * <p>
  * 7. attach the data volume
- *
+ * <p>
  * confirm the attach succeeded
- *
+ * <p>
  * 8. take 30 snapshots of the data volume
  * 9. migrate the data volume to the host1
- *
+ * <p>
  * confirm the migration of the volume and snapshots succeeded
- *
  */
 public class TestLocalStorage32 {
     Deployer deployer;
@@ -101,13 +97,13 @@ public class TestLocalStorage32 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 
-        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         VolumeInventory root = vm.getRootVolume();
         VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
             @Override
@@ -120,14 +116,14 @@ public class TestLocalStorage32 {
 
         ImageInventory image = deployer.images.get("TestImage");
 
-        long rootVolumeSize = psRatioMgr.calculateByRatio(ps.getUuid(), root.getSize());
-        long dataVolumeSize = psRatioMgr.calculateByRatio(ps.getUuid(), data.getSize());
+        long rootVolumeSize = psRatioMgr.calculateByRatio(local.getUuid(), root.getSize());
+        long dataVolumeSize = psRatioMgr.calculateByRatio(local.getUuid(), data.getSize());
         long imageSize = image.getSize();
 
         HostInventory host1 = deployer.hosts.get("host1");
         HostInventory host2 = deployer.hosts.get("host2");
-        LocalStorageHostRefVO hcap1 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
-        LocalStorageHostRefVO hcap2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap1 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
+        LocalStorageHostRefVO hcap2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
 
         config.downloadBitsCmds.clear();
         LocalStorageResourceRefInventory ref = api.localStorageMigrateVolume(root.getUuid(), host2.getUuid(), null);
@@ -137,8 +133,8 @@ public class TestLocalStorage32 {
         Assert.assertEquals(image.getBackupStorageRefs().get(0).getInstallPath(), downloadBitsCmd.getBackupStorageInstallPath());
 
         Assert.assertEquals(host2.getUuid(), ref.getHostUuid());
-        LocalStorageHostRefVO hcap11 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
-        LocalStorageHostRefVO hcap22 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap11 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
+        LocalStorageHostRefVO hcap22 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         Assert.assertEquals(hcap1.getAvailableCapacity() + rootVolumeSize, hcap11.getAvailableCapacity());
         Assert.assertEquals(hcap2.getAvailableCapacity() - rootVolumeSize - imageSize, hcap22.getAvailableCapacity());
 
@@ -176,8 +172,8 @@ public class TestLocalStorage32 {
 
         ref = api.localStorageMigrateVolume(data.getUuid(), host2.getUuid(), null);
         Assert.assertEquals(host2.getUuid(), ref.getHostUuid());
-        LocalStorageHostRefVO hcap111 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
-        LocalStorageHostRefVO hcap222 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap111 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
+        LocalStorageHostRefVO hcap222 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         Assert.assertEquals(hcap11.getAvailableCapacity() + dataVolumeSize, hcap111.getAvailableCapacity());
         Assert.assertEquals(hcap22.getAvailableCapacity() - dataVolumeSize, hcap222.getAvailableCapacity());
 
@@ -185,7 +181,7 @@ public class TestLocalStorage32 {
         data = api.attachVolumeToVm(vm.getUuid(), data.getUuid());
 
         int spNum = 30;
-        for (int i=0; i<spNum; i++) {
+        for (int i = 0; i < spNum; i++) {
             api.createSnapshot(data.getUuid());
         }
 
@@ -198,15 +194,15 @@ public class TestLocalStorage32 {
             spSize += sp.getSize();
         }
 
-        hcap111 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
-        hcap222 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        hcap111 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
+        hcap222 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         config.checkMd5sumCmds.clear();
         config.getMd5Cmds.clear();
         config.deleteBitsCmds.clear();
         ref = api.localStorageMigrateVolume(data.getUuid(), host1.getUuid(), null);
         Assert.assertEquals(host1.getUuid(), ref.getHostUuid());
-        LocalStorageHostRefVO hcap1111 = dbf.findByUuid(host1.getUuid(), LocalStorageHostRefVO.class);
-        LocalStorageHostRefVO hcap2222 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap1111 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
+        LocalStorageHostRefVO hcap2222 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         Assert.assertEquals(hcap111.getAvailableCapacity() - dataVolumeSize - spSize, hcap1111.getAvailableCapacity());
         Assert.assertEquals(hcap222.getAvailableCapacity() + dataVolumeSize + spSize, hcap2222.getAvailableCapacity());
         Assert.assertFalse(config.checkMd5sumCmds.isEmpty());

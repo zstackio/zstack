@@ -12,7 +12,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.PrimaryStorage;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
@@ -32,7 +31,7 @@ import java.util.List;
  * 1. use local storage
  * 2. create a vm
  * 3. destroy the vm
- *
+ * <p>
  * confirm all local storage related commands, VOs are set; disk capacity is returned
  */
 public class TestLocalStorage2 {
@@ -70,9 +69,9 @@ public class TestLocalStorage2 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.destroyVmInstance(vm.getUuid());
@@ -84,16 +83,17 @@ public class TestLocalStorage2 {
         }
 
         HostInventory host = deployer.hosts.get("host1");
-        SimpleQuery<LocalStorageHostRefVO> hq = dbf.createQuery(LocalStorageHostRefVO.class);
-        hq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, host.getUuid());
-        LocalStorageHostRefVO href = hq.find();
+
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+
+        LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(totalSize, href.getTotalCapacity());
-        Assert.assertEquals(totalSize-isize, href.getAvailableCapacity());
+        Assert.assertEquals(totalSize - isize, href.getAvailableCapacity());
 
         PrimaryStorageInventory pri = deployer.primaryStorages.get("local");
         PrimaryStorageVO privo = dbf.findByUuid(pri.getUuid(), PrimaryStorageVO.class);
         Assert.assertEquals(totalSize, privo.getCapacity().getTotalCapacity());
-        Assert.assertEquals(totalSize-isize, privo.getCapacity().getAvailableCapacity());
+        Assert.assertEquals(totalSize - isize, privo.getCapacity().getAvailableCapacity());
 
         Assert.assertFalse(config.deleteBitsCmds.isEmpty());
 

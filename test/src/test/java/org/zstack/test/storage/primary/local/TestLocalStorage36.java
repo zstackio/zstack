@@ -15,8 +15,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
-import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
@@ -37,9 +36,8 @@ import java.util.concurrent.TimeUnit;
  * 4. delete the image, set the backing file existing on the dst
  * 5. migrate the root volume to host2
  * 7. make the migrate cmd fail
- *
+ * <p>
  * confirm the migration failed but the backing file not deleted on the dst
- *
  */
 public class TestLocalStorage36 {
     Deployer deployer;
@@ -79,11 +77,12 @@ public class TestLocalStorage36 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageInventory image = deployer.images.get("TestImage");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         api.stopVmInstance(vm.getUuid());
 
         VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -105,7 +104,7 @@ public class TestLocalStorage36 {
         VolumeInventory root = vm.getRootVolume();
 
         HostInventory host2 = deployer.hosts.get("host2");
-        LocalStorageHostRefVO hcap2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
 
         boolean s = false;
         try {
@@ -118,7 +117,7 @@ public class TestLocalStorage36 {
         TimeUnit.SECONDS.sleep(3);
         Assert.assertEquals(0, config.deleteBitsCmds.size());
 
-        LocalStorageHostRefVO hcap22 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap22 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         Assert.assertEquals(hcap2.getAvailableCapacity(), hcap22.getAvailableCapacity());
     }
 }

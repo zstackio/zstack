@@ -15,6 +15,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.storage.primary.local.LocalStorageHostRefVO;
+import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
@@ -36,9 +37,8 @@ import java.util.concurrent.TimeUnit;
  * 3. stop the vm and detach the data volume
  * 4. delete the image and set the backing file to null
  * 5. migrate the root volume to host2
- *
+ * <p>
  * confirm the migration succeeded but not copying the backing file
- *
  */
 public class TestLocalStorage35 {
     Deployer deployer;
@@ -78,12 +78,12 @@ public class TestLocalStorage35 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageInventory image = deployer.images.get("TestImage");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
-        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         api.stopVmInstance(vm.getUuid());
 
         VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
@@ -103,10 +103,10 @@ public class TestLocalStorage35 {
 
         VolumeInventory root = vm.getRootVolume();
 
-        long requiredSize = psRatioMgr.calculateByRatio(ps.getUuid(), root.getSize());
+        long requiredSize = psRatioMgr.calculateByRatio(local.getUuid(), root.getSize());
 
         HostInventory host2 = deployer.hosts.get("host2");
-        LocalStorageHostRefVO hcap2 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
 
         api.localStorageMigrateVolume(root.getUuid(), host2.getUuid(), null);
         Assert.assertEquals(1, config.getBackingFileCmds.size());
@@ -134,7 +134,7 @@ public class TestLocalStorage35 {
         DeleteBitsCmd deleteBitsCmd = config.deleteBitsCmds.get(0);
         Assert.assertEquals(root.getInstallPath(), deleteBitsCmd.getPath());
 
-        LocalStorageHostRefVO hcap22 = dbf.findByUuid(host2.getUuid(), LocalStorageHostRefVO.class);
+        LocalStorageHostRefVO hcap22 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         Assert.assertEquals(hcap2.getAvailableCapacity() - requiredSize, hcap22.getAvailableCapacity());
     }
 }
