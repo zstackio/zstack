@@ -14,6 +14,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
+import java.util.List;
 
 /**
  * Created by frank on 11/10/2015.
@@ -35,10 +36,11 @@ public class LocalStorageCapacityUpdater {
                 createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
         query.setParameter("hostUuid", hostUuid);
         query.setParameter("primaryStorageUuid", psUuid);
-        LocalStorageHostRefVO ref = query.getSingleResult();
-        if (ref == null) {
+        List<LocalStorageHostRefVO> refs = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
+        if (refs == null || refs.isEmpty()) {
             return;
         }
+        LocalStorageHostRefVO ref = refs.get(0);
 
         if (ref.getAvailablePhysicalCapacity() == rsp.getAvailableCapacity()
                 && ref.getTotalPhysicalCapacity() == rsp.getTotalCapacity()) {

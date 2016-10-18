@@ -1112,9 +1112,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
                 query.setParameter("hostUuid", msg.getHostUuid());
                 query.setParameter("primaryStorageUuid", msg.getPrimaryStorageUuid());
-                LocalStorageHostRefVO ref = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getSingleResult();
-
-                if (ref == null) {
+                List<LocalStorageHostRefVO> refs = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
+                LocalStorageHostRefVO ref;
+                if (refs == null || refs.isEmpty()) {
                     ref = new LocalStorageHostRefVO();
                     ref.setTotalCapacity(c.totalPhysicalSize);
                     ref.setAvailableCapacity(c.availablePhysicalSize);
@@ -1132,6 +1132,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             c.availablePhysicalSize,
                             ref.getSystemUsedCapacity());
                 } else {
+                    ref = refs.get(1);
                     boolean totalCapacityChanged = false;
                     if (ref.getTotalCapacity() != c.totalPhysicalSize) {
                         totalCapacityChanged = true;
