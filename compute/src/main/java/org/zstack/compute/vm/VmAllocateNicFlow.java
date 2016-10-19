@@ -86,11 +86,13 @@ public class VmAllocateNicFlow implements Flow {
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
+        /*
         if (spec.getVmInventory().getVmNics().isEmpty()) {
             logger.info(String.format("VM [%s] doesn't have any NIC", spec.getVmInventory().getUuid()));
             trigger.next();
             return;
         }
+        */
 
         List<AllocateIpMsg> msgs = new ArrayList<AllocateIpMsg>();
         Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
