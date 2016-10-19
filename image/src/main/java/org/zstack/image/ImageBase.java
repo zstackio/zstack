@@ -141,6 +141,12 @@ public class ImageBase implements Image {
             q.add(BackupStorageVO_.status, Op.EQ, BackupStorageStatus.Connected);
             q.setLimit(1);
             backupStorageUuid = q.findValue();
+            if (backupStorageUuid == null) {
+                completion.fail(errf.stringToOperationError(
+                        String.format("No connected backup storage found for image[uuid:%s, name:%s]",
+                                self.getUuid(), self.getName())));
+                return;
+            }
         }
 
         SyncImageSizeOnBackupStorageMsg smsg = new SyncImageSizeOnBackupStorageMsg();
