@@ -2201,8 +2201,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         refq.add(LocalStorageHostRefVO_.hostUuid, Op.IN, hostUuids);
         List<LocalStorageHostRefVO> refs = refq.list();
         if (!refs.isEmpty()) {
-            dbf.removeCollection(refs, LocalStorageHostRefVO.class);
-
             long total = 0;
             long avail = 0;
             long pt = 0;
@@ -2222,6 +2220,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             // from both total and available capacity of the primary storage
             decreaseCapacity(total, avail, pt, pa, su);
         }
+        dbf.removeCollection(refs, LocalStorageHostRefVO.class);
 
         syncPhysicalCapacity(new ReturnValueCompletion<PhysicalCapacityUsage>(completion) {
             @Override
