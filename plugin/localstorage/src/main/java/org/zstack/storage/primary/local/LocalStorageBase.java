@@ -1134,7 +1134,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             c.availablePhysicalSize,
                             ref.getSystemUsedCapacity());
                 } else {
-                    ref = refs.get(1);
+                    ref = refs.get(0);
                     boolean totalCapacityChanged = false;
                     if (ref.getTotalCapacity() != c.totalPhysicalSize) {
                         totalCapacityChanged = true;
