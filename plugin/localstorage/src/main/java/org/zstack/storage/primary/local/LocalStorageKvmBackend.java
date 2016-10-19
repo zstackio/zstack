@@ -2209,6 +2209,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             long pa = 0;
             long su = 0;
             for (LocalStorageHostRefVO ref : refs) {
+                deleteResourceRef(ref.getHostUuid());
+
                 total += ref.getTotalCapacity();
                 avail += ref.getAvailableCapacity();
                 pt += ref.getTotalPhysicalCapacity();
@@ -2230,7 +2232,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("failed to sync the physical capacity on the local primary storage[uuid:%s], %s", self.getUuid(), errorCode));
+                logger.warn(String.format("failed to sync the physical capacity on the local primary storage[uuid:%s], %s",
+                        self.getUuid(), errorCode));
                 completion.success();
             }
         });

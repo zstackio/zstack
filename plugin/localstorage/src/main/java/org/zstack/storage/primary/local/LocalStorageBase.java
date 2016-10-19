@@ -1041,16 +1041,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         deleteResourceRef(msg.getHostUuid());
 
-        // on remove, substract the total capacity from every capacity
+        // on remove, subtract the capacity from every capacity
         decreaseCapacity(ref.getTotalCapacity(),
-                ref.getTotalCapacity(),
-                ref.getTotalCapacity(),
-                ref.getTotalCapacity(),
+                ref.getAvailableCapacity(),
+                ref.getTotalPhysicalCapacity(),
+                ref.getAvailablePhysicalCapacity(),
                 ref.getSystemUsedCapacity());
         bus.reply(msg, new RemoveHostFromLocalStorageReply());
     }
 
-    private void deleteResourceRef(String hostUuid) {
+    void deleteResourceRef(String hostUuid) {
         SimpleQuery<LocalStorageResourceRefVO> rq = dbf.createQuery(LocalStorageResourceRefVO.class);
         rq.add(LocalStorageResourceRefVO_.hostUuid, Op.EQ, hostUuid);
         List<LocalStorageResourceRefVO> refs = rq.list();
@@ -1075,6 +1075,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         uq.condAnd(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%%s%%", hostUuid));
         uq.delete();
 
+        // delete volumes
         if (!volumes.isEmpty()) {
             uq = UpdateQuery.New();
             uq.entity(VolumeVO.class);
@@ -1084,6 +1085,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     " the local storage[name:%s, uuid:%s]", volumes, hostUuid, self.getName(), self.getUuid()));
         }
 
+        // delete snapshots
         if (!snapshots.isEmpty()) {
             uq = UpdateQuery.New();
             uq.entity(VolumeSnapshotVO.class);

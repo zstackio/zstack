@@ -26,12 +26,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     private static final CLogger logger = Utils.getLogger(DispatchQueueImpl.class);
 
-	@Autowired
-	ThreadFacade _threadFacade;
+    @Autowired
+    ThreadFacade _threadFacade;
 
-	private final HashMap<String, SyncTaskQueueWrapper> syncTasks = new HashMap<String, SyncTaskQueueWrapper>();
-	private final HashMap<String, ChainTaskQueueWrapper> chainTasks = new HashMap<String, ChainTaskQueueWrapper>();
-	private static final CLogger _logger = CLoggerImpl.getLogger(DispatchQueueImpl.class);
+    private final HashMap<String, SyncTaskQueueWrapper> syncTasks = new HashMap<String, SyncTaskQueueWrapper>();
+    private final HashMap<String, ChainTaskQueueWrapper> chainTasks = new HashMap<String, ChainTaskQueueWrapper>();
+    private static final CLogger _logger = CLoggerImpl.getLogger(DispatchQueueImpl.class);
 
     @Override
     public void handleDebugSignal(DebugSignal sig) {
@@ -96,7 +96,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         }
 
         private SyncTask getTask() {
-            return (SyncTask)task;
+            return (SyncTask) task;
         }
 
         @Override
@@ -191,8 +191,8 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         }
     }
 
-	private <T> Future<T> doSyncSubmit(final SyncTask<T> syncTask) {
-		assert syncTask.getSyncSignature() != null : "How can you submit a sync task without sync signature ???";
+    private <T> Future<T> doSyncSubmit(final SyncTask<T> syncTask) {
+        assert syncTask.getSyncSignature() != null : "How can you submit a sync task without sync signature ???";
 
         SyncTaskFuture f;
         synchronized (syncTasks) {
@@ -206,20 +206,20 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             wrapper.startThreadIfNeeded();
         }
 
-		return f;
-	}
+        return f;
+    }
 
-	@Override
-	public <T> Future<T> syncSubmit(SyncTask<T> task) {
-		if (task.getSyncLevel() <= 0) {
-			return _threadFacade.submit(task);
-		} else {
-			return doSyncSubmit(task);
-		}
-	}
+    @Override
+    public <T> Future<T> syncSubmit(SyncTask<T> task) {
+        if (task.getSyncLevel() <= 0) {
+            return _threadFacade.submit(task);
+        } else {
+            return doSyncSubmit(task);
+        }
+    }
 
 
-    class ChainFuture extends  AbstractFuture {
+    class ChainFuture extends AbstractFuture {
         private AtomicBoolean isNextCalled = new AtomicBoolean(false);
         // in running queue: means execution time
         // in pending queue: means pending time
@@ -234,7 +234,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         }
 
         private ChainTask getTask() {
-            return (ChainTask)task;
+            return (ChainTask) task;
         }
 
         @Override
@@ -361,9 +361,9 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     }
 
 
-	private <T> Future<T> doChainSyncSubmit(final ChainTask task) {
+    private <T> Future<T> doChainSyncSubmit(final ChainTask task) {
         assert task.getSyncSignature() != null : "How can you submit a chain task without sync signature ???";
-        DebugUtils.Assert(task.getSyncLevel() >= 1, String.format("getSyncLevel() must return more than 1"));
+        DebugUtils.Assert(task.getSyncLevel() >= 1, String.format("getSyncLevel() must return 1 at least "));
 
         synchronized (chainTasks) {
             final String signature = task.getSyncSignature();
@@ -379,7 +379,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             return cf;
         }
     }
-	
+
 
     @Override
     public Future<Void> chainSubmit(ChainTask task) {

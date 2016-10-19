@@ -100,10 +100,4 @@
             </list>
         </property>
     </bean>
-
-    <bean id="LocalStorageCascadeExtension" class="org.zstack.storage.primary.local.LocalStorageCascadeExtension">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
-        </zstack:plugin>
-    </bean>
 </beans>

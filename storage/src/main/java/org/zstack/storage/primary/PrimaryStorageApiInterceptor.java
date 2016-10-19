@@ -96,7 +96,8 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
         q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
         if (!q.isExists()) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                    String.format("primary storage[uuid:%s] has not been attached to cluster[uuid:%s] yet", msg.getPrimaryStorageUuid(), msg.getClusterUuid())
+                    String.format("primary storage[uuid:%s] has not been attached to cluster[uuid:%s] yet",
+                            msg.getPrimaryStorageUuid(), msg.getClusterUuid())
             ));
         }
     }
