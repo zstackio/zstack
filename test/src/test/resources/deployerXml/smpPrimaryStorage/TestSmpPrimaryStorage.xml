@@ -3,7 +3,7 @@
 
     <backupStorages>
         <sftpBackupStorage name="sftp" description="Test"
-            url="nfs://test" />
+                           url="nfs://test"/>
     </backupStorages>
 
     <images>
@@ -17,11 +17,11 @@
     </images>
 
     <diskOffering name="TestDiskOffering1" description="Test"
-                  diskSize="100" />
+                  diskSize="100"/>
 
     <instanceOfferings>
         <instanceOffering name="TestInstanceOffering"
-            description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000" />
+                          description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000"/>
     </instanceOfferings>
 
     <vm>
@@ -38,9 +38,9 @@
                 <cluster name="Cluster1" description="Test" hypervisorType="KVM">
                     <hosts>
                         <kvmHost name="host1" description="Test" managementIp="localhost"
-                            memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600"/>
                         <kvmHost name="host2" description="Test" managementIp="127.0.0.1"
-                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600"/>
                     </hosts>
                     <primaryStorageRef>smp</primaryStorageRef>
                     <l2NetworkRef>TestL2Network</l2NetworkRef>
@@ -49,11 +49,11 @@
 
             <l2Networks>
                 <l2NoVlanNetwork name="TestL2Network" description="Test"
-                    physicalInterface="eth0">
+                                 physicalInterface="eth0">
                     <l3Networks>
                         <l3BasicNetwork name="TestL3Network1" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
-                                endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                                     endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0"/>
                         </l3BasicNetwork>
                     </l3Networks>
                 </l2NoVlanNetwork>
@@ -62,7 +62,7 @@
             <backupStorageRef>sftp</backupStorageRef>
             <primaryStorages>
                 <sharedMountPointPrimaryStorage name="smp" description="Test"
-                    url="/test" />
+                                                url="/test"/>
             </primaryStorages>
         </zone>
     </zones>

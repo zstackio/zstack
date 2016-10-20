@@ -12,7 +12,6 @@ import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
@@ -27,23 +26,23 @@ import org.zstack.test.deployer.Deployer;
  * 1. use ceph for primary storage and backup storage
  * 2. create a vm
  * 3. create an snapshot from the vm's root volume
- *
+ * <p>
  * confirm the snapshot created successfully
- *
+ * <p>
  * 4. rollback the snapshot
- *
+ * <p>
  * confirm the snapshot is rolled back
- *
+ * <p>
  * 5. create an image from the snapshot
- *
+ * <p>
  * confirm the image created successfully
- *
+ * <p>
  * 6. create a data volume from the snapshot
- *
+ * <p>
  * confirm the data volume created successfully
- *
+ * <p>
  * 7. delete the snapshot
- *
+ * <p>
  * confirm the snapshot deleted successfully
  */
 public class TestCeph4 {
@@ -73,10 +72,11 @@ public class TestCeph4 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
+        BackupStorageInventory bs = deployer.backupStorages.get("ceph-bk");
 
         config.createSnapshotCmds.clear();
         VolumeInventory root = vm.getRootVolume();
@@ -90,7 +90,7 @@ public class TestCeph4 {
         Assert.assertEquals(root.getInstallPath(), rootvo.getInstallPath());
 
         config.cpCmds.clear();
-        ImageInventory image = api.createTemplateFromSnapshot(sp.getUuid());
+        ImageInventory image = api.createTemplateFromSnapshot(sp.getUuid(), bs.getUuid());
         Assert.assertFalse(config.cpCmds.isEmpty());
 
         config.cpCmds.clear();

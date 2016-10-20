@@ -35,20 +35,20 @@ import java.util.ArrayList;
 /**
  * 1. create a user
  * 2. assign permissions of allow of creating/updating/changing/reverting/deleting snapshots to the user
- *
+ * <p>
  * confirm the user can do those operations
- *
+ * <p>
  * 3. assign permissions of allow deny of creating/updating/changing/reverting/deleting snapshots to the user
- *
+ * <p>
  * confirm the user cannot do those operations
- *
+ * <p>
  * 4. create a user added in a group
  * 5. assign permissions of allow of creating/updating/changing/reverting/deleting snapshots to the group
- *
+ * <p>
  * confirm the user can do those operations
- *
+ * <p>
  * 6. assign permissions of deny of creating/updating/changing/reverting/deleting snapshots to the group
- *
+ * <p>
  * confirm the user cannot do those operations
  */
 public class TestPolicyForSnapshot {
@@ -73,9 +73,9 @@ public class TestPolicyForSnapshot {
         dbf = loader.getComponent(DatabaseFacade.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         BackupStorageInventory bs = deployer.backupStorages.get("sftp");
 
         IdentityCreator identityCreator = new IdentityCreator(api);
@@ -103,7 +103,7 @@ public class TestPolicyForSnapshot {
         VolumeSnapshotInventory sp = api.createSnapshot(root.getUuid(), session);
         api.updateVolumeSnapshot(sp, session);
         api.revertVolumeToSnapshot(sp.getUuid(), session);
-        api.createTemplateFromSnapshot(sp.getUuid(), session);
+        api.createTemplateFromSnapshot(sp.getUuid(), bs.getUuid(), session);
         api.createDataVolumeFromSnapshot(sp.getUuid(), session);
         sp = api.backupSnapshot(sp.getUuid(), null, session);
         api.deleteSnapshotFromBackupStorage(sp.getUuid(), session, sp.getBackupStorageRefs().get(0).getBackupStorageUuid());
@@ -148,7 +148,7 @@ public class TestPolicyForSnapshot {
 
         success = false;
         try {
-            api.createTemplateFromSnapshot(sp.getUuid(), session);
+            api.createTemplateFromSnapshot(sp.getUuid(), bs.getUuid(), session);
         } catch (ApiSenderException e) {
             if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
                 success = true;
@@ -216,7 +216,7 @@ public class TestPolicyForSnapshot {
         sp = api.createSnapshot(root.getUuid(), session);
         api.updateVolumeSnapshot(sp, session);
         api.revertVolumeToSnapshot(sp.getUuid(), session);
-        api.createTemplateFromSnapshot(sp.getUuid(), session);
+        api.createTemplateFromSnapshot(sp.getUuid(), bs.getUuid(), session);
         api.createDataVolumeFromSnapshot(sp.getUuid(), session);
         sp = api.backupSnapshot(sp.getUuid(), null, session);
         api.deleteSnapshotFromBackupStorage(sp.getUuid(), session, sp.getBackupStorageRefs().get(0).getBackupStorageUuid());
@@ -248,7 +248,7 @@ public class TestPolicyForSnapshot {
 
         success = false;
         try {
-            api.createTemplateFromSnapshot(sp.getUuid(), session);
+            api.createTemplateFromSnapshot(sp.getUuid(), bs.getUuid(), session);
         } catch (ApiSenderException e) {
             if (IdentityErrors.PERMISSION_DENIED.toString().equals(e.getError().getCode())) {
                 success = true;

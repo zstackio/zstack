@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
@@ -21,7 +22,7 @@ import org.zstack.test.deployer.Deployer;
 /**
  * 1. use smp storage
  * 2. create a vm
- *
+ * <p>
  * confirm the vm created sucessfully
  */
 public class TestSmpPrimaryStorage4 {
@@ -51,10 +52,11 @@ public class TestSmpPrimaryStorage4 {
         config = loader.getComponent(SMPPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
+        BackupStorageInventory bs = deployer.backupStorages.get("sftp");
         VolumeInventory root = vm.getRootVolume();
 
         VolumeSnapshotInventory sp = api.createSnapshot(root.getUuid());
@@ -63,7 +65,7 @@ public class TestSmpPrimaryStorage4 {
         Assert.assertEquals(1, config.revertVolumeFromSnapshotCmds.size());
 
         api.stopVmInstance(vm.getUuid());
-        api.createTemplateFromSnapshot(sp.getUuid());
+        api.createTemplateFromSnapshot(sp.getUuid(), bs.getUuid());
         Assert.assertEquals(1, config.mergeSnapshotCmds.size());
         Assert.assertEquals(1, config.uploadBitsCmds.size());
     }

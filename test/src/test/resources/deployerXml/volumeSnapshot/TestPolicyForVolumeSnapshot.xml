@@ -4,7 +4,7 @@
 
     <backupStorages>
         <sftpBackupStorage name="sftp" description="Test"
-            url="nfs://test" />
+                           url="nfs://test"/>
     </backupStorages>
 
     <images>
@@ -16,7 +16,7 @@
 
     <instanceOfferings>
         <instanceOffering name="TestInstanceOffering"
-            description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000">
+                          description="Test" memoryCapacity="3G" cpuNum="1" cpuSpeed="3000">
             <accountRef>test</accountRef>
         </instanceOffering>
     </instanceOfferings>
@@ -39,7 +39,7 @@
                 <cluster name="Cluster1" description="Test" hypervisorType="KVM">
                     <hosts>
                         <kvmHost name="host1" description="Test" managementIp="localhost"
-                            memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600"/>
                     </hosts>
                     <primaryStorageRef>nfs</primaryStorageRef>
                     <l2NetworkRef>TestL2Network</l2NetworkRef>
@@ -48,26 +48,26 @@
 
             <l2Networks>
                 <l2NoVlanNetwork name="TestL2Network" description="Test"
-                    physicalInterface="eth0">
+                                 physicalInterface="eth0">
                     <l3Networks>
                         <l3BasicNetwork name="TestL3Network1" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
-                                endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0" />
+                                     endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0"/>
                             <accountRef>test</accountRef>
                         </l3BasicNetwork>
                         <l3BasicNetwork name="TestL3Network2" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
-                                endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0" />
+                                     endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0"/>
                             <accountRef>test</accountRef>
                         </l3BasicNetwork>
                         <l3BasicNetwork name="TestL3Network3" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.20.3.100"
-                                endIp="10.30.3.200" gateway="10.20.3.1" netmask="255.0.0.0" />
+                                     endIp="10.30.3.200" gateway="10.20.3.1" netmask="255.0.0.0"/>
                             <accountRef>test</accountRef>
                         </l3BasicNetwork>
                         <l3BasicNetwork name="TestL3Network4" description="Test">
                             <ipRange name="TestIpRange" description="Test" startIp="10.20.4.100"
-                                     endIp="10.30.4.200" gateway="10.20.4.1" netmask="255.0.0.0" />
+                                     endIp="10.30.4.200" gateway="10.20.4.1" netmask="255.0.0.0"/>
                             <accountRef>test</accountRef>
                         </l3BasicNetwork>
                     </l3Networks>
@@ -77,7 +77,7 @@
             <backupStorageRef>sftp</backupStorageRef>
             <primaryStorages>
                 <nfsPrimaryStorage name="nfs" description="Test"
-                    totalCapacity="1T" url="nfs://test" />
+                                   totalCapacity="1T" url="nfs://test"/>
             </primaryStorages>
         </zone>
     </zones>
