@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -29,7 +30,7 @@ import org.zstack.utils.data.SizeUnit;
  * 3. stop the vm
  * 4. take a snapshot from vm's root volume
  * 5. create a template from the latest snapshot
- *
+ * <p>
  * confirm the template created successfully
  */
 public class TestLocalStorage22 {
@@ -69,12 +70,13 @@ public class TestLocalStorage22 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        BackupStorageInventory bs = deployer.backupStorages.get("sftp");
 
         VolumeSnapshotInventory sp = api.createSnapshot(vm.getRootVolumeUuid());
         Assert.assertFalse(kconfig.snapshotCmds.isEmpty());
@@ -98,7 +100,7 @@ public class TestLocalStorage22 {
         long tenG = SizeUnit.GIGABYTE.toByte(10);
         config.snapshotToVolumeSize.put(sp.getVolumeUuid(), tenG);
         config.snapshotToVolumeActualSize.put(sp.getVolumeUuid(), tenG);
-        ImageInventory img = api.createTemplateFromSnapshot(sp.getUuid());
+        ImageInventory img = api.createTemplateFromSnapshot(sp.getUuid(), bs.getUuid());
         Assert.assertEquals(tenG, img.getSize());
         Assert.assertEquals(tenG, img.getActualSize().longValue());
 

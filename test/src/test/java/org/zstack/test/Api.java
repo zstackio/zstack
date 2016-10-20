@@ -218,15 +218,6 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public ImageInventory createTemplateFromSnapshot(String snapshotUuid) throws ApiSenderException {
-        return createTemplateFromSnapshot(snapshotUuid, (SessionInventory) null);
-    }
-
-    @Deprecated
-    public ImageInventory createTemplateFromSnapshot(String snapshotUuid, SessionInventory session) throws ApiSenderException {
-        return createTemplateFromSnapshot(snapshotUuid, (List) null, session);
-    }
-
     public VolumeInventory createDataVolumeFromSnapshot(String snapshotUuid) throws ApiSenderException {
         return createDataVolumeFromSnapshot(snapshotUuid, (SessionInventory) null);
     }
@@ -723,11 +714,11 @@ public class Api implements CloudBusEventListener {
         return e.getInventory();
     }
 
-    public ImageInventory addImage(ImageInventory inv, String...bsUuids) throws ApiSenderException {
+    public ImageInventory addImage(ImageInventory inv, String... bsUuids) throws ApiSenderException {
         return addImage(inv, null, bsUuids);
     }
 
-    public ImageInventory addImage(ImageInventory inv, SessionInventory session, String...bsUuids) throws ApiSenderException {
+    public ImageInventory addImage(ImageInventory inv, SessionInventory session, String... bsUuids) throws ApiSenderException {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIAddImageMsg msg = new APIAddImageMsg();
@@ -1465,6 +1456,7 @@ public class Api implements CloudBusEventListener {
         APIAddIpRangeEvent e = sender.send(msg, APIAddIpRangeEvent.class);
         return e.getInventory();
     }
+
     public IpRangeInventory addIpRangeByFullConfig(IpRangeInventory inv) throws ApiSenderException {
         return addIpRangeByFullConfig(inv, adminSession);
     }
@@ -1517,7 +1509,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public VmInstanceInventory createVmByFullConfig(VmInstanceInventory inv, String rootDiskOfferingUuid, List<String> l3NetworkUuids,
-            List<String> diskOfferingUuids, SessionInventory session) throws ApiSenderException {
+                                                    List<String> diskOfferingUuids, SessionInventory session) throws ApiSenderException {
         APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
         msg.setClusterUuid(inv.getClusterUuid());
         if (diskOfferingUuids != null) {
@@ -1557,7 +1549,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public VmInstanceInventory createVmByFullConfig(VmInstanceInventory inv, String rootDiskOfferingUuid, List<String> l3NetworkUuids,
-            List<String> diskOfferingUuids) throws ApiSenderException {
+                                                    List<String> diskOfferingUuids) throws ApiSenderException {
         return createVmByFullConfig(inv, rootDiskOfferingUuid, l3NetworkUuids, diskOfferingUuids, adminSession);
     }
 
@@ -1584,6 +1576,7 @@ public class Api implements CloudBusEventListener {
         APIStopVmInstanceEvent evt = sender.send(msg, APIStopVmInstanceEvent.class);
         return evt.getInventory();
     }
+
     public VmInstanceInventory forcefullyStopVmInstance(String uuid) throws ApiSenderException {
         return forcefullyStopVmInstance(uuid, null);
     }
@@ -2710,7 +2703,7 @@ public class Api implements CloudBusEventListener {
         APIGetPortForwardingAttachableVmNicsReply reply = sender.call(msg, APIGetPortForwardingAttachableVmNicsReply.class);
         return reply.getInventories();
     }
-    
+
     public List<VmNicSecurityGroupRefInventory> listVmNicSecurityGroupRef(List<String> uuids) throws ApiSenderException {
         APIListVmNicInSecurityGroupMsg msg = new APIListVmNicInSecurityGroupMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
@@ -3027,11 +3020,11 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public VolumeSnapshotInventory deleteSnapshotFromBackupStorage(String snapshotUuid, String...bsUuids) throws ApiSenderException {
+    public VolumeSnapshotInventory deleteSnapshotFromBackupStorage(String snapshotUuid, String... bsUuids) throws ApiSenderException {
         return deleteSnapshotFromBackupStorage(snapshotUuid, null, bsUuids);
     }
 
-    public VolumeSnapshotInventory deleteSnapshotFromBackupStorage(String snapshotUuid, SessionInventory session, String...bsUuids) throws ApiSenderException {
+    public VolumeSnapshotInventory deleteSnapshotFromBackupStorage(String snapshotUuid, SessionInventory session, String... bsUuids) throws ApiSenderException {
         APIDeleteVolumeSnapshotFromBackupStorageMsg msg = new APIDeleteVolumeSnapshotFromBackupStorageMsg();
         msg.setUuid(snapshotUuid);
         if (bsUuids != null) {
@@ -3315,7 +3308,7 @@ public class Api implements CloudBusEventListener {
         msg.setUuid(inv.getUuid());
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIUpdateVipEvent evt =  sender.send(msg, APIUpdateVipEvent.class);
+        APIUpdateVipEvent evt = sender.send(msg, APIUpdateVipEvent.class);
         return evt.getInventory();
     }
 
@@ -3588,7 +3581,7 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public PrimaryStorageInventory updateCephPrimaryStorageMon (CephPrimaryStorageMonVO inv) throws ApiSenderException {
+    public PrimaryStorageInventory updateCephPrimaryStorageMon(CephPrimaryStorageMonVO inv) throws ApiSenderException {
         APIUpdateCephPrimaryStorageMonMsg msg = new APIUpdateCephPrimaryStorageMonMsg();
         msg.setSession(adminSession);
         msg.setMonUuid(inv.getUuid());
@@ -3652,7 +3645,7 @@ public class Api implements CloudBusEventListener {
         return createLoadBalancerListener(inv, null, session);
     }
 
-    public LoadBalancerListenerInventory createLoadBalancerListener(LoadBalancerListenerInventory inv, List<String> sysTags,  SessionInventory session) throws ApiSenderException {
+    public LoadBalancerListenerInventory createLoadBalancerListener(LoadBalancerListenerInventory inv, List<String> sysTags, SessionInventory session) throws ApiSenderException {
         APICreateLoadBalancerListenerMsg msg = new APICreateLoadBalancerListenerMsg();
         msg.setResourceUuid(inv.getUuid());
         msg.setLoadBalancerUuid(inv.getLoadBalancerUuid());
@@ -3872,37 +3865,38 @@ public class Api implements CloudBusEventListener {
         return reply.getOrder();
     }
 
-    public VmInstanceInventory setVmConsolePassword(String vmUuid,String vncPassword,SessionInventory session) throws ApiSenderException{
+    public VmInstanceInventory setVmConsolePassword(String vmUuid, String vncPassword, SessionInventory session) throws ApiSenderException {
         APISetVmConsolePasswordMsg msg = new APISetVmConsolePasswordMsg();
         msg.setUuid(vmUuid);
         msg.setConsolePassword(vncPassword);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APISetVmConsolePasswordEvent evt = sender.send(msg,APISetVmConsolePasswordEvent.class);
+        APISetVmConsolePasswordEvent evt = sender.send(msg, APISetVmConsolePasswordEvent.class);
         return evt.getInventory();
     }
 
-    public String getVmConsolePassword(String vmUuid,SessionInventory session) throws ApiSenderException{
+    public String getVmConsolePassword(String vmUuid, SessionInventory session) throws ApiSenderException {
         APIGetVmConsolePasswordMsg msg = new APIGetVmConsolePasswordMsg();
         msg.setUuid(vmUuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIGetVmConsolePasswordReply reply = sender.call(msg,APIGetVmConsolePasswordReply.class);
+        APIGetVmConsolePasswordReply reply = sender.call(msg, APIGetVmConsolePasswordReply.class);
         return reply.getConsolePassword();
     }
 
-    public VmInstanceInventory deleteVmConsolePassword(String vmUuid,SessionInventory session) throws ApiSenderException{
+    public VmInstanceInventory deleteVmConsolePassword(String vmUuid, SessionInventory session) throws ApiSenderException {
         APIDeleteVmConsolePasswordMsg msg = new APIDeleteVmConsolePasswordMsg();
         msg.setUuid(vmUuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIDeleteVmConsolePasswordEvent evt = sender.send(msg,APIDeleteVmConsolePasswordEvent.class);
+        APIDeleteVmConsolePasswordEvent evt = sender.send(msg, APIDeleteVmConsolePasswordEvent.class);
         return evt.getInventory();
     }
-    public VmInstanceInventory setVmSshKey(String vmUuid,String sshKey,SessionInventory session) throws  ApiSenderException{
+
+    public VmInstanceInventory setVmSshKey(String vmUuid, String sshKey, SessionInventory session) throws ApiSenderException {
         APISetVmSshKeyMsg msg = new APISetVmSshKeyMsg();
         msg.setUuid(vmUuid);
         msg.setSshKey(sshKey);
@@ -3913,26 +3907,27 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
-    public String getVmSshKey(String vmUuid,SessionInventory session) throws  ApiSenderException{
+    public String getVmSshKey(String vmUuid, SessionInventory session) throws ApiSenderException {
         APIGetVmSshKeyMsg msg = new APIGetVmSshKeyMsg();
         msg.setUuid(vmUuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIGetVmSshKeyReply reply = sender.call(msg,APIGetVmSshKeyReply.class);
+        APIGetVmSshKeyReply reply = sender.call(msg, APIGetVmSshKeyReply.class);
         return reply.getSshKey();
     }
 
-    public VmInstanceInventory deleteVmSshKey(String vmUuid,SessionInventory session) throws ApiSenderException{
+    public VmInstanceInventory deleteVmSshKey(String vmUuid, SessionInventory session) throws ApiSenderException {
         APIDeleteVmSshKeyMsg msg = new APIDeleteVmSshKeyMsg();
         msg.setUuid(vmUuid);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        APIDeleteVmSshKeyEvent evt = sender.send(msg,APIDeleteVmSshKeyEvent.class);
+        APIDeleteVmSshKeyEvent evt = sender.send(msg, APIDeleteVmSshKeyEvent.class);
         return evt.getInventory();
     }
-     public LicenseInventory getLicenseInfo() throws ApiSenderException {
+
+    public LicenseInventory getLicenseInfo() throws ApiSenderException {
         APIGetLicenseInfoMsg msg = new APIGetLicenseInfoMsg();
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
@@ -4061,7 +4056,7 @@ public class Api implements CloudBusEventListener {
     public APICalculateAccountSpendingReply calculateSpending(String accountUuid, Long start, Long end, SessionInventory session) throws ApiSenderException {
         APICalculateAccountSpendingMsg msg = new APICalculateAccountSpendingMsg();
         msg.setAccountUuid(accountUuid);
-        msg.setSession(session == null ?  adminSession : session);
+        msg.setSession(session == null ? adminSession : session);
         msg.setDateStart(start);
         msg.setDateEnd(end);
         ApiSender sender = new ApiSender();
@@ -4117,7 +4112,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public UserInventory updateUser(UserInventory user, String password, SessionInventory session) throws ApiSenderException {
-        APIUpdateUserMsg msg  = new APIUpdateUserMsg();
+        APIUpdateUserMsg msg = new APIUpdateUserMsg();
         msg.setUuid(user.getUuid());
         msg.setPassword(password);
         msg.setName(user.getName());
@@ -4249,7 +4244,7 @@ public class Api implements CloudBusEventListener {
         APIDeleteLogEvent evt = sender.send(msg, APIDeleteLogEvent.class);
     }
 
-    public void debugSignal(DebugSignal...ds) throws ApiSenderException {
+    public void debugSignal(DebugSignal... ds) throws ApiSenderException {
         APIDebugSignalMsg msg = new APIDebugSignalMsg();
         List<String> lst = new ArrayList<>();
         for (DebugSignal sig : ds) {
@@ -4302,11 +4297,11 @@ public class Api implements CloudBusEventListener {
 
     public SchedulerInventory updateScheduler(String uuid, String schedulerName, String schedulerDescription, SessionInventory session) throws ApiSenderException {
         APIUpdateSchedulerMsg msg = new APIUpdateSchedulerMsg();
-        if ( schedulerName != null ) {
+        if (schedulerName != null) {
             msg.setSchedulerName(schedulerName);
         }
 
-        if ( schedulerDescription != null ) {
+        if (schedulerDescription != null) {
             msg.setSchedulerDescription(schedulerDescription);
         }
 
@@ -4331,12 +4326,12 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public void stopVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount ) throws ApiSenderException {
+    public void stopVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount) throws ApiSenderException {
         APICreateStopVmInstanceSchedulerMsg msg = new APICreateStopVmInstanceSchedulerMsg();
         msg.setSession(adminSession);
         msg.setSchedulerName("stopvm");
         msg.setInterval(interval);
-        if ( repeatCount != null) {
+        if (repeatCount != null) {
             msg.setRepeatCount(repeatCount);
         }
         msg.setType(type);
@@ -4349,12 +4344,12 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public void startVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount ) throws ApiSenderException {
+    public void startVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount) throws ApiSenderException {
         APICreateStartVmInstanceSchedulerMsg msg = new APICreateStartVmInstanceSchedulerMsg();
         msg.setSession(adminSession);
         msg.setSchedulerName("startvm");
         msg.setInterval(interval);
-        if ( repeatCount != null) {
+        if (repeatCount != null) {
             msg.setRepeatCount(repeatCount);
         }
         msg.setType(type);
@@ -4367,12 +4362,12 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public void rebootVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount ) throws ApiSenderException {
+    public void rebootVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount) throws ApiSenderException {
         APICreateRebootVmInstanceSchedulerMsg msg = new APICreateRebootVmInstanceSchedulerMsg();
         msg.setSession(adminSession);
         msg.setSchedulerName("rebootvm");
         msg.setInterval(interval);
-        if ( repeatCount != null) {
+        if (repeatCount != null) {
             msg.setRepeatCount(repeatCount);
         }
         msg.setType(type);
@@ -4416,9 +4411,9 @@ public class Api implements CloudBusEventListener {
         }
 
         if (msg instanceof APISyncCallMessage) {
-            return (T)sender.call(msg, retClass);
+            return (T) sender.call(msg, retClass);
         } else {
-            return (T)sender.send(msg, retClass);
+            return (T) sender.send(msg, retClass);
         }
     }
 
