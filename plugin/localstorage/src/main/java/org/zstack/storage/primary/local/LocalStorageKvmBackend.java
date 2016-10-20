@@ -2207,8 +2207,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             long pa = 0;
             long su = 0;
             for (LocalStorageHostRefVO ref : refs) {
-                deleteResourceRef(ref.getHostUuid());
-
                 total += ref.getTotalCapacity();
                 avail += ref.getAvailableCapacity();
                 pt += ref.getTotalPhysicalCapacity();
