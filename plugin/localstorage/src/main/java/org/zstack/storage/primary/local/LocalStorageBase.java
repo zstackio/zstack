@@ -89,6 +89,18 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    public void detachHook(String clusterUuid, Completion completion) {
+        SimpleQuery<ClusterVO> q = dbf.createQuery(ClusterVO.class);
+        q.select(ClusterVO_.hypervisorType);
+        q.add(ClusterVO_.uuid, Op.EQ, clusterUuid);
+        String hvType = q.findValue();
+
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactory(hvType);
+        final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.detachHook(clusterUuid, completion);
+    }
+    
+    @Override
     public void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIGetLocalStorageHostDiskCapacityMsg) {
             handle((APIGetLocalStorageHostDiskCapacityMsg) msg);
