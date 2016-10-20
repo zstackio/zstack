@@ -99,7 +99,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
         bkd.detachHook(clusterUuid, completion);
     }
-    
+
     @Override
     public void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIGetLocalStorageHostDiskCapacityMsg) {
@@ -1126,7 +1126,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         createQuery(sqlLocalStorageHostRefVO, LocalStorageHostRefVO.class);
                 query.setParameter("hostUuid", msg.getHostUuid());
                 query.setParameter("primaryStorageUuid", msg.getPrimaryStorageUuid());
-                List<LocalStorageHostRefVO> refs = query.setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
+                List<LocalStorageHostRefVO> refs = query.getResultList();
                 LocalStorageHostRefVO ref;
                 if (refs == null || refs.isEmpty()) {
                     ref = new LocalStorageHostRefVO();

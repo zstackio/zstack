@@ -53,7 +53,11 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
 
     @Transactional(readOnly = true)
     private String findLocalStorageUuidByHostUuid(String clusterUuid) {
-        String sql = "select pri.uuid from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref where pri.uuid = ref.primaryStorageUuid and ref.clusterUuid = :cuuid and pri.type = :ptype";
+        String sql = "select pri.uuid" +
+                " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                " where pri.uuid = ref.primaryStorageUuid" +
+                " and ref.clusterUuid = :cuuid" +
+                " and pri.type = :ptype";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("cuuid", clusterUuid);
         q.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
@@ -85,7 +89,7 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
                             trigger.fail(errf.stringToOperationError(
-                                    String.format("KVM host[uuid: %s] fails to add into local primary storage[uuid: %s], %s",
+                                    String.format("KVM host[uuid: %s] fails to be added into local primary storage[uuid: %s], %s",
                                             context.getInventory().getUuid(), priUuid, reply.getError())
                             ));
                         } else {
@@ -112,7 +116,8 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
                     //TODO:
-                    logger.warn(String.format("failed to sync primary storage[uuid:%s] capacity, %s", priUuid, reply.getError()));
+                    logger.warn(String.format("failed to sync primary storage[uuid:%s] capacity, %s",
+                            priUuid, reply.getError()));
                 }
             }
         });
