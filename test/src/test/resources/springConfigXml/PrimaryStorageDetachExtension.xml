@@ -8,15 +8,15 @@
 
 
 
-     	 http://zstack.org/schema/zstack 
+         http://zstack.org/schema/zstack
          http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destory">
 
-	<bean id="PrimaryStorageDetachExtension"
-		class="org.zstack.test.storage.primary.PrimaryStorageDetachExtension">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageDetachExtensionPoint" />
-		</zstack:plugin>
-	</bean>
+    <bean id="PrimaryStorageDetachExtension"
+          class="org.zstack.test.storage.primary.PrimaryStorageDetachExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageDetachExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 
 </beans>

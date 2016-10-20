@@ -97,7 +97,30 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         LocalStorageHypervisorFactory f = getHypervisorBackendFactory(hvType);
         final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.detachHook(clusterUuid, completion);
+        bkd.detachHook(clusterUuid, new Completion(completion) {
+            @Override
+            public void success() {
+                syncPhysicalCapacity(new ReturnValueCompletion<PhysicalCapacityUsage>() {
+                    @Override
+                    public void success(PhysicalCapacityUsage returnValue) {
+                        setCapacity(null, null, returnValue.totalPhysicalSize, returnValue.availablePhysicalSize);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format("failed to sync the physical capacity on the local primary storage[uuid:%s], %s",
+                                self.getUuid(), errorCode));
+                    }
+                });
+
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+
+            }
+        });
     }
 
     @Override
@@ -1773,11 +1796,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
         updater.update(total, avail, totalPhysical, availPhysical);
     }
 
-    protected void increaseCapacity(final Long total,
-                                    final Long avail,
-                                    final Long totalPhysical,
-                                    final Long availPhysical,
-                                    final Long sysmtemUsed) {
+    void increaseCapacity(final Long total,
+                          final Long avail,
+                          final Long totalPhysical,
+                          final Long availPhysical,
+                          final Long sysmtemUsed) {
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
@@ -1806,11 +1829,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
-    protected void decreaseCapacity(final Long total,
-                                    final Long avail,
-                                    final Long totalPhysical,
-                                    final Long availPhysical,
-                                    final Long systemUsed) {
+    void decreaseCapacity(final Long total,
+                          final Long avail,
+                          final Long totalPhysical,
+                          final Long availPhysical,
+                          final Long systemUsed) {
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(self.getUuid());
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
@@ -1843,22 +1866,25 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Transactional(readOnly = true)
     protected List<FactoryCluster> getAllFactoriesForAttachedClusters() {
-        String sql = "select cluster from ClusterVO cluster, PrimaryStorageClusterRefVO ref where ref.clusterUuid = cluster.uuid and ref.primaryStorageUuid = :uuid";
+        String sql = "select cluster" +
+                " from ClusterVO cluster, PrimaryStorageClusterRefVO ref" +
+                " where ref.clusterUuid = cluster.uuid" +
+                " and ref.primaryStorageUuid = :uuid";
         TypedQuery<ClusterVO> q = dbf.getEntityManager().createQuery(sql, ClusterVO.class);
         q.setParameter("uuid", self.getUuid());
         List<ClusterVO> clusters = q.getResultList();
 
         if (clusters.isEmpty()) {
-            return new ArrayList<FactoryCluster>();
+            return new ArrayList<>();
         }
 
-        Map<String, FactoryCluster> m = new HashMap<String, FactoryCluster>();
+        Map<String, FactoryCluster> m = new HashMap<>();
         for (ClusterVO c : clusters) {
             FactoryCluster fc = m.get(c.getHypervisorType());
             if (fc == null) {
                 fc = new FactoryCluster();
                 fc.factory = getHypervisorBackendFactory(c.getHypervisorType());
-                fc.clusters = new ArrayList<ClusterInventory>();
+                fc.clusters = new ArrayList<>();
                 m.put(c.getHypervisorType(), fc);
             }
 

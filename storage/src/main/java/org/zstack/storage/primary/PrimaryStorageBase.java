@@ -414,7 +414,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     @Transactional
     private void updateCapacity(long total, long avail) {
-        PrimaryStorageCapacityVO cvo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class, self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
+        PrimaryStorageCapacityVO cvo = dbf.getEntityManager().find(PrimaryStorageCapacityVO.class,
+                self.getUuid(), LockModeType.PESSIMISTIC_WRITE);
         DebugUtils.Assert(cvo != null, String.format("how can there is no PrimaryStorageCapacityVO[uuid:%s]", self.getUuid()));
 
         cvo.setTotalPhysicalCapacity(total);
