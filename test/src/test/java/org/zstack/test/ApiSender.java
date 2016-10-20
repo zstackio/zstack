@@ -20,12 +20,12 @@ import static java.util.Arrays.asList;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ApiSender {
-	private APIEvent result;
-	private volatile boolean isTimeout = true;
-	private int timeout = 15;
+    private APIEvent result;
+    private volatile boolean isTimeout = true;
+    private int timeout = 15;
 
-	@Autowired
-	private CloudBus bus;
+    @Autowired
+    private CloudBus bus;
     @Autowired
     private ErrorFacade errf;
 
@@ -35,87 +35,87 @@ public class ApiSender {
         if (!r.isSuccess()) {
             throw new ApiSenderException(r.getError());
         } else {
-            return  r.castReply();
+            return r.castReply();
         }
     }
-    
-	private <T extends APIEvent> T doSend(final APIMessage msg, Class<? extends APIEvent> clazz, boolean exceptionOnError) throws ApiSenderException {
-		APIEvent resultEvent;
+
+    private <T extends APIEvent> T doSend(final APIMessage msg, Class<? extends APIEvent> clazz, boolean exceptionOnError) throws ApiSenderException {
+        APIEvent resultEvent;
         try {
-	        resultEvent = clazz.newInstance();
+            resultEvent = clazz.newInstance();
         } catch (Exception e) {
-        	throw new CloudRuntimeException("Unable to create instance of " + clazz.getCanonicalName(), e);
+            throw new CloudRuntimeException("Unable to create instance of " + clazz.getCanonicalName(), e);
         }
 
-		msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-		final CountDownLatch count = new CountDownLatch(1);
-		bus.subscribeEvent(new CloudBusEventListener() {
-			@Override
-			public boolean handleEvent(Event e) {
-				APIEvent ae = (APIEvent) e;
-				if (ae instanceof InProgressEvent) {
-					return false;
-				}
-				
-				if (msg.getId().equals(ae.getApiId())) {
-					result = ae;
-					isTimeout = false;
-					count.countDown();
-					return true;
-				}
-				
-				return false;
-			}
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        final CountDownLatch count = new CountDownLatch(1);
+        bus.subscribeEvent(new CloudBusEventListener() {
+            @Override
+            public boolean handleEvent(Event e) {
+                APIEvent ae = (APIEvent) e;
+                if (ae instanceof InProgressEvent) {
+                    return false;
+                }
 
-		}, resultEvent);
-		bus.send(msg);
+                if (msg.getId().equals(ae.getApiId())) {
+                    result = ae;
+                    isTimeout = false;
+                    count.countDown();
+                    return true;
+                }
 
-		try {
-			count.await(timeout, TimeUnit.SECONDS);
-			if (isTimeout) {
-				Api api = new Api();
-				APIDebugSignalMsg dmsg = new APIDebugSignalMsg();
-				dmsg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-				dmsg.setSignals(asList(DebugSignal.DumpTaskQueue.toString()));
+                return false;
+            }
+
+        }, resultEvent);
+        bus.send(msg);
+
+        try {
+            count.await(timeout, TimeUnit.SECONDS);
+            if (isTimeout) {
+                Api api = new Api();
+                APIDebugSignalMsg dmsg = new APIDebugSignalMsg();
+                dmsg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+                dmsg.setSignals(asList(DebugSignal.DumpTaskQueue.toString()));
                 dmsg.setSession(api.loginAsAdmin());
                 bus.send(dmsg);
-				TimeUnit.SECONDS.sleep(2);
+                TimeUnit.SECONDS.sleep(2);
 
-				String errStr = String.format("%s[uuid:%s] timeout after %s seconds", msg.getMessageName(), msg.getId(), timeout);
-				throw new ApiSenderException(errf.stringToTimeoutError(errStr));
-			}
-		} catch (InterruptedException e1) {
-			throw new CloudRuntimeException("", e1);
-		}
+                String errStr = String.format("%s[uuid:%s] timeout after %s seconds", msg.getMessageName(), msg.getId(), timeout);
+                throw new ApiSenderException(errf.stringToTimeoutError(errStr));
+            }
+        } catch (InterruptedException e1) {
+            throw new CloudRuntimeException("", e1);
+        }
 
-		if (!result.isSuccess()) {
-		    if (exceptionOnError) {
-		        throw new ApiSenderException(result.getErrorCode());
-		    } else {
-		        return null;
-		    }
-		} else {
-			return (T) result;
-		}
-	}
-	
-	public <T extends APIEvent> T send(APIMessage msg,  Class<? extends APIEvent> clazz) throws ApiSenderException {
-		return doSend(msg, clazz, true);
-	}
-	
-	public <T extends APIEvent> T send(APIMessage msg,  Class<? extends APIEvent> clazz, boolean exceptionOnError) throws ApiSenderException {
-		return doSend(msg, clazz, exceptionOnError);
-	}
-	
-	public <T extends APIReply> T list(APIListMessage msg) throws ApiSenderException {
-		msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-		APIReply reply = (APIReply) bus.call(msg);
-		if (!reply.isSuccess()) {
-			throw new ApiSenderException(reply.getError());
-		} else {
-			return (T) reply;
-		}
-	}
+        if (!result.isSuccess()) {
+            if (exceptionOnError) {
+                throw new ApiSenderException(result.getErrorCode());
+            } else {
+                return null;
+            }
+        } else {
+            return (T) result;
+        }
+    }
+
+    public <T extends APIEvent> T send(APIMessage msg, Class<? extends APIEvent> clazz) throws ApiSenderException {
+        return doSend(msg, clazz, true);
+    }
+
+    public <T extends APIEvent> T send(APIMessage msg, Class<? extends APIEvent> clazz, boolean exceptionOnError) throws ApiSenderException {
+        return doSend(msg, clazz, exceptionOnError);
+    }
+
+    public <T extends APIReply> T list(APIListMessage msg) throws ApiSenderException {
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        APIReply reply = (APIReply) bus.call(msg);
+        if (!reply.isSuccess()) {
+            throw new ApiSenderException(reply.getError());
+        } else {
+            return (T) reply;
+        }
+    }
 
     public int getTimeout() {
         return timeout;

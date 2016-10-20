@@ -20,26 +20,22 @@ import java.util.List;
 
 
 /**
- * @inventory
- * inventory for host. Depending on hypervisor, the inventory may have extra fields
- *
- * @example
-{
-"inventory": {
-"zoneUuid": "2893ce85c43d4a3a8d78f414da39966e",
-"name": "host1-192.168.0.203",
-"uuid": "43673938584447b2a29ab3d53f9d88d3",
-"clusterUuid": "8524072a4274403892bcc5b1972c2576",
-"description": "Test",
-"managementIp": "192.168.0.203",
-"hypervisorType": "KVM",
-"state": "Enabled",
-"status": "Connected",
-"createDate": "Feb 28, 2014 6:49:24 PM",
-"lastOpDate": "Feb 28, 2014 6:49:24 PM"
-}
-}
-
+ * @inventory inventory for host. Depending on hypervisor, the inventory may have extra fields
+ * @example {
+ * "inventory": {
+ * "zoneUuid": "2893ce85c43d4a3a8d78f414da39966e",
+ * "name": "host1-192.168.0.203",
+ * "uuid": "43673938584447b2a29ab3d53f9d88d3",
+ * "clusterUuid": "8524072a4274403892bcc5b1972c2576",
+ * "description": "Test",
+ * "managementIp": "192.168.0.203",
+ * "hypervisorType": "KVM",
+ * "state": "Enabled",
+ * "status": "Connected",
+ * "createDate": "Feb 28, 2014 6:49:24 PM",
+ * "lastOpDate": "Feb 28, 2014 6:49:24 PM"
+ * }
+ * }
  * @since 0.1.0
  */
 @Inventory(mappingVOClass = HostVO.class)
@@ -52,15 +48,15 @@ import java.util.List;
         @ExpandedQuery(expandedField = "vmInstance", inventoryClass = VmInstanceInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "hostUuid")
 })
-public class HostInventory implements Serializable{
+public class HostInventory implements Serializable {
     /**
      * @desc uuid of zone this host belongs to
      */
-	private String zoneUuid;
+    private String zoneUuid;
     /**
      * @desc max length of 255 characters
      */
-	private String name;
+    private String name;
     /**
      * @desc host uuid
      */
@@ -76,7 +72,7 @@ public class HostInventory implements Serializable{
     private String description;
     /**
      * @desc IPv4 address of host's management nic
-     *
+     * <p>
      * .. note:: This field could be DNS name
      */
     private String managementIp;
@@ -86,51 +82,45 @@ public class HostInventory implements Serializable{
     @TypeField
     private String hypervisorType;
     /**
-     * @desc
-     * - Disabled: no vm can be created on this host
+     * @desc - Disabled: no vm can be created on this host
      * - PreMaintenance: host is in middle way of entering state Maintenance
      * - Maintenance: host is ready for maintenance work, for example, upgrading CPU/memory. No vm can be created on this host
-     *
+     * <p>
      * .. note:: PreMaintenance is an ephemeral state after admin switches host state to Maintenance. During entering
-     *           Maintenance, zstack will try to live migrate all running vm to other hosts, vm failed to migrate will be stopped.
-     *           In maintenance mode, host will not receive any commands from zstack, admin can safely shut it off and do whatever upgrade
-     *           work
-     *
-     * @choices
-     * - Enabled
+     * Maintenance, zstack will try to live migrate all running vm to other hosts, vm failed to migrate will be stopped.
+     * In maintenance mode, host will not receive any commands from zstack, admin can safely shut it off and do whatever upgrade
+     * work
+     * @choices - Enabled
      * - Disabled
      * - PreMaintenance
      * - Maintenance
      */
     private String state;
     /**
-     * @desc
-     * - Connecting: zstack management server is trying to establish connection to hypervisor agent
+     * @desc - Connecting: zstack management server is trying to establish connection to hypervisor agent
      * - Connected: connection to hypervisor agent has been established
      * - Disconnected: connection to hypervisor agent is broken, no commands can be sent to hypervisor and no vm can be created
-     *   on this host
-     *
-     * @choices
-     * - Connecting
+     * on this host
+     * @choices - Connecting
      * - Connected
      * - Disconnected
      */
     private String status;
 
     @Queryable(mappingClass = HostCapacityInventory.class,
-            joinColumn = @JoinColumn(name="uuid", referencedColumnName = "totalCpu"))
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "totalCpu"))
     private Long totalCpuCapacity;
 
     @Queryable(mappingClass = HostCapacityInventory.class,
-            joinColumn = @JoinColumn(name="uuid", referencedColumnName = "availableCpu"))
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "availableCpu"))
     private Long availableCpuCapacity;
 
     @Queryable(mappingClass = HostCapacityInventory.class,
-            joinColumn = @JoinColumn(name="uuid", referencedColumnName = "totalMemory"))
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "totalMemory"))
     private Long totalMemoryCapacity;
 
     @Queryable(mappingClass = HostCapacityInventory.class,
-            joinColumn = @JoinColumn(name="uuid", referencedColumnName = "availableMemory"))
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "availableMemory"))
     private Long availableMemoryCapacity;
 
     /**
@@ -162,20 +152,20 @@ public class HostInventory implements Serializable{
         }
     }
 
-	public HostInventory() {
-	}
-	
-	public static HostInventory valueOf(HostVO vo) {
+    public HostInventory() {
+    }
+
+    public static HostInventory valueOf(HostVO vo) {
         return new HostInventory(vo);
-	}
-	
-	public static List<HostInventory> valueOf(Collection<HostVO> vos) {
-	    List<HostInventory> invs = new ArrayList<HostInventory>(vos.size());
-	    for (HostVO vo : vos) {
-	        invs.add(HostInventory.valueOf(vo));
-	    }
-	    return invs;
-	}
+    }
+
+    public static List<HostInventory> valueOf(Collection<HostVO> vos) {
+        List<HostInventory> invs = new ArrayList<HostInventory>(vos.size());
+        for (HostVO vo : vos) {
+            invs.add(HostInventory.valueOf(vo));
+        }
+        return invs;
+    }
 
     public Long getTotalCpuCapacity() {
         return totalCpuCapacity;
@@ -210,52 +200,67 @@ public class HostInventory implements Serializable{
     }
 
     public String getZoneUuid() {
-    	return zoneUuid;
+        return zoneUuid;
     }
-	public void setZoneUuid(String zoneUuid) {
-    	this.zoneUuid = zoneUuid;
+
+    public void setZoneUuid(String zoneUuid) {
+        this.zoneUuid = zoneUuid;
     }
-	public String getName() {
-    	return name;
+
+    public String getName() {
+        return name;
     }
-	public void setName(String name) {
-    	this.name = name;
+
+    public void setName(String name) {
+        this.name = name;
     }
-	public String getUuid() {
-    	return uuid;
+
+    public String getUuid() {
+        return uuid;
     }
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
-	public String getDescription() {
-    	return description;
+
+    public String getDescription() {
+        return description;
     }
-	public void setDescription(String description) {
-    	this.description = description;
+
+    public void setDescription(String description) {
+        this.description = description;
     }
-	public String getManagementIp() {
-    	return managementIp;
+
+    public String getManagementIp() {
+        return managementIp;
     }
-	public void setManagementIp(String managementIp) {
-    	this.managementIp = managementIp;
+
+    public void setManagementIp(String managementIp) {
+        this.managementIp = managementIp;
     }
-	public String getHypervisorType() {
-    	return hypervisorType;
+
+    public String getHypervisorType() {
+        return hypervisorType;
     }
-	public void setHypervisorType(String hypervisorType) {
-    	this.hypervisorType = hypervisorType;
+
+    public void setHypervisorType(String hypervisorType) {
+        this.hypervisorType = hypervisorType;
     }
-	public String getState() {
-    	return state;
+
+    public String getState() {
+        return state;
     }
-	public void setState(String state) {
-    	this.state = state;
+
+    public void setState(String state) {
+        this.state = state;
     }
-	public String getStatus() {
-    	return status;
+
+    public String getStatus() {
+        return status;
     }
-	public void setStatus(String status) {
-    	this.status = status;
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Timestamp getCreateDate() {
@@ -275,9 +280,10 @@ public class HostInventory implements Serializable{
     }
 
     public String getClusterUuid() {
-    	return clusterUuid;
+        return clusterUuid;
     }
-	public void setClusterUuid(String clusterUuid) {
-    	this.clusterUuid = clusterUuid;
+
+    public void setClusterUuid(String clusterUuid) {
+        this.clusterUuid = clusterUuid;
     }
 }
