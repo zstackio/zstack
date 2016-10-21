@@ -2361,7 +2361,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), new Function<String, CephPrimaryStorageMonVO>() {
             @Override
             public String call(CephPrimaryStorageMonVO arg) {
-                return String.format("%s:%s", arg.getHostname(), arg.getMonPort());
+                return String.format("%s:%s", arg.getMonAddr(), arg.getMonPort());
             }
         });
 
