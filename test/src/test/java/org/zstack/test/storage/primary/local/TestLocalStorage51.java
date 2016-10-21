@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * 1. two local storage running two VMs with the same image
  * 2. delete the image and two VMs
  * 3. clean up image cache on the local storage 1
- *
+ * <p>
  * confirm the image cache of the local storage 1 get cleaned up
  * confirm the image cache of the local storage 2 doesn't get cleaned up
  */
@@ -76,9 +76,9 @@ public class TestLocalStorage51 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
         ImageInventory image1 = deployer.images.get("TestImage");
         api.deleteImage(image1.getUuid());

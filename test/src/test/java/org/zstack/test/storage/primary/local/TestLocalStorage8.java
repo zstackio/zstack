@@ -68,6 +68,7 @@ public class TestLocalStorage8 {
     public void test() throws ApiSenderException, InterruptedException {
         ClusterInventory cluster = deployer.clusters.get("Cluster1");
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
 
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
         msg.setName("host1");

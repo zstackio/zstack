@@ -627,6 +627,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         q.add(HostVO_.clusterUuid, Op.IN, clusterUuids);
         final List<String> hostInClusterUuids = q.listValue();
 
+        if (hostInClusterUuids.isEmpty()) {
+            completion.success(ret);
+            return;
+        }
+
         SimpleQuery<LocalStorageHostRefVO> sq = dbf.createQuery(LocalStorageHostRefVO.class);
         q.select(LocalStorageHostRefVO_.hostUuid);
         q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());

@@ -8,7 +8,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
@@ -92,18 +91,6 @@ public class TestLocalStorage1 {
 
         Assert.assertNotNull(rref);
         Assert.assertEquals(vm.getRootVolume().getSize(), rref.getSize());
-
-        {
-            PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
-            ClusterInventory cluster = deployer.clusters.get("Cluster1");
-            boolean s = false;
-            try {
-                api.attachPrimaryStorage(cluster.getUuid(), local2.getUuid());
-            } catch (ApiSenderException e) {
-                s = true;
-            }
-            Assert.assertFalse(s);
-        }
 
         Map<String, Object> cap = api.getVmCapabilities(vm.getUuid(), null);
         Assert.assertFalse((Boolean) cap.get(Capability.LiveMigration.toString()));

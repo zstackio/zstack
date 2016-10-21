@@ -73,6 +73,9 @@ public class TestLocalStorage6 {
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         ClusterInventory cluster = deployer.clusters.get("Cluster1");
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
+
 
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
         msg.setName("host1");
@@ -92,8 +95,6 @@ public class TestLocalStorage6 {
         HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1);
 
         TimeUnit.SECONDS.sleep(5);
-
-        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
 
         LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
         Assert.assertEquals(href.getTotalCapacity(), totalSize);

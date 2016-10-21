@@ -97,7 +97,9 @@ public class TestLocalStorage7 {
         api.deleteHost(host1.getUuid());
 
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
         PrimaryStorageVO lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
+        PrimaryStorageVO lvo2 = dbf.findByUuid(local2.getUuid(), PrimaryStorageVO.class);
         Assert.assertEquals(totalSize, lvo.getCapacity().getTotalCapacity());
         Assert.assertEquals(totalSize, lvo.getCapacity().getAvailableCapacity());
         Assert.assertEquals(totalSize, lvo.getCapacity().getTotalPhysicalCapacity());

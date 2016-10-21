@@ -112,15 +112,16 @@ public class TestLocalStorage27 {
 
         Assert.assertFalse(config.downloadBitsCmds.isEmpty());
         long count = dbf.count(ImageCacheVO.class);
-        Assert.assertEquals(1, count);
+        // two local storage ps
+        Assert.assertEquals(2, count);
 
         long used = usedVolumeSize();
-        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
-        PrimaryStorageCapacityVO pscap = dbf.findByUuid(ps.getUuid(), PrimaryStorageCapacityVO.class);
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
+        PrimaryStorageCapacityVO pscap = dbf.findByUuid(local.getUuid(), PrimaryStorageCapacityVO.class);
         Assert.assertEquals(pscap.getTotalCapacity() - used, pscap.getAvailableCapacity());
 
         HostInventory host = deployer.hosts.get("host1");
-        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
 
         LocalStorageHostRefVO ref = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), local.getUuid());
         Assert.assertEquals(ref.getTotalCapacity() - used, ref.getAvailableCapacity());
