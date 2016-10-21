@@ -131,6 +131,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             mvo.setUuid(Platform.getUuid());
             mvo.setStatus(MonStatus.Connecting);
             mvo.setHostname(uri.getHostname());
+            mvo.setMonAddr(mvo.getHostname());
             mvo.setMonPort(uri.getMonPort());
             mvo.setSshPort(uri.getSshPort());
             mvo.setSshUsername(uri.getSshUsername());

@@ -908,6 +908,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             monvo.setUuid(Platform.getUuid());
                             monvo.setStatus(MonStatus.Connecting);
                             monvo.setHostname(uri.getHostname());
+                            monvo.setMonAddr(monvo.getHostname());
                             monvo.setMonPort(uri.getMonPort());
                             monvo.setSshPort(uri.getSshPort());
                             monvo.setSshUsername(uri.getSshUsername());
