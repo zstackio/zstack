@@ -6,15 +6,18 @@
                 <cluster name="Cluster1" description="Test" hypervisorType="KVM">
                     <hosts>
                         <kvmHost name="host1" description="Test" managementIp="localhost"
-                            memoryCapacity="8G" cpuNum="4" cpuSpeed="2600" />
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600"/>
                     </hosts>
                     <primaryStorageRef>local</primaryStorageRef>
+                    <primaryStorageRef>local2</primaryStorageRef>
                 </cluster>
             </clusters>
 
             <primaryStorages>
-                <localPrimaryStorage name="local" description="Test"
-                    url="/test" />
+                <localPrimaryStorage name="local" description="Test" totalCapacity="1T" availableCapacity="1T"
+                                     url="/test"/>
+                <localPrimaryStorage name="local2" description="Test" totalCapacity="2T" availableCapacity="2T"
+                                     url="/test2"/>
             </primaryStorages>
         </zone>
     </zones>
