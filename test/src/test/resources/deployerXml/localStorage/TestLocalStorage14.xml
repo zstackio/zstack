@@ -42,7 +42,6 @@
                                  memoryCapacity="8G" cpuNum="4" cpuSpeed="2600"/>
                     </hosts>
                     <primaryStorageRef>local</primaryStorageRef>
-                    <primaryStorageRef>local2</primaryStorageRef>
                     <l2NetworkRef>TestL2Network</l2NetworkRef>
                 </cluster>
             </clusters>
