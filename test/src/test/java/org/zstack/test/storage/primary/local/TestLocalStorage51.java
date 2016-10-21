@@ -101,9 +101,9 @@ public class TestLocalStorage51 {
         path.fullPath = c.getInstallUrl();
         path.disassemble();
 
-        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         config.deleteBitsCmds.clear();
-        api.cleanupImageCache(ps.getUuid());
+        api.cleanupImageCache(local.getUuid());
         TimeUnit.SECONDS.sleep(3);
 
         Assert.assertEquals(1, config.deleteBitsCmds.size());

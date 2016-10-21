@@ -97,13 +97,15 @@ public class TestLocalStorage6 {
         TimeUnit.SECONDS.sleep(5);
 
         LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
+        PrimaryStorageVO lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
         if (href == null) {
             href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local2.getUuid());
+            lvo = dbf.findByUuid(local2.getUuid(), PrimaryStorageVO.class);
         }
         Assert.assertEquals(href.getTotalCapacity(), totalSize);
         Assert.assertEquals(href.getTotalPhysicalCapacity(), totalSize);
 
-        PrimaryStorageVO lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
+
         Assert.assertEquals(totalSize, lvo.getCapacity().getTotalCapacity());
         Assert.assertEquals(totalSize, lvo.getCapacity().getTotalPhysicalCapacity());
     }

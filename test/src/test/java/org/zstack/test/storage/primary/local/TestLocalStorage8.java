@@ -86,9 +86,15 @@ public class TestLocalStorage8 {
         evt = sender.send(msg, APIAddHostEvent.class);
         host1 = evt.getInventory();
 
-        Assert.assertTrue(new LocalStorageHostRefVOFinder().isExist(host1.getUuid(), local.getUuid()));
+        PrimaryStorageVO lvo;
+        if (new LocalStorageHostRefVOFinder().isExist(host1.getUuid(), local.getUuid())) {
+            lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
+        } else {
+            Assert.assertTrue(new LocalStorageHostRefVOFinder().isExist(host1.getUuid(), local2.getUuid()));
+            lvo = dbf.findByUuid(local2.getUuid(), PrimaryStorageVO.class);
+        }
 
-        PrimaryStorageVO lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
+
         Assert.assertEquals(totalSize, lvo.getCapacity().getTotalCapacity());
         Assert.assertEquals(totalSize, lvo.getCapacity().getAvailableCapacity());
         Assert.assertEquals(totalSize, lvo.getCapacity().getTotalPhysicalCapacity());
