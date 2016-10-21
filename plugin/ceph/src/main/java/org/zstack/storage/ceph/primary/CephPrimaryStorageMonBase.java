@@ -9,6 +9,7 @@ import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -18,6 +19,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.storage.ceph.CephGlobalProperty;
 import org.zstack.storage.ceph.CephMonAO;
@@ -39,6 +41,8 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
     private DatabaseFacade dbf;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private ErrorFacade errf;
 
     private String syncId;
 
@@ -77,6 +81,15 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
     }
 
     public void changeStatus(MonStatus status) {
+        String uuid = self.getUuid();
+        self = dbf.reload(self);
+        if (self == null) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("cannot update status of the ceph primary storage mon[uuid:%s], it has been deleted." +
+                            "This error can be ignored", uuid)
+            ));
+        }
+
         if (self.getStatus() == status) {
             return;
         }
