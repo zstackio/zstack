@@ -181,7 +181,10 @@ public class DiskCapacityTracer implements Component {
                 VolumeSnapshotEO s = (VolumeSnapshotEO) o;
                 VolumeSnapshotEO pre = (VolumeSnapshotEO) s.getShadow();
                 if (pre.getDeleted() == null && s.getDeleted() != null) {
-                    String info = String.format("[VolumeSnapshot:Delete][name=%s, uuid=%s]: -%s", s.getName(), s.getUuid(), s.getSize());
+                    String info = String.format("[VolumeSnapshot:Delete][name=%s, uuid=%s]: -%s",
+                            s.getName(),
+                            s.getUuid(),
+                            s.getSize());
                     logger.debug(info);
                     loggerd.debug(info);
                     printCallTrace();
@@ -195,8 +198,12 @@ public class DiskCapacityTracer implements Component {
                 PrimaryStorageCapacityVO c = (PrimaryStorageCapacityVO) o;
                 PrimaryStorageCapacityVO pre = c.getShadow();
                 if (c.getAvailableCapacity() != pre.getAvailableCapacity()) {
-                    String info = String.format("[PrimaryStorageCapacity:Change][uuid=%s]: %s --> %s (%s)", pre.getUuid(), pre.getAvailableCapacity(),
-                            c.getAvailableCapacity(), pre.getAvailableCapacity() - c.getAvailableCapacity());
+                    String info = String.format(
+                            "[PrimaryStorageCapacity:Change][uuid=%s]: %s --> %s (%s)",
+                            pre.getUuid(),
+                            pre.getAvailableCapacity(),
+                            c.getAvailableCapacity(),
+                            c.getAvailableCapacity() - pre.getAvailableCapacity());
                     logger.debug(info);
                     loggerd.debug(info);
                     printCallTrace();

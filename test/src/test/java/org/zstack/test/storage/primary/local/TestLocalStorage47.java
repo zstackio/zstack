@@ -91,12 +91,12 @@ public class TestLocalStorage47 {
         }
         Assert.assertTrue(s);
 
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(3);
 
         PrimaryStorageVO lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
-        Assert.assertEquals(2 * psvo.getCapacity().getTotalCapacity(), lvo.getCapacity().getTotalCapacity());
-        Assert.assertEquals(2 * psvo.getCapacity().getAvailableCapacity(), lvo.getCapacity().getAvailableCapacity());
-        Assert.assertEquals(2 * psvo.getCapacity().getTotalPhysicalCapacity(), lvo.getCapacity().getTotalPhysicalCapacity());
-        Assert.assertEquals(2 * psvo.getCapacity().getAvailablePhysicalCapacity(), lvo.getCapacity().getAvailablePhysicalCapacity());
+        Assert.assertEquals(psvo.getCapacity().getTotalCapacity(), lvo.getCapacity().getTotalCapacity());
+        Assert.assertEquals(psvo.getCapacity().getAvailableCapacity(), lvo.getCapacity().getAvailableCapacity());
+        Assert.assertEquals(psvo.getCapacity().getTotalPhysicalCapacity(), lvo.getCapacity().getTotalPhysicalCapacity());
+        Assert.assertEquals(psvo.getCapacity().getAvailablePhysicalCapacity(), lvo.getCapacity().getAvailablePhysicalCapacity());
     }
 }
