@@ -6,14 +6,13 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.storage.primary.local.*;
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO;
+import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -27,7 +26,7 @@ import org.zstack.utils.data.SizeUnit;
  * 2. create a vm
  * 3. create a data volume
  * 4. attach the data volume to the vm
- *
+ * <p>
  * confirm the data volume is allocated on the same host with vm's root volume
  */
 public class TestLocalStorage9 {
@@ -65,9 +64,12 @@ public class TestLocalStorage9 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
+
         DiskOfferingInventory dof = deployer.diskOfferings.get("TestDiskOffering1");
         VolumeInventory data = api.createDataVolume("data", dof.getUuid());
         VmInstanceInventory vm = deployer.vms.get("TestVm");
@@ -80,7 +82,6 @@ public class TestLocalStorage9 {
         LocalStorageResourceRefVO dataRef = dbf.findByUuid(data.getUuid(), LocalStorageResourceRefVO.class);
         Assert.assertNotNull(dataRef);
         Assert.assertEquals(rootRef.getHostUuid(), dataRef.getHostUuid());
-        Assert.assertEquals(rootRef.getPrimaryStorageUuid(), dataRef.getPrimaryStorageUuid());
         Assert.assertEquals(data.getSize(), dataRef.getSize());
     }
 }

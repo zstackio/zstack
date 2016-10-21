@@ -97,6 +97,9 @@ public class TestLocalStorage6 {
         TimeUnit.SECONDS.sleep(5);
 
         LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local.getUuid());
+        if (href == null) {
+            href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), local2.getUuid());
+        }
         Assert.assertEquals(href.getTotalCapacity(), totalSize);
         Assert.assertEquals(href.getTotalPhysicalCapacity(), totalSize);
 

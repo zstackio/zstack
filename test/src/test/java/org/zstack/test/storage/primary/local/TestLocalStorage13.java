@@ -75,14 +75,15 @@ public class TestLocalStorage13 {
         HostInventory host = deployer.hosts.get("host1");
         ClusterInventory cluster = deployer.clusters.get("Cluster1");
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
-        api.detachPrimaryStorage(local.getUuid(), cluster.getUuid());
+        api.detachPrimaryStorage(vm.getRootVolume().getPrimaryStorageUuid(), cluster.getUuid());
 
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Stopped, vmvo.getState());
 
-        api.attachPrimaryStorage(cluster.getUuid(), local.getUuid());
+        api.attachPrimaryStorage(cluster.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
         api.startVmInstance(vm.getUuid());
     }
 }

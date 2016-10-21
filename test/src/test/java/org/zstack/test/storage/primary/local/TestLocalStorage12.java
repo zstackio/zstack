@@ -28,7 +28,7 @@ import java.util.List;
  * 3. attach a data volume to the vm1
  * 4. detach the data volume from the vm1
  * 5. attach the data volume to the vm2
- *
+ * <p>
  * confirm the attaching success
  */
 public class TestLocalStorage12 {
@@ -67,10 +67,11 @@ public class TestLocalStorage12 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
         PrimaryStorageInventory nfs = deployer.primaryStorages.get("nfs");
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm1");
@@ -81,6 +82,7 @@ public class TestLocalStorage12 {
         data = api.detachVolumeFromVm(data.getUuid());
 
         List<VolumeInventory> vols = api.getVmAttachableVolume(vm2.getUuid());
+
         Assert.assertEquals(1, vols.size());
 
         api.attachVolumeToVm(vm2.getUuid(), data.getUuid());

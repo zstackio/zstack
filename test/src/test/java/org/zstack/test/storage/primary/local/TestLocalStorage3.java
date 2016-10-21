@@ -21,6 +21,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -73,7 +74,12 @@ public class TestLocalStorage3 {
         HostInventory host = deployer.hosts.get("host1");
         final VmInstanceInventory vm = deployer.vms.get("TestVm");
 
-        Assert.assertEquals(local.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
+        // vm root volume exists in one of these local storage ps randomly
+        Assert.assertTrue(
+                Arrays.asList(local.getUuid(), local2.getUuid())
+                        .contains(vm.getRootVolume().getPrimaryStorageUuid()));
+
+        // new data volume exists in ps on which there is not the vm root volume
         VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(),
                 new Function<VolumeInventory, VolumeInventory>() {
                     @Override
@@ -82,10 +88,12 @@ public class TestLocalStorage3 {
                     }
                 });
 
-        Assert.assertTrue(
-                Arrays.asList(
-                        nfs.getUuid(),
-                        local2.getUuid()
-                ).contains(data.getPrimaryStorageUuid()));
+
+        ArrayList<String> otherPS = new ArrayList<>();
+        otherPS.addAll(Arrays.asList(nfs.getUuid(),
+                local.getUuid(),
+                local2.getUuid()));
+        otherPS.remove(vm.getRootVolume().getPrimaryStorageUuid());
+        Assert.assertTrue(otherPS.contains(data.getPrimaryStorageUuid()));
     }
 }

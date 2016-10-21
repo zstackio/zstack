@@ -26,9 +26,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. set volume root image uuid to NULL
  * 2. use VolumeUpgradeExtension to get the missing uuid back
- *
+ * <p>
  * confirm it works
- *
  */
 public class TestLocalStorage48 {
     Deployer deployer;
@@ -67,9 +66,9 @@ public class TestLocalStorage48 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String imageUuid = vm.getRootVolume().getRootImageUuid();
         config.getVolumeBaseImagePaths.put(vm.getRootVolumeUuid(), String.format("/%s.qcow2", imageUuid));
@@ -80,9 +79,14 @@ public class TestLocalStorage48 {
         VolumeGlobalProperty.ROOT_VOLUME_FIND_MISSING_IMAGE_UUID = true;
         volumeUpgradeExtension.start();
 
-        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
-        api.reconnectPrimaryStorage(ps.getUuid());
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
+
+        api.reconnectPrimaryStorage(local.getUuid());
         TimeUnit.SECONDS.sleep(3);
+        api.reconnectPrimaryStorage(local2.getUuid());
+        TimeUnit.SECONDS.sleep(3);
+        
         vol = dbf.findByUuid(vm.getRootVolumeUuid(), VolumeVO.class);
         Assert.assertEquals(imageUuid, vol.getRootImageUuid());
     }

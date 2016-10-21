@@ -6,19 +6,13 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.host.APIAddHostEvent;
-import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.kvm.APIAddKVMHostMsg;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.simulator.kvm.KVMSimulatorController;
-import org.zstack.storage.primary.local.LocalStorageHostRefVO;
-import org.zstack.storage.primary.local.LocalStorageHostRefVO_;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
@@ -30,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. use local storage
  * 2. make adding KVM host fail,  add another host
- *
+ * <p>
  * confirm the local storage capacity not changed
  */
 public class TestLocalStorage47 {
@@ -71,12 +65,13 @@ public class TestLocalStorage47 {
         api = deployer.getApi();
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-        PrimaryStorageInventory ps = deployer.primaryStorages.get("local");
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
         ClusterInventory cluster = deployer.clusters.get("Cluster1");
-        PrimaryStorageVO psvo = dbf.findByUuid(ps.getUuid(), PrimaryStorageVO.class);
+        PrimaryStorageVO psvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
 
         kconfig.checkPhysicalInterfaceSuccess = false;
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
@@ -98,10 +93,10 @@ public class TestLocalStorage47 {
 
         TimeUnit.SECONDS.sleep(2);
 
-        PrimaryStorageVO lvo = dbf.findByUuid(ps.getUuid(), PrimaryStorageVO.class);
-        Assert.assertEquals(psvo.getCapacity().getTotalCapacity(), lvo.getCapacity().getTotalCapacity());
-        Assert.assertEquals(psvo.getCapacity().getAvailableCapacity(), lvo.getCapacity().getAvailableCapacity());
-        Assert.assertEquals(psvo.getCapacity().getTotalPhysicalCapacity(), lvo.getCapacity().getTotalPhysicalCapacity());
-        Assert.assertEquals(psvo.getCapacity().getAvailablePhysicalCapacity(), lvo.getCapacity().getAvailablePhysicalCapacity());
+        PrimaryStorageVO lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
+        Assert.assertEquals(2 * psvo.getCapacity().getTotalCapacity(), lvo.getCapacity().getTotalCapacity());
+        Assert.assertEquals(2 * psvo.getCapacity().getAvailableCapacity(), lvo.getCapacity().getAvailableCapacity());
+        Assert.assertEquals(2 * psvo.getCapacity().getTotalPhysicalCapacity(), lvo.getCapacity().getTotalPhysicalCapacity());
+        Assert.assertEquals(2 * psvo.getCapacity().getAvailablePhysicalCapacity(), lvo.getCapacity().getAvailablePhysicalCapacity());
     }
 }

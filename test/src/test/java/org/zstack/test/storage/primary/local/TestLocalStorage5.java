@@ -85,10 +85,14 @@ public class TestLocalStorage5 {
         Assert.assertFalse(config.initCmdList.isEmpty());
 
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
         LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
+        if (href == null) {
+            href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local2.getUuid());
+        }
         Assert.assertEquals(href.getTotalCapacity(), totalSize);
         Assert.assertEquals(href.getTotalPhysicalCapacity(), totalSize);
-        
+
         PrimaryStorageVO lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
         Assert.assertEquals(totalSize * 2, lvo.getCapacity().getTotalCapacity());
         Assert.assertEquals(totalSize * 2, lvo.getCapacity().getTotalPhysicalCapacity());

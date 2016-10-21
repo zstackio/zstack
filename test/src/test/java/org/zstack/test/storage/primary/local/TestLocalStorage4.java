@@ -73,20 +73,24 @@ public class TestLocalStorage4 {
         PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
         final VmInstanceInventory vm = deployer.vms.get("TestVm");
 
-        HostInventory targetHost = CollectionUtils.find(deployer.hosts.values(), new Function<HostInventory, HostInventory>() {
-            @Override
-            public HostInventory call(HostInventory arg) {
-                return arg.getUuid().equals(vm.getHostUuid()) ? arg : null;
-            }
-        });
+        HostInventory targetHost = CollectionUtils.find(deployer.hosts.values(),
+                new Function<HostInventory, HostInventory>() {
+                    @Override
+                    public HostInventory call(HostInventory arg) {
+                        return arg.getUuid().equals(vm.getHostUuid()) ? arg : null;
+                    }
+                });
 
-        Assert.assertEquals(local.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
-        VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
-            @Override
-            public VolumeInventory call(VolumeInventory arg) {
-                return arg.getUuid().equals(vm.getRootVolumeUuid()) ? null : arg;
-            }
-        });
+        Assert.assertTrue(Arrays.asList(local.getUuid(), local2.getUuid())
+                .contains(vm.getRootVolume().getPrimaryStorageUuid()));
+
+        VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(),
+                new Function<VolumeInventory, VolumeInventory>() {
+                    @Override
+                    public VolumeInventory call(VolumeInventory arg) {
+                        return arg.getUuid().equals(vm.getRootVolumeUuid()) ? null : arg;
+                    }
+                });
 
         Assert.assertTrue(Arrays.asList(local.getUuid(), local2.getUuid()).contains(data.getPrimaryStorageUuid()));
 

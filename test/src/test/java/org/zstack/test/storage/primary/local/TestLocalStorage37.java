@@ -83,14 +83,16 @@ public class TestLocalStorage37 {
     public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
         api.stopVmInstance(vm.getUuid());
 
-        VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(), new Function<VolumeInventory, VolumeInventory>() {
-            @Override
-            public VolumeInventory call(VolumeInventory arg) {
-                return VolumeType.Data.toString().equals(arg.getType()) ? arg : null;
-            }
-        });
+        VolumeInventory data = CollectionUtils.find(vm.getAllVolumes(),
+                new Function<VolumeInventory, VolumeInventory>() {
+                    @Override
+                    public VolumeInventory call(VolumeInventory arg) {
+                        return VolumeType.Data.toString().equals(arg.getType()) ? arg : null;
+                    }
+                });
 
         api.detachVolumeFromVm(data.getUuid());
 
