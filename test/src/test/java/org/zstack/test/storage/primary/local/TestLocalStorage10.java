@@ -20,6 +20,7 @@ import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -75,7 +76,10 @@ public class TestLocalStorage10 {
         VolumeInventory data = api.createDataVolume("data", dof.getUuid());
 
         data = api.attachVolumeToVm(vm.getUuid(), data.getUuid());
-        Assert.assertTrue(
-                Arrays.asList(local2.getUuid(), nfs.getUuid()).contains(data.getPrimaryStorageUuid()));
+
+        ArrayList<String> otherPSUuids = new ArrayList<>();
+        otherPSUuids.addAll(Arrays.asList(local.getUuid(), local2.getUuid(), nfs.getUuid()));
+        otherPSUuids.remove(vm.getRootVolume().getPrimaryStorageUuid());
+        Assert.assertTrue(otherPSUuids.contains(data.getPrimaryStorageUuid()));
     }
 }

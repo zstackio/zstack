@@ -76,15 +76,15 @@ public class TestLocalStorage12 {
         VmInstanceInventory vm1 = deployer.vms.get("TestVm");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm1");
         DiskOfferingInventory dof = deployer.diskOfferings.get("TestDiskOffering1");
-        VolumeInventory data = api.createDataVolume("data", dof.getUuid());
+        VolumeInventory dataVolume = api.createDataVolume("data", dof.getUuid());
 
-        data = api.attachVolumeToVm(vm1.getUuid(), data.getUuid());
-        data = api.detachVolumeFromVm(data.getUuid());
+        dataVolume = api.attachVolumeToVm(vm1.getUuid(), dataVolume.getUuid());
+        dataVolume = api.detachVolumeFromVm(dataVolume.getUuid());
 
         List<VolumeInventory> vols = api.getVmAttachableVolume(vm2.getUuid());
 
         Assert.assertEquals(1, vols.size());
 
-        api.attachVolumeToVm(vm2.getUuid(), data.getUuid());
+        api.attachVolumeToVm(vm2.getUuid(), dataVolume.getUuid());
     }
 }
