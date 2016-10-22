@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter.vip;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -24,6 +25,7 @@ public class VirtualRouterSyncVipFlow implements Flow {
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
+    @Qualifier("VirtualRouterVipBackend")
     protected VirtualRouterVipBackend vipExt;
 
     @Override

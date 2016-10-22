@@ -64,3 +64,5 @@ ALTER TABLE VCenterPrimaryStorageVO ADD CONSTRAINT fkVCenterPrimaryStorageVOVCen
 
 # Foreign keys for table VCenterVO
 ALTER TABLE VCenterVO ADD CONSTRAINT fkVCenterVOZoneEO FOREIGN KEY (zoneUuid) REFERENCES ZoneEO (uuid) ON DELETE CASCADE;
+
+ALTER TABLE ApplianceVmVO ADD agentPort int unsigned DEFAULT 7759;

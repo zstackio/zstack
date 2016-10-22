@@ -2,7 +2,6 @@ package org.zstack.network.service.virtualrouter;
 
 import org.zstack.appliancevm.APIQueryApplianceVmMsg;
 import org.zstack.header.identity.Action;
-import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 
 /**

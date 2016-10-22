@@ -54,8 +54,8 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         VmNicInventory mgmtNic;
+        final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
         if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate) {
-            final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
             mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
                 @Override
                 public VmNicInventory call(VmNicInventory arg) {
@@ -69,9 +69,10 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
         }
 
         final int connectTimeout = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
-        final String username = "root";
         final String privKey = asf.getPrivateKey();
-        final int sshPort = 22;
+        final String username = aspec.getSshUsername();
+        final int sshPort = aspec.getSshPort();
+
         final boolean connectVerbose = ApplianceVmGlobalProperty.CONNECT_VERBOSE;
 
         final String mgmtIp = mgmtNic.getIp();

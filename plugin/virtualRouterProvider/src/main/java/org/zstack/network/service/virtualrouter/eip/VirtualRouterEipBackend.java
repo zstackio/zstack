@@ -37,11 +37,9 @@ import java.util.Map;
 
 /**
  */
-public class VirtualRouterEipBackend implements EipBackend {
+public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implements EipBackend {
     private static final CLogger logger = Utils.getLogger(VirtualRouterEipBackend.class);
 
-    @Autowired
-    protected VirtualRouterManager vrMgr;
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -176,7 +174,9 @@ public class VirtualRouterEipBackend implements EipBackend {
     public void applyEip(final EipStruct struct, final Completion completion) {
         L3NetworkVO l3vo = dbf.findByUuid(struct.getNic().getL3NetworkUuid(), L3NetworkVO.class);
         final L3NetworkInventory l3inv = L3NetworkInventory.valueOf(l3vo);
-        vrMgr.acquireVirtualRouterVm(l3inv, new VirtualRouterOfferingValidator() {
+
+        VirtualRouterStruct s = new VirtualRouterStruct();
+        s.setOfferingValidator(new VirtualRouterOfferingValidator() {
             @Override
             public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                 if (!offering.getPublicNetworkUuid().equals(struct.getVip().getL3NetworkUuid())) {
@@ -186,7 +186,10 @@ public class VirtualRouterEipBackend implements EipBackend {
                     ));
                 }
             }
-        }, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
+        });
+        s.setL3Network(l3inv);
+
+        acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
             public void success(final VirtualRouterVmInventory vr) {
                 applyEip(vr, struct, new Completion() {

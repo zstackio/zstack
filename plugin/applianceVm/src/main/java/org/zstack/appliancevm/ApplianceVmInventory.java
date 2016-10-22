@@ -1,17 +1,12 @@
 package org.zstack.appliancevm;
 
 import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.query.Queryable;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.search.TypeField;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
 
-import javax.persistence.JoinColumn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -25,6 +20,7 @@ public class ApplianceVmInventory extends VmInstanceInventory {
     private String managementNetworkUuid;
     private String defaultRouteL3NetworkUuid;
     private String status;
+    private Integer agentPort;
 
     protected ApplianceVmInventory(ApplianceVmVO vo) {
         super(vo);
@@ -32,9 +28,18 @@ public class ApplianceVmInventory extends VmInstanceInventory {
         this.setManagementNetworkUuid(vo.getManagementNetworkUuid());
         this.setDefaultRouteL3NetworkUuid(vo.getDefaultRouteL3NetworkUuid());
         this.setStatus(vo.getStatus().toString());
+        this.setAgentPort(vo.getAgentPort());
     }
 
     public ApplianceVmInventory() {
+    }
+
+    public Integer getAgentPort() {
+        return agentPort;
+    }
+
+    public void setAgentPort(Integer agentPort) {
+        this.agentPort = agentPort;
     }
 
     public String getManagementNetworkUuid() {

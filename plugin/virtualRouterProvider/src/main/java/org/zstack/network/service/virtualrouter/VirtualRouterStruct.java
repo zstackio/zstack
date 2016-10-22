@@ -14,6 +14,24 @@ public class VirtualRouterStruct {
     private List<String> inherentSystemTags;
     private List<String> nonInherentSystemTags;
     private boolean notGatewayForGuestL3Network;
+    private String providerType = VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
+    private String applianceVmType = VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE;
+
+    public String getApplianceVmType() {
+        return applianceVmType;
+    }
+
+    public void setApplianceVmType(String applianceVmType) {
+        this.applianceVmType = applianceVmType;
+    }
+
+    public String getProviderType() {
+        return providerType;
+    }
+
+    public void setProviderType(String providerType) {
+        this.providerType = providerType;
+    }
 
     public boolean isNotGatewayForGuestL3Network() {
         return notGatewayForGuestL3Network;

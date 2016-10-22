@@ -1,8 +1,6 @@
 package org.zstack.appliancevm;
 
 import org.zstack.header.network.l3.L3NetworkEO;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.search.TypeField;
 import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vo.EO;
@@ -33,6 +31,8 @@ public class ApplianceVmVO extends VmInstanceVO {
     @Column
     @Enumerated(EnumType.STRING)
     private ApplianceVmStatus status = ApplianceVmStatus.Connecting;
+    @Column
+    private int agentPort;
 
     public ApplianceVmVO(ApplianceVmVO other) {
         super(other);
@@ -40,9 +40,18 @@ public class ApplianceVmVO extends VmInstanceVO {
         this.managementNetworkUuid = other.managementNetworkUuid;
         this.defaultRouteL3NetworkUuid = other.defaultRouteL3NetworkUuid;
         this.status = other.status;
+        this.agentPort = other.agentPort;
     }
 
     public ApplianceVmVO() {
+    }
+
+    public int getAgentPort() {
+        return agentPort;
+    }
+
+    public void setAgentPort(int agentPort) {
+        this.agentPort = agentPort;
     }
 
     public String getDefaultRouteL3NetworkUuid() {

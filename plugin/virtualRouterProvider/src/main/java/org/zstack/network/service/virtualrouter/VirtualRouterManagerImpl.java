@@ -19,17 +19,17 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -54,7 +54,6 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
-import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.eip.EipConstant;
@@ -71,7 +70,10 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -218,7 +220,16 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             }
 
             void create() {
-                List<String> neededService = l3Network.getNetworkServiceTypesFromProvider(getVirtualRouterProvider().getUuid());
+                List<String> neededService = l3Network.getNetworkServiceTypesFromProvider(new Callable<String>() {
+                    @Override
+                    public String call() {
+                        SimpleQuery<NetworkServiceProviderVO> q = dbf.createQuery(NetworkServiceProviderVO.class);
+                        q.select(NetworkServiceProviderVO_.uuid);
+                        q.add(NetworkServiceProviderVO_.type, Op.EQ, msg.getProviderType());
+                        return q.findValue();
+                    }
+                }.call());
+
                 if (neededService.contains(NetworkServiceType.SNAT.toString()) && offering.getPublicNetworkUuid() == null) {
                     String err = String.format("L3Network[uuid:%s, name:%s] requires SNAT service, but default virtual router offering[uuid:%s, name:%s] doesn't have a public network", l3Network.getUuid(), l3Network.getName(), offering.getUuid(), offering.getName());
                     logger.warn(err);
@@ -231,11 +242,14 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 final ApplianceVmSpec aspec = new ApplianceVmSpec();
                 aspec.setSyncCreate(false);
                 aspec.setTemplate(ImageInventory.valueOf(imgvo));
-                aspec.setApplianceVmType(VirtualRouterApplianceVmFactory.type);
+                aspec.setApplianceVmType(ApplianceVmType.valueOf(msg.getApplianceVmType()));
                 aspec.setInstanceOffering(offering);
                 aspec.setAccountUuid(accountUuid);
-                aspec.setName(String.format("virtualRouter.l3.%s", l3Network.getUuid()));
+                aspec.setName(String.format("%s.l3.%s", msg.getApplianceVmType(), l3Network.getName()));
                 aspec.setInherentSystemTags(msg.getInherentSystemTags());
+                aspec.setSshUsername(VirtualRouterGlobalConfig.SSH_USERNAME.value());
+                aspec.setSshPort(VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class));
+                aspec.setAgentPort(VirtualRouterGlobalProperty.AGENT_PORT);
 
                 L3NetworkInventory mgmtNw = L3NetworkInventory.valueOf(dbf.findByUuid(offering.getManagementNetworkUuid(), L3NetworkVO.class));
                 ApplianceVmNicSpec mgmtNicSpec = new ApplianceVmNicSpec();
@@ -575,16 +589,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         return q.isExists();
     }
 
-    @Override
-    public void acquireVirtualRouterVm(final L3NetworkInventory l3Nw,
-                                       VirtualRouterOfferingValidator validator,
-                                       final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
-        VirtualRouterStruct s = new VirtualRouterStruct();
-        s.setL3Network(l3Nw);
-        s.setOfferingValidator(validator);
-        acquireVirtualRouterVm(s, completion);
-    }
-
     private void acquireVirtualRouterVmInternal(VirtualRouterStruct struct,  final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
         final L3NetworkInventory l3Nw = struct.getL3Network();
         final VirtualRouterOfferingValidator validator = struct.getOfferingValidator();
@@ -660,6 +664,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         msg.setL3Network(l3Nw);
         msg.setOffering(offering);
         msg.setInherentSystemTags(struct.getInherentSystemTags());
+        msg.setProviderType(struct.getProviderType());
+        msg.setApplianceVmType(struct.getApplianceVmType());
         bus.makeTargetServiceIdByResourceUuid(msg, VirtualRouterConstant.SERVICE_ID, l3Nw.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -692,16 +698,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 completion.fail(errorCode);
             }
         });
-    }
-
-    @Override
-    public void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VmInstanceSpec servedVm, ReturnValueCompletion<VirtualRouterVmInventory> completion) {
-        acquireVirtualRouterVm(l3Nw, servedVm, null, completion);
-    }
-
-    @Override
-    public void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VmInstanceSpec servedVm, VirtualRouterOfferingValidator vrOfferingValidator, ReturnValueCompletion<VirtualRouterVmInventory> completion) {
-        acquireVirtualRouterVm(l3Nw, vrOfferingValidator, completion);
     }
 
     @Override

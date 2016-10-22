@@ -38,11 +38,9 @@ import java.util.List;
  * Time: 10:37 PM
  * To change this template use File | Settings | File Templates.
  */
-public class VirtualRouterSnatBackend implements NetworkServiceSnatBackend {
+public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend implements NetworkServiceSnatBackend {
     private static final CLogger logger = Utils.getLogger(VirtualRouterSnatBackend.class);
 
-    @Autowired
-    private VirtualRouterManager vrMgr;
     @Autowired
     private ErrorFacade errf;
     @Autowired
@@ -64,7 +62,9 @@ public class VirtualRouterSnatBackend implements NetworkServiceSnatBackend {
         final SnatStruct struct = it.next();
         final L3NetworkInventory guestL3 = struct.getL3Network();
 
-        vrMgr.acquireVirtualRouterVm(struct.getL3Network(), new VirtualRouterOfferingValidator() {
+        VirtualRouterStruct s = new VirtualRouterStruct();
+        s.setL3Network(guestL3);
+        s.setOfferingValidator(new VirtualRouterOfferingValidator() {
             @Override
             public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                 if (offering.getPublicNetworkUuid().equals(guestL3.getUuid())) {
@@ -72,7 +72,9 @@ public class VirtualRouterSnatBackend implements NetworkServiceSnatBackend {
                             guestL3.getUuid(), guestL3.getName(), offering.getPublicNetworkUuid(), offering.getUuid(), offering.getName())));
                 }
             }
-        }, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
+        });
+
+        acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
             public void success(final VirtualRouterVmInventory vr) {
                 final VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();

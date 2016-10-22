@@ -76,6 +76,7 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
         for (String d : dnsAddresses) {
             DnsInfo dinfo = new DnsInfo();
             dinfo.setDnsAddress(d);
+            dinfo.setNicMac(vr.getGuestNic().getMac());
             dns.add(dinfo);
         }
 

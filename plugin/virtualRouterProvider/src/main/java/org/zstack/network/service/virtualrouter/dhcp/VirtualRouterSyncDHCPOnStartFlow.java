@@ -95,6 +95,7 @@ public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
 			info.setGateway(nic.getGateway());
 			info.setIp(nic.getIp());
 			info.setMac(nic.getMac());
+            info.setVrNicMac(vr.getGuestNic().getMac());
 			info.setNetmask(nic.getNetmask());
             if (l3NetworkUuid.equals(defaultL3Uuid)) {
                 info.setDefaultL3Network(true);

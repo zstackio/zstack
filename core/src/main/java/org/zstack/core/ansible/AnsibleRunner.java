@@ -355,11 +355,12 @@ public class AnsibleRunner {
             putArgument("trusted_host", Platform.getManagementServerIp());
             putArgument("yum_server", String.format("%s:8080", Platform.getManagementServerIp()));
             putArgument("remote_user", username);
-            if (password != null && !password.isEmpty())
+            if (password != null && !password.isEmpty()) {
                 putArgument("remote_pass", password);
+            }
             putArgument("remote_port", Integer.toString(sshPort));
 
-            logger.debug(String.format("starts to run ansbile[%s]", playBookPath == null ? playBookName : playBookPath));
+            logger.debug(String.format("starts to run ansible[%s]", playBookPath == null ? playBookName : playBookPath));
             new PrepareAnsible().setTargetIp(targetIp).prepare();
             setupPublicKey();
             callAnsible(completion);

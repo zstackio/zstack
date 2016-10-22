@@ -158,7 +158,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         }
 
         final String mgmtIp = mgmtNicIp;
-        final String url = ApplianceVmBase.buildAgentUrl(mgmtIp, ApplianceVmConstant.ECHO_PATH);
+        final String url = ApplianceVmBase.buildAgentUrl(mgmtIp, ApplianceVmConstant.ECHO_PATH, 7759);
 
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             continueConnect(url, apvmUuid, trigger);

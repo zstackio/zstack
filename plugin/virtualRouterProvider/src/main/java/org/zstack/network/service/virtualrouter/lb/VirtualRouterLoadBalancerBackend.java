@@ -1,6 +1,7 @@
 package org.zstack.network.service.virtualrouter.lb;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -50,16 +51,15 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  * Created by frank on 8/9/2015.
  */
-public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
+public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBackend implements LoadBalancerBackend {
     private static CLogger logger = Utils.getLogger(VirtualRouterLoadBalancerBackend.class);
 
-    @Autowired
-    private VirtualRouterManager vrMgr;
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
     @Autowired
+    @Qualifier("VirtualRouterVipBackend")
     private VirtualRouterVipBackend vipVrBkd;
     @Autowired
     private VipManager vipMgr;
@@ -436,7 +436,7 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
                             s.setL3Network(l3);
                             s.setNotGatewayForGuestL3Network(true);
 
-                            vrMgr.acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger) {
+                            acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger) {
                                 @Override
                                 public void success(VirtualRouterVmInventory returnValue) {
                                     vr = returnValue;
@@ -480,7 +480,10 @@ public class VirtualRouterLoadBalancerBackend implements LoadBalancerBackend {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            vrMgr.acquireVirtualRouterVm(l3, (VirtualRouterOfferingValidator)null, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger) {
+                            VirtualRouterStruct s = new VirtualRouterStruct();
+                            s.setL3Network(l3);
+
+                            acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger) {
                                 @Override
                                 public void success(VirtualRouterVmInventory returnValue) {
                                     vr = returnValue;

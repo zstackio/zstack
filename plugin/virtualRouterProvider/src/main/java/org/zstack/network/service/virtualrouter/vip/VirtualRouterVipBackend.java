@@ -32,13 +32,11 @@ import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.list;
 
-public class VirtualRouterVipBackend implements VipBackend {
+public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements VipBackend {
     private static final CLogger logger = Utils.getLogger(VirtualRouterVipBackend.class);
 
     @Autowired
     private CloudBus bus;
-    @Autowired
-    protected VirtualRouterManager vrMgr;
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -186,7 +184,9 @@ public class VirtualRouterVipBackend implements VipBackend {
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
-                vrMgr.acquireVirtualRouterVm(guestNw, new VirtualRouterOfferingValidator() {
+                VirtualRouterStruct s = new VirtualRouterStruct();
+                s.setL3Network(guestNw);
+                s.setOfferingValidator(new VirtualRouterOfferingValidator() {
                     @Override
                     public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                         if (!offering.getPublicNetworkUuid().equals(vip.getL3NetworkUuid())) {
@@ -196,7 +196,9 @@ public class VirtualRouterVipBackend implements VipBackend {
                             ));
                         }
                     }
-                }, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger){
+                });
+
+                acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger){
                     @Override
                     public void success(VirtualRouterVmInventory returnValue) {
                         data.put(VirtualRouterConstant.Param.VR.toString(), returnValue);

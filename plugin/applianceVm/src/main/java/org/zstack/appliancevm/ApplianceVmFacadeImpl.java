@@ -2,6 +2,7 @@ package org.zstack.appliancevm;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.appliancevm.ApplianceVmConstant.BootstrapParams;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
@@ -15,13 +16,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.job.JobQueueFacade;
-import org.zstack.header.core.workflow.Flow;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
-import org.zstack.header.configuration.ConfigurationConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
@@ -235,9 +235,9 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     @Override
     public Map<String, Object> prepareBootstrapInformation(VmInstanceSpec spec) {
         VmNicInventory mgmtNic = null;
-        String defaultL3Uuid = null;
+        String defaultL3Uuid;
+        ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
         if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate) {
-            ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
             for (VmNicInventory nic : spec.getDestNics()) {
                 if (nic.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid())) {
                     mgmtNic = nic;
@@ -294,6 +294,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
         String publicKey = asf.getPublicKey();
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
+        ret.put(BootstrapParams.sshPort.toString(), aspec.getSshPort());
 
         return ret;
     }

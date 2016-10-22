@@ -32,11 +32,9 @@ import java.util.List;
 
 /**
  */
-public class VirtualRouterDnsBackend implements NetworkServiceDnsBackend {
+public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implements NetworkServiceDnsBackend {
     private final CLogger logger = Utils.getLogger(VirtualRouterDnsBackend.class);
 
-    @Autowired
-    private VirtualRouterManager vrMgr;
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -62,6 +60,7 @@ public class VirtualRouterDnsBackend implements NetworkServiceDnsBackend {
             @Override
             public DnsInfo call(String arg) {
                 DnsInfo info = new DnsInfo();
+                info.setNicMac(vr.getGuestNic().getMac());
                 info.setDnsAddress(arg);
                 return info;
             }
@@ -108,6 +107,7 @@ public class VirtualRouterDnsBackend implements NetworkServiceDnsBackend {
             public DnsInfo call(String arg) {
                 DnsInfo info = new DnsInfo();
                 info.setDnsAddress(arg);
+                info.setNicMac(vr.getGuestNic().getMac());
                 return info;
             }
         }));
@@ -147,14 +147,18 @@ public class VirtualRouterDnsBackend implements NetworkServiceDnsBackend {
 
         final DnsStruct struct = it.next();
         final L3NetworkInventory l3 = struct.getL3Network();
-        vrMgr.acquireVirtualRouterVm(struct.getL3Network(), spec, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
 
+        VirtualRouterStruct s = new VirtualRouterStruct();
+        s.setL3Network(l3);
+
+        acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
             public void success(final VirtualRouterVmInventory vr) {
                 final List<VirtualRouterCommands.DnsInfo> dns = new ArrayList<VirtualRouterCommands.DnsInfo>(l3.getDns().size());
                 for (String d : l3.getDns()) {
                     VirtualRouterCommands.DnsInfo dinfo = new VirtualRouterCommands.DnsInfo();
                     dinfo.setDnsAddress(d);
+                    dinfo.setNicMac(vr.getGuestNic().getMac());
                     dns.add(dinfo);
                 }
 
@@ -230,6 +234,7 @@ public class VirtualRouterDnsBackend implements NetworkServiceDnsBackend {
         for (String dns : struct.getDns()) {
             VirtualRouterCommands.DnsInfo i = new VirtualRouterCommands.DnsInfo();
             i.setDnsAddress(dns);
+            i.setNicMac(vr.getGuestNic().getMac());
             info.add(i);
         }
 

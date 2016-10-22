@@ -30,17 +30,15 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-public class VirtualRouterDhcpBackend implements NetworkServiceDhcpBackend {
+public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend implements NetworkServiceDhcpBackend {
     private final CLogger logger = Utils.getLogger(VirtualRouterDhcpBackend.class);
 
     @Autowired
-    private VirtualRouterManager vrMgr;
+    protected ErrorFacade errf;
     @Autowired
-    private ErrorFacade errf;
+    protected CloudBus bus;
     @Autowired
-    private CloudBus bus;
-    @Autowired
-    private ApiTimeoutManager apiTimeoutManager;
+    protected ApiTimeoutManager apiTimeoutManager;
 
     @Override
     public NetworkServiceProviderType getProviderType() {
@@ -54,7 +52,11 @@ public class VirtualRouterDhcpBackend implements NetworkServiceDhcpBackend {
         }
 
         final DhcpStruct struct = it.next();
-        vrMgr.acquireVirtualRouterVm(struct.getL3Network(), spec, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
+
+        VirtualRouterStruct s = new VirtualRouterStruct();
+        s.setL3Network(struct.getL3Network());
+
+        acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
             public void success(final VirtualRouterVmInventory vr) {
                 VirtualRouterCommands.DhcpInfo e = new VirtualRouterCommands.DhcpInfo();

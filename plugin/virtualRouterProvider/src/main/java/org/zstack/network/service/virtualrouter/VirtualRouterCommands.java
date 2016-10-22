@@ -349,6 +349,15 @@ public class VirtualRouterCommands {
 	
 	public static class DnsInfo {
 		private String dnsAddress;
+		private String nicMac;
+
+		public String getNicMac() {
+			return nicMac;
+		}
+
+		public void setNicMac(String nicMac) {
+			this.nicMac = nicMac;
+		}
 
 		public String getDnsAddress() {
 			return dnsAddress;

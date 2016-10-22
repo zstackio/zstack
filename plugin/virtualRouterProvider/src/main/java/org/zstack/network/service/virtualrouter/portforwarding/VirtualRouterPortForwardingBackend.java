@@ -32,9 +32,7 @@ import org.zstack.utils.function.Function;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
-public class VirtualRouterPortForwardingBackend implements PortForwardingBackend, Component {
-    @Autowired
-    protected VirtualRouterManager vrMgr;
+public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBackend implements PortForwardingBackend, Component {
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -132,7 +130,9 @@ public class VirtualRouterPortForwardingBackend implements PortForwardingBackend
         }
 
         final PortForwardingStruct struct = it.next();
-        vrMgr.acquireVirtualRouterVm(struct.getGuestL3Network(), new VirtualRouterOfferingValidator() {
+        VirtualRouterStruct s = new VirtualRouterStruct();
+        s.setL3Network(struct.getGuestL3Network());
+        s.setOfferingValidator(new VirtualRouterOfferingValidator() {
             @Override
             public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
                 if (!offering.getPublicNetworkUuid().equals(struct.getVip().getL3NetworkUuid())) {
@@ -142,7 +142,9 @@ public class VirtualRouterPortForwardingBackend implements PortForwardingBackend
                     ));
                 }
             }
-        }, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
+        });
+
+        acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
             public void success(final VirtualRouterVmInventory vr) {
                 applyRule(struct, vr, new Completion(completion) {

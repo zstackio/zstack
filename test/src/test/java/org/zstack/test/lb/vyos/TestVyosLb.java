@@ -1,4 +1,4 @@
-package org.zstack.test.lb;
+package org.zstack.test.lb.vyos;
 
 import junit.framework.Assert;
 import org.junit.Before;
@@ -51,7 +51,7 @@ import org.zstack.test.deployer.Deployer;
  *
  * confirm the result is right
  */
-public class TestVirtualRouterLb {
+public class TestVyosLb {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -65,12 +65,13 @@ public class TestVirtualRouterLb {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/lb/TestVirtualRouterLb.xml", con);
+        deployer = new Deployer("deployerXml/lb/TestVyosLb.xml", con);
         deployer.addSpringConfig("VirtualRouter.xml");
         deployer.addSpringConfig("VirtualRouterSimulator.xml");
         deployer.addSpringConfig("KVMRelated.xml");
         deployer.addSpringConfig("vip.xml");
         deployer.addSpringConfig("lb.xml");
+        deployer.addSpringConfig("vyos.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();

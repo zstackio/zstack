@@ -1,13 +1,12 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceProviderInventory;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.vm.VmInstanceSpec;
 
 import java.util.List;
 
@@ -21,12 +20,6 @@ public interface VirtualRouterManager {
 	List<String> selectL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType);
 
     boolean isL3NetworkNeedingNetworkServiceByVirtualRouter(String l3Uuid, String nsType);
-
-    void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VmInstanceSpec servedVm, ReturnValueCompletion<VirtualRouterVmInventory> completion);
-
-    void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VmInstanceSpec servedVm, VirtualRouterOfferingValidator vrOfferingValidator, ReturnValueCompletion<VirtualRouterVmInventory> completion);
-
-    void acquireVirtualRouterVm(L3NetworkInventory l3Nw, VirtualRouterOfferingValidator vrOfferingValidator, ReturnValueCompletion<VirtualRouterVmInventory> completion);
 
     void acquireVirtualRouterVm(VirtualRouterStruct struct, ReturnValueCompletion<VirtualRouterVmInventory> completion);
 

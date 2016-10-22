@@ -90,4 +90,5 @@
     <import resource="springConfigXml/VolumeManager.xml"/>
     <import resource="springConfigXml/volumeSnapshot.xml"/>
     <import resource="springConfigXml/ZoneManager.xml"/>
+    <import resource="springConfigXml/vyos.xml"/>
 </beans>

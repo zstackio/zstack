@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter.portforwarding;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -27,6 +28,7 @@ public class ReleasePortForwardingRuleOnVirtualRouterVmFlow extends NoRollbackFl
     @Autowired
     protected VirtualRouterManager vrMgr;
     @Autowired
+    @Qualifier("VirtualRouterPortForwardingBackend")
     protected VirtualRouterPortForwardingBackend backend;
     @Autowired
     private CloudBus bus;

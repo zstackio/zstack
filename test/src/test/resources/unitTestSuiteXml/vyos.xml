@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
+    <TestCase class="org.zstack.test.lb.vyos.TestVyosLb" />
+    <TestCase class="org.zstack.test.eip.vyos.TestVyosEip" />
+    <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosPortForwarding" />
+</UnitTestSuiteConfig>

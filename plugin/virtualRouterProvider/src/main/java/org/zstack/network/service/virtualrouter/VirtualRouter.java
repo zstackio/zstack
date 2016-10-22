@@ -40,13 +40,13 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     @Autowired
-    private VirtualRouterManager vrMgr;
+    protected VirtualRouterManager vrMgr;
     @Autowired
-    private RESTFacade restf;
+    protected RESTFacade restf;
     @Autowired
-    private ErrorFacade errf;
+    protected ErrorFacade errf;
 
-    private VirtualRouterVmInventory vr;
+    protected VirtualRouterVmInventory vr;
 
     public VirtualRouter(ApplianceVmVO vo) {
         super(vo);
@@ -92,6 +92,10 @@ public class VirtualRouter extends ApplianceVmBase {
         return vrMgr.getPostMigrateFlows();
     }
 
+    protected FlowChain getReconnectChain() {
+        return vrMgr.getReconnectFlowChain();
+    }
+
     @Override
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIReconnectVirtualRouterMsg) {
@@ -133,7 +137,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
                 PingCmd cmd = new PingCmd();
                 cmd.setUuid(self.getUuid());
-                restf.asyncJsonPost(vrMgr.buildUrl(vr.getManagementNic().getIp(), VirtualRouterConstant.VR_PING), cmd, new JsonAsyncRESTCallback<PingRsp>(msg, chain) {
+                restf.asyncJsonPost(buildUrl(vr.getManagementNic().getIp(), VirtualRouterConstant.VR_PING), cmd, new JsonAsyncRESTCallback<PingRsp>(msg, chain) {
                     @Override
                     public void fail(ErrorCode err) {
                         reply.setDoReconnect(true);
@@ -219,6 +223,10 @@ public class VirtualRouter extends ApplianceVmBase {
         });
     }
 
+    protected String buildUrl(String mgmtIp, String path) {
+        return vrMgr.buildUrl(mgmtIp, path);
+    }
+
     private void handle(final VirtualRouterAsyncHttpCallMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -237,7 +245,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     return;
                 }
 
-                restf.asyncJsonPost(vrMgr.buildUrl(vr.getManagementNic().getIp(), msg.getPath()), msg.getCommand(), new JsonAsyncRESTCallback<LinkedHashMap>(msg, chain) {
+                restf.asyncJsonPost(buildUrl(vr.getManagementNic().getIp(), msg.getPath()), msg.getCommand(), new JsonAsyncRESTCallback<LinkedHashMap>(msg, chain) {
                     @Override
                     public void fail(ErrorCode err) {
                         reply.setError(err);
@@ -316,7 +324,7 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     private void reconnect(final Completion completion) {
-        FlowChain chain = vrMgr.getReconnectFlowChain();
+        FlowChain chain = getReconnectChain();
         chain.setName(String.format("reconnect-virtual-router-%s", self.getUuid()));
         chain.getData().put(VirtualRouterConstant.Param.VR.toString(), vr);
         chain.getData().put(Param.IS_RECONNECT.toString(), Boolean.TRUE.toString());

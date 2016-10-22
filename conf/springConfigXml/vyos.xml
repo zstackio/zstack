@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx" xmlns:zstack="http://zstack.org/schema/zstack"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+    http://www.springframework.org/schema/tx 
+    http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+    http://zstack.org/schema/zstack 
+    http://zstack.org/schema/zstack/plugin.xsd"
+    default-init-method="init" default-destroy-method="destroy">
+
+    <bean id="VyosVmFactory" class="org.zstack.network.service.virtualrouter.vyos.VyosVmFactory">
+        <property name="vyosPostCreateFlows">
+            <list>
+                <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterAssembleDecoratorFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosConnectFlow</value>
+                <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterSyncVipForNewCreateFlow</value>
+                <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterSyncPortForwardingRulesOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.eip.VirtualRouterSyncEipOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.lb.VirtualRouterSyncLbOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.lifecycle.TrackVirtualRouterVmFlow</value>
+            </list>
+        </property>
+
+        <property name="vyosPostStartFlows">
+            <list>
+                <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterAssembleDecoratorFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosConnectFlow</value>
+                <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterSyncVipFlow</value>
+                <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterSyncPortForwardingRulesOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.eip.VirtualRouterSyncEipOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.lb.VirtualRouterSyncLbOnStartFlow</value>
+            </list>
+        </property>
+
+        <property name="vyosPostRebootFlows">
+            <list>
+                <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterAssembleDecoratorFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosConnectFlow</value>
+                <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterSyncVipFlow</value>
+                <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterSyncPortForwardingRulesOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.eip.VirtualRouterSyncEipOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.lb.VirtualRouterSyncLbOnStartFlow</value>
+            </list>
+        </property>
+
+        <property name="vyosPostDestroyFlows">
+            <list>
+                <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterAssembleDecoratorFlow</value>
+                <value>org.zstack.network.service.virtualrouter.eip.VirtualRouterCleanupEipOnDestroyFlow</value>
+                <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterCleanupPortforwardingOnDestroyFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCleanupVipOnDestroyFlow</value>
+                <value>org.zstack.network.service.virtualrouter.lifecycle.UntrackVirtualRouterVmFlow</value>
+            </list>
+        </property>
+
+        <property name="vyosReconnectFlows">
+            <list>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosDeployAgentFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosConnectFlow</value>
+                <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterSyncVipFlow</value>
+                <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterSyncPortForwardingRulesOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.eip.VirtualRouterSyncEipOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.lb.VirtualRouterSyncLbOnStartFlow</value>
+            </list>
+        </property>
+
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSubTypeFactory" />
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkCreateExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VyosDhcpBackend" class="org.zstack.network.service.virtualrouter.vyos.VyosDhcpBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDhcpBackend" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VyosSnatBackend" class="org.zstack.network.service.virtualrouter.vyos.VyosSnatBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceSnatBackend" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VyosDnsBackend" class="org.zstack.network.service.virtualrouter.vyos.VyosDnsBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDnsBackend" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VyosEipBackend" class="org.zstack.network.service.virtualrouter.vyos.VyosEipBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.network.service.eip.EipBackend" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VyosLbBackend" class="org.zstack.network.service.virtualrouter.vyos.VyosLbBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.network.service.lb.LoadBalancerBackend" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VyosPortForwardingBackend" class="org.zstack.network.service.virtualrouter.vyos.VyosPortForwardingBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.network.service.portforwarding.PortForwardingBackend" />
+        </zstack:plugin>
+
+	<property name="applyPortForwardingRuleElements">
+            <list>
+                <value>org.zstack.network.service.virtualrouter.portforwarding.PortForwardingOpenVirtualRouterFirewallFlow</value>
+                <value>org.zstack.network.service.virtualrouter.portforwarding.ApplyPortforwardingRuleOnVirtualRouterVmFlow</value>
+            </list>
+        </property>
+
+        <property name="releasePortForwardingRuleElements">
+            <list>
+                <value>org.zstack.network.service.virtualrouter.portforwarding.ReleasePortForwardingRuleOnVirtualRouterVmFlow</value>
+                <value>org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRemoveVirtualRouterFirewallFlow</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="VyosVipBackend" class="org.zstack.network.service.virtualrouter.vyos.VyosVipBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.network.service.vip.VipBackend" />
+        </zstack:plugin>
+    </bean>
+</beans>

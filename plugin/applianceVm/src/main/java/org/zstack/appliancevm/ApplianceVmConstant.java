@@ -16,10 +16,11 @@ public class ApplianceVmConstant {
 
     public static final String ANSIBLE_MODULE_PATH = "ansible/appliancevm";
 
-    public static enum BootstrapParams {
+    public enum BootstrapParams {
         managementNic,
         additionalNics,
         publicKey,
+        sshPort,
     }
 
     public static enum Params {

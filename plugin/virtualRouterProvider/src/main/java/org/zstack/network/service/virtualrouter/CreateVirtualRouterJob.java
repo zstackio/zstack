@@ -3,7 +3,6 @@ package org.zstack.network.service.virtualrouter;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.*;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -17,14 +16,12 @@ import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.e;
