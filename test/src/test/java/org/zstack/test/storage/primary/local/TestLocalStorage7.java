@@ -13,6 +13,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.kvm.APIAddKVMHostMsg;
+import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -72,6 +73,7 @@ public class TestLocalStorage7 {
     public void test() throws ApiSenderException, InterruptedException {
         ClusterInventory cluster = deployer.clusters.get("Cluster1");
 
+        // add host 1
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
         msg.setName("host1");
         msg.setClusterUuid(cluster.getUuid());
@@ -83,6 +85,7 @@ public class TestLocalStorage7 {
         APIAddHostEvent evt = sender.send(msg, APIAddHostEvent.class);
         HostInventory host1 = evt.getInventory();
 
+        // add host 2
         msg = new APIAddKVMHostMsg();
         msg.setName("host2");
         msg.setClusterUuid(cluster.getUuid());
@@ -94,12 +97,19 @@ public class TestLocalStorage7 {
         evt = sender.send(msg, APIAddHostEvent.class);
         HostInventory host2 = evt.getInventory();
 
+        // delete host 1
         api.deleteHost(host1.getUuid());
 
+        // check
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
+
+        LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
         PrimaryStorageVO lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
-        PrimaryStorageVO lvo2 = dbf.findByUuid(local2.getUuid(), PrimaryStorageVO.class);
+        if (href == null) {
+            lvo = dbf.findByUuid(local2.getUuid(), PrimaryStorageVO.class);
+        }
+
         Assert.assertEquals(totalSize, lvo.getCapacity().getTotalCapacity());
         Assert.assertEquals(totalSize, lvo.getCapacity().getAvailableCapacity());
         Assert.assertEquals(totalSize, lvo.getCapacity().getTotalPhysicalCapacity());
