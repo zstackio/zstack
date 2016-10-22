@@ -118,7 +118,7 @@ public class TestLocalStorage44 {
 
         config.capacityMap.put("host1", c);
         api.reconnectHost(host.getUuid());
-        TimeUnit.SECONDS.sleep(5);
+        TimeUnit.SECONDS.sleep(3);
 
         href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
         Assert.assertEquals(totalSize, href.getTotalCapacity());
