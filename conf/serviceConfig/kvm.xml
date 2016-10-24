@@ -16,5 +16,4 @@
         <name>org.zstack.kvm.APIKvmRunShellMsg</name>
         <serviceId>kvm</serviceId>
     </message>
-
 </service>

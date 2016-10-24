@@ -252,6 +252,22 @@ public class VolumeSnapshotTree {
             return walkUp(getParent(), func);
         }
 
+        public void walk(SnapshotLeaf leaf, Function<Void, SnapshotLeaf> func) {
+            func.call(leaf);
+
+            if (leaf.getChildren().isEmpty()) {
+                return;
+            }
+
+            for (SnapshotLeaf l : leaf.getChildren()) {
+                walk(l, func);
+            }
+        }
+
+        public void walk(Function<Void, SnapshotLeaf> func) {
+            walk(this, func);
+        }
+
         public SnapshotLeaf walkDown(Function<Boolean, VolumeSnapshotInventory> func) {
             return walkDown(this, func);
         }

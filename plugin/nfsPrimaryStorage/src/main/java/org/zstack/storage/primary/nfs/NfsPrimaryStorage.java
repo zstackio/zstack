@@ -601,7 +601,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     public void attachHook(String clusterUuid, Completion completion) {
-
         NfsPrimaryStorageBackend backend = getBackendByClusterUuid(clusterUuid);
         try {
             boolean ret = backend.attachToCluster(PrimaryStorageInventory.valueOf(self), clusterUuid);

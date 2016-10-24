@@ -13,6 +13,7 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
@@ -68,6 +69,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private CloudBus bus;
     @Autowired
     private RESTFacade restf;
+    @Autowired
+    private ErrorFacade errf;
 
     @Override
     public HostVO createHost(HostVO vo, AddHostMessage msg) {

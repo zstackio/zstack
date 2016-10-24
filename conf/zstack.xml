@@ -90,4 +90,5 @@
     <import resource="springConfigXml/SchedulerFacade.xml"/>
     <import resource="springConfigXml/LdapManagerImpl.xml"/>
     <import resource="springConfigXml/jsonlabel.xml"/>
+    <import resource="springConfigXml/hotfix.xml"/>
 </beans>

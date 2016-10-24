@@ -1,8 +1,6 @@
 package org.zstack.kvm;
 
 import org.zstack.core.validation.ConditionalValidation;
-import org.zstack.header.configuration.InstanceOffering;
-import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;

@@ -57,6 +57,7 @@ public class Ssh {
         String scriptName;
         File scriptFile;
         SshRunner scriptCommand;
+        SshRunner scpCommand;
         String scriptContent;
 
         ScriptRunner(String scriptName, String parameters, Map token) {
@@ -103,29 +104,22 @@ public class Ssh {
         }
 
         ScriptRunner(String script) {
-            String remoteScript = ln(
-                    "/bin/bash << EOF",
-                    "cat << EOF1 > {remotePath}",
-                    "{scriptContent}",
-                    "EOF1",
-                    "/bin/bash {remotePath} 1>{stdout} 2>{stderr}",
-                    "ret=$?",
-                    "test -f {stdout} && cat {stdout}",
-                    "test -f {stderr} && cat {stderr} 1>&2",
-                    "rm -f {remotePath}",
-                    "rm -f {stdout}",
-                    "rm -f {stderr}",
-                    "exit $ret",
-                    "EOF"
-            ).formatByMap(map(e("remotePath", String.format("/tmp/%s", UUID.randomUUID().toString())),
-                    e("scriptContent", script),
-                    e("stdout", String.format("/tmp/%s", UUID.randomUUID().toString())),
-                    e("stderr", String.format("/tmp/%s", UUID.randomUUID().toString()))
-            ));
-            scriptCommand = createCommand(remoteScript);
+            try {
+                scriptFile = File.createTempFile("zstack", "script");
+                FileUtils.writeStringToFile(scriptFile, script);
+                String dstFile = String.format("/tmp/zstack-%s", UUID.randomUUID().toString());
+                scpCommand = createScpCommand(scriptFile.getAbsolutePath(), dstFile);
+                scriptCommand = createCommand(String.format("bash %s; RET=$?; rm -f %s; exit $RET", dstFile, dstFile));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         SshResult run() {
+            if (scpCommand != null) {
+                SshResult res = scpCommand.run();
+                res.raiseExceptionIfFailed();
+            }
             return scriptCommand.run();
         }
 

@@ -11,36 +11,6 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 
 public interface NfsPrimaryStorageBackend {
-    public static class CreateBitsFromSnapshotResult {
-        private String installPath;
-        private long size;
-        private long actualSize;
-
-        public long getActualSize() {
-            return actualSize;
-        }
-
-        public void setActualSize(long actualSize) {
-            this.actualSize = actualSize;
-        }
-
-        public String getInstallPath() {
-            return installPath;
-        }
-
-        public void setInstallPath(String installPath) {
-            this.installPath = installPath;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
-        }
-    }
-
     HypervisorType getHypervisorType();
 
     void ping(PrimaryStorageInventory inv, Completion completion);
