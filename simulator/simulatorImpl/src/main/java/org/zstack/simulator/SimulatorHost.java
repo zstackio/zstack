@@ -22,57 +22,57 @@ import java.util.ArrayList;
 import java.util.List;
 
 class SimulatorHost extends HostBase {
-	private static final CLogger logger = Utils.getLogger(SimulatorHost.class);
-	private SimulatorConnection conn;
-	private volatile boolean isDisconnected;
-	
-	@Autowired
-	private PluginRegistry pluginRegty;
+    private static final CLogger logger = Utils.getLogger(SimulatorHost.class);
+    private SimulatorConnection conn;
+    private volatile boolean isDisconnected;
+
+    @Autowired
+    private PluginRegistry pluginRegty;
     @Autowired
     private ErrorFacade errf;
     @Autowired
     private SimulatorConfig config;
 
-	
-	protected SimulatorHost(SimulatorHostVO self) {
-	    super(self);
-	    conn = new SimulatorConnectionImpl(this);
+
+    protected SimulatorHost(SimulatorHostVO self) {
+        super(self);
+        conn = new SimulatorConnectionImpl(this);
     }
 
-	@Override
-	public void changeStateHook(HostState current, HostStateEvent stateEvent, HostState next) {
-		logger.debug(String.format("Host: %s changed state from %s to %s by %s", self.getName(), current, next, stateEvent));
-	}
+    @Override
+    public void changeStateHook(HostState current, HostStateEvent stateEvent, HostState next) {
+        logger.debug(String.format("Host: %s changed state from %s to %s by %s", self.getName(), current, next, stateEvent));
+    }
 
-	@Override
-	public void deleteHook() {
-		logger.debug(String.format("Host: %s is being deleted", self.getName()));
-	}
+    @Override
+    public void deleteHook() {
+        logger.debug(String.format("Host: %s is being deleted", self.getName()));
+    }
 
-	@Override
-	public void connectHook(ConnectHostInfo info, Completion complete) {
-		for (SimulatorConnectExtensionPoint sc : pluginRegty.getExtensionList(SimulatorConnectExtensionPoint.class)) {
-			String err = sc.connect(conn);
-			if (err != null) {
-				logger.warn(err);
-				complete.fail(errf.stringToOperationError(err));
-				return;
-			}
-		}
-		
-		logger.debug(String.format("Host: %s is connected", self.getName()));
-		complete.success();
-	}
+    @Override
+    public void connectHook(ConnectHostInfo info, Completion complete) {
+        for (SimulatorConnectExtensionPoint sc : pluginRegty.getExtensionList(SimulatorConnectExtensionPoint.class)) {
+            String err = sc.connect(conn);
+            if (err != null) {
+                logger.warn(err);
+                complete.fail(errf.stringToOperationError(err));
+                return;
+            }
+        }
 
-	@Override
-	public void maintenanceHook(Completion completion) {
-		logger.debug(String.format("Host: %s entered maintenance mode", self.getName()));
+        logger.debug(String.format("Host: %s is connected", self.getName()));
+        complete.success();
+    }
+
+    @Override
+    public void maintenanceHook(Completion completion) {
+        logger.debug(String.format("Host: %s entered maintenance mode", self.getName()));
         completion.success();
     }
 
-	SimulatorHostVO getSimulatorHostVO() {
-		return (SimulatorHostVO) self;
-	}
+    SimulatorHostVO getSimulatorHostVO() {
+        return (SimulatorHostVO) self;
+    }
 
     @Override
     protected void pingHook(Completion completion) {
@@ -92,16 +92,16 @@ class SimulatorHost extends HostBase {
     protected void handleApiMessage(APIMessage msg) {
         super.handleApiMessage(msg);
     }
-	
-	@Override
-	protected void handleLocalMessage(Message msg) {
-	    if (msg instanceof CheckNetworkPhysicalInterfaceMsg) {
-	        handle((CheckNetworkPhysicalInterfaceMsg)msg);
-	    } else if (msg instanceof SimulatorHostConnectionControlMsg) {
-	        handle((SimulatorHostConnectionControlMsg)msg);
-	    } else if (msg instanceof ChangeVmStateOnSimulatorHostMsg) {
-	        handle((ChangeVmStateOnSimulatorHostMsg)msg);
-	    } else if (msg instanceof RemoveVmOnSimulatorMsg) {
+
+    @Override
+    protected void handleLocalMessage(Message msg) {
+        if (msg instanceof CheckNetworkPhysicalInterfaceMsg) {
+            handle((CheckNetworkPhysicalInterfaceMsg) msg);
+        } else if (msg instanceof SimulatorHostConnectionControlMsg) {
+            handle((SimulatorHostConnectionControlMsg) msg);
+        } else if (msg instanceof ChangeVmStateOnSimulatorHostMsg) {
+            handle((ChangeVmStateOnSimulatorHostMsg) msg);
+        } else if (msg instanceof RemoveVmOnSimulatorMsg) {
             handle((RemoveVmOnSimulatorMsg) msg);
         } else if (msg instanceof TakeSnapshotOnHypervisorMsg) {
             handle((TakeSnapshotOnHypervisorMsg) msg);
@@ -109,10 +109,10 @@ class SimulatorHost extends HostBase {
             handle((DetachNicFromVmOnHypervisorMsg) msg);
         } else if (msg instanceof VmAttachNicOnHypervisorMsg) {
             handle((VmAttachNicOnHypervisorMsg) msg);
-	    } else {
-	        super.handleLocalMessage(msg);
-	    }
-	}
+        } else {
+            super.handleLocalMessage(msg);
+        }
+    }
 
     private void handle(MigrateVmOnHypervisorMsg msg) {
         config.removeVm(msg.getSrcHostUuid(), msg.getVmInventory().getUuid());
@@ -188,7 +188,7 @@ class SimulatorHost extends HostBase {
             config.putVm(self.getUuid(), vmUuid, state);
         }
     }
-    
+
     void removeVm(String vmUuid) {
         synchronized (config.vms) {
             config.removeVm(self.getUuid(), vmUuid);

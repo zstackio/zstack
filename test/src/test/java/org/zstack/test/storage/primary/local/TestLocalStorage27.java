@@ -14,6 +14,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
@@ -100,6 +101,7 @@ public class TestLocalStorage27 {
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
         ImageInventory img = deployer.images.get("TestImage");
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
+        VmInstanceInventory vm1 = deployer.vms.get("TestVm");
 
         config.downloadBitsCmds.clear();
         config.checkBitsSuccess = false;
@@ -108,12 +110,16 @@ public class TestLocalStorage27 {
         creator.name = "vm";
         creator.instanceOfferingUuid = ioinv.getUuid();
         creator.addL3Network(l3.getUuid());
-        creator.create();
+        VmInstanceInventory vm2 = creator.create();
 
         Assert.assertFalse(config.downloadBitsCmds.isEmpty());
         long count = dbf.count(ImageCacheVO.class);
         // two local storage ps
-        Assert.assertEquals(2, count);
+        long imageCacheNum = 2;
+        if (vm1.getRootVolume().getPrimaryStorageUuid().equals(vm2.getRootVolume().getPrimaryStorageUuid())) {
+            imageCacheNum = 1;
+        }
+        Assert.assertEquals(imageCacheNum, count);
 
         long used = usedVolumeSize();
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");

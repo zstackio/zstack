@@ -72,6 +72,7 @@ public class TestLocalStorage47 {
         PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
         ClusterInventory cluster = deployer.clusters.get("Cluster1");
         PrimaryStorageVO psvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
+        Assert.assertEquals(totalSize, psvo.getCapacity().getTotalCapacity());
 
         kconfig.checkPhysicalInterfaceSuccess = false;
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();

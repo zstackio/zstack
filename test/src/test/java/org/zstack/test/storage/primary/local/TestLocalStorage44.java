@@ -88,13 +88,13 @@ public class TestLocalStorage44 {
 
     @Test
     public void test() throws ApiSenderException, InterruptedException {
-        HostInventory host = deployer.hosts.get("host1");
+        HostInventory host1 = deployer.hosts.get("host1");
         PrimaryStorageInventory local = deployer.primaryStorages.get("local");
         PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
         LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder()
-                .findByPrimaryKey(host.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
+                .findByPrimaryKey(host1.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
         Assert.assertEquals(href.getTotalCapacity(), totalSize);
         Assert.assertEquals(href.getTotalPhysicalCapacity(), totalSize);
 
@@ -117,10 +117,10 @@ public class TestLocalStorage44 {
         c.avail = totalSize;
 
         config.capacityMap.put("host1", c);
-        api.reconnectHost(host.getUuid());
+        api.reconnectHost(host1.getUuid());
         TimeUnit.SECONDS.sleep(3);
 
-        href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
+        href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
         Assert.assertEquals(totalSize, href.getTotalCapacity());
         Assert.assertEquals(totalSize, href.getAvailablePhysicalCapacity());
         Assert.assertEquals(totalSize, href.getTotalPhysicalCapacity());
@@ -139,11 +139,11 @@ public class TestLocalStorage44 {
         c.avail = totalSize;
 
         config.capacityMap.put("host1", c);
-        api.reconnectHost(host.getUuid());
+        api.reconnectHost(host1.getUuid());
 
         TimeUnit.SECONDS.sleep(3);
 
-        href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
+        href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
         Assert.assertEquals(totalSize, href.getTotalCapacity());
         Assert.assertEquals(totalSize, href.getAvailablePhysicalCapacity());
         Assert.assertEquals(totalSize, href.getTotalPhysicalCapacity());
@@ -160,7 +160,7 @@ public class TestLocalStorage44 {
         c.avail = totalSize;
 
         config.capacityMap.put("host2", c);
-        HostInventory host2 = api.addKvmHost("host2", "127.0.0.1", host.getClusterUuid());
+        HostInventory host2 = api.addKvmHost("host2", "127.0.0.1", host1.getClusterUuid());
         api.reconnectHost(host2.getUuid());
 
         LocalStorageHostRefVO refHost2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());

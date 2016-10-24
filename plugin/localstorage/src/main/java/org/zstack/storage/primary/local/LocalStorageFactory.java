@@ -786,11 +786,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void afterHostConnected(HostInventory host) {
-        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
-        q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, host.getUuid());
-        List<LocalStorageHostRefVO> refs = q.list();
+        SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
+        q.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.EQ, host.getClusterUuid());
+        List<PrimaryStorageClusterRefVO> refs = q.list();
         if (refs != null && !refs.isEmpty()) {
-            for (LocalStorageHostRefVO ref : refs) {
+            for (PrimaryStorageClusterRefVO ref : refs) {
                 RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
                 msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
