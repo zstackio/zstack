@@ -133,14 +133,14 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     }
 
     private void handle(RecalculateHostCapacityMsg msg) {
-        final List<String> hostUuids = new ArrayList<String>();
+        final List<String> hostUuids = new ArrayList<>();
         if (msg.getHostUuid() != null) {
             hostUuids.add(msg.getHostUuid());
         } else {
             SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
             q.select(HostVO_.uuid);
             q.add(HostVO_.zoneUuid, Op.EQ, msg.getZoneUuid());
-            hostUuids.addAll(q.<String>listValue());
+            hostUuids.addAll(q.listValue());
         }
 
         if (hostUuids.isEmpty()) {
@@ -157,13 +157,21 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             @Override
             @Transactional(readOnly = true)
             public List<Struct> call() {
-                String sql = "select sum(vm.memorySize), vm.hostUuid, sum(vm.cpuNum) from VmInstanceVO vm where vm.hostUuid in (:hostUuids) and vm.state not in (:vmStates) group by vm.hostUuid";
+                String sql = "select sum(vm.memorySize), vm.hostUuid, sum(vm.cpuNum)" +
+                        " from VmInstanceVO vm" +
+                        " where vm.hostUuid in (:hostUuids)" +
+                        " and vm.state not in (:vmStates)" +
+                        " group by vm.hostUuid";
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("hostUuids", hostUuids);
-                q.setParameter("vmStates", list(VmInstanceState.Destroyed, VmInstanceState.Created, VmInstanceState.Destroying, VmInstanceState.Stopped));
+                q.setParameter("vmStates", list(
+                        VmInstanceState.Destroyed,
+                        VmInstanceState.Created,
+                        VmInstanceState.Destroying,
+                        VmInstanceState.Stopped));
                 List<Tuple> ts = q.getResultList();
 
-                List<Struct> ret = new ArrayList<Struct>();
+                List<Struct> ret = new ArrayList<>();
                 for (Tuple t : ts) {
                     Struct s = new Struct();
                     s.hostUuid = t.get(1, String.class);

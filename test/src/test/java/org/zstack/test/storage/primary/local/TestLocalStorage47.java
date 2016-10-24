@@ -92,7 +92,7 @@ public class TestLocalStorage47 {
         }
         Assert.assertTrue(s);
 
-        TimeUnit.SECONDS.sleep(3);
+        TimeUnit.SECONDS.sleep(5);
 
         PrimaryStorageVO lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
         Assert.assertEquals(psvo.getCapacity().getTotalCapacity(), lvo.getCapacity().getTotalCapacity());
