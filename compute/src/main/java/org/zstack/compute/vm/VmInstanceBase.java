@@ -4226,15 +4226,16 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceSpec spec = new VmInstanceSpec();
         spec.setAccountPerference(account);
 
-        VmInstanceInventory inv =
-                VmInstanceInventory.valueOf(dbf.findByUuid(amsg.getVmInstanceUuid(), VmInstanceVO.class));
+        VmInstanceVO viVo = dbf.findByUuid(amsg.getVmInstanceUuid(), VmInstanceVO.class);
+        VmInstanceInventory inv = VmInstanceInventory.valueOf(viVo);
 
         ErrorCode noHostErr = new ErrorCode(
                 "NO_DEST_HOST_FOUND", "not dest host found in db by uuid",
                 String.format("not dest host found in db by uuid: %s, " +
                         "can't send change password cmd to the host!", amsg.getVmInstanceUuid()));
         if(inv != null) {
-            HostVO hvo = dbf.findByUuid(inv.getHostUuid(), HostVO.class);
+            String hostid = inv.getHostUuid() == null? inv.getLastHostUuid():inv.getHostUuid();
+            HostVO hvo = dbf.findByUuid(hostid, HostVO.class);
             if (hvo != null)
                 spec.setDestHost(HostInventory.valueOf(hvo));
             else
@@ -4246,6 +4247,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         chain.setName(String.format("change-vm-password-%s", amsg.getVmInstanceUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        String qcowFilePath = getRootVolumeQcowPath(viVo);
+        if(qcowFilePath == null)
+            completion.fail(new ErrorCode("NO_ROOTVOLUME_FOUND", "not dest root volume" +
+                    "found in VolumeVO by vmUuid", String.format("not dest root volume found" +
+                    " in VolumeVO by vmUuid: %s", amsg.getVmInstanceUuid())));
+        chain.getData().put(VmInstanceConstant.QCOW_FILE_PATH, qcowFilePath);
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
@@ -4257,6 +4264,19 @@ public class VmInstanceBase extends AbstractVmInstance {
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    protected String getRootVolumeQcowPath(final VmInstanceVO viVo){
+        logger.debug(String.format("get RootVolumePath begin, viVo is: %s", viVo.toString()));
+        String volumeUuid = viVo.getRootVolumeUuid();
+        if(volumeUuid == null)
+            return null;
+        VolumeVO vo = dbf.findByUuid(volumeUuid, VolumeVO.class);
+        if(vo == null)
+            return null;
+        VolumeInventory vol = VolumeInventory.valueOf(vo);
+        logger.debug(String.format("get RootVolumePath %s from VolumeVo by volumeUuid: %s", vol.getInstallPath(), volumeUuid));
+        return vol.getInstallPath();
     }
 
     protected void handle(final APICreateStopVmInstanceSchedulerMsg msg) {
