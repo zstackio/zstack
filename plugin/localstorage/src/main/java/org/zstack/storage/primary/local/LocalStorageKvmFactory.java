@@ -2,11 +2,14 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.AsyncBatchRunner;
+import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.logging.Log;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -24,6 +27,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -52,7 +56,7 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
     }
 
     @Transactional(readOnly = true)
-    private String findLocalStorageUuidByHostUuid(String clusterUuid) {
+    private List<String> findLocalStorageUuidByHostUuid(String clusterUuid) {
         String sql = "select pri.uuid" +
                 " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
                 " where pri.uuid = ref.primaryStorageUuid" +
@@ -61,8 +65,7 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("cuuid", clusterUuid);
         q.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-        List<String> ret = q.getResultList();
-        return ret.isEmpty() ? null : ret.get(0);
+        return q.getResultList();
     }
 
     @Override
@@ -72,54 +75,77 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                final String priUuid = findLocalStorageUuidByHostUuid(context.getInventory().getClusterUuid());
-                if (priUuid == null) {
+                final List<String> priUuids = findLocalStorageUuidByHostUuid(context.getInventory().getClusterUuid());
+                if (priUuids == null || priUuids.isEmpty()) {
                     trigger.next();
                     return;
                 }
 
                 new Log(context.getInventory().getUuid()).log(LocalStorageLabels.INIT);
 
-                InitPrimaryStorageOnHostConnectedMsg msg = new InitPrimaryStorageOnHostConnectedMsg();
-                msg.setPrimaryStorageUuid(priUuid);
-                msg.setHostUuid(context.getInventory().getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUuid);
-                bus.send(msg, new CloudBusCallBack(trigger) {
+                new LoopAsyncBatch<String>() {
+
                     @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(errf.stringToOperationError(
-                                    String.format("KVM host[uuid: %s] fails to be added into local primary storage[uuid: %s], %s",
-                                            context.getInventory().getUuid(), priUuid, reply.getError())
-                            ));
-                        } else {
-                            trigger.next();
-                        }
+                    protected Collection<String> collect() {
+                        return priUuids;
                     }
-                });
+
+                    @Override
+                    protected AsyncBatchRunner forEach(String priUuid) {
+                        return new AsyncBatchRunner() {
+                            @Override
+                            public void run(NoErrorCompletion completion) {
+                                InitPrimaryStorageOnHostConnectedMsg msg = new InitPrimaryStorageOnHostConnectedMsg();
+                                msg.setPrimaryStorageUuid(priUuid);
+                                msg.setHostUuid(context.getInventory().getUuid());
+                                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUuid);
+                                bus.send(msg, new CloudBusCallBack(completion) {
+                                    @Override
+                                    public void run(MessageReply reply) {
+                                        if (!reply.isSuccess()) {
+                                            trigger.fail(errf.stringToOperationError(
+                                                    String.format("KVM host[uuid: %s] fails to be added into local primary storage[uuid: %s], %s",
+                                                            context.getInventory().getUuid(), priUuids, reply.getError())
+                                            ));
+                                        } else {
+                                            completion.done();
+                                        }
+                                    }
+                                });
+                            }
+                        };
+                    }
+
+                    @Override
+                    protected void done() {
+                        trigger.next();
+                    }
+                }.start();
             }
         };
     }
 
     @Override
     public void failedToAddHost(HostInventory host, AddHostMessage amsg) {
-        final String priUuid = findLocalStorageUuidByHostUuid(host.getClusterUuid());
-        if (priUuid == null) {
+        final List<String> priUuids = findLocalStorageUuidByHostUuid(host.getClusterUuid());
+        if (priUuids == null || priUuids.isEmpty()) {
             return;
         }
 
-        RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
-        msg.setPrimaryStorageUuid(priUuid);
-        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUuid);
-        bus.send(msg, new CloudBusCallBack() {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    //TODO:
-                    logger.warn(String.format("failed to sync primary storage[uuid:%s] capacity, %s",
-                            priUuid, reply.getError()));
+        for (String priUUid : priUuids) {
+            RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
+            msg.setPrimaryStorageUuid(priUUid);
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUUid);
+            bus.send(msg, new CloudBusCallBack() {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        //TODO:
+                        logger.warn(String.format("failed to sync primary storage[uuid:%s] capacity, %s",
+                                priUuids, reply.getError()));
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 }

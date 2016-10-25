@@ -1317,20 +1317,21 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.setHostUuid(msg.getHostUuid());
         cmd.setPath(self.getUrl());
 
-        httpCall(INIT_PATH, msg.getHostUuid(), cmd, true, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(completion) {
-            @Override
-            public void success(AgentResponse rsp) {
-                PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
-                usage.totalPhysicalSize = rsp.getTotalCapacity();
-                usage.availablePhysicalSize = rsp.getAvailableCapacity();
-                completion.success(usage);
-            }
+        httpCall(INIT_PATH, msg.getHostUuid(), cmd, true, AgentResponse.class,
+                new ReturnValueCompletion<AgentResponse>(completion) {
+                    @Override
+                    public void success(AgentResponse rsp) {
+                        PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
+                        usage.totalPhysicalSize = rsp.getTotalCapacity();
+                        usage.availablePhysicalSize = rsp.getAvailableCapacity();
+                        completion.success(usage);
+                    }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
     }
 
     @Override
