@@ -47,8 +47,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public static final HypervisorType hypervisorType = new HypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
     public static final VolumeFormat QCOW2_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_QCOW2, hypervisorType);
     public static final VolumeFormat RAW_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_RAW, hypervisorType);
-    private List<KVMHostConnectExtensionPoint> connectExtensions = new ArrayList<KVMHostConnectExtensionPoint>();
-    private Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<L2NetworkType, KVMCompleteNicInformationExtensionPoint>();
+    private List<KVMHostConnectExtensionPoint> connectExtensions = new ArrayList<>();
+    private Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
     private int maxDataVolumeNum;
 
     static {
@@ -93,10 +93,10 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private List<String> getHostManagedByUs() {
         int qun = 10000;
         long amount = dbf.count(HostVO.class);
-        int times = (int)(amount / qun) + (amount % qun != 0 ? 1 : 0);
+        int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
         List<String> hostUuids = new ArrayList<String>();
         int start = 0;
-        for (int i=0; i<times; i++) {
+        for (int i = 0; i < times; i++) {
             SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
             q.select(HostVO_.uuid);
             // disconnected host will be handled by HostManager
@@ -136,21 +136,21 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private void populateExtensions() {
         connectExtensions = pluginRgty.getExtensionList(KVMHostConnectExtensionPoint.class);
         for (KVMCompleteNicInformationExtensionPoint ext : pluginRgty.getExtensionList(KVMCompleteNicInformationExtensionPoint.class)) {
-        	KVMCompleteNicInformationExtensionPoint old = completeNicInfoExtensions.get(ext.getL2NetworkTypeVmNicOn());
+            KVMCompleteNicInformationExtensionPoint old = completeNicInfoExtensions.get(ext.getL2NetworkTypeVmNicOn());
             if (old != null) {
                 throw new CloudRuntimeException(String.format("duplicate KVMCompleteNicInformationExtensionPoint[%s, %s] for type[%s]",
                         old.getClass().getName(), ext.getClass().getName(), ext.getL2NetworkTypeVmNicOn()));
             }
-        	completeNicInfoExtensions.put(ext.getL2NetworkTypeVmNicOn(), ext);
+            completeNicInfoExtensions.put(ext.getL2NetworkTypeVmNicOn(), ext);
         }
     }
 
     public KVMCompleteNicInformationExtensionPoint getCompleteNicInfoExtension(L2NetworkType type) {
-    	KVMCompleteNicInformationExtensionPoint extp = completeNicInfoExtensions.get(type);
-    	if (extp == null) {
-    		throw new IllegalArgumentException(String.format("unble to fine KVMCompleteNicInformationExtensionPoint supporting L2NetworkType[%s]", type));
-    	}
-    	return extp;
+        KVMCompleteNicInformationExtensionPoint extp = completeNicInfoExtensions.get(type);
+        if (extp == null) {
+            throw new IllegalArgumentException(String.format("unble to fine KVMCompleteNicInformationExtensionPoint supporting L2NetworkType[%s]", type));
+        }
+        return extp;
     }
 
 
@@ -273,7 +273,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         bus.send(msgs, HostGlobalConfig.HOST_LOAD_PARALLELISM_DEGREE.value(Integer.class), new CloudBusSteppingCallback() {
             @Override
             public void run(NeedReplyMessage msg, MessageReply reply) {
-                ConnectHostMsg cmsg = (ConnectHostMsg)msg;
+                ConnectHostMsg cmsg = (ConnectHostMsg) msg;
                 if (!reply.isSuccess()) {
                     logger.warn(String.format("failed to connect kvm host[uuid:%s], %s", cmsg.getHostUuid(), reply.getError()));
                 } else {

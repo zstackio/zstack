@@ -111,72 +111,79 @@ public class TestLocalStorage44 {
             }
         }
 
+        PrimaryStorageCapacityVO pscap;
+        Capacity c;
         // expand the the host storage capacity local storage
-        totalSize = SizeUnit.GIGABYTE.toByte(599);
-        Capacity c = new Capacity();
-        c.total = totalSize;
-        c.avail = totalSize;
+        {
+            totalSize = SizeUnit.GIGABYTE.toByte(599);
+            c = new Capacity();
+            c.total = totalSize;
+            c.avail = totalSize;
 
-        config.capacityMap.put("host1", c);
-        api.reconnectHost(host1.getUuid());
-        TimeUnit.SECONDS.sleep(6);
+            config.capacityMap.put("host1", c);
+            api.reconnectHost(host1.getUuid());
+            TimeUnit.SECONDS.sleep(6);
 
-        href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
-        Assert.assertEquals(totalSize, href.getTotalCapacity());
-        Assert.assertEquals(totalSize, href.getAvailablePhysicalCapacity());
-        Assert.assertEquals(totalSize, href.getTotalPhysicalCapacity());
-        Assert.assertEquals(totalSize - usedSize, href.getAvailableCapacity());
+            href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
+            Assert.assertEquals(totalSize, href.getTotalCapacity());
+            Assert.assertEquals(totalSize, href.getAvailablePhysicalCapacity());
+            Assert.assertEquals(totalSize, href.getTotalPhysicalCapacity());
+            Assert.assertEquals(totalSize - usedSize, href.getAvailableCapacity());
 
-        PrimaryStorageCapacityVO pscap = dbf.findByUuid(vm.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageCapacityVO.class);
-        Assert.assertEquals(totalSize, pscap.getTotalCapacity());
-        Assert.assertEquals(totalSize, pscap.getTotalPhysicalCapacity());
-        Assert.assertEquals(totalSize, pscap.getAvailablePhysicalCapacity());
-        Assert.assertEquals(totalSize - usedSize, pscap.getAvailableCapacity());
-
+            pscap = dbf.findByUuid(vm.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageCapacityVO.class);
+            Assert.assertEquals(totalSize, pscap.getTotalCapacity());
+            Assert.assertEquals(totalSize, pscap.getTotalPhysicalCapacity());
+            Assert.assertEquals(totalSize, pscap.getAvailablePhysicalCapacity());
+            Assert.assertEquals(totalSize - usedSize, pscap.getAvailableCapacity());
+        }
         // squeeze the the local storage
-        totalSize = SizeUnit.GIGABYTE.toByte(80);
-        c = new Capacity();
-        c.total = totalSize;
-        c.avail = totalSize;
+        {
+            totalSize = SizeUnit.GIGABYTE.toByte(80);
+            c = new Capacity();
+            c.total = totalSize;
+            c.avail = totalSize;
 
-        config.capacityMap.put("host1", c);
-        api.reconnectHost(host1.getUuid());
+            config.capacityMap.put("host1", c);
+            api.reconnectHost(host1.getUuid());
 
-        TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(3);
 
-        href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
-        Assert.assertEquals(totalSize, href.getTotalCapacity());
-        Assert.assertEquals(totalSize, href.getAvailablePhysicalCapacity());
-        Assert.assertEquals(totalSize, href.getTotalPhysicalCapacity());
-        Assert.assertEquals(totalSize - usedSize, href.getAvailableCapacity());
+            href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host1.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
+            Assert.assertEquals(totalSize, href.getTotalCapacity());
+            Assert.assertEquals(totalSize, href.getAvailablePhysicalCapacity());
+            Assert.assertEquals(totalSize, href.getTotalPhysicalCapacity());
+            Assert.assertEquals(totalSize - usedSize, href.getAvailableCapacity());
 
-        pscap = dbf.findByUuid(vm.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageCapacityVO.class);
-        Assert.assertEquals(totalSize, pscap.getTotalCapacity());
-        Assert.assertEquals(totalSize, pscap.getTotalPhysicalCapacity());
-        Assert.assertEquals(totalSize, pscap.getAvailablePhysicalCapacity());
-        Assert.assertEquals(totalSize - usedSize, pscap.getAvailableCapacity());
+            pscap = dbf.findByUuid(vm.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageCapacityVO.class);
+            Assert.assertEquals(totalSize, pscap.getTotalCapacity());
+            Assert.assertEquals(totalSize, pscap.getTotalPhysicalCapacity());
+            Assert.assertEquals(totalSize, pscap.getAvailablePhysicalCapacity());
+            Assert.assertEquals(totalSize - usedSize, pscap.getAvailableCapacity());
+        }
+        // add another host
+        {
+            c = new Capacity();
+            c.total = totalSize;
+            c.avail = totalSize;
 
-        c = new Capacity();
-        c.total = totalSize;
-        c.avail = totalSize;
+            config.capacityMap.put("host2", c);
+            HostInventory host2 = api.addKvmHost("host2", "127.0.0.1", host1.getClusterUuid());
+            api.reconnectHost(host2.getUuid());
 
-        config.capacityMap.put("host2", c);
-        HostInventory host2 = api.addKvmHost("host2", "127.0.0.1", host1.getClusterUuid());
-        api.reconnectHost(host2.getUuid());
+            LocalStorageHostRefVO refHost2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
+            // make available capacity bigger than total capacity
+            // to simulate abnormal conditions.
+            pscap = dbf.findByUuid(vm.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageCapacityVO.class);
+            pscap.setAvailableCapacity(pscap.getTotalCapacity() + SizeUnit.GIGABYTE.toByte(10));
+            dbf.update(pscap);
+            dbf.remove(refHost2);
 
-        LocalStorageHostRefVO refHost2 = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), vm.getRootVolume().getPrimaryStorageUuid());
-        // make available capacity bigger than total capacity
-        // to simulate abnormal conditions.
-        pscap = dbf.findByUuid(vm.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageCapacityVO.class);
-        pscap.setAvailableCapacity(pscap.getTotalCapacity() + SizeUnit.GIGABYTE.toByte(10));
-        dbf.update(pscap);
-        dbf.remove(refHost2);
-
-        // reconnect should be able to correct the capacity
-        api.reconnectPrimaryStorage(vm.getRootVolume().getPrimaryStorageUuid());
-        TimeUnit.SECONDS.sleep(2);
-        PrimaryStorageCapacityVO pscap1 = dbf.findByUuid(vm.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageCapacityVO.class);
-        Assert.assertTrue(pscap1.getTotalCapacity() < pscap.getTotalCapacity());
-        Assert.assertTrue(pscap1.getAvailableCapacity() <= pscap1.getTotalCapacity());
+            // reconnect should be able to correct the capacity
+            api.reconnectPrimaryStorage(vm.getRootVolume().getPrimaryStorageUuid());
+            TimeUnit.SECONDS.sleep(2);
+            PrimaryStorageCapacityVO pscap1 = dbf.findByUuid(vm.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageCapacityVO.class);
+            Assert.assertTrue(pscap1.getTotalCapacity() < pscap.getTotalCapacity());
+            Assert.assertTrue(pscap1.getAvailableCapacity() <= pscap1.getTotalCapacity());
+        }
     }
 }
