@@ -417,6 +417,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                             @Override
                             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
                                 cap.setAvailableCapacity(cap.getAvailablePhysicalCapacity());
+                                logger.debug(String.format("re-calculated available capacity of the primary storage" +
+                                                "[uuid:%s] with over-provisioning ratio[%s]",
+                                        psUuid, ratioMgr.getRatio(psUuid)));
                                 return cap;
                             }
                         });

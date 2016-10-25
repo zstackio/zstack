@@ -100,14 +100,15 @@ public class TestLocalStorage44 {
 
 
         long usedSize = 0;
-        List<ImageCacheVO> imgs = dbf.listAll(ImageCacheVO.class);
-        for (ImageCacheVO i : imgs) {
-            usedSize += i.getSize();
-        }
-
-        List<VolumeVO> vols = dbf.listAll(VolumeVO.class);
-        for (VolumeVO v : vols) {
-            usedSize += ratioMgr.calculateByRatio(vm.getRootVolume().getPrimaryStorageUuid(), v.getSize());
+        {
+            List<ImageCacheVO> imgs = dbf.listAll(ImageCacheVO.class);
+            for (ImageCacheVO i : imgs) {
+                usedSize += i.getSize();
+            }
+            List<VolumeVO> vols = dbf.listAll(VolumeVO.class);
+            for (VolumeVO v : vols) {
+                usedSize += ratioMgr.calculateByRatio(vm.getRootVolume().getPrimaryStorageUuid(), v.getSize());
+            }
         }
 
         // expand the the host storage capacity local storage
