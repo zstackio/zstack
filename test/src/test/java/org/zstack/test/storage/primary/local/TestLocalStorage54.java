@@ -28,11 +28,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. local storage
  * 2. migrate a root volume twice to the same host
- *
+ * <p>
  * confirm the volume only deleted on the src host
- *
+ * <p>
  * for bug https://github.com/zxwing/premium/issues/633
- *
  */
 public class TestLocalStorage54 {
     Deployer deployer;
@@ -87,9 +86,9 @@ public class TestLocalStorage54 {
             latch.countDown();
         }
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 
@@ -97,6 +96,7 @@ public class TestLocalStorage54 {
         HostInventory host2 = deployer.hosts.get("host2");
         HostInventory host1 = deployer.hosts.get("host1");
         VolumeInventory root = vm.getRootVolume();
+        // xml file defined vm was on host1
         migrateVolume(root, host2.getUuid());
         migrateVolume(root, host2.getUuid());
         latch.await(1, TimeUnit.MINUTES);

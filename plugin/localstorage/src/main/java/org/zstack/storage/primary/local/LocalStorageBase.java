@@ -411,7 +411,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        List<String> paths = new ArrayList<String>();
+                        List<String> paths = new ArrayList<>();
                         paths.add(volume.getInstallPath());
                         for (VolumeSnapshotVO sp : snapshots) {
                             paths.add(sp.getPrimaryStorageInstallPath());

@@ -288,7 +288,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Transactional(readOnly = true)
-    private String getLocalStorageInCluster(String clusterUuid) {
+    private List<String> getLocalStorageInCluster(String clusterUuid) {
         String sql = "select pri.uuid" +
                 " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
                 " where pri.uuid = ref.primaryStorageUuid" +
@@ -297,12 +297,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("cuuid", clusterUuid);
         q.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-        List<String> ret = q.getResultList();
-        if (ret.isEmpty()) {
-            return null;
-        }
-
-        return ret.get(0);
+        return q.getResultList();
     }
 
     private boolean isRootVolumeOnLocalStorage(String rootVolumeUuid) {
@@ -315,7 +310,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     public Flow marshalVmOperationFlow(String previousFlowName, String nextFlowName, FlowChain chain, VmInstanceSpec spec) {
         if (VmAllocatePrimaryStorageFlow.class.getName().equals(nextFlowName)) {
             if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
-                if (getLocalStorageInCluster(spec.getDestHost().getClusterUuid()) != null) {
+                List<String> localStorageUuids = getLocalStorageInCluster(spec.getDestHost().getClusterUuid());
+                if (localStorageUuids != null && !localStorageUuids.isEmpty()) {
                     return new LocalStorageAllocateCapacityFlow();
                 }
             }
@@ -465,8 +461,12 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void afterDeleteHost(final HostInventory inventory) {
-        final String priUuid = getLocalStorageInCluster(inventory.getClusterUuid());
-        if (priUuid != null) {
+        final List<String> priUuids = getLocalStorageInCluster(inventory.getClusterUuid());
+        if (priUuids == null || priUuids.isEmpty()) {
+            return;
+        }
+
+        for (String priUuid : priUuids) {
             RemoveHostFromLocalStorageMsg msg = new RemoveHostFromLocalStorageMsg();
             msg.setPrimaryStorageUuid(priUuid);
             msg.setHostUuid(inventory.getUuid());
