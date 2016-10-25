@@ -13,13 +13,14 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.kvm.APIAddKVMHostMsg;
-import org.zstack.storage.primary.local.LocalStorageHostRefVO;
 import org.zstack.storage.primary.local.LocalStorageHostRefVOFinder;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.data.SizeUnit;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * 1. use local storage
@@ -97,34 +98,60 @@ public class TestLocalStorage7 {
         evt = sender.send(msg, APIAddHostEvent.class);
         HostInventory host2 = evt.getInventory();
 
-        // delete host 1
-        api.deleteHost(host1.getUuid());
-
         // check
-        PrimaryStorageInventory local = deployer.primaryStorages.get("local");
+        TimeUnit.SECONDS.sleep(5);
+        PrimaryStorageInventory local1 = deployer.primaryStorages.get("local");
         PrimaryStorageInventory local2 = deployer.primaryStorages.get("local2");
+        {
+            Assert.assertTrue(new LocalStorageHostRefVOFinder().isExist(host1.getUuid(), local1.getUuid()));
+            Assert.assertTrue(new LocalStorageHostRefVOFinder().isExist(host1.getUuid(), local2.getUuid()));
 
-        LocalStorageHostRefVO href = new LocalStorageHostRefVOFinder().findByPrimaryKey(host2.getUuid(), local.getUuid());
-        PrimaryStorageVO lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
-        if (href == null) {
-            lvo = dbf.findByUuid(local2.getUuid(), PrimaryStorageVO.class);
+            Assert.assertTrue(new LocalStorageHostRefVOFinder().isExist(host2.getUuid(), local1.getUuid()));
+            Assert.assertTrue(new LocalStorageHostRefVOFinder().isExist(host2.getUuid(), local2.getUuid()));
         }
+        api.deleteHost(host1.getUuid());
+        TimeUnit.SECONDS.sleep(5);
+        {
+            Assert.assertFalse(new LocalStorageHostRefVOFinder().isExist(host1.getUuid(), local1.getUuid()));
+            Assert.assertFalse(new LocalStorageHostRefVOFinder().isExist(host1.getUuid(), local2.getUuid()));
 
-        Assert.assertEquals(totalSize, lvo.getCapacity().getTotalCapacity());
-        Assert.assertEquals(totalSize, lvo.getCapacity().getAvailableCapacity());
-        Assert.assertEquals(totalSize, lvo.getCapacity().getTotalPhysicalCapacity());
-        Assert.assertEquals(totalSize, lvo.getCapacity().getAvailablePhysicalCapacity());
+            Assert.assertTrue(new LocalStorageHostRefVOFinder().isExist(host2.getUuid(), local1.getUuid()));
+            Assert.assertTrue(new LocalStorageHostRefVOFinder().isExist(host2.getUuid(), local2.getUuid()));
 
-        Assert.assertFalse(new LocalStorageHostRefVOFinder().isExist(host1.getUuid(), local.getUuid()));
-
+            {
+                PrimaryStorageVO lvo1 = dbf.findByUuid(local1.getUuid(), PrimaryStorageVO.class);
+                Assert.assertEquals(totalSize, lvo1.getCapacity().getTotalCapacity());
+                Assert.assertEquals(totalSize, lvo1.getCapacity().getAvailableCapacity());
+                Assert.assertEquals(totalSize, lvo1.getCapacity().getTotalPhysicalCapacity());
+                Assert.assertEquals(totalSize, lvo1.getCapacity().getAvailablePhysicalCapacity());
+            }
+            {
+                PrimaryStorageVO lvo2 = dbf.findByUuid(local2.getUuid(), PrimaryStorageVO.class);
+                Assert.assertEquals(totalSize, lvo2.getCapacity().getTotalCapacity());
+                Assert.assertEquals(totalSize, lvo2.getCapacity().getAvailableCapacity());
+                Assert.assertEquals(totalSize, lvo2.getCapacity().getTotalPhysicalCapacity());
+                Assert.assertEquals(totalSize, lvo2.getCapacity().getAvailablePhysicalCapacity());
+            }
+        }
         api.deleteHost(host2.getUuid());
-
-        Assert.assertFalse(new LocalStorageHostRefVOFinder().isExist(host2.getUuid(), local.getUuid()));
-
-        lvo = dbf.findByUuid(local.getUuid(), PrimaryStorageVO.class);
-        Assert.assertEquals(0, lvo.getCapacity().getTotalCapacity());
-        Assert.assertEquals(0, lvo.getCapacity().getAvailableCapacity());
-        Assert.assertEquals(0, lvo.getCapacity().getTotalPhysicalCapacity());
-        Assert.assertEquals(0, lvo.getCapacity().getAvailablePhysicalCapacity());
+        TimeUnit.SECONDS.sleep(5);
+        {
+            Assert.assertFalse(new LocalStorageHostRefVOFinder().isExist(host2.getUuid(), local1.getUuid()));
+            Assert.assertFalse(new LocalStorageHostRefVOFinder().isExist(host2.getUuid(), local2.getUuid()));
+            {
+                PrimaryStorageVO lvo1 = dbf.findByUuid(local1.getUuid(), PrimaryStorageVO.class);
+                Assert.assertEquals(0, lvo1.getCapacity().getTotalCapacity());
+                Assert.assertEquals(0, lvo1.getCapacity().getAvailableCapacity());
+                Assert.assertEquals(0, lvo1.getCapacity().getTotalPhysicalCapacity());
+                Assert.assertEquals(0, lvo1.getCapacity().getAvailablePhysicalCapacity());
+            }
+            {
+                PrimaryStorageVO lvo2 = dbf.findByUuid(local2.getUuid(), PrimaryStorageVO.class);
+                Assert.assertEquals(0, lvo2.getCapacity().getTotalCapacity());
+                Assert.assertEquals(0, lvo2.getCapacity().getAvailableCapacity());
+                Assert.assertEquals(0, lvo2.getCapacity().getTotalPhysicalCapacity());
+                Assert.assertEquals(0, lvo2.getCapacity().getAvailablePhysicalCapacity());
+            }
+        }
     }
 }
