@@ -14,13 +14,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.core.defer.Deferred;
-import org.zstack.header.AbstractService;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -393,15 +393,40 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         if (psCap.isEmpty()) {
             // the primary storage is empty
             for (String psUuid : psUuids) {
-                new PrimaryStorageCapacityUpdater(psUuid).run(new PrimaryStorageCapacityUpdaterRunnable() {
+                new Runnable() {
                     @Override
-                    public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                        cap.setAvailableCapacity(cap.getAvailablePhysicalCapacity());
-                        return cap;
-                    }
-                });
-            }
+                    @Transactional
+                    public void run() {
+                        String sql = "select ps.type" +
+                                " from PrimaryStorageVO ps" +
+                                " where ps.uuid = :psUuid";
+                        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                        q.setParameter("psUuid", psUuid);
+                        String type = q.getSingleResult();
 
+                        RecalculatePrimaryStorageCapacityExtensionPoint ext = recalculateCapacityExtensions.get(type);
+                        RecalculatePrimaryStorageCapacityStruct struct = new RecalculatePrimaryStorageCapacityStruct();
+                        struct.setPrimaryStorageUuid(psUuid);
+
+                        if (ext != null) {
+                            ext.beforeRecalculatePrimaryStorageCapacity(struct);
+                        }
+
+                        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(psUuid);
+                        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+                            @Override
+                            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                                cap.setAvailableCapacity(cap.getAvailablePhysicalCapacity());
+                                return cap;
+                            }
+                        });
+
+                        if (ext != null) {
+                            ext.afterRecalculatePrimaryStorageCapacity(struct);
+                        }
+                    }
+                }.run();
+            }
         } else {
             // there are volumes/images on the primary storage, re-calculate the available capacity
             for (final Map.Entry<String, Long> e : psCap.entrySet()) {

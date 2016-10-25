@@ -110,7 +110,7 @@ public class TestLocalStorage44 {
             usedSize += ratioMgr.calculateByRatio(vm.getRootVolume().getPrimaryStorageUuid(), v.getSize());
         }
 
-        // expand the the local storage
+        // expand the the host storage capacity local storage
         totalSize = SizeUnit.GIGABYTE.toByte(599);
         Capacity c = new Capacity();
         c.total = totalSize;
