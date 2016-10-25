@@ -2,14 +2,11 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.asyncbatch.AsyncBatchRunner;
-import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.logging.Log;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -27,7 +24,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -82,47 +79,37 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
                 }
 
                 new Log(context.getInventory().getUuid()).log(LocalStorageLabels.INIT);
-
-                new LoopAsyncBatch<String>() {
-
-                    @Override
-                    protected Collection<String> collect() {
-                        return priUuids;
-                    }
-
-                    @Override
-                    protected AsyncBatchRunner forEach(String priUuid) {
-                        return new AsyncBatchRunner() {
-                            @Override
-                            public void run(NoErrorCompletion completion) {
-                                InitPrimaryStorageOnHostConnectedMsg msg = new InitPrimaryStorageOnHostConnectedMsg();
-                                msg.setPrimaryStorageUuid(priUuid);
-                                msg.setHostUuid(context.getInventory().getUuid());
-                                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUuid);
-                                bus.send(msg, new CloudBusCallBack(completion) {
-                                    @Override
-                                    public void run(MessageReply reply) {
-                                        if (!reply.isSuccess()) {
-                                            trigger.fail(errf.stringToOperationError(
-                                                    String.format("KVM host[uuid: %s] fails to be added into local primary storage[uuid: %s], %s",
-                                                            context.getInventory().getUuid(), priUuids, reply.getError())
-                                            ));
-                                        } else {
-                                            completion.done();
-                                        }
-                                    }
-                                });
-                            }
-                        };
-                    }
-
-                    @Override
-                    protected void done() {
-                        trigger.next();
-                    }
-                }.start();
+                Iterator<String> iterator = priUuids.iterator();
+                initLocalStorage(iterator, trigger, data, context);
             }
         };
+    }
+
+    private void initLocalStorage(final Iterator<String> iterator,
+                                  final FlowTrigger trigger,
+                                  Map data,
+                                  final KVMHostConnectedContext context) {
+        if (!iterator.hasNext()) {
+            trigger.next();
+            return;
+        }
+        final String priUuid = iterator.next();
+        InitPrimaryStorageOnHostConnectedMsg msg = new InitPrimaryStorageOnHostConnectedMsg();
+        msg.setPrimaryStorageUuid(priUuid);
+        msg.setHostUuid(context.getInventory().getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUuid);
+        bus.send(msg, new CloudBusCallBack(trigger) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    trigger.fail(errf.stringToOperationError(
+                            String.format("KVM host[uuid: %s] fails to be added into local primary storage[uuid: %s], %s",
+                                    context.getInventory().getUuid(), priUuid, reply.getError())));
+                } else {
+                    initLocalStorage(iterator, trigger, data, context);
+                }
+            }
+        });
     }
 
     @Override
