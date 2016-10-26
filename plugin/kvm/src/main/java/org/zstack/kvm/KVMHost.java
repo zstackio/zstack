@@ -99,6 +99,7 @@ public class KVMHost extends HostBase implements Host {
     private String changeCpuMemoryPath;
     private String deleteConsoleFirewall;
     private String changeVmPasswordPath;
+    private String setRootPasswordPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -197,6 +198,10 @@ public class KVMHost extends HostBase implements Host {
         changeVmPasswordPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_SET_ROOT_PASSWORD_PATH);
+        setRootPasswordPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
         deleteConsoleFirewall = ub.build().toString();
     }
@@ -254,6 +259,8 @@ public class KVMHost extends HostBase implements Host {
             handle((OnlineChangeVmCpuMemoryMsg) msg);
         } else if (msg instanceof ChangeVmPasswordMsg) {
             handle((ChangeVmPasswordMsg) msg);
+        } else if (msg instanceof SetRootPasswordMsg) {
+            handle((SetRootPasswordMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -341,12 +348,46 @@ public class KVMHost extends HostBase implements Host {
         bus.reply(msg, reply);
     }
 
+    private void handle(final SetRootPasswordMsg msg) {
+        final SetRootPasswordReply reply = new SetRootPasswordReply();
+        ChangeVmPasswordCmd cmd = new ChangeVmPasswordCmd();
+        cmd.setVmUuid(msg.getVmUuid());
+        cmd.setAccountPerference(new VmAccountPerference(msg.getVmUuid(),"root",msg.getRootPassword()));
+        cmd.setQcowFile(msg.getQcowFile());
+
+        restf.asyncJsonPost(setRootPasswordPath, cmd, new JsonAsyncRESTCallback<ChangeVmPasswordResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(ChangeVmPasswordResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                } else {
+                    reply.setRootPassword(ret.getVmAccountPerference().getAccountPassword());
+                    reply.setQcowFile(ret.getQcowFile());
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<ChangeVmPasswordResponse> getReturnClass() {
+                return ChangeVmPasswordResponse.class;
+            }
+        });
+    }
+
     private void handle(final ChangeVmPasswordMsg msg) {
         final ChangeVmPasswordReply reply = new ChangeVmPasswordReply();
 
         ChangeVmPasswordCmd cmd = new ChangeVmPasswordCmd();
         cmd.setVmUuid(msg.getAccountPerference().getVmUuid());
         cmd.setAccountPerference(msg.getAccountPerference());
+        cmd.setQcowFile(msg.getQcowFile());
+
         restf.asyncJsonPost(changeVmPasswordPath, cmd, new JsonAsyncRESTCallback<ChangeVmPasswordResponse>(msg) {
             @Override
             public void fail(ErrorCode err) {
@@ -359,7 +400,8 @@ public class KVMHost extends HostBase implements Host {
                 if (!ret.isSuccess()) {
                     reply.setError(errf.stringToOperationError(ret.getError()));
                 } else {
-                    reply.setVmAccountPerference(msg.getAccountPerference());
+                    reply.setVmAccountPerference(ret.getVmAccountPerference());
+                    reply.setQcowFile(ret.getQcowFile());
                 }
                 bus.reply(msg, reply);
             }

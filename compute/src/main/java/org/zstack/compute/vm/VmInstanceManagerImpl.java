@@ -650,6 +650,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         smsg.setL3NetworkUuids(msg.getL3NetworkUuids());
         smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(vo));
+        smsg.setRootPassword(msg.getRootPassword());
         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vo.getUuid());
         bus.send(smsg, new CloudBusCallBack(smsg) {
             @Override
@@ -716,6 +717,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
         cmsg.setStrategy(msg.getStrategy());
+        cmsg.setRootPassword(msg.getRootPassword());
         return cmsg;
     }
 

@@ -25,4 +25,5 @@ public interface CreateVmInstanceMessage {
     String getDefaultL3NetworkUuid();
     String getAllocatorStrategy();
     String getStrategy(); // VmCreationStrategy
+    String getRootPassword();
 }
