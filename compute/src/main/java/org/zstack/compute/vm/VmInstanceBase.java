@@ -3467,6 +3467,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (self.getState() == VmInstanceState.Created) {
             StartVmFromNewCreatedStruct struct = new JsonLabel().get(
                     StartVmFromNewCreatedStruct.makeLabelKey(self.getUuid()), StartVmFromNewCreatedStruct.class);
+
             startVmFromNewCreate(struct, completion);
             return;
         }
@@ -3657,6 +3658,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
         FlowChain chain = getCreateVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
+        // add user-defined root password
+        if(struct.getRootPassword() != null)
+            spec.setAccountPerference(new VmAccountPerference(self.getUuid(), "root", struct.getRootPassword()));
 
         chain.setName(String.format("create-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
@@ -4247,12 +4251,6 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         chain.setName(String.format("change-vm-password-%s", amsg.getVmInstanceUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
-        String qcowFilePath = getRootVolumeQcowPath(viVo);
-        if(qcowFilePath == null)
-            completion.fail(new ErrorCode("NO_ROOTVOLUME_FOUND", "not dest root volume" +
-                    "found in VolumeVO by vmUuid", String.format("not dest root volume found" +
-                    " in VolumeVO by vmUuid: %s", amsg.getVmInstanceUuid())));
-        chain.getData().put(VmInstanceConstant.QCOW_FILE_PATH, qcowFilePath);
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
@@ -4264,19 +4262,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 completion.fail(errCode);
             }
         }).start();
-    }
-
-    protected String getRootVolumeQcowPath(final VmInstanceVO viVo){
-        logger.debug(String.format("get RootVolumePath begin, viVo is: %s", viVo.toString()));
-        String volumeUuid = viVo.getRootVolumeUuid();
-        if(volumeUuid == null)
-            return null;
-        VolumeVO vo = dbf.findByUuid(volumeUuid, VolumeVO.class);
-        if(vo == null)
-            return null;
-        VolumeInventory vol = VolumeInventory.valueOf(vo);
-        logger.debug(String.format("get RootVolumePath %s from VolumeVo by volumeUuid: %s", vol.getInstallPath(), volumeUuid));
-        return vol.getInstallPath();
     }
 
     protected void handle(final APICreateStopVmInstanceSchedulerMsg msg) {

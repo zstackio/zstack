@@ -68,10 +68,5 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="ApplianceVmChangePassword" class="org.zstack.appliancevm.ApplianceVmChangePassword">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.vm.VmBeforeStartOnHypervisorExtensionPoint" />
-        </zstack:plugin>
-    </bean>
 
 </beans>

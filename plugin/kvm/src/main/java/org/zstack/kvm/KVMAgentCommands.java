@@ -777,6 +777,7 @@ public class KVMAgentCommands {
     public static class ChangeVmPasswordCmd extends AgentCommand{
         private String vmUuid;
         private VmAccountPerference accountPerference;
+        private String qcowFile;
 
         public String getVmUuid() {
             return vmUuid;
@@ -789,6 +790,14 @@ public class KVMAgentCommands {
         public VmAccountPerference getAccountPerference() { return accountPerference; }
 
         public void setAccountPerference(VmAccountPerference accountPerference) { this.accountPerference = accountPerference; }
+
+        public String getQcowFile() {
+            return qcowFile;
+        }
+
+        public void setQcowFile(String qcowFile) {
+            this.qcowFile = qcowFile;
+        }
     }
     public static class OnlineChangeCpuMemoryCmd extends AgentCommand{
         private String vmUuid;
@@ -820,10 +829,18 @@ public class KVMAgentCommands {
     }
     public static class ChangeVmPasswordResponse extends AgentResponse{
         private VmAccountPerference vmAccountPerference;
+        private String qcowFile;
 
         public VmAccountPerference getVmAccountPerference() { return vmAccountPerference; }
         public void setVmAccountPerference(VmAccountPerference vmAccountPerference) { this.vmAccountPerference = vmAccountPerference; }
 
+        public String getQcowFile() {
+            return qcowFile;
+        }
+
+        public void setQcowFile(String qcowFile) {
+            this.qcowFile = qcowFile;
+        }
     }
     public static class OnlineChangeCpuMemoryResponse extends AgentResponse{
         private int cpuNum;

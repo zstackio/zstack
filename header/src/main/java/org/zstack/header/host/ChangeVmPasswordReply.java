@@ -8,8 +8,17 @@ import org.zstack.header.vm.VmAccountPerference;
  */
 public class ChangeVmPasswordReply extends MessageReply {
     private VmAccountPerference vmAccountPerference;
+    private String qcowFile;
 
     public VmAccountPerference getVmAccountPerference() { return vmAccountPerference; }
 
     public void setVmAccountPerference(VmAccountPerference vmAccountPerference) { this.vmAccountPerference = vmAccountPerference; }
+
+    public String getQcowFile() {
+        return qcowFile;
+    }
+
+    public void setQcowFile(String qcowFile) {
+        this.qcowFile = qcowFile;
+    }
 }
