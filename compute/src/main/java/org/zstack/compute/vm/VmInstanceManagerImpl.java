@@ -786,9 +786,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         if (quotas == null || quotas.size() == 0) {
                             return;
                         }
+                        Map<String, QuotaPair> pairs = new QuotaUtil().
+                                makeQuotaPairs(((NeedQuotaCheckMessage) msg).getAccountUuid());
                         for (Quota quota : quotas) {
-                            Map<String, QuotaPair> pairs = new QuotaUtil().
-                                    makeQuotaPairs(quota, ((NeedQuotaCheckMessage) msg).getAccountUuid());
                             quota.getOperator().checkQuota((NeedQuotaCheckMessage) msg, pairs);
                         }
                     }

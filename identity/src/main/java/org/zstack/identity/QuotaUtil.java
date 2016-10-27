@@ -12,7 +12,9 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by miao on 16-10-9.
@@ -61,12 +63,11 @@ public class QuotaUtil {
         }
     }
 
-    public Map<String, Quota.QuotaPair> makeQuotaPairs(Set<String> quotaNames, String accountUuid) {
+    public Map<String, Quota.QuotaPair> makeQuotaPairs(String accountUuid) {
         SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
         q.select(QuotaVO_.name, QuotaVO_.value);
         q.add(QuotaVO_.identityType, SimpleQuery.Op.EQ, AccountVO.class.getSimpleName());
         q.add(QuotaVO_.identityUuid, SimpleQuery.Op.EQ, accountUuid);
-        q.add(QuotaVO_.name, SimpleQuery.Op.IN, quotaNames);
         List<Tuple> ts = q.listTuple();
 
         Map<String, Quota.QuotaPair> pairs = new HashMap<>();
@@ -80,14 +81,6 @@ public class QuotaUtil {
         }
 
         return pairs;
-    }
-
-    public Map<String, Quota.QuotaPair> makeQuotaPairs(Quota quota, String accountUuid) {
-        Set<String> quotaNameSet = new HashSet<>();
-        for (Quota.QuotaPair p : quota.getQuotaPairs()) {
-            quotaNameSet.add(p.getName());
-        }
-        return makeQuotaPairs(quotaNameSet, accountUuid);
     }
 
     public AccountType getAccountType(String accountUuid) {

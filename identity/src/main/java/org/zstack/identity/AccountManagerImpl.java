@@ -1456,10 +1456,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         return msg;
     }
-
-    private void validateResourceAccessPermission(APIChangeResourceOwnerMsg msg) {
-    }
-
+    
     private void checkQuotaForChangeResourceOwner(APIChangeResourceOwnerMsg msg) {
         String currentAccountUuid = msg.getSession().getAccountUuid();
         String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
@@ -1479,13 +1476,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             ));
         }
         // check quota
+        Map<String, QuotaPair> pairs = new QuotaUtil().makeQuotaPairs(msg.getAccountUuid());
         for (Quota quota : messageQuotaMap.get(APIChangeResourceOwnerMsg.class)) {
-            quota.getOperator().checkQuota(msg, new QuotaUtil().makeQuotaPairs(quota, msg.getAccountUuid()));
+            quota.getOperator().checkQuota(msg, pairs);
         }
     }
 
     private void validate(APIChangeResourceOwnerMsg msg) {
-        validateResourceAccessPermission(msg);
         checkQuotaForChangeResourceOwner(msg);
     }
 

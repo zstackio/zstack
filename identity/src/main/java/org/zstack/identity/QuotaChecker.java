@@ -8,10 +8,8 @@ import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.message.APIMessage;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by frank on 7/30/2015.
@@ -40,7 +38,7 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
         }
 
         // skip admin. if needed, another quota check will be issued in AccountManagerImpl
-        if(new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())){
+        if (new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
             return msg;
         }
 
@@ -55,18 +53,7 @@ public class QuotaChecker implements GlobalApiMessageInterceptor {
     }
 
     private void check(APIMessage msg, Quota quota) {
-        Set<String> quotaNames = new HashSet<>();
-        for (QuotaPair p : quota.getQuotaPairs()) {
-            quotaNames.add(p.getName());
-        }
-        if (quota.getQuotaValidators() != null) {
-            for (Quota.QuotaValidator q : quota.getQuotaValidators()) {
-                quotaNames.addAll(q.reportQuotaName());
-            }
-        }
-        Map<String, QuotaPair> pairs = new QuotaUtil().makeQuotaPairs(quotaNames, msg.getSession().getAccountUuid());
-
-
+        Map<String, QuotaPair> pairs = new QuotaUtil().makeQuotaPairs(msg.getSession().getAccountUuid());
         quota.getOperator().checkQuota(msg, pairs);
         if (quota.getQuotaValidators() != null) {
             for (Quota.QuotaValidator q : quota.getQuotaValidators()) {
