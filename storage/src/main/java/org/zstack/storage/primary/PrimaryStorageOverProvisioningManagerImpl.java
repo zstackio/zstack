@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class PrimaryStorageOverProvisioningManagerImpl implements PrimaryStorageOverProvisioningManager {
     private double globalRatio = 1;
-    private ConcurrentHashMap<String, Double> primaryStorageRatio = new ConcurrentHashMap<String, Double>();
+    private ConcurrentHashMap<String, Double> primaryStorageRatio = new ConcurrentHashMap<>();
 
     @Override
     public void setGlobalRatio(double ratio) {

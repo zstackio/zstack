@@ -51,17 +51,27 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             errorInfo = String.format("required primary storage[uuid:%s] cannot satisfy conditions[state:%s, status:%s, size:%s]",
                     spec.getRequiredPrimaryStorageUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredHostUuid() != null) {
-            String sql = "select pri from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host where host.uuid = :huuid" +
-                    " and host.clusterUuid = ref.clusterUuid and ref.primaryStorageUuid = pri.uuid and pri.status = :status and pri.state = :priState";
+            String sql = "select pri" +
+                    " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host" +
+                    " where host.uuid = :huuid" +
+                    " and host.clusterUuid = ref.clusterUuid" +
+                    " and ref.primaryStorageUuid = pri.uuid" +
+                    " and pri.status = :status" +
+                    " and pri.state = :priState";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("huuid", spec.getRequiredHostUuid());
             query.setParameter("priState", PrimaryStorageState.Enabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
-            errorInfo = String.format("cannot find primary storage satisfying conditions[attached to cluster having host:%s, state:%s, status: %s, available capacity > %s",
+            errorInfo = String.format("cannot find primary storage satisfying conditions" +
+                            "[attached to cluster having host:%s, state:%s, status: %s, available capacity > %s",
                     spec.getRequiredHostUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredClusterUuids() != null && !spec.getRequiredClusterUuids().isEmpty()) {
-            String sql = "select pri from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, ClusterVO cluster where" +
-                    " cluster.uuid = ref.clusterUuid and ref.primaryStorageUuid = pri.uuid and pri.status = :status and pri.state = :priState" +
+            String sql = "select pri" +
+                    " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, ClusterVO cluster" +
+                    " where cluster.uuid = ref.clusterUuid" +
+                    " and ref.primaryStorageUuid = pri.uuid" +
+                    " and pri.status = :status" +
+                    " and pri.state = :priState" +
                     " and cluster.uuid in (:clusterUuids)";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("clusterUuids", spec.getRequiredClusterUuids());
@@ -101,7 +111,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         }
 
 
-        List<PrimaryStorageVO> res = new ArrayList<PrimaryStorageVO>();
+        List<PrimaryStorageVO> res = new ArrayList<>();
         if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose())) {
             res.addAll(considerImageCache(spec, vos));
         } else {
@@ -120,7 +130,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
 
     @Transactional(readOnly = true)
     private Collection<? extends PrimaryStorageVO> considerImageCache(PrimaryStorageAllocationSpec spec, List<PrimaryStorageVO> vos) {
-        List<PrimaryStorageVO> res = new ArrayList<PrimaryStorageVO>();
+        List<PrimaryStorageVO> res = new ArrayList<>();
         if (vos.isEmpty()) {
             return res;
         }

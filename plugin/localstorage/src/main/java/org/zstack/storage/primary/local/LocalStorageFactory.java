@@ -825,7 +825,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             if (hostUuid == null) {
                 throw new OperationFailureException(errf.stringToInvalidArgumentError(
                         String.format("To create data volume on the local primary storage, you must specify the host that" +
-                                " the data volume is going to be created using the system tag [%s]", LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat())
+                                " the data volume is going to be created using the system tag [%s]",
+                                LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat())
                 ));
             }
         }

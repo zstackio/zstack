@@ -4,7 +4,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 
 public class APIUpdateGlobalConfigMsg extends APIMessage {
-	@APIParam
+    @APIParam
     private String category;
     @APIParam
     private String name;
