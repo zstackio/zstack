@@ -3,7 +3,6 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -18,7 +17,6 @@ import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.DownloadIsoToPrimaryStorageMsg;
 import org.zstack.header.storage.primary.DownloadIsoToPrimaryStorageReply;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
@@ -30,10 +28,7 @@ import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import javax.persistence.TypedQuery;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 /**
  * Created by frank on 10/17/2015.
@@ -66,19 +61,20 @@ public class VmDownloadIsoFlow extends NoRollbackFlow {
         if (bsUuid == null) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("cannot find the iso[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n" +
-                            "1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is running\n" +
-                            "2. if the backup storage is in connected status, if not, try reconnecting it",
+                                    "1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is running\n" +
+                                    "2. if the backup storage is in connected status, if not, try reconnecting it",
                             iso.getUuid(), host.getZoneUuid(), spec.getVmInventory().getName(), spec.getVmInventory().getUuid())
             ));
         }
 
         ImageSpec imageSpec = new ImageSpec();
-        imageSpec.setSelectedBackupStorage(CollectionUtils.find(iso.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
-            @Override
-            public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
-            }
-        }));
+        imageSpec.setSelectedBackupStorage(CollectionUtils.find(iso.getBackupStorageRefs(),
+                new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
+                    @Override
+                    public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
+                        return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
+                    }
+                }));
         imageSpec.setInventory(iso);
 
         DownloadIsoToPrimaryStorageMsg msg = new DownloadIsoToPrimaryStorageMsg();

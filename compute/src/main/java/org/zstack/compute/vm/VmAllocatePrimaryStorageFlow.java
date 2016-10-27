@@ -47,7 +47,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
-        final List<AllocatePrimaryStorageMsg> msgs = new ArrayList<AllocatePrimaryStorageMsg>();
+        final List<AllocatePrimaryStorageMsg> msgs = new ArrayList<>();
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory destHost = spec.getDestHost();
         final ImageInventory iminv = spec.getImageSpec().getInventory();

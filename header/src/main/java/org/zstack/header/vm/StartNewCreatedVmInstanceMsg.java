@@ -11,7 +11,7 @@ public class StartNewCreatedVmInstanceMsg extends NeedReplyMessage implements Vm
     private List<String> l3NetworkUuids;
     private List<String> dataDiskOfferingUuids;
     private String rootDiskOfferingUuid;
-    
+
     public VmInstanceInventory getVmInstanceInventory() {
         return vmInstanceInventory;
     }
@@ -21,22 +21,22 @@ public class StartNewCreatedVmInstanceMsg extends NeedReplyMessage implements Vm
     }
 
     public List<String> getL3NetworkUuids() {
-		return l3NetworkUuids;
-	}
+        return l3NetworkUuids;
+    }
 
-	public void setL3NetworkUuids(List<String> l3NetworkUuids) {
-		this.l3NetworkUuids = l3NetworkUuids;
-	}
+    public void setL3NetworkUuids(List<String> l3NetworkUuids) {
+        this.l3NetworkUuids = l3NetworkUuids;
+    }
 
-	public List<String> getDataDiskOfferingUuids() {
-		return dataDiskOfferingUuids;
-	}
+    public List<String> getDataDiskOfferingUuids() {
+        return dataDiskOfferingUuids;
+    }
 
-	public void setDataDiskOfferingUuids(List<String> dataDiskOfferingUuids) {
-		this.dataDiskOfferingUuids = dataDiskOfferingUuids;
-	}
+    public void setDataDiskOfferingUuids(List<String> dataDiskOfferingUuids) {
+        this.dataDiskOfferingUuids = dataDiskOfferingUuids;
+    }
 
-	public String getRootDiskOfferingUuid() {
+    public String getRootDiskOfferingUuid() {
         return rootDiskOfferingUuid;
     }
 
