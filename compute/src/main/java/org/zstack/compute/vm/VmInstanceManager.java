@@ -27,7 +27,9 @@ public interface VmInstanceManager {
 
     FlowChain getExpungeVmWorkFlowChain(VmInstanceInventory inv);
 
-    FlowChain getChangeVmPasswordWorkFlowChain(VmAccountPerference account);
+    FlowChain getChangeVmPasswordWorkFlowChain();
+
+    FlowChain getSetVmRootPasswordWorkFlowChain();
 
     VmInstanceFactory getVmInstanceFactory(VmInstanceType vmType);
 }

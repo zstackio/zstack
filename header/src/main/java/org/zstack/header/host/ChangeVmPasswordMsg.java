@@ -8,7 +8,6 @@ import org.zstack.header.vm.VmAccountPerference;
  */
 public class ChangeVmPasswordMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
-    private String qcowFile;
     private VmAccountPerference accountPerference;
 
     public VmAccountPerference getAccountPerference() { return accountPerference; }
@@ -21,13 +20,5 @@ public class ChangeVmPasswordMsg extends NeedReplyMessage implements HostMessage
     @Override
     public String getHostUuid() {
         return hostUuid;
-    }
-
-    public String getQcowFile() {
-        return qcowFile;
-    }
-
-    public void setQcowFile(String qcowFile) {
-        this.qcowFile = qcowFile;
     }
 }

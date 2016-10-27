@@ -1,22 +1,22 @@
 package org.zstack.header.host;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.vm.VmAccountPerference;
 
 /**
  * Created by mingjian.deng on 16/10/26.
  */
 public class SetRootPasswordMsg extends NeedReplyMessage implements HostMessage{
-    private String rootPassword;
     private String hostUuid;
-    private String vmUuid;
     private String qcowFile;
+    private VmAccountPerference vmAccountPerference;
 
-    public String getRootPassword() {
-        return rootPassword;
+    public VmAccountPerference getVmAccountPerference() {
+        return vmAccountPerference;
     }
 
-    public void setRootPassword(String rootPassword) {
-        this.rootPassword = rootPassword;
+    public void setVmAccountPerference(VmAccountPerference vmAccountPerference) {
+        this.vmAccountPerference = vmAccountPerference;
     }
 
     @Override
@@ -26,14 +26,6 @@ public class SetRootPasswordMsg extends NeedReplyMessage implements HostMessage{
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
-    }
-
-    public String getVmUuid() {
-        return vmUuid;
-    }
-
-    public void setVmUuid(String vmUuid) {
-        this.vmUuid = vmUuid;
     }
 
     public String getQcowFile() {

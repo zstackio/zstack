@@ -10,7 +10,7 @@ import org.zstack.header.tag.TagResourceType;
  */
 @TagResourceType(VmInstanceVO.class)
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
-public class APIChangeVMPasswordMsg extends APIMessage implements VmInstanceMessage {
+public class APIChangeVmPasswordMsg extends APIMessage implements VmInstanceMessage {
 
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String uuid;

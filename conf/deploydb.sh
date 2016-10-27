@@ -22,6 +22,8 @@ DROP DATABASE IF EXISTS zstack_rest;
 CREATE DATABASE zstack_rest;
 grant all privileges on zstack.* to root@'%' identified by "$password";
 grant all privileges on zstack_rest.* to root@'%' identified by "$password";
+grant all privileges on zstack.* to root@'localhost' identified by "$password";
+grant all privileges on zstack_rest.* to root@'localhost' identified by "$password";
 EOF
 
 rm -rf $flyway_sql
