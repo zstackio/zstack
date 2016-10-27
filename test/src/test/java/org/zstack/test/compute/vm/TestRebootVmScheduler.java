@@ -46,7 +46,7 @@ public class TestRebootVmScheduler {
         Integer repeatCount = 1;
         String vmUuid = inv.getUuid();
         Assert.assertEquals(VmInstanceState.Running.toString(), inv.getState());
-        api.rebootVmInstanceScheduler(vmUuid, type, startDate, interval, repeatCount);
+        api.rebootVmInstanceScheduler(vmUuid, type, startDate, interval, repeatCount, null);
         TimeUnit.SECONDS.sleep(10);
         VmInstanceVO vm = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
         Assert.assertNotNull(vm);

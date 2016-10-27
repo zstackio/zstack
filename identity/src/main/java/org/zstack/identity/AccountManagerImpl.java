@@ -1201,18 +1201,18 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             List<Tuple> ts = q.listTuple();
 
             for (Tuple t : ts) {
-                String auuid = t.get(0, String.class);
-                String ruuid = t.get(1, String.class);
-                String type = t.get(2, String.class);
-                if (!session.getAccountUuid().equals(auuid)) {
+                String resourceOwnerAccountUuid = t.get(0, String.class);
+                String resourceUuid = t.get(1, String.class);
+                String resourceType = t.get(2, String.class);
+                if (!session.getAccountUuid().equals(resourceOwnerAccountUuid)) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                            String.format("operation denied. The resource[uuid: %s, type: %s] doesn't belong to the account[uuid: %s]",
-                                    ruuid, type, session.getAccountUuid())
+                            String.format("operation denied. The resource[uuid: %s, type: %s, ownerAccountUuid:%s] doesn't belong to the account[uuid: %s]",
+                                    resourceUuid, resourceType, resourceOwnerAccountUuid, session.getAccountUuid())
                     ));
                 } else {
                     if (logger.isTraceEnabled()) {
                         logger.trace(String.format("account-check pass. The resource[uuid: %s, type: %s] belongs to the account[uuid: %s]",
-                                ruuid, type, session.getAccountUuid()));
+                                resourceUuid, resourceType, session.getAccountUuid()));
                     }
                 }
             }

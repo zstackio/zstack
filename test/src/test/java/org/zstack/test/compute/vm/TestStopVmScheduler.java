@@ -45,12 +45,12 @@ public class TestStopVmScheduler {
         Date date = new Date();
         VmInstanceInventory inv = api.listVmInstances(null).get(0);
         String type = "simple";
-        Long startDate = date.getTime()/1000;
+        Long startDate = date.getTime() / 1000;
         Integer interval = 3;
         Integer repeatCount = 3;
         String uuid = inv.getUuid();
         // stopvm
-        api.stopVmInstanceScheduler(uuid, type, startDate, interval, repeatCount);
+        api.stopVmInstanceScheduler(uuid, type, startDate, interval, repeatCount, null);
         TimeUnit.SECONDS.sleep(2);
         VmInstanceVO vm = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
         Assert.assertNotNull(vm);

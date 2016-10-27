@@ -52,7 +52,7 @@ public class TestStartVmScheduler {
         Integer interval = 3;
         Integer repeatCount = 3;
         String vmUuid = inv.getUuid();
-        api.startVmInstanceScheduler(vmUuid, type, startDate, interval, repeatCount);
+        api.startVmInstanceScheduler(vmUuid, type, startDate, interval, repeatCount, null);
         TimeUnit.SECONDS.sleep(2);
 
         VmInstanceVO vm2 = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);

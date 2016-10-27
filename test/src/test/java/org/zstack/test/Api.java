@@ -4326,9 +4326,14 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public void stopVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount) throws ApiSenderException {
+    public void stopVmInstanceScheduler(String vmUuid,
+                                        String type,
+                                        Long startDate,
+                                        Integer interval,
+                                        Integer repeatCount,
+                                        SessionInventory session) throws ApiSenderException {
         APICreateStopVmInstanceSchedulerMsg msg = new APICreateStopVmInstanceSchedulerMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("stopvm");
         msg.setInterval(interval);
         if (repeatCount != null) {
@@ -4344,9 +4349,14 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public void startVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount) throws ApiSenderException {
+    public void startVmInstanceScheduler(String vmUuid,
+                                         String type,
+                                         Long startDate,
+                                         Integer interval,
+                                         Integer repeatCount,
+                                         SessionInventory session) throws ApiSenderException {
         APICreateStartVmInstanceSchedulerMsg msg = new APICreateStartVmInstanceSchedulerMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("startvm");
         msg.setInterval(interval);
         if (repeatCount != null) {
@@ -4362,9 +4372,14 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public void rebootVmInstanceScheduler(String vmUuid, String type, Long startDate, Integer interval, Integer repeatCount) throws ApiSenderException {
+    public void rebootVmInstanceScheduler(String vmUuid,
+                                          String type,
+                                          Long startDate,
+                                          Integer interval,
+                                          Integer repeatCount,
+                                          SessionInventory session) throws ApiSenderException {
         APICreateRebootVmInstanceSchedulerMsg msg = new APICreateRebootVmInstanceSchedulerMsg();
-        msg.setSession(adminSession);
+        msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("rebootvm");
         msg.setInterval(interval);
         if (repeatCount != null) {
