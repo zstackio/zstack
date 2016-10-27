@@ -1257,6 +1257,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         volumeUuids.add(uuid);
                     }
                 }
+
+                // skip empty volume uuid list
+                if (volumeUuids.isEmpty()) {
+                    return;
+                }
                 // check data volume num
                 long dataVolumeNumUsed = new VmQuotaUtil().getUsedDataVolumeCount(resourceTargetOwnerAccountUuid);
                 if (dataVolumeUuids != null && !dataVolumeUuids.isEmpty()) {

@@ -66,14 +66,15 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     protected SchedulerInventory getInventory() {
         return SchedulerInventory.valueOf(self);
     }
+
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof APIDeleteSchedulerMsg) {
             handle((APIDeleteSchedulerMsg) msg);
-        } else  if (msg instanceof  APIUpdateSchedulerMsg) {
+        } else if (msg instanceof APIUpdateSchedulerMsg) {
             handle((APIUpdateSchedulerMsg) msg);
-        } else  if (msg instanceof  APIChangeSchedulerStateMsg) {
+        } else if (msg instanceof APIChangeSchedulerStateMsg) {
             handle((APIChangeSchedulerStateMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
@@ -84,12 +85,12 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         self = dbf.findByUuid(msg.getSchedulerUuid(), SchedulerVO.class);
         if (msg.getStateEvent().equals("enable")) {
             resumeSchedulerJob(msg.getUuid());
-            APIChangeSchedulerStateEvent evt = new APIChangeSchedulerStateEvent( msg.getId());
+            APIChangeSchedulerStateEvent evt = new APIChangeSchedulerStateEvent(msg.getId());
             evt.setInventory(getInventory());
             bus.publish(evt);
         } else {
             pauseSchedulerJob(msg.getUuid());
-            APIChangeSchedulerStateEvent evt = new APIChangeSchedulerStateEvent( msg.getId());
+            APIChangeSchedulerStateEvent evt = new APIChangeSchedulerStateEvent(msg.getId());
             evt.setInventory(getInventory());
             bus.publish(evt);
         }
@@ -131,10 +132,10 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
     private SchedulerVO updateScheduler(APIUpdateSchedulerMsg msg) {
         SchedulerVO self = dbf.findByUuid(msg.getSchedulerUuid(), SchedulerVO.class);
-        if ( msg.getSchedulerName() != null ) {
+        if (msg.getSchedulerName() != null) {
             self.setSchedulerName(msg.getSchedulerName());
         }
-        if ( msg.getSchedulerDescription() != null ) {
+        if (msg.getSchedulerDescription() != null) {
             self.setSchedulerDescription(msg.getSchedulerDescription());
         }
         return self;
@@ -178,7 +179,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
 
-    public void pauseSchedulerJob (String uuid) {
+    public void pauseSchedulerJob(String uuid) {
         logger.debug(String.format("Scheduler %s will change status to Disabled", uuid));
         SimpleQuery<SchedulerVO> q = dbf.createQuery(SchedulerVO.class);
         q.select(SchedulerVO_.jobName);
@@ -199,7 +200,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     public void resumeSchedulerJob(String uuid) {
-        if ( ! destinationMaker.isManagedByUs(uuid)) {
+        if (!destinationMaker.isManagedByUs(uuid)) {
             logger.debug(String.format("Scheduler %s not managed by us, will not be resume", uuid));
         } else {
             logger.debug(String.format("Scheduler %s will change status to Enabled", uuid));
@@ -224,7 +225,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     public void deleteSchedulerJob(String uuid) {
-        if ( ! destinationMaker.isManagedByUs(uuid)) {
+        if (!destinationMaker.isManagedByUs(uuid)) {
             logger.debug(String.format("Scheduler %s not managed by us, will not be deleted", uuid));
         } else {
             logger.debug(String.format("Scheduler %s will be deleted", uuid));
@@ -260,8 +261,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 q.add(SchedulerVO_.uuid, SimpleQuery.Op.IN, ours);
                 List<SchedulerVO> vos = q.list();
                 for (SchedulerVO vo : vos) {
-                   vo.setManagementNodeUuid(Platform.getManagementServerId());
-                   dbf.updateAndRefresh(vo);
+                    vo.setManagementNodeUuid(Platform.getManagementServerId());
+                    dbf.updateAndRefresh(vo);
                 }
             }
         }
@@ -337,8 +338,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         Boolean startNow = false;
         SchedulerVO vo = new SchedulerVO();
         Timestamp create = new Timestamp(System.currentTimeMillis());
-        if ( schedulerJob.getStartDate() != null ) {
-            if ( ! schedulerJob.getStartDate().equals(new Date(0))) {
+        if (schedulerJob.getStartDate() != null) {
+            if (!schedulerJob.getStartDate().equals(new Date(0))) {
                 start = new Timestamp(schedulerJob.getStartDate().getTime());
             } else {
                 startNow = true;
@@ -348,19 +349,19 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         String jobData = JSONObjectUtil.toJsonString(schedulerJob);
         String jobClassName = schedulerJob.getClass().getName();
         if (saveDB) {
-            if ( start != null) {
+            if (start != null) {
                 vo.setStartDate(start);
             }
 
-            if ( schedulerJob.getSchedulerInterval() != null ) {
+            if (schedulerJob.getSchedulerInterval() != null) {
                 vo.setSchedulerInterval(schedulerJob.getSchedulerInterval());
             }
 
-            if ( schedulerJob.getCron() != null ) {
+            if (schedulerJob.getCron() != null) {
                 vo.setCronScheduler(schedulerJob.getCron());
             }
 
-            if ( schedulerJob.getRepeat() != null ) {
+            if (schedulerJob.getRepeat() != null) {
                 vo.setRepeatCount(schedulerJob.getRepeat());
             }
             vo.setJobData(jobData);
@@ -370,7 +371,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             } else {
                 vo.setUuid(Platform.getUuid());
             }
-            vo.setSchedulerJob(jobClassName.substring(jobClassName.lastIndexOf(".")+1));
+            vo.setSchedulerJob(jobClassName.substring(jobClassName.lastIndexOf(".") + 1));
             vo.setSchedulerType(schedulerJob.getType());
             vo.setSchedulerName(schedulerJob.getSchedulerName());
             vo.setCreateDate(create);
@@ -390,12 +391,12 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                     .usingJobData("jobClassName", jobClassName)
                     .usingJobData("jobData", jobData)
                     .build();
-            if ( schedulerJob.getType().equals("simple")) {
+            if (schedulerJob.getType().equals("simple")) {
                 Trigger trigger;
-                if ( schedulerJob.getRepeat() != null ) {
-                    if ( schedulerJob.getRepeat() == 1) {
+                if (schedulerJob.getRepeat() != null) {
+                    if (schedulerJob.getRepeat() == 1) {
                         //repeat only once, ignore interval
-                        if ( startNow ) {
+                        if (startNow) {
                             trigger = newTrigger()
                                     .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
                                     .withSchedule(simpleSchedule())
@@ -410,7 +411,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
 
                     } else {
                         //repeat more than once
-                        if ( startNow ) {
+                        if (startNow) {
                             trigger = newTrigger()
                                     .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
                                     .withSchedule(simpleSchedule()
@@ -427,9 +428,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                                     .build();
                         }
                     }
-                }
-                else {
-                    if ( startNow ) {
+                } else {
+                    if (startNow) {
                         trigger = newTrigger()
                                 .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
                                 .withSchedule(simpleSchedule()
@@ -447,8 +447,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                     }
                 }
                 scheduler.scheduleJob(job, trigger);
-            }
-            else if (schedulerJob.getType().equals("cron")){
+            } else if (schedulerJob.getType().equals("cron")) {
                 CronTrigger trigger = newTrigger()
                         .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
                         .withSchedule(cronSchedule(schedulerJob.getCron()))
@@ -489,7 +488,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     }
 
     @Override
-    public  void iAmDead(String nodeId) {
+    public void iAmDead(String nodeId) {
 
     }
 
@@ -504,12 +503,13 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         q.select(SchedulerVO_.uuid);
         q.add(SchedulerVO_.targetResourceUuid, SimpleQuery.Op.EQ, ref.getResourceUuid());
         List<String> uuids = q.listValue();
-        if (! uuids.isEmpty()) {
+        if (!uuids.isEmpty()) {
             for (String uuid : uuids) {
-                if ( ! destinationMaker.isManagedByUs(uuid)) {
-                    logger.debug(String.format("Scheduler %s not managed by us, will not to pause it", uuid ));
+                if (!destinationMaker.isManagedByUs(uuid)) {
+                    logger.debug(String.format("Scheduler %s not managed by us, will not to pause it", uuid));
                 } else {
-                    logger.debug(String.format("resource %s: %s scheduler %s will be paused", ref.getResourceType(), ref.getResourceUuid(), uuid));
+                    logger.debug(String.format("resource %s: %s scheduler %s will be paused",
+                            ref.getResourceType(), ref.getResourceUuid(), uuid));
                     pauseSchedulerJob(uuid);
                 }
             }
@@ -523,11 +523,11 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         q.select(SchedulerVO_.uuid);
         q.add(SchedulerVO_.targetResourceUuid, SimpleQuery.Op.EQ, vm.getUuid());
         List<String> uuids = q.listValue();
-        if (! uuids.isEmpty()) {
+        if (!uuids.isEmpty()) {
             for (String uuid : uuids) {
                 if (oldState.toString().equals("Running") && newState.toString().equals("Unknown")) {
                     pauseSchedulerJob(uuid);
-                } else if (oldState.toString().equals("Unknown") && newState.toString().equals("Running") ) {
+                } else if (oldState.toString().equals("Unknown") && newState.toString().equals("Running")) {
                     resumeSchedulerJob(uuid);
                 }
             }
