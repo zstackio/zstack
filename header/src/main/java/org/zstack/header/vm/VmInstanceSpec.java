@@ -153,7 +153,7 @@ public class VmInstanceSpec implements Serializable {
         }
     }
 
-	private VmInstanceInventory vmInventory;
+    private VmInstanceInventory vmInventory;
     private List<L3NetworkInventory> l3Networks;
     private List<DiskOfferingInventory> dataDiskOfferings;
     private DiskOfferingInventory rootDiskOffering;
@@ -161,24 +161,24 @@ public class VmInstanceSpec implements Serializable {
     private String ipAllocatorStrategy;
     private Message message;
     private ImageSpec imageSpec = new ImageSpec();
-    private List<VolumeSpec> volumeSpecs = new ArrayList<VolumeSpec>();
+    private List<VolumeSpec> volumeSpecs = new ArrayList<>();
     private String requiredClusterUuid;
     private String requiredHostUuid;
 
-    private List<HostName> hostnames = new ArrayList<HostName>();
+    private List<HostName> hostnames = new ArrayList<>();
     private HostInventory destHost;
-    private List<VmNicInventory> destNics = new ArrayList<VmNicInventory>();
-    private List<VolumeInventory> destDataVolumes = new ArrayList<VolumeInventory>();
+    private List<VmNicInventory> destNics = new ArrayList<>();
+    private List<VolumeInventory> destDataVolumes = new ArrayList<>();
     private VolumeInventory destRootVolume;
     private VmOperation currentVmOperation;
-    private Map<String, JsonWrapper> extensionData = new HashMap<String, JsonWrapper>();
+    private Map<String, JsonWrapper> extensionData = new HashMap<>();
     private String dataIsoPath;
     private IsoSpec destIso;
     private String userdata;
     private List<String> bootOrders;
     private boolean gcOnStopFailure;
     private String consolePassword;
-    private boolean instanceOfferingOnliechange;
+    private boolean instanceOfferingOnlineChange;
 
 
     public String getRequiredClusterUuid() {
@@ -213,19 +213,20 @@ public class VmInstanceSpec implements Serializable {
         this.bootOrders = bootOrders;
     }
 
-    public String getConsolePassword(){
+    public String getConsolePassword() {
         return consolePassword;
     }
 
-    public void setConsolePassword(String consolePassword){
+    public void setConsolePassword(String consolePassword) {
         this.consolePassword = consolePassword;
     }
 
-    public boolean getInstanceOfferingOnliechange(){
-        return instanceOfferingOnliechange;
+    public boolean getInstanceOfferingOnlineChange() {
+        return instanceOfferingOnlineChange;
     }
-    public void setInstanceOfferingOnliechange(boolean instanceOfferingOnliechange){
-        this.instanceOfferingOnliechange = instanceOfferingOnliechange;
+
+    public void setInstanceOfferingOnlineChange(boolean instanceOfferingOnlineChange) {
+        this.instanceOfferingOnlineChange = instanceOfferingOnlineChange;
     }
 
     public String getUserdata() {
@@ -273,7 +274,7 @@ public class VmInstanceSpec implements Serializable {
 
     public List<DiskOfferingInventory> getDataDiskOfferings() {
         if (dataDiskOfferings == null) {
-            dataDiskOfferings = new ArrayList<DiskOfferingInventory>(0);
+            dataDiskOfferings = new ArrayList<>(0);
         }
         return dataDiskOfferings;
     }
@@ -289,6 +290,7 @@ public class VmInstanceSpec implements Serializable {
     public void setRootDiskOffering(DiskOfferingInventory rootDiskOffering) {
         this.rootDiskOffering = rootDiskOffering;
     }
+
     public String getHostAllocatorStrategy() {
         return hostAllocatorStrategy;
     }
@@ -334,39 +336,39 @@ public class VmInstanceSpec implements Serializable {
         this.extensionData.put(key, JsonWrapper.wrap(data));
     }
 
-	public HostInventory getDestHost() {
-		return destHost;
-	}
+    public HostInventory getDestHost() {
+        return destHost;
+    }
 
-	public void setDestHost(HostInventory destHost) {
-		this.destHost = destHost;
-	}
+    public void setDestHost(HostInventory destHost) {
+        this.destHost = destHost;
+    }
 
-	public List<VmNicInventory> getDestNics() {
-		return destNics;
-	}
+    public List<VmNicInventory> getDestNics() {
+        return destNics;
+    }
 
-	public void setDestNics(List<VmNicInventory> destNics) {
-		this.destNics = destNics;
-	}
+    public void setDestNics(List<VmNicInventory> destNics) {
+        this.destNics = destNics;
+    }
 
-	public List<VolumeInventory> getDestDataVolumes() {
-		return destDataVolumes;
-	}
+    public List<VolumeInventory> getDestDataVolumes() {
+        return destDataVolumes;
+    }
 
-	public void setDestDataVolumes(List<VolumeInventory> destDataVolumes) {
-		this.destDataVolumes = destDataVolumes;
-	}
+    public void setDestDataVolumes(List<VolumeInventory> destDataVolumes) {
+        this.destDataVolumes = destDataVolumes;
+    }
 
-	public VolumeInventory getDestRootVolume() {
-		return destRootVolume;
-	}
+    public VolumeInventory getDestRootVolume() {
+        return destRootVolume;
+    }
 
-	public void setDestRootVolume(VolumeInventory destRootVolume) {
-		this.destRootVolume = destRootVolume;
-	}
-	
-	public VmOperation getCurrentVmOperation() {
+    public void setDestRootVolume(VolumeInventory destRootVolume) {
+        this.destRootVolume = destRootVolume;
+    }
+
+    public VmOperation getCurrentVmOperation() {
         return currentVmOperation;
     }
 
@@ -374,13 +376,13 @@ public class VmInstanceSpec implements Serializable {
         this.currentVmOperation = currentVmOperation;
     }
 
-	public VmInstanceInventory getVmInventory() {
-		return vmInventory;
-	}
+    public VmInstanceInventory getVmInventory() {
+        return vmInventory;
+    }
 
-	public void setVmInventory(VmInstanceInventory vmInventory) {
-		this.vmInventory = vmInventory;
-	}
+    public void setVmInventory(VmInstanceInventory vmInventory) {
+        this.vmInventory = vmInventory;
+    }
 
     public String getDataIsoPath() {
         return dataIsoPath;
@@ -392,7 +394,7 @@ public class VmInstanceSpec implements Serializable {
 
 
     public List<String> getRequiredNetworkServiceTypes() {
-        List<String> nsTypes = new ArrayList<String>();
+        List<String> nsTypes = new ArrayList<>();
         if (getL3Networks() != null) {
             for (L3NetworkInventory l3 : getL3Networks()) {
                 for (NetworkServiceL3NetworkRefInventory ref : l3.getNetworkServices()) {

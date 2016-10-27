@@ -3633,7 +3633,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         String instanceOfferingOnlinechange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
         if (instanceOfferingOnlinechange != null && instanceOfferingOnlinechange.equals("true")) {
-            spec.setInstanceOfferingOnliechange(true);
+            spec.setInstanceOfferingOnlineChange(true);
         }
         spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
@@ -3945,9 +3945,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         String instanceOfferingOnlineChange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
         if (instanceOfferingOnlineChange != null && instanceOfferingOnlineChange.equals("true")) {
-            spec.setInstanceOfferingOnliechange(true);
+            spec.setInstanceOfferingOnlineChange(true);
         } else {
-            spec.setInstanceOfferingOnliechange(false);
+            spec.setInstanceOfferingOnlineChange(false);
         }
         spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
