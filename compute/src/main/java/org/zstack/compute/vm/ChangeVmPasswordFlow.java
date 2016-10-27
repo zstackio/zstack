@@ -30,13 +30,11 @@ public class ChangeVmPasswordFlow extends NoRollbackFlow {
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
+        logger.debug("change password while vm is running.");
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        String qcowFilePath = VmQcowFileFind.generateQcowFilePath(trigger, spec);
         ChangeVmPasswordMsg msg = new ChangeVmPasswordMsg();
         msg.setHostUuid(spec.getDestHost().getUuid());
         msg.setAccountPerference(spec.getAccountPerference());
-        if(!StringUtils.isEmpty(qcowFilePath))
-            msg.setQcowFile(qcowFilePath);
         if(spec.getDestHost() == null) {
             ErrorCode err = new ErrorCode(
                     "NO_DEST_HOST_FOUND", "not dest host found",

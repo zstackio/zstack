@@ -775,17 +775,8 @@ public class KVMAgentCommands {
     public static class StartVmResponse extends AgentResponse {
     }
     public static class ChangeVmPasswordCmd extends AgentCommand{
-        private String vmUuid;
         private VmAccountPerference accountPerference;
         private String qcowFile;
-
-        public String getVmUuid() {
-            return vmUuid;
-        }
-
-        public void setVmUuid(String vmUuid) {
-            this.vmUuid = vmUuid;
-        }
 
         public VmAccountPerference getAccountPerference() { return accountPerference; }
 

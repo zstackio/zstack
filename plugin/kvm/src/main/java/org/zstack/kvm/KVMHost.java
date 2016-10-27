@@ -351,8 +351,7 @@ public class KVMHost extends HostBase implements Host {
     private void handle(final SetRootPasswordMsg msg) {
         final SetRootPasswordReply reply = new SetRootPasswordReply();
         ChangeVmPasswordCmd cmd = new ChangeVmPasswordCmd();
-        cmd.setVmUuid(msg.getVmUuid());
-        cmd.setAccountPerference(new VmAccountPerference(msg.getVmUuid(),"root",msg.getRootPassword()));
+        cmd.setAccountPerference(msg.getVmAccountPerference());
         cmd.setQcowFile(msg.getQcowFile());
 
         restf.asyncJsonPost(setRootPasswordPath, cmd, new JsonAsyncRESTCallback<ChangeVmPasswordResponse>(msg) {
@@ -384,9 +383,7 @@ public class KVMHost extends HostBase implements Host {
         final ChangeVmPasswordReply reply = new ChangeVmPasswordReply();
 
         ChangeVmPasswordCmd cmd = new ChangeVmPasswordCmd();
-        cmd.setVmUuid(msg.getAccountPerference().getVmUuid());
         cmd.setAccountPerference(msg.getAccountPerference());
-        cmd.setQcowFile(msg.getQcowFile());
 
         restf.asyncJsonPost(changeVmPasswordPath, cmd, new JsonAsyncRESTCallback<ChangeVmPasswordResponse>(msg) {
             @Override

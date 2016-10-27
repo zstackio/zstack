@@ -40,7 +40,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIAttachL3NetworkToVmMsg.class.getName(),
                 GetVmMigrationTargetHostMsg.class.getName(),
                 APIChangeInstanceOfferingMsg.class.getName(),
-                APIChangeVMPasswordMsg.class.getName(),
+                APIChangeVmPasswordMsg.class.getName(),
                 APIGetVmMigrationCandidateHostsMsg.class.getName(),
                 APIDetachL3NetworkFromVmMsg.class.getName(),
                 DetachNicFromVmMsg.class.getName(),
@@ -72,7 +72,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 StartVmInstanceMsg.class.getName(),
                 HaStartVmInstanceMsg.class.getName(),
                 APIGetVmStartingCandidateClustersHostsMsg.class.getName(),
-                APIChangeVMPasswordMsg.class.getName()
+                APIChangeVmPasswordMsg.class.getName()
         );
 
         allowedOperations.addState(VmInstanceState.Unknown,

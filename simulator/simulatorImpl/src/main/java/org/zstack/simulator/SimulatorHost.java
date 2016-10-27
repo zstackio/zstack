@@ -110,7 +110,8 @@ class SimulatorHost extends HostBase {
             handle((DetachNicFromVmOnHypervisorMsg) msg);
         } else if (msg instanceof VmAttachNicOnHypervisorMsg) {
             handle((VmAttachNicOnHypervisorMsg) msg);
-
+        } else if (msg instanceof ChangeVmPasswordMsg) {
+            handle((ChangeVmPasswordMsg) msg);
 	    } else if (msg instanceof ChangeVmPasswordMsg) {
             handle((ChangeVmPasswordMsg) msg);
         } else {
