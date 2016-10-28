@@ -72,9 +72,6 @@
         <name>org.zstack.header.vm.APIChangeInstanceOfferingMsg</name>
     </message>
     <message>
-        <name>org.zstack.header.vm.APIChangeVmPasswordMsg</name>
-    </message>
-    <message>
         <name>org.zstack.header.vm.APIDetachL3NetworkFromVmMsg</name>
     </message>
     <message>

@@ -112,8 +112,8 @@ class SimulatorHost extends HostBase {
             handle((VmAttachNicOnHypervisorMsg) msg);
         } else if (msg instanceof ChangeVmPasswordMsg) {
             handle((ChangeVmPasswordMsg) msg);
-	    } else if (msg instanceof ChangeVmPasswordMsg) {
-            handle((ChangeVmPasswordMsg) msg);
+	    } else if (msg instanceof SetRootPasswordMsg) {
+            handle((SetRootPasswordMsg) msg);
         } else {
 	        super.handleLocalMessage(msg);
 	    }
@@ -186,6 +186,12 @@ class SimulatorHost extends HostBase {
     private void handle(final ChangeVmPasswordMsg msg) {
         logger.debug(String.format("SimulatorHost handle the message, hostid = %s ", msg.getHostUuid()));
         ChangeVmPasswordReply reply = new ChangeVmPasswordReply();
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final SetRootPasswordMsg msg) {
+        logger.debug(String.format("SimulatorHost handle the message, hostid = %s ", msg.getHostUuid()));
+        SetRootPasswordReply reply = new SetRootPasswordReply();
         bus.reply(msg, reply);
     }
 
