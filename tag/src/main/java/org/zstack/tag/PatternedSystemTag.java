@@ -89,7 +89,7 @@ public class PatternedSystemTag extends SystemTag {
     }
 
     public List<Map<String, String>> getTokensOfTagsByResourceUuid(String resourceUuid, Class resourceClass) {
-        List<Map<String, String>> res = new ArrayList<Map<String, String>>();
+        List<Map<String, String>> res = new ArrayList<>();
 
         List<String> tags = getTags(resourceUuid, resourceClass);
         for (String tag : tags) {

@@ -52,7 +52,7 @@ import java.util.Map;
 public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBackend {
     private static final CLogger logger = Utils.getLogger(ManagementServerConsoleProxyBackend.class);
     private int agentPort = 7758;
-    private String agentPackageName = ConsoleGlobalPropery.AGENT_PACKAGE_NAME;
+    private String agentPackageName = ConsoleGlobalProperty.AGENT_PACKAGE_NAME;
     private boolean connected = false;
 
     public static ConsoleProxyAgentType type = new ConsoleProxyAgentType(ConsoleConstants.MANAGEMENT_SERVER_CONSOLE_PROXY_TYPE);

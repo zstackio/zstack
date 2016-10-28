@@ -26,21 +26,21 @@ public class SystemTag {
     @Autowired
     protected DatabaseFacade dbf;
 
-    // TagManager must be explicitly set. use @Autowried will cause circular dependency
+    // TagManager must be explicitly set. use @Autowired will cause circular dependency
     protected TagManager tagMgr;
 
     protected String tagFormat;
     protected Class resourceClass;
-    protected List<SystemTagValidator> validators = new ArrayList<SystemTagValidator>();
-    protected List<SystemTagLifeCycleListener> lifeCycleListeners = new ArrayList<SystemTagLifeCycleListener>();
-    protected List<SystemTagOperationJudger> judgers = new ArrayList<SystemTagOperationJudger>();
+    protected List<SystemTagValidator> validators = new ArrayList<>();
+    protected List<SystemTagLifeCycleListener> lifeCycleListeners = new ArrayList<>();
+    protected List<SystemTagOperationJudger> judgers = new ArrayList<>();
 
     public SystemTag(String tagFormat, Class resourceClass) {
         this.tagFormat = tagFormat;
         this.resourceClass = resourceClass;
     }
 
-    public static enum SystemTagOperation {
+    public enum SystemTagOperation {
         CREATE,
         UPDATE,
         DELETE
@@ -161,12 +161,12 @@ public class SystemTag {
         q.add(SystemTagVO_.resourceUuid, Op.IN, resourceUuids);
         q.add(SystemTagVO_.tag, useOp(), useTagFormat());
         List<Tuple> ts = q.listTuple();
-        Map<String, List<String>> ret = new HashMap<String, List<String>>();
+        Map<String, List<String>> ret = new HashMap<>();
         for (Tuple t : ts) {
             String uuid = t.get(1, String.class);
             List<String> tags = ret.get(uuid);
             if (tags == null) {
-                tags = new ArrayList<String>();
+                tags = new ArrayList<>();
                 ret.put(uuid, tags);
             }
             tags.add(t.get(0, String.class));

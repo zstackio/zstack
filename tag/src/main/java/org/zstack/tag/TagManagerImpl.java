@@ -11,9 +11,9 @@ import org.zstack.core.db.HardDeleteEntityExtensionPoint;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.SoftDeleteEntityExtensionPoint;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.defer.Deferred;
 import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -55,12 +55,12 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private List<SystemTag> systemTags = new ArrayList<SystemTag>();
-    private Map<String, List<SystemTag>> resourceTypeSystemTagMap = new HashMap<String, List<SystemTag>>();
-    private Map<String, Class> resourceTypeClassMap = new HashMap<String, Class>();
-    private Map<Class, Class> resourceTypeCreateMessageMap = new HashMap<Class, Class>();
-    private Map<String, List<SystemTagCreateMessageValidator>> createMessageValidators = new HashMap<String, List<SystemTagCreateMessageValidator>>();
-    private Map<String, List<SystemTagLifeCycleExtension>> lifeCycleExtensions = new HashMap<String, List<SystemTagLifeCycleExtension>>();
+    private List<SystemTag> systemTags = new ArrayList<>();
+    private Map<String, List<SystemTag>> resourceTypeSystemTagMap = new HashMap<>();
+    private Map<String, Class> resourceTypeClassMap = new HashMap<>();
+    private Map<Class, Class> resourceTypeCreateMessageMap = new HashMap<>();
+    private Map<String, List<SystemTagCreateMessageValidator>> createMessageValidators = new HashMap<>();
+    private Map<String, List<SystemTagLifeCycleExtension>> lifeCycleExtensions = new HashMap<>();
     private List<Class> autoDeleteTagClasses;
 
     private void initSystemTags() throws IllegalAccessException {
@@ -100,7 +100,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                 stag.setTagMgr(this);
                 List<SystemTag> lst = resourceTypeSystemTagMap.get(stag.getResourceClass().getSimpleName());
                 if (lst == null) {
-                    lst = new ArrayList<SystemTag>();
+                    lst = new ArrayList<>();
                     resourceTypeSystemTagMap.put(stag.getResourceClass().getSimpleName(), lst);
                 }
                 lst.add(stag);
@@ -156,7 +156,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
                 List<SystemTagLifeCycleExtension> lst = lifeCycleExtensions.get(resType);
                 if (lst == null) {
-                    lst = new ArrayList<SystemTagLifeCycleExtension>();
+                    lst = new ArrayList<>();
                     lifeCycleExtensions.put(resType, lst);
                 }
 
@@ -651,7 +651,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private List<String> getResourceTypes(Class entityClass) {
-        List<String> types = new ArrayList<String>();
+        List<String> types = new ArrayList<>();
         while (entityClass != Object.class) {
             types.add(entityClass.getSimpleName());
             entityClass = entityClass.getSuperclass();
@@ -742,7 +742,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public List<String> getResourceTypeOfSystemTags() {
-        List<String> lst = new ArrayList<String>();
+        List<String> lst = new ArrayList<>();
         lst.addAll(resourceTypeClassMap.keySet());
         return lst;
     }
