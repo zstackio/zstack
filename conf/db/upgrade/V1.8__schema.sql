@@ -45,3 +45,22 @@ CREATE TABLE  `zstack`.`VCenterPrimaryStorageVO` (
     `vCenterUuid` varchar(32) NOT NULL COMMENT 'vcenter uuid',
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# Foreign keys for table ESXHostVO
+ALTER TABLE ESXHostVO ADD CONSTRAINT fkESXHostVOHostEO FOREIGN KEY (uuid) REFERENCES HostEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ESXHostVO ADD CONSTRAINT fkESXHostVOVCenterVO FOREIGN KEY (vCenterUuid) REFERENCES VCenterVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table VCenterBackupStorageVO
+ALTER TABLE VCenterBackupStorageVO ADD CONSTRAINT fkVCenterBackupStorageVOBackupStorageEO FOREIGN KEY (uuid) REFERENCES BackupStorageEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE VCenterBackupStorageVO ADD CONSTRAINT fkVCenterBackupStorageVOVCenterVO FOREIGN KEY (vCenterUuid) REFERENCES VCenterVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table VCenterClusterVO
+ALTER TABLE VCenterClusterVO ADD CONSTRAINT fkVCenterClusterVOClusterEO FOREIGN KEY (uuid) REFERENCES ClusterEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE VCenterClusterVO ADD CONSTRAINT fkVCenterClusterVOVCenterVO FOREIGN KEY (vCenterUuid) REFERENCES VCenterVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table VCenterPrimaryStorageVO
+ALTER TABLE VCenterPrimaryStorageVO ADD CONSTRAINT fkVCenterPrimaryStorageVOPrimaryStorageEO FOREIGN KEY (uuid) REFERENCES PrimaryStorageEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE VCenterPrimaryStorageVO ADD CONSTRAINT fkVCenterPrimaryStorageVOVCenterVO FOREIGN KEY (vCenterUuid) REFERENCES VCenterVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table VCenterVO
+ALTER TABLE VCenterVO ADD CONSTRAINT fkVCenterVOZoneEO FOREIGN KEY (zoneUuid) REFERENCES ZoneEO (uuid) ON DELETE CASCADE;
