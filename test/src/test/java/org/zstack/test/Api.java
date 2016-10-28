@@ -23,6 +23,7 @@ import org.zstack.core.debug.APIDebugSignalEvent;
 import org.zstack.core.debug.APIDebugSignalMsg;
 import org.zstack.core.debug.DebugSignal;
 import org.zstack.core.scheduler.*;
+import org.zstack.header.vm.APIChangeVmPasswordMsg;
 import org.zstack.ha.APIDeleteVmInstanceHaLevelMsg;
 import org.zstack.ha.APISetVmInstanceHaLevelEvent;
 import org.zstack.ha.APISetVmInstanceHaLevelMsg;
