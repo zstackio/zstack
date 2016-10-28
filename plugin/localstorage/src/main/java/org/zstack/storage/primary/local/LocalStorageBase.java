@@ -1843,6 +1843,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     cap.setTotalCapacity(t < 0 ? 0 : t);
                 }
                 if (avail != null) {
+                    // for over-provisioning scenarios, minus value of available capacity is permitted
                     long a = cap.getAvailableCapacity() - avail;
                     cap.setAvailableCapacity(a);
                 }
