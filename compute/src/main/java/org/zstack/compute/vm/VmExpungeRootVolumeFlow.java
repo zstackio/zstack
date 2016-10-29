@@ -39,7 +39,7 @@ public class VmExpungeRootVolumeFlow extends NoRollbackFlow {
         ExpungeVolumeMsg msg = new ExpungeVolumeMsg();
         msg.setVolumeUuid(spec.getVmInventory().getRootVolumeUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
-        bus.send(msg, new CloudBusCallBack() {
+        bus.send(msg, new CloudBusCallBack(trigger) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
@@ -47,9 +47,9 @@ public class VmExpungeRootVolumeFlow extends NoRollbackFlow {
                             spec.getVmInventory().getRootVolumeUuid(), spec.getVmInventory().getUuid(),
                             spec.getVmInventory().getName(), reply.getError()));
                 }
+
+                trigger.next();
             }
         });
-
-        trigger.next();
     }
 }
