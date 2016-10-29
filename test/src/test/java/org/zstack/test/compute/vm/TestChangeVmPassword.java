@@ -13,6 +13,7 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
+import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
 /**
@@ -29,6 +30,7 @@ public class TestChangeVmPassword {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         deployer = new Deployer("deployerXml/vm/TestChangeVmPassword.xml");
+        deployer.addSpringConfig("mevocoRelated.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
