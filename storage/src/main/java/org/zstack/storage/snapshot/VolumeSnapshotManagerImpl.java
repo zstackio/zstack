@@ -265,6 +265,12 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private void rollbackSnapshot(String uuid) {
         VolumeSnapshotVO vo = dbf.getEntityManager().find(VolumeSnapshotVO.class, uuid);
         dbf.getEntityManager().remove(vo);
+
+        String sql = "delete from AccountResourceRefVO where resourceUuid = :vsUuid and resourceType = 'VolumeSnapshotVO'";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("vsUuid", uuid);
+        q.executeUpdate();
+
         if (vo.getParentUuid() != null) {
             VolumeSnapshotVO parent = dbf.getEntityManager().find(VolumeSnapshotVO.class, vo.getParentUuid());
             parent.setLatest(true);

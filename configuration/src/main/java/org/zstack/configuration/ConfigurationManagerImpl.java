@@ -94,13 +94,13 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         }
 
         if (vo == null) {
-            bus.replyErrorByMessageType((Message)msg, String.format("cannot find InstanceOffering[uuid:%s], it may have been deleted", msg.getInstanceOfferingUuid()));
+            bus.replyErrorByMessageType((Message) msg, String.format("cannot find InstanceOffering[uuid:%s], it may have been deleted", msg.getInstanceOfferingUuid()));
             return;
         }
 
         InstanceOfferingFactory factory = getInstanceOfferingFactory(vo.getType());
         InstanceOffering offering = factory.getInstanceOffering(vo);
-        offering.handleMessage((Message)msg);
+        offering.handleMessage((Message) msg);
     }
 
     private void diskOfferingPassThrough(DiskOfferingMessage msg) {
@@ -111,13 +111,13 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         }
 
         if (vo == null) {
-            bus.replyErrorByMessageType((Message)msg, String.format("cannot find DiskOffering[uuid:%s], it may have been deleted", msg.getDiskOfferingUuid()));
+            bus.replyErrorByMessageType((Message) msg, String.format("cannot find DiskOffering[uuid:%s], it may have been deleted", msg.getDiskOfferingUuid()));
             return;
         }
 
         DiskOfferingFactory factory = getDiskOfferingFactory(vo.getType());
         DiskOffering offering = factory.getDiskOffering(vo);
-        offering.handleMessage((Message)msg);
+        offering.handleMessage((Message) msg);
     }
 
     @Override
@@ -335,7 +335,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     private String whiteSpace(int num) {
         return StringUtils.repeat(" ", num);
     }
-    
+
     private String classToInventoryPythonClass(Class<?> clazz) {
         StringBuilder sb = new StringBuilder();
         boolean hasParent = (clazz.getSuperclass() != Object.class);
@@ -343,7 +343,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         if (hasParent && !isPythonClassGenerated(clazz.getSuperclass())) {
             sb.append(classToInventoryPythonClass(clazz.getSuperclass()));
         }
-        
+
         if (hasParent) {
             sb.append(String.format("\nclass %s(%s):", clazz.getSimpleName(), clazz.getSuperclass().getSimpleName()));
             sb.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
@@ -352,12 +352,12 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             sb.append(String.format("\nclass %s(object):", clazz.getSimpleName()));
             sb.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
         }
-        
+
         Field[] fs = clazz.getDeclaredFields();
         for (Field f : fs) {
             sb.append(String.format("\n%sself.%s = None", whiteSpace(8), f.getName()));
         }
-        
+
         sb.append(String.format("\n\n%sdef evaluate(self, inv):", whiteSpace(4)));
         if (hasParent) {
             sb.append(String.format("\n%ssuper(%s, self).evaluate(inv)", whiteSpace(8), clazz.getSimpleName()));
@@ -368,7 +368,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             sb.append(String.format("\n%selse:", whiteSpace(8)));
             sb.append(String.format("\n%sself.%s = None\n", whiteSpace(12), f.getName()));
         }
-        
+
         sb.append("\n\n");
         markPythonClassAsGenerated(clazz);
         return sb.toString();
@@ -522,11 +522,11 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         sb.append(String.format("\n}\n\n"));
         generatedGroovyClassName.add(clazz.getSimpleName());
     }
-    
+
     private String classToApiMessagePythonClass(Class<?> clazz) {
         StringBuilder sb = new StringBuilder();
         boolean emptyLine = true;
-        
+
         String signature = String.format("%s_FULL_NAME", clazz.getSimpleName()).toUpperCase();
         sb.append(String.format("\n%s = '%s'", signature, clazz.getName()));
         sb.append(String.format("\nclass %s(object):", clazz.getSimpleName()));
@@ -587,12 +587,12 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         if (emptyLine) {
             sb.append(String.format("\n%spass", whiteSpace(8)));
         }
-        
+
         sb.append("\n\n");
         markPythonClassAsGenerated(clazz);
         return sb.toString();
     }
-    
+
     private void generateSimplePythonClass(StringBuilder sb, Class<?> clazz) {
         sb.append(String.format("\nclass %s(object):", clazz.getSimpleName()));
         sb.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
@@ -601,24 +601,24 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         }
         sb.append("\n\n");
     }
-    
+
     private void generateErrorCodePythonClass(StringBuilder sb) {
         generateSimplePythonClass(sb, ErrorCode.class);
     }
-    
+
     private void generateSessionPythonClass(StringBuilder sb) {
         sb.append(String.format("\nclass Session(object):"));
         sb.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
         sb.append(String.format("\n%sself.uuid = None", whiteSpace(8)));
         sb.append("\n\n");
     }
-    
+
 
     private void generateSeachConditionClass(StringBuilder sb) {
         generateSimplePythonClass(sb, APISearchMessage.NOLTriple.class);
         generateSimplePythonClass(sb, APISearchMessage.NOVTriple.class);
     }
-    
+
     private void generateMandoryFieldClass(StringBuilder sb) {
         sb.append(String.format("\n\nclass NotNoneField(object):"));
         sb.append(String.format("\n%spass\n", whiteSpace(4)));
@@ -635,7 +635,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         sb.append(String.format("\n\nclass OptionalMap(object):"));
         sb.append(String.format("\n%spass\n", whiteSpace(4)));
     }
-    
+
     private void generateBaseApiMessagePythonClass(StringBuilder sb) {
         sb.append(String.format("\nclass %s(object):", APIMessage.class.getSimpleName()));
         sb.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
@@ -650,7 +650,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         markPythonClassAsGenerated(APIDeleteMessage.class);
         generateSeachConditionClass(sb);
     }
-    
+
     private void generateApiNameList(StringBuilder sb, List<String> apiNames) {
         sb.append(String.format("\napi_names = ["));
         for (String name : apiNames) {
@@ -658,7 +658,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         }
         sb.append("\n]\n");
     }
-    
+
     private void generateApiMessagePythonClass(StringBuilder sb, List<String> basePkgs) {
         generateSessionPythonClass(sb);
         generateErrorCodePythonClass(sb);
@@ -694,14 +694,14 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 }
             }
         }
-        
+
         apiNames.remove(APIMessage.class.getSimpleName());
         apiNames.remove(APIListMessage.class.getSimpleName());
         apiNames.remove(APIDeleteMessage.class.getSimpleName());
         apiNames.remove(APISearchMessage.class.getSimpleName());
         generateApiNameList(sb, apiNames);
     }
-    
+
     private void generateConstantFromClassField(StringBuilder sb, Class<?> clazz) throws IllegalArgumentException, IllegalAccessException {
         if (clazz.isEnum()) {
             for (Field f : clazz.getDeclaredFields()) {
@@ -738,7 +738,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             }
         }
     }
-    
+
     private void generateInventoryPythonClass(StringBuilder sb, List<String> basePkgs) {
         List<String> inventoryPython = new ArrayList<String>();
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
@@ -757,21 +757,21 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                     logger.warn(String.format("Unable to generate python class for %s", bd.getBeanClassName()), e);
                 }
             }
-        } 
-        
+        }
+
         for (String invstr : inventoryPython) {
             sb.append(invstr);
         }
     }
-    
+
     private boolean isPythonClassGenerated(Class<?> clazz) {
         return generatedPythonClassName.contains(clazz.getSimpleName());
     }
-    
+
     private void markPythonClassAsGenerated(Class<?> clazz) {
         generatedPythonClassName.add(clazz.getSimpleName());
     }
-    
+
     private void generateGlobalConfigPythonConstant(StringBuilder pysb) {
         pysb.append("\n");
         Map<String, List<String>> configs = new HashMap<String, List<String>>();
@@ -783,7 +783,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             }
             cnames.add(c.getName());
         }
-        
+
         for (Map.Entry<String, List<String>> e : configs.entrySet()) {
             pysb.append(String.format("\nclass GlobalConfig_%s(object):", e.getKey().toUpperCase().replaceAll("\\.", "_")));
             for (String cname : e.getValue()) {
@@ -796,13 +796,13 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             pysb.append(String.format("\n%sreturn '%s'\n", whiteSpace(8), e.getKey()));
         }
     }
-    
+
     private void handle(APIGenerateTestLinkDocumentMsg msg) throws IOException {
         String outputDir = msg.getOutputDir();
         if (outputDir == null) {
             outputDir = PathUtil.join(System.getProperty("user.home"), "zstack-testlink");
         }
-        
+
         FileUtils.deleteDirectory(new File(outputDir));
         File folder = new File(outputDir);
         folder.mkdirs();
@@ -811,23 +811,23 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         evt.setOutputDir(outputDir);
         bus.publish(evt);
     }
-    
+
     private void handle(APIGenerateApiJsonTemplateMsg msg) throws IOException {
-        generatedPythonClassName = new HashSet<String>();
+        generatedPythonClassName = new HashSet<>();
         String exportPath = msg.getExportPath();
         if (exportPath == null) {
             exportPath = PathUtil.join(System.getProperty("user.home"), "zstack-python-template");
         }
         List<String> basePkgs = msg.getBasePackageNames();
         if (basePkgs == null || basePkgs.isEmpty()) {
-            basePkgs = new ArrayList<String>(1);
+            basePkgs = new ArrayList<>(1);
             basePkgs.add("org.zstack");
         }
-        
+
         FileUtils.deleteDirectory(new File(exportPath));
         File folder = new File(exportPath);
         folder.mkdirs();
-        
+
         File jsonFolder = new File(PathUtil.join(folder.getAbsolutePath(), "json"));
         jsonFolder.mkdirs();
         StringBuilder apiNameBuilder = new StringBuilder();
@@ -858,12 +858,12 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 }
             }
         }
-        
+
         File pythonFolder = new File(PathUtil.join(folder.getAbsolutePath(), "python"));
         pythonFolder.mkdirs();
         apiNameBuilder.append("]\n");
         FileUtils.write(new File(PathUtil.join(pythonFolder.getAbsolutePath(), "api_messages.py")), apiNameBuilder.toString());
-        
+
         StringBuilder pysb = new StringBuilder();
         generateMandoryFieldClass(pysb);
         generateApiMessagePythonClass(pysb, basePkgs);
@@ -874,12 +874,12 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             pysb.append("\n");
             writer.writePython(pysb);
         }
-        
+
         String pyStr = pysb.toString();
         FileUtils.write(new File(PathUtil.join(pythonFolder.getAbsolutePath(), "inventory.py")), pyStr);
-        
+
         PythonApiActionGenerator.generatePythonApiAction(basePkgs, pythonFolder.getAbsolutePath());
-        
+
         logger.info(String.format("Generated result in %s", folder.getAbsolutePath()));
         APIGenerateApiJsonTemplateEvent evt = new APIGenerateApiJsonTemplateEvent(msg.getId());
         bus.publish(evt);
@@ -887,11 +887,11 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     }
 
     private void handle(APISearchDiskOfferingMsg msg) {
-       SearchQuery<DiskOfferingInventory> query = SearchQuery.create(msg, DiskOfferingInventory.class); 
-       String content = query.listAsString();
-       APISearchDiskOfferingReply reply = new APISearchDiskOfferingReply();
-       reply.setContent(content);
-       bus.reply(msg, reply);
+        SearchQuery<DiskOfferingInventory> query = SearchQuery.create(msg, DiskOfferingInventory.class);
+        String content = query.listAsString();
+        APISearchDiskOfferingReply reply = new APISearchDiskOfferingReply();
+        reply.setContent(content);
+        bus.reply(msg, reply);
     }
 
     private void handle(APISearchInstanceOfferingMsg msg) {
@@ -917,7 +917,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
 
         String type = msg.getType() == null ? UserVmInstanceOfferingFactory.type.toString() : msg.getType();
         InstanceOfferingFactory f = getInstanceOfferingFactory(type);
-        
+
         InstanceOfferingVO vo = new InstanceOfferingVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -1018,13 +1018,13 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             pythonApiBindingWriters.add(ext);
         }
     }
-    
+
     private InstanceOfferingFactory getInstanceOfferingFactory(String type) {
-    	InstanceOfferingFactory f = instanceOfferingFactories.get(type);
-    	if (f == null) {
-    		throw new IllegalArgumentException(String.format("unable to find InstanceOfferingFactory with type[%s]", type));
-    	}
-    	return f;
+        InstanceOfferingFactory f = instanceOfferingFactories.get(type);
+        if (f == null) {
+            throw new IllegalArgumentException(String.format("unable to find InstanceOfferingFactory with type[%s]", type));
+        }
+        return f;
     }
 
     private DiskOfferingFactory getDiskOfferingFactory(String type) {
@@ -1034,10 +1034,10 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         }
         return f;
     }
-    
+
     @Override
     public boolean start() {
-    	populateExtensions();
+        populateExtensions();
         return true;
     }
 

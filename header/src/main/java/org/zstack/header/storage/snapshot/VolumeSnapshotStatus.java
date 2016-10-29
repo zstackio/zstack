@@ -27,7 +27,7 @@ public enum VolumeSnapshotStatus {
         );
     }
 
-    public static enum StatusEvent {
+    public enum StatusEvent {
         delete,
         ready,
     }
@@ -42,7 +42,7 @@ public enum VolumeSnapshotStatus {
         }
     }
 
-    private Map<StatusEvent, Transaction> transactionMap = new HashMap<StatusEvent, Transaction>();
+    private Map<StatusEvent, Transaction> transactionMap = new HashMap<>();
 
     private void transactions(Transaction...transactions) {
         for (Transaction tran : transactions) {

@@ -45,9 +45,9 @@ public class TestVmErrorRootVolumeRollback {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() {
+
+    @Test
+    public void test() {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         config.deleteCmds.clear();
         kconfig.startVmSuccess = false;
