@@ -366,7 +366,8 @@ public class KVMHost extends HostBase implements Host {
                 if (!ret.isSuccess()) {
                     reply.setError(errf.stringToOperationError(ret.getError()));
                 } else {
-                    reply.setRootPassword(ret.getVmAccountPerference().getAccountPassword());
+                    logger.debug(String.format("test----: ret.getVmAccountPerference()   %s", ret.getVmAccountPerference()));
+                    reply.setVmAccountPerference(ret.getVmAccountPerference());
                     reply.setQcowFile(ret.getQcowFile());
                 }
                 bus.reply(msg, reply);
@@ -398,7 +399,6 @@ public class KVMHost extends HostBase implements Host {
                     reply.setError(errf.stringToOperationError(ret.getError()));
                 } else {
                     reply.setVmAccountPerference(ret.getVmAccountPerference());
-                    reply.setQcowFile(ret.getQcowFile());
                 }
                 bus.reply(msg, reply);
             }

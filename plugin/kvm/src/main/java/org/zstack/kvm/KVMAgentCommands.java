@@ -819,11 +819,11 @@ public class KVMAgentCommands {
         }
     }
     public static class ChangeVmPasswordResponse extends AgentResponse{
-        private VmAccountPerference vmAccountPerference;
+        private VmAccountPerference accountPerference;
         private String qcowFile;
 
-        public VmAccountPerference getVmAccountPerference() { return vmAccountPerference; }
-        public void setVmAccountPerference(VmAccountPerference vmAccountPerference) { this.vmAccountPerference = vmAccountPerference; }
+        public VmAccountPerference getVmAccountPerference() { return accountPerference; }
+        public void setVmAccountPerference(VmAccountPerference accountPerference) { this.accountPerference = accountPerference; }
 
         public String getQcowFile() {
             return qcowFile;

@@ -9,14 +9,14 @@ import org.zstack.header.vm.VmAccountPerference;
 public class SetRootPasswordMsg extends NeedReplyMessage implements HostMessage{
     private String hostUuid;
     private String qcowFile;
-    private VmAccountPerference vmAccountPerference;
+    private VmAccountPerference accountPerference;
 
     public VmAccountPerference getVmAccountPerference() {
-        return vmAccountPerference;
+        return accountPerference;
     }
 
-    public void setVmAccountPerference(VmAccountPerference vmAccountPerference) {
-        this.vmAccountPerference = vmAccountPerference;
+    public void setVmAccountPerference(VmAccountPerference accountPerference) {
+        this.accountPerference = accountPerference;
     }
 
     @Override

@@ -1608,8 +1608,8 @@ public class Api implements CloudBusEventListener {
         APIChangeVmPasswordMsg msg = new APIChangeVmPasswordMsg();
         msg.setSession(adminSession);
         msg.setVmInstanceUuid(account.getVmUuid());
-        msg.setVmAccountName(account.getUserAccount());
-        msg.setVmAccountPassword(account.getAccountPassword());
+        msg.setAccount(account.getUserAccount());
+        msg.setPassword(account.getAccountPassword());
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIChangeVmPasswordEvent evt = sender.send(msg, APIChangeVmPasswordEvent.class);
