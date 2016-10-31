@@ -1,8 +1,8 @@
 package org.zstack.test.compute.vm;
 
 import junit.framework.Assert;
-import org.junit.Test;
 import org.junit.Before;
+import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
@@ -29,6 +29,7 @@ public class TestChangeVmPassword {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         deployer = new Deployer("deployerXml/vm/TestChangeVmPassword.xml");
+        deployer.addSpringConfig("mevocoRelated.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
