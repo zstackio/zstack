@@ -366,7 +366,6 @@ public class KVMHost extends HostBase implements Host {
                 if (!ret.isSuccess()) {
                     reply.setError(errf.stringToOperationError(ret.getError()));
                 } else {
-                    logger.debug(String.format("test----: ret.getVmAccountPerference()   %s", ret.getVmAccountPerference()));
                     reply.setVmAccountPerference(ret.getVmAccountPerference());
                     reply.setQcowFile(ret.getQcowFile());
                 }

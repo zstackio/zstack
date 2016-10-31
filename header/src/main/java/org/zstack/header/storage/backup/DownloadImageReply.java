@@ -8,6 +8,7 @@ public class DownloadImageReply extends MessageReply {
     private String installPath;
     private String md5sum;
     private String format;
+    private boolean injected;
 
     public String getFormat() {
         return format;
@@ -48,6 +49,14 @@ public class DownloadImageReply extends MessageReply {
 
     public void setMd5sum(String md5sum) {
         this.md5sum = md5sum;
+    }
+
+    public boolean isInjected() {
+        return injected;
+    }
+
+    public void setInjected(boolean injected) {
+        this.injected = injected;
     }
 
     public DownloadImageReply() {

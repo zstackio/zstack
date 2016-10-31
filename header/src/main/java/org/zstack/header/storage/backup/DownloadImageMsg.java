@@ -20,6 +20,12 @@ public class DownloadImageMsg extends NeedReplyMessage implements BackupStorageM
         this.format = format;
     }
 
+    public DownloadImageMsg(ImageInventory inventory, boolean inject) {
+        super();
+        this.imageInventory = inventory;
+        this.inject = inject;
+    }
+
     public DownloadImageMsg(ImageInventory inventory) {
 	    super();
 	    this.imageInventory = inventory;

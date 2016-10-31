@@ -293,7 +293,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                     Matcher mt = p.matcher(value.toString());
                     if (!mt.matches()){
                         throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INVALID_ARGUMENT_ERROR,
-                                String.format("valid regex value for field[%s] of message[%s] are %s, but %s found", f.getName(),
+                                String.format("valid regex value for field[%s] of message[%s] are A-Z a-z 0-9 _, but %s found", f.getName(),
                                         msg.getClass().getName(), regex, value)
                         ));
                     }
