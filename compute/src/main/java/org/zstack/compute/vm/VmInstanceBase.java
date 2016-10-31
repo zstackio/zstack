@@ -363,7 +363,13 @@ public class VmInstanceBase extends AbstractVmInstance {
         } else if (msg instanceof HaStartVmInstanceMsg) {
             handle((HaStartVmInstanceMsg) msg);
         } else {
-            bus.dealWithUnknownMessage(msg);
+            VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
+            if (ext != null) {
+                VmInstance v = ext.getVmInstance(self);
+                v.handleMessage(msg);
+            } else {
+                bus.dealWithUnknownMessage(msg);
+            }
         }
     }
 
@@ -1994,7 +2000,13 @@ public class VmInstanceBase extends AbstractVmInstance {
         } else if (msg instanceof APIGetCandidateIsoForAttachingVmMsg) {
             handle((APIGetCandidateIsoForAttachingVmMsg) msg);
         } else {
-            bus.dealWithUnknownMessage(msg);
+            VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
+            if (ext != null) {
+                VmInstance v = ext.getVmInstance(self);
+                v.handleMessage(msg);
+            } else {
+                bus.dealWithUnknownMessage(msg);
+            }
         }
     }
 

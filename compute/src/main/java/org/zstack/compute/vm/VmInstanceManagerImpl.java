@@ -127,6 +127,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private FlowChainBuilder expungeVmFlowBuilder;
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private Future<Void> expungeVmTask;
+    private Map<Class, VmInstanceBaseExtensionFactory> vmInstanceBaseExtensionFactories = new HashMap<>();
 
     static {
         allowedMessageAfterSoftDeletion.add(VmInstanceDeletionMsg.class);
@@ -764,6 +765,18 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
             vmInstanceFactories.put(ext.getType().toString(), ext);
         }
+
+        for (VmInstanceBaseExtensionFactory ext : pluginRgty.getExtensionList(VmInstanceBaseExtensionFactory.class)) {
+            for (Class clz : ext.getMessageClasses()) {
+                VmInstanceBaseExtensionFactory old = vmInstanceBaseExtensionFactories.get(clz);
+                if (old != null) {
+                    throw new CloudRuntimeException(String.format("duplicate VmInstanceBaseExtensionFactory[%s, %s] for the" +
+                            " message[%s]", old.getClass(), ext.getClass(), clz));
+                }
+
+                vmInstanceBaseExtensionFactories.put(clz, ext);
+            }
+        }
     }
 
     @Override
@@ -983,6 +996,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
             throw new CloudRuntimeException(String.format("No VmInstanceFactory of type[%s] found", type));
         }
         return factory;
+    }
+
+    @Override
+    public VmInstanceBaseExtensionFactory getVmInstanceBaseExtensionFactory(Message msg) {
+        return vmInstanceBaseExtensionFactories.get(msg.getClass());
     }
 
     @Transactional
