@@ -66,7 +66,7 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
 
     public void addExcludeAllocatorStrategy(String allocationStrategy) {
         if (excludeAllocatorStrategies == null) {
-            excludeAllocatorStrategies = new ArrayList<String>();
+            excludeAllocatorStrategies = new ArrayList<>();
         }
         excludeAllocatorStrategies.add(allocationStrategy);
     }

@@ -24,8 +24,8 @@ public class HostAllocatorSpec {
     private VmInstanceInventory vmInstance;
     private ImageInventory image;
     private String vmOperation;
-    private List<DiskOfferingInventory> diskOfferings = new ArrayList<DiskOfferingInventory>();
-    private Map<Object, Object> extraData = new HashMap<Object, Object>();
+    private List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
+    private Map<Object, Object> extraData = new HashMap<>();
     private boolean allowNoL3Networks;
     private boolean listAllHosts;
     private String requiredBackupStorageUuid;
@@ -82,7 +82,7 @@ public class HostAllocatorSpec {
 
     public List<String> getAvoidHostUuids() {
         if (avoidHostUuids == null) {
-            avoidHostUuids = new ArrayList<String>();
+            avoidHostUuids = new ArrayList<>();
         }
         return avoidHostUuids;
     }
@@ -109,7 +109,7 @@ public class HostAllocatorSpec {
 
     public List<String> getL3NetworkUuids() {
         if (l3NetworkUuids == null) {
-            l3NetworkUuids = new ArrayList<String>();
+            l3NetworkUuids = new ArrayList<>();
         }
         return l3NetworkUuids;
     }

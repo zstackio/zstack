@@ -20,6 +20,14 @@ import java.util.Map;
 
 
 public class VmInstanceSpec implements Serializable {
+    public String getRequiredPrimaryStorageUuidForRootVolume() {
+        return requiredPrimaryStorageUuidForRootVolume;
+    }
+
+    public void setRequiredPrimaryStorageUuidForRootVolume(String requiredPrimaryStorageUuidForRootVolume) {
+        this.requiredPrimaryStorageUuidForRootVolume = requiredPrimaryStorageUuidForRootVolume;
+    }
+
     public static class VolumeSpec {
         private PrimaryStorageInventory primaryStorageInventory;
         private boolean isRoot;
@@ -164,6 +172,7 @@ public class VmInstanceSpec implements Serializable {
     private List<VolumeSpec> volumeSpecs = new ArrayList<>();
     private String requiredClusterUuid;
     private String requiredHostUuid;
+    private String requiredPrimaryStorageUuidForRootVolume;
 
     private List<HostName> hostnames = new ArrayList<>();
     private HostInventory destHost;

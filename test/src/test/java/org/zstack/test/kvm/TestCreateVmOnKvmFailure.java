@@ -8,11 +8,8 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.host.CheckVmStateOnHypervisorMsg;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
-import org.zstack.header.message.Message;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.APICreateVmInstanceEvent;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
@@ -51,24 +48,24 @@ public class TestCreateVmOnKvmFailure {
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
-		ImageInventory iminv = deployer.images.get("TestImage");
-		InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
-		L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network1");
-		APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
-		msg.setImageUuid(iminv.getUuid());
-		msg.setInstanceOfferingUuid(ioinv.getUuid());
-		List<String> l3uuids = new ArrayList<String>();
-		l3uuids.add(l3inv.getUuid());
-		msg.setL3NetworkUuids(l3uuids);
-		msg.setName("TestVm");
-		msg.setSession(session);
-		msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-		msg.setType(VmInstanceConstant.USER_VM_TYPE);
-		config.startVmSuccess = false;
-		ApiSender sender = api.getApiSender();
+
+    @Test
+    public void test() throws ApiSenderException {
+        ImageInventory iminv = deployer.images.get("TestImage");
+        InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
+        L3NetworkInventory l3inv = deployer.l3Networks.get("TestL3Network1");
+        APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
+        msg.setImageUuid(iminv.getUuid());
+        msg.setInstanceOfferingUuid(ioinv.getUuid());
+        List<String> l3uuids = new ArrayList<>();
+        l3uuids.add(l3inv.getUuid());
+        msg.setL3NetworkUuids(l3uuids);
+        msg.setName("TestVm");
+        msg.setSession(session);
+        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
+        msg.setType(VmInstanceConstant.USER_VM_TYPE);
+        config.startVmSuccess = false;
+        ApiSender sender = api.getApiSender();
 
         boolean s = false;
         try {
@@ -77,5 +74,5 @@ public class TestCreateVmOnKvmFailure {
             s = true;
         }
         Assert.assertTrue(s);
-	}
+    }
 }

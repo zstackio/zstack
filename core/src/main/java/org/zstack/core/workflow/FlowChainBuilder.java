@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class FlowChainBuilder {
     private List<String> flowClassNames;
-    private List<Flow> flows = new ArrayList<Flow>();
+    private List<Flow> flows = new ArrayList<>();
     private boolean isConstructed;
 
     public FlowChainBuilder construct() {

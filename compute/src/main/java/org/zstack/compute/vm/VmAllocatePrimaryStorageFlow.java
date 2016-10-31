@@ -52,15 +52,17 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         HostInventory destHost = spec.getDestHost();
         final ImageInventory iminv = spec.getImageSpec().getInventory();
 
+        // get ps types from bs
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
         q.select(BackupStorageVO_.type);
         q.add(BackupStorageVO_.uuid, Op.EQ, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
         String bsType = q.findValue();
-
         List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
         DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
 
+        // allocate ps for root volume
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
+        rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
         if (ImageMediaType.ISO.toString().equals(iminv.getMediaType())) {
@@ -75,10 +77,11 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         }
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
         rmsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
-
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
 
+
+        // allocate ps for data volumes
         for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
             amsg.setSize(dinv.getDiskSize());
@@ -89,7 +92,6 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }
-
 
         new AsyncLoop<AllocatePrimaryStorageMsg>(trigger) {
             @Override

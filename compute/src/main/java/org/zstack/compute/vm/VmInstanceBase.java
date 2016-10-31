@@ -94,7 +94,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     @Autowired
     protected VmInstanceExtensionPointEmitter extEmitter;
     @Autowired
-    protected VmInstanceNotifyPointEmitter notfiyEmitter;
+    protected VmInstanceNotifyPointEmitter notifyEmitter;
     @Autowired
     protected CascadeFacade casf;
     @Autowired
@@ -303,7 +303,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     });
 
             //TODO: remove this
-            notfiyEmitter.notifyVmStateChange(VmInstanceInventory.valueOf(self), bs, state);
+            notifyEmitter.notifyVmStateChange(VmInstanceInventory.valueOf(self), bs, state);
         }
 
         return self;
@@ -420,8 +420,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(MessageReply re) {
                 if (!re.isSuccess()) {
                     if (HostAllocatorError.NO_AVAILABLE_HOST.toString().equals(re.getError().getCode())) {
-                        reply.setHostInventories(new ArrayList<HostInventory>());
-                        reply.setClusterInventories(new ArrayList<ClusterInventory>());
+                        reply.setHostInventories(new ArrayList<>());
+                        reply.setClusterInventories(new ArrayList<>());
                     } else {
                         reply.setError(re.getError());
                     }
@@ -443,7 +443,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         reply.setHostInventories(hosts);
                     } else {
                         reply.setHostInventories(hosts);
-                        reply.setClusterInventories(new ArrayList<ClusterInventory>());
+                        reply.setClusterInventories(new ArrayList<>());
                     }
                 }
 
@@ -836,7 +836,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmMigrateToAnotherHost;
         }
 
-        throw new CloudRuntimeException(String.format("unknown VM[uuid:%s] abnormal state combination[original state: %s, current state: %s, original host:%s, current host:%s]",
+        throw new CloudRuntimeException(String.format("unknown VM[uuid:%s] abnormal state combination[original state: %s," +
+                        " current state: %s, original host:%s, current host:%s]",
                 self.getUuid(), originalState, currentState, originalHostUuid, currentHostUuid));
     }
 
@@ -3501,7 +3502,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (!isZsCluster) {
             SimpleFlowChain fc = new SimpleFlowChain();
             List<Flow> flows = new ArrayList<>();
-            for (Flow f: chain.getFlows()) {
+            for (Flow f : chain.getFlows()) {
                 if (f.getClass() == VmStartOnHypervisorFlow.class) {
                     flows.add(f);
                     break;
@@ -3560,6 +3561,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         VmInstanceInventory inv = getSelfInventory();
 
         final VmInstanceSpec spec = new VmInstanceSpec();
+        spec.setRequiredPrimaryStorageUuidForRootVolume(struct.getPrimaryStorageUuidForRootVolume());
         spec.setVmInventory(inv);
         if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {
             SimpleQuery<L3NetworkVO> nwquery = dbf.createQuery(L3NetworkVO.class);
@@ -3568,7 +3570,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             List<L3NetworkInventory> nws = L3NetworkInventory.valueOf(vos);
 
             // order L3 networks by the order they specified in the API
-            List<L3NetworkInventory> l3s = new ArrayList<L3NetworkInventory>(nws.size());
+            List<L3NetworkInventory> l3s = new ArrayList<>(nws.size());
             for (final String l3Uuid : struct.getL3NetworkUuids()) {
                 L3NetworkInventory l3 = CollectionUtils.find(nws, new Function<L3NetworkInventory, L3NetworkInventory>() {
                     @Override
@@ -3630,9 +3632,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         spec.setUserdata(buildUserdata());
         selectBootOrder(spec);
-        String instanceOfferingOnlinechange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.
+        String instanceOfferingOnlineChange = VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN);
-        if (instanceOfferingOnlinechange != null && instanceOfferingOnlinechange.equals("true")) {
+        if (instanceOfferingOnlineChange != null && instanceOfferingOnlineChange.equals("true")) {
             spec.setInstanceOfferingOnlineChange(true);
         }
         spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.

@@ -3,13 +3,13 @@ package org.zstack.header.allocator;
 import java.util.*;
 
 public class HostAllocatorStrategyType {
-	private static Map<String, HostAllocatorStrategyType> types = Collections.synchronizedMap(new HashMap<String, HostAllocatorStrategyType>());
-	private final String typeName;
+    private static Map<String, HostAllocatorStrategyType> types = Collections.synchronizedMap(new HashMap<String, HostAllocatorStrategyType>());
+    private final String typeName;
     private final boolean exposed;
 
-	public HostAllocatorStrategyType(String typeName) {
+    public HostAllocatorStrategyType(String typeName) {
         this(typeName, true);
-	}
+    }
 
     public HostAllocatorStrategyType(String typeName, boolean exposed) {
         this.typeName = typeName;
@@ -21,33 +21,33 @@ public class HostAllocatorStrategyType {
         return types.keySet().contains(type);
     }
 
-	public static HostAllocatorStrategyType valueOf(String typeName) {
-		HostAllocatorStrategyType type = types.get(typeName);
-		if (type == null) {
-			throw new IllegalArgumentException("HostAllocatorStrategy type: " + typeName + " was not registered by any HostAllocatorStrategyFactory");
-		}
-		return type;
-	}
-	
-	@Override
-	public String toString() {
-		return typeName;
-	}
-	
-	@Override
-	public boolean equals(Object t) {
-		if (t == null || !(t instanceof HostAllocatorStrategyType)) {
-			return false;
-		}
-		
-		HostAllocatorStrategyType type = (HostAllocatorStrategyType)t;
-		return type.toString().equals(typeName);
-	}
-	
-	@Override
-	public int hashCode() {
-		return typeName.hashCode();
-	}
+    public static HostAllocatorStrategyType valueOf(String typeName) {
+        HostAllocatorStrategyType type = types.get(typeName);
+        if (type == null) {
+            throw new IllegalArgumentException("HostAllocatorStrategy type: " + typeName + " was not registered by any HostAllocatorStrategyFactory");
+        }
+        return type;
+    }
+
+    @Override
+    public String toString() {
+        return typeName;
+    }
+
+    @Override
+    public boolean equals(Object t) {
+        if (t == null || !(t instanceof HostAllocatorStrategyType)) {
+            return false;
+        }
+
+        HostAllocatorStrategyType type = (HostAllocatorStrategyType) t;
+        return type.toString().equals(typeName);
+    }
+
+    @Override
+    public int hashCode() {
+        return typeName.hashCode();
+    }
 
     public boolean isExposed() {
         return exposed;
@@ -55,7 +55,7 @@ public class HostAllocatorStrategyType {
 
 
     public static List<String> getAllExposedTypeNames() {
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
         for (Map.Entry<String, HostAllocatorStrategyType> e : types.entrySet()) {
             HostAllocatorStrategyType t = e.getValue();
             if (t.isExposed()) {

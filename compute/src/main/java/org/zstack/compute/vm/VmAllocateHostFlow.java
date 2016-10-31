@@ -53,7 +53,7 @@ public class VmAllocateHostFlow implements Flow {
 
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
 
-        List<DiskOfferingInventory> diskOfferings = new ArrayList<DiskOfferingInventory>();
+        List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
         ImageInventory image = spec.getImageSpec().getInventory();
         long diskSize;
         if (image.getMediaType().equals(ImageMediaType.ISO.toString())) {

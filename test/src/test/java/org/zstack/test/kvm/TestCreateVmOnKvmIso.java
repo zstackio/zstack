@@ -52,9 +52,9 @@ public class TestCreateVmOnKvmIso {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         ImageInventory iso = deployer.images.get("TestImage");
         SimpleQuery query = dbf.createQuery(ImageCacheVO.class);
         query.add(ImageCacheVO_.imageUuid, Op.EQ, iso.getUuid());

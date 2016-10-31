@@ -639,7 +639,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 List<DiskOfferingVO> vos = dquery.list();
 
                 // allow create multiple data volume from the same disk offering
-                List<DiskOfferingInventory> disks = new ArrayList<DiskOfferingInventory>();
+                List<DiskOfferingInventory> disks = new ArrayList<>();
                 for (final String duuid : msg.getDataDiskOfferingUuids()) {
                     DiskOfferingVO dvo = CollectionUtils.find(vos, new Function<DiskOfferingVO, DiskOfferingVO>() {
                         @Override
@@ -654,7 +654,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 }
                 spec.setDataDiskOfferings(disks);
             } else {
-                spec.setDataDiskOfferings(new ArrayList<DiskOfferingInventory>(0));
+                spec.setDataDiskOfferings(new ArrayList<>(0));
             }
 
             ImageVO imvo = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
@@ -711,7 +711,8 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                     self.setHypervisorType(spec.getDestHost().getHypervisorType());
                     self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
                     changeVmStateInDb(VmInstanceStateEvent.running);
-                    logger.debug(String.format("appliance vm[uuid:%s, name: %s, type:%s] is running ..", self.getUuid(), self.getName(), getSelf().getApplianceVmType()));
+                    logger.debug(String.format("appliance vm[uuid:%s, name: %s, type:%s] is running ..",
+                            self.getUuid(), self.getName(), getSelf().getApplianceVmType()));
                     VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                     extEmitter.afterStartNewCreatedVm(inv);
                     StartNewCreatedVmInstanceReply reply = new StartNewCreatedVmInstanceReply();

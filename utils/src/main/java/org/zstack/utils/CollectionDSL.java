@@ -7,7 +7,7 @@ import java.util.*;
  */
 public class CollectionDSL {
     public static <K,V> Map<K,V> map(Map.Entry<K,V>... entries) {
-        Map<K,V> map = new HashMap<K,V>();
+        Map<K,V> map = new HashMap<>();
         for(Map.Entry<K,V> entry : entries) {
             map.put(entry.getKey(), entry.getValue());
         }
@@ -29,7 +29,7 @@ public class CollectionDSL {
     }
 
     public static <T> List<T> list(T...els) {
-        ArrayList<T> lst = new ArrayList<T>(els.length);
+        ArrayList<T> lst = new ArrayList<>(els.length);
         Collections.addAll(lst, els);
         return lst;
     }

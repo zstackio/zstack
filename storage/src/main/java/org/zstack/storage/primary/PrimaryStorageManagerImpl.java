@@ -504,11 +504,15 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         if (allocatorStrategyType == null) {
-            allocatorStrategyType = msg.getAllocationStrategy() == null ? PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE : msg.getAllocationStrategy();
+            allocatorStrategyType = msg.getAllocationStrategy() == null ?
+                    PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE
+                    : msg.getAllocationStrategy();
         }
 
         if (msg.getExcludeAllocatorStrategies() != null && msg.getExcludeAllocatorStrategies().contains(allocatorStrategyType)) {
-            throw new CloudRuntimeException(String.format("%s is set as excluded, there is no available primary storage allocator strategy", allocatorStrategyType));
+            throw new CloudRuntimeException(
+                    String.format("%s is set as excluded, there is no available primary storage allocator strategy",
+                            allocatorStrategyType));
         }
 
         PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAlloactorStrategyFactory(

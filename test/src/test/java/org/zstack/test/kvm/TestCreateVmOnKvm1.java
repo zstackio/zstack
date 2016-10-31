@@ -21,7 +21,7 @@ import org.zstack.utils.logging.CLogger;
 
 /**
  * 1 create a vm from a data volume template
- *
+ * <p>
  * confirm the vm failed to create
  */
 public class TestCreateVmOnKvm1 {
@@ -48,16 +48,16 @@ public class TestCreateVmOnKvm1 {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         DiskOfferingInventory disk = new DiskOfferingInventory();
         disk.setName("xxx");
         disk.setDiskSize(10000000);
         disk = api.addDiskOffering(disk);
         api.stopVmInstance(vm.getUuid());
-        VolumeInventory vol = api.createDataVolume("vol",disk.getUuid());
+        VolumeInventory vol = api.createDataVolume("vol", disk.getUuid());
         vol = api.attachVolumeToVm(vm.getUuid(), vol.getUuid());
         ImageInventory img = api.addDataVolumeTemplateFromDataVolume(vol.getUuid(), null);
 

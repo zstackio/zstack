@@ -92,8 +92,10 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
 
     @Transactional(readOnly = true)
     private String findIsoBsUuidInTheZone(final String isoImageUuid, final String zoneUuid) {
-        String sql = "select ref.backupStorageUuid from ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zoneref" +
-                " where ref.backupStorageUuid = zoneref.backupStorageUuid and zoneref.zoneUuid = :zoneUuid" +
+        String sql = "select ref.backupStorageUuid" +
+                " from ImageBackupStorageRefVO ref, BackupStorageZoneRefVO zoneref" +
+                " where ref.backupStorageUuid = zoneref.backupStorageUuid" +
+                " and zoneref.zoneUuid = :zoneUuid" +
                 " and ref.imageUuid = :imgUuid";
 
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
@@ -117,21 +119,23 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
 
         if (VmOperation.NewCreate == spec.getCurrentVmOperation()) {
             final String bsUuid = findBackupStorage(spec, spec.getImageSpec().getInventory().getUuid());
-            spec.getImageSpec().setSelectedBackupStorage(CollectionUtils.find(spec.getImageSpec().getInventory().getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
-                @Override
-                public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                    return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
-                }
-            }));
+            spec.getImageSpec().setSelectedBackupStorage(CollectionUtils.find(
+                    spec.getImageSpec().getInventory().getBackupStorageRefs(),
+                    new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
+                        @Override
+                        public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
+                            return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
+                        }
+                    }));
 
             if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
                 spec.getDestIso().setBackupStorageUuid(bsUuid);
             }
-        } else if ((VmOperation.Start == spec.getCurrentVmOperation() || VmOperation.Reboot == spec.getCurrentVmOperation())
+        } else if ((VmOperation.Start == spec.getCurrentVmOperation()
+                || VmOperation.Reboot == spec.getCurrentVmOperation())
                 && spec.getDestIso() != null) {
             spec.getDestIso().setBackupStorageUuid(
-                    findIsoBsUuidInTheZone(spec.getDestIso().getImageUuid(),
-                    spec.getVmInventory().getZoneUuid())
+                    findIsoBsUuidInTheZone(spec.getDestIso().getImageUuid(), spec.getVmInventory().getZoneUuid())
             );
         }
 

@@ -51,7 +51,7 @@ public class VmAllocateVolumeFlow implements Flow {
         }
 
         List<VolumeSpec> volumeSpecs = spec.getVolumeSpecs();
-        List<CreateVolumeMsg> msgs = new ArrayList<CreateVolumeMsg>(volumeSpecs.size());
+        List<CreateVolumeMsg> msgs = new ArrayList<>(volumeSpecs.size());
         for (VolumeSpec vspec : volumeSpecs) {
             CreateVolumeMsg msg = new CreateVolumeMsg();
             if (vspec.isRoot()) {
@@ -98,8 +98,11 @@ public class VmAllocateVolumeFlow implements Flow {
                         CreateVolumeReply cr = r.castReply();
                         VolumeInventory inv = cr.getInventory();
                         if (inv.getType().equals(VolumeType.Root.toString())) {
-                            UpdateQuery.New().entity(VmInstanceVO.class).set(VmInstanceVO_.rootVolumeUuid, inv.getUuid())
-                                    .condAnd(VmInstanceVO_.uuid, Op.EQ, spec.getVmInventory().getUuid()).update();
+                            UpdateQuery.New()
+                                    .entity(VmInstanceVO.class)
+                                    .set(VmInstanceVO_.rootVolumeUuid, inv.getUuid())
+                                    .condAnd(VmInstanceVO_.uuid, Op.EQ, spec.getVmInventory().getUuid())
+                                    .update();
                             spec.setDestRootVolume(inv);
                         } else {
                             spec.getDestDataVolumes().add(inv);
@@ -124,7 +127,7 @@ public class VmAllocateVolumeFlow implements Flow {
     @Override
     public void rollback(final FlowRollback chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        List<VolumeInventory> destVolumes = new ArrayList<VolumeInventory>(spec.getDestDataVolumes().size() + 1);
+        List<VolumeInventory> destVolumes = new ArrayList<>(spec.getDestDataVolumes().size() + 1);
         if (spec.getDestRootVolume() != null) {
             destVolumes.add(spec.getDestRootVolume());
         }

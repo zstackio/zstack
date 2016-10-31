@@ -39,9 +39,9 @@ public class TestCreateVmOnKvm {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws InterruptedException {
-	}
+
+    @Test
+    public void test() throws InterruptedException {
+    }
 
 }

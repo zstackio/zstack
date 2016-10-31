@@ -87,8 +87,12 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
 
     @Transactional(readOnly = true)
     private List<HostVO> findHostsByPrimaryStorageUuids(List<String> psUuids) {
-        String sql = "select h from HostVO h, PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps where ref.clusterUuid = h.clusterUuid" +
-                " and ref.primaryStorageUuid = ps.uuid and ps.uuid in (:psUuids) and h.uuid in (:huuids)";
+        String sql = "select h" +
+                " from HostVO h, PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps" +
+                " where ref.clusterUuid = h.clusterUuid" +
+                " and ref.primaryStorageUuid = ps.uuid" +
+                " and ps.uuid in (:psUuids)" +
+                " and h.uuid in (:huuids)";
 
         TypedQuery<HostVO> q = dbf.getEntityManager().createQuery(sql, HostVO.class);
         q.setParameter("psUuids", psUuids);
@@ -99,8 +103,12 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
 
     @Transactional(readOnly = true)
     private List<HostVO> findHostsByPrimaryStorageTypes(List<String> psTypes) {
-        String sql = "select h from HostVO h, PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps where ref.clusterUuid = h.clusterUuid" +
-                " and ref.primaryStorageUuid = ps.uuid and ps.type in (:psTypes) and h.uuid in (:huuids)";
+        String sql = "select h" +
+                " from HostVO h, PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps" +
+                " where ref.clusterUuid = h.clusterUuid" +
+                " and ref.primaryStorageUuid = ps.uuid" +
+                " and ps.type in (:psTypes)" +
+                " and h.uuid in (:huuids)";
 
         TypedQuery<HostVO> q = dbf.getEntityManager().createQuery(sql, HostVO.class);
         q.setParameter("psTypes", psTypes);

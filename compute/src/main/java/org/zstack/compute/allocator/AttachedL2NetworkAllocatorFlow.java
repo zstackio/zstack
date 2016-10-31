@@ -32,7 +32,7 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
         q.setParameter("l3uuids", l3NetworkUuids);
         List<String> l2uuids = q.getResultList();
         if (l2uuids.isEmpty()) {
-            return new ArrayList<HostVO>();
+            return new ArrayList<>();
         }
 
         sql = "select ref from L2NetworkClusterRefVO ref where ref.l2NetworkUuid in (:l2uuids)";
@@ -40,20 +40,20 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
         rq.setParameter("l2uuids", l2uuids);
         List<L2NetworkClusterRefVO> refs = rq.getResultList();
         if (refs.isEmpty()) {
-            return new ArrayList<HostVO>();
+            return new ArrayList<>();
         }
 
-        Map<String, Set<String>> l2ClusterMap = new HashMap<String, Set<String>>();
+        Map<String, Set<String>> l2ClusterMap = new HashMap<>();
         for (L2NetworkClusterRefVO ref : refs) {
             Set<String> l2s = l2ClusterMap.get(ref.getClusterUuid());
             if (l2s == null) {
-                l2s = new HashSet<String>();
+                l2s = new HashSet<>();
                 l2ClusterMap.put(ref.getClusterUuid(), l2s);
             }
             l2s.add(ref.getL2NetworkUuid());
         }
 
-        Set<String> clusterUuids = new HashSet<String>();
+        Set<String> clusterUuids = new HashSet<>();
         for (Map.Entry<String, Set<String>> e : l2ClusterMap.entrySet()) {
             if (e.getValue().containsAll(l2uuids)) {
                 clusterUuids.add(e.getKey());
@@ -61,7 +61,7 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         if (clusterUuids.isEmpty()) {
-            return new ArrayList<HostVO>();
+            return new ArrayList<>();
         }
 
         if (hostUuids.isEmpty()) {
@@ -102,7 +102,7 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         if (amITheFirstFlow()) {
-            candidates = allocate(spec.getL3NetworkUuids(), new ArrayList<String>());
+            candidates = allocate(spec.getL3NetworkUuids(), new ArrayList<>());
         } else {
             candidates = allocate(spec.getL3NetworkUuids(), getHostUuidsFromCandidates());
         }

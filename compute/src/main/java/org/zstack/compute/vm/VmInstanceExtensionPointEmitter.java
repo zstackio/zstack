@@ -36,8 +36,8 @@ public class VmInstanceExtensionPointEmitter implements Component {
             try {
                 String err = ext.preStartNewCreatedVm(inv);
                 if (err != null) {
-                    logger.debug(String.format("VmInstanceStartNewCreatedVmExtensionPoint[%s] refuses to create vm[uuid:%s] because %s", ext.getClass()
-                            .getName(), inv.getUuid(), err));
+                    logger.debug(String.format("VmInstanceStartNewCreatedVmExtensionPoint[%s] refuses to create vm[uuid:%s] because %s",
+                            ext.getClass().getName(), inv.getUuid(), err));
                     return errf.stringToOperationError(err);
                 }
             } catch (Exception e) {
@@ -116,7 +116,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             }
         });
     }
-    
+
     public ErrorCode preRebootVm(final VmInstanceInventory inv) {
         for (VmInstanceRebootExtensionPoint ext : rebootVmExtensions) {
             try {
@@ -132,7 +132,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         }
         return null;
     }
-    
+
     public void beforeRebootVm(final VmInstanceInventory inv) {
         CollectionUtils.safeForEach(rebootVmExtensions, new ForEachFunction<VmInstanceRebootExtensionPoint>() {
             @Override
@@ -141,7 +141,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             }
         });
     }
-    
+
     public void afterRebootVm(final VmInstanceInventory inv) {
         CollectionUtils.safeForEach(rebootVmExtensions, new ForEachFunction<VmInstanceRebootExtensionPoint>() {
             @Override
@@ -150,7 +150,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             }
         });
     }
-    
+
     public void failedToRebootVm(final VmInstanceInventory inv, final ErrorCode reason) {
         CollectionUtils.safeForEach(rebootVmExtensions, new ForEachFunction<VmInstanceRebootExtensionPoint>() {
             @Override
@@ -159,7 +159,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             }
         });
     }
-    
+
     public ErrorCode preDestroyVm(VmInstanceInventory inv) {
         for (VmInstanceDestroyExtensionPoint ext : destroyVmExtensions) {
             try {
@@ -175,7 +175,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         }
         return null;
     }
-    
+
     public void beforeDestroyVm(final VmInstanceInventory inv) {
         CollectionUtils.safeForEach(destroyVmExtensions, new ForEachFunction<VmInstanceDestroyExtensionPoint>() {
             @Override
@@ -184,7 +184,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             }
         });
     }
-    
+
     public void afterDestroyVm(final VmInstanceInventory inv) {
         CollectionUtils.safeForEach(destroyVmExtensions, new ForEachFunction<VmInstanceDestroyExtensionPoint>() {
             @Override
@@ -202,7 +202,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             }
         });
     }
-    
+
     public ErrorCode preStartVm(VmInstanceInventory inv) {
         for (VmInstanceStartExtensionPoint ext : startVmExtensions) {
             try {
@@ -218,7 +218,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         }
         return null;
     }
-    
+
     public void beforeStartVm(final VmInstanceInventory inv) {
         CollectionUtils.safeForEach(startVmExtensions, new ForEachFunction<VmInstanceStartExtensionPoint>() {
             @Override
@@ -236,7 +236,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             }
         });
     }
-    
+
     public void failedToStartVm(final VmInstanceInventory inv, final ErrorCode reason) {
         CollectionUtils.safeForEach(startVmExtensions, new ForEachFunction<VmInstanceStartExtensionPoint>() {
             @Override
@@ -245,7 +245,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             }
         });
     }
-    
+
     public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid) {
         CollectionUtils.safeForEach(migrateVmExtensions, new ForEachFunction<VmInstanceMigrateExtensionPoint>() {
             @Override
@@ -254,7 +254,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             }
         });
     }
-    
+
     public void failedToMigrateVm(final VmInstanceInventory inv, final String dstHostUuid, final ErrorCode reason) {
         CollectionUtils.safeForEach(migrateVmExtensions, new ForEachFunction<VmInstanceMigrateExtensionPoint>() {
             @Override
@@ -274,7 +274,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         CollectionUtils.safeForEach(attachVolumeExtensions, new ForEachFunction<VmAttachVolumeExtensionPoint>() {
             @Override
             public void run(VmAttachVolumeExtensionPoint arg) {
-                arg.beforeAttachVolume(vm ,volume);
+                arg.beforeAttachVolume(vm, volume);
             }
         });
     }
@@ -283,7 +283,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         CollectionUtils.safeForEach(attachVolumeExtensions, new ForEachFunction<VmAttachVolumeExtensionPoint>() {
             @Override
             public void run(VmAttachVolumeExtensionPoint arg) {
-                arg.beforeAttachVolume(vm ,volume);
+                arg.beforeAttachVolume(vm, volume);
             }
         });
     }
@@ -329,7 +329,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
             }
         });
     }
-    
+
     private void populateExtensions() {
         startNewCreatedVmExtensions = pluginRgty.getExtensionList(VmInstanceStartNewCreatedVmExtensionPoint.class);
         stopVmExtensions = pluginRgty.getExtensionList(VmInstanceStopExtensionPoint.class);

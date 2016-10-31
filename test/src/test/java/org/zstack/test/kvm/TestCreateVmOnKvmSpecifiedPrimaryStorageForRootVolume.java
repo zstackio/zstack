@@ -9,10 +9,11 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.simulator.storage.primary.nfs.NfsPrimaryStorageSimulatorConfig;
 import org.zstack.test.*;
@@ -21,15 +22,7 @@ import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-/**
- * 1. create a vm which will download the image in the primary storage cache
- * 2. make the backup storage disconnected
- * 3. create a new vm
- * <p>
- * confirm the vm created successfully
- * confirm no download operation executed
- */
-public class TestCreateVmOnKvm2 {
+public class TestCreateVmOnKvmSpecifiedPrimaryStorageForRootVolume {
     CLogger logger = Utils.getLogger(TestSftpBackupStorageDeleteImage2.class);
     Deployer deployer;
     Api api;
@@ -44,7 +37,7 @@ public class TestCreateVmOnKvm2 {
     public void setUp() throws Exception {
         DBUtil.reDeployDB();
         WebBeanConstructor con = new WebBeanConstructor();
-        deployer = new Deployer("deployerXml/kvm/TestCreateVmOnKvm.xml", con);
+        deployer = new Deployer("deployerXml/kvm/TestCreateVmOnKvmSpeicfiedPrimaryStorageForRootVolume.xml", con);
         deployer.addSpringConfig("KVMRelated.xml");
         deployer.build();
         api = deployer.getApi();
@@ -58,23 +51,27 @@ public class TestCreateVmOnKvm2 {
 
     @Test
     public void test() throws ApiSenderException {
-        VmInstanceInventory vm = deployer.vms.get("TestVm");
-        BackupStorageInventory sftp = deployer.backupStorages.get("sftp");
-        BackupStorageVO bsvo = dbf.findByUuid(sftp.getUuid(), BackupStorageVO.class);
-        bsvo.setStatus(BackupStorageStatus.Disconnected);
-        dbf.update(bsvo);
+        PrimaryStorageInventory nfsPS = deployer.primaryStorages.get("nfs");
+
+        L3NetworkInventory l3nInv1 = deployer.l3Networks.get("TestL3Network1");
+        L3NetworkInventory l3nInv2 = deployer.l3Networks.get("TestL3Network2");
+        L3NetworkInventory l3nInv3 = deployer.l3Networks.get("TestL3Network3");
+        L3NetworkInventory l3nInv4 = deployer.l3Networks.get("TestL3Network4");
 
         InstanceOfferingInventory ioinv = deployer.instanceOfferings.get("TestInstanceOffering");
         ImageInventory img = deployer.images.get("TestImage");
 
         nconfig.downloadFromSftpCmds.clear();
         VmCreator creator = new VmCreator(api);
-        creator.addL3Network(vm.getVmNics().get(0).getL3NetworkUuid());
+        creator.addL3Network(l3nInv1.getUuid());
+        creator.addL3Network(l3nInv2.getUuid());
+        creator.addL3Network(l3nInv3.getUuid());
+        creator.addL3Network(l3nInv4.getUuid());
         creator.name = "vm";
         creator.imageUuid = img.getUuid();
         creator.instanceOfferingUuid = ioinv.getUuid();
+        creator.primaryStorageUuidForRootVolume = nfsPS.getUuid();
         creator.create();
-        Assert.assertTrue(nconfig.downloadFromSftpCmds.isEmpty());
     }
 
 }

@@ -24,6 +24,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String zoneUuid;
     private String clusterUuid;
     private String hostUuid;
+    private String primaryStorageUuidForRootVolume;
     private String description;
     private String resourceUuid;
     private String defaultL3NetworkUuid;
@@ -217,5 +218,13 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
         return cmsg;
+    }
+
+    public String getPrimaryStorageUuidForRootVolume() {
+        return primaryStorageUuidForRootVolume;
+    }
+
+    public void setPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
+        this.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume;
     }
 }

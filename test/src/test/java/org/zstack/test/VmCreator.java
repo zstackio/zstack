@@ -15,17 +15,18 @@ import java.util.List;
 public class VmCreator {
     private static final CLogger logger = Utils.getLogger(VmCreator.class);
 
-    List<String> l3NetworkUuids = new ArrayList<String>();
+    List<String> l3NetworkUuids = new ArrayList<>();
     public String imageUuid;
     public String instanceOfferingUuid;
-    List<String> diskOfferingUuids = new ArrayList<String>();
+    List<String> diskOfferingUuids = new ArrayList<>();
     public String zoneUuid;
     public String clusterUUid;
     public String hostUuid;
+    public String primaryStorageUuidForRootVolume;
     public String defaultL3NetworkUuid;
     public String description;
     public String name = "vm";
-    public List<String> systemTags = new ArrayList<String>();
+    public List<String> systemTags = new ArrayList<>();
     public List<String> userTags;
     public String rootDiskOfferingUuid;
     public int timeout = 15;
@@ -68,6 +69,7 @@ public class VmCreator {
         msg.setSystemTags(systemTags);
         msg.setUserTags(userTags);
         msg.setDescription(description);
+        msg.setPrimaryStorageUuidForRootVolume(primaryStorageUuidForRootVolume);
         if (strategy != null) {
             msg.setStrategy(strategy.toString());
         }
