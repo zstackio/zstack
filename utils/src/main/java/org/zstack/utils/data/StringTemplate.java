@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StringTemplate {
-    public static String subsititute(String text, Map<String, String> tokens) {
+    public static String substitute(String text, Map<String, String> tokens) {
         Pattern pattern = Pattern.compile("\\{(.+?)\\}");
         Matcher matcher = pattern.matcher(text);
         StringBuffer buffer = new StringBuffer();

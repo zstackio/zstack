@@ -62,7 +62,7 @@ public class SaltSetupMinionJob implements Job {
         map.put("minionId", minionId);
 
         String srcConf = FileUtils.readFileToString(minionConfTmpt);
-        String conf = StringTemplate.subsititute(srcConf, map);
+        String conf = StringTemplate.substitute(srcConf, map);
         File minionConf = File.createTempFile("zstack-salt", "minion");
         FileUtils.write(minionConf, conf);
         return minionConf;

@@ -70,7 +70,7 @@ public class SaltFacadeImpl extends AbstractService implements SaltFacade {
         map.put("workerThreads", String.valueOf(masterWorkerThreads));
 
         String srcConf = FileUtils.readFileToString(masterConfTmpt);
-        String conf = StringTemplate.subsititute(srcConf, map);
+        String conf = StringTemplate.substitute(srcConf, map);
         File masterConf = File.createTempFile("zstack-salt", "master");
         FileUtils.write(masterConf, conf);
 

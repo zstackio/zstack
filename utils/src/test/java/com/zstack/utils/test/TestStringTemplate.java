@@ -16,7 +16,7 @@ public class TestStringTemplate {
         Map<String, String> tokens = new HashMap<String, String>();
         tokens.put("name", name);
         tokens.put("boy", boy);
-        String res = StringTemplate.subsititute(text, tokens);
+        String res = StringTemplate.substitute(text, tokens);
         System.out.println(res);
 
         System.out.println("file:///mnt".replaceAll("file://", ""));

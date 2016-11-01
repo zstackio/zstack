@@ -123,7 +123,7 @@ public class Platform {
                 }
 
                 if (value != null) {
-                    value = StringTemplate.subsititute(value, propertiesMap);
+                    value = StringTemplate.substitute(value, propertiesMap);
                 }
 
                 if (Integer.class.isAssignableFrom(f.getType()) || Integer.TYPE.isAssignableFrom(f.getType())) {
