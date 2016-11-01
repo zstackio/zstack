@@ -12,6 +12,7 @@ import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -73,6 +74,12 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
         int timeoutInSeconds = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
         long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeoutInSeconds);
+
+        if (isReconnect && !NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, 2)) {
+            throw new OperationFailureException(errf.stringToOperationError(
+                    String.format("unable to ssh in to the vyos[%s], the ssh port seems not open", mgmtNicIp)
+            ));
+        }
 
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             @Override

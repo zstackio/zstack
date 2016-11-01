@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.appliancevm.ApplianceVm;
 import org.zstack.appliancevm.ApplianceVmType;
 import org.zstack.appliancevm.ApplianceVmVO;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.db.DatabaseFacade;
@@ -20,7 +19,10 @@ import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkCreateExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.NetworkServiceProviderL2NetworkRefVO;
+import org.zstack.header.network.service.NetworkServiceProviderVO;
+import org.zstack.header.network.service.NetworkServiceProviderVO_;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.lb.LoadBalancerConstants;
 import org.zstack.network.service.virtualrouter.VirtualRouterApplianceVmFactory;
@@ -130,18 +132,9 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
         reconnectFlowsBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(vyosReconnectFlows).construct();
     }
 
-    private void deployAnsible() {
-        if (CoreGlobalProperty.UNIT_TEST_ON) {
-            return;
-        }
-
-        asf.deployModule(VyosConstants.ANSIBLE_MODULE_PATH, VyosConstants.ANSIBLE_PLAYBOOK_NAME);
-    }
-
 
     @Override
     public boolean start() {
-        deployAnsible();
         buildWorkFlowBuilder();
         return true;
     }
