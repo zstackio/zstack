@@ -324,7 +324,10 @@ public class KVMHost extends HostBase implements Host {
         KvmRunShellReply reply = new KvmRunShellReply();
         if (result.isSshFailure()) {
             reply.setError(errf.stringToOperationError(
-                    String.format("unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check, please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), result.getExitErrorMessage())
+                    String.format("unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check," +
+                            " please check if username/password is wrong; %s",
+                            self.getManagementIp(), getSelf().getUsername(),
+                            getSelf().getPort(), result.getExitErrorMessage())
             ));
         } else {
             reply.setStdout(result.getStdout());
@@ -429,7 +432,7 @@ public class KVMHost extends HostBase implements Host {
                 if (!ret.isSuccess()) {
                     reply.setError(errf.stringToOperationError(ret.getError()));
                 } else {
-                    Map<String, String> m = new HashMap<String, String>();
+                    Map<String, String> m = new HashMap<>();
                     for (Map.Entry<String, String> e : ret.states.entrySet()) {
                         m.put(e.getKey(), KvmVmState.valueOf(e.getValue()).toVmInstanceState().toString());
                     }
@@ -804,7 +807,8 @@ public class KVMHost extends HostBase implements Host {
             VmInstanceState state = q.findValue();
             if (state != VmInstanceState.Stopped && state != VmInstanceState.Running) {
                 throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("cannot do volume snapshot merge when vm[uuid:%s] is in state of %s. The operation is only allowed when vm is Running or Stopped",
+                        String.format("cannot do volume snapshot merge when vm[uuid:%s] is in state of %s." +
+                                        " The operation is only allowed when vm is Running or Stopped",
                                 volume.getUuid(), state)
                 ));
             }
@@ -813,7 +817,9 @@ public class KVMHost extends HostBase implements Host {
                 String libvirtVersion = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN);
                 if (new VersionComparator(KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION).compare(libvirtVersion) > 0) {
                     throw new OperationFailureException(errf.stringToOperationError(
-                            String.format("live volume snapshot merge needs libvirt version greater than %s, current libvirt version is %s. Please stop vm and redo the operation or detach the volume if it's data volume",
+                            String.format("live volume snapshot merge needs libvirt version greater than %s," +
+                                            " current libvirt version is %s." +
+                                            " Please stop vm and redo the operation or detach the volume if it's data volume",
                                     KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION, libvirtVersion)
                     ));
                 }
@@ -1151,7 +1157,7 @@ public class KVMHost extends HostBase implements Host {
     private void migrateVm(final MigrateVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
 
-        List<MigrateStruct> lst = new ArrayList<MigrateStruct>();
+        List<MigrateStruct> lst = new ArrayList<>();
         MigrateStruct s = new MigrateStruct();
         s.vmUuid = msg.getVmInventory().getUuid();
         s.dstHostIp = msg.getDestHostInventory().getManagementIp();
@@ -1390,8 +1396,10 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachDataVolumeResponse ret) {
                 if (!ret.isSuccess()) {
-                    String err = String.format("failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
-                            vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(), getSelf().getUuid(), getSelf().getManagementIp(), ret.getError());
+                    String err = String.format("failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s]" +
+                                    " on kvm host[uuid:%s, ip:%s], because %s",
+                            vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(),
+                            getSelf().getUuid(), getSelf().getManagementIp(), ret.getError());
                     logger.warn(err);
                     reply.setError(errf.stringToOperationError(err));
                     extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError());

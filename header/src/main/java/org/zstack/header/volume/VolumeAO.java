@@ -115,79 +115,79 @@ public class VolumeAO implements ShadowEntity {
     }
 
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
 
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
-	public String getName() {
-    	return name;
+    public String getName() {
+        return name;
     }
 
-	public void setName(String name) {
-    	this.name = name;
+    public void setName(String name) {
+        this.name = name;
     }
 
-	public String getDescription() {
-    	return description;
+    public String getDescription() {
+        return description;
     }
 
-	public void setDescription(String description) {
-    	this.description = description;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-	public String getPrimaryStorageUuid() {
-    	return primaryStorageUuid;
+    public String getPrimaryStorageUuid() {
+        return primaryStorageUuid;
     }
 
-	public void setPrimaryStorageUuid(String primaryStorageUuid) {
-    	this.primaryStorageUuid = primaryStorageUuid;
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
     }
 
-	public String getVmInstanceUuid() {
-    	return vmInstanceUuid;
+    public String getVmInstanceUuid() {
+        return vmInstanceUuid;
     }
 
-	public void setVmInstanceUuid(String vmInstanceUuid) {
-    	this.vmInstanceUuid = vmInstanceUuid;
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
     }
 
-	public String getInstallPath() {
-    	return installPath;
+    public String getInstallPath() {
+        return installPath;
     }
 
-	public void setInstallPath(String installPath) {
-    	this.installPath = installPath;
+    public void setInstallPath(String installPath) {
+        this.installPath = installPath;
     }
 
-	public VolumeType getType() {
-    	return type;
+    public VolumeType getType() {
+        return type;
     }
 
-	public void setType(VolumeType volumeType) {
-    	this.type = volumeType;
+    public void setType(VolumeType volumeType) {
+        this.type = volumeType;
     }
 
-	public long getSize() {
-    	return size;
+    public long getSize() {
+        return size;
     }
 
-	public void setSize(long size) {
-    	this.size = size;
+    public void setSize(long size) {
+        this.size = size;
     }
 
-	public VolumeState getState() {
-    	return state;
+    public VolumeState getState() {
+        return state;
     }
 
-	public void setState(VolumeState state) {
-    	this.state = state;
+    public void setState(VolumeState state) {
+        this.state = state;
     }
 
-	public boolean isAttached() {
-    	return this.vmInstanceUuid != null;
+    public boolean isAttached() {
+        return this.vmInstanceUuid != null;
     }
 
     public String getRootImageUuid() {
