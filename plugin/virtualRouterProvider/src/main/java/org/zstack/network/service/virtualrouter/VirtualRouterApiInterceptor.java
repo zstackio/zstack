@@ -13,6 +13,8 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.IpRangeVO_;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
@@ -21,6 +23,8 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.utils.ShellResult;
+import org.zstack.utils.ShellUtils;
 
 import javax.persistence.Tuple;
 import java.util.List;
@@ -104,6 +108,8 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
+        checkIfManagementNetworkReachable(msg.getManagementNetworkUuid());
+
         q = dbf.createQuery(L3NetworkVO.class);
         q.select(L3NetworkVO_.zoneUuid);
         q.add(L3NetworkVO_.uuid, Op.EQ, msg.getPublicNetworkUuid());
@@ -151,6 +157,29 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
                 }
             }
         }
+    }
+
+    private void checkIfManagementNetworkReachable(String managementNetworkUuid) {
+        SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
+        q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, managementNetworkUuid);
+        List<IpRangeVO> iprs = q.list();
+        if (iprs.isEmpty()) {
+            throw new ApiMessageInterceptionException(errf.stringToOperationError(
+                    String.format("the management network[uuid:%s] doesn't have any IP range", managementNetworkUuid)
+            ));
+        }
+
+        String gateway = iprs.get(0).getGateway();
+        for (int i=0; i<3; i++) {
+            ShellResult ret = ShellUtils.runAndReturn(String.format("ping -c 1 -W 2 %s", gateway));
+            if (ret.isReturnCode(0)) {
+                return;
+            }
+        }
+
+        throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                String.format("the management network[uuid:%s, gateway:%s] is not reachable", managementNetworkUuid, gateway)
+        ));
     }
 
     private void validate(APIQueryVirtualRouterOfferingMsg msg) {
