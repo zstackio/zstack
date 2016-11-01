@@ -329,7 +329,7 @@ public class KVMHost extends HostBase implements Host {
         if (result.isSshFailure()) {
             reply.setError(errf.stringToOperationError(
                     String.format("unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check," +
-                                    " please check if username/password is wrong; %s",
+                            " please check if username/password is wrong; %s",
                             self.getManagementIp(), getSelf().getUsername(),
                             getSelf().getPort(), result.getExitErrorMessage())
             ));
