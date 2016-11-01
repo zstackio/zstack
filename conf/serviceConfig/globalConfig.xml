@@ -19,4 +19,5 @@
         <name>org.zstack.core.config.APIQueryGlobalConfigMsg</name>
         <serviceId>query</serviceId>
     </message>
+
 </service>

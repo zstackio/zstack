@@ -41,7 +41,8 @@ public class BeanConstructor {
             "<import resource=\"springConfigXml/gc.xml\" />",
             "<import resource=\"springConfigXml/debug.xml\" />",
             "<import resource=\"springConfigXml/SchedulerFacade.xml\" />",
-            "<import resource=\"springConfigXml/jsonlabel.xml\" />"
+            "<import resource=\"springConfigXml/jsonlabel.xml\" />",
+            "<import resource=\"springConfigXml/EncryptRSA.xml\" />"
     ).toString();
 
     public BeanConstructor() {

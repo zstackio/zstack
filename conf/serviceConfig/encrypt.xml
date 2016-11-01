@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>encrypt</id>
+    <interceptor>EncryptApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.core.encrypt.APIUpdateEncryptKeyMsg</name>
+    </message>
+
+</service>

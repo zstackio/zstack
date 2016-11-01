@@ -15,7 +15,7 @@
 
     <context:annotation-config/>
     <context:spring-configured/>
-    <aop:aspectj-autoproxy/>
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
     <tx:annotation-driven transaction-manager="transactionManager" mode="aspectj"/>
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -48,6 +48,7 @@
     <import resource="springConfigXml/DatabaseFacade.xml"/>
     <import resource="springConfigXml/debug.xml"/>
     <import resource="springConfigXml/eip.xml"/>
+    <import resource="springConfigXml/encrypt.xml"/>
     <import resource="springConfigXml/Error.xml"/>
     <import resource="springConfigXml/flatNetworkProvider.xml"/>
     <import resource="springConfigXml/fusionstor.xml"/>
