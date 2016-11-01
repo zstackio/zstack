@@ -49,5 +49,8 @@ public class TestQueryManagementNode {
         String version = api.getVersion();
         Assert.assertNotNull(version);
         System.out.println(String.format("version: %s", version));
+        long currentTime = api.getCurrentTime();
+        Assert.assertNotNull(currentTime);
+        System.out.println(String.format("version: %d", currentTime));
     }
 }

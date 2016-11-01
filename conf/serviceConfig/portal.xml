@@ -15,4 +15,8 @@
         <name>org.zstack.header.managementnode.APIGetVersionMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.header.managementnode.APIGetCurrentTimeMillisMsg</name>
+    </message>
+
 </service>

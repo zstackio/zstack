@@ -110,6 +110,8 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
                     handle((APIIsReadyToGoMsg) msg);
                 } else if (msg instanceof APIGetVersionMsg) {
                     handle((APIGetVersionMsg) msg);
+                } else if (msg instanceof APIGetCurrentTimeMillisMsg) {
+                    handle((APIGetCurrentTimeMillisMsg) msg);
                 } else if (msg instanceof APIMessage) {
                     dispatchMessage((APIMessage) msg);
                 } else {
@@ -134,6 +136,13 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
 
         APIGetVersionReply reply = new APIGetVersionReply();
         reply.setVersion(version);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetCurrentTimeMillisMsg msg) {
+        long currentTimeMillis = System.currentTimeMillis();
+        APIGetCurrentTimeMillisReply reply = new APIGetCurrentTimeMillisReply();
+        reply.setCurrentTimeMillis(currentTimeMillis);
         bus.reply(msg, reply);
     }
 

@@ -3786,6 +3786,14 @@ public class Api implements CloudBusEventListener {
         return reply.getVersion();
     }
 
+    public long getCurrentTime() throws ApiSenderException {
+        APIGetCurrentTimeMillisMsg msg = new APIGetCurrentTimeMillisMsg();
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIGetCurrentTimeMillisReply reply = sender.call(msg, APIGetCurrentTimeMillisReply.class);
+        return reply.getCurrentTimeMillis();
+    }
+
     public void expungeImage(String imageUuid, List<String> bsUuids, SessionInventory session) throws ApiSenderException {
         APIExpungeImageMsg msg = new APIExpungeImageMsg();
         msg.setImageUuid(imageUuid);
