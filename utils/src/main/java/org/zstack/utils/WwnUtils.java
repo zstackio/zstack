@@ -6,7 +6,7 @@ import java.util.UUID;
  * Created by miao on 11/1/16.
  */
 public class WwnUtils {
-    final String oui = "ffff";
+    final String oui = "000f";
 
     public String getRandomWwn() {
         String uuid = UUID.randomUUID().toString().replace("-", "");
