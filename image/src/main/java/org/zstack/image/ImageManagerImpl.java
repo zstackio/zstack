@@ -1208,7 +1208,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
-
+                if (new QuotaUtil().isAdminAccount(resourceTargetOwnerAccountUuid)) {
+                    return;
+                }
 
                 SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
                 q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());

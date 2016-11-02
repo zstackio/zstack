@@ -1458,10 +1458,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         return msg;
     }
-    
+
     private void checkQuotaForChangeResourceOwner(APIChangeResourceOwnerMsg msg) {
         String currentAccountUuid = msg.getSession().getAccountUuid();
         String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
+        if (new QuotaUtil().isAdminAccount(resourceTargetOwnerAccountUuid)) {
+            return;
+        }
         // check if change resource owner to self
         SimpleQuery<AccountResourceRefVO> queryAccResRefVO = dbf.createQuery(AccountResourceRefVO.class);
         queryAccResRefVO.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());

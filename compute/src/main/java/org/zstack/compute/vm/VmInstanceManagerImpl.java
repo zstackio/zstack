@@ -1343,6 +1343,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
             private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
+                if (new QuotaUtil().isAdminAccount(resourceTargetOwnerAccountUuid)) {
+                    return;
+                }
 
                 String resourceType = new QuotaUtil().getResourceType(msg.getResourceUuid());
                 if (resourceType.equals(VolumeVO.class.getSimpleName())) {

@@ -12,7 +12,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowChainProcessor;
@@ -742,7 +741,9 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
-
+                if (new QuotaUtil().isAdminAccount(resourceTargetOwnerAccountUuid)) {
+                    return;
+                }
 
                 SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
                 q.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
