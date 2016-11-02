@@ -354,10 +354,13 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                 vo.setSchedulerInterval(schedulerJob.getSchedulerInterval());
                 if (schedulerJob.getRepeat() != null) {
                     vo.setStopTime(new Timestamp(System.currentTimeMillis() + schedulerJob.getRepeat() * schedulerJob.getSchedulerInterval()*1000));
+                } else {
+                    vo.setStopTime(null);
                 }
                 vo.setStartTime(start);
             } else if (schedulerJob.getType().equals("cron")) {
                 vo.setCronScheduler(schedulerJob.getCron());
+                vo.setStopTime(null);
             } else {
                 logger.error(String.format("Unknown scheduler job type %s", schedulerJob.getType()));
             }

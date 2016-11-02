@@ -56,7 +56,7 @@ public class TestRebootVmScheduler {
         Assert.assertNotNull(schedulerInv.getStopTime());
 
         SchedulerInventory schedulerInv2 = api.rebootVmInstanceScheduler(vmUuid, type, startDate, interval, null, null);
-        TimeUnit.SECONDS.sleep(10);
+        TimeUnit.SECONDS.sleep(2);
         Assert.assertNull(schedulerInv2.getStopTime());
     }
 }

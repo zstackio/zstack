@@ -67,3 +67,4 @@ ALTER TABLE ApplianceVmVO ADD agentPort int unsigned DEFAULT 7759;
 ALTER TABLE VCenterVO ADD CONSTRAINT fkVCenterVOZoneEO FOREIGN KEY (zoneUuid) REFERENCES ZoneEO (uuid) ON DELETE CASCADE  ;
 ALTER TABLE SchedulerVO CHANGE startDate  startTime  timestamp;
 ALTER TABLE SchedulerVO CHANGE stopDate  stopTime  timestamp NULL DEFAULT NULL;
+UPDATE SchedulerVO SET stopTime = NULL;
