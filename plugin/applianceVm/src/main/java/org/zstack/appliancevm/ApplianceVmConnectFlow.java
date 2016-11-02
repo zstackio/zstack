@@ -70,7 +70,7 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
 
         final int connectTimeout = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
         final String privKey = asf.getPrivateKey();
-        final String username = aspec.getSshUsername();
+        final String username = "root";
         final int sshPort = aspec.getSshPort();
 
         final boolean connectVerbose = ApplianceVmGlobalProperty.CONNECT_VERBOSE;
