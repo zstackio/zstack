@@ -84,9 +84,14 @@ public class SftpBackupStorage extends BackupStorageBase {
         String format;
         long size;
         long actualSize;
+        boolean injected;
     }
 
     private void download(String url, String installPath, String uuid, final ReturnValueCompletion<DownloadResult> completion) {
+        download(url, installPath, uuid, false, completion);
+    }
+
+    private void download(String url, String installPath, String uuid, boolean inject, final ReturnValueCompletion<DownloadResult> completion) {
         try {
             URI uri = new URI(url);
             String scheme = uri.getScheme();
@@ -102,6 +107,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             cmd.setUrlScheme(scheme);
             cmd.setInstallPath(installPath);
             cmd.setTimeout(timeoutManager.getTimeout(cmd.getClass(), "3h"));
+            cmd.setInject(inject);
 
             restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH), cmd, new JsonAsyncRESTCallback<DownloadResponse>() {
                 @Override
@@ -175,7 +181,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         final DownloadImageReply reply = new DownloadImageReply();
         final ImageInventory iinv = msg.getImageInventory();
         final String installPath = PathUtil.join(getSelf().getUrl(), BackupStoragePathMaker.makeImageInstallPath(iinv));
-        download(iinv.getUrl(), installPath, iinv.getUuid(), new ReturnValueCompletion<DownloadResult>(msg) {
+        download(iinv.getUrl(), installPath, iinv.getUuid(), msg.isInject(), new ReturnValueCompletion<DownloadResult>(msg) {
             @Override
             public void success(DownloadResult res) {
                 reply.setInstallPath(installPath);
@@ -183,6 +189,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                 reply.setActualSize(res.actualSize);
                 reply.setMd5sum(res.md5sum);
                 reply.setFormat(res.format);
+                reply.setInjected(res.injected);
                 bus.reply(msg, reply);
             }
 

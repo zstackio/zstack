@@ -13,6 +13,8 @@ public class StartNewCreatedVmInstanceMsg extends NeedReplyMessage implements Vm
     private String rootDiskOfferingUuid;
     private String primaryStorageUuidForRootVolume;
 
+    private String rootPassword;
+    
     public VmInstanceInventory getVmInstanceInventory() {
         return vmInstanceInventory;
     }
@@ -43,6 +45,14 @@ public class StartNewCreatedVmInstanceMsg extends NeedReplyMessage implements Vm
 
     public void setRootDiskOfferingUuid(String rootDiskOfferingUuid) {
         this.rootDiskOfferingUuid = rootDiskOfferingUuid;
+    }
+
+    public String getRootPassword() {
+        return rootPassword;
+    }
+
+    public void setRootPassword(String rootPassword) {
+        this.rootPassword = rootPassword;
     }
 
     @Override

@@ -98,6 +98,8 @@ public class KVMHost extends HostBase implements Host {
     private String getConsolePortPath;
     private String changeCpuMemoryPath;
     private String deleteConsoleFirewall;
+    private String changeVmPasswordPath;
+    private String setRootPasswordPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -191,6 +193,13 @@ public class KVMHost extends HostBase implements Host {
         ub.path(KVMConstant.KVM_VM_CHANGE_CPUMEMORY);
         changeCpuMemoryPath = ub.build().toString();
 
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_CHANGE_PASSWORD_PATH);
+        changeVmPasswordPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_SET_ROOT_PASSWORD_PATH);
+        setRootPasswordPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
@@ -248,6 +257,10 @@ public class KVMHost extends HostBase implements Host {
             handle((VmDirectlyDestroyOnHypervisorMsg) msg);
         } else if (msg instanceof OnlineChangeVmCpuMemoryMsg) {
             handle((OnlineChangeVmCpuMemoryMsg) msg);
+        } else if (msg instanceof ChangeVmPasswordMsg) {
+            handle((ChangeVmPasswordMsg) msg);
+        } else if (msg instanceof SetRootPasswordMsg) {
+            handle((SetRootPasswordMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -336,6 +349,67 @@ public class KVMHost extends HostBase implements Host {
         }
 
         bus.reply(msg, reply);
+    }
+
+    private void handle(final SetRootPasswordMsg msg) {
+        final SetRootPasswordReply reply = new SetRootPasswordReply();
+        ChangeVmPasswordCmd cmd = new ChangeVmPasswordCmd();
+        cmd.setAccountPerference(msg.getVmAccountPerference());
+        cmd.setQcowFile(msg.getQcowFile());
+
+        restf.asyncJsonPost(setRootPasswordPath, cmd, new JsonAsyncRESTCallback<ChangeVmPasswordResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(ChangeVmPasswordResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                } else {
+                    reply.setVmAccountPerference(ret.getVmAccountPerference());
+                    reply.setQcowFile(ret.getQcowFile());
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<ChangeVmPasswordResponse> getReturnClass() {
+                return ChangeVmPasswordResponse.class;
+            }
+        });
+    }
+
+    private void handle(final ChangeVmPasswordMsg msg) {
+        final ChangeVmPasswordReply reply = new ChangeVmPasswordReply();
+
+        ChangeVmPasswordCmd cmd = new ChangeVmPasswordCmd();
+        cmd.setAccountPerference(msg.getAccountPerference());
+
+        restf.asyncJsonPost(changeVmPasswordPath, cmd, new JsonAsyncRESTCallback<ChangeVmPasswordResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(ChangeVmPasswordResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(ret.getError()));
+                } else {
+                    reply.setVmAccountPerference(ret.getVmAccountPerference());
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<ChangeVmPasswordResponse> getReturnClass() {
+                return ChangeVmPasswordResponse.class;
+            }
+        });
     }
 
     private void handle(final OnlineChangeVmCpuMemoryMsg msg) {
@@ -1832,7 +1906,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setHostManagementIp(self.getManagementIp());
         cmd.setConsolePassword(spec.getConsolePassword());
         cmd.setInstanceOfferingOnlineChange(spec.getInstanceOfferingOnlineChange());
-
+        addons(spec, cmd);
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
         try {
             extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
@@ -1880,6 +1954,19 @@ public class KVMHost extends HostBase implements Host {
                 return StartVmResponse.class;
             }
         });
+    }
+
+    private void addons(final VmInstanceSpec spec, StartVmCmd cmd){
+        KVMAddons.Channel chan = new KVMAddons.Channel();
+        chan.setSocketPath(makeChannelSocketPath(spec.getVmInventory().getUuid()));
+        chan.setTargetName(String.format("org.qemu.guest_agent.0"));
+        cmd.getAddons().put(chan.NAME, chan);
+        logger.debug(String.format("make kvm channel device[path:%s, target:%s]", chan.getSocketPath(), chan.getTargetName()));
+
+    }
+
+    private String makeChannelSocketPath(String apvmuuid) {
+        return PathUtil.join(String.format("/var/lib/libvirt/qemu/%s", apvmuuid));
     }
 
     private void handle(final StartVmOnHypervisorMsg msg) {

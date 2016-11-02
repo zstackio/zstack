@@ -127,6 +127,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private FlowChainBuilder expungeVmFlowBuilder;
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private Future<Void> expungeVmTask;
+    private Map<Class, VmInstanceBaseExtensionFactory> vmInstanceBaseExtensionFactories = new HashMap<>();
 
     static {
         allowedMessageAfterSoftDeletion.add(VmInstanceDeletionMsg.class);
@@ -667,6 +668,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(vo));
         smsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
+        smsg.setRootPassword(msg.getRootPassword());
         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vo.getUuid());
         bus.send(smsg, new CloudBusCallBack(smsg) {
             @Override
@@ -734,6 +736,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
         cmsg.setStrategy(msg.getStrategy());
+        cmsg.setRootPassword(msg.getRootPassword());
         return cmsg;
     }
 
@@ -781,6 +784,18 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         old.getClass().getName(), ext.getClass().getName(), ext.getType()));
             }
             vmInstanceFactories.put(ext.getType().toString(), ext);
+        }
+
+        for (VmInstanceBaseExtensionFactory ext : pluginRgty.getExtensionList(VmInstanceBaseExtensionFactory.class)) {
+            for (Class clz : ext.getMessageClasses()) {
+                VmInstanceBaseExtensionFactory old = vmInstanceBaseExtensionFactories.get(clz);
+                if (old != null) {
+                    throw new CloudRuntimeException(String.format("duplicate VmInstanceBaseExtensionFactory[%s, %s] for the" +
+                            " message[%s]", old.getClass(), ext.getClass(), clz));
+                }
+
+                vmInstanceBaseExtensionFactories.put(clz, ext);
+            }
         }
     }
 
@@ -1001,6 +1016,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
             throw new CloudRuntimeException(String.format("No VmInstanceFactory of type[%s] found", type));
         }
         return factory;
+    }
+
+    @Override
+    public VmInstanceBaseExtensionFactory getVmInstanceBaseExtensionFactory(Message msg) {
+        return vmInstanceBaseExtensionFactories.get(msg.getClass());
     }
 
     @Transactional

@@ -23,6 +23,7 @@ import org.zstack.core.debug.APIDebugSignalEvent;
 import org.zstack.core.debug.APIDebugSignalMsg;
 import org.zstack.core.debug.DebugSignal;
 import org.zstack.core.scheduler.*;
+import org.zstack.header.vm.APIChangeVmPasswordMsg;
 import org.zstack.ha.APIDeleteVmInstanceHaLevelMsg;
 import org.zstack.ha.APISetVmInstanceHaLevelEvent;
 import org.zstack.ha.APISetVmInstanceHaLevelMsg;
@@ -61,6 +62,14 @@ import org.zstack.header.simulator.storage.backup.SimulatorBackupStorageDetails;
 import org.zstack.header.simulator.storage.primary.APIAddSimulatorPrimaryStorageMsg;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageConstant;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageDetails;
+import org.zstack.storage.ceph.backup.*;
+import org.zstack.storage.ceph.primary.*;
+import org.zstack.storage.primary.local.*;
+import org.zstack.network.service.eip.*;
+import org.zstack.network.service.lb.*;
+import org.zstack.network.service.portforwarding.*;
+import org.zstack.network.service.vip.*;
+import org.zstack.network.service.virtualrouter.*;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
@@ -77,19 +86,12 @@ import org.zstack.logging.APIDeleteLogEvent;
 import org.zstack.logging.APIDeleteLogMsg;
 import org.zstack.network.securitygroup.*;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
-import org.zstack.network.service.eip.*;
-import org.zstack.network.service.lb.*;
-import org.zstack.network.service.portforwarding.*;
-import org.zstack.network.service.vip.*;
-import org.zstack.network.service.virtualrouter.*;
 import org.zstack.portal.managementnode.ManagementNodeManager;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageEvent;
 import org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.APIUpdateSftpBackupStorageMsg;
 import org.zstack.storage.backup.sftp.SftpBackupStorageInventory;
-import org.zstack.storage.ceph.backup.*;
-import org.zstack.storage.ceph.primary.*;
-import org.zstack.storage.primary.local.*;
+import org.zstack.header.vm.APIChangeVmPasswordEvent;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
@@ -112,6 +114,7 @@ public class Api implements CloudBusEventListener {
     private static ComponentLoader loader;
     private ManagementNodeManager mgr;
     private SessionInventory adminSession;
+    private String rootPassword;
     private int timeout = 15;
 
     @Autowired
@@ -130,6 +133,7 @@ public class Api implements CloudBusEventListener {
     public void prepare() {
         try {
             adminSession = this.loginAsAdmin();
+            rootPassword = null;
         } catch (ApiSenderException e1) {
             throw new CloudRuntimeException(e1);
         }
@@ -1508,6 +1512,10 @@ public class Api implements CloudBusEventListener {
         return evt.getInventory();
     }
 
+    public void setRootPassword(String rootPassword) {
+        this.rootPassword = rootPassword;
+    }
+
     public VmInstanceInventory createVmByFullConfig(VmInstanceInventory inv, String rootDiskOfferingUuid, List<String> l3NetworkUuids,
                                                     List<String> diskOfferingUuids, SessionInventory session) throws ApiSenderException {
         APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
@@ -1528,6 +1536,9 @@ public class Api implements CloudBusEventListener {
         msg.setClusterUuid(inv.getClusterUuid());
         msg.setRootDiskOfferingUuid(rootDiskOfferingUuid);
         msg.setDefaultL3NetworkUuid(inv.getDefaultL3NetworkUuid());
+        if(rootPassword != null){
+            msg.setRootPassword(rootPassword);
+        }
         if (msg.getL3NetworkUuids().size() > 1 && msg.getDefaultL3NetworkUuid() == null) {
             msg.setDefaultL3NetworkUuid(msg.getL3NetworkUuids().get(0));
         }
@@ -1590,6 +1601,19 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIStopVmInstanceEvent evt = sender.send(msg, APIStopVmInstanceEvent.class);
         return evt.getInventory();
+    }
+
+    public VmAccountPerference changeVmPassword(VmAccountPerference account)
+            throws ApiSenderException{
+        APIChangeVmPasswordMsg msg = new APIChangeVmPasswordMsg();
+        msg.setSession(adminSession);
+        msg.setVmInstanceUuid(account.getVmUuid());
+        msg.setAccount(account.getUserAccount());
+        msg.setPassword(account.getAccountPassword());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APIChangeVmPasswordEvent evt = sender.send(msg, APIChangeVmPasswordEvent.class);
+        return new VmAccountPerference(evt.getVmUuid(),evt.getUserAccount(),evt.getAccountPassword());
     }
 
     public VmInstanceInventory rebootVmInstance(String uuid) throws ApiSenderException {

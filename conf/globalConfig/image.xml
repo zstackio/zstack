@@ -22,4 +22,11 @@
 		<defaultValue>3600</defaultValue>
 		<type>java.lang.Long</type>
 	</config>
+    <config>
+        <name>enableResetPassword</name>
+        <description>enable reset password</description>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+        <category>image</category>
+    </config>
 </globalConfig>

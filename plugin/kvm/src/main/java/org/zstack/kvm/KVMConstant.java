@@ -10,6 +10,7 @@ public interface KVMConstant {
     @PythonClass
     String KVM_HYPERVISOR_TYPE = "KVM";
 
+
     String KVM_CONNECT_PATH = "/host/connect";
     String KVM_PING_PATH = "/host/ping";
     String KVM_ECHO_PATH = "/host/echo";
@@ -35,6 +36,8 @@ public interface KVMConstant {
     String KVM_ATTACH_NIC_PATH = "/vm/attachnic";
     String KVM_DETACH_NIC_PATH = "/vm/detachnic";
     String KVM_VM_CHECK_STATE = "/vm/checkstate";
+    String KVM_VM_CHANGE_PASSWORD_PATH = "/vm/changepasswd";
+    String KVM_VM_SET_ROOT_PASSWORD_PATH = "/vm/setrootpasswd";
     String KVM_TAKE_VOLUME_SNAPSHOT_PATH = "/vm/volume/takesnapshot";
     String KVM_MERGE_SNAPSHOT_PATH = "/vm/volume/mergesnapshot";
     String KVM_LOGOUT_ISCSI_PATH = "/iscsi/target/logout";

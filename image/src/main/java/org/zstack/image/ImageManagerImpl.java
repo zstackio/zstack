@@ -1,5 +1,6 @@
 package org.zstack.image;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmSystemTags;
@@ -900,7 +901,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         final List<DownloadImageMsg> dmsgs = CollectionUtils.transformToList(msg.getBackupStorageUuids(), new Function<DownloadImageMsg, String>() {
             @Override
             public DownloadImageMsg call(String arg) {
-                DownloadImageMsg dmsg = new DownloadImageMsg(inv);
+                boolean enableInject = ImageGlobalConfig.ENABLE_QEMUGA.value(Boolean.class);
+                DownloadImageMsg dmsg = new DownloadImageMsg(inv, enableInject);
                 dmsg.setBackupStorageUuid(arg);
                 dmsg.setFormat(msg.getFormat());
                 bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, arg);
@@ -935,6 +937,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         ref.setStatus(ImageStatus.Downloading);
                         dbf.persist(ref);
 
+                        logger.debug(String.format("handle dmsg, dmsg.isInject() is: %s", String.valueOf(dmsg.isInject())));
                         bus.send(dmsg, new CloudBusCallBack(completion) {
                             @Override
                             public void run(MessageReply reply) {
