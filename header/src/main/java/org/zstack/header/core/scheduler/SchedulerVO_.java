@@ -27,8 +27,8 @@ public class SchedulerVO_ {
     public static volatile SingularAttribute<SchedulerVO, SchedulerState> state;
     public static volatile SingularAttribute<SchedulerVO, String> managementNodeUuid;
     public static volatile SingularAttribute<SchedulerVO, Timestamp> createDate;
-    public static volatile SingularAttribute<SchedulerVO, Timestamp> startDate;
-    public static volatile SingularAttribute<SchedulerVO, Timestamp> stopDate;
+    public static volatile SingularAttribute<SchedulerVO, Timestamp> startTime;
+    public static volatile SingularAttribute<SchedulerVO, Timestamp> stopTime;
     public static volatile SingularAttribute<SchedulerVO, Timestamp> lastOpDate;
 
 }

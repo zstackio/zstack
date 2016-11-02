@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 
 /**
- * Created by root on 8/3/16.
+ * Created by Mei Lei<meilei007@gmail.com> on 8/3/16.
  */
 
 public class AbstractSchedulerJob implements SchedulerJob {
@@ -52,8 +52,10 @@ public class AbstractSchedulerJob implements SchedulerJob {
             cron = msg.getCron();
         }
 
-        if ( msg.getStartTime() != null) {
+        if ( msg.getStartTime() != 0) {
             startDate = new Date(msg.getStartTime() * 1000);
+        } else {
+            startDate = new Date(System.currentTimeMillis());
         }
 
         if ( msg.getInterval() != null) {
@@ -102,7 +104,7 @@ public class AbstractSchedulerJob implements SchedulerJob {
         this.schedulerDescription = schedulerDescription;
     }
 
-    public Date getStartDate() {
+    public Date getStartTime() {
         return startDate;
     }
 

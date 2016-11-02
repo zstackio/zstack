@@ -47,7 +47,9 @@ public class SchedulerVO {
     @Column
     private Timestamp createDate;
     @Column
-    private Timestamp startDate;
+    private Timestamp startTime;
+    @Column
+    private Timestamp stopTime;
     @Column
     private Timestamp lastOpDate;
     /**
@@ -84,12 +86,20 @@ public class SchedulerVO {
         this.uuid = uuid;
     }
 
-    public Timestamp getStartDate() {
-        return startDate;
+    public Timestamp getStartTime() {
+        return startTime;
     }
 
-    public void setStartDate(Timestamp startDate) {
-        this.startDate = startDate;
+    public void setStartTime(Timestamp startTime) {
+        this.startTime = startTime;
+    }
+
+    public Timestamp getStopTime() {
+        return stopTime;
+    }
+
+    public void setStopTime(Timestamp stopTime) {
+        this.stopTime = stopTime;
     }
 
     public Integer getSchedulerInterval() {

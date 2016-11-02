@@ -338,9 +338,9 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         Boolean startNow = false;
         SchedulerVO vo = new SchedulerVO();
         Timestamp create = new Timestamp(System.currentTimeMillis());
-        if (schedulerJob.getStartDate() != null) {
-            if (!schedulerJob.getStartDate().equals(new Date(0))) {
-                start = new Timestamp(schedulerJob.getStartDate().getTime());
+        if (schedulerJob.getStartTime() != null) {
+            if (!schedulerJob.getStartTime().equals(new Date(0))) {
+                start = new Timestamp(schedulerJob.getStartTime().getTime());
             } else {
                 startNow = true;
                 start = create;
@@ -349,21 +349,19 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         String jobData = JSONObjectUtil.toJsonString(schedulerJob);
         String jobClassName = schedulerJob.getClass().getName();
         if (saveDB) {
-            if (start != null) {
-                vo.setStartDate(start);
-            }
-
-            if (schedulerJob.getSchedulerInterval() != null) {
-                vo.setSchedulerInterval(schedulerJob.getSchedulerInterval());
-            }
-
-            if (schedulerJob.getCron() != null) {
-                vo.setCronScheduler(schedulerJob.getCron());
-            }
-
-            if (schedulerJob.getRepeat() != null) {
+            if (schedulerJob.getType().equals("simple")) {
                 vo.setRepeatCount(schedulerJob.getRepeat());
+                vo.setSchedulerInterval(schedulerJob.getSchedulerInterval());
+                if (schedulerJob.getRepeat() != null) {
+                    vo.setStopTime(new Timestamp(System.currentTimeMillis() + schedulerJob.getRepeat() * schedulerJob.getSchedulerInterval()*1000));
+                }
+                vo.setStartTime(start);
+            } else if (schedulerJob.getType().equals("cron")) {
+                vo.setCronScheduler(schedulerJob.getCron());
+            } else {
+                logger.error(String.format("Unknown scheduler job type %s", schedulerJob.getType()));
             }
+
             vo.setJobData(jobData);
 
             if (schedulerJob.getResourceUuid() != null) {
@@ -404,7 +402,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                         } else {
                             trigger = newTrigger()
                                     .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-                                    .startAt(schedulerJob.getStartDate())
+                                    .startAt(schedulerJob.getStartTime())
                                     .withSchedule(simpleSchedule())
                                     .build();
                         }
@@ -421,7 +419,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                         } else {
                             trigger = newTrigger()
                                     .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-                                    .startAt(schedulerJob.getStartDate())
+                                    .startAt(schedulerJob.getStartTime())
                                     .withSchedule(simpleSchedule()
                                             .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
                                             .withRepeatCount(schedulerJob.getRepeat() - 1))
@@ -439,7 +437,7 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                     } else {
                         trigger = newTrigger()
                                 .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-                                .startAt(schedulerJob.getStartDate())
+                                .startAt(schedulerJob.getStartTime())
                                 .withSchedule(simpleSchedule()
                                         .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
                                         .repeatForever())

@@ -6,7 +6,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 
 /**
- * Created by root on 7/15/16.
+ * Created by Mei Lei<meilei007@gmail.com> on 7/15/16.
  */
 @Action(category = SchedulerConstant.ACTION_CATEGORY)
 public class APIDeleteSchedulerMsg extends APIDeleteMessage {

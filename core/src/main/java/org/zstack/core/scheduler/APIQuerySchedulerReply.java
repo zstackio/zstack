@@ -6,7 +6,7 @@ import org.zstack.header.query.APIQueryReply;
 import java.util.List;
 
 /**
- * Created by root on 7/18/16.
+ * Created by Mei Lei<meilei007@gmail.com> on 7/18/16.
  */
 public class APIQuerySchedulerReply extends APIQueryReply {
     private List<SchedulerInventory> inventories;

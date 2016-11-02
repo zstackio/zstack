@@ -3,7 +3,7 @@ package org.zstack.core.scheduler;
 import org.zstack.header.message.APIEvent;
 
 /**
- * Created by root on 7/15/16.
+ * Created by Mei Lei<meilei007@gmail.com> on 7/15/16.
  */
 public class APIDeleteSchedulerEvent extends APIEvent{
 

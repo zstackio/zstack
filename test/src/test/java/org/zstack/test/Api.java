@@ -4380,7 +4380,7 @@ public class Api implements CloudBusEventListener {
         logger.debug(MessageCommandRecorder.endAndToString());
     }
 
-    public void rebootVmInstanceScheduler(String vmUuid,
+    public SchedulerInventory rebootVmInstanceScheduler(String vmUuid,
                                           String type,
                                           Long startDate,
                                           Integer interval,
@@ -4401,6 +4401,7 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APICreateRebootVmInstanceSchedulerEvent evt = sender.send(msg, APICreateRebootVmInstanceSchedulerEvent.class);
         logger.debug(MessageCommandRecorder.endAndToString());
+        return evt.getInventory();
     }
 
     public SchedulerInventory changeSchedulerState(String uuid, String state, SessionInventory session) throws ApiSenderException {

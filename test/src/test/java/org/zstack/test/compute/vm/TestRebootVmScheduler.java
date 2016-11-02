@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -46,12 +47,16 @@ public class TestRebootVmScheduler {
         Integer repeatCount = 1;
         String vmUuid = inv.getUuid();
         Assert.assertEquals(VmInstanceState.Running.toString(), inv.getState());
-        api.rebootVmInstanceScheduler(vmUuid, type, startDate, interval, repeatCount, null);
+        SchedulerInventory schedulerInv = api.rebootVmInstanceScheduler(vmUuid, type, startDate, interval, repeatCount, null);
         TimeUnit.SECONDS.sleep(10);
         VmInstanceVO vm = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
         Assert.assertNotNull(vm);
         Assert.assertEquals(VmInstanceState.Running, vm.getState());
         Assert.assertNotNull(vm.getHostUuid());
+        Assert.assertNotNull(schedulerInv.getStopTime());
 
+        SchedulerInventory schedulerInv2 = api.rebootVmInstanceScheduler(vmUuid, type, startDate, interval, null, null);
+        TimeUnit.SECONDS.sleep(10);
+        Assert.assertNull(schedulerInv2.getStopTime());
     }
 }

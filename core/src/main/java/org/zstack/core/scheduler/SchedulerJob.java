@@ -7,7 +7,7 @@ import java.util.Date;
  * Created by Mei Lei on 7/11/16.
  */
 public interface SchedulerJob {
-    Date getStartDate();
+    Date getStartTime();
     Timestamp getCreateDate();
     Integer getSchedulerInterval();
     Integer getRepeat();
