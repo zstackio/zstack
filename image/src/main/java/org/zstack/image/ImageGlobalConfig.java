@@ -21,5 +21,5 @@ public class ImageGlobalConfig {
     public static GlobalConfig EXPUNGE_PERIOD = new GlobalConfig(CATEGORY, "expungePeriod");
 
     @GlobalConfigValidation()
-    public static GlobalConfig ENABLE_QEMUGA = new GlobalConfig(CATEGORY, "enableQemuGa");
+    public static GlobalConfig ENABLE_QEMUGA = new GlobalConfig(CATEGORY, "enableResetPassword");
 }

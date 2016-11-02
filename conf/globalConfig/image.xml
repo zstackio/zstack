@@ -23,8 +23,8 @@
 		<type>java.lang.Long</type>
 	</config>
     <config>
-        <name>enableQemuGa</name>
-        <description>enable inject qemu-ga</description>
+        <name>enableResetPassword</name>
+        <description>enable reset password</description>
         <defaultValue>true</defaultValue>
         <type>java.lang.Boolean</type>
         <category>image</category>
