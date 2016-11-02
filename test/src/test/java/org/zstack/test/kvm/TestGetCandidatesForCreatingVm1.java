@@ -50,9 +50,9 @@ public class TestGetCandidatesForCreatingVm1 {
         config = loader.getComponent(SftpBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         ImageInventory img = deployer.images.get("TestImage");
         InstanceOfferingInventory inso = deployer.instanceOfferings.get("TestInstanceOffering");
         L3NetworkInventory l31 = deployer.l3Networks.get("TestL3Network1");
@@ -76,5 +76,9 @@ public class TestGetCandidatesForCreatingVm1 {
         Assert.assertEquals(1, reply.getHosts().size());
         HostInventory host1 = deployer.hosts.get("host2");
         Assert.assertEquals(host1.getUuid(), reply.getHosts().get(0).getUuid());
+
+        Assert.assertEquals(1, reply.getClusterPsMap().size());
+        Assert.assertTrue(reply.getClusterPsMap().containsKey(cluster1.getUuid()));
+        Assert.assertEquals(1, reply.getClusterPsMap().get(cluster1.getUuid()).size());
     }
 }

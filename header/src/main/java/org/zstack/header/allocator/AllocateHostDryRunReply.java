@@ -6,7 +6,7 @@ import org.zstack.header.message.MessageReply;
 import java.util.List;
 
 public class AllocateHostDryRunReply extends MessageReply {
-	private List<HostInventory> hosts;
+    private List<HostInventory> hosts;
 
     public AllocateHostDryRunReply() {
     }
