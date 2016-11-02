@@ -13,6 +13,11 @@
     </message>
 
     <message>
+        <name>org.zstack.storage.fusionstor.backup.APIUpdateFusionstorBackupStorageMonMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
         <name>org.zstack.storage.fusionstor.backup.APIRemoveMonFromFusionstorBackupStorageMsg</name>
         <serviceId>storage.backup</serviceId>
     </message>
@@ -29,6 +34,11 @@
 
     <message>
         <name>org.zstack.storage.fusionstor.primary.APIAddMonToFusionstorPrimaryStorageMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.fusionstor.primary.APIUpdateFusionstorPrimaryStorageMonMsg</name>
         <serviceId>storage.primary</serviceId>
     </message>
 
