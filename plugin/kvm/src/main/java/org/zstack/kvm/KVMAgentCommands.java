@@ -457,7 +457,18 @@ public class KVMAgentCommands {
         private String deviceType = FILE;
         private String volumeUuid;
         private boolean useVirtio;
+        private boolean useVirtioSCSI;
         private String cacheMode = "none";
+
+        public String getWwn() {
+            return wwn;
+        }
+
+        public void setWwn(String wwn) {
+            this.wwn = wwn;
+        }
+
+        private String wwn;
 
         public VolumeTO() {
         }
@@ -468,7 +479,17 @@ public class KVMAgentCommands {
             this.deviceType = other.deviceType;
             this.volumeUuid = other.volumeUuid;
             this.useVirtio = other.useVirtio;
+            this.useVirtioSCSI = other.useVirtioSCSI;
             this.cacheMode = other.cacheMode;
+            this.wwn = other.wwn;
+        }
+
+        public boolean isUseVirtioSCSI() {
+            return useVirtioSCSI;
+        }
+
+        public void setUseVirtioSCSI(boolean useVirtioSCSI) {
+            this.useVirtioSCSI = useVirtioSCSI;
         }
 
         public boolean isUseVirtio() {

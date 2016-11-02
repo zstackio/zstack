@@ -43,8 +43,10 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -71,6 +73,8 @@ public class KVMHost extends HostBase implements Host {
     private KVMExtensionEmitter extEmitter;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private TagManager tagmgr;
 
     private KVMHostContext context;
 
@@ -325,7 +329,7 @@ public class KVMHost extends HostBase implements Host {
         if (result.isSshFailure()) {
             reply.setError(errf.stringToOperationError(
                     String.format("unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check," +
-                            " please check if username/password is wrong; %s",
+                                    " please check if username/password is wrong; %s",
                             self.getManagementIp(), getSelf().getUsername(),
                             getSelf().getPort(), result.getExitErrorMessage())
             ));
@@ -1296,6 +1300,8 @@ public class KVMHost extends HostBase implements Host {
         // so for Windows, use virtio as well
         to.setUseVirtio(ImagePlatform.Windows.toString().equals(vm.getPlatform()) ||
                 ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization());
+        to.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
+        to.setWwn(setVolumeWwn(vol.getUuid()));
 
         final DetachVolumeFromVmOnHypervisorReply reply = new DetachVolumeFromVmOnHypervisorReply();
         final DetachDataVolumeCmd cmd = new DetachDataVolumeCmd();
@@ -1363,6 +1369,16 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
+    private String setVolumeWwn(String volumeUUid) {
+        if (!KVMSystemTags.VOLUME_WWN.hasTag(volumeUUid)) {
+            KVMSystemTags.VOLUME_WWN.createTag(volumeUUid, VolumeVO.class,
+                    map(e(KVMSystemTags.VOLUME_WWN_TOKEN, new WwnUtils().getRandomWwn())));
+        }
+        String wwn = KVMSystemTags.VOLUME_WWN.getTokenByResourceUuid(volumeUUid, KVMSystemTags.VOLUME_WWN_TOKEN);
+        DebugUtils.Assert(new WwnUtils().isValidWwn(wwn), String.format("Not a valid wwn[%s] for volume[uuid:%s]", wwn, volumeUUid));
+        return wwn;
+    }
+
     private void attachVolume(final AttachVolumeToVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
 
@@ -1377,6 +1393,8 @@ public class KVMHost extends HostBase implements Host {
         // so for Windows, use virtio as well
         to.setUseVirtio(ImagePlatform.Windows.toString().equals(vm.getPlatform()) ||
                 ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization());
+        to.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
+        to.setWwn(setVolumeWwn(vol.getUuid()));
         to.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
 
         final AttachVolumeToVmOnHypervisorReply reply = new AttachVolumeToVmOnHypervisorReply();
@@ -1786,20 +1804,25 @@ public class KVMHost extends HostBase implements Host {
         cmd.setMemory(spec.getVmInventory().getMemorySize());
         cmd.setUseVirtio(virtio);
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
+
         VolumeTO rootVolume = new VolumeTO();
+        {
+            rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
+            rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
+            rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
+            rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
+            rootVolume.setUseVirtio(virtio);
+            rootVolume.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
+            rootVolume.setWwn(setVolumeWwn(spec.getDestRootVolume().getUuid()));
+            rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
+        }
         consoleMode = KVMGlobalConfig.VM_CONSOLE_MODE.value(String.class);
         nestedVirtualization = KVMGlobalConfig.NESTED_VIRTUALIZATION.value(String.class);
-        rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
-        rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
-        rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
-        rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
-        rootVolume.setUseVirtio(virtio);
-        rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
         cmd.setConsoleMode(consoleMode);
         cmd.setNestedVirtualization(nestedVirtualization);
         cmd.setRootVolume(rootVolume);
 
-        List<VolumeTO> dataVolumes = new ArrayList<VolumeTO>(spec.getDestDataVolumes().size());
+        List<VolumeTO> dataVolumes = new ArrayList<>(spec.getDestDataVolumes().size());
         for (VolumeInventory data : spec.getDestDataVolumes()) {
             VolumeTO v = new VolumeTO();
             v.setInstallPath(data.getInstallPath());
@@ -1809,13 +1832,15 @@ public class KVMHost extends HostBase implements Host {
             // always use virtio driver for data volume
             // set bug https://github.com/zxwing/premium/issues/1050
             v.setUseVirtio(true);
+            v.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(data.getUuid()));
+            v.setWwn(setVolumeWwn(data.getUuid()));
             v.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
             dataVolumes.add(v);
         }
         cmd.setDataVolumes(dataVolumes);
         cmd.setVmInternalId(spec.getVmInventory().getInternalId());
 
-        List<NicTO> nics = new ArrayList<NicTO>(spec.getDestNics().size());
+        List<NicTO> nics = new ArrayList<>(spec.getDestNics().size());
         for (VmNicInventory nic : spec.getDestNics()) {
             nics.add(completeNicInfo(nic));
         }

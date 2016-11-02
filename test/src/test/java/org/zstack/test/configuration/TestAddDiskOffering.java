@@ -15,8 +15,9 @@ import org.zstack.test.DBUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.logging.CLogger;
+
 public class TestAddDiskOffering {
-	CLogger logger = Utils.getLogger(TestAddDiskOffering.class);
+    CLogger logger = Utils.getLogger(TestAddDiskOffering.class);
     Api api;
     ComponentLoader loader;
     DatabaseFacade dbf;
@@ -26,7 +27,14 @@ public class TestAddDiskOffering {
         DBUtil.reDeployDB();
         BeanConstructor con = new BeanConstructor();
         /* This loads spring application context */
-        loader = con.addXml("ZoneManager.xml").addXml("PortalForUnitTest.xml").addXml("ConfigurationManager.xml").addXml("Simulator.xml").addXml("PrimaryStorageManager.xml").addXml("AccountManager.xml").build();
+        loader = con
+                .addXml("ZoneManager.xml")
+                .addXml("PortalForUnitTest.xml")
+                .addXml("ConfigurationManager.xml")
+                .addXml("Simulator.xml")
+                .addXml("PrimaryStorageManager.xml")
+                .addXml("AccountManager.xml")
+                .build();
         dbf = loader.getComponent(DatabaseFacade.class);
         api = new Api();
         api.startServer();
@@ -37,14 +45,14 @@ public class TestAddDiskOffering {
         api.stopServer();
     }
 
-	@Test
-	public void test() throws InterruptedException, ApiSenderException {
-	    DiskOfferingInventory inv = new DiskOfferingInventory();
-	    inv.setDiskSize(SizeUnit.GIGABYTE.toByte(10));
-	    inv.setName("Test");
-	    inv.setDescription("Test");
-	    inv = api.addDiskOffering(inv);
-	    DiskOfferingVO vo = dbf.findByUuid(inv.getUuid(), DiskOfferingVO.class);
-	    Assert.assertEquals(SizeUnit.GIGABYTE.toByte(10), vo.getDiskSize());
-	}
+    @Test
+    public void test() throws InterruptedException, ApiSenderException {
+        DiskOfferingInventory inv = new DiskOfferingInventory();
+        inv.setDiskSize(SizeUnit.GIGABYTE.toByte(10));
+        inv.setName("Test");
+        inv.setDescription("Test");
+        inv = api.addDiskOffering(inv);
+        DiskOfferingVO vo = dbf.findByUuid(inv.getUuid(), DiskOfferingVO.class);
+        Assert.assertEquals(SizeUnit.GIGABYTE.toByte(10), vo.getDiskSize());
+    }
 }
