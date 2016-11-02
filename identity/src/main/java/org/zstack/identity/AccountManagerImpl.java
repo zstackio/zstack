@@ -292,12 +292,14 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     @Transactional(readOnly = true)
     private void handle(APIGetResourceAccountMsg msg) {
-        String sql = "select a, ref.resourceUuid from AccountResourceRefVO ref, AccountVO a where" +
-                " a.uuid = ref.accountUuid and ref.resourceUuid in (:uuids)";
+        String sql = "select a, ref.resourceUuid" +
+                " from AccountResourceRefVO ref, AccountVO a" +
+                " where a.uuid = ref.accountUuid" +
+                " and ref.resourceUuid in (:uuids)";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("uuids", msg.getResourceUuids());
         List<Tuple> tuples = q.getResultList();
-        Map<String, AccountInventory> ret = new HashMap<String, AccountInventory>();
+        Map<String, AccountInventory> ret = new HashMap<>();
         for (Tuple t : tuples) {
             String resUuid = t.get(1, String.class);
             AccountVO vo = t.get(0, AccountVO.class);
