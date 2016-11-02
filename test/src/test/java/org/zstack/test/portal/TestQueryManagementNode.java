@@ -16,6 +16,7 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.search.QueryTestValidator;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  */
@@ -49,8 +50,10 @@ public class TestQueryManagementNode {
         String version = api.getVersion();
         Assert.assertNotNull(version);
         System.out.println(String.format("version: %s", version));
-        long currentTime = api.getCurrentTime();
-        Assert.assertNotNull(currentTime);
-        System.out.println(String.format("version: %d", currentTime));
+
+        Map<String, Long> currentTime = api.getCurrentTime();
+        Assert.assertNotNull(currentTime.get("MillionSeconds"));
+        Assert.assertNotNull(currentTime.get("Seconds"));
+        System.out.println(String.format("current time in million seconds: %d", currentTime.get("MillionSeconds")));
     }
 }
