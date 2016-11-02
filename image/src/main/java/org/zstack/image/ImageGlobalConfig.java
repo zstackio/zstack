@@ -20,6 +20,6 @@ public class ImageGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig EXPUNGE_PERIOD = new GlobalConfig(CATEGORY, "expungePeriod");
 
-    @GlobalConfigValidation()
+    @GlobalConfigValidation(notNull = false)
     public static GlobalConfig ENABLE_QEMUGA = new GlobalConfig(CATEGORY, "enableResetPassword");
 }

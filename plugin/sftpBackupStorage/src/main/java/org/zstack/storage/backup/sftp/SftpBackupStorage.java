@@ -181,7 +181,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         final DownloadImageReply reply = new DownloadImageReply();
         final ImageInventory iinv = msg.getImageInventory();
         final String installPath = PathUtil.join(getSelf().getUrl(), BackupStoragePathMaker.makeImageInstallPath(iinv));
-        download(iinv.getUrl(), installPath, iinv.getUuid(), new ReturnValueCompletion<DownloadResult>(msg) {
+        download(iinv.getUrl(), installPath, iinv.getUuid(), msg.isInject(), new ReturnValueCompletion<DownloadResult>(msg) {
             @Override
             public void success(DownloadResult res) {
                 reply.setInstallPath(installPath);

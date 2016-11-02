@@ -902,7 +902,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             @Override
             public DownloadImageMsg call(String arg) {
                 boolean enableInject = ImageGlobalConfig.ENABLE_QEMUGA.value(Boolean.class);
-                logger.debug(String.format("enableInject is: %s", String.valueOf(enableInject)));
                 DownloadImageMsg dmsg = new DownloadImageMsg(inv, enableInject);
                 dmsg.setBackupStorageUuid(arg);
                 dmsg.setFormat(msg.getFormat());
