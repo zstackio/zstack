@@ -1,6 +1,7 @@
 package org.zstack.network.service.virtualrouter;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -108,7 +109,9 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
-        checkIfManagementNetworkReachable(msg.getManagementNetworkUuid());
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            checkIfManagementNetworkReachable(msg.getManagementNetworkUuid());
+        }
 
         q = dbf.createQuery(L3NetworkVO.class);
         q.select(L3NetworkVO_.zoneUuid);
