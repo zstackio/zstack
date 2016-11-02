@@ -19,6 +19,7 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend {
     protected void acquireVirtualRouterVm(VirtualRouterStruct struct, ReturnValueCompletion<VirtualRouterVmInventory> completion) {
         struct.setApplianceVmType(VyosConstants.VYOS_VM_TYPE);
         struct.setProviderType(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE);
+        struct.setVirtualRouterOfferingSelector(new VyosOfferingSelector());
         super.acquireVirtualRouterVm(struct, completion);
     }
 }

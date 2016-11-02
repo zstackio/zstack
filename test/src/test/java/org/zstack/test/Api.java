@@ -3398,6 +3398,10 @@ public class Api implements CloudBusEventListener {
     }
 
     public VirtualRouterOfferingInventory createVirtualRouterOffering(VirtualRouterOfferingInventory inv, SessionInventory session) throws ApiSenderException {
+        return createVirtualRouterOffering(inv, null, session);
+    }
+
+    public VirtualRouterOfferingInventory createVirtualRouterOffering(VirtualRouterOfferingInventory inv, List<String> sysTags, SessionInventory session) throws ApiSenderException {
         APICreateVirtualRouterOfferingMsg msg = new APICreateVirtualRouterOfferingMsg();
         msg.setName(inv.getName());
         msg.setDescription(inv.getDescription());
@@ -3410,6 +3414,7 @@ public class Api implements CloudBusEventListener {
         msg.setCpuNum(inv.getCpuNum());
         msg.setAllocatorStrategy(inv.getAllocatorStrategy());
         msg.setMemorySize(inv.getMemorySize());
+        msg.setSystemTags(sysTags);
         msg.setSession(session == null ? adminSession : session);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);

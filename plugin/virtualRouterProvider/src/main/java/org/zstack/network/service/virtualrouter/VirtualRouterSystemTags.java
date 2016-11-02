@@ -4,6 +4,7 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.SystemTag;
 
 /**
  */
@@ -25,4 +26,6 @@ public class VirtualRouterSystemTags {
     public static PatternedSystemTag VR_LB_ROLE = new PatternedSystemTag("role::LoadBalancer", VmInstanceVO.class);
 
     public static PatternedSystemTag DEDICATED_ROLE_VR = new PatternedSystemTag("dedicatedRole", VmInstanceVO.class);
+
+    public static SystemTag VYOS_OFFERING = new PatternedSystemTag("vyos", InstanceOfferingVO.class);
 }

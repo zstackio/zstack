@@ -11,11 +11,20 @@ public class VirtualRouterStruct {
     private L3NetworkInventory l3Network;
     private VirtualRouterOfferingValidator offeringValidator;
     private VirtualRouterVmSelector virtualRouterVmSelector;
+    private VirtualRouterOfferingSelector virtualRouterOfferingSelector;
     private List<String> inherentSystemTags;
     private List<String> nonInherentSystemTags;
     private boolean notGatewayForGuestL3Network;
     private String providerType = VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
     private String applianceVmType = VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE;
+
+    public VirtualRouterOfferingSelector getVirtualRouterOfferingSelector() {
+        return virtualRouterOfferingSelector;
+    }
+
+    public void setVirtualRouterOfferingSelector(VirtualRouterOfferingSelector virtualRouterOfferingSelector) {
+        this.virtualRouterOfferingSelector = virtualRouterOfferingSelector;
+    }
 
     public String getApplianceVmType() {
         return applianceVmType;

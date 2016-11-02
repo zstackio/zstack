@@ -3,4 +3,5 @@
     <TestCase class="org.zstack.test.lb.vyos.TestVyosLb" />
     <TestCase class="org.zstack.test.eip.vyos.TestVyosEip" />
     <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosPortForwarding" />
+    <TestCase class="org.zstack.test.virtualrouter.vyos.TestVyosPortForwarding1" />
 </UnitTestSuiteConfig>

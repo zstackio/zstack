@@ -7,7 +7,6 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.zone.ZoneInventory;
 
 import java.util.ArrayList;

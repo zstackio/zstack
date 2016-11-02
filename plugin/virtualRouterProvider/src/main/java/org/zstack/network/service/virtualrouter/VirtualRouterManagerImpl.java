@@ -646,14 +646,26 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             return;
         }
 
-        VirtualRouterOfferingInventory offering = findOfferingByGuestL3Network(l3Nw);
-        if (offering == null) {
+        List<VirtualRouterOfferingInventory> offerings = findOfferingByGuestL3Network(l3Nw);
+        if (offerings == null) {
             String err = String.format("unable to find a virtual router offering for l3Network[uuid:%s] in zone[uuid:%s], please at least create a default virtual router offering in that zone",
                     l3Nw.getUuid(), l3Nw.getZoneUuid());
             logger.warn(err);
             completion.fail(errf.instantiateErrorCode(VirtualRouterErrors.NO_DEFAULT_OFFERING, err));
             return;
         }
+
+        if (struct.getVirtualRouterOfferingSelector() == null) {
+            struct.setVirtualRouterOfferingSelector(new VirtualRouterOfferingSelector() {
+                @Override
+                public VirtualRouterOfferingInventory selectVirtualRouterOffering(L3NetworkInventory l3, List<VirtualRouterOfferingInventory> candidates) {
+                    VirtualRouterOfferingInventory def = candidates.stream().filter(VirtualRouterOfferingInventory::isDefault).findAny().get();
+                    return def == null ? candidates.get(0) : def;
+                }
+            });
+        }
+
+        VirtualRouterOfferingInventory offering = struct.getVirtualRouterOfferingSelector().selectVirtualRouterOffering(l3Nw, offerings);
 
         if (validator != null) {
             validator.validate(offering);
@@ -741,9 +753,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         return count > 0;
     }
 
-    @Override
     @Transactional(readOnly = true)
-    public VirtualRouterOfferingInventory findOfferingByGuestL3Network(L3NetworkInventory guestL3) {
+    private List<VirtualRouterOfferingInventory> findOfferingByGuestL3Network(L3NetworkInventory guestL3) {
         String sql = "select offering from VirtualRouterOfferingVO offering, SystemTagVO stag where offering.uuid = stag.resourceUuid and stag.resourceType = :type and offering.zoneUuid = :zoneUuid and stag.tag = :tag";
         TypedQuery<VirtualRouterOfferingVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterOfferingVO.class);
         q.setParameter("type", InstanceOfferingVO.class.getSimpleName());
@@ -751,15 +762,14 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         q.setParameter("tag", VirtualRouterSystemTags.VR_OFFERING_GUEST_NETWORK.instantiateTag(map(e(VirtualRouterSystemTags.VR_OFFERING_GUEST_NETWORK_TOKEN, guestL3.getUuid()))));
         List<VirtualRouterOfferingVO> vos = q.getResultList();
         if (!vos.isEmpty()) {
-            return VirtualRouterOfferingInventory.valueOf(vos.get(0));
+            return VirtualRouterOfferingInventory.valueOf1(vos);
         }
 
-        sql ="select offering from VirtualRouterOfferingVO offering where offering.zoneUuid = :zoneUuid and offering.isDefault = :default";
+        sql ="select offering from VirtualRouterOfferingVO offering where offering.zoneUuid = :zoneUuid";
         q = dbf.getEntityManager().createQuery(sql, VirtualRouterOfferingVO.class);
         q.setParameter("zoneUuid", guestL3.getZoneUuid());
-        q.setParameter("default", true);
         vos = q.getResultList();
-        return vos.isEmpty() ? null : VirtualRouterOfferingInventory.valueOf(vos.get(0));
+        return vos.isEmpty() ? null : VirtualRouterOfferingInventory.valueOf1(vos);
     }
 
     @Override
