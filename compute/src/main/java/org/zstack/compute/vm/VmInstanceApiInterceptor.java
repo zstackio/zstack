@@ -87,7 +87,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
             validate((APIGetInterdependentL3NetworksImagesMsg) msg);
         }
-
         setServiceId(msg);
         return msg;
     }

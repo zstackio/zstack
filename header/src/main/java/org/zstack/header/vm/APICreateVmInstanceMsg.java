@@ -135,6 +135,13 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
     @APIParam(required = false, maxLength = 2048)
     private String description;
 
+    /**
+     * @desc user-defined root password
+     * @optional
+     */
+    @APIParam(required = false, maxLength = 32, checkAccount = true)
+    private String rootPassword;
+
     private String defaultL3NetworkUuid;
 
 
@@ -251,5 +258,12 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
 
     public void setPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
         this.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume;
+    }
+    public String getRootPassword() {
+        return rootPassword;
+    }
+
+    public void setRootPassword(String rootPassword) {
+        this.rootPassword = rootPassword;
     }
 }

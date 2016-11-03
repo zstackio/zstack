@@ -154,6 +154,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         String url;
         String installPath;
         String imageUuid;
+        boolean inject = false;
 
         public String getImageUuid() {
             return imageUuid;
@@ -177,6 +178,14 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
+        }
+
+        public boolean isInject() {
+            return inject;
+        }
+
+        public void setInject(boolean inject) {
+            this.inject = inject;
         }
     }
 

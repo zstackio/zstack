@@ -10,6 +10,7 @@ public class DownloadImageMsg extends NeedReplyMessage implements BackupStorageM
 	private ImageInventory imageInventory;
     private String backupStorageUuid;
     private String format;
+    private boolean inject;
 
     public String getFormat() {
         return format;
@@ -17,6 +18,12 @@ public class DownloadImageMsg extends NeedReplyMessage implements BackupStorageM
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    public DownloadImageMsg(ImageInventory inventory, boolean inject) {
+        super();
+        this.imageInventory = inventory;
+        this.inject = inject;
     }
 
     public DownloadImageMsg(ImageInventory inventory) {
@@ -34,6 +41,14 @@ public class DownloadImageMsg extends NeedReplyMessage implements BackupStorageM
 
     public void setImageInventory(ImageInventory imageInventory) {
         this.imageInventory = imageInventory;
+    }
+
+    public boolean isInject() {
+        return inject;
+    }
+
+    public void setInject(boolean inject) {
+        this.inject = inject;
     }
 
     @Override

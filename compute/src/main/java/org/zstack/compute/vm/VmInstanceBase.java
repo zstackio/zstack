@@ -363,7 +363,13 @@ public class VmInstanceBase extends AbstractVmInstance {
         } else if (msg instanceof HaStartVmInstanceMsg) {
             handle((HaStartVmInstanceMsg) msg);
         } else {
-            bus.dealWithUnknownMessage(msg);
+            VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
+            if (ext != null) {
+                VmInstance v = ext.getVmInstance(self);
+                v.handleMessage(msg);
+            } else {
+                bus.dealWithUnknownMessage(msg);
+            }
         }
     }
 
@@ -1995,7 +2001,13 @@ public class VmInstanceBase extends AbstractVmInstance {
         } else if (msg instanceof APIGetCandidateIsoForAttachingVmMsg) {
             handle((APIGetCandidateIsoForAttachingVmMsg) msg);
         } else {
-            bus.dealWithUnknownMessage(msg);
+            VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
+            if (ext != null) {
+                VmInstance v = ext.getVmInstance(self);
+                v.handleMessage(msg);
+            } else {
+                bus.dealWithUnknownMessage(msg);
+            }
         }
     }
 
@@ -3462,6 +3474,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (self.getState() == VmInstanceState.Created) {
             StartVmFromNewCreatedStruct struct = new JsonLabel().get(
                     StartVmFromNewCreatedStruct.makeLabelKey(self.getUuid()), StartVmFromNewCreatedStruct.class);
+
             startVmFromNewCreate(struct, completion);
             return;
         }
@@ -3653,6 +3666,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
         FlowChain chain = getCreateVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
+        // add user-defined root password
+        if(struct.getRootPassword() != null) {
+            spec.setAccountPerference(new VmAccountPerference(self.getUuid(), "root", struct.getRootPassword()));
+        }
 
         chain.setName(String.format("create-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
