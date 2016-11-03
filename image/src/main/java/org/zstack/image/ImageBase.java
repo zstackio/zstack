@@ -58,7 +58,7 @@ public class ImageBase implements Image {
 
     protected  ImageVO self;
 
-    ImageBase(ImageVO vo) {
+    public ImageBase(ImageVO vo) {
         self = vo;
     }
 
