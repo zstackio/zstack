@@ -13,9 +13,13 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.scheduler.SchedulerFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.workflow.*;
@@ -23,6 +27,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.*;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -30,7 +36,9 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -60,7 +68,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         ResourceOwnerAfterChangeExtensionPoint,
         ReportQuotaExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotManagerImpl.class);
-
+    private String syncSignature;
+    @Autowired
+    private ThreadFacade thdf;
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -138,7 +148,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         if (msg.getTreeUuid() != null) {
             VolumeSnapshotTreeVO treeVO = dbf.findByUuid(msg.getTreeUuid(), VolumeSnapshotTreeVO.class);
             if (treeVO == null) {
-                reply.setInventories(new ArrayList<VolumeSnapshotTreeInventory>());
+                reply.setInventories(new ArrayList<>());
                 bus.reply(msg, reply);
                 return;
             }
@@ -155,7 +165,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             q.add(VolumeSnapshotTreeVO_.volumeUuid, Op.EQ, msg.getVolumeUuid());
             List<VolumeSnapshotTreeVO> trees = q.list();
             if (trees.isEmpty()) {
-                reply.setInventories(new ArrayList<VolumeSnapshotTreeInventory>());
+                reply.setInventories(new ArrayList<>());
                 bus.reply(msg, reply);
                 return;
             }
@@ -448,6 +458,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             handle((APIGetVolumeSnapshotTreeMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotSchedulerMsg) {
             handle((APICreateVolumeSnapshotSchedulerMsg) msg);
+        } else if (msg instanceof APIResetRootVolumeFromImageMsg) {
+            handle((APIResetRootVolumeFromImageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -698,5 +710,121 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         quota.setOperator(checker);
 
         return list(quota);
+    }
+
+    private void handle(final APIResetRootVolumeFromImageMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncSignature;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                resetRootVolumeFromImage(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("reset-volume-%s-from-image", msg.getRootVolumeUuid());
+            }
+        });
+    }
+
+    private void resetRootVolumeFromImage(final APIResetRootVolumeFromImageMsg msg, final NoErrorCompletion completion) {
+        final APIResetRootVolumeFromImageEvent evt = new APIResetRootVolumeFromImageEvent(msg.getId());
+
+        VolumeVO rootVolume = dbf.findByUuid(msg.getRootVolumeUuid(), VolumeVO.class);
+        VolumeInventory rootVolumeInventory = VolumeInventory.valueOf(rootVolume);
+        ImageInventory imageInventory = ImageInventory.valueOf(dbf.findByUuid(rootVolume.getRootImageUuid(), ImageVO.class));
+
+        if (rootVolume.getVmInstanceUuid() != null) {
+            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+            q.select(VmInstanceVO_.state);
+            q.add(VmInstanceVO_.uuid, Op.EQ, rootVolume.getVmInstanceUuid());
+            VmInstanceState state = q.findValue();
+            if (state != VmInstanceState.Stopped) {
+                throw new OperationFailureException(errf.stringToOperationError(
+                        String.format("unable to reset volume[uuid:%s] to image[uuid:%s, name:%s]," +
+                                        " the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
+                                rootVolume.getUuid(), imageInventory.getUuid(), imageInventory.getName(),
+                                rootVolume.getVmInstanceUuid(), state)
+                ));
+            }
+        }
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("reset-root-volume-%s-from-image-%s", rootVolume.getUuid(), rootVolume.getRootImageUuid()));
+        chain.then(new ShareFlow() {
+            String newVolumeInstallPath;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "reset-root-volume-from-image-on-primary-storage";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        ResetRootVolumeFromImageOnPrimaryStorageMsg rmsg = new ResetRootVolumeFromImageOnPrimaryStorageMsg();
+                        rmsg.setImage(imageInventory);
+                        rmsg.setVolume(rootVolumeInventory);
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rootVolumeInventory.getPrimaryStorageUuid());
+                        bus.send(rmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    ResetRootVolumeFromImageOnPrimaryStorageReply re = (ResetRootVolumeFromImageOnPrimaryStorageReply) reply;
+                                    newVolumeInstallPath = re.getNewVolumeInstallPath();
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg, completion) {
+                    @Transactional
+                    private void updateLatest() {
+                        String sql = "update VolumeSnapshotVO s set s.latest = false where s.latest = true and s.volumeUuid = :volumeUuid";
+                        Query q = dbf.getEntityManager().createQuery(sql);
+                        q.setParameter("volumeUuid", rootVolumeInventory.getUuid());
+                        q.executeUpdate();
+
+                        sql = "update VolumeSnapshotTreeVO tree set tree.current = false where tree.current = true and tree.volumeUuid = :volUuid";
+                        q = dbf.getEntityManager().createQuery(sql);
+                        q.setParameter("volUuid", rootVolumeInventory.getUuid());
+                        q.executeUpdate();
+                    }
+
+                    @Override
+                    public void handle(Map data) {
+                        rootVolume.setInstallPath(newVolumeInstallPath);
+                        dbf.update(rootVolume);
+                        updateLatest();
+                        bus.publish(evt);
+                        completion.done();
+                    }
+                });
+
+                error(new FlowErrorHandler(msg, completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        logger.warn(String.format("failed to restore volume[uuid:%s] to image[uuid:%s, name:%s], %s",
+                                rootVolumeInventory.getUuid(), imageInventory.getUuid(), imageInventory.getName(), errCode));
+                        evt.setErrorCode(errCode);
+                        bus.publish(evt);
+                        completion.done();
+                    }
+                });
+            }
+        }).start();
+
     }
 }
