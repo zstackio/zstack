@@ -25,7 +25,7 @@ public class KVMSystemTags {
     public static final String L2_BRIDGE_NAME_TOKEN = "name";
     public static PatternedSystemTag L2_BRIDGE_NAME = new PatternedSystemTag(String.format("kvm::bridge::{%s}", L2_BRIDGE_NAME_TOKEN), L2NetworkVO.class);
 
-    public static SystemTag VOLUME_VIRTIO_SCSI = new SystemTag("capability:virtio-scsi", VolumeVO.class);
+    public static SystemTag VOLUME_VIRTIO_SCSI = new SystemTag("capability::virtio-scsi", VolumeVO.class);
 
     public static final String VOLUME_WWN_TOKEN = "wwn";
     public static PatternedSystemTag VOLUME_WWN = new PatternedSystemTag(String.format("kvm::volume::{%s}", VOLUME_WWN_TOKEN), VolumeVO.class);
