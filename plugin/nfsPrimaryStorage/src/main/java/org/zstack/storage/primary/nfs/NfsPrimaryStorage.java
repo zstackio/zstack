@@ -107,6 +107,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
+        }else if(msg instanceof ResetRootVolumeFromImageOnPrimaryStorageMsg){
+            handle((ResetRootVolumeFromImageOnPrimaryStorageMsg)msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -410,27 +412,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
         final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
 
-        if (msg.getVolume().getVmInstanceUuid() != null) {
-            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.state);
-            q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVolume().getVmInstanceUuid());
-            VmInstanceState state = q.findValue();
-            if (state != VmInstanceState.Stopped) {
-                reply.setError(errf.stringToOperationError(
-                        String.format("unable to revert volume[uuid:%s] to snapshot[uuid:%s], the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
-                                msg.getVolume().getUuid(), msg.getSnapshot().getUuid(), msg.getVolume().getVmInstanceUuid(), state)
-                ));
-
-                bus.reply(msg, reply);
-                return;
-            }
-        }
-
         HostInventory destHost = factory.getConnectedHostForOperation(PrimaryStorageInventory.valueOf(self));
         if (destHost == null) {
             reply.setError(errf.stringToOperationError(
-                    String.format("no host in Connected status nfs primary storage[uuid:%s, name:%s] attached found to revert volume[uuid:%s] to snapshot[uuid:%s, name:%s]",
-                            self.getUuid(), self.getName(), msg.getVolume().getUuid(), msg.getSnapshot().getUuid(), msg.getSnapshot().getName())
+                    String.format("no host in Connected status to which nfs primary storage[uuid:%s, name:%s] attached" +
+                                    " found to revert volume[uuid:%s] to snapshot[uuid:%s, name:%s]",
+                            self.getUuid(), self.getName(), msg.getVolume().getUuid(),
+                            msg.getSnapshot().getUuid(), msg.getSnapshot().getName())
             ));
 
             bus.reply(msg, reply);
@@ -439,6 +427,38 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
         NfsPrimaryStorageBackend bkd = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getSnapshot().getFormat(), self.getUuid()));
         bkd.revertVolumeFromSnapshot(msg.getSnapshot(), msg.getVolume(), destHost, new ReturnValueCompletion<String>(msg) {
+            @Override
+            public void success(String returnValue) {
+                reply.setNewVolumeInstallPath(returnValue);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final ResetRootVolumeFromImageOnPrimaryStorageMsg msg) {
+        final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
+
+        HostInventory destHost = factory.getConnectedHostForOperation(PrimaryStorageInventory.valueOf(self));
+        if (destHost == null) {
+            reply.setError(errf.stringToOperationError(
+                    String.format("no host in Connected status to which nfs primary storage[uuid:%s, name:%s] attached" +
+                                    " found to revert volume[uuid:%s] to image[uuid:%s, name:%s]",
+                            self.getUuid(), self.getName(), msg.getVolume().getUuid(),
+                            msg.getImage().getUuid(), msg.getImage().getName())
+            ));
+
+            bus.reply(msg, reply);
+            return;
+        }
+
+        NfsPrimaryStorageBackend bkd = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getImage().getFormat(), self.getUuid()));
+        bkd.resetRootVolumeFromImage(msg.getImage(), msg.getVolume(), destHost, new ReturnValueCompletion<String>(msg) {
             @Override
             public void success(String returnValue) {
                 reply.setNewVolumeInstallPath(returnValue);

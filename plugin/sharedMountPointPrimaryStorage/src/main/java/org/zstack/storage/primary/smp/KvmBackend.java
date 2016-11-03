@@ -284,7 +284,7 @@ public class KvmBackend extends HypervisorBackend {
     @Override
     void handle(InstantiateVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
         if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
-            createRootVolume((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg)msg, completion);
+            createRootVolume((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg, completion);
         } else {
             createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), completion);
         }
@@ -714,7 +714,6 @@ public class KvmBackend extends HypervisorBackend {
     }
 
 
-
     @Override
     void handle(final DownloadDataVolumeToPrimaryStorageMsg msg, final ReturnValueCompletion<DownloadDataVolumeToPrimaryStorageReply> completion) {
         final String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
@@ -806,7 +805,7 @@ public class KvmBackend extends HypervisorBackend {
                     return;
                 }
 
-                TakeSnapshotOnHypervisorReply treply = (TakeSnapshotOnHypervisorReply)reply;
+                TakeSnapshotOnHypervisorReply treply = (TakeSnapshotOnHypervisorReply) reply;
                 sp.setSize(treply.getSize());
                 sp.setPrimaryStorageUuid(self.getUuid());
                 sp.setPrimaryStorageInstallPath(treply.getSnapshotInstallPath());
@@ -860,6 +859,28 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
+    void handle(ResetRootVolumeFromImageOnPrimaryStorageMsg msg, final ReturnValueCompletion<ResetRootVolumeFromImageOnPrimaryStorageReply> completion) {
+        ImageInventory sp = msg.getImage();
+        RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
+        cmd.snapshotInstallPath = makeCachedImageInstallUrl(sp);
+
+        new Do().go(REVERT_VOLUME_FROM_SNAPSHOT_PATH, cmd, RevertVolumeFromSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp returnValue) {
+                RevertVolumeFromSnapshotRsp rsp = (RevertVolumeFromSnapshotRsp) returnValue;
+                ResetRootVolumeFromImageOnPrimaryStorageReply reply = new ResetRootVolumeFromImageOnPrimaryStorageReply();
+                reply.setNewVolumeInstallPath(rsp.newVolumeInstallPath);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
     void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, final ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion) {
         final String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
         VolumeSnapshotInventory latest = msg.getSnapshot();
@@ -893,7 +914,7 @@ public class KvmBackend extends HypervisorBackend {
         VolumeSnapshotInventory sp = msg.getFrom();
         String hostUuid = null;
         if (volume.getVmInstanceUuid() != null) {
-            SimpleQuery<VmInstanceVO> q  = dbf.createQuery(VmInstanceVO.class);
+            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
             q.select(VmInstanceVO_.state, VmInstanceVO_.hostUuid);
             q.add(VmInstanceVO_.uuid, Op.EQ, volume.getVmInstanceUuid());
             Tuple t = q.findTuple();
@@ -1298,7 +1319,7 @@ public class KvmBackend extends HypervisorBackend {
         if (msg instanceof InitKvmHostMsg) {
             handle((InitKvmHostMsg) msg);
         } else {
-            bus.dealWithUnknownMessage((Message)msg);
+            bus.dealWithUnknownMessage((Message) msg);
         }
     }
 
@@ -1420,7 +1441,7 @@ public class KvmBackend extends HypervisorBackend {
             return;
         }
 
-        final String installPath = ((BackupStorageAskInstallPathReply)br).getInstallPath();
+        final String installPath = ((BackupStorageAskInstallPathReply) br).getInstallPath();
         BackupStorageKvmUploader uploader = getBackupStorageKvmUploader(bsUuid);
         uploader.uploadBits(installPath, sinv.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
             @Override

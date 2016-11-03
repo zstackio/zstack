@@ -117,8 +117,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setHostUuid(hostUuid);
         msg.setNoStatusCheck(true);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-        MessageReply reply =  bus.call(msg);
-        
+        MessageReply reply = bus.call(msg);
+
         if (!reply.isSuccess()) {
             ErrorCode err = reply.getError();
 
@@ -131,7 +131,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             throw new OperationFailureException(err);
         }
 
-        MountAgentResponse rsp = ((KVMHostSyncHttpCallReply)reply).toResponse(MountAgentResponse.class);
+        MountAgentResponse rsp = ((KVMHostSyncHttpCallReply) reply).toResponse(MountAgentResponse.class);
         if (!rsp.isSuccess()) {
             throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
         }
@@ -229,7 +229,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             throw new OperationFailureException(reply.getError());
         }
 
-        AgentResponse rsp = ((KVMHostSyncHttpCallReply)reply).toResponse(AgentResponse.class);
+        AgentResponse rsp = ((KVMHostSyncHttpCallReply) reply).toResponse(AgentResponse.class);
         if (!rsp.isSuccess()) {
             String err = String.format("Unable to unmount nfs primary storage[uuid:%s] on kvm host[uuid:%s], because %s", inv.getUuid(), hostUuid, rsp.getError());
             logger.warn(err);
@@ -494,7 +494,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     return;
                 }
 
-                CheckIsBitsExistingRsp rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(CheckIsBitsExistingRsp.class);
+                CheckIsBitsExistingRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(CheckIsBitsExistingRsp.class);
                 if (!rsp.isSuccess()) {
                     completion.fail(errf.stringToOperationError(
                             String.format("failed to check existence of %s on nfs primary storage[uuid:%s], %s",
@@ -554,13 +554,13 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             String version = KVMSystemTags.QEMU_IMG_VERSION.getTokenByTag(e.getValue().get(0), KVMSystemTags.QEMU_IMG_VERSION_TOKEN);
             if (
                     (version.compareTo(QCOW3_QEMU_IMG_VERSION) >= 0 && mine.compareTo(QCOW3_QEMU_IMG_VERSION) < 0) ||
-                    (version.compareTo(QCOW3_QEMU_IMG_VERSION) < 0 && mine.compareTo(QCOW3_QEMU_IMG_VERSION) >= 0)
-               ) {
+                            (version.compareTo(QCOW3_QEMU_IMG_VERSION) < 0 && mine.compareTo(QCOW3_QEMU_IMG_VERSION) >= 0)
+                    ) {
                 String err = String.format(
                         "unable to attach a primary storage to cluster. Kvm host[uuid:%s, name:%s] in cluster has qemu-img "
-                        + "with version[%s]; but the primary storage has attached to a cluster that has kvm host[uuid:%s], which has qemu-img with "
-                        + "version[%s]. qemu-img version greater than %s is incompatible with versions less than %s, this will causes volume snapshot operation "
-                        + "to fail. Please avoid attaching a primary storage to clusters that have different Linux distributions, in order to prevent qemu-img version mismatch",
+                                + "with version[%s]; but the primary storage has attached to a cluster that has kvm host[uuid:%s], which has qemu-img with "
+                                + "version[%s]. qemu-img version greater than %s is incompatible with versions less than %s, this will causes volume snapshot operation "
+                                + "to fail. Please avoid attaching a primary storage to clusters that have different Linux distributions, in order to prevent qemu-img version mismatch",
                         context.getInventory().getUuid(), context.getInventory().getName(), mine, e.getKey(), version, QCOW3_QEMU_IMG_VERSION, QCOW3_QEMU_IMG_VERSION
                 );
                 throw new OperationFailureException(errf.stringToOperationError(err));
@@ -571,7 +571,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Override
     public void instantiateVolume(final PrimaryStorageInventory pinv, final VolumeInventory volume, final ReturnValueCompletion<VolumeInventory> complete) {
         String accounUuid = acntMgr.getOwnerAccountUuidOfResource(volume.getUuid());
-        
+
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         cmd.setUuid(pinv.getUuid());
         cmd.setAccountUuid(accounUuid);
@@ -601,7 +601,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     return;
                 }
 
-                CreateEmptyVolumeResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(CreateEmptyVolumeResponse.class);
+                CreateEmptyVolumeResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(CreateEmptyVolumeResponse.class);
                 if (!rsp.isSuccess()) {
                     String err = String.format("unable to create empty volume[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s",
                             volume.getUuid(), volume.getName(), host.getUuid(), host.getManagementIp(), rsp.getError());
@@ -631,14 +631,14 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         query.setParameter("clusterUuid", host.getClusterUuid());
         return query.getResultList();
     }
-    
+
     @Override
     public void connectionReestablished(HostInventory inv) throws HostException {
         List<PrimaryStorageVO> ps = getPrimaryStorageHostShouldMount(inv);
         if (ps.isEmpty()) {
             return;
         }
-        
+
         for (PrimaryStorageVO pvo : ps) {
             mount(PrimaryStorageInventory.valueOf(pvo), inv.getUuid());
         }
@@ -675,7 +675,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     return;
                 }
 
-                DeleteResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(DeleteResponse.class);
+                DeleteResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(DeleteResponse.class);
                 if (!rsp.isSuccess()) {
                     logger.warn(String.format("failed to delete bits[%s] on nfs primary storage[uuid:%s], %s, will clean up",
                             installPath, pinv.getUuid(), rsp.getError()));
@@ -718,11 +718,46 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     return;
                 }
 
-                RevertVolumeFromSnapshotResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(RevertVolumeFromSnapshotResponse.class);
+                RevertVolumeFromSnapshotResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(RevertVolumeFromSnapshotResponse.class);
                 if (!rsp.isSuccess()) {
                     completion.fail(errf.stringToOperationError(
                             String.format("failed to revert volume[uuid:%s] to snapshot[uuid:%s] on kvm host[uuid:%s, ip:%s], %s",
                                     vol.getUuid(), sinv.getUuid(), host.getUuid(), host.getManagementIp(), rsp.getError())
+                    ));
+                    return;
+                }
+
+                completion.success(rsp.getNewVolumeInstallPath());
+            }
+        });
+    }
+
+    @Override
+    public void resetRootVolumeFromImage(final ImageInventory iinv, final VolumeInventory vol, final HostInventory host, final ReturnValueCompletion<String> completion) {
+        RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
+        PrimaryStorageInventory psInv = PrimaryStorageInventory.valueOf(dbf.findByUuid(vol.getPrimaryStorageUuid(), PrimaryStorageVO.class));
+        cmd.setSnapshotInstallPath(NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrl(psInv, iinv));
+        cmd.setUuid(vol.getPrimaryStorageUuid());
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setPath(REVERT_VOLUME_FROM_SNAPSHOT_PATH);
+        msg.setHostUuid(host.getUuid());
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                RevertVolumeFromSnapshotResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(RevertVolumeFromSnapshotResponse.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(errf.stringToOperationError(
+                            String.format("failed to revert volume[uuid:%s] to image[uuid:%s] on kvm host[uuid:%s, ip:%s], %s",
+                                    vol.getUuid(), iinv.getUuid(), host.getUuid(), host.getManagementIp(), rsp.getError())
                     ));
                     return;
                 }
@@ -756,7 +791,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     return;
                 }
 
-                CreateTemplateFromVolumeRsp rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(CreateTemplateFromVolumeRsp.class);
+                CreateTemplateFromVolumeRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(CreateTemplateFromVolumeRsp.class);
                 if (!rsp.isSuccess()) {
                     StringBuilder sb = new StringBuilder();
                     sb.append(String.format("failed to create template from volume, because %s", rsp.getError()));
@@ -788,7 +823,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         boolean offline = true;
         String hostUuid = null;
         if (volume.getVmInstanceUuid() != null) {
-            SimpleQuery<VmInstanceVO> q  = dbf.createQuery(VmInstanceVO.class);
+            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
             q.select(VmInstanceVO_.state, VmInstanceVO_.hostUuid);
             q.add(VmInstanceVO_.uuid, Op.EQ, volume.getVmInstanceUuid());
             Tuple t = q.findTuple();
@@ -820,7 +855,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         return;
                     }
 
-                    OfflineMergeSnapshotRsp rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(OfflineMergeSnapshotRsp.class);
+                    OfflineMergeSnapshotRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(OfflineMergeSnapshotRsp.class);
                     if (!rsp.isSuccess()) {
                         completion.fail(errf.stringToOperationError(rsp.getError()));
                         return;

@@ -38,9 +38,6 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmSetupSelfFencerParam;
@@ -291,15 +288,19 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         int sshPort;
         String backupStorageInstallPath;
         String primaryStorageInstallPath;
+
         public String getUsername() {
             return username;
         }
+
         public void setUsername(String username) {
             this.username = username;
         }
+
         public int getSshPort() {
             return sshPort;
         }
+
         public void setSshPort(int sshPort) {
             this.sshPort = sshPort;
         }
@@ -355,12 +356,15 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         public String getUsername() {
             return username;
         }
+
         public void setUsername(String username) {
             this.username = username;
         }
+
         public int getSshPort() {
             return sshPort;
         }
+
         public void setSshPort(int sshPort) {
             this.sshPort = sshPort;
         }
@@ -1180,7 +1184,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            snapshotPath =  String.format("%s@%s", cachePath, image.getInventory().getUuid());
+                            snapshotPath = String.format("%s@%s", cachePath, image.getInventory().getUuid());
                             CreateSnapshotCmd cmd = new CreateSnapshotCmd();
                             cmd.skipOnExisting = true;
                             cmd.snapshotPath = snapshotPath;
@@ -1316,7 +1320,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
-                    String __name__ ="download-image-to-cache";
+                    String __name__ = "download-image-to-cache";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
@@ -1705,7 +1709,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 set.addAll(fsids.values());
 
                                 if (set.size() != 1) {
-                                    StringBuilder sb =  new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different fusionstor clusters:\n");
+                                    StringBuilder sb = new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different fusionstor clusters:\n");
                                     for (FusionstorPrimaryStorageMonBase mon : mons) {
                                         String fsid = fsids.get(mon.getSelf().getUuid());
                                         sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
@@ -1717,7 +1721,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 // check if there is another fusionstor setup having the same fsid
                                 String fsId = set.iterator().next();
 
-                                SimpleQuery<FusionstorPrimaryStorageVO>  q = dbf.createQuery(FusionstorPrimaryStorageVO.class);
+                                SimpleQuery<FusionstorPrimaryStorageVO> q = dbf.createQuery(FusionstorPrimaryStorageVO.class);
                                 q.add(FusionstorPrimaryStorageVO_.fsid, Op.EQ, fsId);
                                 q.add(FusionstorPrimaryStorageVO_.uuid, Op.NOT_EQ, self.getUuid());
                                 FusionstorPrimaryStorageVO otherFusion = q.find();
@@ -1968,7 +1972,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 ErrorCode errorCode = errf.stringToOperationError(res.error);
                                 errors.add(errorCode);
                                 primaryStorageDown();
-                            } else  {
+                            } else {
                                 // this mon is down(success == false, operationFailure == false), but the primary storage may still work as other mons may work
                                 ErrorCode errorCode = errf.stringToOperationError(res.error);
                                 thisMonIsDown(errorCode);
@@ -2017,7 +2021,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         PrimaryStorageCapacityVO cap = dbf.findByUuid(self.getUuid(), PrimaryStorageCapacityVO.class);
         PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
         usage.availablePhysicalSize = cap.getAvailablePhysicalCapacity();
-        usage.totalPhysicalSize =  cap.getTotalPhysicalCapacity();
+        usage.totalPhysicalSize = cap.getTotalPhysicalCapacity();
         completion.success(usage);
     }
 
@@ -2249,6 +2253,8 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             handle((UploadBitsToBackupStorageMsg) msg);
         } else if (msg instanceof SetupSelfFencerOnKvmHostMsg) {
             handle((SetupSelfFencerOnKvmHostMsg) msg);
+        } else if (msg instanceof ResetRootVolumeFromImageOnPrimaryStorageMsg) {
+            handle((ResetRootVolumeFromImageOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -2378,26 +2384,30 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
-        final RevertVolumeFromSnapshotOnPrimaryStorageReply reply  = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
-
-        if (msg.getVolume().getVmInstanceUuid() != null) {
-            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.state);
-            q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVolume().getVmInstanceUuid());
-            VmInstanceState state = q.findValue();
-            if (state != VmInstanceState.Stopped) {
-                reply.setError(errf.stringToOperationError(
-                        String.format("unable to revert volume[uuid:%s] to snapshot[uuid:%s], the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
-                                msg.getVolume().getUuid(), msg.getSnapshot().getUuid(), msg.getVolume().getVmInstanceUuid(), state)
-                ));
-
-                bus.reply(msg, reply);
-                return;
-            }
-        }
+        final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
 
         RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
         cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
+        httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
+            @Override
+            public void success(RollbackSnapshotRsp returnValue) {
+                reply.setNewVolumeInstallPath(msg.getVolume().getInstallPath());
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final ResetRootVolumeFromImageOnPrimaryStorageMsg msg) {
+        final ResetRootVolumeFromImageOnPrimaryStorageReply reply = new ResetRootVolumeFromImageOnPrimaryStorageReply();
+
+        RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
+        cmd.snapshotPath = makeCacheInstallPath(msg.getImage().getUuid());
         httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
             @Override
             public void success(RollbackSnapshotRsp returnValue) {

@@ -41,9 +41,6 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmCancelSelfFencerParam;
@@ -295,18 +292,23 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         int sshPort;
         String backupStorageInstallPath;
         String primaryStorageInstallPath;
+
         public String getUsername() {
             return username;
         }
+
         public void setUsername(String username) {
             this.username = username;
         }
+
         public int getSshPort() {
             return sshPort;
         }
+
         public void setSshPort(int sshPort) {
             this.sshPort = sshPort;
         }
+
         public String getSshKey() {
             return sshKey;
         }
@@ -354,6 +356,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String username;
         String sshKey;
         int sshPort;
+
         public String getUsername() {
             return username;
         }
@@ -361,9 +364,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public void setUsername(String username) {
             this.username = username;
         }
+
         public int getSshPort() {
             return sshPort;
         }
+
         public void setSshPort(int sshPort) {
             this.sshPort = sshPort;
         }
@@ -1207,7 +1212,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            snapshotPath =  String.format("%s@%s", cachePath, image.getInventory().getUuid());
+                            snapshotPath = String.format("%s@%s", cachePath, image.getInventory().getUuid());
                             CreateSnapshotCmd cmd = new CreateSnapshotCmd();
                             cmd.skipOnExisting = true;
                             cmd.snapshotPath = snapshotPath;
@@ -1343,7 +1348,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
-                    String __name__ ="download-image-to-cache";
+                    String __name__ = "download-image-to-cache";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
@@ -1732,7 +1737,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 set.addAll(fsids.values());
 
                                 if (set.size() != 1) {
-                                    StringBuilder sb =  new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\n");
+                                    StringBuilder sb = new StringBuilder("the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\n");
                                     for (CephPrimaryStorageMonBase mon : mons) {
                                         String fsid = fsids.get(mon.getSelf().getUuid());
                                         sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
@@ -1744,14 +1749,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 // check if there is another ceph setup having the same fsid
                                 String fsId = set.iterator().next();
 
-                                SimpleQuery<CephPrimaryStorageVO>  q = dbf.createQuery(CephPrimaryStorageVO.class);
+                                SimpleQuery<CephPrimaryStorageVO> q = dbf.createQuery(CephPrimaryStorageVO.class);
                                 q.add(CephPrimaryStorageVO_.fsid, Op.EQ, fsId);
                                 q.add(CephPrimaryStorageVO_.uuid, Op.NOT_EQ, self.getUuid());
                                 CephPrimaryStorageVO otherCeph = q.find();
                                 if (otherCeph != null) {
                                     throw new OperationFailureException(errf.stringToOperationError(
                                             String.format("there is another CEPH primary storage[name:%s, uuid:%s] with the same" +
-                                                    " FSID[%s], you cannot add the same CEPH setup as two different primary storage",
+                                                            " FSID[%s], you cannot add the same CEPH setup as two different primary storage",
                                                     otherCeph.getName(), otherCeph.getUuid(), fsId)
                                     ));
                                 }
@@ -1979,7 +1984,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 ErrorCode errorCode = errf.stringToOperationError(res.error);
                                 errors.add(errorCode);
                                 primaryStorageDown();
-                            } else if (!res.success || PingOperationFailure.MonAddrChanged.toString().equals(res.failure))  {
+                            } else if (!res.success || PingOperationFailure.MonAddrChanged.toString().equals(res.failure)) {
                                 // this mon is down(success == false, operationFailure == false), but the primary storage may still work as other mons may work
                                 ErrorCode errorCode = errf.stringToOperationError(res.error);
                                 thisMonIsDown(errorCode);
@@ -2030,7 +2035,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         PrimaryStorageCapacityVO cap = dbf.findByUuid(self.getUuid(), PrimaryStorageCapacityVO.class);
         PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
         usage.availablePhysicalSize = cap.getAvailablePhysicalCapacity();
-        usage.totalPhysicalSize =  cap.getTotalPhysicalCapacity();
+        usage.totalPhysicalSize = cap.getTotalPhysicalCapacity();
         completion.success(usage);
     }
 
@@ -2292,6 +2297,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CancelSelfFencerOnKvmHostMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof ResetRootVolumeFromImageOnPrimaryStorageMsg) {
+            handle((ResetRootVolumeFromImageOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -2472,26 +2479,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
-        final RevertVolumeFromSnapshotOnPrimaryStorageReply reply  = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
-
-        if (msg.getVolume().getVmInstanceUuid() != null) {
-            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.state);
-            q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVolume().getVmInstanceUuid());
-            VmInstanceState state = q.findValue();
-            if (state != VmInstanceState.Stopped) {
-                reply.setError(errf.stringToOperationError(
-                        String.format("unable to revert volume[uuid:%s] to snapshot[uuid:%s], the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
-                                msg.getVolume().getUuid(), msg.getSnapshot().getUuid(), msg.getVolume().getVmInstanceUuid(), state)
-                ));
-
-                bus.reply(msg, reply);
-                return;
-            }
-        }
+        final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
 
         RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
         cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
+        httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
+            @Override
+            public void success(RollbackSnapshotRsp returnValue) {
+                reply.setNewVolumeInstallPath(msg.getVolume().getInstallPath());
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final ResetRootVolumeFromImageOnPrimaryStorageMsg msg) {
+        final ResetRootVolumeFromImageOnPrimaryStorageReply reply = new ResetRootVolumeFromImageOnPrimaryStorageReply();
+
+        RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
+        cmd.snapshotPath = makeCacheInstallPath(msg.getImage().getUuid());
         httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
             @Override
             public void success(RollbackSnapshotRsp returnValue) {
