@@ -6,10 +6,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
 import org.zstack.header.storage.backup.BackupStorageZoneRefVO_;
@@ -63,6 +65,8 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetVolumeSnapshotTreeMsg) msg);
         } else if (msg instanceof APIBackupVolumeSnapshotMsg) {
             validate((APIBackupVolumeSnapshotMsg) msg);
+        } else if (msg instanceof APIResetRootVolumeFromImageMsg) {
+            validate((APIResetRootVolumeFromImageMsg) msg);
         }
 
         setServiceId(msg);
@@ -168,11 +172,22 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
-        String volUuid =  t.get(1, String.class);
+        String volUuid = t.get(1, String.class);
         if (volUuid == null) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
                     String.format("original volume for snapshot[uuid:%s] has been deleted, cannot revert volume to it", msg.getUuid())
             ));
+        }
+    }
+
+    private void validate(APIResetRootVolumeFromImageMsg msg) {
+        VolumeVO vvo = dbf.findByUuid(msg.getRootVolumeUuid(), VolumeVO.class);
+        ImageVO ivo = dbf.findByUuid(vvo.getRootImageUuid(), ImageVO.class);
+        if (!ivo.getFormat().equals(ImageConstant.QCOW2_FORMAT_STRING)) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("Origin Image[uuid:%s, name:%s, format:%s] of Volume[uuid:%s]" +
+                                    " is not a qcow2 format file, cannot reset volume.",
+                            ivo.getUuid(), ivo.getName(), ivo.getFormat(), vvo.getUuid())));
         }
     }
 

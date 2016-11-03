@@ -12,11 +12,11 @@ public class ImageAO implements ShadowEntity {
     @Id
     @Column
     private String uuid;
-    
+
     @Column
     @Index
     private String name;
-    
+
     @Column
     private String description;
 
@@ -30,7 +30,7 @@ public class ImageAO implements ShadowEntity {
     @Column
     @Enumerated(EnumType.STRING)
     private ImageState state;
-    
+
     @Column
     private long size;
 
@@ -59,10 +59,10 @@ public class ImageAO implements ShadowEntity {
     @Column
     @Enumerated(EnumType.STRING)
     private ImageMediaType mediaType;
-    
+
     @Column
     private Timestamp createDate;
-    
+
     @Column
     private Timestamp lastOpDate;
 
@@ -106,23 +106,23 @@ public class ImageAO implements ShadowEntity {
     }
 
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
 
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
-	public String getName() {
-    	return name;
+    public String getName() {
+        return name;
     }
 
-	public void setName(String name) {
-    	this.name = name;
+    public void setName(String name) {
+        this.name = name;
     }
 
-	public String getDescription() {
-    	return description;
+    public String getDescription() {
+        return description;
     }
 
     public String getExportUrl() {
@@ -134,55 +134,55 @@ public class ImageAO implements ShadowEntity {
     }
 
     public void setDescription(String description) {
-    	this.description = description;
+        this.description = description;
     }
 
-	public ImageState getState() {
-    	return state;
+    public ImageState getState() {
+        return state;
     }
 
-	public void setState(ImageState state) {
-    	this.state = state;
+    public void setState(ImageState state) {
+        this.state = state;
     }
 
-	public long getSize() {
-    	return size;
+    public long getSize() {
+        return size;
     }
 
-	public void setSize(long size) {
-    	this.size = size;
+    public void setSize(long size) {
+        this.size = size;
     }
 
-	public String getMd5Sum() {
-    	return md5Sum;
+    public String getMd5Sum() {
+        return md5Sum;
     }
 
-	public void setMd5Sum(String md5Sum) {
-    	this.md5Sum = md5Sum;
+    public void setMd5Sum(String md5Sum) {
+        this.md5Sum = md5Sum;
     }
 
-	public String getUrl() {
-    	return url;
+    public String getUrl() {
+        return url;
     }
 
-	public void setUrl(String url) {
-    	this.url = url;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
-	public ImageMediaType getMediaType() {
-    	return mediaType;
+    public ImageMediaType getMediaType() {
+        return mediaType;
     }
 
-	public void setMediaType(ImageMediaType type) {
-    	this.mediaType = type;
+    public void setMediaType(ImageMediaType type) {
+        this.mediaType = type;
     }
 
-	public String getGuestOsType() {
-    	return guestOsType;
+    public String getGuestOsType() {
+        return guestOsType;
     }
 
-	public void setGuestOsType(String guestOsType) {
-    	this.guestOsType = guestOsType;
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
     }
 
     public String getType() {

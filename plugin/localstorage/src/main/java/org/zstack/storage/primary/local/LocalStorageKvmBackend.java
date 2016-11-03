@@ -1410,6 +1410,26 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
+    void handle(ResetRootVolumeFromImageOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<ResetRootVolumeFromImageOnPrimaryStorageReply> completion) {
+        RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
+        cmd.setSnapshotInstallPath(makeCachedImageInstallUrl(msg.getImage()));
+
+        httpCall(REVERT_SNAPSHOT_PATH, hostUuid, cmd, RevertVolumeFromSnapshotRsp.class, new ReturnValueCompletion<RevertVolumeFromSnapshotRsp>(completion) {
+            @Override
+            public void success(RevertVolumeFromSnapshotRsp rsp) {
+                ResetRootVolumeFromImageOnPrimaryStorageReply ret = new ResetRootVolumeFromImageOnPrimaryStorageReply();
+                ret.setNewVolumeInstallPath(rsp.getNewVolumeInstallPath());
+                completion.success(ret);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
     void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg, String hostUuid, final ReturnValueCompletion<BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply> completion) {
         VolumeSnapshotInventory sp = msg.getSnapshot();
         LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(KVMConstant.KVM_HYPERVISOR_TYPE, msg.getBackupStorage().getType());
@@ -1616,12 +1636,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(KVMConstant.KVM_HYPERVISOR_TYPE, bs.getType());
         m.uploadBits(getSelfInventory(), bsinv, msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(),
                 hostUuid, new ReturnValueCompletion<String>(completion) {
-            @Override
-            public void success(String installPath) {
-                UploadBitsFromLocalStorageToBackupStorageReply reply = new UploadBitsFromLocalStorageToBackupStorageReply();
-                reply.setBackupStorageInstallPath(installPath);
-                bus.reply(msg, reply);
-            }
+                    @Override
+                    public void success(String installPath) {
+                        UploadBitsFromLocalStorageToBackupStorageReply reply = new UploadBitsFromLocalStorageToBackupStorageReply();
+                        reply.setBackupStorageInstallPath(installPath);
+                        bus.reply(msg, reply);
+                    }
 
                     @Override
                     public void fail(ErrorCode errorCode) {

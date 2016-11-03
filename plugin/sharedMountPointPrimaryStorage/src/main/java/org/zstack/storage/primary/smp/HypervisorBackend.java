@@ -31,6 +31,8 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
 
     abstract void handle(RevertVolumeFromSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply> completion);
 
+    abstract void handle(ResetRootVolumeFromImageOnPrimaryStorageMsg msg, ReturnValueCompletion<ResetRootVolumeFromImageOnPrimaryStorageReply> completion);
+
     abstract void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion);
 
     abstract void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply> completion);

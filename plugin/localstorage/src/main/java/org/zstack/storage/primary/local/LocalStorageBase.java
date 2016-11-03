@@ -514,6 +514,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((LocalStorageDeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MigrateVolumeOnLocalStorageMsg) {
             handle((MigrateVolumeOnLocalStorageMsg) msg);
+        }else if(msg instanceof ResetRootVolumeFromImageOnPrimaryStorageMsg){
+            handle((ResetRootVolumeFromImageOnPrimaryStorageMsg)msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -934,28 +936,32 @@ public class LocalStorageBase extends PrimaryStorageBase {
     private void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
         final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
 
-        if (msg.getVolume().getVmInstanceUuid() != null) {
-            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.state);
-            q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVolume().getVmInstanceUuid());
-            VmInstanceState state = q.findValue();
-            if (state != VmInstanceState.Stopped) {
-                reply.setError(errf.stringToOperationError(
-                        String.format("unable to revert volume[uuid:%s] to snapshot[uuid:%s], the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
-                                msg.getVolume().getUuid(), msg.getSnapshot().getUuid(), msg.getVolume().getVmInstanceUuid(), state)
-                ));
-
-                bus.reply(msg, reply);
-                return;
-            }
-        }
-
         String hostUuid = getHostUuidByResourceUuid(msg.getSnapshot().getUuid());
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
         bkd.handle(msg, hostUuid, new ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply>(msg) {
             @Override
             public void success(RevertVolumeFromSnapshotOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final ResetRootVolumeFromImageOnPrimaryStorageMsg msg) {
+        final ResetRootVolumeFromImageOnPrimaryStorageReply reply = new ResetRootVolumeFromImageOnPrimaryStorageReply();
+
+        String hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid());
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, hostUuid, new ReturnValueCompletion<ResetRootVolumeFromImageOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(ResetRootVolumeFromImageOnPrimaryStorageReply returnValue) {
                 bus.reply(msg, returnValue);
             }
 

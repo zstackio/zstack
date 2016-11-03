@@ -7,13 +7,13 @@ import org.zstack.header.vm.APICreateVmInstanceMsg;
 @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
 public class CreateVolumeMsg extends NeedReplyMessage {
     private long size;
-	private String primaryStorageUuid;
-	private String vmInstanceUuid;
-	private String volumeType;
-	private String name;
-	private String description;
-	private String accountUuid;
-	private String rootImageUuid;
+    private String primaryStorageUuid;
+    private String vmInstanceUuid;
+    private String volumeType;
+    private String name;
+    private String description;
+    private String accountUuid;
+    private String rootImageUuid;
     private String diskOfferingUuid;
     private String format;
 
@@ -36,48 +36,63 @@ public class CreateVolumeMsg extends NeedReplyMessage {
     public long getSize() {
         return size;
     }
+
     public void setSize(long size) {
         this.size = size;
     }
+
     public String getPrimaryStorageUuid() {
-    	return primaryStorageUuid;
+        return primaryStorageUuid;
     }
-	public void setPrimaryStorageUuid(String primaryStorageUuid) {
-    	this.primaryStorageUuid = primaryStorageUuid;
+
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
     }
-	public String getVmInstanceUuid() {
-    	return vmInstanceUuid;
+
+    public String getVmInstanceUuid() {
+        return vmInstanceUuid;
     }
-	public void setVmInstanceUuid(String vmInstanceUuid) {
-    	this.vmInstanceUuid = vmInstanceUuid;
+
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
     }
-	public String getName() {
-    	return name;
+
+    public String getName() {
+        return name;
     }
-	public void setName(String name) {
-    	this.name = name;
+
+    public void setName(String name) {
+        this.name = name;
     }
-	public String getDescription() {
-    	return description;
+
+    public String getDescription() {
+        return description;
     }
-	public void setDescription(String description) {
-    	this.description = description;
+
+    public void setDescription(String description) {
+        this.description = description;
     }
-	public String getAccountUuid() {
-    	return accountUuid;
+
+    public String getAccountUuid() {
+        return accountUuid;
     }
-	public void setAccountUuid(String accountUuid) {
-    	this.accountUuid = accountUuid;
+
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
     }
+
     public String getVolumeType() {
         return volumeType;
     }
+
     public void setVolumeType(String volumeType) {
         this.volumeType = volumeType;
     }
+
     public String getRootImageUuid() {
         return rootImageUuid;
     }
+
     public void setRootImageUuid(String rootImageUuid) {
         this.rootImageUuid = rootImageUuid;
     }

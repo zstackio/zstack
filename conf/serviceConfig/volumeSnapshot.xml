@@ -41,4 +41,8 @@
         <interceptor>SchedulerApiInterceptor</interceptor>
         <interceptor>VolumeSnapshotApiInterceptor</interceptor>
     </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.APIResetRootVolumeFromImageMsg</name>
+    </message>
 </service>
