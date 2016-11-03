@@ -61,6 +61,7 @@
 	<TestCase class="org.zstack.test.compute.vm.TestPolicyForVm6"/>
 	<TestCase class="org.zstack.test.compute.vm.TestQueryVm6"/>
 	<TestCase class="org.zstack.test.compute.vm.TestChangeVmInstanceOffering"/>
+	<TestCase class="org.zstack.test.compute.vm.TestChangeVmPassword"/>
 	<TestCase class="org.zstack.test.compute.vm.TestChangeVmInstanceOffering1"/>
 	<TestCase class="org.zstack.test.compute.vm.TestVmGetAttachableL3Networks"/>
 	<TestCase class="org.zstack.test.compute.vm.TestQuotaUsageForVm"/>

@@ -38,6 +38,8 @@ public interface VmInstanceConstant {
     String QUOTA_VM_RUNNING_MEMORY_SIZE = "vm.memorySize";
     String QUOTA_VM_RUNNING_CPU_NUM = "vm.cpuNum";
 
+    String USER_VM_REGEX_PASSWORD = "^\\w+$";
+
     enum Capability {
         LiveMigration,
         VolumeMigration

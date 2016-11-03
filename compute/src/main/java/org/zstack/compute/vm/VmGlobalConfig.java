@@ -3,7 +3,6 @@ package org.zstack.compute.vm;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
-import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 
 @GlobalConfigDefinition
 public class VmGlobalConfig {

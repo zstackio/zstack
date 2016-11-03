@@ -80,6 +80,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                         spec.getDestDataVolumes().add(vinv);
                     }
 
+                    logger.debug(String.format("spec.getDestRootVolume is: %s", spec.getDestRootVolume().getInstallPath()));
                     logger.debug(String.format("successfully instantiated volume%s", JSONObjectUtil.toJsonString(vinv)));
 
                     doInstantiate(it, spec, completion);
