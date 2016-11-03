@@ -3667,8 +3667,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         FlowChain chain = getCreateVmWorkFlowChain(inv);
         setFlowMarshaller(chain);
         // add user-defined root password
-        if(struct.getRootPassword() != null)
+        if(struct.getRootPassword() != null) {
             spec.setAccountPerference(new VmAccountPerference(self.getUuid(), "root", struct.getRootPassword()));
+        }
 
         chain.setName(String.format("create-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);

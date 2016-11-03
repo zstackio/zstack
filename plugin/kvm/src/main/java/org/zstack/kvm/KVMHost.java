@@ -380,6 +380,8 @@ public class KVMHost extends HostBase implements Host {
                 return ChangeVmPasswordResponse.class;
             }
         });
+
+
     }
 
     private void handle(final ChangeVmPasswordMsg msg) {
