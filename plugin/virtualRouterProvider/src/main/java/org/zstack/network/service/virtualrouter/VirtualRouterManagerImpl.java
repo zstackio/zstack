@@ -249,7 +249,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 aspec.setInherentSystemTags(msg.getInherentSystemTags());
                 aspec.setSshUsername(VirtualRouterGlobalConfig.SSH_USERNAME.value());
                 aspec.setSshPort(VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class));
-                aspec.setAgentPort(VirtualRouterGlobalProperty.AGENT_PORT);
+                aspec.setAgentPort(msg.getApplianceVmAgentPort());
 
                 L3NetworkInventory mgmtNw = L3NetworkInventory.valueOf(dbf.findByUuid(offering.getManagementNetworkUuid(), L3NetworkVO.class));
                 ApplianceVmNicSpec mgmtNicSpec = new ApplianceVmNicSpec();
@@ -678,6 +678,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         msg.setInherentSystemTags(struct.getInherentSystemTags());
         msg.setProviderType(struct.getProviderType());
         msg.setApplianceVmType(struct.getApplianceVmType());
+        msg.setApplianceVmAgentPort(struct.getApplianceVmAgentPort());
         bus.makeTargetServiceIdByResourceUuid(msg, VirtualRouterConstant.SERVICE_ID, l3Nw.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

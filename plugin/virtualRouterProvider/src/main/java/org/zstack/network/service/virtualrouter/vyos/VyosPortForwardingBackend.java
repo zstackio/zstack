@@ -15,6 +15,7 @@ public class VyosPortForwardingBackend extends VirtualRouterPortForwardingBacken
         struct.setApplianceVmType(VyosConstants.VYOS_VM_TYPE);
         struct.setProviderType(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE);
         struct.setVirtualRouterOfferingSelector(new VyosOfferingSelector());
+        struct.setApplianceVmAgentPort(7272);
         super.acquireVirtualRouterVm(struct, completion);
     }
 

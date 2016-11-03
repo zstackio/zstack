@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.zstack.appliancevm.ApplianceVmGlobalProperty;
 import org.zstack.header.network.l3.L3NetworkInventory;
 
 import java.util.List;
@@ -17,6 +18,15 @@ public class VirtualRouterStruct {
     private boolean notGatewayForGuestL3Network;
     private String providerType = VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
     private String applianceVmType = VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE;
+    private int applianceVmAgentPort = ApplianceVmGlobalProperty.AGENT_PORT;
+
+    public int getApplianceVmAgentPort() {
+        return applianceVmAgentPort;
+    }
+
+    public void setApplianceVmAgentPort(int applianceVmAgentPort) {
+        this.applianceVmAgentPort = applianceVmAgentPort;
+    }
 
     public VirtualRouterOfferingSelector getVirtualRouterOfferingSelector() {
         return virtualRouterOfferingSelector;
