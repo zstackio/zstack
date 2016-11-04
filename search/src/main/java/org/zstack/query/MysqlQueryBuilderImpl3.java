@@ -1472,7 +1472,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                     objectNameHavingWritten.add(info.inventoryClass.getName());
                 }
 
-                sb.append("\n\n").append("#QueryMessageInventoryMap").append("queryMessageInventoryMap = {");
+                sb.append("\n\n").append("#QueryMessageInventoryMap").append("\nqueryMessageInventoryMap = {");
                 for (Map.Entry<Class, Class> e : inventoryQueryMessageMap.entrySet()
                         .stream()
                         .sorted((e1, e2) ->
