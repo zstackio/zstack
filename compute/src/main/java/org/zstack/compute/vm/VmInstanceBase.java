@@ -20,12 +20,10 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostAllocatorError;
-import org.zstack.header.cluster.ClusterConstant;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
@@ -3451,18 +3449,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
     }
 
-    private boolean isZstackCluster(String clusterUuid) {
-        ClusterVO cvo = dbf.findByUuid(clusterUuid, ClusterVO.class);
-        if (cvo == null) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("vm[uuid:%s] doesn't belong a cluster",
-                            self.getUuid())
-            ));
-        }
-
-        return cvo.getType().equals(ClusterConstant.ZSTACK_CLUSTER_TYPE);
-    }
-
     protected void startVm(final Message msg, final Completion completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
@@ -3497,8 +3483,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setRequiredHostUuid(amsg.getHostUuid());
         }
 
-        final boolean isZsCluster = isZstackCluster(spec.getVmInventory().getClusterUuid());
-        if (spec.getDestNics().isEmpty() && isZsCluster) {
+        if (spec.getDestNics().isEmpty()) {
             throw new OperationFailureException(errf.stringToOperationError(
                     String.format("unable to start the vm[uuid:%s]." +
                                     " It doesn't have any nic, please attach a nic and try again",
@@ -3512,19 +3497,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         extEmitter.beforeStartVm(VmInstanceInventory.valueOf(self));
 
         FlowChain chain = getStartVmWorkFlowChain(inv);
-        if (!isZsCluster) {
-            SimpleFlowChain fc = new SimpleFlowChain();
-            List<Flow> flows = new ArrayList<>();
-            for (Flow f : chain.getFlows()) {
-                if (f.getClass() == VmStartOnHypervisorFlow.class) {
-                    flows.add(f);
-                    break;
-                }
-            }
-
-            fc.setFlows(flows);
-            chain = fc;
-        }
         setFlowMarshaller(chain);
 
         chain.setName(String.format("start-vm-%s", self.getUuid()));
@@ -3930,18 +3902,16 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
         spec.setDestDataVolumes(dataVols);
 
-        if (inv.getImageUuid() != null) {
-            ImageVO imgvo = dbf.findByUuid(inv.getImageUuid(), ImageVO.class);
-            ImageInventory imginv = null;
-            if (imgvo == null) {
-                // the image has been deleted, use EO instead
-                ImageEO imgeo = dbf.findByUuid(inv.getImageUuid(), ImageEO.class);
-                imginv = ImageInventory.valueOf(imgeo);
-            } else {
-                imginv = ImageInventory.valueOf(imgvo);
-            }
-            spec.getImageSpec().setInventory(imginv);
+        ImageVO imgvo = dbf.findByUuid(inv.getImageUuid(), ImageVO.class);
+        ImageInventory imginv = null;
+        if (imgvo == null) {
+            // the image has been deleted, use EO instead
+            ImageEO imgeo = dbf.findByUuid(inv.getImageUuid(), ImageEO.class);
+            imginv = ImageInventory.valueOf(imgeo);
+        } else {
+            imginv = ImageInventory.valueOf(imgvo);
         }
+        spec.getImageSpec().setInventory(imginv);
 
         spec.setVmInventory(inv);
         buildHostname(spec);
