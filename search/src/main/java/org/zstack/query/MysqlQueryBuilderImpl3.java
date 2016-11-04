@@ -35,6 +35,7 @@ import java.lang.reflect.Method;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.StringDSL.s;
 
@@ -57,7 +58,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
 
     @Override
     public List<Class> getMessageClassToIntercept() {
-        List<Class> clz = new ArrayList<Class>();
+        List<Class> clz = new ArrayList<>();
         clz.add(APIQueryMessage.class);
         return clz;
     }
@@ -74,7 +75,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             APIQueryMessage qmsg = (APIQueryMessage) msg;
             for (QueryCondition qcond : qmsg.getConditions()) {
                 for (ExpandedQueryAliasInfo info : infos) {
-                    if (qcond.getName().startsWith(String.format("%s.",info.alias))) {
+                    if (qcond.getName().startsWith(String.format("%s.", info.alias))) {
                         qcond.setName(qcond.getName().replaceFirst(info.alias, info.expandField));
                     }
                 }
@@ -107,7 +108,8 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                     }
                 }
 
-                throw new CloudRuntimeException(String.format("inventory[%s] has an expanded query alias[%s], but it doesn't have an expand query that has expandedField[%s]",
+                throw new CloudRuntimeException(String.format("inventory[%s] has an expanded query alias[%s]," +
+                                " but it doesn't have an expand query that has expandedField[%s]",
                         inventoryClassDefiningThisAlias.getName(), alias, firstExpand));
             } else {
                 List<ExpandedQueryStruct> expds = expandedQueryStructs.get(inventoryClassDefiningThisAlias);
@@ -117,7 +119,8 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                     }
                 }
 
-                throw new CloudRuntimeException(String.format("inventory[%s] has an expanded query alias[%s](added by AddExpandedQueryExtensionPoint], but the extension doesn't declare any expanded query having expandedField[%s]",
+                throw new CloudRuntimeException(String.format("inventory[%s] has an expanded query alias[%s](added by AddExpandedQueryExtensionPoint]," +
+                                " but the extension doesn't declare any expanded query having expandedField[%s]",
                         inventoryClassDefiningThisAlias.getClass(), alias, firstExpand));
             }
         }
@@ -171,7 +174,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             if (inventoryTypeField != null) {
                 inventoryTypeField.setAccessible(true);
                 entityTypeField = FieldUtils.getField(inventoryTypeField.getName(), entityClass);
-                DebugUtils.Assert(entityTypeField!=null, String.format("the type field[%s] of inventory class[%s] is not on entity class[%s]", inventoryTypeField.getName(), inventoryClass.getName(), entityClass.getName()));
+                DebugUtils.Assert(entityTypeField != null, String.format("the type field[%s] of inventory class[%s] is not on entity class[%s]", inventoryTypeField.getName(), inventoryClass.getName(), entityClass.getName()));
                 entityTypeField.setAccessible(true);
             }
 
@@ -293,7 +296,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             return info;
         }
 
-        info  = new EntityInfo(invClass);
+        info = new EntityInfo(invClass);
         entityInfos.put(invClass, info);
 
         return info;
@@ -436,7 +439,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             }
 
             Queryable at = inventoryField.getAnnotation(Queryable.class);
-            EntityInfo info  = entityInfos.get(inventoryClass);
+            EntityInfo info = entityInfos.get(inventoryClass);
 
             if (at == null) {
                 Field metaField = FieldUtils.getField(attr, info.jpaMetaClass);
@@ -446,7 +449,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 }
 
                 entityField = FieldUtils.getField(attr, info.entityClass);
-                DebugUtils.Assert(entityField!=null, String.format("mismatching between inventory[%s] and entity[%s], field[%s] is not present on entity",
+                DebugUtils.Assert(entityField != null, String.format("mismatching between inventory[%s] and entity[%s], field[%s] is not present on entity",
                         inventoryClass.getName(), info.entityClass.getName(), attr));
 
                 return formatSql(entityName, attr, op);
@@ -461,7 +464,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                         inventoryField.getName(), inventoryClass.getName()));
                 Class mappingInvClass = at.mappingClass();
                 Inventory mappingInvAt = (Inventory) mappingInvClass.getAnnotation(Inventory.class);
-                DebugUtils.Assert(mappingInvAt!=null, String.format("Mapping inventory class[%s] of inventory class[%s] is not annotated by @Inventory", mappingInvClass.getName(), inventoryClass.getName()));
+                DebugUtils.Assert(mappingInvAt != null, String.format("Mapping inventory class[%s] of inventory class[%s] is not annotated by @Inventory", mappingInvClass.getName(), inventoryClass.getName()));
                 Class foreignVOClass = mappingInvAt.mappingVOClass();
                 DebugUtils.Assert(FieldUtils.hasField(refName, foreignVOClass), String.format("referencedColumnName of JoinColumn of field[%s] on inventory class[%s] is invalid, class[%s] doesn't have field[%s]",
                         inventoryField.getName(), inventoryClass.getName(), foreignVOClass.getName(), refName));
@@ -553,7 +556,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 }
             }
 
-            private String chooseOp (QueryCondition cond) {
+            private String chooseOp(QueryCondition cond) {
                 if (IN_CONDITIONS.contains(cond.getOp())) {
                     return "in";
                 }
@@ -566,7 +569,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             }
 
             private List<String> getAllResourceTypesForTag() {
-                List<String>  types = new ArrayList<String>();
+                List<String> types = new ArrayList<String>();
                 Class c = info.entityClass;
                 while (c != Object.class) {
                     types.add(String.format("'%s'", c.getSimpleName()));
@@ -626,7 +629,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 }
 
                 // use an index to differentiate multiple conditions with the same name
-                it.index = index ++;
+                it.index = index++;
                 where.add(it.toJpql());
             }
 
@@ -787,7 +790,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             } else {
                 Field currentField = FieldUtils.getField(currentFieldName, parentInvClass);
 
-                DebugUtils.Assert(currentField!=null, String.format("cannot find field[%s] on class[%s], wrong subquery name[%s]",
+                DebugUtils.Assert(currentField != null, String.format("cannot find field[%s] on class[%s], wrong subquery name[%s]",
                         currentFieldName, parentInvClass.getName(), qcond.getName()));
                 InherentSubQuery isub = new InherentSubQuery();
                 Queryable at = currentField.getAnnotation(Queryable.class);
@@ -815,7 +818,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             }
 
             slices = Arrays.copyOfRange(slices, 1, slices.length);
-            String subFieldName =  StringUtils.join(slices, ".");
+            String subFieldName = StringUtils.join(slices, ".");
 
             QueryCondition ncond = new QueryCondition();
             ncond.setName(subFieldName);
@@ -850,7 +853,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             root = new QueryObject();
             root.msg = msg;
             root.info = entityInfos.get(inventoryClass);
-            DebugUtils.Assert(root.info!=null, String.format("class[%s] is not annotated by @Inventory", inventoryClass.getName()));
+            DebugUtils.Assert(root.info != null, String.format("class[%s] is not annotated by @Inventory", inventoryClass.getName()));
             tmpMap.put(root.info.entityClass, root);
 
             for (QueryCondition qcond : msg.getConditions()) {
@@ -1009,9 +1012,9 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             EntityInfo info = entityInfos.get(inventoryClass);
             List ret = new ArrayList(fieldTuple.size());
             for (Object t : fieldTuple) {
-                Tuple tuple = (Tuple)t;
+                Tuple tuple = (Tuple) t;
                 Object inv = info.objectInstantiator.newInstance();
-                for (int i=0; i<msg.getFields().size(); i++) {
+                for (int i = 0; i < msg.getFields().size(); i++) {
                     String fname = msg.getFields().get(i);
                     Object value = tuple.get(i);
                     Field f = info.allFieldsMap.get(fname);
@@ -1070,7 +1073,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 logger.trace(hq.getQueryString());
             }
             setQueryValue(q, root);
-            return (Long)q.getSingleResult();
+            return (Long) q.getSingleResult();
         }
     }
 
@@ -1204,7 +1207,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                         }
                     }
 
-                    DebugUtils.Assert(toSuppressed!=null, String.format("ExpandedQuery[%s] of %s is going to suppress a undefined ExpandedQuery that has inventory class[%s]",
+                    DebugUtils.Assert(toSuppressed != null, String.format("ExpandedQuery[%s] of %s is going to suppress a undefined ExpandedQuery that has inventory class[%s]",
                             e.getValue().getExpandedField(), info.inventoryClass, e.getValue().getSuppressedInventoryClass()));
 
                     info.expandedQueries.remove(toSuppressed.getExpandedField());
@@ -1229,7 +1232,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                     struct = entityInfo.expandedQueries.get(exf);
                     if (struct == null) {
                         ExpandedQueryAliasInfo exalias = entityInfo.aliases.get(exf);
-                        DebugUtils.Assert(exalias!=null, String.format("cannot find expanded query or alias[%s] on %s", exf, entityInfo.inventoryClass));
+                        DebugUtils.Assert(exalias != null, String.format("cannot find expanded query or alias[%s] on %s", exf, entityInfo.inventoryClass));
                         struct = findTargetExpandedQueryStruct(exalias.expandField.split("\\."), entityInfo);
                     }
                     entityInfo = entityInfos.get(struct.getInventoryClass());
@@ -1240,7 +1243,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             void complete() {
                 EntityInfo entityInfo = entityInfos.get(alias.inventoryClassDefiningThisAlias);
                 String[] expandedFields = alias.expandField.split("\\.");
-                DebugUtils.Assert(expandedFields.length!=0, String.format("alias[%s] defined in %s is invalid", alias.expandField, alias.inventoryClassDefiningThisAlias));
+                DebugUtils.Assert(expandedFields.length != 0, String.format("alias[%s] defined in %s is invalid", alias.expandField, alias.inventoryClassDefiningThisAlias));
                 ExpandedQueryStruct struct = findTargetExpandedQueryStruct(expandedFields, entityInfo);
                 alias.inventoryClass = struct.getInventoryClass();
                 alias.check();
@@ -1313,25 +1316,25 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
     @Override
     public Map<String, List<String>> populateQueryableFields() {
         //throw new CloudRuntimeException("it's impossible enumerate all combinations");
-        Map<String, List<String>> ret = new HashMap<String, List<String>>();
+        Map<String, List<String>> ret = new HashMap<>();
 
         class QueryableBuilder {
-            Class inventoryClass;
-            List<String> queryableFields = new ArrayList<String>();
-            EntityInfo info;
+            private Class inventoryClass;
+            private List<String> queryableFields = new ArrayList<>();
+            private EntityInfo info;
 
-            Stack<Class> visitedPath = new Stack<Class>();
+            private Stack<Class> visitedPath = new Stack<>();
 
-            QueryableBuilder() {
+            private QueryableBuilder() {
             }
 
-            QueryableBuilder(Stack<Class> path) {
+            private QueryableBuilder(Stack<Class> path) {
                 visitedPath = path;
             }
 
-            List<String> build() {
+            private List<String> build() {
                 info = entityInfos.get(inventoryClass);
-                if (!visitedPath.contains(inventoryClass))  {
+                if (!visitedPath.contains(inventoryClass)) {
                     visitedPath.push(inventoryClass);
                     buildExpandedQueryableFields();
                     buildInherentQueryableFields();
@@ -1353,7 +1356,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             }
 
             private void normalizeToAliases() {
-                Set<String> set = new HashSet<String>();
+                Set<String> set = new HashSet<>();
                 for (String ret : queryableFields) {
                     set.add(normalizeToAlias(ret));
                 }
@@ -1367,7 +1370,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                     //QueryableBuilder nbuilder = new QueryableBuilder(inherentPath, expandedPath);
                     QueryableBuilder nbuilder = new QueryableBuilder(visitedPath);
                     nbuilder.inventoryClass = struct.getInventoryClass();
-                    List<String> expandedFields =  nbuilder.build();
+                    List<String> expandedFields = nbuilder.build();
                     for (String ef : expandedFields) {
                         String ff = String.format("%s.%s", struct.getExpandedField(), ef);
                         //logger.debug(ff);
@@ -1430,9 +1433,9 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
         }
 
 
-        LinkedHashMap<String, List<String>> orderedRet = new LinkedHashMap<String, List<String>>();
+        LinkedHashMap<String, List<String>> orderedRet = new LinkedHashMap<>();
         // order
-        List<String> keys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
         keys.addAll(ret.keySet());
         Collections.sort(keys);
         for (String k : keys) {
@@ -1453,9 +1456,15 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 return String.format("QueryObject%s", clazz.getSimpleName());
             }
 
-            void write() {
-                Set<String> objectNameHavingWritten = new HashSet<String>();
-                for (EntityInfo info : entityInfos.values()) {
+            private void write() {
+                sb.append("\n#QueryObjectInventory");
+                Set<String> objectNameHavingWritten = new HashSet<>();
+                for (EntityInfo info : entityInfos.values()
+                        .stream()
+                        .sorted((i1, i2) -> {
+                            return i1.inventoryClass.getSimpleName().compareTo(i2.inventoryClass.getSimpleName());
+                        })
+                        .collect(Collectors.toList())) {
                     if (objectNameHavingWritten.contains(info.inventoryClass.getName())) {
                         continue;
                     }
@@ -1463,8 +1472,14 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                     objectNameHavingWritten.add(info.inventoryClass.getName());
                 }
 
-                sb.append(String.format("\n\nqueryMessageInventoryMap = {"));
-                for (Map.Entry<Class, Class> e : inventoryQueryMessageMap.entrySet()) {
+                sb.append("\n\n").append("#QueryMessageInventoryMap").append("queryMessageInventoryMap = {");
+                for (Map.Entry<Class, Class> e : inventoryQueryMessageMap.entrySet()
+                        .stream()
+                        .sorted((e1, e2) ->
+                        {
+                            return e1.getValue().getSimpleName().compareTo(e2.getValue().getSimpleName());
+                        })
+                        .collect(Collectors.toList())) {
                     sb.append(String.format("\n%s '%s' : %s,", StringUtils.repeat(" ", 4), e.getValue().getSimpleName(), makeClassName(e.getKey())));
                 }
                 sb.append("\n}\n");
@@ -1472,10 +1487,10 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
 
             private void write(EntityInfo info) {
                 sb.append(String.format("\nclass %s(object):", makeClassName(info.inventoryClass)));
-                List<String> primitiveFields = new ArrayList<String>();
-                List<String> expandedFields = new ArrayList<String>();
+                List<String> primitiveFields = new ArrayList<>();
+                List<String> expandedFields = new ArrayList<>();
 
-                Map<String, Class> nestedAndExpandedFields = new HashMap<String, Class>();
+                Map<String, Class> nestedAndExpandedFields = new HashMap<>();
 
                 for (Field f : info.allFieldsMap.values()) {
                     if (f.isAnnotationPresent(Unqueryable.class)) {

@@ -30,7 +30,7 @@ public class PythonApiActionGenerator {
         pysb.append(String.format("from apibinding import inventory"));
         pysb.append(String.format("\nfrom apibinding import api"));
         pysb.append(String.format("\nfrom zstacklib.utils import jsonobject"));
-        
+
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
         scanner.addIncludeFilter(new AssignableTypeFilter(APIMessage.class));
         scanner.addExcludeFilter(new AnnotationTypeFilter(NoPython.class));
@@ -46,7 +46,7 @@ public class PythonApiActionGenerator {
                     if (TypeUtils.isTypeOf(clazz, APISearchMessage.class, APIGetMessage.class, APIListMessage.class)) {
                         continue;
                     }
-                    
+
                     if (APIQueryMessage.class.isAssignableFrom(clazz)) {
                         generateQueryMsg(pysb, clazz);
                     } else {
@@ -57,11 +57,11 @@ public class PythonApiActionGenerator {
                 }
             }
         }
-        
+
         String pyStr = pysb.toString();
         FileUtils.write(new File(PathUtil.join(resultFolder, "api_actions.py")), pyStr);
     }
-    
+
     private static void generateApiMsg(StringBuilder pysb, Class<?> clazz) {
         String actionName = populateActionName(clazz);
         pysb.append(String.format("\n\nclass %s(inventory.%s):", actionName, clazz.getSimpleName()));
@@ -93,7 +93,7 @@ public class PythonApiActionGenerator {
         pysb.append(String.format("\n%sself.out = jsonobject.loads(reply.content)", whiteSpace(8)));
         pysb.append(String.format("\n%sreturn self.out", whiteSpace(8)));
     }
-    
+
     private static void generateQueryMsg(StringBuilder pysb, Class<?> clazz) {
         String actionName = populateActionName(clazz);
         pysb.append(String.format("\n\nclass %s(inventory.%s):", actionName, clazz.getSimpleName()));
@@ -131,7 +131,7 @@ public class PythonApiActionGenerator {
         name = String.format("%sAction", name);
         return WordUtils.capitalize(name);
     }
-    
+
     private static String whiteSpace(int num) {
         return StringUtils.repeat(" ", num);
     }
