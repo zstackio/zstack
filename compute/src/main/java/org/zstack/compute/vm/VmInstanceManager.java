@@ -28,6 +28,10 @@ public interface VmInstanceManager {
 
     FlowChain getExpungeVmWorkFlowChain(VmInstanceInventory inv);
 
+    FlowChain getSuspendWorkFlowChain(VmInstanceInventory inv);
+
+    FlowChain getResumeVmWorkFlowChain(VmInstanceInventory inv);
+
     VmInstanceFactory getVmInstanceFactory(VmInstanceType vmType);
 
     VmInstanceBaseExtensionFactory getVmInstanceBaseExtensionFactory(Message msg);

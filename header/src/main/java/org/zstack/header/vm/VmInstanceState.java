@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import com.sun.org.apache.regexp.internal.RE;
 import org.zstack.header.configuration.PythonClass;
 import org.zstack.header.exception.CloudRuntimeException;
 
@@ -20,6 +21,9 @@ public enum VmInstanceState {
     Destroyed(VmInstanceStateEvent.destroyed),
     Migrating(VmInstanceStateEvent.migrating),
     Expunging(VmInstanceStateEvent.expunging),
+    Suspending(VmInstanceStateEvent.suspending),
+    Suspended(VmInstanceStateEvent.suspended),
+    Resuming(VmInstanceStateEvent.resuming),
     Error(null),
     Unknown(VmInstanceStateEvent.unknown);
 
@@ -31,6 +35,8 @@ public enum VmInstanceState {
         intermediateStates.add(Rebooting);
         intermediateStates.add(Destroying);
         intermediateStates.add(Migrating);
+        intermediateStates.add(Suspending);
+        intermediateStates.add(Resuming);
 
         Created.transactions(
                 new Transaction(VmInstanceStateEvent.starting, VmInstanceState.Starting),
@@ -50,6 +56,8 @@ public enum VmInstanceState {
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.rebooting, VmInstanceState.Rebooting),
                 new Transaction(VmInstanceStateEvent.migrating, VmInstanceState.Migrating),
+                new Transaction(VmInstanceStateEvent.suspending, VmInstanceState.Suspending),
+                new Transaction(VmInstanceStateEvent.suspended, VmInstanceState.Suspended),
                 new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown)
         );
         Stopping.transactions(
@@ -77,6 +85,27 @@ public enum VmInstanceState {
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown),
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying)
+        );
+
+        Suspended.transactions(
+                new Transaction(VmInstanceStateEvent.resuming, VmInstanceState.Resuming),
+                //new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
+                new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
+                new Transaction(VmInstanceStateEvent.stopping, VmInstanceState.Stopping),
+                new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),
+                new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown)
+        );
+        Suspending.transactions(
+                new Transaction(VmInstanceStateEvent.suspended, VmInstanceState.Suspended),
+                new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),
+                new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
+                new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown)
+        );
+        Resuming.transactions(
+                new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
+                new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),
+                new Transaction(VmInstanceStateEvent.suspended,VmInstanceState.Suspended),
+                new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown)
         );
         Unknown.transactions(
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),

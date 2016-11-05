@@ -553,6 +553,54 @@ public class KVMSimulatorController {
         }
     	replyer.reply(entity, rsp);
     }
+
+    @RequestMapping(value = KVMConstant.KVM_SUSPEND_VM_PATH, method = RequestMethod.POST)
+    private @ResponseBody String suspendVm(HttpServletRequest req) throws InterruptedException{
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        suspendVm(entity);
+        return null;
+    }
+
+    private void suspendVm(HttpEntity<String> entity) {
+        SuspendVmCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SuspendVmCmd.class);
+        SuspendVmResponse rsp = new SuspendVmResponse();
+        if (config.suspendVmSuccess) {
+            logger.debug(String.format("successfully suspend  vm on kvm host, %s", entity.getBody()));
+            synchronized (config) {
+                config.vms.put(cmd.getUuid(), KvmVmState.Suspended);
+            }
+            config.suspendVmCmds.add(cmd);
+        } else {
+            String err = "fail suspend vm on purpose";
+            rsp.setError(err);
+            rsp.setSuccess(false);
+        }
+        replyer.reply(entity, rsp);
+    }
+
+    @RequestMapping(value = KVMConstant.KVM_RESUME_VM_PATH, method = RequestMethod.POST)
+    private @ResponseBody String resumeVm(HttpServletRequest req) throws InterruptedException{
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        resumeVm(entity);
+        return null;
+    }
+
+    private void resumeVm(HttpEntity<String> entity) {
+        ResumeVmCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ResumeVmCmd.class);
+        ResumeVmResponse rsp = new ResumeVmResponse();
+        if (config.resumeVmSuccess) {
+            logger.debug(String.format("successfully resume  vm on kvm host, %s", entity.getBody()));
+            synchronized (config) {
+                config.vms.put(cmd.getUuid(), KvmVmState.Running);
+            }
+            config.resumeVmCmds.add(cmd);
+        } else {
+            String err = "fail resume vm on purpose";
+            rsp.setError(err);
+            rsp.setSuccess(false);
+        }
+        replyer.reply(entity, rsp);
+    }
     
     @RequestMapping(value=KVMConstant.KVM_REBOOT_VM_PATH, method=RequestMethod.POST)
     private @ResponseBody String rebootVm(HttpServletRequest req) throws InterruptedException {

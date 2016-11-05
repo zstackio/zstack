@@ -94,6 +94,16 @@
                 <value>org.zstack.compute.vm.VmExpungeRootVolumeFlow</value>
             </list>
         </property>
+        <property name="suspendVmWorkFlowElements">
+            <list>
+                <value>org.zstack.compute.vm.SuspengVmOnHypervisorFlow</value>
+            </list>
+        </property>
+        <property name="resumeVmWorkFlowElements">
+            <list>
+                <value>org.zstack.compute.vm.ResumeVmOnHypervisorFlow</value>
+            </list>
+        </property>
 
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />

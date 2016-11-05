@@ -85,6 +85,8 @@ public class KVMHost extends HostBase implements Host {
     private String checkPhysicalNetworkInterfacePath;
     private String startVmPath;
     private String stopVmPath;
+    private String suspendVmPath;
+    private String resumeVmPath;
     private String rebootVmPath;
     private String destroyVmPath;
     private String attachDataVolumePath;
@@ -132,6 +134,14 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_STOP_VM_PATH);
         stopVmPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_SUSPEND_VM_PATH);
+        suspendVmPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_RESUME_VM_PATH);
+        resumeVmPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_REBOOT_VM_PATH);
@@ -265,7 +275,11 @@ public class KVMHost extends HostBase implements Host {
             handle((ChangeVmPasswordMsg) msg);
         } else if (msg instanceof SetRootPasswordMsg) {
             handle((SetRootPasswordMsg) msg);
-        } else {
+        } else if (msg instanceof SuspendVmOnHypervisorMsg) {
+        handle((SuspendVmOnHypervisorMsg) msg);
+        } else if (msg instanceof ResumeVmOnHypervisorMsg) {
+        handle((ResumeVmOnHypervisorMsg) msg);
+        }else {
             super.handleLocalMessage(msg);
         }
     }
@@ -2049,6 +2063,134 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             protected int getSyncLevel() {
+                return getHostSyncLevel();
+            }
+        });
+    }
+
+    private void suspendVm(final SuspendVmOnHypervisorMsg msg,final NoErrorCompletion completion) {
+        checkStatus();
+        final VmInstanceInventory vminv = msg.getVmInventory();
+        SuspendVmOnHypervisorReply reply = new SuspendVmOnHypervisorReply();
+        SuspendVmCmd cmd = new SuspendVmCmd();
+        cmd.setUuid(vminv.getUuid());
+        cmd.setTimeout(120);
+        restf.asyncJsonPost(suspendVmPath, cmd, new JsonAsyncRESTCallback<SuspendVmResponse>(msg,completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg,reply);
+                completion.done();
+            }
+
+            @Override
+            public void success(SuspendVmResponse ret) {
+                if(!ret.isSuccess()) {
+                    String err = String.format("unable to suspend vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError());
+                    reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, err));
+                    logger.warn(err);
+                }
+                bus.reply(msg,reply);
+                completion.done();
+            }
+
+            @Override
+            public Class<SuspendVmResponse> getReturnClass() {
+                return SuspendVmResponse.class ;
+            }
+        });
+
+    }
+
+    private void handle(final ResumeVmOnHypervisorMsg msg){
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return id;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain){
+                resumeVm(msg,new NoErrorCompletion(chain){
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName(){
+                return String.format("resume-vm-%s-on-host-%s",msg.getVmInventory().getUuid(),self.getUuid());
+            }
+
+            @Override
+            protected int getSyncLevel(){
+                return getHostSyncLevel();
+            }
+        });
+    }
+
+    private void resumeVm(final ResumeVmOnHypervisorMsg msg,final NoErrorCompletion completion) {
+        checkStatus();
+        final VmInstanceInventory vminv = msg.getVmInventory();
+        ResumeVmOnHypervisorReply reply = new ResumeVmOnHypervisorReply();
+        ResumeVmCmd cmd = new ResumeVmCmd();
+        cmd.setUuid(vminv.getUuid());
+        cmd.setTimeout(120);
+        restf.asyncJsonPost(resumeVmPath, cmd, new JsonAsyncRESTCallback<ResumeVmResponse>(msg,completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg,reply);
+                completion.done();
+            }
+
+            @Override
+            public void success(ResumeVmResponse ret) {
+                if(!ret.isSuccess()) {
+                    String err = String.format("unable to resume vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError());
+                    reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, err));
+                    logger.warn(err);
+                }
+                bus.reply(msg,reply);
+                completion.done();
+            }
+
+            @Override
+            public Class<ResumeVmResponse> getReturnClass() {
+                return ResumeVmResponse.class ;
+            }
+        });
+
+    }
+
+    private void handle(final SuspendVmOnHypervisorMsg msg){
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return id;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain){
+                suspendVm(msg,new NoErrorCompletion(chain){
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName(){
+                return String.format("suspend-vm-%s-on-host-%s",msg.getVmInventory().getUuid(),self.getUuid());
+            }
+
+            @Override
+            protected int getSyncLevel(){
                 return getHostSyncLevel();
             }
         });

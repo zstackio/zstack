@@ -22,6 +22,7 @@ public interface VmInstanceConstant {
         NewCreate,
         Start,
         Stop,
+        Suspend,
         Reboot,
         Destroy,
         Migrate,

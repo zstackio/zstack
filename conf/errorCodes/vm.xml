@@ -55,10 +55,17 @@
         <id>1010</id>
         <description>VM is not in state that allows required operation</description>
     </code>
-
     <code>
         <id>1011</id>
         <description>An error occurred while change vm password</description>
+    </code>
+    <code>
+        <id>1012</id>
+        <description>Unable to suspend a vm</description>
+    </code>
+    <code>
+        <id>1013</id>
+        <description>Unable to resume a vm</description>
     </code>
 </error>
 

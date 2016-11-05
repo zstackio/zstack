@@ -46,7 +46,8 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIAttachIsoToVmInstanceMsg.class.getName(),
                 APIDetachIsoFromVmInstanceMsg.class.getName(),
                 APIGetVmConsoleAddressMsg.class.getName(),
-                APIDeleteVmStaticIpMsg.class.getName()
+                APIDeleteVmStaticIpMsg.class.getName(),
+                APISuspendVmInstanceMsg.class.getName()
         );
 
         allowedOperations.addState(VmInstanceState.Stopped,
@@ -99,6 +100,21 @@ public abstract class AbstractVmInstance implements VmInstance {
                 ExpungeVmMsg.class.getName(),
                 APIExpungeVmInstanceMsg.class.getName(),
                 APIRecoverVmInstanceMsg.class.getName());
+
+        allowedOperations.addState(VmInstanceState.Suspended,
+                APIResumeVmInstanceMsg.class.getName(),
+                APIStopVmInstanceMsg.class.getName(),
+                StopVmInstanceMsg.class.getName(),
+                APIDestroyVmInstanceMsg.class.getName(),
+                DestroyVmInstanceMsg.class.getName());
+
+        allowedOperations.addState(VmInstanceState.Suspending,
+                APIDestroyVmInstanceMsg.class.getName(),
+                DestroyVmInstanceMsg.class.getName());
+
+        allowedOperations.addState(VmInstanceState.Resuming,
+                APIDestroyVmInstanceMsg.class.getName(),
+                DestroyVmInstanceMsg.class.getName());
 
 
         stateChangeChecker.addState(VmInstanceStateEvent.unknown.toString(),

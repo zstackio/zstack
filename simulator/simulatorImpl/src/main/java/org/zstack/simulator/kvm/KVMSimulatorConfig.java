@@ -39,6 +39,10 @@ public class KVMSimulatorConfig {
     public volatile boolean startVmSuccess = true;
     public volatile boolean stopVmSuccess = true;
     public volatile List<StopVmCmd> stopVmCmds = new ArrayList<StopVmCmd>();
+    public volatile List<SuspendVmCmd> suspendVmCmds = new ArrayList<>();
+    public volatile boolean suspendVmSuccess = true;
+    public volatile List<ResumeVmCmd> resumeVmCmds = new ArrayList<>();
+    public volatile  boolean resumeVmSuccess = true;
     public volatile boolean rebootVmSuccess = true;
     public volatile List<RebootVmCmd> rebootVmCmds = new ArrayList<RebootVmCmd>();
     public volatile boolean destroyVmSuccess = true;
