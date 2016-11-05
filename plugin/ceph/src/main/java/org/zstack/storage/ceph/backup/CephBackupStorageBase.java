@@ -8,6 +8,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.*;
@@ -16,8 +18,11 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.image.*;
+import org.zstack.header.image.APIAddImageMsg;
+import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
@@ -32,6 +37,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,6 +67,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     @Autowired
     protected RESTFacade restf;
+    @Autowired
+    protected CephBackupStorageMetaDataMaker metaDataMaker;
 
     public enum PingOperationFailure {
         UnableToCreateFile,
@@ -241,12 +249,158 @@ public class CephBackupStorageBase extends BackupStorageBase {
         public String monAddr;
     }
 
+    public static class GetImagesMetaDataCommand extends AgentCommand {
+        private String poolName;
+
+        public String getPoolName() {
+            return poolName;
+        }
+
+        public void setPoolName(String poolName) {
+            this.poolName = poolName;
+        }
+    }
+
+    public static class GetImagesMetaDataRsp extends AgentResponse {
+        private String imagesMetadata;
+
+        public String getImagesMetadata() {
+            return imagesMetadata;
+        }
+
+        public void setImagesMetadata(String imagesMetadata) {
+            this.imagesMetadata = imagesMetadata;
+        }
+    }
+
+    public static class CheckImageMetaDataFileExistCmd extends AgentCommand {
+        private String poolName;
+
+        public String getPoolName() {
+            return poolName;
+        }
+
+        public void setPoolName(String poolName) {
+            this.poolName = poolName;
+        }
+    }
+
+    public static class CheckImageMetaDataFileExistRsp extends AgentResponse {
+        private String backupStorageMetaFileName;
+        private Boolean exist;
+
+        public Boolean getExist() {
+            return exist;
+        }
+
+        public void setExist(Boolean exist) {
+            this.exist = exist;
+        }
+
+        public String getBackupStorageMetaFileName() {
+            return backupStorageMetaFileName;
+        }
+
+        public void setBackupStorageMetaFileName(String backupStorageMetaFileName) {
+            this.backupStorageMetaFileName = backupStorageMetaFileName;
+        }
+    }
+
+    public static class DumpImageInfoToMetaDataFileCmd extends AgentCommand {
+        private String poolName;
+        private String imageMetaData;
+        private boolean dumpAllMetaData;
+
+        public boolean isDumpAllMetaData() {
+            return dumpAllMetaData;
+        }
+
+        public void setDumpAllMetaData(boolean dumpAllMetaData) {
+            this.dumpAllMetaData = dumpAllMetaData;
+        }
+
+        public String getPoolName() {
+            return poolName;
+        }
+
+        public void setPoolName(String poolName) {
+            this.poolName = poolName;
+        }
+
+        public String getImageMetaData() {
+            return imageMetaData;
+        }
+
+        public void setImageMetaData(String imageMetaData) {
+            this.imageMetaData = imageMetaData;
+        }
+    }
+
+    public static class DumpImageInfoToMetaDataFileRsp extends AgentResponse {
+    }
+
+    public static class DeleteImageInfoFromMetaDataFileCmd extends AgentCommand {
+        private String imageUuid;
+        private String backupStorageUuid;
+        private String poolName;
+
+        public String getPoolName() {
+            return poolName;
+        }
+
+        public void setPoolName(String poolName) {
+            this.poolName = poolName;
+        }
+
+        public String getBackupStorageUuid() {
+            return backupStorageUuid;
+        }
+
+        public void setBackupStorageUuid(String backupStorageUuid) {
+            this.backupStorageUuid = backupStorageUuid;
+        }
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
+    }
+
+    public static class DeleteImageInfoFromMetaDataFileRsp extends AgentResponse {
+        private Integer ret;
+        private String out;
+
+        public Integer getRet() {
+            return ret;
+        }
+
+        public void setRet(Integer ret) {
+            this.ret = ret;
+        }
+
+        public String getOut() {
+            return out;
+        }
+
+        public void setOut(String out) {
+            this.out = out;
+        }
+    }
+
+
     public static final String INIT_PATH = "/ceph/backupstorage/init";
     public static final String DOWNLOAD_IMAGE_PATH = "/ceph/backupstorage/image/download";
     public static final String DELETE_IMAGE_PATH = "/ceph/backupstorage/image/delete";
     public static final String GET_IMAGE_SIZE_PATH = "/ceph/backupstorage/image/getsize";
     public static final String PING_PATH = "/ceph/backupstorage/ping";
     public static final String GET_FACTS = "/ceph/backupstorage/facts";
+    public static final String CHECK_IMAGE_METADATA_FILE_EXIST = "/ceph/backupstorage/checkimagemetadatafileexist";
+    public static final String DUMP_IMAGE_METADATA_TO_FILE = "/ceph/backupstorage/dumpimagemetadatatofile";
+    public static final String GET_IMAGES_METADATA = "/ceph/backupstorage/getimagesmetadata";
+    public static final String DELETE_IMAGES_METADATA = "/ceph/backupstorage/deleteimagesmetadata";
 
     protected String makeImageInstallPath(String imageUuid) {
         return String.format("ceph://%s/%s", getSelf().getPoolName(), imageUuid);
@@ -351,6 +505,122 @@ public class CephBackupStorageBase extends BackupStorageBase {
             }
         });
     }
+
+    protected void handle(final BakeImageMetadataMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getName() {
+                return String.format("bake-image-metadata-for-bs-%s", msg.getBackupStorageUuid());
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return String.format("bake-image-metadata-for-bs-%s", msg.getBackupStorageUuid());
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                bakeImageMetadata(msg, chain);
+            }
+
+        });
+    }
+
+    private void bakeImageMetadata(BakeImageMetadataMsg msg, final SyncTaskChain chain) {
+        if (msg.getOperation().equals(CephConstants.AFTER_ADD_BACKUPSTORAGE)) {
+            GetImagesMetaDataCommand cmd = new GetImagesMetaDataCommand();
+            cmd.setPoolName(msg.getPoolName());
+            final BakeImageMetadataReply reply = new BakeImageMetadataReply();
+
+            httpCall(GET_IMAGES_METADATA, cmd, GetImagesMetaDataRsp.class, new ReturnValueCompletion<GetImagesMetaDataRsp>(msg) {
+                @Override
+                public void fail(ErrorCode err) {
+                    reply.setError(err);
+                    logger.error(String.format("get images metadata failed: %s", err));
+                    bus.reply(msg, reply);
+                    chain.next();
+                }
+
+                @Override
+                public void success(GetImagesMetaDataRsp ret) {
+                    logger.error(String.format("get images metadata: %s successfully", ret.getImagesMetadata()));
+                    reply.setImagesMetadata(ret.getImagesMetadata());
+                    metaDataMaker.restoreImagesBackupStorageMetadataToDatabase(ret.getImagesMetadata(), msg.getBackupStorageUuid());
+                    bus.reply(msg, reply);
+                    chain.next();
+                }
+            });
+        } else if (msg.getOperation().equals(CephConstants.AFTER_ADD_IMAGE)) {
+            final BakeImageMetadataReply reply = new BakeImageMetadataReply();
+            CheckImageMetaDataFileExistCmd cmd = new CheckImageMetaDataFileExistCmd();
+            cmd.setPoolName(msg.getPoolName());
+            httpCall(CHECK_IMAGE_METADATA_FILE_EXIST, cmd, CheckImageMetaDataFileExistRsp.class, new ReturnValueCompletion<CheckImageMetaDataFileExistRsp>(msg) {
+                @Override
+                public void fail(ErrorCode err) {
+                    logger.error(String.format("check images metadata file: %s failed", reply.getBackupStorageMetaFileName()));
+                    dumpImagesBackupStorageInfoToMetaDataFile(msg, reply, true, chain);
+                }
+
+                @Override
+                public void success(CheckImageMetaDataFileExistRsp ret) {
+                    dumpImagesBackupStorageInfoToMetaDataFile(msg, reply, false, chain);
+                }
+            });
+        } else if (msg.getOperation().equals(CephConstants.AFTER_EXPUNGE_IMAGE)) {
+            final BakeImageMetadataReply reply = new BakeImageMetadataReply();
+            CephBackupStorageBase.DeleteImageInfoFromMetaDataFileCmd deleteCmd = new CephBackupStorageBase.DeleteImageInfoFromMetaDataFileCmd();
+            deleteCmd.setImageUuid(msg.getImg().getUuid());
+            deleteCmd.setBackupStorageUuid(msg.getBackupStorageUuid());
+            deleteCmd.setPoolName(msg.getPoolName());
+            httpCall(DELETE_IMAGES_METADATA, deleteCmd, DeleteImageInfoFromMetaDataFileRsp.class, new ReturnValueCompletion<DeleteImageInfoFromMetaDataFileRsp>() {
+                @Override
+                public void success(DeleteImageInfoFromMetaDataFileRsp returnValue) {
+                    bus.reply(msg, reply);
+                    chain.next();
+                }
+                @Override
+                public void fail(ErrorCode err) {
+                    reply.setError(err);
+                    logger.error(String.format("delete ceph images metadata failed"));
+                    bus.reply(msg, reply);
+                    chain.next();
+                }
+            });
+        }
+    }
+
+    private void dumpImagesBackupStorageInfoToMetaDataFile(BakeImageMetadataMsg msg, BakeImageMetadataReply reply, boolean allImagesInfo, SyncTaskChain chain ) {
+        ImageInventory img = msg.getImg();
+        logger.debug("dump ceph images info to meta data file");
+        DumpImageInfoToMetaDataFileCmd dumpCmd = new DumpImageInfoToMetaDataFileCmd();
+        String metaData;
+        if (allImagesInfo) {
+            metaData = metaDataMaker.getAllImageInventories(img, null);
+        } else {
+            metaData = JSONObjectUtil.toJsonString(img);
+        }
+        dumpCmd.setImageMetaData(metaData);
+        dumpCmd.setDumpAllMetaData(allImagesInfo);
+        dumpCmd.setPoolName(msg.getPoolName());
+
+        httpCall(DUMP_IMAGE_METADATA_TO_FILE, dumpCmd, DumpImageInfoToMetaDataFileRsp.class, new ReturnValueCompletion<DumpImageInfoToMetaDataFileRsp>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                logger.error("dump ceph images metadata failed");
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public void success(DumpImageInfoToMetaDataFileRsp ret) {
+                logger.error("dump ceph images metadata successfully");
+                bus.reply(msg, reply);
+                chain.next();
+            }
+        });
+    }
+
 
     @Override
     @Transactional
@@ -674,6 +944,19 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "generate-ceph-images-metadata-file";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (!newAdded) {
+                            String backupStorageHostName = metaDataMaker.getHostnameFromBackupStorage(CephBackupStorageInventory.valueOf(getSelf()));
+                            String backupStorageUuid = getSelf().getUuid();
+                            metaDataMaker.dumpImagesBackupStorageInfoToMetaDataFile(null,true, backupStorageHostName, backupStorageUuid);
+                        }
+                        trigger.next();
+                    }
+                });
+
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
@@ -863,6 +1146,16 @@ public class CephBackupStorageBase extends BackupStorageBase {
             handle((APIRemoveMonFromCephBackupStorageMsg) msg);
         } else {
             super.handleApiMessage(msg);
+        }
+    }
+
+    @Override
+    protected void handleLocalMessage(Message msg) throws URISyntaxException {
+        if (msg instanceof BakeImageMetadataMsg) {
+            handle((BakeImageMetadataMsg) msg);
+        }
+        else {
+            super.handleLocalMessage(msg);
         }
     }
 

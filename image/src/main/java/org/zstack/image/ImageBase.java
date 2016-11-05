@@ -8,6 +8,7 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -31,6 +32,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
@@ -59,6 +61,8 @@ public class ImageBase implements Image {
     private ImageDeletionPolicyManager deletionPolicyMgr;
     @Autowired
     private GCFacade gcf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     protected ImageVO self;
 
@@ -211,6 +215,15 @@ public class ImageBase implements Image {
                     reply.setError(r.getError());
                 } else {
                     returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());
+                    //TODO remove ref from metadata, this logic should after all refs deleted
+                    logger.debug("meilei. delete metadata");
+                    logger.debug(String.format("meilei. imageInventory %s", ImageInventory.valueOf(self).toString()));
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(ExpungeImageExtensionPoint.class), new ForEachFunction<ExpungeImageExtensionPoint>() {
+                        @Override
+                        public void run(ExpungeImageExtensionPoint ext) {
+                            ext.afterExpungeImage(ImageInventory.valueOf(self), ref.getBackupStorageUuid());
+                        }
+                    });
                     dbf.remove(ref);
                     logger.debug(String.format("successfully expunged the image[uuid: %s, name: %s] on the backup storage[uuid: %s]",
                             self.getUuid(), self.getName(), ref.getBackupStorageUuid()));
@@ -294,6 +307,7 @@ public class ImageBase implements Image {
                                 } else {
                                     returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());
                                     dbf.remove(ref);
+                                    //TODO should delete ref in metadata
                                 }
                                 trigger.next();
                             }

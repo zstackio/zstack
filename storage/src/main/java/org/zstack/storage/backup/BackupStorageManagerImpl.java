@@ -27,9 +27,11 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -181,6 +183,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         } else {
             vo.setUuid(Platform.getUuid());
         }
+
         vo.setUrl(msg.getUrl());
         vo.setType(type.toString());
         vo.setName(msg.getName());
@@ -189,8 +192,15 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         vo.setStatus(BackupStorageStatus.Connecting);
 
         final BackupStorageInventory inv = factory.createBackupStorage(vo, msg);
+        AddBackupStorageStruct addBackupStoragestruct = new AddBackupStorageStruct();
+        if(msg.isImportImages()) {
+            addBackupStoragestruct.setImportImages(true);
+        }
+        addBackupStoragestruct.setBackupStorageInventory(inv);
+        addBackupStoragestruct.setType(vo.getType());
 
         tagMgr.createTagsFromAPICreateMessage(msg, inv.getUuid(), BackupStorageVO.class.getSimpleName());
+
 
         final APIAddBackupStorageEvent evt = new APIAddBackupStorageEvent(msg.getId());
         ConnectBackupStorageMsg cmsg = new ConnectBackupStorageMsg();
@@ -203,6 +213,14 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
                 if (reply.isSuccess()) {
                     evt.setInventory(factory.reload(inv.getUuid()));
                     bus.publish(evt);
+
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddBackupStorageExtensionPoint.class), new ForEachFunction<AddBackupStorageExtensionPoint>() {
+                        @Override
+                        public void run(AddBackupStorageExtensionPoint ext) {
+                            ext.afterAddBackupStorage(addBackupStoragestruct);
+                        }
+                    });
+
                 } else {
                     dbf.removeByPrimaryKey(inv.getUuid(), BackupStorageVO.class);
                     evt.setErrorCode(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, reply.getError()));

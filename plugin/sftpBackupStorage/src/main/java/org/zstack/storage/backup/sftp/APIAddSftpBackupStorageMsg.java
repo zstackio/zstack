@@ -61,6 +61,8 @@ public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
     @APIParam(numberRange = {1, 65535}, required = false)
     private int sshPort = 22;
 
+
+
     @Override
     public String getType() {
         return SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE;
@@ -91,4 +93,5 @@ public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
     public void setSshPort(int sshPort) {
         this.sshPort = sshPort;
     }
+
 }

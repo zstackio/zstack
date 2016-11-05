@@ -31,10 +31,10 @@ public class ImageBackupStorageRefVO implements Serializable {
     @ForeignKey(parentEntityClass = BackupStorageEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String backupStorageUuid;
     @Column
-    private String installPath;
-    @Column
     @Enumerated(EnumType.STRING)
     private ImageStatus status;
+    @Column
+    private String installPath;
     @Column
     private Timestamp createDate;
     @Column

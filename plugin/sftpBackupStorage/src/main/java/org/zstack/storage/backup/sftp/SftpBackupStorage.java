@@ -42,13 +42,15 @@ public class SftpBackupStorage extends BackupStorageBase {
     private static final CLogger logger = Utils.getLogger(SftpBackupStorage.class);
 
     @Autowired
-    private RESTFacade restf;
+    protected RESTFacade restf;
     @Autowired
     private AnsibleFacade asf;
     @Autowired
     private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager timeoutManager;
+    @Autowired
+    private SftpBackupStorageMetaDataMaker metaDataMaker;
 
     private String agentPackageName = SftpBackupStorageGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -56,7 +58,8 @@ public class SftpBackupStorage extends BackupStorageBase {
         super(vo);
     }
 
-    private String buildUrl(String subPath) {
+
+    public String buildUrl(String subPath) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
         ub.scheme(SftpBackupStorageGlobalProperty.AGENT_URL_SCHEME);
         if (CoreGlobalProperty.UNIT_TEST_ON) {
@@ -98,8 +101,8 @@ public class SftpBackupStorage extends BackupStorageBase {
             }
 
             DownloadCmd cmd = new DownloadCmd();
-            cmd.setUrl(url);
             cmd.setUuid(uuid);
+            cmd.setUrl(url);
             cmd.setUrlScheme(scheme);
             cmd.setInstallPath(installPath);
             cmd.setTimeout(timeoutManager.getTimeout(cmd.getClass(), "3h"));
@@ -226,7 +229,30 @@ public class SftpBackupStorage extends BackupStorageBase {
 
     @Override
     protected void connectHook(boolean newAdded, Completion completion) {
-        connect(completion);
+        connect(new Completion(completion) {
+            @Override
+            public void success() {
+               if (!newAdded) {
+                   String backupStorageUrl = getSelf().getUrl();
+                   String backStorageHostName = getSelf().getHostname();
+                   String backupStorageUuid = getSelf().getUuid();
+                   SftpBackupStorageDumpMetadataInfo dumpInfo = new SftpBackupStorageDumpMetadataInfo();
+                   dumpInfo.setDumpAllInfo(true);
+                   dumpInfo.setBackupStorageUuid(backupStorageUuid);
+                   dumpInfo.setBackupStorageUrl(backupStorageUrl);
+                   dumpInfo.setBackupStorageHostname(backStorageHostName);
+
+                   metaDataMaker.dumpImagesBackupStorageInfoToMetaDataFile(dumpInfo);
+               }
+               completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+
+            }
+        });
     }
 
     @Override
@@ -496,4 +522,7 @@ public class SftpBackupStorage extends BackupStorageBase {
 
         return vo;
     }
+
+
+
 }

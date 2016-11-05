@@ -96,7 +96,9 @@ public class BackupStorageInventory implements Serializable {
      * depending on backup storage type, the connection may have various meanings. For example, for Sftp backup storage connection is the http
      * channel between zstack and sftp backup storage agent
      */
-    private String status;
+	private String status;
+
+
     /**
      * @desc the time this resource gets created
      */
@@ -243,4 +245,5 @@ public class BackupStorageInventory implements Serializable {
     public void setStatus(String status) {
         this.status = status;
     }
+
 }
