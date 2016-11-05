@@ -22,7 +22,9 @@ import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PythonApiActionGenerator {
     public static void generatePythonApiAction(List<String> basePkgs, String resultFolder) throws IOException {
@@ -36,6 +38,7 @@ public class PythonApiActionGenerator {
         scanner.addExcludeFilter(new AnnotationTypeFilter(NoPython.class));
         scanner.addExcludeFilter(new AnnotationTypeFilter(Component.class));
         for (String pkg : basePkgs) {
+            List<Class<?>> clazzList = new ArrayList<>();
             for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
                 try {
                     Class<?> clazz = Class.forName(bd.getBeanClassName());
@@ -47,13 +50,21 @@ public class PythonApiActionGenerator {
                         continue;
                     }
 
-                    if (APIQueryMessage.class.isAssignableFrom(clazz)) {
-                        generateQueryMsg(pysb, clazz);
-                    } else {
-                        generateApiMsg(pysb, clazz);
-                    }
+                    clazzList.add(clazz);
                 } catch (Exception e) {
                     throw new CloudRuntimeException(e);
+                }
+            }
+            List<Class<?>> sortedClazzList = clazzList.stream().sorted(
+                    (c1, c2) -> {
+                        return populateActionName(c1).compareTo(populateActionName(c2));
+                    }
+            ).collect(Collectors.toList());
+            for (Class<?> clazz : sortedClazzList) {
+                if (APIQueryMessage.class.isAssignableFrom(clazz)) {
+                    generateQueryMsg(pysb, clazz);
+                } else {
+                    generateApiMsg(pysb, clazz);
                 }
             }
         }
