@@ -49,6 +49,7 @@ public class TestSuspendVm {
         Assert.assertNotNull(vm);
         Assert.assertEquals(VmInstanceState.Suspended, vm.getState());
         Assert.assertNotNull(vm.getHostUuid());
+        //stop a suspended vm
         inv = api.stopVmInstance(inv.getUuid());
         Assert.assertEquals(VmInstanceState.Stopped.toString(), inv.getState());
         vm = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);

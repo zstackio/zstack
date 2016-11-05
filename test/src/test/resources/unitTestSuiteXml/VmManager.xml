@@ -10,6 +10,8 @@
 	<TestCase class="org.zstack.test.compute.vm.TestRebootVmFailure"/>
 	<TestCase class="org.zstack.test.compute.vm.TestStopVm"/>
 	<TestCase class="org.zstack.test.compute.vm.TestStartVm"/>
+	<TestCase class="org.zstack.test.compute.vm.TestSuspendVm.java"/>
+	<TestCase class="org.zstack.test.compute.vm.TestResumeVm.java"/>
 	<TestCase class="org.zstack.test.compute.vm.TestStartCreatedVmExtensionPoint"/>
 	<TestCase class="org.zstack.test.compute.vm.TestDestroyVmExtensionPoint"/>
 	<TestCase class="org.zstack.test.compute.vm.TestRebootVmExtensionPoint"/>
