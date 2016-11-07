@@ -14,6 +14,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 
 /**
  */
@@ -389,6 +390,61 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
         }
     }
 
+    private class CascadeWrapper implements CascadeExtensionPoint {
+        CascadeExtensionPoint origin;
+        List<CascadeExtensionPoint> addons = new ArrayList<>();
+
+        public CascadeWrapper(CascadeExtensionPoint origin) {
+            this.origin = origin;
+        }
+
+        private CascadeExtensionPoint findExtensionPointByParent(String parent) {
+            if (origin.getCascadeResourceName().equals(parent) || origin.getEdgeNames().contains(parent)) {
+                return origin;
+            } else {
+                Optional<CascadeExtensionPoint> o = addons.stream().filter(c->c.getEdgeNames().contains(parent)).findFirst();
+                DebugUtils.Assert(o.isPresent(), String.format("cannot find any cascade extension point has the parent[%s] for the resource[%s]",
+                        parent, origin.getCascadeResourceName()));
+                return o.get();
+            }
+        }
+
+        @Override
+        public void syncCascade(CascadeAction action) throws CascadeException {
+            findExtensionPointByParent(action.getParentIssuer()).syncCascade(action);
+        }
+
+        @Override
+        public void asyncCascade(CascadeAction action, Completion completion) {
+            findExtensionPointByParent(action.getParentIssuer()).asyncCascade(action, completion);
+        }
+
+        @Override
+        public List<String> getEdgeNames() {
+            return addons.isEmpty() ? origin.getEdgeNames() : new Callable<List<String>>() {
+                @Override
+                public List<String> call() {
+                    List<String> es = new ArrayList<>();
+                    es.addAll(origin.getEdgeNames());
+                    for (CascadeExtensionPoint a : addons) {
+                        es.addAll(a.getEdgeNames());
+                    }
+                    return es;
+                }
+            }.call();
+        }
+
+        @Override
+        public String getCascadeResourceName() {
+            return origin.getCascadeResourceName();
+        }
+
+        @Override
+        public CascadeAction createActionForChildResource(CascadeAction action) {
+            return findExtensionPointByParent(action.getParentIssuer()).createActionForChildResource(action);
+        }
+    }
+
     private void populateNodes() {
         Map<String, CascadeExtensionPoint> exts = new HashMap<>();
         for (CascadeExtensionPoint extp : pluginRgty.getExtensionList(CascadeExtensionPoint.class)) {
@@ -398,7 +454,25 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
                         extp.getClass().getName(), oext.getClass().getName(), extp.getCascadeResourceName()));
             }
 
-            exts.put(extp.getCascadeResourceName(), extp);
+            exts.put(extp.getCascadeResourceName(), new CascadeWrapper(extp));
+        }
+
+        for (CascadeExtensionPoint e : exts.values()) {
+            CascadeWrapper w = (CascadeWrapper) e;
+
+            for (CascadeAddOnExtensionPoint a : pluginRgty.getExtensionList(CascadeAddOnExtensionPoint.class)) {
+                CascadeExtensionPoint c = a.cascadeAddOn(e.getCascadeResourceName());
+                if (c != null) {
+                    if (!c.getCascadeResourceName().equals(w.getCascadeResourceName())) {
+                        throw new CloudRuntimeException(String.format("the resourceName[%s] of the addon returned" +
+                                " by %s is not %s. The plugin cannot populate an cascade addon with different" +
+                                " resource name", c.getCascadeResourceName(), a.getClass(), w.getCascadeResourceName()));
+                    }
+
+                    w.addons.add(c);
+                }
+            }
+
         }
 
         populateCascadeNodes(exts);

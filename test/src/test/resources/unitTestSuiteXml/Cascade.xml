@@ -36,4 +36,5 @@
     <TestCase class="org.zstack.test.cascade.TestCascadeDeletion34"/>
     <TestCase class="org.zstack.test.cascade.TestCascadeDeletion35"/>
     <TestCase class="org.zstack.test.cascade.TestCascadeDeletion36"/>
+    <TestCase class="org.zstack.test.cascade.TestCascadeDeletionAddon"/>
 </UnitTestSuiteConfig>
