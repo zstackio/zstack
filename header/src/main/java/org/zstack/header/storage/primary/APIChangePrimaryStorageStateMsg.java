@@ -56,7 +56,7 @@ public class APIChangePrimaryStorageStateMsg extends APIMessage implements Prima
      *
      * for details of primary storage states, see state of :ref:`PrimaryStorageInventory`
      */
-	@APIParam(validValues = {"enable", "disable"})
+	@APIParam(validValues = {"enable", "disable", "maintain"})
 	private String stateEvent;
 
 	public APIChangePrimaryStorageStateMsg(String uuid, String stateEvent) {

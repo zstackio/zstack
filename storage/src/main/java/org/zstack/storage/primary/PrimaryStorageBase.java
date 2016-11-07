@@ -8,6 +8,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
@@ -39,6 +40,8 @@ import org.zstack.header.storage.snapshot.ChangeVolumeSnapshotStatusReply;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageReply;
+import org.zstack.header.vm.StopVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
@@ -47,6 +50,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -754,6 +758,47 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         });
     }
 
+    private  void stopAllVms(List<String> vmUuids) {
+        final List<StopVmInstanceMsg> msgs = new ArrayList<StopVmInstanceMsg>();
+        for (String vmUuid : vmUuids) {
+            StopVmInstanceMsg msg = new StopVmInstanceMsg();
+            msg.setVmInstanceUuid(vmUuid);
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
+            msgs.add(msg);
+        }
+
+        bus.send(msgs, new CloudBusListCallBack() {
+            @Override
+            public void run(List<MessageReply> replies) {
+                StringBuilder sb = new StringBuilder();
+                boolean success = true;
+                for (MessageReply r : replies) {
+                    if (!r.isSuccess()) {
+                        StopVmInstanceMsg msg = msgs.get(replies.indexOf(r));
+                        String err = String.format("\nfailed to stop vm[uuid:%s] on primary storage[uuid:%s], %s",
+                                msg.getVmInstanceUuid(), self.getUuid(), r.getError());
+                        sb.append(err);
+                        success = false;
+                    }
+                }
+
+                if (!success) {
+                    logger.warn(sb.toString());
+                }
+
+            }
+        });
+
+    }
+
+    private List<String> getAllVmsUuid(String PrimaryStorageUuid) {
+        String sql = "select vm.uuid from VmInstanceVO vm, VolumeVO vol where vol.primaryStorageUuid =:uuid and vol.vmInstanceUuid = vm.uuid";
+        Query q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("uuid", PrimaryStorageUuid);
+        List<String> vmUUids= q.getResultList();
+        return vmUUids;
+    }
+
     protected void handle(APIChangePrimaryStorageStateMsg msg) {
         APIChangePrimaryStorageStateEvent evt = new APIChangePrimaryStorageStateEvent(msg.getId());
 
@@ -770,6 +815,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
 
         extpEmitter.beforeChange(self, event);
+        if (PrimaryStorageStateEvent.maintain == event) {
+            List<String> vmUuids = getAllVmsUuid(msg.getPrimaryStorageUuid());
+            stopAllVms(vmUuids);
+        }
         changeStateHook(event, nextState);
         self.setState(nextState);
         self = dbf.updateAndRefresh(self);
