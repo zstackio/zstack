@@ -6,6 +6,7 @@ import org.zstack.appliancevm.ApplianceVmType;
 import org.zstack.appliancevm.ApplianceVmVO;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -32,6 +33,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by xing5 on 2016/10/31.
@@ -45,6 +47,8 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
     private AnsibleFacade asf;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private List<String> vyosPostCreateFlows;
     private List<String> vyosPostStartFlows;
@@ -57,6 +61,12 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
     private FlowChainBuilder postDestroyFlowsBuilder;
     private FlowChainBuilder reconnectFlowsBuilder;
     private NetworkServiceProviderVO providerVO;
+
+    private List<VyosPostCreateFlowExtensionPoint> postCreateFlowExtensionPoints;
+    private List<VyosPostDestroyFlowExtensionPoint> postDestroyFlowExtensionPoints;
+    private List<VyosPostRebootFlowExtensionPoint> postRebootFlowExtensionPoints;
+    private List<VyosPostReconnectFlowExtensionPoint> postReconnectFlowExtensionPoints;
+    private List<VyosPostStartFlowExtensionPoint> postStartFlowExtensionPoints;
 
     private final static List<String> supportedL2NetworkTypes = new ArrayList<>();
 
@@ -86,15 +96,21 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
     }
 
     public List<Flow> getPostCreateFlows() {
-        return postCreateFlowsBuilder.getFlows();
+        List<Flow> flows = postCreateFlowsBuilder.getFlows();
+        flows.addAll(postCreateFlowExtensionPoints.stream().map(VyosPostCreateFlowExtensionPoint::vyosPostCreateFlow).collect(Collectors.toList()));
+        return flows;
     }
 
     public List<Flow> getPostStartFlows() {
-        return postStartFlowsBuilder.getFlows();
+        List<Flow> flows = postStartFlowsBuilder.getFlows();
+        flows.addAll(postStartFlowExtensionPoints.stream().map(VyosPostStartFlowExtensionPoint::vyosPostStartFlow).collect(Collectors.toList()));
+        return flows;
     }
 
     public List<Flow> getPostRebootFlows() {
-        return postRebootFlowsBuilder.getFlows();
+        List<Flow> flows = postRebootFlowsBuilder.getFlows();
+        flows.addAll(postRebootFlowExtensionPoints.stream().map(VyosPostRebootFlowExtensionPoint::vyosPostRebootFlow).collect(Collectors.toList()));
+        return flows;
     }
 
     public List<Flow> getPostStopFlows() {
@@ -106,11 +122,17 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
     }
 
     public List<Flow> getPostDestroyFlows() {
-        return postDestroyFlowsBuilder.getFlows();
+        List<Flow> flows = postDestroyFlowsBuilder.getFlows();
+        flows.addAll(postDestroyFlowExtensionPoints.stream().map(VyosPostDestroyFlowExtensionPoint::vyosPostDestroyFlow).collect(Collectors.toList()));
+        return flows;
     }
 
     public FlowChain getReconnectFlowChain() {
-        return reconnectFlowsBuilder.build();
+        FlowChain c = reconnectFlowsBuilder.build();
+        for (VyosPostReconnectFlowExtensionPoint ext : postReconnectFlowExtensionPoints) {
+            c.then(ext.vyosPostReconnectFlow());
+        }
+        return c;
     }
 
     @Override
@@ -136,7 +158,16 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
     @Override
     public boolean start() {
         buildWorkFlowBuilder();
+        populateExtensions();
         return true;
+    }
+
+    private void populateExtensions() {
+        postCreateFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostCreateFlowExtensionPoint.class);
+        postDestroyFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostDestroyFlowExtensionPoint.class);
+        postRebootFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostRebootFlowExtensionPoint.class);
+        postReconnectFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostReconnectFlowExtensionPoint.class);
+        postStartFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostStartFlowExtensionPoint.class);
     }
 
     @Override
@@ -163,6 +194,8 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
         vo.getNetworkServiceTypes().add(NetworkServiceType.PortForwarding.toString());
         vo.getNetworkServiceTypes().add(EipConstant.EIP_NETWORK_SERVICE_TYPE);
         vo.getNetworkServiceTypes().add(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+        //hard code for the premium plugin
+        vo.getNetworkServiceTypes().add("IPsec");
         vo.setType(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE);
         providerVO = dbf.persistAndRefresh(vo);
     }
@@ -185,5 +218,9 @@ public class VyosVmFactory extends VirtualRouterApplianceVmFactory implements Co
         String info = String.format("successfully attach network service provider[uuid:%s, name:%s, type:%s] to l2network[uuid:%s, name:%s, type:%s]",
                 providerVO.getUuid(), providerVO.getName(), providerVO.getType(), l2Network.getUuid(), l2Network.getName(), l2Network.getType());
         logger.debug(info);
+    }
+
+    public String getNetworkServiceProviderUuid() {
+        return providerVO.getUuid();
     }
 }

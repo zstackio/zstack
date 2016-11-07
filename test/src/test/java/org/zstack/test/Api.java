@@ -62,6 +62,7 @@ import org.zstack.header.simulator.storage.backup.SimulatorBackupStorageDetails;
 import org.zstack.header.simulator.storage.primary.APIAddSimulatorPrimaryStorageMsg;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageConstant;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageDetails;
+import org.zstack.ipsec.*;
 import org.zstack.storage.ceph.backup.*;
 import org.zstack.storage.ceph.primary.*;
 import org.zstack.storage.primary.local.*;
@@ -104,6 +105,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.zstack.utils.CollectionDSL.list;
@@ -4525,5 +4527,41 @@ public class Api implements CloudBusEventListener {
         sender.setTimeout(timeout);
         APIGetCandidateIsoForAttachingVmReply reply = sender.call(msg, APIGetCandidateIsoForAttachingVmReply.class);
         return reply.getInventories();
+    }
+
+    public IPsecConnectionInventory createIPsecConnection(IPsecConnectionInventory inv, List<String> peerCidrs, SessionInventory session) throws ApiSenderException {
+        APICreateIPsecConnectionMsg msg = new APICreateIPsecConnectionMsg();
+        msg.setName(inv.getName());
+        msg.setDescription(inv.getDescription());
+        msg.setSession(session == null ? adminSession : session);
+        msg.setAuthKey(inv.getAuthKey());
+        msg.setAuthMode(inv.getAuthMode());
+        msg.setIkeAuthAlgorithm(inv.getIkeAuthAlgorithm());
+        msg.setIkeDhGroup(inv.getIkeDhGroup());
+        msg.setIkeEncryptionAlgorithm(inv.getIkeEncryptionAlgorithm());
+        msg.setL3NetworkUuid(inv.getL3NetworkUuid());
+        msg.setPeerAddress(inv.getPeerAddress());
+        msg.setPeerCidrs(peerCidrs);
+        msg.setPfs(inv.getPfs());
+        msg.setPolicyAuthAlgorithm(inv.getPolicyAuthAlgorithm());
+        msg.setPolicyMode(inv.getPolicyMode());
+        msg.setPolicyEncryptionAlgorithm(inv.getPolicyEncryptionAlgorithm());
+        msg.setPolicyAuthAlgorithm(inv.getPolicyAuthAlgorithm());
+        msg.setVipUuid(inv.getVipUuid());
+        msg.setTransformProtocol(inv.getTransformProtocol());
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICreateIPsecConnectionEvent evt = sender.send(msg, APICreateIPsecConnectionEvent.class);
+        return evt.getInventory();
+    }
+
+    public void deleteIPsecConnection(String uuid, SessionInventory session) throws ApiSenderException {
+        APIDeleteIPsecConnectionMsg msg = new APIDeleteIPsecConnectionMsg();
+        msg.setUuid(uuid);
+        msg.setSession(session == null ? adminSession : session);
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        sender.send(msg, APIDeleteIPsecConnectionEvent.class);
+        return;
     }
 }

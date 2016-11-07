@@ -200,6 +200,8 @@ public class IpRangeInventory implements Serializable{
         ipr.setNetmask(msg.getNetmask());
         ipr.setGateway(msg.getGateway());
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
+        SubnetUtils su = new SubnetUtils(msg.getGateway(), msg.getNetmask());
+        ipr.setNetworkCidr(su.getInfo().getCidrSignature());
         ipr.setUuid(msg.getResourceUuid());
         return ipr;
     }

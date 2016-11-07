@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -42,6 +43,11 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            trigger.next();
+            return;
+        }
+
         boolean isReconnect = Boolean.valueOf((String) data.get(Params.isReconnect.toString()));
 
         if (!isReconnect && !ApplianceVmGlobalConfig.DEPLOY_AGENT_ON_START.value(Boolean.class)) {

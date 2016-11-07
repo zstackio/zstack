@@ -77,6 +77,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -101,6 +102,12 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private FlowChainBuilder postRebootFlowsBuilder;
     private FlowChainBuilder postDestroyFlowsBuilder;
     private FlowChainBuilder reconnectFlowsBuilder;
+
+    private List<VirtualRouterPostCreateFlowExtensionPoint> postCreateFlowExtensionPoints;
+    private List<VirtualRouterPostStartFlowExtensionPoint> postStartFlowExtensionPoints;
+    private List<VirtualRouterPostRebootFlowExtensionPoint> postRebootFlowExtensionPoints;
+    private List<VirtualRouterPostReconnectFlowExtensionPoint> postReconnectFlowExtensionPoints;
+    private List<VirtualRouterPostDestroyFlowExtensionPoint> postDestroyFlowExtensionPoints;
 
 	static {
 		supportedL2NetworkTypes.add(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE);
@@ -478,6 +485,12 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             }
 			hypervisorBackends.put(extp.getVirtualRouterSupportedHypervisorType().toString(), extp);
 		}
+
+		postCreateFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostCreateFlowExtensionPoint.class);
+        postStartFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostStartFlowExtensionPoint.class);
+        postRebootFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostRebootFlowExtensionPoint.class);
+        postReconnectFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostReconnectFlowExtensionPoint.class);
+        postDestroyFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostDestroyFlowExtensionPoint.class);
 	}
 	
 	private NetworkServiceProviderVO getRouterVO() {
@@ -569,7 +582,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     @Override
     public List<String> selectL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType) {
         if (candidate.isEmpty()) {
-            return new ArrayList<String>(0);
+            return new ArrayList<>(0);
         }
         
         SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
@@ -775,17 +788,23 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public List<Flow> getPostCreateFlows() {
-        return postCreateFlowsBuilder.getFlows();
+        List<Flow> flows = postCreateFlowsBuilder.getFlows();
+        flows.addAll(postCreateFlowExtensionPoints.stream().map(VirtualRouterPostCreateFlowExtensionPoint::virtualRouterPostCreateFlow).collect(Collectors.toList()));
+        return flows;
     }
 
     @Override
     public List<Flow> getPostStartFlows() {
-        return postStartFlowsBuilder.getFlows();
+        List<Flow> flows = postStartFlowsBuilder.getFlows();
+        flows.addAll(postStartFlowExtensionPoints.stream().map(VirtualRouterPostStartFlowExtensionPoint::virtualRouterPostStartFlow).collect(Collectors.toList()));
+        return flows;
     }
 
     @Override
     public List<Flow> getPostRebootFlows() {
-        return postRebootFlowsBuilder.getFlows();
+        List<Flow> flows = postRebootFlowsBuilder.getFlows();
+        flows.addAll(postRebootFlowExtensionPoints.stream().map(VirtualRouterPostRebootFlowExtensionPoint::virtualRouterPostRebootFlow).collect(Collectors.toList()));
+        return flows;
     }
 
     @Override
@@ -800,12 +819,18 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public List<Flow> getPostDestroyFlows() {
-        return postDestroyFlowsBuilder.getFlows();
+        List<Flow> flows = postDestroyFlowsBuilder.getFlows();
+        flows.addAll(postDestroyFlowExtensionPoints.stream().map(VirtualRouterPostDestroyFlowExtensionPoint::virtualRouterPostDestroyFlow).collect(Collectors.toList()));
+        return flows;
     }
 
     @Override
     public FlowChain getReconnectFlowChain() {
-        return reconnectFlowsBuilder.build();
+        FlowChain chain = reconnectFlowsBuilder.build();
+        for (VirtualRouterPostReconnectFlowExtensionPoint ext : postReconnectFlowExtensionPoints) {
+            chain.then(ext.virtualRouterPostReconnectFlow());
+        }
+        return chain;
     }
 
     @Override

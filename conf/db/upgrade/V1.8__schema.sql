@@ -68,3 +68,37 @@ ALTER TABLE VCenterVO ADD CONSTRAINT fkVCenterVOZoneEO FOREIGN KEY (zoneUuid) RE
 ALTER TABLE SchedulerVO CHANGE startDate  startTime  timestamp;
 ALTER TABLE SchedulerVO CHANGE stopDate  stopTime  timestamp NULL DEFAULT NULL;
 UPDATE SchedulerVO SET stopTime = NULL;
+
+CREATE TABLE `zstack`.`IPsecConnectionVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `name` varchar(255) NOT NULL,
+    `description` varchar(2048) DEFAULT NULL,
+    `l3NetworkUuid` varchar(32) NOT NULL,
+    `peerAddress` varchar(255) NOT NULL,
+    `authMode` varchar(255) NOT NULL,
+    `authKey` text NOT NULL,
+    `vipUuid` varchar(32) NOT NULL,
+    `ikeAuthAlgorithm` varchar(32) NOT NULL,
+    `ikeEncryptionAlgorithm` varchar(32) NOT NULL,
+    `ikeDhGroup` int unsigned NOT NULL,
+    `policyAuthAlgorithm` varchar(32) NOT NULL,
+    `policyEncryptionAlgorithm` varchar(32) NOT NULL,
+    `pfs` varchar(32) DEFAULT NULL,
+    `policyMode` varchar(32) NOT NULL,
+    `transformProtocol` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `zstack`.`IPsecPeerCidrVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `cidr` varchar(255) NOT NULL,
+    `description` varchar(2048) DEFAULT NULL,
+    `connectionUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
