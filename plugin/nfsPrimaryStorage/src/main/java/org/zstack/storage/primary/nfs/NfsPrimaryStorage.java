@@ -442,7 +442,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     private void handle(final ResetRootVolumeFromImageOnPrimaryStorageMsg msg) {
-        final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
+        final ResetRootVolumeFromImageOnPrimaryStorageReply reply = new ResetRootVolumeFromImageOnPrimaryStorageReply();
 
         HostInventory destHost = factory.getConnectedHostForOperation(PrimaryStorageInventory.valueOf(self));
         if (destHost == null) {
