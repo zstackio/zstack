@@ -25,7 +25,7 @@
     <config>
         <name>enableResetPassword</name>
         <description>enable reset password</description>
-        <defaultValue>false</defaultValue>
+        <defaultValue>true</defaultValue>
         <type>java.lang.Boolean</type>
         <category>image</category>
     </config>
