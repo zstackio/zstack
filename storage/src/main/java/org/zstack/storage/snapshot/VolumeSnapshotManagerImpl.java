@@ -458,8 +458,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             handle((APIGetVolumeSnapshotTreeMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotSchedulerMsg) {
             handle((APICreateVolumeSnapshotSchedulerMsg) msg);
-        } else if (msg instanceof APIResetRootVolumeFromImageMsg) {
-            handle((APIResetRootVolumeFromImageMsg) msg);
+        } else if (msg instanceof APIReInitVmInstanceMsg) {
+            handle((APIReInitVmInstanceMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -712,7 +712,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         return list(quota);
     }
 
-    private void handle(final APIResetRootVolumeFromImageMsg msg) {
+    private void handle(final APIReInitVmInstanceMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -731,15 +731,16 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
             @Override
             public String getName() {
-                return String.format("reset-volume-%s-from-image", msg.getRootVolumeUuid());
+                return String.format("re-init-vm-%s", msg.getVmInstanceUuid());
             }
         });
     }
 
-    private void resetRootVolumeFromImage(final APIResetRootVolumeFromImageMsg msg, final NoErrorCompletion completion) {
-        final APIResetRootVolumeFromImageEvent evt = new APIResetRootVolumeFromImageEvent(msg.getId());
+    private void resetRootVolumeFromImage(final APIReInitVmInstanceMsg msg, final NoErrorCompletion completion) {
+        final APIReInitVmInstanceEvent evt = new APIReInitVmInstanceEvent(msg.getId());
 
-        VolumeVO rootVolume = dbf.findByUuid(msg.getRootVolumeUuid(), VolumeVO.class);
+        VmInstanceVO vmInstanceVO = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        VolumeVO rootVolume = dbf.findByUuid(vmInstanceVO.getRootVolumeUuid(), VolumeVO.class);
         VolumeInventory rootVolumeInventory = VolumeInventory.valueOf(rootVolume);
         ImageInventory imageInventory = ImageInventory.valueOf(dbf.findByUuid(rootVolume.getRootImageUuid(), ImageVO.class));
 

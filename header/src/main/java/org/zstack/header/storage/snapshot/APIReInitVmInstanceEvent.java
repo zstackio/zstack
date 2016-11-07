@@ -5,12 +5,12 @@ import org.zstack.header.message.APIEvent;
 /**
  * Created by miao on 11/3/16.
  */
-public class APIResetRootVolumeFromImageEvent extends APIEvent {
-    public APIResetRootVolumeFromImageEvent(String apiId) {
+public class APIReInitVmInstanceEvent extends APIEvent {
+    public APIReInitVmInstanceEvent(String apiId) {
         super(apiId);
     }
 
-    public APIResetRootVolumeFromImageEvent() {
+    public APIReInitVmInstanceEvent() {
         super(null);
     }
 }

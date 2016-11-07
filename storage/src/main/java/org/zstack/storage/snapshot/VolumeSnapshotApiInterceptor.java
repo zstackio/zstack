@@ -18,6 +18,7 @@ import org.zstack.header.storage.backup.BackupStorageZoneRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 
 import javax.persistence.Tuple;
@@ -65,8 +66,8 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetVolumeSnapshotTreeMsg) msg);
         } else if (msg instanceof APIBackupVolumeSnapshotMsg) {
             validate((APIBackupVolumeSnapshotMsg) msg);
-        } else if (msg instanceof APIResetRootVolumeFromImageMsg) {
-            validate((APIResetRootVolumeFromImageMsg) msg);
+        } else if (msg instanceof APIReInitVmInstanceMsg) {
+            validate((APIReInitVmInstanceMsg) msg);
         }
 
         setServiceId(msg);
@@ -180,8 +181,9 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validate(APIResetRootVolumeFromImageMsg msg) {
-        VolumeVO vvo = dbf.findByUuid(msg.getRootVolumeUuid(), VolumeVO.class);
+    private void validate(APIReInitVmInstanceMsg msg) {
+        VmInstanceVO vmInstanceVO = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        VolumeVO vvo = dbf.findByUuid(vmInstanceVO.getRootVolumeUuid(), VolumeVO.class);
         ImageVO ivo = dbf.findByUuid(vvo.getRootImageUuid(), ImageVO.class);
         if (!ivo.getFormat().equals(ImageConstant.QCOW2_FORMAT_STRING)) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
