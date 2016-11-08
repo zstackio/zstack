@@ -13,10 +13,10 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
@@ -504,7 +504,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         SimpleQuery<SharedResourceVO> sq2 = dbf.createQuery(SharedResourceVO.class);
         sq2.add(SharedResourceVO_.resourceUuid, Op.EQ, resourceUuid);
         sq2.add(SharedResourceVO_.toPublic, Op.EQ, 1);
-        if (sq2.find() != null) {
+        List<SharedResourceVO> l = sq2.list();
+        if (l != null && !l.isEmpty()) {
             return true;
         }
 
