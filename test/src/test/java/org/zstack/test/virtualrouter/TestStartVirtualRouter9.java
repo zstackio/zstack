@@ -3,7 +3,6 @@ package org.zstack.test.virtualrouter;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.appliancevm.ApplianceVm;
 import org.zstack.appliancevm.ApplianceVmVO;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;

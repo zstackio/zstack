@@ -236,8 +236,9 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     public Map<String, Object> prepareBootstrapInformation(VmInstanceSpec spec) {
         VmNicInventory mgmtNic = null;
         String defaultL3Uuid;
-        ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
+        int sshPort;
         if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate) {
+            ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
             for (VmNicInventory nic : spec.getDestNics()) {
                 if (nic.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid())) {
                     mgmtNic = nic;
@@ -247,11 +248,14 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
             DebugUtils.Assert(mgmtNic!=null, String.format("cannot find management nic for appliance vm[uuid:%s]", aspec.getUuid()));
             defaultL3Uuid = aspec.getDefaultRouteL3Network() != null ? aspec.getDefaultRouteL3Network().getUuid() : mgmtNic.getL3NetworkUuid();
+            sshPort = aspec.getSshPort();
         } else {
             ApplianceVmVO avo = dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
             ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(avo);
             mgmtNic = ainv.getManagementNic();
             defaultL3Uuid = ainv.getDefaultRouteL3NetworkUuid();
+            //TODO: make it configurable
+            sshPort = 22;
         }
 
         Map<String, Object> ret = new HashMap<String, Object>();
@@ -294,7 +298,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
         String publicKey = asf.getPublicKey();
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
-        ret.put(BootstrapParams.sshPort.toString(), aspec.getSshPort());
+        ret.put(BootstrapParams.sshPort.toString(), sshPort);
 
         return ret;
     }
