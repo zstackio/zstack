@@ -377,6 +377,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         cmd.url = msg.getImageInventory().getUrl();
         cmd.installPath = makeImageInstallPath(msg.getImageInventory().getUuid());
         cmd.imageUuid = msg.getImageInventory().getUuid();
+        cmd.inject = msg.isInject();
 
         final DownloadImageReply reply = new DownloadImageReply();
         httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
