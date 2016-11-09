@@ -39,6 +39,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -494,8 +495,9 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         new HostCapacityUpdater(hostUuid).run(new HostCapacityUpdaterRunnable() {
             @Override
             public HostCapacityVO call(HostCapacityVO cap) {
-                long availCpu = cap.getAvailableCpu() + cpu;
-                availCpu = availCpu > cap.getTotalCpu() ? cap.getTotalCpu() : availCpu;
+                {
+                    long availCpu = cap.getAvailableCpu() + cpu;
+                    availCpu = availCpu > cap.getTotalCpu() ? cap.getTotalCpu() : availCpu;
                 /*
                 if (availCpu > cap.getTotalCpu()) {
                     throw new CloudRuntimeException(String.format("invalid cpu capcity of the host[uuid:%s], available cpu[%s]" +
@@ -503,16 +505,28 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 }
                 */
 
-                cap.setAvailableCpu(availCpu);
-
-                long availMemory = cap.getAvailableMemory() + ratioMgr.calculateMemoryByRatio(hostUuid, memory);
-                if (availMemory > cap.getTotalMemory()) {
-                    throw new CloudRuntimeException(String.format("invalid memory capacity of host[uuid:%s], available memory[%s] is greater than total memory[%s]",
-                            hostUuid, availMemory, cap.getTotalMemory()));
+                    cap.setAvailableCpu(availCpu);
                 }
 
-                cap.setAvailableMemory(availMemory);
+                {
+                    long deltaMemory = ratioMgr.calculateMemoryByRatio(hostUuid, memory);
+                    long availMemory = cap.getAvailableMemory() + deltaMemory;
+                    if (availMemory > cap.getTotalMemory()) {
+                        throw new CloudRuntimeException(
+                                String.format("invalid memory capacity of host[uuid:%s]," +
+                                                " available memory[%s] is greater than total memory[%s]." +
+                                                " Available Memory before is [%s], Delta Memory is [%s].",
+                                        hostUuid,
+                                        new DecimalFormat(",###").format(availMemory),
+                                        new DecimalFormat(",###").format(cap.getTotalMemory()),
+                                        new DecimalFormat(",###").format(cap.getAvailableMemory()),
+                                        new DecimalFormat(",###").format(deltaMemory)
+                                )
+                        );
+                    }
 
+                    cap.setAvailableMemory(availMemory);
+                }
                 return cap;
             }
         });
