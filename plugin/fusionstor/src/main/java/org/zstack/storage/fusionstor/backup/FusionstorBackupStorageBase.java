@@ -840,6 +840,8 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
             handle((APIAddMonToFusionstorBackupStorageMsg) msg);
         } else if (msg instanceof APIRemoveMonFromFusionstorBackupStorageMsg) {
             handle((APIRemoveMonFromFusionstorBackupStorageMsg) msg);
+        } else if (msg instanceof APIUpdateFusionstorBackupStorageMonMsg) {
+            handle((APIUpdateFusionstorBackupStorageMonMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
@@ -1016,6 +1018,29 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                 });
             }
         }).start();
+    }
+
+    private void handle(final APIUpdateFusionstorBackupStorageMonMsg msg) {
+        final APIUpdateMonToFusionstorBackupStorageEvent evt = new APIUpdateMonToFusionstorBackupStorageEvent(msg.getId());
+        FusionstorBackupStorageMonVO monvo = dbf.findByUuid(msg.getMonUuid(), FusionstorBackupStorageMonVO.class);
+        if (msg.getHostname() != null) {
+            monvo.setHostname(msg.getHostname());
+        }
+        if (msg.getMonPort() != null && msg.getMonPort() > 0 && msg.getMonPort() <= 65535) {
+            monvo.setMonPort(msg.getMonPort());
+        }
+        if (msg.getSshPort() != null && msg.getSshPort() > 0 && msg.getSshPort() <= 65535) {
+            monvo.setSshPort(msg.getSshPort());
+        }
+        if (msg.getSshUsername() != null) {
+            monvo.setSshUsername(msg.getSshUsername());
+        }
+        if (msg.getSshPassword() != null) {
+            monvo.setSshPassword(msg.getSshPassword());
+        }
+        dbf.update(monvo);
+        evt.setInventory(FusionstorBackupStorageInventory.valueOf(dbf.reload(getSelf())));
+        bus.publish(evt);
     }
 
     @Override
