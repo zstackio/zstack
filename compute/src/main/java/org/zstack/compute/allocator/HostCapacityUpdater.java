@@ -58,7 +58,8 @@ public class HostCapacityUpdater {
                             "total memory: %s --> %s\n" +
                             "available memory: %s --> %s\n" +
                             "total physical memory: %s --> %s\n" +
-                            "available physical memory: %s --> %s\n", caller.getFileName(), caller.getMethodName(), caller.getLineNumber(), capacityVO.getUuid(),
+                            "available physical memory: %s --> %s\n",
+                    caller.getFileName(), caller.getMethodName(), caller.getLineNumber(), capacityVO.getUuid(),
                     originalCopy.getTotalCpu(), capacityVO.getTotalCpu(),
                     originalCopy.getAvailableCpu(), capacityVO.getAvailableCpu(),
                     originalCopy.getTotalMemory(), capacityVO.getTotalMemory(),

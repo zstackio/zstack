@@ -14,11 +14,12 @@ import org.zstack.header.host.HostVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
-	private static final CLogger logger = Utils.getLogger(HostCapacityAllocatorFlow.class);
+    private static final CLogger logger = Utils.getLogger(HostCapacityAllocatorFlow.class);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -29,17 +30,14 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
     @Autowired
     private HostCpuOverProvisioningManager cpuRatioMgr;
 
-	private List<HostVO> allocate(List<HostVO> vos, long cpu, long memory) {
-        List<HostVO> ret = new ArrayList<HostVO>();
-        for (HostVO hvo : vos) {
-            if (hvo.getCapacity().getAvailableCpu() >= cpu
-                    && ratioMgr.calculateHostAvailableMemoryByRatio(hvo.getUuid(), hvo.getCapacity().getAvailableMemory()) >= memory) {
-                ret.add(hvo);
-            }
-        }
+    private List<HostVO> allocate(List<HostVO> vos, long cpu, long memory) {
+        List<HostVO> ret = vos.stream()
+                .filter(hvo -> hvo.getCapacity().getAvailableCpu() >= cpu
+                        && ratioMgr.calculateHostAvailableMemoryByRatio(hvo.getUuid(), hvo.getCapacity().getAvailableMemory()) >= memory)
+                .collect(Collectors.toList());
 
         return ret;
-	}
+    }
 
     private boolean isNoCpu(int cpu) {
         return !candidates.stream().anyMatch(vo -> vo.getCapacity().getCpuNum() >= cpu);
