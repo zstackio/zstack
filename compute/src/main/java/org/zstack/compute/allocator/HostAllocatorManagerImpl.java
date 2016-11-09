@@ -147,16 +147,16 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             return;
         }
 
-        class Struct {
+        class HostUsedCpuMem {
             String hostUuid;
             Long usedMemory;
             Long usedCpu;
         }
 
-        List<Struct> ss = new Callable<List<Struct>>() {
+        List<HostUsedCpuMem> hostUsedCpuMemList = new Callable<List<HostUsedCpuMem>>() {
             @Override
             @Transactional(readOnly = true)
-            public List<Struct> call() {
+            public List<HostUsedCpuMem> call() {
                 String sql = "select sum(vm.memorySize), vm.hostUuid, sum(vm.cpuNum)" +
                         " from VmInstanceVO vm" +
                         " where vm.hostUuid in (:hostUuids)" +
@@ -171,9 +171,9 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                         VmInstanceState.Stopped));
                 List<Tuple> ts = q.getResultList();
 
-                List<Struct> ret = new ArrayList<>();
+                List<HostUsedCpuMem> ret = new ArrayList<>();
                 for (Tuple t : ts) {
-                    Struct s = new Struct();
+                    HostUsedCpuMem s = new HostUsedCpuMem();
                     s.hostUuid = t.get(1, String.class);
 
                     if (t.get(0, Long.class) == null) {
@@ -188,22 +188,20 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             }
         }.call();
 
-        List<String> hostHasVms = CollectionUtils.transformToList(ss, new Function<String, Struct>() {
+        List<String> hostHasVms = CollectionUtils.transformToList(hostUsedCpuMemList, new Function<String, HostUsedCpuMem>() {
             @Override
-            public String call(Struct arg) {
+            public String call(HostUsedCpuMem arg) {
                 return arg.hostUuid;
             }
         });
 
-        for (String huuid : hostUuids) {
-            if (!hostHasVms.contains(huuid)) {
-                Struct s = new Struct();
-                s.hostUuid = huuid;
-                ss.add(s);
-            }
-        }
+        hostUuids.stream().filter(huuid -> !hostHasVms.contains(huuid)).forEach(huuid -> {
+            HostUsedCpuMem s = new HostUsedCpuMem();
+            s.hostUuid = huuid;
+            hostUsedCpuMemList.add(s);
+        });
 
-        for (final Struct s : ss) {
+        for (final HostUsedCpuMem s : hostUsedCpuMemList) {
             new HostCapacityUpdater(s.hostUuid).run(new HostCapacityUpdaterRunnable() {
                 @Override
                 public HostCapacityVO call(HostCapacityVO cap) {
@@ -222,7 +220,9 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     logger.debug(String.format("re-calculated available capacity on the host[uuid:%s]:" +
                                     "\n[available memory] before: %s, now: %s" +
                                     "\n[total cpu] before: %s, now: %s" +
-                                    "\n[available cpu] before: %s, now :%s", s.hostUuid, before, avail,
+                                    "\n[available cpu] before: %s, now :%s",
+                            s.hostUuid,
+                            before, avail,
                             totalCpuBefore, totalCpu,
                             beforeCpu, availCpu));
                     return cap;
@@ -369,24 +369,36 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             @Transactional(readOnly = true)
             public Tuple call() {
                 if (msg.getHostUuids() != null && !msg.getHostUuids().isEmpty()) {
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory) from HostCapacityVO hc, HostVO host where hc.uuid in (:hostUuids)" +
-                            " and hc.uuid = host.uuid and host.state = :hstate and host.status = :hstatus";
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory)" +
+                            " from HostCapacityVO hc, HostVO host" +
+                            " where hc.uuid in (:hostUuids)" +
+                            " and hc.uuid = host.uuid" +
+                            " and host.state = :hstate" +
+                            " and host.status = :hstatus";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("hostUuids", msg.getHostUuids());
                     q.setParameter("hstate", HostState.Enabled);
                     q.setParameter("hstatus", HostStatus.Connected);
                     return q.getSingleResult();
                 } else if (msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty()) {
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory) from " +
-                            "HostCapacityVO hc, HostVO host where hc.uuid = host.uuid and host.clusterUuid in (:clusterUuids) and host.state = :hstate and host.status = :hstatus";
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory)" +
+                            " from HostCapacityVO hc, HostVO host" +
+                            " where hc.uuid = host.uuid" +
+                            " and host.clusterUuid in (:clusterUuids)" +
+                            " and host.state = :hstate" +
+                            " and host.status = :hstatus";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("clusterUuids", msg.getClusterUuids());
                     q.setParameter("hstate", HostState.Enabled);
                     q.setParameter("hstatus", HostStatus.Connected);
                     return q.getSingleResult();
                 } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory) from HostCapacityVO hc, HostVO host" +
-                            " where hc.uuid = host.uuid and host.zoneUuid in (:zoneUuids) and host.state = :hstate and host.status = :hstatus";
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory)" +
+                            " from HostCapacityVO hc, HostVO host" +
+                            " where hc.uuid = host.uuid" +
+                            " and host.zoneUuid in (:zoneUuids)" +
+                            " and host.state = :hstate" +
+                            " and host.status = :hstatus";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("zoneUuids", msg.getZoneUuids());
                     q.setParameter("hstate", HostState.Enabled);

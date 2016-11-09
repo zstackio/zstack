@@ -37,7 +37,7 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
     @Autowired
     private HostCapacityOverProvisioningManager ratioMgr;
 
-    private Map<String, HostReservedCapacityExtensionPoint> exts = new HashMap<String, HostReservedCapacityExtensionPoint>();
+    private Map<String, HostReservedCapacityExtensionPoint> exts = new HashMap<>();
 
     private void populateExtensions() {
         for (HostReservedCapacityExtensionPoint extp : pluginRgty.getExtensionList(HostReservedCapacityExtensionPoint.class)) {
@@ -62,9 +62,9 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         return true;
     }
 
-    class ReservedCapacityFinder {
+    private class ReservedCapacityFinder {
         List<String> hostUuids;
-        Map<String, ReservedHostCapacity> result = new HashMap<String, ReservedHostCapacity>();
+        Map<String, ReservedHostCapacity> result = new HashMap<>();
 
         private void findReservedCapacityByHostTag() {
             if (!HostAllocatorGlobalConfig.HOST_LEVEL_RESERVE_CAPACITY.value(Boolean.class)) {
@@ -95,14 +95,14 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
             clusterq.select(HostVO_.uuid, HostVO_.clusterUuid);
             clusterq.add(HostVO_.uuid, Op.IN, hostUuids);
             List<Tuple> clusterTuple = clusterq.listTuple();
-            Map<String, List<String>> clusterHostUuidMap = new HashMap<String, List<String>>(clusterTuple.size());
-            List<String> clusterUuids = new ArrayList<String>(clusterTuple.size());
+            Map<String, List<String>> clusterHostUuidMap = new HashMap<>(clusterTuple.size());
+            List<String> clusterUuids = new ArrayList<>(clusterTuple.size());
             for (Tuple t : clusterTuple) {
                 String huuid = t.get(0, String.class);
                 String cuuid = t.get(1, String.class);
                 List<String> huuids = clusterHostUuidMap.get(cuuid);
                 if (huuids == null) {
-                    huuids = new ArrayList<String>();
+                    huuids = new ArrayList<>();
                     clusterHostUuidMap.put(cuuid, huuids);
                 }
                 huuids.add(huuid);
@@ -147,14 +147,14 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
             zoneq.select(HostVO_.uuid, HostVO_.zoneUuid);
             zoneq.add(HostVO_.uuid, Op.IN, hostUuids);
             List<Tuple> zoneTuples = zoneq.listTuple();
-            List<String> zoneUuids = new ArrayList<String>();
-            Map<String, List<String>> zoneHostUuidMap = new HashMap<String, List<String>>();
+            List<String> zoneUuids = new ArrayList<>();
+            Map<String, List<String>> zoneHostUuidMap = new HashMap<>();
             for (Tuple t : zoneTuples) {
                 String huuid = t.get(0, String.class);
                 String zuuid = t.get(1, String.class);
                 List<String> huuids = zoneHostUuidMap.get(zuuid);
                 if (huuids == null) {
-                    huuids = new ArrayList<String>();
+                    huuids = new ArrayList<>();
                     zoneHostUuidMap.put(zuuid, huuids);
                 }
 
@@ -217,11 +217,10 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         }
 
         private void squeeze() {
-            for (Map.Entry<String, ReservedHostCapacity> e : result.entrySet()) {
-                if (e.getValue().getReservedCpuCapacity() != -1 && e.getValue().getReservedMemoryCapacity() != -1) {
-                    hostUuids.remove(e.getKey());
-                }
-            }
+            result.entrySet()
+                    .stream()
+                    .filter(e -> e.getValue().getReservedCpuCapacity() != -1 && e.getValue().getReservedMemoryCapacity() != -1)
+                    .forEach(e -> hostUuids.remove(e.getKey()));
         }
 
         private void done() {
@@ -282,7 +281,7 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         });
 
         Map<String, ReservedHostCapacity> reserves = finder.find();
-        List<HostVO> ret = new ArrayList<HostVO>(candidates.size());
+        List<HostVO> ret = new ArrayList<>(candidates.size());
         for (HostVO hvo : candidates) {
             ReservedHostCapacity hc = reserves.get(hvo.getUuid());
             if (hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() > ratioMgr.calculateMemoryByRatio(hvo.getUuid(), requiredMemory)) {
@@ -290,12 +289,14 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
             } else {
                 if (logger.isTraceEnabled()) {
                     if (hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() < requiredMemory) {
-                        logger.trace(String.format("remove host[uuid:%s] from candidates;because after subtracting reserved memory[%s bytes], it cannot provide required memory[%s bytes]",
+                        logger.trace(String.format("remove host[uuid:%s] from candidates;because after subtracting reserved memory[%s bytes]," +
+                                        " it cannot provide required memory[%s bytes]",
                                 hvo.getUuid(), hc.getReservedMemoryCapacity(), requiredMemory));
                     }
 
                     if (hvo.getCapacity().getAvailableCpu() - hc.getReservedCpuCapacity() < requiredCpu) {
-                        logger.trace(String.format("remove host[uuid:%s] from candidates;because after subtracting reserved cpu[%s], it cannot provide required cpu[%s]",
+                        logger.trace(String.format("remove host[uuid:%s] from candidates;because after subtracting reserved cpu[%s]," +
+                                        " it cannot provide required cpu[%s]",
                                 hvo.getUuid(), hc.getReservedCpuCapacity(), requiredCpu));
                     }
                 }
