@@ -375,6 +375,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             }
             FileUtils.copyDirectory(src, dest);
 
+
             boolean isPlaybookLinked = false;
             for (File f : dest.listFiles()) {
                 if (f.getName().equals(playBookName)) {
@@ -388,7 +389,8 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 }
             }
 
-            if (!isPlaybookLinked) {
+            // if playBookName=null, skip the deploy steps because the deploy is not independent
+            if (playBookName != null && !isPlaybookLinked) {
                 throw new IllegalArgumentException(String.format("cannot find playbook[%s] in module[%s], module files are%s", playBookName, modulePath, Arrays.asList(src.list())));
             }
 
