@@ -576,6 +576,10 @@ public class AccountBase extends AbstractAccount {
             evtf.fire(IdentityCanonicalEvents.USER_DELETED_PATH, d);
 
             dbf.remove(user);
+
+            SimpleQuery<SessionVO> sq = dbf.createQuery(SessionVO.class);
+            sq.add(SessionVO_.userUuid, Op.EQ, user.getUuid());
+            dbf.removeCollection(sq.list(), SessionVO.class);
         }
 
         APIDeleteUserEvent evt = new APIDeleteUserEvent(msg.getId());
