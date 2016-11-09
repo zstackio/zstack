@@ -185,6 +185,10 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
         VmInstanceVO vmInstanceVO = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
         VolumeVO vvo = dbf.findByUuid(vmInstanceVO.getRootVolumeUuid(), VolumeVO.class);
         ImageVO ivo = dbf.findByUuid(vvo.getRootImageUuid(), ImageVO.class);
+        if (ivo == null) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("Image[uuid:%s] of Volume[uuid:%s] Not Found!", vvo.getRootImageUuid(), vvo.getUuid())));
+        }
         if (!ivo.getFormat().equals(ImageConstant.QCOW2_FORMAT_STRING)) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
                     String.format("Origin Image[uuid:%s, name:%s, format:%s] of Volume[uuid:%s]" +
