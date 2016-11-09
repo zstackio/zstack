@@ -32,7 +32,6 @@ public class SchedulerApiInterceptor implements ApiMessageInterceptor {
             bus.makeTargetServiceIdByResourceUuid(msg, SchedulerConstant.SERVICE_ID, schedmsg.getSchedulerUuid());
         }
     }
-    // meilei: to do strict check for api
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         setServiceId(msg);
