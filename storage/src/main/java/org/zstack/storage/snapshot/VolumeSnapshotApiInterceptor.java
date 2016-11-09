@@ -22,7 +22,9 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 
 import javax.persistence.Tuple;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -189,11 +191,20 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
                     String.format("Image[uuid:%s] of Volume[uuid:%s] Not Found!", vvo.getRootImageUuid(), vvo.getUuid())));
         }
-        if (!ivo.getFormat().equals(ImageConstant.QCOW2_FORMAT_STRING)) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("Origin Image[uuid:%s, name:%s, format:%s] of Volume[uuid:%s]" +
-                                    " is not a qcow2 format file, cannot reset volume.",
-                            ivo.getUuid(), ivo.getName(), ivo.getFormat(), vvo.getUuid())));
+        //
+        List<String> supportReInitImageFormatList = new ArrayList<>();
+        supportReInitImageFormatList.add(ImageConstant.QCOW2_FORMAT_STRING);
+        supportReInitImageFormatList.add(ImageConstant.RAW_FORMAT_STRING);
+        if (!supportReInitImageFormatList.contains(ivo.getFormat())) {
+            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(
+                    SysErrors.OPERATION_ERROR,
+                    String.format("Format of Origin Image[uuid:%s, name:%s, format:%s] of Volume[uuid:%s]" +
+                                    " is not supported, cannot reset volume. Support Format List:%s",
+                            ivo.getUuid(), ivo.getName(), ivo.getFormat(), vvo.getUuid(),
+                            supportReInitImageFormatList.stream().collect(Collectors.joining(","))
+                    )
+            )
+            );
         }
     }
 
