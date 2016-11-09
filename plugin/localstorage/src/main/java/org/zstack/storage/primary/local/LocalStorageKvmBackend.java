@@ -257,6 +257,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             APICreateDataVolumeTemplateFromVolumeMsg.class,
             APICreateDataVolumeFromVolumeSnapshotMsg.class,
             APILocalStorageMigrateVolumeMsg.class,
+            APIDeleteVolumeSnapshotMsg.class,
     })
     public static class DeleteBitsCmd extends AgentCommand {
         private String hostUuid;
