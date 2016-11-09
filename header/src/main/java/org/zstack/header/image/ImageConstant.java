@@ -18,6 +18,7 @@ public interface ImageConstant {
 
     String ISO_FORMAT_STRING = "iso";
     String QCOW2_FORMAT_STRING = "qcow2";
+    String RAW_FORMAT_STRING = "raw";
 
     String QUOTA_IMAGE_NUM = "image.num";
     String QUOTA_IMAGE_SIZE = "image.size";
