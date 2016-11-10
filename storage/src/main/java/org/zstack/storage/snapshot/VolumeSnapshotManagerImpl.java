@@ -13,13 +13,10 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.scheduler.SchedulerFacade;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.scheduler.SchedulerInventory;
 import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.core.workflow.*;
@@ -711,30 +708,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     private void handle(final APIReInitVmInstanceMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return syncSignature;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                resetRootVolumeFromImage(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("re-init-vm-%s", msg.getVmInstanceUuid());
-            }
-        });
-    }
-
-    private void resetRootVolumeFromImage(final APIReInitVmInstanceMsg msg, final NoErrorCompletion completion) {
         final APIReInitVmInstanceEvent evt = new APIReInitVmInstanceEvent(msg.getId());
 
         VmInstanceVO vmInstanceVO = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
@@ -786,7 +759,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     }
                 });
 
-                done(new FlowDoneHandler(msg, completion) {
+                done(new FlowDoneHandler(msg) {
                     @Transactional
                     private void updateLatest() {
                         String sql = "update VolumeSnapshotVO s" +
@@ -812,18 +785,16 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         dbf.update(rootVolume);
                         updateLatest();
                         bus.publish(evt);
-                        completion.done();
                     }
                 });
 
-                error(new FlowErrorHandler(msg, completion) {
+                error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         logger.warn(String.format("failed to restore volume[uuid:%s] to image[uuid:%s], %s",
                                 rootVolumeInventory.getUuid(), rootVolumeInventory.getRootImageUuid(), errCode));
                         evt.setErrorCode(errCode);
                         bus.publish(evt);
-                        completion.done();
                     }
                 });
             }
