@@ -8,6 +8,7 @@ import org.zstack.header.vm.VmAccountPerference;
  */
 public class ChangeVmPasswordMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
+    private String ip;
     private VmAccountPerference accountPerference;
 
     public VmAccountPerference getAccountPerference() { return accountPerference; }
@@ -20,5 +21,13 @@ public class ChangeVmPasswordMsg extends NeedReplyMessage implements HostMessage
     @Override
     public String getHostUuid() {
         return hostUuid;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
     }
 }
