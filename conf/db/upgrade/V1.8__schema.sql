@@ -63,7 +63,6 @@ ALTER TABLE VCenterPrimaryStorageVO ADD CONSTRAINT fkVCenterPrimaryStorageVOPrim
 ALTER TABLE VCenterPrimaryStorageVO ADD CONSTRAINT fkVCenterPrimaryStorageVOVCenterVO FOREIGN KEY (vCenterUuid) REFERENCES VCenterVO (uuid) ON DELETE CASCADE;
 
 # Foreign keys for table VCenterVO
-ALTER TABLE ApplianceVmVO ADD agentPort int unsigned DEFAULT 7759;
 ALTER TABLE VCenterVO ADD CONSTRAINT fkVCenterVOZoneEO FOREIGN KEY (zoneUuid) REFERENCES ZoneEO (uuid) ON DELETE CASCADE  ;
 ALTER TABLE SchedulerVO CHANGE startDate  startTime  timestamp;
 ALTER TABLE SchedulerVO CHANGE stopDate  stopTime  timestamp NULL DEFAULT NULL;
@@ -101,4 +100,13 @@ CREATE TABLE `zstack`.`IPsecPeerCidrVO` (
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+# Foreign keys for table IPsecConnectionVO
 
+ALTER TABLE IPsecConnectionVO ADD CONSTRAINT fkIPsecConnectionVOL3NetworkVO FOREIGN KEY (l3NetworkUuid) REFERENCES L3NetworkEO (uuid) ON DELETE RESTRICT;
+ALTER TABLE IPsecConnectionVO ADD CONSTRAINT fkIPsecConnectionVOVipVO FOREIGN KEY (vipUuid) REFERENCES VipVO (uuid) ON DELETE RESTRICT;
+
+# Foreign keys for table IPsecPeerCidrVO
+
+ALTER TABLE IPsecPeerCidrVO ADD CONSTRAINT fkIPsecPeerCidrVOIPsecConnectionVO FOREIGN KEY (connectionUuid) REFERENCES IPsecConnectionVO (uuid) ON DELETE CASCADE;
+
+ALTER TABLE ApplianceVmVO ADD agentPort int unsigned DEFAULT 7759;
