@@ -216,6 +216,7 @@ public class KVMSimulatorController {
             rsp.setSuccess(true);
             rsp.setLibvirtVersion("1.0.0");
             rsp.setQemuVersion("1.3.0");
+            rsp.setIptablesSucc(true);
             logger.debug("KVM connected");
         } else {
             rsp.setSuccess(false);
