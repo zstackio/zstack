@@ -131,6 +131,15 @@ public class KVMAgentCommands {
     public static class ConnectCmd extends AgentCommand {
         private String hostUuid;
         private String sendCommandUrl;
+        private List<String> iptablesRules;
+
+        public List<String> getIptablesRules() {
+            return iptablesRules;
+        }
+
+        public void setIptablesRules(List<String> iptablesRules) {
+            this.iptablesRules = iptablesRules;
+        }
 
         public String getSendCommandUrl() {
             return sendCommandUrl;
@@ -152,6 +161,16 @@ public class KVMAgentCommands {
     public static class ConnectResponse extends AgentResponse {
         private String libvirtVersion;
         private String qemuVersion;
+
+        public boolean isIptablesSucc() {
+            return iptablesSucc;
+        }
+
+        public void setIptablesSucc(boolean iptablesSucc) {
+            this.iptablesSucc = iptablesSucc;
+        }
+
+        boolean iptablesSucc;
 
         public String getLibvirtVersion() {
             return libvirtVersion;

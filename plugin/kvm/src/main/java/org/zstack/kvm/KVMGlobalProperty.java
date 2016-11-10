@@ -3,6 +3,8 @@ package org.zstack.kvm;
 import org.zstack.core.GlobalProperty;
 import org.zstack.core.GlobalPropertyDefinition;
 
+import java.util.List;
+
 /**
  */
 @GlobalPropertyDefinition
@@ -17,4 +19,6 @@ public class KVMGlobalProperty {
     public static int AGENT_PORT;
     @GlobalProperty(name="KvmAgentServer.port", defaultValue = "10001")
     public static int AGENT_SERVER_PORT;
+    @GlobalProperty(name="KvmHost.iptables.rule.", defaultValue = "")
+    public static List<String> IPTABLES_RULES;
 }

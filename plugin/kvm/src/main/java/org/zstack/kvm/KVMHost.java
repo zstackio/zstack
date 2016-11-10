@@ -2381,8 +2381,9 @@ public class KVMHost extends HostBase implements Host {
             ConnectCmd cmd = new ConnectCmd();
             cmd.setHostUuid(self.getUuid());
             cmd.setSendCommandUrl(restf.getSendCommandUrl());
+            cmd.setIptablesRules(KVMGlobalProperty.IPTABLES_RULES);
             ConnectResponse rsp = restf.syncJsonPost(connectPath, cmd, ConnectResponse.class);
-            if (!rsp.isSuccess()) {
+            if (!rsp.isSuccess() || !rsp.isIptablesSucc()) {
                 String err = String.format("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s", self.getUuid(), self.getManagementIp(), connectPath,
                         rsp.getError());
                 errCode = errf.stringToOperationError(err);
