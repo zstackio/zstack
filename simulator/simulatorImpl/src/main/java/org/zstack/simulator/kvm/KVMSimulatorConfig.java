@@ -13,6 +13,7 @@ import java.util.Map;
 
 public class KVMSimulatorConfig {
     public volatile boolean connectSuccess = true;
+    public volatile boolean iptablesSucc = true;
     public List<ConnectCmd> connectCmds = new ArrayList<ConnectCmd>();
     public volatile String simulatorHostUuid;
     public Map<String, String> connectHostUuids = new HashMap<String, String>();
