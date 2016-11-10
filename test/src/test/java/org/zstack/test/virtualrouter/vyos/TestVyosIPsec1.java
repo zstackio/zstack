@@ -11,11 +11,15 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.ipsec.IPsecConnectionInventory;
 import org.zstack.ipsec.IPsecConnectionVO;
+import org.zstack.ipsec.IPsecConstants;
+import org.zstack.ipsec.IPsecPeerCidrVO;
 import org.zstack.ipsec.vyos.VyosIPsecBackend.CreateIPsecConnectionCmd;
+import org.zstack.ipsec.vyos.VyosIPsecBackend.DeleteIPsecConnectionCmd;
 import org.zstack.ipsec.vyos.VyosIPsecBackend.IPsecInfo;
 import org.zstack.ipsec.vyos.VyosIPsecSimulatorConfig;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -107,7 +111,7 @@ public class TestVyosIPsec1 {
         }
     }
 
-    private void compare(IPsecConnectionInventory inv1, IPsecInfo inv2) {
+    private void compare(IPsecConnectionInventory inv1, String vipIp, IPsecInfo inv2) {
         Assert.assertEquals(String.format("different uuid[%s, %s]",
                 inv1.getUuid(), inv2.uuid), inv1.getUuid(), inv2.uuid);
         Assert.assertEquals(String.format("different peerAddress[%s, %s]",
@@ -116,9 +120,12 @@ public class TestVyosIPsec1 {
                 inv1.getAuthMode(), inv2.authMode), inv1.getAuthMode(), inv2.authMode);
         Assert.assertEquals(String.format("different authKey[%s, %s]",
                 inv1.getAuthKey(), inv2.authKey), inv1.getAuthKey(), inv2.authKey);
-        VipVO vip = dbf.findByUuid(inv1.getVipUuid(), VipVO.class);
+        if (vipIp == null) {
+            VipVO vip = dbf.findByUuid(inv1.getVipUuid(), VipVO.class);
+            vipIp = vip.getIp();
+        }
         Assert.assertEquals(String.format("different vip[%s, %s]",
-                vip.getIp(), inv2.vip), vip.getIp(), inv2.vip);
+                vipIp, inv2.vip), vipIp, inv2.vip);
         Assert.assertEquals(String.format("different ikeAuthAlgorithm[%s, %s]",
                 inv1.getIkeAuthAlgorithm(), inv2.ikeAuthAlgorithm), inv1.getIkeAuthAlgorithm(), inv2.ikeAuthAlgorithm);
         Assert.assertEquals(String.format("different ikeEncryptionAlgorithm[%s, %s]",
@@ -174,6 +181,21 @@ public class TestVyosIPsec1 {
         Assert.assertEquals(1, iconfig.createIPsecConnectionCmdList.size());
         CreateIPsecConnectionCmd cmd = iconfig.createIPsecConnectionCmdList.get(0);
         Assert.assertEquals(1, cmd.infos.size());
-        compare(ipsec, cmd.infos.get(0));
+        compare(ipsec, null, cmd.infos.get(0));
+
+        VipVO vipvo = dbf.findByUuid(vip.getUuid(), VipVO.class);
+        Assert.assertEquals(IPsecConstants.IPSEC_NETWORK_SERVICE_TYPE.toString(), vipvo.getUseFor());
+        Assert.assertEquals(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE, vipvo.getServiceProvider());
+
+        api.releaseIp(vip.getUuid());
+        Assert.assertEquals(1, iconfig.deleteIPsecConnectionCmds.size());
+        DeleteIPsecConnectionCmd dcmd = iconfig.deleteIPsecConnectionCmds.get(0);
+        Assert.assertEquals(1, dcmd.infos.size());
+        compare(ipsec, vip.getIp(), dcmd.infos.get(0));
+
+        long count = dbf.count(IPsecConnectionVO.class);
+        Assert.assertEquals(0, count);
+        count = dbf.count(IPsecPeerCidrVO.class);
+        Assert.assertEquals(0, count);
     }
 }

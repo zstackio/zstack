@@ -131,5 +131,9 @@ public class TestVyosIPsec2 {
         Assert.assertEquals(1, iconfig.deleteIPsecConnectionCmds.size());
         IPsecInfo info = iconfig.deleteIPsecConnectionCmds.get(0).infos.get(0);
         compare(ipsec, info);
+
+        VipVO vipvo = dbf.findByUuid(vip.getUuid(), VipVO.class);
+        Assert.assertEquals(null, vipvo.getUseFor());
+        Assert.assertEquals(null, vipvo.getServiceProvider());
     }
 }
