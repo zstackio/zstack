@@ -407,6 +407,7 @@ public class KVMHost extends HostBase implements Host {
 
         ChangeVmPasswordCmd cmd = new ChangeVmPasswordCmd();
         cmd.setAccountPerference(msg.getAccountPerference());
+        cmd.setIp(msg.getIp());
 
         restf.asyncJsonPost(changeVmPasswordPath, cmd, new JsonAsyncRESTCallback<ChangeVmPasswordResponse>(msg) {
             @Override

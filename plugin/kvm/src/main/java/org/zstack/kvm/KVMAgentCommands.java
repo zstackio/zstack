@@ -874,6 +874,7 @@ public class KVMAgentCommands {
     public static class ChangeVmPasswordCmd extends AgentCommand{
         private VmAccountPerference accountPerference;
         private String qcowFile;
+        private String ip;
 
         public VmAccountPerference getAccountPerference() { return accountPerference; }
 
@@ -885,6 +886,14 @@ public class KVMAgentCommands {
 
         public void setQcowFile(String qcowFile) {
             this.qcowFile = qcowFile;
+        }
+
+        public String getIp() {
+            return ip;
+        }
+
+        public void setIp(String ip) {
+            this.ip = ip;
         }
     }
     public static class OnlineChangeCpuMemoryCmd extends AgentCommand{
