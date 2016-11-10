@@ -51,5 +51,7 @@ public class TestChangePrimaryStorageState {
         Assert.assertEquals(PrimaryStorageState.Disabled.toString(), inv.getState());
         inv = api.changePrimaryStorageState(inv.getUuid(), PrimaryStorageStateEvent.enable);
         Assert.assertEquals(PrimaryStorageState.Enabled.toString(), inv.getState());
+        inv = api.changePrimaryStorageState(inv.getUuid(), PrimaryStorageStateEvent.maintain);
+        Assert.assertEquals(PrimaryStorageState.Maintenance.toString(), inv.getState());
     }
 }

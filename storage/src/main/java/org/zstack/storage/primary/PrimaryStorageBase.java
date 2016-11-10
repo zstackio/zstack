@@ -819,7 +819,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             logger.warn(String.format("Primary Storage %s  will enter maintenance mode, ignore unknown status VMs", msg.getPrimaryStorageUuid()));
             List<String> vmUuids = getAllVmsUuid(msg.getPrimaryStorageUuid());
             //TODO: Add alert if some vms on disconnect host
-            stopAllVms(vmUuids);
+            if ( vmUuids.size() != 0 ) {
+                stopAllVms(vmUuids);
+            }
         }
         changeStateHook(event, nextState);
         self.setState(nextState);
