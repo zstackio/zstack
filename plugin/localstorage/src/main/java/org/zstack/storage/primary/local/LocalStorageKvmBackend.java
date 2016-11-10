@@ -589,6 +589,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv));
     }
 
+    public String makeCachedImageInstallUrlFromImageUuidForTemplate(String imageUuid) {
+        return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeCachedImageInstallPathFromImageUuidForTemplate(imageUuid));
+    }
+
     public String makeTemplateFromVolumeInWorkspacePath(String imageUuid) {
         return PathUtil.join(self.getUrl(), "templateWorkspace", String.format("image-%s", imageUuid), String.format("%s.qcow2", imageUuid));
     }
@@ -1411,14 +1415,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    void handle(ResetRootVolumeFromImageOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<ResetRootVolumeFromImageOnPrimaryStorageReply> completion) {
+    void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<ReInitRootVolumeFromTemplateOnPrimaryStorageReply> completion) {
         RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
-        cmd.setSnapshotInstallPath(makeCachedImageInstallUrl(msg.getImage()));
+        cmd.setSnapshotInstallPath(makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid()));
 
         httpCall(REVERT_SNAPSHOT_PATH, hostUuid, cmd, RevertVolumeFromSnapshotRsp.class, new ReturnValueCompletion<RevertVolumeFromSnapshotRsp>(completion) {
             @Override
             public void success(RevertVolumeFromSnapshotRsp rsp) {
-                ResetRootVolumeFromImageOnPrimaryStorageReply ret = new ResetRootVolumeFromImageOnPrimaryStorageReply();
+                ReInitRootVolumeFromTemplateOnPrimaryStorageReply ret = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
                 ret.setNewVolumeInstallPath(rsp.getNewVolumeInstallPath());
                 completion.success(ret);
             }

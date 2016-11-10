@@ -733,10 +733,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
-    public void resetRootVolumeFromImage(final ImageInventory iinv, final VolumeInventory vol, final HostInventory host, final ReturnValueCompletion<String> completion) {
+    public void resetRootVolumeFromImage(final VolumeInventory vol, final HostInventory host, final ReturnValueCompletion<String> completion) {
         RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
         PrimaryStorageInventory psInv = PrimaryStorageInventory.valueOf(dbf.findByUuid(vol.getPrimaryStorageUuid(), PrimaryStorageVO.class));
-        cmd.setSnapshotInstallPath(NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrl(psInv, iinv));
+        cmd.setSnapshotInstallPath(NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrlFromImageUuidForTemplate(psInv, vol.getRootImageUuid()));
         cmd.setUuid(vol.getPrimaryStorageUuid());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -757,7 +757,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 if (!rsp.isSuccess()) {
                     completion.fail(errf.stringToOperationError(
                             String.format("failed to revert volume[uuid:%s] to image[uuid:%s] on kvm host[uuid:%s, ip:%s], %s",
-                                    vol.getUuid(), iinv.getUuid(), host.getUuid(), host.getManagementIp(), rsp.getError())
+                                    vol.getUuid(), vol.getRootImageUuid(), host.getUuid(), host.getManagementIp(), rsp.getError())
                     ));
                     return;
                 }

@@ -2297,8 +2297,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CancelSelfFencerOnKvmHostMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof ResetRootVolumeFromImageOnPrimaryStorageMsg) {
-            handle((ResetRootVolumeFromImageOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -2498,11 +2498,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final ResetRootVolumeFromImageOnPrimaryStorageMsg msg) {
-        final ResetRootVolumeFromImageOnPrimaryStorageReply reply = new ResetRootVolumeFromImageOnPrimaryStorageReply();
+    private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+        final ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
         RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
-        cmd.snapshotPath = makeCacheInstallPath(msg.getImage().getUuid());
+        cmd.snapshotPath = makeCacheInstallPath(msg.getVolume().getRootImageUuid());
         httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
             @Override
             public void success(RollbackSnapshotRsp returnValue) {

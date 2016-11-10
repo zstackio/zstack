@@ -41,6 +41,7 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
@@ -107,8 +108,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((GetVolumeRootImageUuidFromPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
-        }else if(msg instanceof ResetRootVolumeFromImageOnPrimaryStorageMsg){
-            handle((ResetRootVolumeFromImageOnPrimaryStorageMsg)msg);
+        } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -163,7 +164,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                                     public void fail(ErrorCode errorCode) {
                                         //TODO: bring the host to an error state
                                         logger.warn(String.format("failed to update the nfs[uuid:%s, name:%s] mount point" +
-                                                " from %s to %s in the cluster[uuid:%s], %s", self.getUuid(), self.getName(),
+                                                        " from %s to %s in the cluster[uuid:%s], %s", self.getUuid(), self.getName(),
                                                 oldUrl, newUrl, item, errorCode));
                                         completion.done();
                                     }
@@ -441,24 +442,27 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final ResetRootVolumeFromImageOnPrimaryStorageMsg msg) {
-        final ResetRootVolumeFromImageOnPrimaryStorageReply reply = new ResetRootVolumeFromImageOnPrimaryStorageReply();
+    private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+        final ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
         HostInventory destHost = factory.getConnectedHostForOperation(PrimaryStorageInventory.valueOf(self));
         if (destHost == null) {
             reply.setError(errf.stringToOperationError(
                     String.format("no host in Connected status to which nfs primary storage[uuid:%s, name:%s] attached" +
-                                    " found to revert volume[uuid:%s] to image[uuid:%s, name:%s]",
-                            self.getUuid(), self.getName(), msg.getVolume().getUuid(),
-                            msg.getImage().getUuid(), msg.getImage().getName())
+                                    " found to revert volume[uuid:%s] to image[uuid:%s]",
+                            self.getUuid(), self.getName(),
+                            msg.getVolume().getUuid(), msg.getVolume().getRootImageUuid()
+                    )
             ));
 
             bus.reply(msg, reply);
             return;
         }
 
-        NfsPrimaryStorageBackend bkd = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getImage().getFormat(), self.getUuid()));
-        bkd.resetRootVolumeFromImage(msg.getImage(), msg.getVolume(), destHost, new ReturnValueCompletion<String>(msg) {
+        NfsPrimaryStorageBackend bkd = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(
+                VolumeConstant.VOLUME_FORMAT_QCOW2, self.getUuid())
+        );
+        bkd.resetRootVolumeFromImage(msg.getVolume(), destHost, new ReturnValueCompletion<String>(msg) {
             @Override
             public void success(String returnValue) {
                 reply.setNewVolumeInstallPath(returnValue);
@@ -550,7 +554,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void run(MessageReply ret) {
                 if (ret.isSuccess()) {
-                    TakeSnapshotOnHypervisorReply treply = (TakeSnapshotOnHypervisorReply)ret;
+                    TakeSnapshotOnHypervisorReply treply = (TakeSnapshotOnHypervisorReply) ret;
                     VolumeSnapshotInventory inv = msg.getStruct().getCurrent();
                     inv.setSize(treply.getSize());
                     inv.setPrimaryStorageUuid(self.getUuid());
@@ -748,7 +752,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             if (backend == null) {
                 throw new OperationFailureException(errf.stringToOperationError(
                         String.format("the NFS primary storage[uuid:%s, name:%s] cannot find any usable host to" +
-                                " create the data volume[uuid:%s, name:%s]", self.getUuid(), self.getName(),
+                                        " create the data volume[uuid:%s, name:%s]", self.getUuid(), self.getName(),
                                 msg.getVolume().getUuid(), msg.getVolume().getName())
                 ));
             }

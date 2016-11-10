@@ -16,24 +16,28 @@ public class PrimaryStoragePathMaker {
         }
         return acntMgr.getOwnerAccountUuidOfResource(resourceUuid);
     }
-    
+
     public static String makeRootVolumeInstallPath(VolumeInventory vol) {
-        return PathUtil.join("rootVolumes", "acct-" + getAccountUuidOfResource(vol.getUuid()), "vol-" + vol.getUuid(), vol.getUuid()+".qcow2");
+        return PathUtil.join("rootVolumes", "acct-" + getAccountUuidOfResource(vol.getUuid()), "vol-" + vol.getUuid(), vol.getUuid() + ".qcow2");
     }
-    
+
     public static String makeDataVolumeInstallPath(String volUuid) {
-        return PathUtil.join("dataVolumes", "acct-" + getAccountUuidOfResource(volUuid), "vol-" + volUuid, volUuid+".qcow2");
+        return PathUtil.join("dataVolumes", "acct-" + getAccountUuidOfResource(volUuid), "vol-" + volUuid, volUuid + ".qcow2");
     }
 
     public static String makeImageFromSnapshotWorkspacePath(String imageUuid) {
         return PathUtil.join("snapshotWorkspace", String.format("image-%s", imageUuid));
     }
-    
+
     public static String makeCachedImageInstallPath(ImageInventory iminv) {
         if (iminv.getMediaType().equals(ImageMediaType.ISO.toString())) {
             return PathUtil.join("imagecache", "iso", iminv.getUuid(), iminv.getUuid() + ".iso");
         } else {
             return PathUtil.join("imagecache", "template", iminv.getUuid(), iminv.getUuid() + ".qcow2");
         }
+    }
+
+    public static String makeCachedImageInstallPathFromImageUuidForTemplate(String imageUuid) {
+        return PathUtil.join("imagecache", "template", imageUuid, imageUuid + ".qcow2");
     }
 }

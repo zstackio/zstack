@@ -30,7 +30,10 @@ import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.ManagementN
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.portal.apimediator.ApiMediator;
-import org.zstack.utils.*;
+import org.zstack.utils.BootErrorLog;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.StringDSL;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -48,33 +51,33 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.zstack.utils.ExceptionDSL.throwableSafe;
 
 public class ManagementNodeManagerImpl extends AbstractService implements ManagementNodeManager {
-	private static final CLogger logger = Utils.getLogger(ManagementNodeManager.class);
+    private static final CLogger logger = Utils.getLogger(ManagementNodeManager.class);
 
-	private List<ComponentWrapper> components;
-	private List<PrepareDbInitialValueExtensionPoint> prepareDbExts;
+    private List<ComponentWrapper> components;
+    private List<PrepareDbInitialValueExtensionPoint> prepareDbExts;
     private ManagementNodeVO node;
-	private volatile boolean isRunning = true;
-	private volatile int isNodeRunning = NODE_STARTING;
-	private static final String INVENTORY_LOCK = "ManagementNodeManager.inventory_lock";
-	private final int INVENTORY_LOCK_TIMEOUT = 600; /* 10 mins */
-	private static boolean started = false;
-	private static boolean stopped = false;
+    private volatile boolean isRunning = true;
+    private volatile int isNodeRunning = NODE_STARTING;
+    private static final String INVENTORY_LOCK = "ManagementNodeManager.inventory_lock";
+    private final int INVENTORY_LOCK_TIMEOUT = 600; /* 10 mins */
+    private static boolean started = false;
+    private static boolean stopped = false;
     private Future<Void> heartBeatTask = null;
     private HeartBeatDBSource heartBeatDBSource;
     private List<ManagementNodeChangeListener> lifeCycleExtension = new ArrayList<ManagementNodeChangeListener>();
 
-	private static int NODE_STARTING = 0;
-	private static int NODE_RUNNING = 1;
-	private static int NODE_FAILED = -1;
+    private static int NODE_STARTING = 0;
+    private static int NODE_RUNNING = 1;
+    private static int NODE_FAILED = -1;
 
-	@Autowired
-	private DatabaseFacade dbf;
-	@Autowired
-	private CloudBusIN bus;
-	@Autowired
-	private ApiMediator apim;
-	@Autowired
-	private PluginRegistry pluginRgty;
+    @Autowired
+    private DatabaseFacade dbf;
+    @Autowired
+    private CloudBusIN bus;
+    @Autowired
+    private ApiMediator apim;
+    @Autowired
+    private PluginRegistry pluginRgty;
     @Autowired
     private ThreadFacade thdf;
     @Autowired
@@ -152,30 +155,31 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
     private interface ComponentWrapper {
         void start();
+
         void stop();
     }
 
-	private void notifyStop() {
-		isRunning = false;
-		synchronized (this) {
-			this.notify();
-		}
-	}
-	
-	private void handle(ManagementNodeExitMsg msg) {
-		logger.debug(getId() + " received ManagementNodeExitMsg, going to exit");
-		notifyStop();
-	}
+    private void notifyStop() {
+        isRunning = false;
+        synchronized (this) {
+            this.notify();
+        }
+    }
 
-	@Override
+    private void handle(ManagementNodeExitMsg msg) {
+        logger.debug(getId() + " received ManagementNodeExitMsg, going to exit");
+        notifyStop();
+    }
+
+    @Override
     @MessageSafe
-	public void handleMessage(Message msg) {
+    public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
         }
-	}
+    }
 
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIListManagementNodeMsg) {
@@ -194,12 +198,12 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
     private void handleLocalMessage(Message msg) {
         if (msg.getClass() == ManagementNodeExitMsg.class) {
-			handle((ManagementNodeExitMsg) msg);
+            handle((ManagementNodeExitMsg) msg);
         } else if (msg instanceof IsManagementNodeReadyMsg) {
-            handle((IsManagementNodeReadyMsg)msg);
-		} else {
-			bus.dealWithUnknownMessage(msg);
-		}
+            handle((IsManagementNodeReadyMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
     }
 
     private void handle(IsManagementNodeReadyMsg msg) {
@@ -208,19 +212,19 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         bus.reply(msg, reply);
     }
 
-	@Override
-	public String getId() {
-		return bus.makeLocalServiceId(ManagementNodeConstant.SERVICE_ID);
-	}
+    @Override
+    public String getId() {
+        return bus.makeLocalServiceId(ManagementNodeConstant.SERVICE_ID);
+    }
 
 
-	private void startComponents() {
-		for (ComponentWrapper c : components) {
+    private void startComponents() {
+        for (ComponentWrapper c : components) {
             c.start();
-		}
-	}
+        }
+    }
 
-	private void stopComponents() {
+    private void stopComponents() {
         for (final ComponentWrapper c : components) {
             try {
                 c.stop();
@@ -228,22 +232,22 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 logger.warn(t.getMessage(), t);
             }
         }
-	}
+    }
 
-	private void installShutdownHook() {
-		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-			@Override
-			public void run() {
+    private void installShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
                 logger.debug("JVM shutdown hook is called, start stopping management node");
-				stop();
-			}
-		}));
-	}
+                stop();
+            }
+        }));
+    }
 
-	private void populateComponents() {
-		components = new ArrayList<ComponentWrapper>();
-		for (final Component c : pluginRgty.getExtensionList(Component.class)) {
-			components.add(new ComponentWrapper() {
+    private void populateComponents() {
+        components = new ArrayList<ComponentWrapper>();
+        for (final Component c : pluginRgty.getExtensionList(Component.class)) {
+            components.add(new ComponentWrapper() {
                 boolean isStart = false;
 
                 @Override
@@ -268,16 +272,16 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     }
                 }
             });
-		}
+        }
 
-		prepareDbExts = pluginRgty.getExtensionList(PrepareDbInitialValueExtensionPoint.class);
-	}
+        prepareDbExts = pluginRgty.getExtensionList(PrepareDbInitialValueExtensionPoint.class);
+    }
 
-	private void callPrepareDbExtensions() {
-	    for (PrepareDbInitialValueExtensionPoint extp : prepareDbExts) {
-	        extp.prepareDbInitialValue();
-	    }
-	}
+    private void callPrepareDbExtensions() {
+        for (PrepareDbInitialValueExtensionPoint extp : prepareDbExts) {
+            extp.prepareDbInitialValue();
+        }
+    }
 
     private void populateExtensions() {
         lifeCycleExtension = pluginRgty.getExtensionList(ManagementNodeChangeListener.class);
@@ -302,18 +306,18 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
     };
 
-	@Override
-	public boolean start() {
-	    if (started) {
-	        /* largely for unittest, the ComponentLoaderWebListener and Api may both call start()
+    @Override
+    public boolean start() {
+        if (started) {
+            /* largely for unittest, the ComponentLoaderWebListener and Api may both call start()
 	         */
-	        logger.debug("Management Node has already started, ignore this call");
-	        return true;
-	    }
+            logger.debug("Management Node has already started, ignore this call");
+            return true;
+        }
 
         populateExtensions();
-	    
-	    started = true;
+
+        started = true;
         stopped = true;
 
         class Result {
@@ -330,7 +334,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 		 * nodes persist inventory concurrently.
 	     */
         lock.lock();
-		try {
+        try {
             final ManagementNodeManagerImpl self = this;
             FlowChain bootstrap = FlowChainBuilder.newSimpleFlowChain();
             bootstrap.setName("management-node-bootstrap");
@@ -496,9 +500,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     ret.success = false;
                 }
             }).start();
-		} finally {
+        } finally {
             lock.unlock();
-		}
+        }
 
         if (!ret.success) {
             logger.warn(String.format("management node[%s] failed to start for some reason", Platform.getUuid()));
@@ -514,26 +518,26 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
         stopped = false;
 
-		installShutdownHook();
+        installShutdownHook();
 
 
         logger.info("Management node: " + getId() + " starts successfully");
 
-		synchronized (this) {
-		    isNodeRunning = NODE_RUNNING;
-			while (isRunning) {
-				try {
-					this.wait();
-				} catch (InterruptedException e) {
-					logger.warn("Interrupted while daemon is running, continue ...", e);
-				}
-			}
-		}
+        synchronized (this) {
+            isNodeRunning = NODE_RUNNING;
+            while (isRunning) {
+                try {
+                    this.wait();
+                } catch (InterruptedException e) {
+                    logger.warn("Interrupted while daemon is running, continue ...", e);
+                }
+            }
+        }
 
         logger.debug("quited main-loop, start stopping management node");
         stop();
-		return true;
-	}
+        return true;
+    }
 
     private void setupHeartbeat() {
         ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
@@ -625,7 +629,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
             private void fenceSuspects() {
                 for (ManagementNodeVO vo : suspects) {
-                    ManagementNodeVO n =  getNode(vo.getUuid());
+                    ManagementNodeVO n = getNode(vo.getUuid());
                     if (n == null) {
                         continue;
                     }
@@ -708,7 +712,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                         heartbeatFailure = 0;
                     } catch (Throwable t) {
-                        heartbeatFailure ++;
+                        heartbeatFailure++;
 
                         if (heartbeatFailure > PortalGlobalProperty.MAX_HEARTBEAT_FAILURE) {
                             logger.warn(String.format("the heartbeat has failed %s times that is greater than the max allowed value[%s]," +
@@ -762,16 +766,16 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     }
 
     @Override
-	public boolean stop() {
+    public boolean stop() {
         Platform.IS_RUNNING = false;
 
-	    if (stopped) {
+        if (stopped) {
 	        /* avoid repeated call from JVM shutdown hook, if process is exited from a former stop() call
 	         */
-	        return true;
-	    }
+            return true;
+        }
 
-	    stopped = true;
+        stopped = true;
         final Service self = this;
         logger.debug(String.format("start stopping the management node[uuid:%s]", node.getUuid()));
 
@@ -848,10 +852,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
 
         return true;
-	}
+    }
 
-	@AsyncThread
-	private void startInThread() {
+    @AsyncThread
+    private void startInThread() {
         try {
             start();
             isNodeRunning = NODE_RUNNING;
@@ -859,8 +863,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             logger.warn(t.getMessage(), t);
             isNodeRunning = NODE_FAILED;
         }
-	}
-	
+    }
+
     @Override
     public void startNode() {
         startInThread();
@@ -870,9 +874,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
                 throw new CloudRuntimeException(e);
-            } 
+            }
         }
-        
+
         if (isNodeRunning == NODE_FAILED) {
             logger.debug(String.format("error happened when starting node, stop the management node now"));
             stop();

@@ -37,9 +37,6 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
@@ -514,8 +511,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((LocalStorageDeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MigrateVolumeOnLocalStorageMsg) {
             handle((MigrateVolumeOnLocalStorageMsg) msg);
-        }else if(msg instanceof ResetRootVolumeFromImageOnPrimaryStorageMsg){
-            handle((ResetRootVolumeFromImageOnPrimaryStorageMsg)msg);
+        }else if(msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg){
+            handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg)msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -953,15 +950,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final ResetRootVolumeFromImageOnPrimaryStorageMsg msg) {
-        final ResetRootVolumeFromImageOnPrimaryStorageReply reply = new ResetRootVolumeFromImageOnPrimaryStorageReply();
+    private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+        final ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
         String hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid());
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, hostUuid, new ReturnValueCompletion<ResetRootVolumeFromImageOnPrimaryStorageReply>(msg) {
+        bkd.handle(msg, hostUuid, new ReturnValueCompletion<ReInitRootVolumeFromTemplateOnPrimaryStorageReply>(msg) {
             @Override
-            public void success(ResetRootVolumeFromImageOnPrimaryStorageReply returnValue) {
+            public void success(ReInitRootVolumeFromTemplateOnPrimaryStorageReply returnValue) {
                 bus.reply(msg, returnValue);
             }
 

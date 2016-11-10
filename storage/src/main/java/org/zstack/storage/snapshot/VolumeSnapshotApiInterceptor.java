@@ -10,21 +10,16 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.image.ImageConstant;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
 import org.zstack.header.storage.backup.BackupStorageZoneRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 
 import javax.persistence.Tuple;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  */
@@ -68,8 +63,6 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetVolumeSnapshotTreeMsg) msg);
         } else if (msg instanceof APIBackupVolumeSnapshotMsg) {
             validate((APIBackupVolumeSnapshotMsg) msg);
-        } else if (msg instanceof APIReInitVmInstanceMsg) {
-            validate((APIReInitVmInstanceMsg) msg);
         }
 
         setServiceId(msg);
@@ -180,31 +173,6 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
                     String.format("original volume for snapshot[uuid:%s] has been deleted, cannot revert volume to it", msg.getUuid())
             ));
-        }
-    }
-
-    private void validate(APIReInitVmInstanceMsg msg) {
-        VmInstanceVO vmInstanceVO = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
-        VolumeVO vvo = dbf.findByUuid(vmInstanceVO.getRootVolumeUuid(), VolumeVO.class);
-        ImageVO ivo = dbf.findByUuid(vvo.getRootImageUuid(), ImageVO.class);
-        if (ivo == null) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                    String.format("Image[uuid:%s] of Volume[uuid:%s] Not Found!", vvo.getRootImageUuid(), vvo.getUuid())));
-        }
-        //
-        List<String> supportReInitImageFormatList = new ArrayList<>();
-        supportReInitImageFormatList.add(ImageConstant.QCOW2_FORMAT_STRING);
-        supportReInitImageFormatList.add(ImageConstant.RAW_FORMAT_STRING);
-        if (!supportReInitImageFormatList.contains(ivo.getFormat())) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(
-                    SysErrors.OPERATION_ERROR,
-                    String.format("Format of Origin Image[uuid:%s, name:%s, format:%s] of Volume[uuid:%s]" +
-                                    " is not supported, cannot reset volume. Support Format List:%s",
-                            ivo.getUuid(), ivo.getName(), ivo.getFormat(), vvo.getUuid(),
-                            supportReInitImageFormatList.stream().collect(Collectors.joining(","))
-                    )
-            )
-            );
         }
     }
 

@@ -347,8 +347,8 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             handle((UploadBitsToBackupStorageMsg) msg);
         } else if (msg instanceof CreateTemporaryVolumeFromSnapshotMsg) {
             handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
-        } else if (msg instanceof ResetRootVolumeFromImageOnPrimaryStorageMsg) {
-            handle((ResetRootVolumeFromImageOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -464,17 +464,17 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void handle(final ResetRootVolumeFromImageOnPrimaryStorageMsg msg) {
+    private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolume().getUuid());
-        bkd.handle(msg, new ReturnValueCompletion<ResetRootVolumeFromImageOnPrimaryStorageReply>(msg) {
+        bkd.handle(msg, new ReturnValueCompletion<ReInitRootVolumeFromTemplateOnPrimaryStorageReply>(msg) {
             @Override
-            public void success(ResetRootVolumeFromImageOnPrimaryStorageReply returnValue) {
+            public void success(ReInitRootVolumeFromTemplateOnPrimaryStorageReply returnValue) {
                 bus.reply(msg, returnValue);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                ResetRootVolumeFromImageOnPrimaryStorageReply reply = new ResetRootVolumeFromImageOnPrimaryStorageReply();
+                ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
