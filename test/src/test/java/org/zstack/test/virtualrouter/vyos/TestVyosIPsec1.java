@@ -181,7 +181,9 @@ public class TestVyosIPsec1 {
         Assert.assertEquals(1, iconfig.createIPsecConnectionCmdList.size());
         CreateIPsecConnectionCmd cmd = iconfig.createIPsecConnectionCmdList.get(0);
         Assert.assertEquals(1, cmd.infos.size());
-        compare(ipsec, null, cmd.infos.get(0));
+        IPsecInfo info = cmd.infos.get(0);
+        compare(ipsec, null, info);
+        Assert.assertTrue(info.excludeSnat);
 
         VipVO vipvo = dbf.findByUuid(vip.getUuid(), VipVO.class);
         Assert.assertEquals(IPsecConstants.IPSEC_NETWORK_SERVICE_TYPE.toString(), vipvo.getUseFor());
