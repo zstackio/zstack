@@ -1237,7 +1237,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                attachVolume(msg, new NoErrorCompletion(chain) {
+                attachDataVolume(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
@@ -3293,7 +3293,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    protected void attachVolume(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
+    protected void attachDataVolume(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
         final AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);

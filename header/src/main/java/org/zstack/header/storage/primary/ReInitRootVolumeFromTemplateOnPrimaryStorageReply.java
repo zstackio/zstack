@@ -4,7 +4,7 @@ import org.zstack.header.message.MessageReply;
 
 /**
  */
-public class ResetRootVolumeFromImageOnPrimaryStorageReply extends MessageReply {
+public class ReInitRootVolumeFromTemplateOnPrimaryStorageReply extends MessageReply {
     private String newVolumeInstallPath;
 
     public String getNewVolumeInstallPath() {

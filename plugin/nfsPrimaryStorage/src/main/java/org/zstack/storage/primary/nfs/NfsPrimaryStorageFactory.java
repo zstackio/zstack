@@ -205,7 +205,10 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
             @Override
             @Transactional(readOnly = true)
             public String call() {
-                String sql = "select c.hypervisorType from ClusterVO c, PrimaryStorageClusterRefVO ref where c.uuid = ref.clusterUuid and ref.primaryStorageUuid = :psUuid";
+                String sql = "select c.hypervisorType" +
+                        " from ClusterVO c, PrimaryStorageClusterRefVO ref" +
+                        " where c.uuid = ref.clusterUuid" +
+                        " and ref.primaryStorageUuid = :psUuid";
                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                 q.setParameter("psUuid", psUuid);
                 List<String> types = q.getResultList();

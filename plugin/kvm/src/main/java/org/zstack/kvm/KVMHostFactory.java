@@ -178,7 +178,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             @Override
             public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
                 if (!SizeUtils.isSizeString(value)) {
-                    throw new GlobalConfigException(String.format("%s only allows a size string. A size string is a number with suffix 'T/t/G/g/M/m/K/k/B/b' or without suffix, but got %s",
+                    throw new GlobalConfigException(String.format("%s only allows a size string." +
+                                    " A size string is a number with suffix 'T/t/G/g/M/m/K/k/B/b' or without suffix, but got %s",
                             KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.getCanonicalName(), value));
                 }
             }

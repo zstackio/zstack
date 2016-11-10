@@ -43,7 +43,7 @@ public interface NfsPrimaryStorageBackend {
 
     void revertVolumeFromSnapshot(VolumeSnapshotInventory sinv, VolumeInventory vol, HostInventory host, ReturnValueCompletion<String> completion);
 
-    void resetRootVolumeFromImage(ImageInventory iinv, VolumeInventory vol, HostInventory host, ReturnValueCompletion<String> completion);
+    void resetRootVolumeFromImage(VolumeInventory vol, HostInventory host, ReturnValueCompletion<String> completion);
 
     void createTemplateFromVolume(PrimaryStorageInventory primaryStorage, VolumeInventory rootVolume, ImageInventory image, ReturnValueCompletion<String> completion);
 

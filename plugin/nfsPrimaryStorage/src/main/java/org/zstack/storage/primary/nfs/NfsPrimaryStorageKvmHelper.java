@@ -23,6 +23,10 @@ public class NfsPrimaryStorageKvmHelper {
         return PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv));
     }
 
+    public static String makeCachedImageInstallUrlFromImageUuidForTemplate(PrimaryStorageInventory pinv, String imageUuid) {
+        return PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPathFromImageUuidForTemplate(imageUuid));
+    }
+
     public static String makeTemplateFromVolumeInWorkspacePath(PrimaryStorageInventory pinv, String imageUuid) {
         return PathUtil.join(pinv.getMountPath(), "templateWorkspace", String.format("image-%s", imageUuid), String.format("%s.qcow2", imageUuid));
     }

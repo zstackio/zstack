@@ -302,6 +302,10 @@ public class KvmBackend extends HypervisorBackend {
         return PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv));
     }
 
+    public String makeCachedImageInstallUrlFromImageUuidForTemplate(String imageUuid) {
+        return PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPathFromImageUuidForTemplate(imageUuid));
+    }
+
     public String makeTemplateFromVolumeInWorkspacePath(String imageUuid) {
         return PathUtil.join(self.getMountPath(), "templateWorkspace", String.format("image-%s", imageUuid), String.format("%s.qcow2", imageUuid));
     }
@@ -859,16 +863,15 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    void handle(ResetRootVolumeFromImageOnPrimaryStorageMsg msg, final ReturnValueCompletion<ResetRootVolumeFromImageOnPrimaryStorageReply> completion) {
-        ImageInventory sp = msg.getImage();
+    void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg, final ReturnValueCompletion<ReInitRootVolumeFromTemplateOnPrimaryStorageReply> completion) {
         RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
-        cmd.snapshotInstallPath = makeCachedImageInstallUrl(sp);
+        cmd.snapshotInstallPath = makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid());
 
         new Do().go(REVERT_VOLUME_FROM_SNAPSHOT_PATH, cmd, RevertVolumeFromSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
             public void success(AgentRsp returnValue) {
                 RevertVolumeFromSnapshotRsp rsp = (RevertVolumeFromSnapshotRsp) returnValue;
-                ResetRootVolumeFromImageOnPrimaryStorageReply reply = new ResetRootVolumeFromImageOnPrimaryStorageReply();
+                ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
                 reply.setNewVolumeInstallPath(rsp.newVolumeInstallPath);
                 completion.success(reply);
             }

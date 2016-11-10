@@ -35,9 +35,7 @@ public class VmAssignDeviceIdToAttachingVolumeFlow implements Flow {
         List<Integer> devIds = q.listValue();
         
         BitSet full = new BitSet(devIds.size()+1);
-        for (Integer id : devIds) {
-            full.set(id);
-        }
+        devIds.forEach(full::set);
         return full.nextClearBit(0);
     }
 

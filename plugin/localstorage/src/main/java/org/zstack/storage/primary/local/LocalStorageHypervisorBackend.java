@@ -39,7 +39,7 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void handle(RevertVolumeFromSnapshotOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply> completion);
 
-    abstract void handle(ResetRootVolumeFromImageOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<ResetRootVolumeFromImageOnPrimaryStorageReply> completion);
+    abstract void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<ReInitRootVolumeFromTemplateOnPrimaryStorageReply> completion);
 
     abstract void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg, String hostUuid, ReturnValueCompletion<BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply> completion);
 

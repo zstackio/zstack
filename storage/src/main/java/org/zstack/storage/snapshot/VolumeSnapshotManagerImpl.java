@@ -27,8 +27,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.*;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -742,7 +740,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         VmInstanceVO vmInstanceVO = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
         VolumeVO rootVolume = dbf.findByUuid(vmInstanceVO.getRootVolumeUuid(), VolumeVO.class);
         VolumeInventory rootVolumeInventory = VolumeInventory.valueOf(rootVolume);
-        ImageInventory imageInventory = ImageInventory.valueOf(dbf.findByUuid(rootVolume.getRootImageUuid(), ImageVO.class));
 
         if (rootVolume.getVmInstanceUuid() != null) {
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
@@ -751,9 +748,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             VmInstanceState state = q.findValue();
             if (state != VmInstanceState.Stopped) {
                 throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("unable to reset volume[uuid:%s] to image[uuid:%s, name:%s]," +
+                        String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
                                         " the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
-                                rootVolume.getUuid(), imageInventory.getUuid(), imageInventory.getName(),
+                                rootVolume.getUuid(), rootVolume.getRootImageUuid(),
                                 rootVolume.getVmInstanceUuid(), state)
                 ));
             }
@@ -771,15 +768,14 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        ResetRootVolumeFromImageOnPrimaryStorageMsg rmsg = new ResetRootVolumeFromImageOnPrimaryStorageMsg();
-                        rmsg.setImage(imageInventory);
+                        ReInitRootVolumeFromTemplateOnPrimaryStorageMsg rmsg = new ReInitRootVolumeFromTemplateOnPrimaryStorageMsg();
                         rmsg.setVolume(rootVolumeInventory);
                         bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rootVolumeInventory.getPrimaryStorageUuid());
                         bus.send(rmsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
                                 if (reply.isSuccess()) {
-                                    ResetRootVolumeFromImageOnPrimaryStorageReply re = (ResetRootVolumeFromImageOnPrimaryStorageReply) reply;
+                                    ReInitRootVolumeFromTemplateOnPrimaryStorageReply re = (ReInitRootVolumeFromTemplateOnPrimaryStorageReply) reply;
                                     newVolumeInstallPath = re.getNewVolumeInstallPath();
                                     trigger.next();
                                 } else {
@@ -793,12 +789,18 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 done(new FlowDoneHandler(msg, completion) {
                     @Transactional
                     private void updateLatest() {
-                        String sql = "update VolumeSnapshotVO s set s.latest = false where s.latest = true and s.volumeUuid = :volumeUuid";
+                        String sql = "update VolumeSnapshotVO s" +
+                                " set s.latest = false" +
+                                " where s.latest = true" +
+                                " and s.volumeUuid = :volumeUuid";
                         Query q = dbf.getEntityManager().createQuery(sql);
                         q.setParameter("volumeUuid", rootVolumeInventory.getUuid());
                         q.executeUpdate();
 
-                        sql = "update VolumeSnapshotTreeVO tree set tree.current = false where tree.current = true and tree.volumeUuid = :volUuid";
+                        sql = "update VolumeSnapshotTreeVO tree" +
+                                " set tree.current = false" +
+                                " where tree.current = true" +
+                                " and tree.volumeUuid = :volUuid";
                         q = dbf.getEntityManager().createQuery(sql);
                         q.setParameter("volUuid", rootVolumeInventory.getUuid());
                         q.executeUpdate();
@@ -817,8 +819,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 error(new FlowErrorHandler(msg, completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        logger.warn(String.format("failed to restore volume[uuid:%s] to image[uuid:%s, name:%s], %s",
-                                rootVolumeInventory.getUuid(), imageInventory.getUuid(), imageInventory.getName(), errCode));
+                        logger.warn(String.format("failed to restore volume[uuid:%s] to image[uuid:%s], %s",
+                                rootVolumeInventory.getUuid(), rootVolumeInventory.getRootImageUuid(), errCode));
                         evt.setErrorCode(errCode);
                         bus.publish(evt);
                         completion.done();
