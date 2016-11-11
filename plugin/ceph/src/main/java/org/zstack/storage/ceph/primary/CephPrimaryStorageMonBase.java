@@ -75,7 +75,6 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
         public PingOperationFailure failure;
     }
 
-
     public CephPrimaryStorageMonVO getSelf() {
         return (CephPrimaryStorageMonVO) self;
     }

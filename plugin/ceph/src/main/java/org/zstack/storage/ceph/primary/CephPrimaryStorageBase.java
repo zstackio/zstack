@@ -21,10 +21,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostConstant;
-import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.*;
 import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
@@ -40,6 +37,7 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
+import org.zstack.header.vm.VmAccountPerference;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.*;
@@ -639,6 +637,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String KVM_HA_CANCEL_SELF_FENCER = "/ha/ceph/cancelselffencer";
     public static final String GET_FACTS = "/ceph/primarystorage/facts";
     public static final String DELETE_IMAGE_CACHE = "/ceph/primarystorage/deleteimagecache";
+    public static final String SET_ROOT_PASSWORD = "/ceph/primarystorage/setrootpassword";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -2301,9 +2300,56 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
             handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof SetRootPasswordMsg) {
+            handle((SetRootPasswordMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    public static class SetPasswordCmd extends AgentCommand {
+        public String cephInstallPath;
+        public String vmUuid;
+        public String account;
+        public String password;
+    }
+
+    public static class SetPasswordRsp extends AgentResponse {
+        public String cephInstallPath;
+        public String vmUuid;
+        public String account;
+        public String password;
+    }
+
+    private void handle(SetRootPasswordMsg msg) {
+        final SetRootPasswordReply reply = new SetRootPasswordReply();
+        CephVolumeOperate cephvo = new CephVolumeOperate();
+        CephPrimaryStorageMonBase monBase = cephvo.chooseTargetVmUuid();
+
+        SetPasswordCmd setPasswordCmd = new SetPasswordCmd();
+        setPasswordCmd.cephInstallPath = msg.getQcowFile();
+        setPasswordCmd.vmUuid = msg.getVmAccountPerference().getVmUuid();
+        setPasswordCmd.account = msg.getVmAccountPerference().getUserAccount();
+        setPasswordCmd.password = msg.getVmAccountPerference().getAccountPassword();
+
+        logger.debug(String.format("set root password, send http to %s", monBase.getSelf().getHostname()));
+        monBase.httpCall(SET_ROOT_PASSWORD, setPasswordCmd, SetPasswordRsp.class, new ReturnValueCompletion<SetPasswordRsp>(reply) {
+            @Override
+            public void success(SetPasswordRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(errf.stringToOperationError(rsp.getError()));
+                }
+                reply.setQcowFile(rsp.cephInstallPath);
+                reply.setVmAccountPerference(new VmAccountPerference(rsp.vmUuid, rsp.account, rsp.password));
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(DeleteImageCacheOnPrimaryStorageMsg msg) {
