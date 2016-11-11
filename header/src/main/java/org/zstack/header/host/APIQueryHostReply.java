@@ -1,6 +1,5 @@
 package org.zstack.header.host;
 
-import org.zstack.header.message.APIReply;
 import org.zstack.header.query.APIQueryReply;
 
 import java.util.List;

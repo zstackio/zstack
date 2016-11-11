@@ -1,6 +1,7 @@
 package org.zstack.test.virtualrouter.vyos;
 
 import junit.framework.Assert;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
@@ -8,9 +9,8 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.ipsec.IPsecConnectionInventory;
-import org.zstack.ipsec.IPsecConnectionVO;
-import org.zstack.ipsec.IPsecPeerCidrVO;
+import org.zstack.header.query.QueryOp;
+import org.zstack.ipsec.*;
 import org.zstack.ipsec.vyos.VyosIPsecBackend.IPsecInfo;
 import org.zstack.ipsec.vyos.VyosIPsecSimulatorConfig;
 import org.zstack.network.service.vip.VipInventory;
@@ -22,6 +22,7 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.test.search.QueryTestValidator;
 import org.zstack.utils.DebugUtils;
 
 import java.util.List;
@@ -30,6 +31,7 @@ import static java.util.Arrays.asList;
 
 /**
  * test delete ipsec connection
+ * test query ipsec connection
  */
 public class TestVyosIPsec2 {
     Deployer deployer;
@@ -124,6 +126,15 @@ public class TestVyosIPsec2 {
 
         List<String> peerCidrs = asList("10.2.1.0/24", "10.3.1.0/24");
         IPsecConnectionInventory ipsec = api.createIPsecConnection(inv, peerCidrs, null);
+
+        QueryTestValidator.validateEQ(new APIQueryIPSecConnectionMsg(), api, APIQueryIPSecConnectionReply.class, ipsec);
+        QueryTestValidator.validateRandomEQConjunction(new APIQueryIPSecConnectionMsg(), api, APIQueryIPSecConnectionReply.class, ipsec, 3);
+
+        APIQueryIPSecConnectionMsg msg = new APIQueryIPSecConnectionMsg();
+        msg.addQueryCondition("peerCidrs", QueryOp.IN, StringUtils.join(peerCidrs, ","));
+        APIQueryIPSecConnectionReply r = api.query(msg, APIQueryIPSecConnectionReply.class);
+        Assert.assertEquals(1, r.getInventories().size());
+
         api.deleteIPsecConnection(ipsec.getUuid(), null);
         Assert.assertFalse(dbf.isExist(ipsec.getUuid(), IPsecConnectionVO.class));
         List<IPsecPeerCidrVO> peers = dbf.listAll(IPsecPeerCidrVO.class);
