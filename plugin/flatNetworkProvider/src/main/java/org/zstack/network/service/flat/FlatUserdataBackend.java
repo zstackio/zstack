@@ -85,10 +85,18 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
             @Transactional(readOnly = true)
             private Map<String, VmIpL3Uuid> getVmIpL3Uuid(List<String> vmUuids) {
-                String sql = "select vm.uuid, nic.ip, nic.l3NetworkUuid from VmInstanceVO vm, VmNicVO nic" +
-                        " where vm.uuid = nic.vmInstanceUuid and vm.uuid in (:uuids) and nic.l3NetworkUuid = vm.defaultL3NetworkUuid";
+                String sql = "select vm.uuid, nic.ip, nic.l3NetworkUuid from VmInstanceVO vm," +
+                        "VmNicVO nic, NetworkServiceL3NetworkRefVO ref," +
+                        "NetworkServiceProviderVO pro where " +
+                        " vm.uuid = nic.vmInstanceUuid and vm.uuid in (:uuids)" +
+                        " and nic.l3NetworkUuid = vm.defaultL3NetworkUuid" +
+                        " and ref.networkServiceProviderUuid = pro.uuid" +
+                        " and ref.l3NetworkUuid = vm.defaultL3NetworkUuid" +
+                        " and pro.type = :proType";
+
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("uuids", vmUuids);
+                q.setParameter("proType", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
                 List<Tuple> ts = q.getResultList();
 
                 Map<String, VmIpL3Uuid> ret = new HashMap<String, VmIpL3Uuid>();
@@ -109,8 +117,12 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     return null;
                 }
 
-                Map<String, String> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
                 Map<String, VmIpL3Uuid> vmipl3 = getVmIpL3Uuid(vmUuids);
+                if (vmipl3.isEmpty()) {
+                    return null;
+                }
+
+                Map<String, String> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
                 Set<String> l3Uuids = new HashSet<String>();
                 for (VmIpL3Uuid l : vmipl3.values()) {
                     l.dhcpServerIp = dhcpBackend.allocateDhcpIp(l.l3Uuid).getIp();
