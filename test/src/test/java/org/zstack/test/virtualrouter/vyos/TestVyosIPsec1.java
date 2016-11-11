@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -199,5 +200,9 @@ public class TestVyosIPsec1 {
         Assert.assertEquals(0, count);
         count = dbf.count(IPsecPeerCidrVO.class);
         Assert.assertEquals(0, count);
+
+        // test host reconnect is not effected by the flat network provider
+        HostInventory host1 = deployer.hosts.get("host1");
+        api.reconnectHost(host1.getUuid());
     }
 }
