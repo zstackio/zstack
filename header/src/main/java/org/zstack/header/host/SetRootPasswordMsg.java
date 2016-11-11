@@ -1,13 +1,15 @@
 package org.zstack.header.host;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.storage.primary.PrimaryStorageMessage;
 import org.zstack.header.vm.VmAccountPerference;
 
 /**
  * Created by mingjian.deng on 16/10/26.
  */
-public class SetRootPasswordMsg extends NeedReplyMessage implements HostMessage{
+public class SetRootPasswordMsg extends NeedReplyMessage implements HostMessage, PrimaryStorageMessage{
     private String hostUuid;
+    private String primaryStorageUuid;
     private String qcowFile;
     private VmAccountPerference accountPerference;
 
@@ -34,5 +36,14 @@ public class SetRootPasswordMsg extends NeedReplyMessage implements HostMessage{
 
     public void setQcowFile(String qcowFile) {
         this.qcowFile = qcowFile;
+    }
+
+    @Override
+    public String getPrimaryStorageUuid() {
+        return primaryStorageUuid;
+    }
+
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
     }
 }

@@ -23,7 +23,6 @@ public class CephPrimaryStorageVO extends PrimaryStorageVO {
     @JoinColumn(name="primaryStorageUuid", insertable=false, updatable=false)
     @NoView
     private Set<CephPrimaryStorageMonVO> mons = new HashSet<CephPrimaryStorageMonVO>();
-
     @Column
     private String fsid;
 
