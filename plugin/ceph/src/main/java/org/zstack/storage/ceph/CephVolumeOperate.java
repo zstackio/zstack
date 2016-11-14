@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO;
 import org.zstack.storage.volume.DistributedVolumeOperateInterface;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.Random;
 import java.util.Set;
@@ -14,6 +16,7 @@ import java.util.Set;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class CephVolumeOperate implements DistributedVolumeOperateInterface {
+    private static final CLogger logger = Utils.getLogger(CephVolumeOperate.class);
     Set<CephPrimaryStorageMonVO> monsSet;
 
     public CephPrimaryStorageMonBase chooseTargetVmUuid() {
@@ -23,6 +26,17 @@ public class CephVolumeOperate implements DistributedVolumeOperateInterface {
 
     private CephPrimaryStorageMonBase getRandomMon(final Set<CephPrimaryStorageMonVO> monsSet) {
         int i = 0;
+        if(monsSet == null)
+            return null;
+        else {
+            StringBuffer buff = new StringBuffer();
+            buff.append("get monsSet, monAddr is: ");
+            for (CephPrimaryStorageMonVO monvo: monsSet){
+                buff.append(monvo.getMonAddr());
+                buff.append(",");
+            }
+            logger.debug(buff.substring(0, buff.lastIndexOf(",")));
+        }
         int random = new Random().nextInt(monsSet.size());
         for(CephPrimaryStorageMonVO vo: monsSet){
             if(i ++ == random){
