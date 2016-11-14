@@ -29,7 +29,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * 3. create an data volume template from the vm's root volume
  * 4. create a data volume from the template
  * 5. attach the data volume
- *
+ * <p>
  * confirm the volume attached successfully
  */
 public class TestCeph8 {
@@ -59,9 +59,9 @@ public class TestCeph8 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 

@@ -35,7 +35,7 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  * 1. make mons always return different fsid
  * 2. add ceph primary/backup storage
- *
+ * <p>
  * confirm the failure of adding primary/backup storage
  */
 public class TestCeph12 {
@@ -69,9 +69,9 @@ public class TestCeph12 {
         restf = loader.getComponent(RESTFacade.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         ZoneInventory zone = deployer.zones.get("Zone1");
 
         restf.installBeforeAsyncJsonPostInterceptor(new BeforeAsyncJsonPostInterceptor() {

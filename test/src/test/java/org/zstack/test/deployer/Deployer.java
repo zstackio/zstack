@@ -45,6 +45,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.*;
+
 public class Deployer {
     private static final CLogger logger = Utils.getLogger(Deployer.class);
     private String xmlName;
@@ -140,6 +141,7 @@ public class Deployer {
             springConfigs.add(config);
         }
     }
+
     public ComponentLoader getComponentLoader() {
         if (loader == null) {
             addDefaultConfig(this.SPRING_CONFIG_PORTAL_FOR_UNIT_TEST);
@@ -228,7 +230,7 @@ public class Deployer {
             }
         }
     }
-    
+
     @SuppressWarnings("unused")
     private void deploySecurityGroup() throws IllegalArgumentException, IllegalAccessException, ApiSenderException {
         SecurityGroupUnion sc = config.getSecurityGroups();
@@ -246,7 +248,7 @@ public class Deployer {
             }
         }
     }
-    
+
     @SuppressWarnings("unused")
     private void deployPortForwarding() throws IllegalArgumentException, IllegalAccessException, ApiSenderException {
         PortForwardingUnion pf = config.getPortForwardings();
@@ -400,29 +402,29 @@ public class Deployer {
     }
 
     private String getNetworkServiceProviderUuid(List<NetworkServiceProviderInventory> providers, String providerType) {
-    	for (NetworkServiceProviderInventory p : providers) {
-    		if (p.getType().equals(providerType)) {
-    			return p.getUuid();
-    		}
-    	}
-    	throw new CloudRuntimeException(String.format("unable to find network service provider[name:%s]", providerType));
+        for (NetworkServiceProviderInventory p : providers) {
+            if (p.getType().equals(providerType)) {
+                return p.getUuid();
+            }
+        }
+        throw new CloudRuntimeException(String.format("unable to find network service provider[name:%s]", providerType));
     }
-    
+
     public void attachNetworkServiceToL3Network(L3NetworkInventory l3, List<NetworkServiceConfig> services) throws ApiSenderException {
-    	if (services == null || services.isEmpty()) {
-    		return;
-    	}
+        if (services == null || services.isEmpty()) {
+            return;
+        }
 
         APIQueryNetworkServiceProviderMsg msg = new APIQueryNetworkServiceProviderMsg();
         msg.setConditions(new ArrayList<QueryCondition>());
         APIQueryNetworkServiceProviderReply r = api.query(msg, APIQueryNetworkServiceProviderReply.class);
         List<NetworkServiceProviderInventory> providers = r.getInventories();
-    	for (NetworkServiceConfig nc : services) {
-    		String uuid = getNetworkServiceProviderUuid(providers, nc.getProvider());
-    		api.attachNetworkServiceToL3Network(l3.getUuid(), uuid, nc.getServiceType());
-    	}
+        for (NetworkServiceConfig nc : services) {
+            String uuid = getNetworkServiceProviderUuid(providers, nc.getProvider());
+            api.attachNetworkServiceToL3Network(l3.getUuid(), uuid, nc.getServiceType());
+        }
     }
-    
+
     public void deployL3Network(L3NetworkUnion l3u, L2NetworkInventory l2Network) {
         if (l3u == null) {
             return;
@@ -500,10 +502,10 @@ public class Deployer {
     }
 
     private void deployInstanceOffering() throws ApiSenderException, IllegalArgumentException, IllegalAccessException {
-    	InstanceOfferingUnion iou = config.getInstanceOfferings();
-    	if (iou == null) {
-    		return;
-    	}
+        InstanceOfferingUnion iou = config.getInstanceOfferings();
+        if (iou == null) {
+            return;
+        }
         for (Field f : iou.getClass().getDeclaredFields()) {
             f.setAccessible(true);
             exceptionIfNotCollection(f);
@@ -513,7 +515,7 @@ public class Deployer {
             if (val != null && !val.isEmpty()) {
                 id.deploy(val, config, this);
             }
-        } 
+        }
     }
 
     private void deployDiskOffering() throws ApiSenderException {
@@ -553,7 +555,8 @@ public class Deployer {
             context = JAXBContext.newInstance("org.zstack.test.deployer.schema");
             URL configFile = this.getClass().getClassLoader().getResource(xmlName);
             if (configFile == null) {
-                throw new IllegalArgumentException(String.format("Can not find deploy configure file[%s] in classpath", xmlName));
+                throw new IllegalArgumentException(
+                        String.format("Can not find deploy configure file[%s] in classpath", xmlName));
             }
             Unmarshaller unmarshaller = context.createUnmarshaller();
             config = (DeployerConfig) unmarshaller.unmarshal(configFile);
@@ -755,7 +758,7 @@ public class Deployer {
         springConfigs.add(xml);
         return this;
     }
-    
+
     public SessionInventory loginByAccountRef(String accountRef, DeployerConfig dc) throws ApiSenderException {
         AccountInventory acnt = this.accounts.get(accountRef);
         assert acnt != null;

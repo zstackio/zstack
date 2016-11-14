@@ -36,7 +36,7 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  * 1. add a ceph primary/backup storage with a FSID
  * 2. add another ceph primary/bakcup storage with the same FSID
- *
+ * <p>
  * confirm the second ceph primary/backup storage failed to be added
  */
 public class TestCeph19 {
@@ -70,9 +70,9 @@ public class TestCeph19 {
         restf = loader.getComponent(RESTFacade.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         ZoneInventory zone = deployer.zones.get("Zone1");
 
         String fsid = Platform.getUuid();

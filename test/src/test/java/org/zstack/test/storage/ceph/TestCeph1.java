@@ -145,9 +145,6 @@ public class TestCeph1 {
         });
         api.createVmFromClone(vm);
 
-        // test re-init vm
-
-
         // test destroying vm
         api.destroyVmInstance(vm.getUuid());
 

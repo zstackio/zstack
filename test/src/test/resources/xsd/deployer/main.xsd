@@ -4,31 +4,31 @@
             targetNamespace="http://zstack.org/schema/zstack" elementFormDefault="qualified"
             attributeFormDefault="unqualified">
 
-	<xsd:include schemaLocation="network.xsd" />
-	<xsd:include schemaLocation="compute.xsd" />
-	<xsd:include schemaLocation="identity.xsd" />
-	<xsd:include schemaLocation="image.xsd" />
-	<xsd:include schemaLocation="storage.xsd" />
-	<xsd:include schemaLocation="configuration.xsd" />
+    <xsd:include schemaLocation="network.xsd"/>
+    <xsd:include schemaLocation="compute.xsd"/>
+    <xsd:include schemaLocation="identity.xsd"/>
+    <xsd:include schemaLocation="image.xsd"/>
+    <xsd:include schemaLocation="storage.xsd"/>
+    <xsd:include schemaLocation="configuration.xsd"/>
 
-	<xsd:element name="deployerConfig">
-		<xsd:complexType>
-			<xsd:sequence>
+    <xsd:element name="deployerConfig">
+        <xsd:complexType>
+            <xsd:sequence>
                 <xsd:element name="zones" type="ZoneUnion" minOccurs="0"/>
                 <xsd:element name="securityGroups" type="SecurityGroupUnion" minOccurs="0"/>
                 <xsd:element name="portForwardings" type="PortForwardingUnion" minOccurs="0"/>
                 <xsd:element name="eips" type="EipUnion" minOccurs="0"/>
                 <xsd:element name="lbs" type="LbUnion" minOccurs="0"/>
-				
-				<xsd:element name ="backupStorages" type="BackupStorageUnion" minOccurs="0"/>
+
+                <xsd:element name="backupStorages" type="BackupStorageUnion" minOccurs="0"/>
                 <xsd:element name="images" type="ImageUnion" minOccurs="0"/>
                 <xsd:element name="vm" type="VmUnion" minOccurs="0"/>
 
-			    <xsd:element name="instanceOfferings" type="InstanceOfferingUnion" minOccurs="0"/>
-				<xsd:element name="diskOffering" type="DiskOfferingConfig" maxOccurs="unbounded" minOccurs="0"/>
-				<xsd:element name="account" type="AccountConfig" maxOccurs="unbounded" minOccurs="0"/>
-				<xsd:element name="dns" type="DnsConfig" maxOccurs="unbounded" minOccurs="0"/>
-			</xsd:sequence>
-		</xsd:complexType>
-	</xsd:element>
+                <xsd:element name="instanceOfferings" type="InstanceOfferingUnion" minOccurs="0"/>
+                <xsd:element name="diskOffering" type="DiskOfferingConfig" maxOccurs="unbounded" minOccurs="0"/>
+                <xsd:element name="account" type="AccountConfig" maxOccurs="unbounded" minOccurs="0"/>
+                <xsd:element name="dns" type="DnsConfig" maxOccurs="unbounded" minOccurs="0"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
 </xsd:schema>

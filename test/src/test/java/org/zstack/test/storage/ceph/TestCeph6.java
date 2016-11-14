@@ -28,7 +28,7 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  * 1. use ceph for backup storage and primary storage
  * 2. add other 2 mons to both backup and primary storage
- *
+ * <p>
  * confirm the mons added successfully
  */
 public class TestCeph6 {
@@ -58,9 +58,9 @@ public class TestCeph6 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory ps = deployer.primaryStorages.get("ceph-pri");
         BackupStorageInventory bs = deployer.backupStorages.get("ceph-bk");
 

@@ -8,7 +8,7 @@ run_profile() {
     if test x$1 = x'premium'; then
         mvn -Dmaven.test.skip=true -P premium clean install
     else
-    	mvn -pl build -P $1 exec:exec -D$1
+        mvn -pl build -P $1 exec:exec -D$1
     fi
 }
 
