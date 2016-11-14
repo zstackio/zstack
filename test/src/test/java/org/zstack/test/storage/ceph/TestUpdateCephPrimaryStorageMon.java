@@ -3,19 +3,14 @@ package org.zstack.test.storage.ceph;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.storage.ceph.backup.*;
+import org.zstack.storage.ceph.backup.CephBackupStorageMonVO_;
+import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
@@ -23,15 +18,13 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
-import org.zstack.utils.data.SizeUnit;
 
 /**
  * 1. use ceph for backup storage and primary storage
  * 2. Update the primary storage information
  * 3. confirm information are updated
- *
  */
-public class TestUpdateCephPrimaryStorageMon{
+public class TestUpdateCephPrimaryStorageMon {
     Deployer deployer;
     Api api;
     ComponentLoader loader;
@@ -60,8 +53,9 @@ public class TestUpdateCephPrimaryStorageMon{
         bconfig = loader.getComponent(CephBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         SimpleQuery<CephPrimaryStorageMonVO> q = dbf.createQuery(CephPrimaryStorageMonVO.class);
         q.add(CephBackupStorageMonVO_.hostname, SimpleQuery.Op.EQ, "127.0.0.1");
         CephPrimaryStorageMonVO psmon = q.find();
@@ -78,10 +72,10 @@ public class TestUpdateCephPrimaryStorageMon{
         api.updateCephPrimaryStorageMon(psmon);
         psmon = dbf.reload(psmon);
 
-        Assert.assertEquals(20222,psmon.getSshPort());
-        Assert.assertEquals(6789,psmon.getMonPort());
-        Assert.assertEquals("updatehost",psmon.getHostname());
-        Assert.assertEquals("updateuser",psmon.getSshUsername());
-        Assert.assertEquals("updatepassword",psmon.getSshPassword());
+        Assert.assertEquals(20222, psmon.getSshPort());
+        Assert.assertEquals(6789, psmon.getMonPort());
+        Assert.assertEquals("updatehost", psmon.getHostname());
+        Assert.assertEquals("updateuser", psmon.getSshUsername());
+        Assert.assertEquals("updatepassword", psmon.getSshPassword());
     }
 }

@@ -25,7 +25,7 @@ import org.zstack.utils.data.SizeUnit;
 /**
  * 1. has both ceph/nfs/local primary storage but only ceph backup storage
  * 2. create a vm
- *
+ * <p>
  * confirm the vm is created on ceph primary storage
  */
 public class TestCeph18 {
@@ -71,9 +71,9 @@ public class TestCeph18 {
         bconfig = loader.getComponent(CephBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         PrimaryStorageVO ps = dbf.findByUuid(vm.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageVO.class);
         Assert.assertEquals(CephConstants.CEPH_PRIMARY_STORAGE_TYPE, ps.getType());

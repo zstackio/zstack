@@ -25,15 +25,15 @@ import org.zstack.utils.logging.CLogger;
 
 /**
  * 1. add a ceph backup storage
- *
+ * <p>
  * confirm the backup storage added successfully
- *
+ * <p>
  * 2. add an image
- *
+ * <p>
  * confirm the image added successfully
- *
+ * <p>
  * 3. delete the image
- *
+ * <p>
  * confirm the image deleted successfully
  */
 public class TestCephBackupStorage {
@@ -64,7 +64,7 @@ public class TestCephBackupStorage {
         config = loader.getComponent(CephBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
+
     @Test
     public void test() throws ApiSenderException, InterruptedException {
         ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());

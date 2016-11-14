@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * 1. have both ceph primary/backup storage
  * 2. make all those mons return different fsid
  * 3. reconnect both primary/backup storage
- *
+ * <p>
  * confirm the reconnect fail, and primary/backup storage turn into Disconnected state
  */
 public class TestCeph11 {
@@ -68,9 +68,9 @@ public class TestCeph11 {
         restf = loader.getComponent(RESTFacade.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory ps = deployer.primaryStorages.get("ceph-pri");
         BackupStorageInventory bs = deployer.backupStorages.get("ceph-bk");
 

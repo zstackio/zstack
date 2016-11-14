@@ -54,9 +54,9 @@ public class TestCeph20 {
         bconfig = loader.getComponent(CephBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm1 = deployer.vms.get("TestVm1");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm2");
         BackupStorageInventory sftp = deployer.backupStorages.get("sftp");

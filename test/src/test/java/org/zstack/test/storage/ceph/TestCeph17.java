@@ -34,9 +34,8 @@ import java.util.concurrent.TimeUnit;
  * 2. create two vm
  * 3. destroy two vms
  * 4. call API to cleanup the cache
- *
+ * <p>
  * confirm the image cache is cleaned up
- *
  */
 public class TestCeph17 {
     Deployer deployer;
@@ -65,9 +64,9 @@ public class TestCeph17 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());
         TimeUnit.SECONDS.sleep(5);

@@ -33,7 +33,7 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  * 1. make mons always return different fsid
  * 2. add new mons to existing ceph primary/backup storage
- *
+ * <p>
  * confirm the new mons fail to be added
  */
 public class TestCeph13 {
@@ -67,9 +67,9 @@ public class TestCeph13 {
         restf = loader.getComponent(RESTFacade.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory ps = deployer.primaryStorages.get("ceph-pri");
         BackupStorageInventory bs = deployer.backupStorages.get("ceph-bk");
 
@@ -101,7 +101,7 @@ public class TestCeph13 {
         }
         Assert.assertTrue(s);
         long count = dbf.count(CephBackupStorageMonVO.class);
-        Assert.assertEquals(0 ,count);
+        Assert.assertEquals(0, count);
 
         s = false;
         try {
@@ -111,6 +111,6 @@ public class TestCeph13 {
         }
         Assert.assertTrue(s);
         count = dbf.count(CephPrimaryStorageMonVO.class);
-        Assert.assertEquals(0 ,count);
+        Assert.assertEquals(0, count);
     }
 }

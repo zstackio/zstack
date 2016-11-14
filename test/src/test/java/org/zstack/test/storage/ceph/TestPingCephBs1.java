@@ -56,9 +56,9 @@ public class TestPingCephBs1 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         BackupStorageInventory bs = deployer.backupStorages.get("ceph-bk");
         CephBackupStorageVO ceph = dbf.findByUuid(bs.getUuid(), CephBackupStorageVO.class);
         Iterator<CephBackupStorageMonVO> it = ceph.getMons().iterator();

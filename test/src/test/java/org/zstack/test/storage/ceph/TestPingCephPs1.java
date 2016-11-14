@@ -59,9 +59,9 @@ public class TestPingCephPs1 {
         bconfig = loader.getComponent(CephBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         PrimaryStorageInventory ps = deployer.primaryStorages.get("ceph-pri");
         CephPrimaryStorageVO ceph = dbf.findByUuid(ps.getUuid(), CephPrimaryStorageVO.class);
         Iterator<CephPrimaryStorageMonVO> it = ceph.getMons().iterator();

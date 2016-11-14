@@ -13,7 +13,6 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
@@ -27,17 +26,17 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. use ceph for backup storage and primary storage
  * 2. attach the ps to the kvm cluster
- *
+ * <p>
  * confirm the kvm secret created
- *
+ * <p>
  * 3. reconnect the kvm host
- *
+ * <p>
  * confirm the kvm secret created
- *
+ * <p>
  * 4. make the kvm host disconnected
  * 5. change check interval to 1s
  * 6. wait 3s
- *
+ * <p>
  * confirm the kvm secret created
  */
 public class TestCeph7 {
@@ -67,9 +66,9 @@ public class TestCeph7 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         PrimaryStorageInventory pri = deployer.primaryStorages.get("ceph-pri");
         ClusterInventory cluster = deployer.clusters.get("Cluster1");
         HostInventory host = deployer.hosts.get("host1");

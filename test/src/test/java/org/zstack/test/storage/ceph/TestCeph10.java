@@ -22,7 +22,7 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  * 1. add a ceph backup storage with two mons
  * 2. make the mon failed to be connected
- *
+ * <p>
  * confirm adding the backup storage fails and the mons are removed from database
  */
 public class TestCeph10 {
@@ -52,9 +52,9 @@ public class TestCeph10 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         CephBackupStorageConfig sc = new CephBackupStorageConfig();
         sc.fsid = "7ff218d9-f525-435f-8a40-3618d1772a64";
         sc.totalCapacity = SizeUtils.sizeStringToBytes("100G");
