@@ -1,6 +1,5 @@
 package org.zstack.image;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmSystemTags;
@@ -901,7 +900,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         final List<DownloadImageMsg> dmsgs = CollectionUtils.transformToList(msg.getBackupStorageUuids(), new Function<DownloadImageMsg, String>() {
             @Override
             public DownloadImageMsg call(String arg) {
-                boolean enableInject = ImageGlobalConfig.ENABLE_QEMUGA.value(Boolean.class);
+                boolean enableInject = false;
+                if (msg.getSystemTags() != null && msg.getSystemTags().contains(ImageSystemTags.IMAGE_INJECT_QEMUGA_TOKEN) == true)
+                    enableInject = ImageGlobalConfig.ENABLE_QEMUGA.value(Boolean.class);
                 DownloadImageMsg dmsg = new DownloadImageMsg(inv, enableInject);
                 dmsg.setBackupStorageUuid(arg);
                 dmsg.setFormat(msg.getFormat());

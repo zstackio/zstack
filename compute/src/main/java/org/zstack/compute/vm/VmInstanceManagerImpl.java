@@ -659,6 +659,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     VmInstanceVO.class.getSimpleName());
         }
 
+        if (msg.getImageUuid() != null) {
+            tagMgr.copySystemTag(
+                    msg.getImageUuid(),
+                    ImageVO.class.getSimpleName(),
+                    vo.getUuid(),
+                    VmInstanceVO.class.getSimpleName());
+        }
+
         if (VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy())) {
             VmInstanceInventory inv = VmInstanceInventory.valueOf(vo);
             createVmButNotStart(msg, inv);
