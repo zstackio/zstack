@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.ha.HaSystemTags;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -20,6 +21,7 @@ import org.zstack.ipsec.vyos.VyosIPsecBackend.IPsecInfo;
 import org.zstack.ipsec.vyos.VyosIPsecSimulatorConfig;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
@@ -61,6 +63,7 @@ public class TestVyosIPsec1 {
         deployer.addSpringConfig("vyos.xml");
         deployer.addSpringConfig("ipsec.xml");
         deployer.addSpringConfig("ipsecSimulator.xml");
+        deployer.addSpringConfig("vyosHa.xml");
         deployer.build();
         api = deployer.getApi();
         loader = deployer.getComponentLoader();
@@ -204,5 +207,9 @@ public class TestVyosIPsec1 {
         // test host reconnect is not effected by the flat network provider
         HostInventory host1 = deployer.hosts.get("host1");
         api.reconnectHost(host1.getUuid());
+
+        // test the vr is set to never stop
+        VirtualRouterVmVO vr = dbf.listAll(VirtualRouterVmVO.class).get(0);
+        Assert.assertTrue(HaSystemTags.HA.hasTag(vr.getUuid()));
     }
 }
