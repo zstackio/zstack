@@ -2406,21 +2406,75 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     private void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
-        RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
-        cmd.snapshotPath = makeCacheInstallPath(msg.getVolume().getRootImageUuid());
-        httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
-            @Override
-            public void success(RollbackSnapshotRsp returnValue) {
-                reply.setNewVolumeInstallPath(msg.getVolume().getInstallPath());
-                bus.reply(msg, reply);
-            }
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("re-init-root-volume-%s", msg.getVolume().getUuid()));
+        chain.then(new ShareFlow() {
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-current-root-volume";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        DeleteCmd cmd = new DeleteCmd();
+                        cmd.installPath = msg.getVolume().getInstallPath();
+
+                        httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(trigger) {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                trigger.fail(err);
+                            }
+
+                            @Override
+                            public void success(DeleteRsp ret) {
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "clone-image";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        CloneCmd cmd = new CloneCmd();
+                        cmd.srcPath = makeCacheInstallPath(msg.getVolume().getRootImageUuid());
+                        cmd.dstPath = makeRootVolumeInstallPath(msg.getVolume().getUuid());
+
+                        httpCall(CLONE_PATH, cmd, CloneRsp.class, new ReturnValueCompletion<CloneRsp>(trigger) {
+                            @Override
+                            public void success(CloneRsp returnValue) {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        // use the same path as before
+                        reply.setNewVolumeInstallPath(makeRootVolumeInstallPath(msg.getVolume().getUuid()));
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     private void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
