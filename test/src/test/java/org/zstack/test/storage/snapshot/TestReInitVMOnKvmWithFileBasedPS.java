@@ -12,7 +12,6 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.APIReInitVmInstanceEvent;
 import org.zstack.header.storage.snapshot.APIReInitVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.network.service.eip.EipConstant;
 import org.zstack.test.*;
 import org.zstack.test.deployer.Deployer;
 import org.zstack.utils.Utils;
@@ -25,8 +24,8 @@ import org.zstack.utils.logging.CLogger;
 * 4. record current root volume install path, as B
 * 5. confirm A is different with B
 */
-public class TestReInitVMOnKvm {
-    CLogger logger = Utils.getLogger(TestReInitVMOnKvm.class);
+public class TestReInitVMOnKvmWithFileBasedPS {
+    CLogger logger = Utils.getLogger(TestReInitVMOnKvmWithFileBasedPS.class);
     Deployer deployer;
     Api api;
     ComponentLoader loader;

@@ -23,7 +23,7 @@ import org.zstack.utils.data.SizeUnit;
 /**
  * 1. an empty ceph primary storage
  * 2. resize it
- *
+ * <p>
  * confirm the total/available capacity changed correctly
  */
 public class TestCeph14 {
@@ -55,9 +55,9 @@ public class TestCeph14 {
         bconfig = loader.getComponent(CephBackupStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory ps = deployer.primaryStorages.get("ceph-pri");
         CephPrimaryStorageConfig c = config.config.get(ps.getName());
         c.totalCapacity = SizeUnit.GIGABYTE.toByte(500);

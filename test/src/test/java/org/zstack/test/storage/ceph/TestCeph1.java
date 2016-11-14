@@ -132,8 +132,10 @@ public class TestCeph1 {
                 if (body instanceof StartVmCmd) {
                     StartVmCmd cmd = (StartVmCmd) body;
                     KVMCephVolumeTO to = (KVMCephVolumeTO) cmd.getRootVolume();
-                    Assert.assertTrue(to.getMonInfo().stream().filter(info -> info.getHostname().equals(dataNetworkIp1)).findAny().isPresent());
-                    Assert.assertTrue(to.getMonInfo().stream().filter(info -> info.getHostname().equals(dataNetworkIp2)).findAny().isPresent());
+                    Assert.assertTrue(to.getMonInfo().stream().filter(
+                            info -> info.getHostname().equals(dataNetworkIp1)).findAny().isPresent());
+                    Assert.assertTrue(to.getMonInfo().stream().filter(
+                            info -> info.getHostname().equals(dataNetworkIp2)).findAny().isPresent());
                 }
             }
 
@@ -142,6 +144,8 @@ public class TestCeph1 {
             }
         });
         api.createVmFromClone(vm);
+
+        // test re-init vm
 
 
         // test destroying vm

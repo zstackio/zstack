@@ -23,7 +23,7 @@ import org.zstack.test.deployer.Deployer;
  * 1. use ceph for primary storage but sftp for backup storage
  * 2. create a vm
  * 3. create an image from the vm's root volume
- *
+ * <p>
  * confirm the volume created successfully
  */
 public class TestCeph3 {
@@ -53,9 +53,9 @@ public class TestCeph3 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         Assert.assertFalse(config.sftpDownloadCmds.isEmpty());
