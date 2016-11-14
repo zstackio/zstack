@@ -65,9 +65,9 @@ public class TestCeph15 {
         restf = loader.getComponent(RESTFacade.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         ImageInventory iso = deployer.images.get("TestIso");
         PrimaryStorageInventory ps = deployer.primaryStorages.get("ceph-pri");

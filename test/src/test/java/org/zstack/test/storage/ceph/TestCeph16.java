@@ -33,9 +33,8 @@ import java.util.concurrent.TimeUnit;
  * 1. use ceph for backup storage and primary storage
  * 2. create two vm
  * 3. destroy one vm
- *
+ * <p>
  * confirm the image cache is not cleaned up
- *
  */
 public class TestCeph16 {
     Deployer deployer;
@@ -64,9 +63,9 @@ public class TestCeph16 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         CephGlobalConfig.IMAGE_CACHE_CLEANUP_INTERVAL.updateValue(1);
         ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicy.Direct.toString());

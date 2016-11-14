@@ -11,7 +11,6 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeFormat;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.test.Api;
@@ -24,7 +23,7 @@ import org.zstack.test.deployer.Deployer;
  * 1. use ceph for primary storage and backup storage
  * 2. create a vm
  * 3. create an image from the vm's root volume
- *
+ * <p>
  * confirm the volume created successfully
  */
 public class TestCeph2 {
@@ -54,9 +53,9 @@ public class TestCeph2 {
         kconfig = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
     }
-    
-	@Test
-	public void test() throws ApiSenderException {
+
+    @Test
+    public void test() throws ApiSenderException {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
 

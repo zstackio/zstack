@@ -24,7 +24,7 @@ import org.zstack.utils.logging.CLogger;
 /**
  * 1. has two ceph primary storage
  * 2. create data volumes on them with specified primary storage uuid
- *
+ * <p>
  * confirm volumes created on right primary storage
  */
 public class TestCephCreateDataVolume {
@@ -54,8 +54,8 @@ public class TestCephCreateDataVolume {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException {
+    @Test
+    public void test() throws ApiSenderException {
         PrimaryStorageInventory ceph1 = deployer.primaryStorages.get("ceph-pri1");
         PrimaryStorageInventory ceph2 = deployer.primaryStorages.get("ceph-pri2");
 

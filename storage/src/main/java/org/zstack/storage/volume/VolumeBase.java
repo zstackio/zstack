@@ -668,7 +668,8 @@ public class VolumeBase implements Volume {
                                     @Override
                                     public void run(MessageReply reply) {
                                         if (!reply.isSuccess()) {
-                                            logger.warn(String.format("failed to delete volume[uuid:%s, name:%s], %s", self.getUuid(), self.getName(), reply.getError()));
+                                            logger.warn(String.format("failed to delete volume[uuid:%s, name:%s], %s",
+                                                    self.getUuid(), self.getName(), reply.getError()));
                                         }
 
                                         trigger.next();
@@ -735,12 +736,13 @@ public class VolumeBase implements Volume {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(final ErrorCode errCode, Map data) {
-                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class), new ForEachFunction<VolumeDeletionExtensionPoint>() {
-                            @Override
-                            public void run(VolumeDeletionExtensionPoint arg) {
-                                arg.failedToDeleteVolume(getSelfInventory(), errCode);
-                            }
-                        });
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class),
+                                new ForEachFunction<VolumeDeletionExtensionPoint>() {
+                                    @Override
+                                    public void run(VolumeDeletionExtensionPoint arg) {
+                                        arg.failedToDeleteVolume(getSelfInventory(), errCode);
+                                    }
+                                });
 
                         reply.setError(errCode);
                         bus.reply(msg, reply);
