@@ -703,6 +703,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
             for (String tag : cmsg.getSystemTags()) {
                 boolean checked = false;
+                for(SystemTag inittag: systemTags) {
+                    logger.debug(String.format("systemTags init contains: %s", inittag.getClass().getName()));
+                }
                 for (SystemTag stag : systemTags) {
                     if (stag.isMatch(tag)) {
                         checked = true;
