@@ -2324,6 +2324,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private void handle(SetRootPasswordMsg msg) {
         final SetRootPasswordReply reply = new SetRootPasswordReply();
         CephVolumeOperate cephvo = new CephVolumeOperate();
+        SimpleQuery<CephPrimaryStorageMonVO> q = dbf.createQuery(CephPrimaryStorageMonVO.class);
+        q.add(CephPrimaryStorageMonVO_.primaryStorageUuid, SimpleQuery.Op.EQ, msg.getPrimaryStorageUuid());
+        Set<CephPrimaryStorageMonVO> monVos = new HashSet(q.list());
+        cephvo.setMonsSet(monVos);
         CephPrimaryStorageMonBase monBase = cephvo.chooseTargetVmUuid();
 
         SetPasswordCmd setPasswordCmd = new SetPasswordCmd();
