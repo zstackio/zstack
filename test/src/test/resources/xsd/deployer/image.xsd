@@ -18,6 +18,7 @@
         <xsd:attribute name="name" type="xsd:string" use="required"></xsd:attribute>
         <xsd:attribute name="description" type="xsd:string"></xsd:attribute>
         <xsd:attribute name="size" type="xsd:string"></xsd:attribute>
+        <xsd:attribute name="actualSize" type="xsd:string"></xsd:attribute>
         <xsd:attribute name="md5sum" type="xsd:string"></xsd:attribute>
         <xsd:attribute name="bits" type="xsd:unsignedShort" default="64"></xsd:attribute>
         <xsd:attribute name="url" type="xsd:string" default="http://zstack.org/download/test.qcow2"></xsd:attribute>
