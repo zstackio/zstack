@@ -16,10 +16,10 @@ base_dir=`dirname $0`
 #config_schema_pkg_name="org.zstack.test"
 #xjc -p $config_schema_pkg_name -d $target_dir $config_xsd_file
 
-target_dir=$base_dir/../test/src/test/java/
-config_xsd_file=$base_dir/../test/src/test/resources/xsd/deployer/main.xsd
+target_dir=${base_dir}/../test/src/test/java/
+config_xsd_file=${base_dir}/../test/src/test/resources/xsd/deployer/main.xsd
 config_schema_pkg_name="org.zstack.test.deployer.schema"
-xjc -p $config_schema_pkg_name -d $target_dir $config_xsd_file
+xjc -no-header -readOnly -p ${config_schema_pkg_name} -d ${target_dir} ${config_xsd_file}
 
 #target_dir=$base_dir/../identity/src/main/java
 #config_schema_pkg_name="org.zstack.identity.schema"
