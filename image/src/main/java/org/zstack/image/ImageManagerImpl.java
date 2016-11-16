@@ -902,9 +902,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             public DownloadImageMsg call(String arg) {
                 boolean enableInject = false;
                 if(msg.getSystemTags() != null)
-                    for(String tag: msg.getSystemTags())
-                        logger.debug(tag);
-                    if (msg.getSystemTags().contains(ImageSystemTags.IMAGE_INJECT_QEMUGA) == true)
+                    if (msg.getSystemTags().contains(ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat()) == true)
                         enableInject = ImageGlobalConfig.ENABLE_QEMUGA.value(Boolean.class);
                 DownloadImageMsg dmsg = new DownloadImageMsg(inv, enableInject);
                 dmsg.setBackupStorageUuid(arg);
@@ -953,6 +951,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     ref.setStatus(ImageStatus.Ready);
                                     ref.setInstallPath(re.getInstallPath());
                                     dbf.update(ref);
+                                    if(re.isInjected()) {
+                                        logger.debug(String.format("ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat() is: %s", ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat()));
+                                        new ImageAgentOperate().attachAgentToImage(dmsg.getImageInventory().getUuid(), ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat());
+                                    }
 
                                     if (success.compareAndSet(false, true)) {
                                         ivo.setMd5Sum(re.getMd5sum());
