@@ -56,10 +56,10 @@ public class TestHaOnKvm12 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         cconfig = loader.getComponent(CephPrimaryStorageSimulatorConfig.class);
         session = api.loginAsAdmin();
-}
+    }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HostInventory host1 = deployer.hosts.get("host1");
 
         cconfig.kvmSetupSelfFencerCmds.clear();

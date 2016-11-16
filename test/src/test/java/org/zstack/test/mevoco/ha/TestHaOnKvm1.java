@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 1. make the host where the VM runs down
- *
+ * <p>
  * confirm the VM is HA started on another host
  */
 
@@ -60,10 +60,10 @@ public class TestHaOnKvm1 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         hconfig = loader.getComponent(HaKvmSimulatorConfig.class);
         session = api.loginAsAdmin();
-}
+    }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HaGlobalConfig.ALL.updateValue(true);
         HaGlobalConfig.HOST_CHECK_INTERVAL.updateValue(1);
         HaGlobalConfig.HOST_CHECK_MAX_ATTEMPTS.updateValue(3);
@@ -75,7 +75,7 @@ public class TestHaOnKvm1 {
         HostInventory host1 = deployer.hosts.get("host1");
         HostInventory host2 = deployer.hosts.get("host2");
 
-	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
+        final VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.setVmHaLevel(vm.getUuid(), VmHaLevel.OnHostFailure, null);
         String level = HaSystemTags.HA.getTokenByResourceUuid(vm.getUuid(), HaSystemTags.HA_TOKEN);
         Assert.assertEquals(VmHaLevel.OnHostFailure.toString(), level);
@@ -102,5 +102,5 @@ public class TestHaOnKvm1 {
 
         PrimaryStorageInventory nfs = deployer.primaryStorages.get("nfs");
         Assert.assertTrue(fcmd.mountPoints.contains(nfs.getMountPath()));
-	}
+    }
 }

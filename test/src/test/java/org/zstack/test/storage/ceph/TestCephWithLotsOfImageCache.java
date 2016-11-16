@@ -96,6 +96,5 @@ public class TestCephWithLotsOfImageCache {
         createVm("3");
         createVm("4");
         createVm("5");
-        createVm("6");
     }
 }
