@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. stop a vm
  * 2. set the vm to neverstop
- *
+ * <p>
  * confirm the vm starts after being set to neverstop
  */
 
@@ -57,15 +57,15 @@ public class TestHaOnKvm14 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         hconfig = loader.getComponent(HaKvmSimulatorConfig.class);
         session = api.loginAsAdmin();
-}
+    }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
-	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
+        final VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.stopVmInstance(vm.getUuid());
         api.setVmHaLevel(vm.getUuid(), VmHaLevel.NeverStop, null);
         TimeUnit.SECONDS.sleep(3);
         VmInstanceVO vo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Running, vo.getState());
-	}
+    }
 }

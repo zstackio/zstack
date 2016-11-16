@@ -24,7 +24,7 @@ import org.zstack.utils.logging.CLogger;
 
 /**
  * 1. make the host where the VM runs down
- *
+ * <p>
  * confirm the VM is HA started on another host
  */
 
@@ -55,10 +55,10 @@ public class TestHaOnKvm10 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         hconfig = loader.getComponent(HaKvmSimulatorConfig.class);
         session = api.loginAsAdmin();
-}
+    }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         VmInstanceInventory vm1 = deployer.vms.get("TestVm1");
         VmInstanceInventory vm2 = deployer.vms.get("TestVm2");
         api.setVmHaLevel(vm1.getUuid(), VmHaLevel.NeverStop, null);

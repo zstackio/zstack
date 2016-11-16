@@ -7,8 +7,10 @@ import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.ha.*;
-import org.zstack.ha.HaKvmHostSiblingChecker.ScanCmd;
+import org.zstack.ha.HaGlobalConfig;
+import org.zstack.ha.HaKvmSimulatorConfig;
+import org.zstack.ha.HaSystemTags;
+import org.zstack.ha.VmHaLevel;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -29,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * 1. set HA level to the VM
  * 2. delete the HA level from the VM
  * 3. make the host where the VM runs down
- *
+ * <p>
  * confirm the VM is not HA started
  */
 
@@ -60,10 +62,10 @@ public class TestHaOnKvm6 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         hconfig = loader.getComponent(HaKvmSimulatorConfig.class);
         session = api.loginAsAdmin();
-}
+    }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HaGlobalConfig.ALL.updateValue(true);
         HaGlobalConfig.HOST_CHECK_INTERVAL.updateValue(1);
         HaGlobalConfig.HOST_CHECK_MAX_ATTEMPTS.updateValue(3);
@@ -75,7 +77,7 @@ public class TestHaOnKvm6 {
         HostInventory host1 = deployer.hosts.get("host1");
         HostInventory host2 = deployer.hosts.get("host2");
 
-	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
+        final VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.setVmHaLevel(vm.getUuid(), VmHaLevel.OnHostFailure, null);
         String level = HaSystemTags.HA.getTokenByResourceUuid(vm.getUuid(), HaSystemTags.HA_TOKEN);
         Assert.assertEquals(VmHaLevel.OnHostFailure.toString(), level);
@@ -89,5 +91,5 @@ public class TestHaOnKvm6 {
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(VmInstanceState.Unknown, vmvo.getState());
         Assert.assertEquals(0, hconfig.scanCmds.size());
-	}
+    }
 }

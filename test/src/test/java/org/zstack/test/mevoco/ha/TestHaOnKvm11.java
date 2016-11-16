@@ -54,10 +54,10 @@ public class TestHaOnKvm11 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         hconfig = loader.getComponent(HaKvmSimulatorConfig.class);
         session = api.loginAsAdmin();
-}
+    }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HostInventory host1 = deployer.hosts.get("host1");
         HostInventory host2 = deployer.hosts.get("host2");
 

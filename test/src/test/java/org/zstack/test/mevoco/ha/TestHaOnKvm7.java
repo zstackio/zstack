@@ -30,11 +30,11 @@ import java.util.concurrent.TimeUnit;
  * 1. set the vm HA level to NeverStop
  * 2. make the host where the VM runs down
  * 3. disable another host (host2)
- *
+ * <p>
  * confirm the VM is failed to HA start
- *
+ * <p>
  * 4. enable the host2
- *
+ * <p>
  * confirm the VM is HA started
  */
 
@@ -65,10 +65,10 @@ public class TestHaOnKvm7 {
         config = loader.getComponent(KVMSimulatorConfig.class);
         hconfig = loader.getComponent(HaKvmSimulatorConfig.class);
         session = api.loginAsAdmin();
-}
+    }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HaGlobalConfig.ALL.updateValue(true);
         HaGlobalConfig.HOST_CHECK_INTERVAL.updateValue(1);
         HaGlobalConfig.HOST_CHECK_MAX_ATTEMPTS.updateValue(1);
@@ -81,7 +81,7 @@ public class TestHaOnKvm7 {
         HostInventory host1 = deployer.hosts.get("host1");
         HostInventory host2 = deployer.hosts.get("host2");
 
-	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
+        final VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.setVmHaLevel(vm.getUuid(), VmHaLevel.NeverStop, null);
         String level = HaSystemTags.HA.getTokenByResourceUuid(vm.getUuid(), HaSystemTags.HA_TOKEN);
         Assert.assertEquals(VmHaLevel.NeverStop.toString(), level);
@@ -105,5 +105,5 @@ public class TestHaOnKvm7 {
         Assert.assertEquals(HaGlobalConfig.HOST_CHECK_MAX_ATTEMPTS.value(Integer.class).intValue(), cmd.times);
         Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_INTERVAL.value(Long.class).longValue(), cmd.successInterval);
         Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_TIMES.value(Integer.class).intValue(), cmd.times);
-	}
+    }
 }

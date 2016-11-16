@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 1. make the host where the VM runs down
  * 2. make the scan command returns unstable
- *
+ * <p>
  * confirm the VM is not HA started on another host
  */
 
@@ -73,8 +73,8 @@ public class TestHaOnKvm3 {
         session = api.loginAsAdmin();
     }
 
-	@Test
-	public void test() throws ApiSenderException, InterruptedException {
+    @Test
+    public void test() throws ApiSenderException, InterruptedException {
         HaGlobalConfig.ALL.updateValue(true);
         HaGlobalConfig.HOST_CHECK_INTERVAL.updateValue(1);
         HaGlobalConfig.HOST_CHECK_MAX_ATTEMPTS.updateValue(3);
@@ -86,7 +86,7 @@ public class TestHaOnKvm3 {
         final HostInventory host1 = deployer.hosts.get("host1");
         HostInventory host2 = deployer.hosts.get("host2");
 
-	    final VmInstanceInventory vm = deployer.vms.get("TestVm");
+        final VmInstanceInventory vm = deployer.vms.get("TestVm");
         api.setVmHaLevel(vm.getUuid(), VmHaLevel.OnHostFailure, null);
         String level = HaSystemTags.HA.getTokenByResourceUuid(vm.getUuid(), HaSystemTags.HA_TOKEN);
         Assert.assertEquals(VmHaLevel.OnHostFailure.toString(), level);
@@ -122,5 +122,5 @@ public class TestHaOnKvm3 {
         Assert.assertEquals(HaGlobalConfig.HOST_CHECK_MAX_ATTEMPTS.value(Integer.class).intValue(), cmd.times);
         Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_INTERVAL.value(Long.class).longValue(), cmd.successInterval);
         Assert.assertEquals(HaGlobalConfig.HOST_CHECK_SUCCESS_TIMES.value(Integer.class).intValue(), cmd.times);
-	}
+    }
 }
