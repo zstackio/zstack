@@ -1717,7 +1717,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName());
+                        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(
+                                msg.getIsoSpec().getInventory().getUuid(), ImageVO.class.getSimpleName());
                         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
                         bkd.handle(msg, new ReturnValueCompletion<DeleteIsoFromPrimaryStorageReply>(msg) {
                             @Override
@@ -1963,16 +1964,24 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Transactional(readOnly = true)
     private LocalStorageHypervisorFactory getHypervisorBackendFactoryByResourceUuid(String resUuid, String resourceType) {
-        String sql = "select host.hypervisorType from HostVO host, LocalStorageResourceRefVO ref where ref.hostUuid = host.uuid and ref.resourceUuid = :resUuid and ref.primaryStorageUuid = :puuid";
+        String sql = "select host.hypervisorType" +
+                " from HostVO host, LocalStorageResourceRefVO ref" +
+                " where ref.hostUuid = host.uuid" +
+                " and ref.resourceUuid = :resUuid" +
+                " and ref.primaryStorageUuid = :puuid";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("resUuid", resUuid);
         q.setParameter("puuid", self.getUuid());
         List<String> ret = q.getResultList();
         if (ret.isEmpty()) {
-            throw new CloudRuntimeException(String.format("resource[uuid:%s, type: %s] is not on the local primary storage[uuid:%s]", resUuid, resourceType, self.getUuid()));
+            throw new CloudRuntimeException(
+                    String.format("resource[uuid:%s, type: %s] is not on the local primary storage[uuid:%s]",
+                            resUuid, resourceType, self.getUuid()));
         }
         if (ret.size() != 1) {
-            throw new CloudRuntimeException(String.format("resource[uuid:%s, type: %s] on the local primary storage[uuid:%s] maps to multiple hypervisor%s", resUuid, resourceType, self.getUuid(), ret));
+            throw new CloudRuntimeException(
+                    String.format("resource[uuid:%s, type: %s] on the local primary storage[uuid:%s] maps to multiple hypervisor%s",
+                            resUuid, resourceType, self.getUuid(), ret));
         }
 
         String hvType = ret.get(0);

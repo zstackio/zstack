@@ -447,12 +447,13 @@ public class VolumeBase implements Volume {
         }
 
         final VolumeInventory inv = getSelfInventory();
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class), new ForEachFunction<VolumeBeforeExpungeExtensionPoint>() {
-            @Override
-            public void run(VolumeBeforeExpungeExtensionPoint arg) {
-                arg.volumeBeforeExpunge(inv);
-            }
-        });
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class),
+                new ForEachFunction<VolumeBeforeExpungeExtensionPoint>() {
+                    @Override
+                    public void run(VolumeBeforeExpungeExtensionPoint arg) {
+                        arg.volumeBeforeExpunge(inv);
+                    }
+                });
 
         if (self.getPrimaryStorageUuid() != null) {
             DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
@@ -472,12 +473,13 @@ public class VolumeBase implements Volume {
                         bus.send(msg);
 
 
-                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class), new ForEachFunction<VolumeAfterExpungeExtensionPoint>() {
-                            @Override
-                            public void run(VolumeAfterExpungeExtensionPoint arg) {
-                                arg.volumeAfterExpunge(inv);
-                            }
-                        });
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class),
+                                new ForEachFunction<VolumeAfterExpungeExtensionPoint>() {
+                                    @Override
+                                    public void run(VolumeAfterExpungeExtensionPoint arg) {
+                                        arg.volumeAfterExpunge(inv);
+                                    }
+                                });
 
                         dbf.remove(self);
                         completion.success();
@@ -485,12 +487,13 @@ public class VolumeBase implements Volume {
                 }
             });
         } else {
-            CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class), new ForEachFunction<VolumeAfterExpungeExtensionPoint>() {
-                @Override
-                public void run(VolumeAfterExpungeExtensionPoint arg) {
-                    arg.volumeAfterExpunge(inv);
-                }
-            });
+            CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class),
+                    new ForEachFunction<VolumeAfterExpungeExtensionPoint>() {
+                        @Override
+                        public void run(VolumeAfterExpungeExtensionPoint arg) {
+                            arg.volumeAfterExpunge(inv);
+                        }
+                    });
 
             dbf.remove(self);
             completion.success();

@@ -56,7 +56,7 @@ public class ImageBase implements Image {
     @Autowired
     private ImageDeletionPolicyManager deletionPolicyMgr;
 
-    protected  ImageVO self;
+    protected ImageVO self;
 
     public ImageBase(ImageVO vo) {
         self = vo;
@@ -66,7 +66,7 @@ public class ImageBase implements Image {
     public void handleMessage(Message msg) {
         try {
             if (msg instanceof APIMessage) {
-                handleApiMessage((APIMessage)msg);
+                handleApiMessage((APIMessage) msg);
             } else {
                 handleLocalMessage(msg);
             }
@@ -176,12 +176,13 @@ public class ImageBase implements Image {
 
     private void handle(final ExpungeImageMsg msg) {
         final ExpungeImageReply reply = new ExpungeImageReply();
-        final ImageBackupStorageRefVO ref = CollectionUtils.find(self.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
-            @Override
-            public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
-                return arg.getBackupStorageUuid().equals(msg.getBackupStorageUuid()) ? arg : null;
-            }
-        });
+        final ImageBackupStorageRefVO ref = CollectionUtils.find(self.getBackupStorageRefs(),
+                new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
+                    @Override
+                    public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
+                        return arg.getBackupStorageUuid().equals(msg.getBackupStorageUuid()) ? arg : null;
+                    }
+                });
 
         if (ref == null) {
             logger.debug(String.format("cannot find reference for the image[uuid:%s] on the backup storage[uuid:%s], assume it's been deleted",
@@ -313,7 +314,7 @@ public class ImageBase implements Image {
                     int deleteCount = 0;
                     for (ImageBackupStorageRefVO ref : self.getBackupStorageRefs()) {
                         if (ref.getStatus() == ImageStatus.Deleted) {
-                            deleteCount ++;
+                            deleteCount++;
                         }
                     }
                     if (deleteCount == self.getBackupStorageRefs().size()) {
@@ -388,7 +389,7 @@ public class ImageBase implements Image {
             }
         } else {
             toRecoverBsUuids = new ArrayList<String>();
-            for (final String bsUuid :  msg.getBackupStorageUuids()) {
+            for (final String bsUuid : msg.getBackupStorageUuids()) {
                 ImageBackupStorageRefVO ref = CollectionUtils.find(self.getBackupStorageRefs(), new Function<ImageBackupStorageRefVO, ImageBackupStorageRefVO>() {
                     @Override
                     public ImageBackupStorageRefVO call(ImageBackupStorageRefVO arg) {
