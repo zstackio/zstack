@@ -38,7 +38,7 @@ public class RESTApiController {
                 rsp.sendError(HttpStatus.SC_NOT_FOUND, String.format("No api result[uuid:%s] found", uuid));
                 return;
             }
-
+            rsp.setCharacterEncoding("UTF-8");
             PrintWriter writer = rsp.getWriter();
             String res = JSONObjectUtil.toJsonString(apiRsp);
             rsp.setStatus(HttpStatus.SC_OK);
@@ -72,6 +72,7 @@ public class RESTApiController {
         try {
             String ret = handleByMessageType(entity.getBody());
             response.setStatus(HttpStatus.SC_OK);
+            response.setCharacterEncoding("UTF-8");
             PrintWriter writer = response.getWriter();
             writer.write(ret);
         } catch (Throwable t) {
