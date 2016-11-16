@@ -994,7 +994,7 @@ public class KVMHost extends HostBase implements Host {
             q.select(VmInstanceVO_.state);
             q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, msg.getVmUuid());
             VmInstanceState vmState = q.findValue();
-            if (vmState != VmInstanceState.Running && vmState != VmInstanceState.Stopped) {
+            if (vmState != VmInstanceState.Running && vmState != VmInstanceState.Stopped && vmState != VmInstanceState.Suspended) {
                 throw new OperationFailureException(errf.stringToOperationError(
                         String.format("vm[uuid:%s] is not Running or Stopped, current state[%s]", msg.getVmUuid(),
                                 vmState)
