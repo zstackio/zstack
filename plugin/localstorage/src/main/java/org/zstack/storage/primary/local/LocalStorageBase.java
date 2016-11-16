@@ -511,8 +511,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((LocalStorageDeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MigrateVolumeOnLocalStorageMsg) {
             handle((MigrateVolumeOnLocalStorageMsg) msg);
-        }else if(msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg){
-            handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg)msg);
+        } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -1283,19 +1283,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Transactional
     protected void returnCapacityToHostByResourceUuid(String resUuid) {
-        String sql = "select href, ref" +
-                " from LocalStorageHostRefVO href, LocalStorageResourceRefVO ref" +
-                " where href.hostUuid = ref.hostUuid" +
-                " and ref.resourceUuid = :resUuid" +
-                " and ref.primaryStorageUuid = :puuid";
+        String sql = "select href, rref" +
+                " from LocalStorageHostRefVO href, LocalStorageResourceRefVO rref" +
+                " where href.hostUuid = rref.hostUuid" +
+                " and href.primaryStorageUuid = rref.primaryStorageUuid" +
+                " and rref.resourceUuid = :resUuid" +
+                " and rref.primaryStorageUuid = :puuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         q.setParameter("resUuid", resUuid);
         q.setParameter("puuid", self.getUuid());
-        Tuple ref = q.getSingleResult();
+        Tuple twoRefs = q.getSingleResult();
 
-        LocalStorageHostRefVO href = ref.get(0, LocalStorageHostRefVO.class);
-        LocalStorageResourceRefVO rref = ref.get(1, LocalStorageResourceRefVO.class);
+        LocalStorageHostRefVO href = twoRefs.get(0, LocalStorageHostRefVO.class);
+        LocalStorageResourceRefVO rref = twoRefs.get(1, LocalStorageResourceRefVO.class);
 
         long requiredSize = rref.getSize();
         if (VolumeVO.class.getSimpleName().equals(rref.getResourceType())) {
