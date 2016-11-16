@@ -7,7 +7,7 @@ import org.zstack.header.message.NeedReplyMessage;
 
 @ApiTimeout(apiClasses = {APIAddImageMsg.class})
 public class DownloadImageMsg extends NeedReplyMessage implements BackupStorageMessage {
-	private ImageInventory imageInventory;
+    private ImageInventory imageInventory;
     private String backupStorageUuid;
     private String format;
     private boolean inject;
@@ -27,8 +27,8 @@ public class DownloadImageMsg extends NeedReplyMessage implements BackupStorageM
     }
 
     public DownloadImageMsg(ImageInventory inventory) {
-	    super();
-	    this.imageInventory = inventory;
+        super();
+        this.imageInventory = inventory;
     }
 
     public void setBackupStorageUuid(String backupStorageUuid) {
