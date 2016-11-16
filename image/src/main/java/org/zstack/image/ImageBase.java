@@ -669,6 +669,8 @@ public class ImageBase implements Image {
             @Override
             public void handle(Map data) {
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+                if(new ImageAgentOperate().isAgentAttachedToImage(self.getUuid()))
+                    new ImageAgentOperate().detachAgentFromImage(self.getUuid());
                 bus.publish(evt);
             }
         }).error(new FlowErrorHandler(msg) {
