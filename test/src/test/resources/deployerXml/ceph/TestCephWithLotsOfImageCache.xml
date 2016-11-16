@@ -6,31 +6,31 @@
         <cephBackupStorage name="ceph-bk" description="Test"
                            url="/path1" fsid="7ff218d9-f525-435f-8a40-3618d1772a64"
                            monUrl="root:password@localhost:23,root:pass@#$word@127.0.0.1:23"
-                           totalCapacity="500G" availableCapacity="500G"/>
+                           totalCapacity="502G" availableCapacity="502G"/>
     </backupStorages>
 
     <images>
-        <image name="TestImage1" description="Test" size="100G" actualSize="100G">
+        <image name="TestImage1" description="Test" size="100G" actualSize="1G">
             <backupStorageRef>ceph-bk</backupStorageRef>
             <accountRef>test</accountRef>
         </image>
-        <image name="TestImage2" description="Test" size="100G" actualSize="100G">
+        <image name="TestImage2" description="Test" size="100G" actualSize="1G">
             <backupStorageRef>ceph-bk</backupStorageRef>
             <accountRef>test</accountRef>
         </image>
-        <image name="TestImage3" description="Test" size="100G" actualSize="100G">
+        <image name="TestImage3" description="Test" size="100G" actualSize="1G">
             <backupStorageRef>ceph-bk</backupStorageRef>
             <accountRef>test</accountRef>
         </image>
-        <image name="TestImage4" description="Test" size="100G" actualSize="100G">
+        <image name="TestImage4" description="Test" size="100G" actualSize="1G">
             <backupStorageRef>ceph-bk</backupStorageRef>
             <accountRef>test</accountRef>
         </image>
-        <image name="TestImage5" description="Test" size="100G" actualSize="100G">
+        <image name="TestImage5" description="Test" size="100G" actualSize="1G">
             <backupStorageRef>ceph-bk</backupStorageRef>
             <accountRef>test</accountRef>
         </image>
-        <image name="TestImage6" description="Test" size="100G" actualSize="100G">
+        <image name="TestImage6" description="Test" size="100G" actualSize="1G">
             <backupStorageRef>ceph-bk</backupStorageRef>
             <accountRef>test</accountRef>
         </image>
@@ -87,7 +87,7 @@
             <backupStorageRef>ceph-bk</backupStorageRef>
             <primaryStorages>
                 <cephPrimaryStorage name="ceph-pri" description="Test"
-                                    totalCapacity="500G" availableCapacity="500G" url="ceph://test"
+                                    totalCapacity="502G" availableCapacity="502G" url="ceph://test"
                                     fsid="7ff218d9-f525-435f-8a40-3618d1772a64"
                                     monUrl="root:password@localhost/?monPort=7777,root:password@127.0.0.1/?monPort=7777"/>
             </primaryStorages>

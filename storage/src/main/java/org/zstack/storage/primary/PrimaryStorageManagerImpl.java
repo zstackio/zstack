@@ -580,7 +580,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
                 long avail = cap.getAvailableCapacity() - size;
                 if (avail <= 0) {
-                    logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed, no available capacity on it", inv.getUuid()));
+                    logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed," +
+                            " no available capacity on it", inv.getUuid()));
                     return null;
                 }
 
@@ -588,8 +589,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 cap.setAvailableCapacity(avail);
 
                 if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s, available before:%s, available now:%s]",
-                            size, inv.getUuid(), origin, avail));
+                    logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s," +
+                            " available before:%s, available now:%s]", size, inv.getUuid(), origin, avail));
                 }
 
                 return cap;

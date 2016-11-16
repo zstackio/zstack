@@ -24,9 +24,11 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
+import org.zstack.utils.TimeUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class TestCephWithLotsOfImageCache {
     Deployer deployer;
@@ -60,21 +62,29 @@ public class TestCephWithLotsOfImageCache {
         session = api.loginAsAdmin();
     }
 
-    public void createVm(String imageNo) throws ApiSenderException {
+    public VmInstanceInventory createVm(String imageNo, String imageInventoryUuid) throws ApiSenderException {
         List<String> l3uuids;
         List<String> ds;
         VmInstanceInventory vm = new VmInstanceInventory();
         String iouuid;
         String imuuid;
 
-        ImageInventory im = deployer.images.get("TestImage" + imageNo);
-        imuuid = im.getUuid();
+        if (imageInventoryUuid != null) {
+            imuuid = imageInventoryUuid;
+        } else {
+            ImageInventory im = deployer.images.get("TestImage" + imageNo);
+            imuuid = im.getUuid();
+        }
+
         InstanceOfferingInventory io = deployer.instanceOfferings.get("TestInstanceOffering");
         iouuid = io.getUuid();
+
         L3NetworkInventory l3 = deployer.l3Networks.get("TestL3Network1");
         l3uuids = new ArrayList<String>(1);
         l3uuids.add(l3.getUuid());
+
         ds = new ArrayList<String>(0);
+
         vm = new VmInstanceInventory();
         vm.setDescription("TestVm");
         vm.setName("TestVm");
@@ -82,19 +92,32 @@ public class TestCephWithLotsOfImageCache {
         vm.setInstanceOfferingUuid(iouuid);
         vm.setImageUuid(imuuid);
 
-        api.createVmByFullConfig(vm, null, l3uuids, ds);
+        return api.createVmByFullConfig(vm, null, l3uuids, ds);
     }
 
     @Test
-    public void test() throws ApiSenderException {
+    public void test() throws ApiSenderException, InterruptedException {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Direct.toString());
         PrimaryStorageInventory ps = deployer.primaryStorages.get("ceph-pri");
         BackupStorageInventory bs = deployer.backupStorages.get("ceph-bk");
 
-        createVm("1");
-        createVm("2");
-        createVm("3");
-        createVm("4");
-        createVm("5");
+        VmInstanceInventory vm1 = createVm("1", null);
+        TimeUnit.SECONDS.sleep(1);
+
+        api.stopVmInstance(vm1.getUuid());
+        ImageInventory imageInventory1 = api.createTemplateFromRootVolume("Not Exist", vm1.getRootVolumeUuid(), bs.getUuid());
+        createVm("k", imageInventory1.getUuid());
+        TimeUnit.SECONDS.sleep(1);
+
+        createVm("2", null);
+        TimeUnit.SECONDS.sleep(1);
+
+        createVm("3", null);
+        TimeUnit.SECONDS.sleep(1);
+
+        createVm("4", null);
+        TimeUnit.SECONDS.sleep(1);
+
+        api.reconnectPrimaryStorage(ps.getUuid());
     }
 }
