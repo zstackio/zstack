@@ -38,11 +38,18 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
     protected ErrorFacade errf;
 
     @Transactional(readOnly = true)
-    private boolean isThereOtherStorageForTheHost(String hostUuid, String localStorageUuid) {
-        String sql = "select count(pri) from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host where pri.uuid = ref.primaryStorageUuid and ref.clusterUuid = host.clusterUuid and host.uuid = :huuid and pri.uuid != :puuid";
+    private boolean isThereNetworkSharedStorageForTheHost(String hostUuid, String localStorageUuid) {
+        String sql = "select count(pri)" +
+                " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host" +
+                " where pri.uuid = ref.primaryStorageUuid" +
+                " and ref.clusterUuid = host.clusterUuid" +
+                " and host.uuid = :huuid" +
+                " and pri.uuid != :puuid" +
+                " and pri.type != :type";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("huuid", hostUuid);
         q.setParameter("puuid", localStorageUuid);
+        q.setParameter("type", LocalStorageConstants.LOCAL_STORAGE_TYPE);
         return q.getSingleResult() > 0;
     }
 
@@ -59,10 +66,10 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         String priUuid = t.get(1, String.class);
 
         AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
-        if (isThereOtherStorageForTheHost(hostUuid, priUuid)) {
+        if (isThereNetworkSharedStorageForTheHost(hostUuid, priUuid)) {
             // use network-shared primary storage
             msg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-            msg.addExcludePrimaryStoratgeUuid(priUuid);
+            msg.addExcludePrimaryStorageUuid(priUuid);
         } else {
             msg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
             msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
@@ -83,7 +90,7 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
 
                 spec.setDestHost(HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class)));
 
-                AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply)reply;
+                AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply) reply;
                 data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
                 data.put(LocalStorageAllocateCapacityForAttachingVolumeFlow.class, ar.getSize());
                 trigger.next();

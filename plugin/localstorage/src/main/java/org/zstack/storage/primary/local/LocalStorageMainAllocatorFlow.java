@@ -163,7 +163,8 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
                     candidateHosts.add(ref);
                 }
             } else {
-                if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getAvailableCapacity()) > spec.getSize()) {
+                if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(ref.getPrimaryStorageUuid(),
+                        ref.getAvailableCapacity()) > spec.getSize()) {
                     candidateHosts.add(ref);
                 }
             }

@@ -77,7 +77,8 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("clusterUuids", spec.getRequiredClusterUuids());
             query.setParameter("status", PrimaryStorageStatus.Connected);
             query.setParameter("priState", PrimaryStorageState.Enabled);
-            errorInfo = String.format("cannot find primary storage satisfying conditions[attached to clusters:%s, state:%s, status:%s, available capacity > %s",
+            errorInfo = String.format("cannot find primary storage satisfying conditions" +
+                            "[attached to clusters:%s, state:%s, status:%s, available capacity > %s",
                     spec.getRequiredClusterUuids(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredZoneUuid() != null) {
             String sql = "select pri from PrimaryStorageVO pri where pri.zoneUuid = :zoneUuid and pri.status = :status and pri.state = :priState";
@@ -116,7 +117,8 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             res.addAll(considerImageCache(spec, vos));
         } else {
             for (PrimaryStorageVO vo : vos) {
-                if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(vo.getUuid(), vo.getCapacity().getAvailableCapacity()) > spec.getSize()) {
+                if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(vo.getUuid(),
+                        vo.getCapacity().getAvailableCapacity()) > spec.getSize()) {
                     res.add(vo);
                 }
             }
