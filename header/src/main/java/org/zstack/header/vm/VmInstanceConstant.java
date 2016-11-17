@@ -34,6 +34,7 @@ public interface VmInstanceConstant {
         Expunge
     }
 
+    String TIME_OUT_AGENT = "vm.timeout";
     String QUOTA_VM_TOTAL_NUM = "vm.totalNum";
     String QUOTA_VM_RUNNING_NUM = "vm.num";
     String QUOTA_VM_RUNNING_MEMORY_SIZE = "vm.memorySize";
