@@ -7,9 +7,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.scheduler.AbstractSchedulerJob;
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.APIStartVmInstanceEvent;
 import org.zstack.header.vm.StartVmInstanceMsg;
-import org.zstack.header.vm.StartVmInstanceReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.Utils;
@@ -43,14 +41,11 @@ public class StartVmInstanceJob extends AbstractSchedulerJob {
         bus.send(smsg, new CloudBusCallBack() {
             @Override
             public void run(MessageReply reply) {
-                APIStartVmInstanceEvent evt = new APIStartVmInstanceEvent(smsg.getId());
                 if (reply.isSuccess()) {
-                    StartVmInstanceReply creply = (StartVmInstanceReply) reply;
-                    evt.setInventory(creply.getInventory());
+                    logger.debug(String.format("StartVmInstanceJob for vm %s success", vmUuid));
                 } else {
-                    evt.setErrorCode(reply.getError());
+                    logger.debug(String.format("StartVmInstanceJob for vm %s failed", vmUuid));
                 }
-                bus.publish(evt);
             }
         });
     }

@@ -5,12 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.scheduler.AbstractSchedulerJob;
+import org.zstack.core.scheduler.SchedulerFacadeImpl;
 import org.zstack.header.core.scheduler.APICreateSchedulerMessage;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.volume.APICreateVolumeSnapshotEvent;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeCreateSnapshotMsg;
-import org.zstack.header.volume.VolumeCreateSnapshotReply;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -39,26 +38,29 @@ public class CreateVolumeSnapshotJob extends AbstractSchedulerJob {
 
     @Override
     public void run() {
-        logger.debug(String.format("run scheduler for job: CreateVolumeSnapshotJob; volume uuid is %s", getVolumeUuid()));
+        logger.debug(String.format("run scheduler for job: CreateVolumeSnapshotJob; volume uuid is %s", volumeUuid));
         VolumeCreateSnapshotMsg cmsg = new VolumeCreateSnapshotMsg();
-        cmsg.setName(getSnapShotName());
-        cmsg.setDescription(getSnapShotDescription());
-        cmsg.setVolumeUuid(getVolumeUuid());
+        cmsg.setName(snapShotName);
+        cmsg.setDescription(snapShotDescription);
+        cmsg.setVolumeUuid(volumeUuid);
         cmsg.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(getVolumeUuid()));
         bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, getVolumeUuid());
-        bus.send(cmsg, new CloudBusCallBack() {
-            @Override
-            public void run(MessageReply reply) {
-                APICreateVolumeSnapshotEvent evt = new APICreateVolumeSnapshotEvent(cmsg.getId());
-                if (reply.isSuccess()) {
-                    VolumeCreateSnapshotReply creply = (VolumeCreateSnapshotReply) reply;
-                    evt.setInventory(creply.getInventory());
-                } else {
-                    evt.setErrorCode(reply.getError());
+        if (SchedulerFacadeImpl.taskRunning.get(volumeUuid) == null || ! SchedulerFacadeImpl.taskRunning.get(volumeUuid)) {
+            SchedulerFacadeImpl.taskRunning.put(volumeUuid, true);
+            bus.send(cmsg, new CloudBusCallBack() {
+                @Override
+                public void run(MessageReply reply) {
+                    if (reply.isSuccess()) {
+                        logger.debug(String.format("CreateVolumeSnapshotJob for volume %s success", volumeUuid));
+                    } else {
+                        logger.debug(String.format("CreateVolumeSnapshotJob for volume %s failed", volumeUuid));
+                    }
+                    SchedulerFacadeImpl.taskRunning.put(volumeUuid, false);
                 }
-                bus.publish(evt);
-            }
-        });
+            });
+        } else {
+            logger.debug(String.format("CreateVolumeSnapshotJob for volume %s didn't finish, scheduler will ignore this trigger", volumeUuid));
+        }
     }
 
 
