@@ -875,6 +875,7 @@ public class KVMAgentCommands {
         private VmAccountPerference accountPerference;
         private String qcowFile;
         private String ip;
+        private long timeout;
 
         public VmAccountPerference getAccountPerference() { return accountPerference; }
 
@@ -894,6 +895,14 @@ public class KVMAgentCommands {
 
         public void setIp(String ip) {
             this.ip = ip;
+        }
+
+        public long getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(long timeout) {
+            this.timeout = timeout;
         }
     }
     public static class OnlineChangeCpuMemoryCmd extends AgentCommand{
