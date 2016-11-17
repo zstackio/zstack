@@ -852,9 +852,15 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void vmStateChangeOnHost(final VmStateChangedOnHostMsg msg, final NoErrorCompletion completion) {
-        refreshVO();
-
         final VmStateChangedOnHostReply reply = new VmStateChangedOnHostReply();
+        if (refreshVO(true) == null) {
+            // the vm has been deleted
+            reply.setError(errf.stringToOperationError("the vm has been deleted"));
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
+
         if (msg.getVmStateAtTracingMoment() != null) {
             // the vm tracer periodically reports vms's state. It catches an old state
             // before an vm operation(start, stop, reboot, migrate) completes. Ignore this
