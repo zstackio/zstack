@@ -106,7 +106,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             if (!toRemoveHuuids.isEmpty()) {
                 logger.debug(String.format("local storage filters out hosts%s, because they don't have required disk capacity[%s bytes]", toRemoveHuuids, spec.getDiskSize()));
 
-                candidates =  CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
+                candidates = CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
                     @Override
                     public HostVO call(HostVO arg) {
                         return toRemoveHuuids.contains(arg.getUuid()) ? null : arg;
@@ -123,7 +123,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         } else if (VmOperation.Start.toString().equals(spec.getVmOperation())) {
             final LocalStorageResourceRefVO ref = dbf.findByUuid(spec.getVmInstance().getRootVolumeUuid(), LocalStorageResourceRefVO.class);
             if (ref != null) {
-                candidates =  CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
+                candidates = CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
                     @Override
                     public HostVO call(HostVO arg) {
                         return arg.getUuid().equals(ref.getHostUuid()) ? arg : null;
@@ -157,7 +157,9 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     @Override
     public String getPrimaryStorageAllocatorStrategyName(final AllocatePrimaryStorageMsg msg) {
         String allocatorType = null;
-        if (msg.getExcludeAllocatorStrategies() != null && msg.getExcludeAllocatorStrategies().contains(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY)) {
+        if (msg.getExcludeAllocatorStrategies() != null
+                && msg.getExcludeAllocatorStrategies().contains(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY)
+                ) {
             allocatorType = null;
         } else if (LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY.equals(msg.getAllocationStrategy())) {
             allocatorType = LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
@@ -174,7 +176,11 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 @Override
                 @Transactional(readOnly = true)
                 public String call() {
-                    String sql = "select ps.type from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref, HostVO host where ps.uuid = ref.primaryStorageUuid and ref.clusterUuid = host.clusterUuid and host.uuid = :huuid";
+                    String sql = "select ps.type" +
+                            " from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref, HostVO host" +
+                            " where ps.uuid = ref.primaryStorageUuid" +
+                            " and ref.clusterUuid = host.clusterUuid" +
+                            " and host.uuid = :huuid";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                     q.setParameter("huuid", msg.getRequiredHostUuid());
                     List<String> types = q.getResultList();
