@@ -88,6 +88,8 @@ public class TestSchedulerCreateVolumeSnapshot {
         String DataVolUuid = vinv.getUuid();
         api.attachVolumeToVm(vm.getUuid(), DataVolUuid);
         api.createVolumeSnapshotScheduler(DataVolUuid, null, type, startDate, interval, null);
+        // test quick create volume scheduler will be ignore
+        api.createVolumeSnapshotScheduler(DataVolUuid, null, type, startDate, interval, null);
         //destroy volume
         TimeUnit.SECONDS.sleep(2);
         long record1 = dbf.count(VolumeSnapshotVO.class);

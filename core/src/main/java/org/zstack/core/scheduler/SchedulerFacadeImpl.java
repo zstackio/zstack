@@ -32,9 +32,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
@@ -62,6 +60,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
     private Scheduler scheduler;
 
     protected SchedulerVO self;
+
+    public static Map<String, Boolean> taskRunning = new HashMap<String, Boolean>();
 
     protected SchedulerInventory getInventory() {
         return SchedulerInventory.valueOf(self);
