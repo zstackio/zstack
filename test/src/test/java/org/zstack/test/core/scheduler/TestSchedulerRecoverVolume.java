@@ -10,7 +10,6 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.scheduler.SchedulerFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.core.scheduler.SchedulerVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -28,9 +27,9 @@ import org.zstack.utils.data.SizeUnit;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by root on 7/11/16.
+ * Created by Mei Lei <meilei007@gmail.com> on 11/17/16.
  */
-public class TestSchedulerCreateVolumeSnapshot {
+public class TestSchedulerRecoverVolume {
     ComponentLoader loader;
     Api api;
     @Autowired
@@ -63,18 +62,10 @@ public class TestSchedulerCreateVolumeSnapshot {
         Assert.assertNotNull(scheduler);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         String volUuid = vm.getRootVolumeUuid();
-        Integer interval = 5;
+        Integer interval = 6;
         String type="simple";
         Long startDate=0L;
-        String schedulerUuid = api.createVolumeSnapshotScheduler(volUuid, session, type, startDate, interval, null);
-        TimeUnit.SECONDS.sleep(2);
-        long record = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(1,record);
-
-        //test change volume status
-        api.deleteScheduler(schedulerUuid, null);
-        long record0 = dbf.count(SchedulerVO.class);
-        Assert.assertEquals(0,record0);
+        Integer count = 4;
         DiskOfferingInventory dinv = new DiskOfferingInventory();
         dinv.setDiskSize(SizeUnit.GIGABYTE.toByte(10));
         dinv.setName("Test");
@@ -87,30 +78,24 @@ public class TestSchedulerCreateVolumeSnapshot {
         // create scheduler for data volume snapshot
         String DataVolUuid = vinv.getUuid();
         api.attachVolumeToVm(vm.getUuid(), DataVolUuid);
-
-        api.createVolumeSnapshotScheduler(DataVolUuid, null, type, startDate, interval, null);
-        // test ignore repeat scheduler request
-        api.createVolumeSnapshotScheduler(DataVolUuid, null, type, startDate, interval, null);
+        // first snapshot
+        api.createVolumeSnapshotScheduler(DataVolUuid, null, type, startDate, interval, count);
         //destroy volume
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(1);
         long record1 = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(2,record1);
+        Assert.assertEquals(1,record1);
         api.deleteDataVolume(vinv.getUuid());
-        TimeUnit.SECONDS.sleep(4);
+        TimeUnit.SECONDS.sleep(19);
+        // should not execute job when destroy status
         long record2 = dbf.count(VolumeSnapshotVO.class);
-        Assert.assertEquals(2,record2);
+        Assert.assertEquals(1,record2);
 
-        //expunge volume
-        api.expungeDataVolume(vinv.getUuid(), null);
-        TimeUnit.SECONDS.sleep(3);
-        long record4 = dbf.count(VolumeSnapshotVO.class);
-        //only leave the first root volume record
-        Assert.assertEquals(1,record4);
-
-        // check schedulerVO
-        long record5 = dbf.count(SchedulerVO.class);
-        Assert.assertEquals(0,record5);
+        //recover volume, should missing
+        api.recoverVolume(vinv.getUuid(), null);
+        //TimeUnit.SECONDS.sleep(8);
+        // from create 24s, should be triggered 2 times, minus 2 time
+        long record3 = dbf.count(VolumeSnapshotVO.class);
+        Assert.assertEquals(1,record3);
 
     }
-
 }
