@@ -9,8 +9,8 @@ import java.util.List;
 
 @Action(category = ImageConstant.ACTION_CATEGORY)
 public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage {
-	@APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
-	private String uuid;
+    @APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
+    private String uuid;
     @APIParam(required = false, nonempty = true, resourceType = BackupStorageVO.class)
     private List<String> backupStorageUuids;
 
@@ -23,20 +23,20 @@ public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage 
     }
 
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
 
-	public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
-	public APIDeleteImageMsg() {
-	    super();
-	}
-	
-	public APIDeleteImageMsg(String uuid) {
-	    super();
-	    this.uuid = uuid;
+    public APIDeleteImageMsg() {
+        super();
+    }
+
+    public APIDeleteImageMsg(String uuid) {
+        super();
+        this.uuid = uuid;
     }
 
     @Override

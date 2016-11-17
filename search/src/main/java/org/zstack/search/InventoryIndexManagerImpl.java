@@ -72,7 +72,7 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
     private boolean deleteAllIndexWhenStart = false;
     // key: parent class, value: children classes
     private Map<Class<?>, List<Class<?>>> sqlTriggerInheritance = new HashMap<Class<?>, List<Class<?>>>();
-    
+
     // key: child class, value: parent class names
     private Map<Class<?>, List<String>> insertVOTriggerClassNames = new HashMap<Class<?>, List<String>>();
     // key: parent class, value: children class names
@@ -117,35 +117,35 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
     }
 
     private void popluateTriggerVONamesCascade(Class<?> triggerVOClazz) {
-    	Class<?> parent = triggerVOClazz.getSuperclass();
-    	List<Class<?>> parents = new ArrayList<Class<?>>();
-    	while (parent != Object.class) {
-    		parents.add(parent);
-    		parent = parent.getSuperclass();
-    	}
-    	
-    	List<String> insertVOtriggerNames = new ArrayList<String>();
-    	if (!parents.isEmpty()) {
-    		for (Class<?> p : parents) {
-    			insertVOtriggerNames.add(p.getSimpleName());
-    		}
-    	}
-    	insertVOtriggerNames.add(triggerVOClazz.getSimpleName());
-    	insertVOTriggerClassNames.put(triggerVOClazz, insertVOtriggerNames);
-    	
-    	if (!parents.isEmpty()) {
-    		for (Class<?> p : parents) {
-    			List<String> deleteVOTriggerNames = deleteVOTriggerClassNames.get(p);
-    			if (deleteVOTriggerNames == null) {
-    				deleteVOTriggerNames = new ArrayList<String>();
-    				deleteVOTriggerNames.add(p.getSimpleName());
-    				deleteVOTriggerClassNames.put(p, deleteVOTriggerNames);
-    			}
-    			deleteVOTriggerNames.add(triggerVOClazz.getSimpleName());
-    		}
-    	}
+        Class<?> parent = triggerVOClazz.getSuperclass();
+        List<Class<?>> parents = new ArrayList<Class<?>>();
+        while (parent != Object.class) {
+            parents.add(parent);
+            parent = parent.getSuperclass();
+        }
+
+        List<String> insertVOtriggerNames = new ArrayList<String>();
+        if (!parents.isEmpty()) {
+            for (Class<?> p : parents) {
+                insertVOtriggerNames.add(p.getSimpleName());
+            }
+        }
+        insertVOtriggerNames.add(triggerVOClazz.getSimpleName());
+        insertVOTriggerClassNames.put(triggerVOClazz, insertVOtriggerNames);
+
+        if (!parents.isEmpty()) {
+            for (Class<?> p : parents) {
+                List<String> deleteVOTriggerNames = deleteVOTriggerClassNames.get(p);
+                if (deleteVOTriggerNames == null) {
+                    deleteVOTriggerNames = new ArrayList<String>();
+                    deleteVOTriggerNames.add(p.getSimpleName());
+                    deleteVOTriggerClassNames.put(p, deleteVOTriggerNames);
+                }
+                deleteVOTriggerNames.add(triggerVOClazz.getSimpleName());
+            }
+        }
     }
-    
+
     private void populateTriggerVOs() throws ClassNotFoundException {
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(true);
         scanner.addIncludeFilter(new AnnotationTypeFilter(TriggerIndex.class));
@@ -296,7 +296,7 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
     private void populateExtensions() {
         reindexExts = rgty.getExtensionList(SearchIndexRecreateExtensionPoint.class);
     }
-    
+
     @Override
     public boolean start() {
         try {
@@ -381,18 +381,18 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private List<InsertVO> takeInsertVO(Class<?> triggeredVO) {
-    	List<String> voNames = insertVOTriggerClassNames.get(triggeredVO);
-    	TypedQuery<InsertVO> query = null;
-    	if (voNames.size() == 1) {
-    		String sql = "select i from InsertVO i where i.voName = :voName";
-    		query = dbf.getEntityManager().createQuery(sql, InsertVO.class);
-    		query.setParameter("voName", triggeredVO.getSimpleName());
-    	} else {
-    		String sql = "select i from InsertVO i where i.voName in (:voName)";
-    		query = dbf.getEntityManager().createQuery(sql, InsertVO.class);
-    		query.setParameter("voName", voNames);
-    	}
-    	query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        List<String> voNames = insertVOTriggerClassNames.get(triggeredVO);
+        TypedQuery<InsertVO> query = null;
+        if (voNames.size() == 1) {
+            String sql = "select i from InsertVO i where i.voName = :voName";
+            query = dbf.getEntityManager().createQuery(sql, InsertVO.class);
+            query.setParameter("voName", triggeredVO.getSimpleName());
+        } else {
+            String sql = "select i from InsertVO i where i.voName in (:voName)";
+            query = dbf.getEntityManager().createQuery(sql, InsertVO.class);
+            query.setParameter("voName", voNames);
+        }
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<InsertVO> ret = query.getResultList();
         if (!ret.isEmpty()) {
             List<Long> ids = CollectionUtils.transformToList(ret, new Function<Long, InsertVO>() {
@@ -433,17 +433,17 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private List<DeleteVO> takeDeleteVO(Class<?> triggeredVO) {
-    	List<String> voNames = deleteVOTriggerClassNames.get(triggeredVO);
+        List<String> voNames = deleteVOTriggerClassNames.get(triggeredVO);
         TypedQuery<DeleteVO> query = null;
         if (voNames == null) {
-        	String sql = "select i from DeleteVO i where i.voName = :voName";
-        	query = dbf.getEntityManager().createQuery(sql, DeleteVO.class);
-        	query.setParameter("voName", triggeredVO.getSimpleName());
-    	} else {
-        	String sql = "select i from DeleteVO i where i.voName in (:voName)";
-        	query = dbf.getEntityManager().createQuery(sql, DeleteVO.class);
-        	query.setParameter("voName", voNames);
-    	}
+            String sql = "select i from DeleteVO i where i.voName = :voName";
+            query = dbf.getEntityManager().createQuery(sql, DeleteVO.class);
+            query.setParameter("voName", triggeredVO.getSimpleName());
+        } else {
+            String sql = "select i from DeleteVO i where i.voName in (:voName)";
+            query = dbf.getEntityManager().createQuery(sql, DeleteVO.class);
+            query.setParameter("voName", voNames);
+        }
         query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<DeleteVO> ret = query.getResultList();
         if (!ret.isEmpty()) {
@@ -634,20 +634,20 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
         }
         return bbuilder;
     }
-    
+
     private IndexerInfo getIndexerInfoByInventoryName(String inventoryName) {
         for (IndexerInfo info : voClassToIndexerMapping.values()) {
             if (info.inventoryName.equals(inventoryName)) {
                 return info;
             }
         }
-        
+
         throw new CloudRuntimeException(String.format("cannot find IndexerInfo for inventory[%s]", inventoryName));
     }
-    
+
     private void reindexInventory(String inventoryName, Set<String> uuids) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
         IndexerInfo info = getIndexerInfoByInventoryName(inventoryName);
-        
+
         ESBulkBuilder bbuilder = new ESBulkBuilder();
         List<InventoryDoc> docs = buildDoc(info, uuids);
         if (docs.isEmpty()) {
@@ -657,13 +657,13 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
         for (InventoryDoc doc : docs) {
             bbuilder.addIndexBulk(doc.getInventoryName().toLowerCase(), doc.getInventoryName(), doc);
         }
-        
+
         if (!bbuilder.isEmpty()) {
             sendBulk(bbuilder.toString(), bbuilder.getAffectedInventoryNames());
             logger.debug(String.format("successfully reindex all data for inventory[%s]", inventoryName));
         }
     }
-    
+
     private void fireSearchIndexRecreateExtension(String invName) {
         for (SearchIndexRecreateExtensionPoint extp : reindexExts) {
             try {
@@ -671,7 +671,7 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
                 if (lst == null || lst.isEmpty()) {
                     continue;
                 }
-                
+
                 Set<String> uuids = new HashSet<String>(lst.size());
                 uuids.addAll(lst);
                 reindexInventory(invName, uuids);
@@ -740,7 +740,7 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
         } else if (msg instanceof APICreateSearchIndexMsg) {
             handle((APICreateSearchIndexMsg) msg);
         } else if (msg instanceof APISearchGenerateSqlTriggerMsg) {
-        	handle((APISearchGenerateSqlTriggerMsg) msg);
+            handle((APISearchGenerateSqlTriggerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -748,10 +748,10 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
 
     private void handle(APICreateSearchIndexMsg msg) throws Exception {
         APICreateSearchIndexEvent evt = new APICreateSearchIndexEvent(msg.getId());
-        
+
         if (!msg.getInventoryNames().isEmpty()) {
             Set<String> validInventoryNames = getAllInventoryNames();
-            
+
             for (String invname : msg.getInventoryNames()) {
                 if (!validInventoryNames.contains(invname)) {
                     //ErrorCodeFacade.setErrorToApiEvent(ErrorCodeFacade.BuiltinErrors.INVALID_ARGRUMENT.toString(), String.mediaType("zstack doesn't have this inventory[%s]", invname), evt);
@@ -759,14 +759,14 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
                     return;
                 }
             }
-            
+
             for (String invname : msg.getInventoryNames()) {
                 if (msg.isRecreate()) {
                     deleteIndex(invname);
                 }
-                
+
                 doCreateIndexIfNotExists(invname);
-                
+
                 if (msg.isRecreate()) {
                     fireSearchIndexRecreateExtension(invname);
                 }
@@ -775,162 +775,162 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
             if (msg.isRecreate()) {
                 deleteAllIndex();
             }
-            
+
             createIndexIfNotExists();
-            
+
             if (msg.isRecreate()) {
                 for (String invname : getAllInventoryNames()) {
                     fireSearchIndexRecreateExtension(invname);
                 }
             }
         }
-        
+
         bus.publish(evt);
     }
 
     private Field getEntityIdFieldFromClass(Class<?> clazz) {
-    	Class<?> c = clazz;
-    	do {
-    		for (Field f : c.getDeclaredFields()) {
-    			if (f.isAnnotationPresent(Id.class)) {
-    				return f;
-    			}
-    		}
-    		
-    		c = c.getSuperclass();
-    	} while (c != null && c != Object.class);
-    	throw new CloudRuntimeException(String.format("class[%s] doesn't have a field annotated by %s, is it a JPA @Entity class???", clazz.getName(), Id.class.getName()));
+        Class<?> c = clazz;
+        do {
+            for (Field f : c.getDeclaredFields()) {
+                if (f.isAnnotationPresent(Id.class)) {
+                    return f;
+                }
+            }
+
+            c = c.getSuperclass();
+        } while (c != null && c != Object.class);
+        throw new CloudRuntimeException(String.format("class[%s] doesn't have a field annotated by %s, is it a JPA @Entity class???", clazz.getName(), Id.class.getName()));
     }
 
     private void generateParentSqlTriggerInheritance(Class<?> clazz) {
-    	if (clazz.getSuperclass() == Object.class) {
-    		return;
-    	}
-    	
-    	Class<?> parent = clazz.getSuperclass();
-    	do {
-    		if (!parent.isAnnotationPresent(Inheritance.class)) {
-    			throw new CloudRuntimeException(String.format("@Entity class %s inherits %s, but %s doesn't have @Inheritance annotation", clazz.getName(), parent.getName(), parent.getName()));
-    		}
-    		
-    		List<Class<?>> parents = sqlTriggerInheritance.get(parent);
-    		if (parents == null) {
-    			parents = new ArrayList<Class<?>>();
-    			sqlTriggerInheritance.put(parent, parents);
-    		}
-    		parents.add(clazz);
-    		parent = parent.getSuperclass();
-    	} while (parent != Object.class);
+        if (clazz.getSuperclass() == Object.class) {
+            return;
+        }
+
+        Class<?> parent = clazz.getSuperclass();
+        do {
+            if (!parent.isAnnotationPresent(Inheritance.class)) {
+                throw new CloudRuntimeException(String.format("@Entity class %s inherits %s, but %s doesn't have @Inheritance annotation", clazz.getName(), parent.getName(), parent.getName()));
+            }
+
+            List<Class<?>> parents = sqlTriggerInheritance.get(parent);
+            if (parents == null) {
+                parents = new ArrayList<Class<?>>();
+                sqlTriggerInheritance.put(parent, parents);
+            }
+            parents.add(clazz);
+            parent = parent.getSuperclass();
+        } while (parent != Object.class);
     }
-    
+
     private List<String> getForeignChildVOName(Class<?> clazz) {
-        List<String> childNames =  new ArrayList<String>();
-        
+        List<String> childNames = new ArrayList<String>();
+
         List<Class<?>> children = sqlTriggerInheritance.get(clazz);
         if (children != null) {
             for (Class<?> child : children) {
                 if (!child.isAnnotationPresent(SqlTrigger.class)) {
                     continue;
                 }
-                
+
                 String childVOName = child.getSimpleName();
                 childNames.add(childVOName);
             }
         }
         return childNames;
     }
-    
+
     private void doGenerateSqlTriggerText(SqlTrigger trigger, Class<?> clazz, StringBuilder sb) {
-    	String voName = clazz.getSimpleName();
-    	String idName = getEntityIdFieldFromClass(clazz).getName();
-    	
-    	String foreignVOName = null;
-    	String foreignVOUuid = null;
-    	List<String> foreignVONames = null;
-    	
-    	String foreignVOToDeleteName = null;
-    	String foreignVOToDeleteUuid = null;
-    	List<String> foreignVOToDeleteNames = null;
-    	
-    	if (trigger.foreignVOClass() != Object.class) {
-    		foreignVOName = trigger.foreignVOClass().getSimpleName();
-    		foreignVOUuid = trigger.foreignVOJoinColumn();
-    		if (foreignVOUuid.equals("")) {
-    			throw new CloudRuntimeException(String.format("@SqlTrigger of %s has foreignVOClass set to %s, but foreignVOJoinColumn is empty", clazz.getName(), trigger.foreignVOClass().getName()));
-    		}
-    		foreignVONames = getForeignChildVOName(trigger.foreignVOClass());
-    		foreignVONames.add(foreignVOName);
-    	}
-    	
-    	if (trigger.foreignVOToDeleteClass() != Object.class) {
-    		foreignVOToDeleteName = trigger.foreignVOToDeleteClass().getSimpleName();
-    		foreignVOToDeleteUuid = trigger.foreignVOToDeleteJoinColumn();
-    		if (foreignVOToDeleteUuid.equals("")) {
-    			throw new CloudRuntimeException(String.format("@SqlTrigger of %s has foreignVOToDeleteClass set to %s, but foreignVOToDeleteJoinColumn is empty", clazz.getName(), trigger.foreignVOToDeleteClass().getName()));
-    		}
-    		foreignVOToDeleteNames = getForeignChildVOName(trigger.foreignVOToDeleteClass());
-    		foreignVOToDeleteNames.add(foreignVOToDeleteName);
-    	}
-    	
-    	String insertTriggerName = String.format("%sInsertTrigger", voName);
-    	sb.append(String.format("\nDROP TRIGGER IF EXISTS `zstack`.%s;", insertTriggerName));
-    	sb.append(String.format("\nCREATE TRIGGER `zstack`.%s AFTER INSERT ON `zstack`.`%s`", insertTriggerName, voName));
-    	sb.append(String.format("\nFOR EACH ROW BEGIN"));
-    	if (foreignVONames != null) {
-    	    for (String name : foreignVONames) {
-    	        sb.append(String.format("\n\tINSERT INTO InsertVO (voName, uuid, foreignVOName, foreignVOUuid) VALUES ('%s', new.%s, '%s', new.%s);", voName, idName, name, foreignVOUuid));
-    	    }
-    	} else {
-    		sb.append(String.format("\n\tINSERT INTO InsertVO (voName, uuid) VALUES ('%s', new.%s);", voName, idName));
-    	}
-    	sb.append("\nEND|\n");
-    	
-    	String updateTriggerName = String.format("%sUpdateTrigger", voName);
-    	sb.append(String.format("\nDROP TRIGGER IF EXISTS `zstack`.%s;", updateTriggerName));
-    	sb.append(String.format("\nCREATE TRIGGER `zstack`.%s AFTER UPDATE ON `zstack`.`%s`", updateTriggerName, voName));
-    	sb.append(String.format("\nFOR EACH ROW BEGIN"));
-    	if (foreignVONames != null) {
-    	    for (String name : foreignVONames) {
-    	        sb.append(String.format("\n\tINSERT INTO UpdateVO (voName, uuid, foreignVOName, foreignVOUuid) VALUES ('%s', new.%s, '%s', new.%s);", voName, idName, name, foreignVOUuid));
-    	    }
-    	} else {
-    		sb.append(String.format("\n\tINSERT INTO UpdateVO (voName, uuid) VALUES ('%s', new.%s);", voName, idName));
-    	}
-    	
-    	List<Class<?>> children = sqlTriggerInheritance.get(clazz);
-    	if (children != null) {
-    		for (Class<?> child : children) {
-    			if (!child.isAnnotationPresent(SqlTrigger.class)) {
-    				continue;
-    			}
-    			
-    			String childVOName = child.getSimpleName();
-    			String childVOId = getEntityIdFieldFromClass(child).getName();
-    			if (!childVOId.equals(idName)) {
-    				throw new CloudRuntimeException(String.format("%s inherits %s, but %s has @Id as %s, %s has @Id as %s", child.getName(), clazz.getName(), child.getName(), childVOId, clazz.getName(), idName));
-    			}
-    			
-    			sb.append(String.format("\n\tINSERT INTO UpdateVO (voName, uuid, foreignVOName, foreignVOUuid) VALUES ('%s', new.%s, '%s', new.%s);", voName, idName, childVOName, childVOId));
-    		}
-    	}
-    	sb.append("\nEND|\n");
-    	
-    	String deleteTriggerName = String.format("%sDeleteTrigger", voName);
-    	sb.append(String.format("\nDROP TRIGGER IF EXISTS `zstack`.%s;", deleteTriggerName));
-    	sb.append(String.format("\nCREATE TRIGGER `zstack`.%s AFTER DELETE ON `zstack`.`%s`", deleteTriggerName, voName));
-    	sb.append(String.format("\nFOR EACH ROW BEGIN"));
-    	sb.append(String.format("\n\tINSERT INTO DeleteVO (voName, uuid) VALUES ('%s', old.%s);", voName, idName));
-    	if (foreignVONames != null) {
-    	    for (String name : foreignVONames) {
-    	        sb.append(String.format("\n\tINSERT INTO DeleteVO (voName, uuid, foreignVOName, foreignVOUuid) VALUES ('%s', old.%s, '%s', old.%s);", voName, idName, name, foreignVOUuid));
-    	    }
-    	}
-    	if (foreignVOToDeleteNames != null) {
-    	    for (String name : foreignVOToDeleteNames) {
-    	        sb.append(String.format("\n\tINSERT INTO DeleteVO (voName, uuid, foreignVOToDeleteName, foreignVOToDeleteUuid) VALUES ('%s', old.%s, '%s', old.%s);", voName, idName, name, foreignVOToDeleteUuid));
-    	    }
-    	}
-    	
+        String voName = clazz.getSimpleName();
+        String idName = getEntityIdFieldFromClass(clazz).getName();
+
+        String foreignVOName = null;
+        String foreignVOUuid = null;
+        List<String> foreignVONames = null;
+
+        String foreignVOToDeleteName = null;
+        String foreignVOToDeleteUuid = null;
+        List<String> foreignVOToDeleteNames = null;
+
+        if (trigger.foreignVOClass() != Object.class) {
+            foreignVOName = trigger.foreignVOClass().getSimpleName();
+            foreignVOUuid = trigger.foreignVOJoinColumn();
+            if (foreignVOUuid.equals("")) {
+                throw new CloudRuntimeException(String.format("@SqlTrigger of %s has foreignVOClass set to %s, but foreignVOJoinColumn is empty", clazz.getName(), trigger.foreignVOClass().getName()));
+            }
+            foreignVONames = getForeignChildVOName(trigger.foreignVOClass());
+            foreignVONames.add(foreignVOName);
+        }
+
+        if (trigger.foreignVOToDeleteClass() != Object.class) {
+            foreignVOToDeleteName = trigger.foreignVOToDeleteClass().getSimpleName();
+            foreignVOToDeleteUuid = trigger.foreignVOToDeleteJoinColumn();
+            if (foreignVOToDeleteUuid.equals("")) {
+                throw new CloudRuntimeException(String.format("@SqlTrigger of %s has foreignVOToDeleteClass set to %s, but foreignVOToDeleteJoinColumn is empty", clazz.getName(), trigger.foreignVOToDeleteClass().getName()));
+            }
+            foreignVOToDeleteNames = getForeignChildVOName(trigger.foreignVOToDeleteClass());
+            foreignVOToDeleteNames.add(foreignVOToDeleteName);
+        }
+
+        String insertTriggerName = String.format("%sInsertTrigger", voName);
+        sb.append(String.format("\nDROP TRIGGER IF EXISTS `zstack`.%s;", insertTriggerName));
+        sb.append(String.format("\nCREATE TRIGGER `zstack`.%s AFTER INSERT ON `zstack`.`%s`", insertTriggerName, voName));
+        sb.append(String.format("\nFOR EACH ROW BEGIN"));
+        if (foreignVONames != null) {
+            for (String name : foreignVONames) {
+                sb.append(String.format("\n\tINSERT INTO InsertVO (voName, uuid, foreignVOName, foreignVOUuid) VALUES ('%s', new.%s, '%s', new.%s);", voName, idName, name, foreignVOUuid));
+            }
+        } else {
+            sb.append(String.format("\n\tINSERT INTO InsertVO (voName, uuid) VALUES ('%s', new.%s);", voName, idName));
+        }
+        sb.append("\nEND|\n");
+
+        String updateTriggerName = String.format("%sUpdateTrigger", voName);
+        sb.append(String.format("\nDROP TRIGGER IF EXISTS `zstack`.%s;", updateTriggerName));
+        sb.append(String.format("\nCREATE TRIGGER `zstack`.%s AFTER UPDATE ON `zstack`.`%s`", updateTriggerName, voName));
+        sb.append(String.format("\nFOR EACH ROW BEGIN"));
+        if (foreignVONames != null) {
+            for (String name : foreignVONames) {
+                sb.append(String.format("\n\tINSERT INTO UpdateVO (voName, uuid, foreignVOName, foreignVOUuid) VALUES ('%s', new.%s, '%s', new.%s);", voName, idName, name, foreignVOUuid));
+            }
+        } else {
+            sb.append(String.format("\n\tINSERT INTO UpdateVO (voName, uuid) VALUES ('%s', new.%s);", voName, idName));
+        }
+
+        List<Class<?>> children = sqlTriggerInheritance.get(clazz);
+        if (children != null) {
+            for (Class<?> child : children) {
+                if (!child.isAnnotationPresent(SqlTrigger.class)) {
+                    continue;
+                }
+
+                String childVOName = child.getSimpleName();
+                String childVOId = getEntityIdFieldFromClass(child).getName();
+                if (!childVOId.equals(idName)) {
+                    throw new CloudRuntimeException(String.format("%s inherits %s, but %s has @Id as %s, %s has @Id as %s", child.getName(), clazz.getName(), child.getName(), childVOId, clazz.getName(), idName));
+                }
+
+                sb.append(String.format("\n\tINSERT INTO UpdateVO (voName, uuid, foreignVOName, foreignVOUuid) VALUES ('%s', new.%s, '%s', new.%s);", voName, idName, childVOName, childVOId));
+            }
+        }
+        sb.append("\nEND|\n");
+
+        String deleteTriggerName = String.format("%sDeleteTrigger", voName);
+        sb.append(String.format("\nDROP TRIGGER IF EXISTS `zstack`.%s;", deleteTriggerName));
+        sb.append(String.format("\nCREATE TRIGGER `zstack`.%s AFTER DELETE ON `zstack`.`%s`", deleteTriggerName, voName));
+        sb.append(String.format("\nFOR EACH ROW BEGIN"));
+        sb.append(String.format("\n\tINSERT INTO DeleteVO (voName, uuid) VALUES ('%s', old.%s);", voName, idName));
+        if (foreignVONames != null) {
+            for (String name : foreignVONames) {
+                sb.append(String.format("\n\tINSERT INTO DeleteVO (voName, uuid, foreignVOName, foreignVOUuid) VALUES ('%s', old.%s, '%s', old.%s);", voName, idName, name, foreignVOUuid));
+            }
+        }
+        if (foreignVOToDeleteNames != null) {
+            for (String name : foreignVOToDeleteNames) {
+                sb.append(String.format("\n\tINSERT INTO DeleteVO (voName, uuid, foreignVOToDeleteName, foreignVOToDeleteUuid) VALUES ('%s', old.%s, '%s', old.%s);", voName, idName, name, foreignVOToDeleteUuid));
+            }
+        }
+
     	/*
     	if (foreignVOName != null) {
     		sb.append(", foreignVOName, foreignVOUuid");
@@ -947,63 +947,63 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
     	}
     	sb.append(");");
     	*/
-    	sb.append("\nEND|\n");
+        sb.append("\nEND|\n");
     }
-    
-    private void generateSqlTriggerText(Class<?> clazz, StringBuilder sb) {
-    	SqlTrigger st = clazz.getAnnotation(SqlTrigger.class);
-    	if (st != null) {
-    		doGenerateSqlTriggerText(st, clazz, sb);
-    	}
-    	
-    	SqlTriggers sts = clazz.getAnnotation(SqlTriggers.class); 
-    	if (sts != null) {
-    		for (SqlTrigger stt : sts.triggers()) {
-    			doGenerateSqlTriggerText(stt, clazz, sb);
-    		}
-    	}
-    }
-    
-    private void handle(APISearchGenerateSqlTriggerMsg msg) {
-    	String resultPath = msg.getResultPath();
-    	if (resultPath == null) {
-    		resultPath = PathUtil.join(System.getProperty("user.home"), "zstack-sql-trigger.sql");
-    	}
-    	
-    	try {
-    		ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(true);
-    		scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTrigger.class));
-    		scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTriggers.class));
-    		scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
-    		for (String pkg : getBasePkgNames()) {
-    			for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
-        			Class<?> triggerClass = Class.forName(bd.getBeanClassName());
-        			generateParentSqlTriggerInheritance(triggerClass);
-    			}
-    		}	
-    		
-    		StringBuilder sb = new StringBuilder("DELIMITER |\n");
-    		scanner = new ClassPathScanningCandidateComponentProvider(true);
-    		scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTrigger.class));
-    		scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTriggers.class));
-    		scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
-    		for (String pkg : getBasePkgNames()) {
-    			for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
-    				Class<?> triggerClass = Class.forName(bd.getBeanClassName());
-    				generateSqlTriggerText(triggerClass, sb);
-    			}
-    		} 
-    		
-    		FileUtils.writeStringToFile(new File(resultPath), sb.toString());
-    		APISearchGenerateSqlTriggerEvent evt = new APISearchGenerateSqlTriggerEvent(msg.getId());
-    		bus.publish(evt);
-    	} catch (Exception e) {
-    		bus.logExceptionWithMessageDump(msg, e);
-    		bus.replyErrorByMessageType(msg, e);
-    	}
-	}
 
-	private Set<String> getAllInventoryNames() {
+    private void generateSqlTriggerText(Class<?> clazz, StringBuilder sb) {
+        SqlTrigger st = clazz.getAnnotation(SqlTrigger.class);
+        if (st != null) {
+            doGenerateSqlTriggerText(st, clazz, sb);
+        }
+
+        SqlTriggers sts = clazz.getAnnotation(SqlTriggers.class);
+        if (sts != null) {
+            for (SqlTrigger stt : sts.triggers()) {
+                doGenerateSqlTriggerText(stt, clazz, sb);
+            }
+        }
+    }
+
+    private void handle(APISearchGenerateSqlTriggerMsg msg) {
+        String resultPath = msg.getResultPath();
+        if (resultPath == null) {
+            resultPath = PathUtil.join(System.getProperty("user.home"), "zstack-sql-trigger.sql");
+        }
+
+        try {
+            ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(true);
+            scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTrigger.class));
+            scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTriggers.class));
+            scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
+            for (String pkg : getBasePkgNames()) {
+                for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
+                    Class<?> triggerClass = Class.forName(bd.getBeanClassName());
+                    generateParentSqlTriggerInheritance(triggerClass);
+                }
+            }
+
+            StringBuilder sb = new StringBuilder("DELIMITER |\n");
+            scanner = new ClassPathScanningCandidateComponentProvider(true);
+            scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTrigger.class));
+            scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTriggers.class));
+            scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
+            for (String pkg : getBasePkgNames()) {
+                for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
+                    Class<?> triggerClass = Class.forName(bd.getBeanClassName());
+                    generateSqlTriggerText(triggerClass, sb);
+                }
+            }
+
+            FileUtils.writeStringToFile(new File(resultPath), sb.toString());
+            APISearchGenerateSqlTriggerEvent evt = new APISearchGenerateSqlTriggerEvent(msg.getId());
+            bus.publish(evt);
+        } catch (Exception e) {
+            bus.logExceptionWithMessageDump(msg, e);
+            bus.replyErrorByMessageType(msg, e);
+        }
+    }
+
+    private Set<String> getAllInventoryNames() {
         Set<String> names = new HashSet<String>();
         for (IndexerInfo info : voClassToIndexerMapping.values()) {
             names.add(info.inventoryName);
@@ -1040,7 +1040,7 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
             deleteIndex(invname);
         }
     }
-    
+
     private void handle(final APIDeleteSearchIndexMsg msg) throws URISyntaxException, ClientProtocolException, IOException {
         if (msg.getIndexName() != null) {
             deleteIndex(msg.getIndexName());

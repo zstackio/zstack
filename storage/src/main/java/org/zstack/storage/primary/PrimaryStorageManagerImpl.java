@@ -541,25 +541,25 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         List<String> errs = new ArrayList<>();
         PrimaryStorageInventory target = null;
         while (it.hasNext()) {
-            PrimaryStorageInventory inv = it.next();
+            PrimaryStorageInventory psInv = it.next();
 
-            if (!physicalCapacityMgr.checkCapacityByRatio(inv.getUuid(), inv.getTotalPhysicalCapacity(), inv.getAvailablePhysicalCapacity())) {
+            if (!physicalCapacityMgr.checkCapacityByRatio(psInv.getUuid(), psInv.getTotalPhysicalCapacity(), psInv.getAvailablePhysicalCapacity())) {
                 errs.add(String.format("primary storage[uuid:%s]'s physical capacity usage has exceeded the threshold[%s]",
-                        inv.getUuid(), physicalCapacityMgr.getRatio(inv.getUuid())));
+                        psInv.getUuid(), physicalCapacityMgr.getRatio(psInv.getUuid())));
                 continue;
             }
 
             long requiredSize = spec.getSize();
             if (!msg.isNoOverProvisioning()) {
-                requiredSize = ratioMgr.calculateByRatio(inv.getUuid(), requiredSize);
+                requiredSize = ratioMgr.calculateByRatio(psInv.getUuid(), requiredSize);
             }
 
-            if (reserve(inv, requiredSize)) {
-                target = inv;
+            if (reserve(psInv, requiredSize)) {
+                target = psInv;
                 break;
             } else {
-                errs.add(String.format("unable to reserve capacity on the primary storage[uuid:%s], it has no space", inv.getUuid()));
-                logger.debug(String.format("concurrent reservation on the primary storage[uuid:%s], try next one", inv.getUuid()));
+                errs.add(String.format("unable to reserve capacity on the primary storage[uuid:%s], it has no space", psInv.getUuid()));
+                logger.debug(String.format("concurrent reservation on the primary storage[uuid:%s], try next one", psInv.getUuid()));
             }
         }
 

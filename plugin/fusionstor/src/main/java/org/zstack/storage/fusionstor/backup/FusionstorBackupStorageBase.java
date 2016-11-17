@@ -395,7 +395,11 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
 
     @Transactional(readOnly = true)
     private boolean canDelete(String installPath) {
-        String sql = "select count(c) from ImageBackupStorageRefVO img, ImageCacheVO c where img.imageUuid = c.imageUuid and img.backupStorageUuid = :bsUuid and img.installPath = :installPath";
+        String sql = "select count(c)" +
+                " from ImageBackupStorageRefVO img, ImageCacheVO c" +
+                " where img.imageUuid = c.imageUuid" +
+                " and img.backupStorageUuid = :bsUuid" +
+                " and img.installPath = :installPath";
         TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
         q.setParameter("bsUuid", self.getUuid());
         q.setParameter("installPath", installPath);
