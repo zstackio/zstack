@@ -211,5 +211,8 @@ public class TestVyosIPsec1 {
         // test the vr is set to never stop
         VirtualRouterVmVO vr = dbf.listAll(VirtualRouterVmVO.class).get(0);
         Assert.assertTrue(HaSystemTags.HA.hasTag(vr.getUuid()));
+
+        api.destroyVmInstance(vr.getUuid());
+        api.rebootVmInstance(vm.getUuid());
     }
 }

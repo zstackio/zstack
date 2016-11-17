@@ -788,21 +788,24 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public List<Flow> getPostCreateFlows() {
-        List<Flow> flows = postCreateFlowsBuilder.getFlows();
+        List<Flow> flows = new ArrayList<>();
+        flows.addAll(postCreateFlowsBuilder.getFlows());
         flows.addAll(postCreateFlowExtensionPoints.stream().map(VirtualRouterPostCreateFlowExtensionPoint::virtualRouterPostCreateFlow).collect(Collectors.toList()));
         return flows;
     }
 
     @Override
     public List<Flow> getPostStartFlows() {
-        List<Flow> flows = postStartFlowsBuilder.getFlows();
+        List<Flow> flows = new ArrayList<>();
+        flows.addAll(postStartFlowsBuilder.getFlows());
         flows.addAll(postStartFlowExtensionPoints.stream().map(VirtualRouterPostStartFlowExtensionPoint::virtualRouterPostStartFlow).collect(Collectors.toList()));
         return flows;
     }
 
     @Override
     public List<Flow> getPostRebootFlows() {
-        List<Flow> flows = postRebootFlowsBuilder.getFlows();
+        List<Flow> flows = new ArrayList<>();
+        flows.addAll(postRebootFlowsBuilder.getFlows());
         flows.addAll(postRebootFlowExtensionPoints.stream().map(VirtualRouterPostRebootFlowExtensionPoint::virtualRouterPostRebootFlow).collect(Collectors.toList()));
         return flows;
     }
@@ -819,7 +822,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public List<Flow> getPostDestroyFlows() {
-        List<Flow> flows = postDestroyFlowsBuilder.getFlows();
+        List<Flow> flows = new ArrayList<>();
+        flows.addAll(postDestroyFlowsBuilder.getFlows());
         flows.addAll(postDestroyFlowExtensionPoints.stream().map(VirtualRouterPostDestroyFlowExtensionPoint::virtualRouterPostDestroyFlow).collect(Collectors.toList()));
         return flows;
     }
