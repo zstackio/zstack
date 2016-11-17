@@ -13,6 +13,8 @@ public class AnsibleGlobalProperty {
     public static String ZSTACKLIB_PACKAGE_NAME;
     @GlobalProperty(name = "Ansible.zstackRoot", defaultValue = "/var/lib/zstack/")
     public static String ZSTACK_ROOT;
+    @GlobalProperty(name = "Ansible.var.zstack_repo", defaultValue = "false")
+    public static String ZSTACK_REPO;
     @GlobalProperty(name = "Ansible.fullDeploy", defaultValue = "false")
     public static boolean FULL_DEPLOY;
     @GlobalProperty(name = "Ansible.keepHostsFileInMemory", defaultValue = "true")
