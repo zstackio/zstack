@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployerConfig xmlns="http://zstack.org/schema/zstack">
+
+    <backupStorages>
+        <sftpBackupStorage name="sftp" description="Test"
+                           url="nfs://test"/>
+    </backupStorages>
+
+    <images>
+        <image name="TestImage" description="Test" size="20G">
+            <backupStorageRef>sftp</backupStorageRef>
+        </image>
+    </images>
+
+    <diskOffering name="TestDiskOffering1" description="Test"
+                  diskSize="90G"/>
+
+    <instanceOfferings>
+        <instanceOffering name="TestInstanceOffering"
+                          description="Test" memoryCapacity="2G" cpuNum="1" cpuSpeed="3000"/>
+    </instanceOfferings>
+
+    <vm>
+        <userVm name="TestVm" description="Test">
+            <imageRef>TestImage</imageRef>
+            <instanceOfferingRef>TestInstanceOffering</instanceOfferingRef>
+            <l3NetworkRef>TestL3Network1</l3NetworkRef>
+            <l3NetworkRef>TestL3Network2</l3NetworkRef>
+            <l3NetworkRef>TestL3Network3</l3NetworkRef>
+            <defaultL3NetworkRef>TestL3Network1</defaultL3NetworkRef>
+        </userVm>
+    </vm>
+
+    <zones>
+        <zone name="Zone1" description="Test">
+            <clusters>
+                <cluster name="Cluster1" description="Test" hypervisorType="KVM">
+                    <hosts>
+                        <kvmHost name="host1" description="Test" managementIp="localhost"
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600"/>
+                        <kvmHost name="host2" description="Test" managementIp="127.0.0.1"
+                                 memoryCapacity="8G" cpuNum="4" cpuSpeed="2600"/>
+                    </hosts>
+                    <primaryStorageRef>local</primaryStorageRef>
+                    <l2NetworkRef>TestL2Network</l2NetworkRef>
+                </cluster>
+            </clusters>
+
+            <l2Networks>
+                <l2NoVlanNetwork name="TestL2Network" description="Test"
+                                 physicalInterface="eth0">
+                    <l3Networks>
+                        <l3BasicNetwork name="TestL3Network1" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.0.0.100"
+                                     endIp="10.10.1.200" gateway="10.0.0.1" netmask="255.0.0.0"/>
+                        </l3BasicNetwork>
+                        <l3BasicNetwork name="TestL3Network2" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.10.2.100"
+                                     endIp="10.20.2.200" gateway="10.10.2.1" netmask="255.0.0.0"/>
+                        </l3BasicNetwork>
+                        <l3BasicNetwork name="TestL3Network3" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.20.3.100"
+                                     endIp="10.30.3.200" gateway="10.20.3.1" netmask="255.0.0.0"/>
+                        </l3BasicNetwork>
+                        <l3BasicNetwork name="TestL3Network4" description="Test">
+                            <ipRange name="TestIpRange" description="Test" startIp="10.20.4.100"
+                                     endIp="10.30.4.200" gateway="10.20.4.1" netmask="255.0.0.0"/>
+                        </l3BasicNetwork>
+                    </l3Networks>
+                </l2NoVlanNetwork>
+            </l2Networks>
+
+            <backupStorageRef>sftp</backupStorageRef>
+            <primaryStorages>
+                <localPrimaryStorage name="local" description="Test" totalCapacity="1T" availableCapacity="1T"
+                                     url="/test"/>
+            </primaryStorages>
+        </zone>
+    </zones>
+</deployerConfig>

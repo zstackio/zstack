@@ -1,5 +1,6 @@
 package org.zstack.test;
 
+import com.sun.org.apache.xerces.internal.xs.StringList;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -902,12 +903,34 @@ public class Api implements CloudBusEventListener {
         return createDataVolume(name, diskOfferingUuid, null, session);
     }
 
-    public VolumeInventory createDataVolume(String name, String diskOfferingUuid, String primaryStorageUuid, SessionInventory session) throws ApiSenderException {
+    public VolumeInventory createDataVolume(String name,
+                                            String diskOfferingUuid,
+                                            String primaryStorageUuid,
+                                            SessionInventory session) throws ApiSenderException {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APICreateDataVolumeMsg msg = new APICreateDataVolumeMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setPrimaryStorageUuid(primaryStorageUuid);
+        msg.setName(name);
+        msg.setDiskOfferingUuid(diskOfferingUuid);
+        APICreateDataVolumeEvent e = sender.send(msg, APICreateDataVolumeEvent.class);
+        return e.getInventory();
+    }
+
+    public VolumeInventory createDataVolumeOnLocalStorage(String name,
+                                                          String diskOfferingUuid,
+                                                          String primaryStorageUuid,
+                                                          String hostUuid,
+                                                          SessionInventory session) throws ApiSenderException {
+        ApiSender sender = new ApiSender();
+        sender.setTimeout(timeout);
+        APICreateDataVolumeMsg msg = new APICreateDataVolumeMsg();
+        msg.setSession(session == null ? adminSession : session);
+        msg.setPrimaryStorageUuid(primaryStorageUuid);
+        List<String> list = new ArrayList<String>();
+        list.add(String.format("localStorage::hostUuid::%s", hostUuid));
+        msg.setSystemTags(list);
         msg.setName(name);
         msg.setDiskOfferingUuid(diskOfferingUuid);
         APICreateDataVolumeEvent e = sender.send(msg, APICreateDataVolumeEvent.class);
@@ -1538,7 +1561,7 @@ public class Api implements CloudBusEventListener {
         msg.setClusterUuid(inv.getClusterUuid());
         msg.setRootDiskOfferingUuid(rootDiskOfferingUuid);
         msg.setDefaultL3NetworkUuid(inv.getDefaultL3NetworkUuid());
-        if(rootPassword != null){
+        if (rootPassword != null) {
             msg.setRootPassword(rootPassword);
         }
         if (msg.getL3NetworkUuids().size() > 1 && msg.getDefaultL3NetworkUuid() == null) {
@@ -4440,11 +4463,11 @@ public class Api implements CloudBusEventListener {
     }
 
     public SchedulerInventory rebootVmInstanceScheduler(String vmUuid,
-                                          String type,
-                                          Long startDate,
-                                          Integer interval,
-                                          Integer repeatCount,
-                                          SessionInventory session) throws ApiSenderException {
+                                                        String type,
+                                                        Long startDate,
+                                                        Integer interval,
+                                                        Integer repeatCount,
+                                                        SessionInventory session) throws ApiSenderException {
         APICreateRebootVmInstanceSchedulerMsg msg = new APICreateRebootVmInstanceSchedulerMsg();
         msg.setSession(session == null ? adminSession : session);
         msg.setSchedulerName("rebootvm");

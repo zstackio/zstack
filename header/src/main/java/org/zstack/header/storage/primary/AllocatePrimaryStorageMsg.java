@@ -79,7 +79,7 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
         this.excludePrimaryStorageUuids = excludePrimaryStorageUuids;
     }
 
-    public void addExcludePrimaryStoratgeUuid(String priUuid) {
+    public void addExcludePrimaryStorageUuid(String priUuid) {
         if (excludePrimaryStorageUuids == null) {
             excludePrimaryStorageUuids = new ArrayList<String>();
         }
