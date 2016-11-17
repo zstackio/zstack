@@ -15,7 +15,7 @@
 	<bean id="PortForwardingManager" class="org.zstack.network.service.portforwarding.PortForwardingManagerImpl">
 		<zstack:plugin>
 			<zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.Service" />
+            		<zstack:extension interface="org.zstack.header.Service" />
 			<zstack:extension interface="org.zstack.network.service.vip.VipReleaseExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.query.AddExpandedQueryExtensionPoint" />
 			<zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
