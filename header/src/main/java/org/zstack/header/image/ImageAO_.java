@@ -26,5 +26,6 @@ public class ImageAO_ {
 	public static volatile SingularAttribute<ImageAO, String> hypervisorType;
     public static volatile SingularAttribute<ImageAO, String> format;
 	public static volatile SingularAttribute<ImageAO, String> guestOsType;
+	public static volatile SingularAttribute<ImageAO, String> exportUrl;
 	public static volatile SingularAttribute<ImageAO, String> backupStorageUuid;
 }
