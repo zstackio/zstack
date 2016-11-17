@@ -189,8 +189,16 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
         q2.select(SchedulerVO_.jobGroup);
         q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
         String jobGroup = q2.findValue();
+        //q.select(SchedulerVO_.triggerName);
+        //q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+        //String triggerName= q.findValue();
+        //SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
+        //q2.select(SchedulerVO_.triggerGroup);
+        //q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+        //String triggerGroup= q2.findValue();
         try {
             scheduler.pauseJob(jobKey(jobName, jobGroup));
+            //scheduler.pauseTrigger(TriggerKey.triggerKey(triggerName, triggerGroup));
             updateSchedulerStatus(uuid, SchedulerState.Disabled.toString());
             self = dbf.findByUuid(uuid, SchedulerVO.class);
         } catch (SchedulerException e) {
@@ -212,8 +220,16 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
             q2.select(SchedulerVO_.jobGroup);
             q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
             String jobGroup = q2.findValue();
+            //q.select(SchedulerVO_.triggerName);
+            //q.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+            //String triggerName= q.findValue();
+            //SimpleQuery<SchedulerVO> q2 = dbf.createQuery(SchedulerVO.class);
+            //q2.select(SchedulerVO_.triggerGroup);
+            //q2.add(SchedulerVO_.uuid, SimpleQuery.Op.EQ, uuid);
+            //String triggerGroup= q2.findValue();
             try {
                 scheduler.resumeJob(jobKey(jobName, jobGroup));
+                //scheduler.resumeTrigger(TriggerKey.triggerKey(triggerName, triggerGroup));
                 updateSchedulerStatus(uuid, SchedulerState.Enabled.toString());
                 self = dbf.findByUuid(uuid, SchedulerVO.class);
             } catch (SchedulerException e) {
@@ -404,13 +420,15 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                         if (startNow) {
                             trigger = newTrigger()
                                     .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-                                    .withSchedule(simpleSchedule())
+                                    .withSchedule(simpleSchedule()
+                                    .withMisfireHandlingInstructionNextWithRemainingCount())
                                     .build();
                         } else {
                             trigger = newTrigger()
                                     .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
                                     .startAt(schedulerJob.getStartTime())
-                                    .withSchedule(simpleSchedule())
+                                    .withSchedule(simpleSchedule()
+                                    .withMisfireHandlingInstructionNextWithRemainingCount())
                                     .build();
                         }
 
@@ -421,7 +439,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                                     .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
                                     .withSchedule(simpleSchedule()
                                             .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
-                                            .withRepeatCount(schedulerJob.getRepeat() - 1))
+                                            .withRepeatCount(schedulerJob.getRepeat() - 1)
+                                            .withMisfireHandlingInstructionNextWithRemainingCount())
                                     .build();
                         } else {
                             trigger = newTrigger()
@@ -429,7 +448,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                                     .startAt(schedulerJob.getStartTime())
                                     .withSchedule(simpleSchedule()
                                             .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
-                                            .withRepeatCount(schedulerJob.getRepeat() - 1))
+                                            .withRepeatCount(schedulerJob.getRepeat() - 1)
+                                            .withMisfireHandlingInstructionNextWithRemainingCount())
                                     .build();
                         }
                     }
@@ -439,7 +459,8 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                                 .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
                                 .withSchedule(simpleSchedule()
                                         .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
-                                        .repeatForever())
+                                        .repeatForever()
+                                        .withMisfireHandlingInstructionNextWithRemainingCount())
                                 .build();
                     } else {
                         trigger = newTrigger()
@@ -447,15 +468,18 @@ public class SchedulerFacadeImpl extends AbstractService implements SchedulerFac
                                 .startAt(schedulerJob.getStartTime())
                                 .withSchedule(simpleSchedule()
                                         .withIntervalInSeconds(schedulerJob.getSchedulerInterval())
-                                        .repeatForever())
+                                        .repeatForever()
+                                        .withMisfireHandlingInstructionNextWithRemainingCount())
                                 .build();
                     }
                 }
+
                 scheduler.scheduleJob(job, trigger);
             } else if (schedulerJob.getType().equals("cron")) {
                 CronTrigger trigger = newTrigger()
                         .withIdentity(schedulerJob.getTriggerName(), schedulerJob.getTriggerGroup())
-                        .withSchedule(cronSchedule(schedulerJob.getCron()))
+                        .withSchedule(cronSchedule(schedulerJob.getCron())
+                        .withMisfireHandlingInstructionIgnoreMisfires())
                         .build();
                 scheduler.scheduleJob(job, trigger);
             }
